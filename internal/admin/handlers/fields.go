@@ -314,11 +314,7 @@ func FieldUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		// Parse translatable flag from form (checkbox: "1" = true, hidden "0" = false)
 		translatable := existing.Translatable
 		if r.Form.Has("translatable") {
-			if r.FormValue("translatable") == "1" {
-				translatable = 1
-			} else {
-				translatable = 0
-			}
+			translatable = r.FormValue("translatable") == "1"
 		}
 
 		// Parse roles multi-select: marshal selected role IDs to a JSON array.

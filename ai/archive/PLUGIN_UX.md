@@ -16,7 +16,7 @@ CLI command model: Two categories of commands:
 Online CLI approach: Rather than spinning up a second independent plugin.Manager (which would have no shared state with the running server), online commands hit the HTTP admin API at localhost. This reuses the existing handlers in internal/router/mux.go and internal/plugin/cli_commands.go. The CLI reads config.json for the server port.
 
 Online CLI authentication: The existing admin API endpoints require authChain(adminOnly(...)). The existing APIKeyAuth() middleware in internal/middleware/middleware.go already supports Bearer token auth via the tokens table. The CLI reuses this infrastructure:
-- cmd/serve.go generates a random 32-byte crypto/rand token at startup, hex-encodes it, and inserts it into the tokens table via DbDriver.CreateToken() with type "api_key", tied to the existing system user (already used for CLI mode in internal/cli/model.go:218-224). ExpiresAt uses types.Timestamp{Valid: false} (NULL in DB = no expiry). On startup, stale api_key tokens for the system user are cleaned up before creating a new one (prevents accumulation from crashes).
+- cmd/serve.go generates a random 32-byte crypto/rand token at startup, hex-encodes it, and inserts it into the tokens table via DbDriver.CreateToken() with type "api_key", tied to the existing system user (already used for CLI mode in internal/tui/model.go:218-224). ExpiresAt uses types.Timestamp{Valid: false} (NULL in DB = no expiry). On startup, stale api_key tokens for the system user are cleaned up before creating a new one (prevents accumulation from crashes).
 - The token value is written to <config_dir>/.plugin-api-token (mode 0600) so the CLI can read it. <config_dir> is the directory containing config.json (resolved from the --config flag or default "./config.json" in cmd/root.go).
 - pluginAPIClient() in cmd/plugin.go reads the token file and sends it as Authorization: Bearer <token> header. The existing APIKeyAuth middleware validates it against the tokens table -- no new middleware needed.
 - For CI/CD: a --token flag on online commands allows passing the token directly (useful when the token file is on a different host).
@@ -162,7 +162,7 @@ Modify: cmd/helpers.go initPluginManager() function
 
 Modify: cmd/serve.go
 - After server starts, generate 32-byte crypto/rand token, hex-encode it
-- Look up the system user: call driver.ListUsers(), find the user with Username "system" (same pattern as internal/cli/model.go:218-224). Store both the UserID and Username.
+- Look up the system user: call driver.ListUsers(), find the user with Username "system" (same pattern as internal/tui/model.go:218-224). Store both the UserID and Username.
 - Construct AuditContext: audited.Ctx(types.NodeID(""), systemUserID, "plugin-api-token-init", "127.0.0.1") -- empty NodeID is acceptable for system-internal operations, requestID is a descriptive string, IP is localhost.
 - Construct CreateTokenParams:
     UserID:    types.NullableUserID{ID: systemUserID, Valid: true},
@@ -179,12 +179,12 @@ Modify: cmd/serve.go
 
 Step 6: TUI integration
 
-Modify: internal/cli/pages.go
+Modify: internal/tui/pages.go
 - Add PLUGINSPAGE PageIndex constant
 - Add PLUGINDETAILPAGE PageIndex constant
 - Register both in InitPages()
 
-Modify: internal/cli/model.go
+Modify: internal/tui/model.go
 - Add fields: PluginManager *plugin.Manager, PluginsList []PluginDisplay, SelectedPlugin string
 - New type PluginDisplay with Name, Version, State, CBState, Description
 - Update InitialModel() signature to accept *plugin.Manager parameter
@@ -192,21 +192,21 @@ Modify: internal/cli/model.go
 Modify: cmd/serve.go
 - Pass pluginManager to cli.CliMiddleware() (update signature)
 
-Modify: internal/cli/middleware.go
+Modify: internal/tui/middleware.go
 - Accept *plugin.Manager parameter, pass to InitialModel()
 
-Modify: internal/cli/view.go
+Modify: internal/tui/view.go
 - Add PLUGINSPAGE case: TablePage showing plugin list (Name, Version, State, CB)
 - Add PLUGINDETAILPAGE case: StaticPage with detailed info + action menu (Enable, Disable, Reload, Approve All Routes, Approve All Hooks)
 - Approve All Routes/Hooks actions MUST show a confirmation dialog listing pending items before executing (SSH is interactive, no --yes flag equivalent)
 
-Modify: internal/cli/commands.go
+Modify: internal/tui/commands.go
 - Add LoadPluginsCmd() - calls manager.ListPlugins(), returns LoadPluginsMsg
 - Add PluginEnableCmd(mgr, name, adminUsername), PluginDisableCmd(mgr, name), PluginReloadCmd(mgr, name)
   - EnablePlugin requires an adminUser string for circuit breaker audit trail (manager.go:1042). The TUI model has m.UserID (types.UserID from SSH session) but not the username. Resolve the username by looking up the user: call m.DB.GetUser(string(m.UserID)) to get the User struct, then pass user.Username to mgr.EnablePlugin(ctx, name, username). Store the resolved username on the Model at session start (in InitialModel or on first use) to avoid repeated DB lookups.
 - Add PluginApproveRoutesCmd(), PluginApproveHooksCmd() -- use manager.Bridge().ApproveRoute() and manager.HookEngine().ApproveHook()
 
-Modify: internal/cli/update.go
+Modify: internal/tui/update.go
 - Add message types: LoadPluginsMsg, PluginActionResultMsg
 - Add handlers for plugin messages
 - Wire navigation: select plugin from list -> detail page -> action menu
@@ -271,12 +271,12 @@ Files Summary
 | Modify  | cmd/root.go                                      | Register pluginCmd                                 |
 | Modify  | cmd/helpers.go                                   | Auto-create plugins/ dir (0750)                    |
 | Modify  | cmd/serve.go                                     | Pass manager to TUI + generate API token via DB    |
-| Modify  | internal/cli/pages.go                            | Add plugin page constants                          |
-| Modify  | internal/cli/model.go                            | Add plugin state + InitialModel sig                |
-| Modify  | internal/cli/middleware.go                       | Accept *plugin.Manager                             |
-| Modify  | internal/cli/view.go                             | Render plugin pages                                |
-| Modify  | internal/cli/commands.go                         | Plugin async commands                              |
-| Modify  | internal/cli/update.go                           | Plugin message handlers                            |
+| Modify  | internal/tui/pages.go                            | Add plugin page constants                          |
+| Modify  | internal/tui/model.go                            | Add plugin state + InitialModel sig                |
+| Modify  | internal/tui/middleware.go                       | Accept *plugin.Manager                             |
+| Modify  | internal/tui/view.go                             | Render plugin pages                                |
+| Modify  | internal/tui/commands.go                         | Plugin async commands                              |
+| Modify  | internal/tui/update.go                           | Plugin message handlers                            |
 | Modify  | internal/plugin/hook_engine.go                   | Add ListHooks() method                             |
 | Modify  | internal/plugin/http_bridge.go                   | Mount hook endpoints in MountAdminEndpoints()      |
 | Modify  | internal/router/mux.go                           | MaxBytesReader on existing route approve/revoke    |

@@ -314,7 +314,7 @@ go test -cover ./internal/db
 | Database operations (`internal/db`) | 80%+ |
 | Business logic (`internal/model`) | 70%+ |
 | Utilities | 90%+ |
-| TUI code (`internal/cli`) | 50%+ |
+| TUI code (`internal/tui`) | 50%+ |
 
 ## Benchmarking
 

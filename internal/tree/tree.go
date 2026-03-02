@@ -3,7 +3,7 @@
 // and adds TUI-specific state: expand/collapse, indent, and wrapping.
 //
 // All existing field names and method signatures are preserved so that
-// internal/cli/ requires zero changes.
+// internal/tui/ requires zero changes.
 package tree
 
 import (

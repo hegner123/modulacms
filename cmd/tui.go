@@ -4,7 +4,6 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/hegner123/modulacms/internal/cli"
 	"github.com/hegner123/modulacms/internal/tui"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/spf13/cobra"
@@ -35,8 +34,8 @@ var tuiDefaultCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		model, _ := tui.InitialModel(&verbose, cfg)
-		if _, ok := tui.Run(&model); !ok {
+		model, _ := tui.NewPanelModel(&verbose, cfg)
+		if _, ok := tui.PanelRun(&model); !ok {
 			process, err := os.FindProcess(os.Getpid())
 			if err != nil {
 				utility.DefaultLogger.Error("", err)
@@ -69,8 +68,8 @@ var tuiV1Cmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		model, _ := cli.InitialModel(&verbose, cfg, driver, utility.DefaultLogger, nil, mgr, nil)
-		if _, ok := cli.CliRun(&model); !ok {
+		model, _ := tui.InitialModel(&verbose, cfg, driver, utility.DefaultLogger, nil, mgr, nil)
+		if _, ok := tui.CliRun(&model); !ok {
 			process, err := os.FindProcess(os.Getpid())
 			if err != nil {
 				utility.DefaultLogger.Error("", err)

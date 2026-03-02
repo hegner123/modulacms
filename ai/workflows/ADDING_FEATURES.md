@@ -501,7 +501,7 @@ func ArchiveContent(ctx context.Context, db db.DbDriver, contentDataID int64) er
 
 ### 5.2 Add Message Type
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/messages.go` (add to existing)
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/messages.go` (add to existing)
 
 ```go
 // StatusChangedMsg is sent when content status changes
@@ -514,7 +514,7 @@ type StatusChangedMsg struct {
 
 ### 5.3 Add Keyboard Command
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/model.go` (Update function)
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/model.go` (Update function)
 
 ```go
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -550,7 +550,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 ### 5.4 Implement Command Functions
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/commands.go` (add to existing)
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/commands.go` (add to existing)
 
 ```go
 // publishContent creates command to publish content
@@ -582,7 +582,7 @@ func (m *Model) archiveContent(contentDataID int64) tea.Cmd {
 
 ### 5.5 Update View Function
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/view.go` (modify existing)
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/view.go` (modify existing)
 
 ```go
 func (m Model) renderContentItem(node *TreeNode) string {
@@ -818,10 +818,10 @@ git add internal/db-mysql/driver.go
 git add internal/db-psql/driver.go
 git add internal/model/content_status.go
 git add internal/model/content_operations.go
-git add internal/cli/messages.go
-git add internal/cli/model.go
-git add internal/cli/commands.go
-git add internal/cli/view.go
+git add internal/tui/messages.go
+git add internal/tui/model.go
+git add internal/tui/commands.go
+git add internal/tui/view.go
 
 # Commit with descriptive message
 git commit -m "$(cat <<'EOF'
@@ -1178,10 +1178,10 @@ just build         # Build and deploy production
 - `internal/model/*.go` - Domain logic
 
 **TUI:**
-- `internal/cli/model.go` - Main model
-- `internal/cli/messages.go` - Message types
-- `internal/cli/commands.go` - Commands
-- `internal/cli/view.go` - Rendering
+- `internal/tui/model.go` - Main model
+- `internal/tui/messages.go` - Message types
+- `internal/tui/commands.go` - Commands
+- `internal/tui/view.go` - Rendering
 
 **API:**
 - `internal/handlers/*.go` - HTTP handlers

@@ -36,7 +36,7 @@ type BatchContentUpdateResponse struct {
 
 // ContentBatchHandler applies an optional content_data update plus a map of
 // field value upserts in a single request. This mirrors the TUI pattern in
-// HandleUpdateContentFromDialog (internal/cli/commands.go).
+// HandleUpdateContentFromDialog (internal/tui/commands.go).
 func ContentBatchHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	var req BatchContentUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

@@ -740,7 +740,7 @@ type Node struct {
 
 ---
 
-### CLI TreeRoot (internal/cli)
+### CLI TreeRoot (internal/tui)
 
 **Structure:**
 ```go

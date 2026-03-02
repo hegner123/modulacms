@@ -239,7 +239,7 @@ func FieldDetailContent(field db.Fields, availableRoles []db.Roles, csrfToken st
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if field.Translatable != 0 {
+			if field.Translatable {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<input type=\"checkbox\" name=\"translatable\" value=\"1\" checked> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

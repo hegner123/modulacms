@@ -61,7 +61,7 @@ Place domain logic in the appropriate location:
 - **Simple CRUD** -- Handled by the driver implementations from Step 2.
 - **Domain rules and validation** -- Functions in `internal/model/`.
 - **HTTP request handling** -- Handler functions in `internal/router/`.
-- **TUI interaction** -- Bubbletea Update functions in `internal/cli/`.
+- **TUI interaction** -- Bubbletea Update functions in `internal/tui/`.
 
 Define constants, validation functions, and helper methods as needed. Use structured logging via `utility.DefaultLogger` at decision points and error paths.
 
@@ -74,7 +74,7 @@ If the feature needs user interaction in the SSH TUI:
 3. **Create command functions** -- Write `tea.Cmd` functions that perform async operations and return messages.
 4. **Update the View** -- Render the new feature's state in the View function.
 
-For entirely new screens, create a new Bubbletea model file in `internal/cli/`. For additions to existing screens, modify the relevant model's Update and View functions.
+For entirely new screens, create a new Bubbletea model file in `internal/tui/`. For additions to existing screens, modify the relevant model's Update and View functions.
 
 ## Step 5: HTTP/API Endpoints
 

@@ -3,7 +3,7 @@
 Deep dive into ModulaCMS's Terminal User Interface architecture using the Elm Architecture pattern.
 
 **Path:** `/Users/home/Documents/Code/Go_dev/modulacms/ai/architecture/TUI_ARCHITECTURE.md`
-**Related Code:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/`
+**Related Code:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/`
 **Framework:** [Charmbracelet Bubbletea](https://github.com/charmbracelet/bubbletea)
 
 ---

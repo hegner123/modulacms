@@ -9,7 +9,7 @@
 
 ## Problem Statement
 
-The Model struct in `internal/cli/model.go` has 54 fields mixing concerns:
+The Model struct in `internal/tui/model.go` has 54 fields mixing concerns:
 - Configuration, UI dimensions, navigation, pagination, tables, forms, dialogs, CMS-specific state
 - `update_state.go` handles 25+ disparate field updates (188 lines)
 - CMS UI flow with forms, tables, and dialogs is difficult to manage
@@ -46,7 +46,7 @@ type FormModel struct {
 ### Implementation Steps
 
 #### Step 1: Create FormModel Struct
-**File:** `internal/cli/form_model.go` (NEW, ~50 lines)
+**File:** `internal/tui/form_model.go` (NEW, ~50 lines)
 
 ```go
 package cli
@@ -73,7 +73,7 @@ func NewFormModel() *FormModel {
 ```
 
 #### Step 2: Update Model Struct
-**File:** `internal/cli/model.go`
+**File:** `internal/tui/model.go`
 
 **Remove 8 fields (lines 84-91):**
 ```go
@@ -107,7 +107,7 @@ m := Model{
 ```
 # Use checkfor to see how many references need updating in next steps
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.Form"
 - ext: ".go"
 - case_insensitive: false
@@ -119,7 +119,7 @@ checkfor tool with:
 ```
 
 #### Step 3: Update form.go (Core Form Logic)
-**File:** `internal/cli/form.go` (~20 changes)
+**File:** `internal/tui/form.go` (~20 changes)
 
 **Pattern:** Replace `m.Form*` with `m.FormState.Form*`
 
@@ -150,7 +150,7 @@ m.FormState.FormGroups = append(m.FormState.FormGroups, *group)
 ```
 # Verify form.go no longer has direct Form field access
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.Form"
 - ext: ".go"
 - context: 1
@@ -159,7 +159,7 @@ checkfor tool with:
 ```
 
 #### Step 4: Update update_state.go (State Handlers)
-**File:** `internal/cli/update_state.go` (~8 changes)
+**File:** `internal/tui/update_state.go` (~8 changes)
 
 Update message handlers for Form* messages:
 
@@ -194,7 +194,7 @@ case FormOptionsSet:
 ```
 
 #### Step 5: Update update_forms.go (Form Handling)
-**File:** `internal/cli/update_forms.go` (~8 changes)
+**File:** `internal/tui/update_forms.go` (~8 changes)
 
 ```go
 // Line ~40: BEFORE
@@ -217,7 +217,7 @@ opts := (*m.FormState.FormOptions)[key]
 ```
 
 #### Step 6: Update fields.go (Field Generation)
-**File:** `internal/cli/fields.go` (~6 changes)
+**File:** `internal/tui/fields.go` (~6 changes)
 
 ```go
 // NewFieldFromType function: BEFORE
@@ -230,7 +230,7 @@ m.FormState.FormValues = append(m.FormState.FormValues, &value)
 ```
 
 #### Step 7: Update update_controls.go (Form Controls)
-**File:** `internal/cli/update_controls.go` (~15 changes)
+**File:** `internal/tui/update_controls.go` (~15 changes)
 
 Most changes in `FormControls` function (lines 265-289):
 
@@ -259,7 +259,7 @@ if m.FormState.Form.State == huh.StateCompleted {
 # Check that all major files now use FormState
 # Run checkfor for each of the 8 fields to find any stragglers
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.FormOptions"
 - ext: ".go"
 - whole_word: true
@@ -270,7 +270,7 @@ checkfor tool with:
 ```
 
 #### Step 8: Update constructors.go (Optional)
-**File:** `internal/cli/constructors.go` (~5 changes, optional)
+**File:** `internal/tui/constructors.go` (~5 changes, optional)
 
 Constructors like `SetFormDataCmd` can remain unchanged - they return messages that update_state.go handles. No changes strictly required unless you want type safety.
 
@@ -294,7 +294,7 @@ Use these `checkfor` commands to verify each field during migration:
 
 **Standard checkfor parameters:**
 ```
-dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 ext: ".go"
 whole_word: true
 context: 1
@@ -326,7 +326,7 @@ context: 1
 ### Compiler Checks
 ```bash
 # After each file change
-go build ./internal/cli/
+go build ./internal/tui/
 ```
 
 ### Verification with checkfor Tool
@@ -336,7 +336,7 @@ Use the MCP `checkfor` tool for token-efficient, single-directory verification:
 **Before starting - inventory all references:**
 ```
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.Form"
 - ext: ".go"
 - context: 1
@@ -345,7 +345,7 @@ checkfor tool with:
 **After updating each file - verify specific field:**
 ```
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.FormLen"
 - ext: ".go"
 - whole_word: true
@@ -541,7 +541,7 @@ Use the MCP `checkfor` tool instead of grep for token-efficient verification:
 ```
 # Get complete inventory of all 8 fields before starting
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.Form"
 - ext: ".go"
 - context: 2
@@ -553,7 +553,7 @@ checkfor tool with:
 ```
 # Verify specific file changes (example: after updating form.go)
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.FormValues"
 - ext: ".go"
 - whole_word: true
@@ -566,7 +566,7 @@ checkfor tool with:
 ```
 # Verify no old direct references remain (run for each field)
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.FormLen"
 - ext: ".go"
 - whole_word: true
@@ -580,7 +580,7 @@ checkfor tool with:
 ```
 # Confirm all fields now accessed through FormState
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.FormState"
 - ext: ".go"
 - context: 0
@@ -589,7 +589,7 @@ checkfor tool with:
 ```
 
 **Advantages over grep:**
-- Single directory search (perfect for internal/cli/)
+- Single directory search (perfect for internal/tui/)
 - Extension filtering (.go only)
 - Whole-word matching (avoid false positives)
 - Context lines for understanding

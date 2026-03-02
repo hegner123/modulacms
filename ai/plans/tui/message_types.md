@@ -207,13 +207,13 @@ Ready to code?
 
  Critical Files
 
- - internal/cli/message_types.go - Main message type definitions (780 lines)
- - internal/cli/admin_message_types.go - Admin message types (267 lines)
- - internal/cli/constructors.go - Message constructors (689 lines)
- - internal/cli/admin_constructors.go - Admin constructors (168 lines)
- - internal/cli/update_state.go - State setter handler (300 lines)
- - internal/cli/update_fetch.go - Fetch handler (407 lines)
- - internal/cli/update_cms.go - CMS operation handler (plugin cases)
- - internal/cli/update_dialog.go - Dialog handler (28+ inline message types)
- - internal/cli/form_dialog.go - Form dialog (32+ inline message types)
- - internal/cli/commands.go - Command constructors (5+ inline message types)
+ - internal/tui/message_types.go - Main message type definitions (780 lines)
+ - internal/tui/admin_message_types.go - Admin message types (267 lines)
+ - internal/tui/constructors.go - Message constructors (689 lines)
+ - internal/tui/admin_constructors.go - Admin constructors (168 lines)
+ - internal/tui/update_state.go - State setter handler (300 lines)
+ - internal/tui/update_fetch.go - Fetch handler (407 lines)
+ - internal/tui/update_cms.go - CMS operation handler (plugin cases)
+ - internal/tui/update_dialog.go - Dialog handler (28+ inline message types)
+ - internal/tui/form_dialog.go - Form dialog (32+ inline message types)
+ - internal/tui/commands.go - Command constructors (5+ inline message types)

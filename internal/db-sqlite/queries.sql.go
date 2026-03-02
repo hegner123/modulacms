@@ -1189,7 +1189,7 @@ type CreateAdminFieldParams struct {
 	Validation   string                        `json:"validation"`
 	UiConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
-	Translatable int64                         `json:"translatable"`
+	Translatable types.SafeBool                `json:"translatable"`
 	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
@@ -2023,7 +2023,7 @@ type CreateFieldParams struct {
 	Validation   string                   `json:"validation"`
 	UiConfig     string                   `json:"ui_config"`
 	Type         types.FieldType          `json:"type"`
-	Translatable int64                    `json:"translatable"`
+	Translatable types.SafeBool           `json:"translatable"`
 	Roles        types.NullableString     `json:"roles"`
 	AuthorID     types.NullableUserID     `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`
@@ -4253,7 +4253,7 @@ func (q *Queries) DropUserTable(ctx context.Context) error {
 }
 
 const dropWebhookDeliveryTable = `-- name: DropWebhookDeliveryTable :exec
-DROP TABLE webhook_deliveries
+DROP TABLE IF EXISTS webhook_deliveries
 `
 
 func (q *Queries) DropWebhookDeliveryTable(ctx context.Context) error {
@@ -4262,7 +4262,7 @@ func (q *Queries) DropWebhookDeliveryTable(ctx context.Context) error {
 }
 
 const dropWebhookTable = `-- name: DropWebhookTable :exec
-DROP TABLE webhooks
+DROP TABLE IF EXISTS webhooks
 `
 
 func (q *Queries) DropWebhookTable(ctx context.Context) error {
@@ -12317,7 +12317,7 @@ type UpdateAdminFieldParams struct {
 	Validation   string                        `json:"validation"`
 	UiConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
-	Translatable int64                         `json:"translatable"`
+	Translatable types.SafeBool                `json:"translatable"`
 	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
@@ -12754,7 +12754,7 @@ type UpdateFieldParams struct {
 	Validation   string                   `json:"validation"`
 	UiConfig     string                   `json:"ui_config"`
 	Type         types.FieldType          `json:"type"`
-	Translatable int64                    `json:"translatable"`
+	Translatable types.SafeBool           `json:"translatable"`
 	Roles        types.NullableString     `json:"roles"`
 	AuthorID     types.NullableUserID     `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`

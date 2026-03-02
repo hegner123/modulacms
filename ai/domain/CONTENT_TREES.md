@@ -46,7 +46,7 @@ CREATE TABLE content_data (
 The TUI maintains trees in memory with expanded references:
 
 ```go
-// internal/cli/cms_struct.go
+// internal/tui/cms_struct.go
 type TreeNode struct {
 	Instance       *db.ContentData      // Database row
 	InstanceFields []db.ContentFields   // Field values
@@ -77,7 +77,7 @@ Trees load in three phases:
 
 **Phase 1: Create Nodes**
 ```go
-// internal/cli/cms_struct.go
+// internal/tui/cms_struct.go
 for _, row := range *rows {
 	node := NewTreeNodeFromContentTree(row)
 	page.NodeIndex[node.Instance.ContentDataID] = node
@@ -200,7 +200,7 @@ for current != nil {
 node := treeRoot.NodeIndex[contentDataID]
 ```
 
-**TUI Rendering** (`internal/cli/page_builders.go`):
+**TUI Rendering** (`internal/tui/page_builders.go`):
 ```go
 func FormatRow(node *TreeNode) string {
 	indent := strings.Repeat("  ", node.Indent)
@@ -219,7 +219,7 @@ func DecideNodeName(node TreeNode) string {
 
 **Attaching Node to Parent:**
 ```go
-// internal/cli/cms_struct.go
+// internal/tui/cms_struct.go
 func (page *TreeRoot) attachNodeToParent(node, parent *TreeNode) {
 	node.Parent = parent
 
@@ -245,7 +245,7 @@ Deletion handles multiple cases:
 3. Reparenting orphaned children
 
 ```go
-// internal/cli/cms_struct.go
+// internal/tui/cms_struct.go
 func (page *TreeRoot) DeleteTreeNodeByIndex(n *TreeNode) bool {
 	target := page.NodeIndex[n.Instance.ContentDataID]
 	if target == nil || target == page.Root {
@@ -263,7 +263,7 @@ func (page *TreeRoot) DeleteTreeNodeByIndex(n *TreeNode) bool {
 }
 ```
 
-See `internal/cli/cms_struct.go` for complete deletion logic handling sibling chain updates and child reparenting.
+See `internal/tui/cms_struct.go` for complete deletion logic handling sibling chain updates and child reparenting.
 
 ---
 
@@ -379,8 +379,8 @@ type Node struct {
 ## Quick Reference
 
 **Key Files:**
-- `internal/cli/cms_struct.go` - TreeNode, TreeRoot, loading, deletion
-- `internal/cli/page_builders.go` - Tree rendering
+- `internal/tui/cms_struct.go` - TreeNode, TreeRoot, loading, deletion
+- `internal/tui/page_builders.go` - Tree rendering
 - `internal/model/model.go` - JSON tree structure
 - `sql/schema/16_content_data/schema.sql` - Database schema
 - `sql/schema/22_joins/queries.sql` - Tree queries

@@ -66,7 +66,7 @@ User Input → Message → Update → New Model → View → Render
 
 ### The Model Struct
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/model.go`
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/model.go`
 
 ```go
 type Model struct {
@@ -168,7 +168,7 @@ First, add a new page constant and initialize it.
 
 ### 1.1 Add Page Constant
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/pages.go`
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/pages.go`
 
 ```go
 const (
@@ -220,7 +220,7 @@ Define messages for your page's state changes and async operations.
 
 ### 2.1 Add Message Types
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/message_types.go`
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/message_types.go`
 
 ```go
 // Comment-specific messages
@@ -266,7 +266,7 @@ Commands perform async operations and return messages.
 
 ### 3.1 Create Command File
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/commands_comment.go`
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/commands_comment.go`
 
 ```go
 package cli
@@ -352,7 +352,7 @@ Handle messages specific to your page.
 
 ### 4.1 Create Update File
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/update_comment.go`
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/update_comment.go`
 
 ```go
 package cli
@@ -428,7 +428,7 @@ func (m Model) UpdateComment(msg tea.Msg) (Model, tea.Cmd) {
 
 ### 4.2 Hook Into Main Update
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/update.go`
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/update.go`
 
 Add your update handler to the cascade:
 
@@ -450,7 +450,7 @@ Create the visual representation of your page.
 
 ### 5.1 Add View Case
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/view.go`
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/view.go`
 
 ```go
 func (m Model) View() string {
@@ -555,7 +555,7 @@ Implement keyboard controls for your page.
 
 ### 6.1 Page-Specific Key Handlers
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/update_controls.go` (or create `update_comment_keys.go`)
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/update_controls.go` (or create `update_comment_keys.go`)
 
 ```go
 func (m Model) HandleCommentPageKeys(msg tea.KeyMsg) (Model, tea.Cmd) {
@@ -649,7 +649,7 @@ Enable navigation to/from your page.
 
 Add your page to the appropriate menu:
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/menus.go`
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/menus.go`
 
 ```go
 func (m Model) HomepageMenuInit() []Page {
@@ -690,7 +690,7 @@ return m, func() tea.Msg {
 
 Navigation is handled in `UpdateNavigation`:
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/update_navigation.go`
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/update_navigation.go`
 
 ```go
 func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
@@ -886,7 +886,7 @@ Apply consistent styling to your UI elements.
 
 ### 10.1 Using Existing Styles
 
-**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/style.go`
+**File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/style.go`
 
 ModulaCMS defines styles in the config:
 
@@ -996,7 +996,7 @@ Here's a complete working example combining all steps.
 ### File Structure
 
 ```
-internal/cli/
+internal/tui/
 ├── pages.go              # Add COMMENTPAGE constant
 ├── message_types.go      # Add comment messages
 ├── commands_comment.go   # Comment commands

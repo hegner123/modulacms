@@ -116,13 +116,13 @@ func TestValidateUserDatatypeType(t *testing.T) {
 
 func TestReservedTypes_ReturnsCopy(t *testing.T) {
 	rt := ReservedTypes()
-	if len(rt) != 4 {
-		t.Fatalf("expected 4 reserved types, got %d", len(rt))
+	if len(rt) != 5 {
+		t.Fatalf("expected 5 reserved types, got %d", len(rt))
 	}
 
 	// Mutating the copy should not affect the original
 	rt[DatatypeType("_test")] = "test"
-	if len(ReservedTypes()) != 4 {
+	if len(ReservedTypes()) != 5 {
 		t.Fatal("mutating returned map affected the internal registry")
 	}
 }

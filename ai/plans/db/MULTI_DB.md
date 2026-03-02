@@ -124,7 +124,7 @@
  - All wrapper files (content_data.go, user.go, etc.) - unchanged
  - internal/db/init.go - unchanged (InitDB/ConfigDB return DbDriver)
  - cmd/serve.go - unchanged (passes DbDriver which satisfies RBACRepository)
- - internal/cli/ - unchanged (Model.DB stays DbDriver)
+ - internal/tui/ - unchanged (Model.DB stays DbDriver)
  - internal/router/ - unchanged (handlers call ConfigDB())
  - All test files - unchanged (use concrete Database struct)
  - sqlc-generated code - unchanged

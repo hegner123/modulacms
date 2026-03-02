@@ -14,12 +14,12 @@
      │                                                                                                                                                                                       │
      │ Changes                                                                                                                                                                               │
      │                                                                                                                                                                                       │
-     │ 1. internal/cli/model.go — Add restart channel to Model                                                                                                                               │
+     │ 1. internal/tui/model.go — Add restart channel to Model                                                                                                                               │
      │                                                                                                                                                                                       │
      │ Add field to Model struct:                                                                                                                                                            │
      │ RestartCh chan struct{}                                                                                                                                                               │
      │                                                                                                                                                                                       │
-     │ 2. internal/cli/middleware.go — Thread channel through CliMiddleware                                                                                                                  │
+     │ 2. internal/tui/middleware.go — Thread channel through CliMiddleware                                                                                                                  │
      │                                                                                                                                                                                       │
      │ Update CliMiddleware signature to accept restartCh chan struct{}:                                                                                                                     │
      │ func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver, logger Logger, pluginMgr *plugin.Manager, mgr *config.Manager, restartCh chan struct{}) wish.Middleware             │
@@ -27,11 +27,11 @@
      │ Pass to model in InitialModel or assign directly after model creation:                                                                                                                │
      │ m.RestartCh = restartCh                                                                                                                                                               │
      │                                                                                                                                                                                       │
-     │ 3. internal/cli/init.go (or wherever InitialModel lives) — Accept channel                                                                                                             │
+     │ 3. internal/tui/init.go (or wherever InitialModel lives) — Accept channel                                                                                                             │
      │                                                                                                                                                                                       │
      │ Update InitialModel to accept and store restartCh. If InitialModel doesn't take it, just assign on the Model directly in middleware.go after InitialModel returns (simpler).          │
      │                                                                                                                                                                                       │
-     │ 4. internal/cli/actions.go — Add Restart Server action                                                                                                                                │
+     │ 4. internal/tui/actions.go — Add Restart Server action                                                                                                                                │
      │                                                                                                                                                                                       │
      │ Add to ActionsMenu() at index 12:                                                                                                                                                     │
      │ {Label: "Restart Server", Description: "Gracefully restart all servers", Destructive: true},                                                                                          │
@@ -93,15 +93,15 @@
      │                                                                                                                                                                                       │
      │ Files to modify                                                                                                                                                                       │
      │                                                                                                                                                                                       │
-     │ - internal/cli/model.go — Add RestartCh field to Model struct                                                                                                                         │
-     │ - internal/cli/middleware.go — Thread restartCh through CliMiddleware                                                                                                                 │
-     │ - internal/cli/actions.go — Add action item, handler, RestartCh to ActionParams                                                                                                       │
+     │ - internal/tui/model.go — Add RestartCh field to Model struct                                                                                                                         │
+     │ - internal/tui/middleware.go — Thread restartCh through CliMiddleware                                                                                                                 │
+     │ - internal/tui/actions.go — Add action item, handler, RestartCh to ActionParams                                                                                                       │
      │ - cmd/serve.go — Create channel, pass to middleware, select on it                                                                                                                     │
      │ - deploy/docker/docker-compose.postgres.yml — Add restart policy                                                                                                                      │
      │ - File where ActionParams is constructed — pass m.RestartCh                                                                                                                           │
      │                                                                                                                                                                                       │
      │ Verification                                                                                                                                                                          │
      │                                                                                                                                                                                       │
-     │ 1. go vet ./cmd/ ./internal/cli/ — compile check                                                                                                                                      │
+     │ 1. go vet ./cmd/ ./internal/tui/ — compile check                                                                                                                                      │
      │ 2. just test — run tests                                                                                                                                                              │
      │ 3. Docker: just docker-postgres-up, verify SSH-only mode on permission failure, run "DB Init" via TUI, then "Restart Server" — container should come back up with HTTP/HTTPS running

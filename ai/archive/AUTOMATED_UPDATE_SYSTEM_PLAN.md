@@ -84,7 +84,7 @@ Split existing `Fetch()` into:
 
 ### Phase 4: CLI/TUI Integration ⏸️ BLOCKED (Waiting on CMS Content Creation)
 
-**Add: `internal/cli/message_types.go`**
+**Add: `internal/tui/message_types.go`**
 
 New message types:
 - `UpdateCheckStartMsg` - Trigger update check
@@ -94,11 +94,11 @@ New message types:
 - `UpdateDownloadCompleteMsg` - Download finished
 - `UpdateApplyCompleteMsg` - Update applied
 
-**Add: `internal/cli/constructors.go`**
+**Add: `internal/tui/constructors.go`**
 
 Constructors for all update messages following existing patterns (tea.Cmd closures)
 
-**New File: `internal/cli/update_version.go`**
+**New File: `internal/tui/update_version.go`**
 
 Handler function:
 - `UpdateVersion(msg tea.Msg) (Model, tea.Cmd)`
@@ -112,7 +112,7 @@ Helper command functions:
 - `downloadUpdateCmd(release *ReleaseInfo) tea.Cmd` - Async download
 - `applyUpdateCmd(tempPath string) tea.Cmd` - Apply binary update
 
-**Modify: `internal/cli/dialog.go`**
+**Modify: `internal/tui/dialog.go`**
 
 Extend `DialogAction` enum:
 ```go
@@ -126,13 +126,13 @@ Add helper functions:
 - `ShowUpdateDialogCmd(release *ReleaseInfo) tea.Cmd`
 - `ShowRestartDialogCmd() tea.Cmd`
 
-**Modify: `internal/cli/update_dialog.go`**
+**Modify: `internal/tui/update_dialog.go`**
 
 Handle new dialog actions:
 - `DIALOGUPDATE`: User confirmed → trigger `UpdateConfirmMsg`
 - `DIALOGRESTART`: User acknowledged → `tea.Quit`
 
-**Modify: `internal/cli/model.go`**
+**Modify: `internal/tui/model.go`**
 
 Add fields to Model struct:
 ```go
@@ -141,7 +141,7 @@ updateDownloadProgress float64
 lastUpdateCheck        time.Time
 ```
 
-**Modify: `internal/cli/update.go`**
+**Modify: `internal/tui/update.go`**
 
 Add to update chain:
 ```go
@@ -150,7 +150,7 @@ if m, cmd := m.UpdateVersion(msg); cmd != nil {
 }
 ```
 
-**Modify: `internal/cli/model.go` (InitialModel function)**
+**Modify: `internal/tui/model.go` (InitialModel function)**
 
 Trigger update check on startup if configured:
 ```go
@@ -229,18 +229,18 @@ Application Start
 2. ✅ **`internal/config/config.go`** - Add 4 update config fields
 3. ✅ **`internal/config/default.go`** - Set default values
 4. ✅ **`internal/config/env_provider.go`** - Parse environment variables
-5. ⏳ **`internal/cli/message_types.go`** - Add 6+ update message types
-6. ⏳ **`internal/cli/constructors.go`** - Add message constructors
-7. ⏳ **`internal/cli/dialog.go`** - Extend DialogAction enum, add helpers
-8. ⏳ **`internal/cli/update_dialog.go`** - Handle update dialog actions
-9. ⏳ **`internal/cli/model.go`** - Add fields, trigger check on startup
-10. ⏳ **`internal/cli/update.go`** - Add UpdateVersion to handler chain
+5. ⏳ **`internal/tui/message_types.go`** - Add 6+ update message types
+6. ⏳ **`internal/tui/constructors.go`** - Add message constructors
+7. ⏳ **`internal/tui/dialog.go`** - Extend DialogAction enum, add helpers
+8. ⏳ **`internal/tui/update_dialog.go`** - Handle update dialog actions
+9. ⏳ **`internal/tui/model.go`** - Add fields, trigger check on startup
+10. ⏳ **`internal/tui/update.go`** - Add UpdateVersion to handler chain
 11. ⏳ **`cmd/main.go`** - Enhance HandleFlagUpdate()
 
 ## New Files to Create
 
 1. ✅ **`internal/update/checker.go`** - GitHub API integration, version comparison
-2. ⏳ **`internal/cli/update_version.go`** - Update message handler
+2. ⏳ **`internal/tui/update_version.go`** - Update message handler
 3. ✅ **`internal/utility/version.go`** - Helper functions added (GetCurrentVersion, IsDevBuild)
 
 ## Verification Steps

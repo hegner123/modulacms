@@ -144,7 +144,7 @@ The `DatatypeType` is **not** a closed enum like `FieldType`. It must accept arb
 
 **Files to modify (CLI):**
 
-- `internal/cli/form_dialog.go` -> datatype creation/update forms: validate on submit — if value starts with `_`, show error "Type names starting with '_' are reserved for system use. Choose a different name." Do not modify the placeholder. Reserved types are created by the engine, not by users in forms.
+- `internal/tui/form_dialog.go` -> datatype creation/update forms: validate on submit — if value starts with `_`, show error "Type names starting with '_' are reserved for system use. Choose a different name." Do not modify the placeholder. Reserved types are created by the engine, not by users in forms.
 
 **Validation rule:** User-created datatypes CANNOT use the `_` prefix. Reserved types are only created by the engine (bootstrap, import definitions). This is a creation-and-update-time guard, not a schema constraint.
 
@@ -284,7 +284,7 @@ func DeleteNode(root *Root, node *Node) bool
 
 ### 2.4 TUI Layer Changes (`internal/tree/`)
 
-`internal/tree/` becomes a thin wrapper around `core`. The existing `tree.Node` and `tree.Root` types are preserved — the TUI layer keeps its current field names and API. No renames in `internal/cli/`.
+`internal/tree/` becomes a thin wrapper around `core`. The existing `tree.Node` and `tree.Root` types are preserved — the TUI layer keeps its current field names and API. No renames in `internal/tui/`.
 
 The TUI layer:
 - Wraps `core.BuildFromRows()` to produce its own `Root`/`Node` types

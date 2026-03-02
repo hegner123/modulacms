@@ -388,7 +388,7 @@ just admin verify         # Verify everything is up-to-date (CI)
 
 Yes, UIs, plural. There are two.
 
-**Classic TUI** (`internal/cli/`) -- the original 40+ file Bubbletea TUI accessible over SSH. 26+ screens for managing everything. Elm Architecture (Model-Update-View). Focus system for keyboard input routing. Custom form dialogs. Async commands for database operations. It's a whole application living inside your terminal.
+**Classic TUI** (`internal/tui/`) -- the original 40+ file Bubbletea TUI accessible over SSH. 26+ screens for managing everything. Elm Architecture (Model-Update-View). Focus system for keyboard input routing. Custom form dialogs. Async commands for database operations. It's a whole application living inside your terminal.
 
 **New TUI** (`internal/tui/`) -- a three-panel layout:
 

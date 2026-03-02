@@ -439,9 +439,9 @@ sql:
           - column: "admin_fields.type"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
           - column: "fields.translatable"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "admin_fields.translatable"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "fields.roles"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
           - column: "admin_fields.roles"
@@ -961,9 +961,9 @@ sql:
           - column: "admin_fields.type"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
           - column: "fields.translatable"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "admin_fields.translatable"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "fields.roles"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
           - column: "admin_fields.roles"
@@ -1483,9 +1483,9 @@ sql:
           - column: "admin_fields.type"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
           - column: "fields.translatable"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "admin_fields.translatable"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "fields.roles"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
           - column: "admin_fields.roles"

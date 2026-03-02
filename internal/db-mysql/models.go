@@ -90,7 +90,7 @@ type AdminFields struct {
 	Validation   string                        `json:"validation"`
 	UiConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
-	Translatable int64                         `json:"translatable"`
+	Translatable types.SafeBool                `json:"translatable"`
 	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
@@ -248,7 +248,7 @@ type Fields struct {
 	Validation   string                   `json:"validation"`
 	UiConfig     string                   `json:"ui_config"`
 	Type         types.FieldType          `json:"type"`
-	Translatable int64                    `json:"translatable"`
+	Translatable types.SafeBool           `json:"translatable"`
 	Roles        types.NullableString     `json:"roles"`
 	AuthorID     types.NullableUserID     `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`

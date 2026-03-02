@@ -334,7 +334,7 @@ if errs.HasErrors() {
 
 ### TUI (form pre-submit)
 
-`internal/cli/form_dialog.go` — validates all fields before submitting the content form dialog.
+`internal/tui/form_dialog.go` — validates all fields before submitting the content form dialog.
 
 ### Admin Panel
 

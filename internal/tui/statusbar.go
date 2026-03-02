@@ -7,30 +7,63 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 )
 
-// renderStatusBar renders the bottom status bar with focus indicator and key hints.
-func renderStatusBar(m Model) string {
-	barStyle := lipgloss.NewStyle().
-		Background(config.DefaultStyle.Status2BG).
-		Foreground(config.DefaultStyle.Status1)
+// renderStatusBar renders a two-line status bar at the bottom of the
+// three-panel layout. Line 1 shows the focused panel and navigation
+// keys. Line 2 shows action keys.
+func renderStatusBar(m PanelModel) string {
+	// High-contrast: white text on black background.
+	barFG := config.DefaultStyle.Primary
+	barBG := config.DefaultStyle.PrimaryBG
 
-	focusLabel := barStyle.
+	barStyle := lipgloss.NewStyle().
+		Foreground(barFG).
+		Background(barBG)
+
+	keyStyle := barStyle.Bold(true)
+
+	// --- helpers ---
+
+	// key renders a single  key:label  pair.
+	key := func(k, label string) string {
+		return keyStyle.Render(k) + barStyle.Render(":"+label)
+	}
+
+	// padLine fills a line to exactly m.Width so the background color
+	// spans the full terminal width.
+	padLine := func(content string) string {
+		w := lipgloss.Width(content)
+		if w >= m.Width {
+			return content
+		}
+		return content + barStyle.Render(strings.Repeat(" ", m.Width-w))
+	}
+
+	// --- line 1: focus indicator + navigation ---
+	focusLabel := lipgloss.NewStyle().
 		Bold(true).
+		Foreground(config.DefaultStyle.Accent).
+		Background(barBG).
 		Padding(0, 1).
 		Render("[" + m.Focus.String() + "]")
 
-	hints := barStyle.
-		Padding(0, 1).
-		Render("tab: switch panel  q: quit")
+	nav := strings.Join([]string{
+		key("tab", "next panel"),
+		key("shift+tab", "prev panel"),
+	}, barStyle.Render("  "))
 
-	// Calculate gap to push hints to the right
-	focusWidth := lipgloss.Width(focusLabel)
-	hintsWidth := lipgloss.Width(hints)
-	gap := m.Width - focusWidth - hintsWidth
-	if gap < 0 {
-		gap = 0
-	}
+	line1 := focusLabel + barStyle.Render("  ") + nav
 
-	spacer := barStyle.Render(strings.Repeat(" ", gap))
+	// --- line 2: action keys ---
+	actions := strings.Join([]string{
+		key("n", "new"),
+		key("s", "save"),
+		key("d", "duplicate"),
+		key("e", "export"),
+		key("q", "quit"),
+		key("?", "help"),
+	}, barStyle.Render("  "))
 
-	return focusLabel + spacer + hints
+	line2 := barStyle.Render(" ") + actions
+
+	return padLine(line1) + "\n" + padLine(line2)
 }

@@ -532,7 +532,7 @@ cat sql/schema/17_content_fields/schema.sql
 
 **Solution:**
 ```go
-// internal/cli/middleware.go
+// internal/tui/middleware.go
 func CliMiddleware(v *bool, c *config.Config) wish.Middleware {
     teaHandler := func(s ssh.Session) *tea.Program {
         pty, _, active := s.Pty()
@@ -704,7 +704,7 @@ UPDATE content_data SET parent_id = NULL WHERE content_data_id = 123;
 
 **Solution 2: Use validation before creating**
 ```go
-// internal/cli/validation.go
+// internal/tui/validation.go
 func ValidateParentNotDescendant(nodeID, newParentID int64, dbc db.DbDriver) error {
     // Walk up tree from newParentID
     currentID := newParentID

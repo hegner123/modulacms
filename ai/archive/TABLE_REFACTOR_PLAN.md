@@ -85,7 +85,7 @@ type TableModel struct {
 ## Implementation Steps
 
 ### Step 1: Create TableModel Struct
-**File:** `internal/cli/table_model.go` (NEW, ~40 lines)
+**File:** `internal/tui/table_model.go` (NEW, ~40 lines)
 
 ```go
 package cli
@@ -113,7 +113,7 @@ func NewTableModel() *TableModel {
 ```
 
 ### Step 2: Update Model Struct
-**File:** `internal/cli/model.go`
+**File:** `internal/tui/model.go`
 
 **Remove 7 fields (lines 71, 78-83):**
 ```go
@@ -146,7 +146,7 @@ m := Model{
 **Verification after Step 2:**
 ```
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.Table"
 - ext: ".go"
 - context: 0
@@ -157,7 +157,7 @@ checkfor tool with:
 ### Step 3: Update High-Usage Files (Most References)
 
 #### 3a. Update update_controls.go (~17 changes)
-**File:** `internal/cli/update_controls.go`
+**File:** `internal/tui/update_controls.go`
 
 Pattern: `m.Table` → `m.TableState.Table`, `m.Rows` → `m.TableState.Rows`, `m.Row` → `m.TableState.Row`
 
@@ -179,7 +179,7 @@ Key sections:
 **Verification after Step 3a:**
 ```
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.Row"
 - ext: ".go"
 - whole_word: true
@@ -187,7 +187,7 @@ checkfor tool with:
 ```
 
 #### 3b. Update form.go (~14 changes)
-**File:** `internal/cli/form.go`
+**File:** `internal/tui/form.go`
 
 Pattern: `m.Columns` → `m.TableState.Columns`, `m.ColumnTypes` → `m.TableState.ColumnTypes`, `m.Row` → `m.TableState.Row`, `m.Headers` → `m.TableState.Headers`
 
@@ -209,7 +209,7 @@ Key sections:
 **Verification after Step 3b:**
 ```
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.Columns"
 - ext: ".go"
 - whole_word: true
@@ -217,7 +217,7 @@ checkfor tool with:
 ```
 
 #### 3c. Update debug.go (~12 changes)
-**File:** `internal/cli/debug.go`
+**File:** `internal/tui/debug.go`
 
 All 7 fields referenced here for debug output.
 
@@ -232,7 +232,7 @@ All 7 fields referenced here for debug output.
 ### Step 4: Update Navigation/Routing Files
 
 #### 4a. Update update_navigation.go (~6 changes)
-**File:** `internal/cli/update_navigation.go`
+**File:** `internal/tui/update_navigation.go`
 
 - Line 42: `GetColumnsCmd(*m.Config, m.Table)` → `m.TableState.Table`
 - Line 57: `FetchTableHeadersRowsCmd(*m.Config, m.Table, &page)` → `m.TableState.Table`
@@ -242,14 +242,14 @@ All 7 fields referenced here for debug output.
 - Line 161: No change (`m.Tables` is different!)
 
 #### 4b. Update update_fetch.go (~3 changes)
-**File:** `internal/cli/update_fetch.go`
+**File:** `internal/tui/update_fetch.go`
 
 - Line 47: `LogMessageCmd(fmt.Sprintf("Table %s headers fetched: %s", m.Table, strings.Join(columns, ", ")))` → `m.TableState.Table`
 - Line 51: `for _, v := range m.Headers` → `m.TableState.Headers`
 - Line 119: `LogMessageCmd(fmt.Sprintf("Database fetch error for table %s: %s", m.Table, msg.Error.Error()))` → `m.TableState.Table`
 
 #### 4c. Update update_forms.go (~4 changes)
-**File:** `internal/cli/update_forms.go`
+**File:** `internal/tui/update_forms.go`
 
 - Line 26: `if m.Columns == nil` → `if m.TableState.Columns == nil`
 - Line 28: `LogMessageCmd(fmt.Sprintf("Form creation failed: no columns available for table %s", m.Table))` → `m.TableState.Table`
@@ -259,7 +259,7 @@ All 7 fields referenced here for debug output.
 ### Step 5: Update View/Display Files
 
 #### 5a. Update view.go (~10 changes)
-**File:** `internal/cli/view.go`
+**File:** `internal/tui/view.go`
 
 - Line 119: `p.AddHeader(fmt.Sprintf("Read %s", m.Table))` → `m.TableState.Table`
 - Line 121: `p.AddHeaders(m.Headers)` → `m.TableState.Headers`
@@ -274,41 +274,41 @@ All 7 fields referenced here for debug output.
 - Line 172: `p.AddRows(m.Rows)` → `m.TableState.Rows`
 
 #### 5b. Update style.go (~2 changes)
-**File:** `internal/cli/style.go`
+**File:** `internal/tui/style.go`
 
 - Line 168-169: Table name display → `m.TableState.Table`
 
 ### Step 6: Update Utility/Helper Files
 
 #### 6a. Update commands.go (~2 changes)
-**File:** `internal/cli/commands.go`
+**File:** `internal/tui/commands.go`
 
 - Line 103: `valuesMap[m.Headers[i]] = *v` → `m.TableState.Headers`
 - Line 230: `row := m.Rows[m.Cursor]` → `m.TableState.Rows`
 
 #### 6b. Update constructors.go (~2 changes)
-**File:** `internal/cli/constructors.go`
+**File:** `internal/tui/constructors.go`
 
 - Line 347: `start, end := m.Paginator.GetSliceBounds(len(m.Rows))` → `len(m.TableState.Rows)`
 - Line 348: `currentView := m.Rows[start:end]` → `m.TableState.Rows`
 
 #### 6c. Update handles.go (~1 change)
-**File:** `internal/cli/handles.go`
+**File:** `internal/tui/handles.go`
 
 - Line 10: `rows := m.Rows` → `m.TableState.Rows`
 
 #### 6d. Update fields.go (~1 change)
-**File:** `internal/cli/fields.go`
+**File:** `internal/tui/fields.go`
 
 - Line 115: `r, err := db.GetColumnRowsString(con, ctx, m.Table, column)` → `m.TableState.Table`
 
 #### 6e. Update status.go (~1 change)
-**File:** `internal/cli/status.go`
+**File:** `internal/tui/status.go`
 
 - Line 31: `table := fmt.Sprintf("Table\n%s\n", m.Table)` → `m.TableState.Table`
 
 #### 6f. Update update_dialog.go (~1 change)
-**File:** `internal/cli/update_dialog.go`
+**File:** `internal/tui/update_dialog.go`
 
 - Line 38: `DatabaseDeleteEntryCmd(int(id), m.Table)` → `m.TableState.Table`
 
@@ -354,7 +354,7 @@ All 7 fields referenced here for debug output.
 
 **Standard checkfor parameters:**
 ```
-dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 ext: ".go"
 whole_word: true
 context: 1
@@ -386,7 +386,7 @@ context: 1
 ### Compiler Checks
 ```bash
 # After each file change
-go build ./internal/cli/
+go build ./internal/tui/
 
 # Should succeed or show clear missing reference errors
 ```
@@ -397,7 +397,7 @@ go build ./internal/cli/
 ```
 # Run for each of 7 fields to establish baseline
 checkfor tool with:
-- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/cli"
+- dir: "/Users/home/Documents/Code/Go_dev/modulacms/internal/tui"
 - search: "m.Table"
 - ext: ".go"
 - whole_word: false

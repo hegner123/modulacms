@@ -1,61 +1,59 @@
 package tui
 
 import (
+	"embed"
+	"encoding/json"
+
 	"github.com/charmbracelet/lipgloss"
+	config "github.com/hegner123/modulacms/internal/config"
 )
 
-// View renders the TUI.
 func (m Model) View() string {
-	if m.Width == 0 || m.Height == 0 {
-		return "Loading..."
+	// Show user provisioning form if needed
+	if m.NeedsProvisioning {
+		if m.FormState != nil && m.FormState.Form != nil {
+			return m.FormState.Form.View()
+		}
+		return "Initializing user provisioning..."
 	}
 
-	header := renderHeader(m.Width)
-	statusBar := renderStatusBar(m)
-
-	headerH := lipgloss.Height(header)
-	statusH := lipgloss.Height(statusBar)
-
-	// Body height is whatever remains after header and status bar
-	bodyH := m.Height - headerH - statusH
-	if bodyH < 3 {
-		bodyH = 3
+	if isCMSPanelPage(m.Page.Index) {
+		return renderCMSPanelLayout(m)
 	}
 
-	// Column widths: 25% / 50% / 25%
-	leftW := m.Width / 4
-	centerW := m.Width / 2
-	rightW := m.Width - leftW - centerW
+	// Fallback for any unrecognized page index
+	return m.renderFallback()
+}
 
-	treePanel := Panel{
-		Title:   "Tree",
-		Width:   leftW,
-		Height:  bodyH,
-		Content: "Content Tree\n\n  (no data loaded)",
-		Focused: m.Focus == TreePanel,
-	}
-
-	contentPanel := Panel{
-		Title:   "Content",
-		Width:   centerW,
-		Height:  bodyH,
-		Content: "Fields\n\n  Select a node",
-		Focused: m.Focus == ContentPanel,
-	}
-
-	routePanel := Panel{
-		Title:   "Route",
-		Width:   rightW,
-		Height:  bodyH,
-		Content: "Route\n\n  (none)",
-		Focused: m.Focus == RoutePanel,
-	}
-
-	body := lipgloss.JoinHorizontal(lipgloss.Top,
-		treePanel.Render(),
-		contentPanel.Render(),
-		routePanel.Render(),
+// renderFallback renders a minimal UI with status bar and dialog overlay
+// for any page not handled by the panel layout.
+func (m Model) renderFallback() string {
+	docStyle := lipgloss.NewStyle().Width(m.Width).Height(m.Height)
+	doc := lipgloss.JoinVertical(
+		lipgloss.Top,
+		lipgloss.NewStyle().Padding(0, 2).Render(),
+		m.RenderStatusBar(),
 	)
+	ui := docStyle.Render(doc)
 
-	return lipgloss.JoinVertical(lipgloss.Left, header, body, statusBar)
+	if m.ActiveOverlay != nil {
+		return RenderOverlay(ui, m.ActiveOverlay, m.Width, m.Height)
+	}
+	return ui
+}
+
+// Rendering utilities
+
+// TitleFile embeds title graphics from the titles directory.
+//
+//go:embed titles
+var TitleFile embed.FS
+
+// formatJSON marshals config to formatted JSON.
+func formatJSON(b *config.Config) (string, error) {
+	formatted, err := json.MarshalIndent(*b, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(formatted), nil
 }

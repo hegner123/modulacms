@@ -38,7 +38,7 @@ internal/plugin/
     tui_manifest.go      # TUI manifest parsing and validation
     tui_api_server.go    # Unix socket JSON-RPC server for plugin data access
 
-internal/cli/
+internal/tui/
     plugin_screen.go     # PluginScreenModel: Bubbletea model wrapping PluginProcess + VT
     plugin_input.go      # Key translation: tea.KeyMsg → ANSI bytes for PTY write
 ```
@@ -244,7 +244,7 @@ func (p *PluginProcess) Resize(cols, rows int) {
 }
 ```
 
-### 3. PluginScreenModel (internal/cli/plugin_screen.go)
+### 3. PluginScreenModel (internal/tui/plugin_screen.go)
 
 A Bubbletea `tea.Model` that wraps `PluginProcess` and integrates with the host TUI's navigation system.
 
@@ -355,7 +355,7 @@ func (m PluginScreenModel) View() string {
 }
 ```
 
-### 4. Input Translation (internal/cli/plugin_input.go)
+### 4. Input Translation (internal/tui/plugin_input.go)
 
 Translate Bubbletea key messages into ANSI escape sequences for writing to the PTY. This is the inverse of what tmux's `tty-keys.c` does.
 
@@ -674,7 +674,7 @@ internal/plugin/
     tui_api_methods.go     # RPC method implementations
     tui_api_client.go      # Go client SDK for plugin authors
 
-internal/cli/
+internal/tui/
     plugin_screen.go       # PluginScreenModel: Bubbletea model
     plugin_input.go        # Key translation: tea.KeyMsg → ANSI bytes
     plugin_input_test.go   # Translation table tests

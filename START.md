@@ -125,7 +125,7 @@ Current task list for TUI content editor implementation. Full details in `/TODO_
 |---------|------|
 | Atomic Audit Logging | committed: `0e4cc7c` — all db mutations log change_events atomically |
 | Database CRUD Dialog Migration | `~/.claude/plans/resilient-popping-wigderson.md` |
-| Admin CMS Panel CRUD | `internal/cli/admin_*.go` |
+| Admin CMS Panel CRUD | `internal/tui/admin_*.go` |
 | SQLC Type Unification | `/Users/home/Documents/Code/Go_dev/modulacms/ai/refactor/SQLC_REDUCTION/` |
 | CLI TableModel Extraction | `/Users/home/Documents/Code/Go_dev/modulacms/ai/TABLE_REFACTOR_PLAN.md` |
 | CLI FormModel Extraction | `/Users/home/Documents/Code/Go_dev/modulacms/ai/FORM_REFACTOR_PLAN.md` |
@@ -253,7 +253,7 @@ Directories modified most frequently during development:
 
 ```
 /Users/home/Documents/Code/Go_dev/modulacms/cmd/main.go           - Application entry point
-/Users/home/Documents/Code/Go_dev/modulacms/internal/cli/         - TUI implementation
+/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/         - TUI implementation
 /Users/home/Documents/Code/Go_dev/modulacms/internal/router/      - REST API handlers
 /Users/home/Documents/Code/Go_dev/modulacms/internal/db/          - Database interface
 /Users/home/Documents/Code/Go_dev/modulacms/internal/db-sqlite/   - SQLite driver

@@ -1,0 +1,274 @@
+package tui
+
+import (
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+// StateUpdated signals that model state has been updated.
+type StateUpdated struct{}
+
+// NewStateUpdate returns a command that creates a StateUpdated message.
+func NewStateUpdate() tea.Cmd {
+	return func() tea.Msg {
+		return StateUpdated{}
+	}
+}
+
+// UpdateState handles all model state mutations including cursor, loading, pagination, and data setters.
+func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+
+	case LoadingTrue:
+		newModel := m
+		newModel.Loading = true
+		return newModel, NewStateUpdate()
+	case LoadingFalse:
+		newModel := m
+		newModel.Loading = false
+		return newModel, NewStateUpdate()
+	case CursorUp:
+		newModel := m
+		newModel.Cursor = m.Cursor - 1
+		return newModel, NewStateUpdate()
+	case CursorDown:
+		newModel := m
+		newModel.Cursor = m.Cursor + 1
+		return newModel, NewStateUpdate()
+	case CursorReset:
+		newModel := m
+		newModel.Cursor = 0
+		return newModel, NewStateUpdate()
+	case CursorSet:
+		newModel := m
+		newModel.Cursor = msg.Index
+		return newModel, NewStateUpdate()
+	case PageModNext:
+		newModel := m
+		newModel.PageMod = m.PageMod + 1
+		return newModel, NewStateUpdate()
+	case PageModPrevious:
+		newModel := m
+		newModel.PageMod = m.PageMod - 1
+		return newModel, NewStateUpdate()
+	case FocusSet:
+		newModel := m
+		newModel.Focus = msg.Focus
+		return newModel, NewStateUpdate()
+	case TitleFontNext:
+		newModel := m
+		if newModel.TitleFont < len(m.Titles)-1 {
+			newModel.TitleFont++
+		}
+		return newModel, NewStateUpdate()
+	case TitleFontPrevious:
+		newModel := m
+		if newModel.TitleFont > 0 {
+			newModel.TitleFont--
+		}
+		return newModel, NewStateUpdate()
+	case PageSet:
+		newModel := m
+		newModel.Page = msg.Page
+		return newModel, NewStateUpdate()
+	case HistoryPush:
+		newModel := m
+		newModel.History = append(newModel.History, msg.Page)
+		return newModel, NewStateUpdate()
+	case TableSet:
+		newModel := m
+		newModel.TableState.Table = msg.Table
+		return newModel, NewStateUpdate()
+	case TablesSet:
+		newModel := m
+		newModel.Tables = msg.Tables
+		return newModel, tea.Batch(NewStateUpdate(), LoadingStopCmd())
+	case ColumnsSet:
+		newModel := m
+		newModel.TableState.Columns = msg.Columns
+		return newModel, NewStateUpdate()
+	case ColumnTypesSet:
+		newModel := m
+		newModel.TableState.ColumnTypes = msg.ColumnTypes
+		return newModel, NewStateUpdate()
+	case HeadersSet:
+		newModel := m
+		newModel.TableState.Headers = msg.Headers
+		return newModel, NewStateUpdate()
+	case RowsSet:
+		newModel := m
+		newModel.TableState.Rows = msg.Rows
+		return newModel, NewStateUpdate()
+	case LogMsg:
+		m.Logger.Finfo(msg.Message)
+		return m, NewStateUpdate()
+	case ClearScreen:
+		return m, tea.ClearScreen
+	case SetPageContent:
+		newModel := m
+		newModel.Content = msg.Content
+		return newModel, NewStateUpdate()
+	case SetViewportContent:
+		newModel := m
+		newModel.Viewport.SetContent(msg.Content)
+		return newModel, NewStateUpdate()
+	case CursorMaxSet:
+		newModel := m
+		newModel.CursorMax = msg.CursorMax
+		return newModel, NewStateUpdate()
+	case PaginatorUpdate:
+		newModel := m
+		newModel.Paginator.PerPage = msg.PerPage
+		newModel.Paginator.SetTotalPages(msg.TotalPages)
+		return newModel, NewStateUpdate()
+	case ErrorSet:
+		newModel := m
+		newModel.Err = msg.Err
+		return newModel, LogMessageCmd(msg.Err.Error())
+	case StatusSet:
+		newModel := m
+		newModel.Status = msg.Status
+		return newModel, NewStateUpdate()
+	case OverlaySetMsg:
+		newModel := m
+		newModel.ActiveOverlay = msg.Overlay
+		return newModel, NewStateUpdate()
+	case OverlayClearMsg:
+		newModel := m
+		newModel.ActiveOverlay = nil
+		return newModel, NewStateUpdate()
+	case DatatypeMenuSet:
+		newModel := m
+		newModel.DatatypeMenu = msg.DatatypeMenu
+		return newModel, NewStateUpdate()
+	case RoutesSet:
+		newModel := m
+		newModel.Routes = msg.Routes
+		return newModel, NewStateUpdate()
+	case MediaListSet:
+		newModel := m
+		newModel.MediaList = msg.MediaList
+		return newModel, NewStateUpdate()
+	case UsersListSet:
+		newModel := m
+		newModel.UsersList = msg.UsersList
+		return newModel, NewStateUpdate()
+	case RolesListSet:
+		newModel := m
+		newModel.RolesList = msg.RolesList
+		return newModel, NewStateUpdate()
+	case RootContentSummarySet:
+		newModel := m
+		newModel.RootContentSummary = msg.RootContentSummary
+		return newModel, NewStateUpdate()
+	case RootDatatypesSet:
+		newModel := m
+		newModel.RootDatatypes = msg.RootDatatypes
+		return newModel, NewStateUpdate()
+	case AllDatatypesSet:
+		newModel := m
+		newModel.AllDatatypes = msg.AllDatatypes
+		return newModel, NewStateUpdate()
+	case DatatypeFieldsSet:
+		newModel := m
+		newModel.SelectedDatatypeFields = msg.Fields
+		return newModel, NewStateUpdate()
+	case SelectedDatatypeSet:
+		newModel := m
+		newModel.SelectedDatatype = msg.DatatypeID
+		return newModel, NewStateUpdate()
+	case PanelFocusReset:
+		newModel := m
+		newModel.PanelFocus = TreePanel
+		return newModel, NewStateUpdate()
+	case PageMenuSet:
+		newModel := m
+		newModel.PageMenu = msg.PageMenu
+		return newModel, NewStateUpdate()
+	case PluginsListSet:
+		newModel := m
+		newModel.PluginsList = msg.PluginsList
+		return newModel, NewStateUpdate()
+	case UpdatePagination:
+		p, cmd := m.Paginator.Update(msg)
+		newModel := m
+		newModel.Paginator = p
+		return newModel, cmd
+	case FormLenSet:
+		newModel := m
+		newModel.FormState.FormLen = msg.FormLen
+		return newModel, NewStateUpdate()
+	case FormMapSet:
+		newModel := m
+		newModel.FormState.FormMap = msg.FormMap
+		return newModel, NewStateUpdate()
+	case FormSet:
+		newModel := m
+		newModel.FormState.Form = &msg.Form
+		newModel.FormState.FormValues = msg.Values
+		return newModel, NewStateUpdate()
+	case FormValuesSet:
+		newModel := m
+		newModel.FormState.FormValues = msg.Values
+		return newModel, NewStateUpdate()
+	case FormOptionsSet:
+		newModel := m
+		newModel.FormState.FormOptions = msg.Options
+		return newModel, NewStateUpdate()
+
+	// Admin CMS state setters
+	case AdminRoutesSet:
+		newModel := m
+		newModel.AdminRoutes = msg.AdminRoutes
+		return newModel, NewStateUpdate()
+	case AdminAllDatatypesSet:
+		newModel := m
+		newModel.AdminAllDatatypes = msg.AdminAllDatatypes
+		return newModel, NewStateUpdate()
+	case AdminDatatypeFieldsSet:
+		newModel := m
+		newModel.AdminSelectedDatatypeFields = msg.Fields
+		return newModel, NewStateUpdate()
+	case AdminContentDataSet:
+		newModel := m
+		newModel.AdminRootContentSummary = msg.AdminContentData
+		return newModel, NewStateUpdate()
+	case AdminLoadContentFieldsMsg:
+		newModel := m
+		newModel.AdminSelectedContentFields = msg.Fields
+		return newModel, NewStateUpdate()
+	case FieldTypesSet:
+		newModel := m
+		newModel.FieldTypesList = msg.FieldTypes
+		return newModel, NewStateUpdate()
+	case AdminFieldTypesSet:
+		newModel := m
+		newModel.AdminFieldTypesList = msg.AdminFieldTypes
+		return newModel, NewStateUpdate()
+
+	// Deploy state setters
+	case DeployEnvsSet:
+		newModel := m
+		newModel.DeployEnvironments = msg.Envs
+		return newModel, NewStateUpdate()
+
+	case UpdateMaxCursorMsg:
+		cursorUpdate := func() tea.Msg {
+			if m.Cursor > msg.CursorMax-1 {
+				return CursorSet{Index: msg.CursorMax - 1}
+			}
+			return nil
+		}()
+
+		cmds := []tea.Cmd{
+			CursorMaxSetCmd(msg.CursorMax),
+		}
+
+		if cursorUpdate != nil {
+			cmds = append(cmds, func() tea.Msg { return cursorUpdate })
+		}
+
+		return m, tea.Batch(cmds...)
+	default:
+		return m, nil
+	}
+}

@@ -451,9 +451,9 @@ func TestDatabase_DropAllTables_ErrorMessages_StrictTables(t *testing.T) {
 func TestDatabase_DropAllTables_DoubleDrop(t *testing.T) {
 	// Calling DropAllTables twice should fail on the second call because
 	// strict tables no longer exist (DROP TABLE without IF EXISTS).
-	// Pipelines, plugins, role_permissions, admin_content_relations,
-	// and content_relations use IF EXISTS and silently succeed, so the
-	// first error comes from admin_content_fields (first strict table).
+	// Webhook tables, pipelines, plugins, role_permissions, content
+	// relations, and content versions use IF EXISTS and silently succeed,
+	// so the first error comes from admin_content_fields (first strict table).
 	d := newWipeTestDB(t)
 
 	// First drop: should succeed
@@ -720,7 +720,7 @@ func TestDatabase_DropAllTables_ClosedConnection(t *testing.T) {
 		t.Fatal("expected error from DropAllTables on closed connection, got nil")
 	}
 	// The error should reference the first table in the drop sequence
-	if !strings.Contains(err.Error(), "drop pipelines") {
+	if !strings.Contains(err.Error(), "drop webhook_deliveries") {
 		t.Errorf("error = %q, want it to reference first table in drop order", err.Error())
 	}
 }
@@ -951,7 +951,7 @@ func TestDatabase_DropAllTables_CanceledContext(t *testing.T) {
 	}
 
 	// The error should reference the first table in the drop sequence
-	if !strings.Contains(err.Error(), "drop pipelines") {
+	if !strings.Contains(err.Error(), "drop webhook_deliveries") {
 		t.Errorf("error = %q, want it to reference the first table in drop order", err.Error())
 	}
 }
@@ -1044,7 +1044,7 @@ func TestDatabase_DropAllTables_ReadOnlyConnection(t *testing.T) {
 		t.Fatal("expected error from DropAllTables on read-only connection, got nil")
 	}
 	// The error should reference the first table
-	if !strings.Contains(err.Error(), "drop pipelines") {
+	if !strings.Contains(err.Error(), "drop webhook_deliveries") {
 		t.Errorf("error = %q, want it to reference the first table", err.Error())
 	}
 }

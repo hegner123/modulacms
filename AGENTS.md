@@ -376,7 +376,7 @@ Regenerate with `just admin generate`. Watch mode: `just admin watch`.
 
 Built with Charmbracelet Bubbletea (Elm Architecture: Model → Update → View).
 
-Key files in `internal/cli/`:
+Key files in `internal/tui/`:
 - `model.go` — central state machine (`Model` struct with focus, state, navigation)
 - `update*.go` — state transition handlers (`Update()` dispatches by focus and message type)
 - `view.go` / `panel_view.go` — screen rendering

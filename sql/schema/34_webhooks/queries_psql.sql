@@ -1,5 +1,5 @@
 -- name: DropWebhookTable :exec
-DROP TABLE webhooks;
+DROP TABLE IF EXISTS webhooks;
 
 -- name: CreateWebhookTable :exec
 CREATE TABLE IF NOT EXISTS webhooks (

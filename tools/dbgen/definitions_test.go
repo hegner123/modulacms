@@ -160,9 +160,16 @@ func TestEntities_ExtraQueriesHaveMethodName(t *testing.T) {
 
 func TestEntities_ExtraQueriesHaveAtLeastOneParam(t *testing.T) {
 	t.Parallel()
+	// Paramless ExtraQueries (e.g. ListActiveWebhooks) are valid —
+	// the template generates correct code without params.
+	// This list tracks intentionally paramless queries so new ones
+	// are added consciously.
+	allowParamless := map[string]bool{
+		"ListActiveWebhooks": true,
+	}
 	for _, e := range Entities {
 		for i, eq := range e.ExtraQueries {
-			if len(eq.Params) == 0 {
+			if len(eq.Params) == 0 && !allowParamless[eq.MethodName] {
 				t.Errorf("Entity %q: ExtraQueries[%d] (%s) has no Params", e.Name, i, eq.MethodName)
 			}
 		}

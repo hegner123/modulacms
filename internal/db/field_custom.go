@@ -152,7 +152,7 @@ func MapFieldJSON(a Fields) FieldsJSON {
 		Validation:   a.Validation,
 		UIConfig:     a.UIConfig,
 		Type:         a.Type.String(),
-		Translatable: fmt.Sprintf("%d", a.Translatable),
+		Translatable: fmt.Sprintf("%t", a.Translatable),
 		Roles: func() string {
 			if a.Roles.Valid {
 				return a.Roles.String

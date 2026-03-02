@@ -770,7 +770,7 @@ dlv attach $(pgrep modulacms)
 
 ```bash
 # Breakpoints
-(dlv) break internal/cli/update.go:123
+(dlv) break internal/tui/update.go:123
 (dlv) break Model.Update
 (dlv) breakpoints                    # list all breakpoints
 (dlv) clear 1                        # clear breakpoint #1
@@ -804,7 +804,7 @@ dlv attach $(pgrep modulacms)
 
 ```bash
 # Break in Update function
-(dlv) break internal/cli/update.go:UpdateFunction
+(dlv) break internal/tui/update.go:UpdateFunction
 
 # Inspect message
 (dlv) print msg
@@ -903,7 +903,7 @@ go func() {
 
 ```bash
 # Check for goroutine leaks
-go test -run=TestLongRunning ./internal/cli &
+go test -run=TestLongRunning ./internal/tui &
 PID=$!
 
 # Check goroutines periodically
@@ -1403,8 +1403,8 @@ condition 1 var == value
 ### Key Files for Debugging
 
 - `internal/utility/utility.go` - Logger configuration
-- `internal/cli/update.go` - TUI message handling
-- `internal/cli/cms_struct.go` - Tree operations
+- `internal/tui/update.go` - TUI message handling
+- `internal/tui/cms_struct.go` - Tree operations
 - `internal/db/` - Database interface
 - `cmd/main.go` - Application entry point
 - `debug.log` - Default log output (if configured)

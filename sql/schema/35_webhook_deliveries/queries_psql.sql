@@ -1,5 +1,5 @@
 -- name: DropWebhookDeliveryTable :exec
-DROP TABLE webhook_deliveries;
+DROP TABLE IF EXISTS webhook_deliveries;
 
 -- name: CreateWebhookDeliveryTable :exec
 CREATE TABLE IF NOT EXISTS webhook_deliveries (

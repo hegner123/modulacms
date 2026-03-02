@@ -269,7 +269,7 @@ ai/
 - Debugging TUI issues
 
 **Key Files:**
-- `internal/cli/` - All TUI code
+- `internal/tui/` - All TUI code
 - Message definitions
 - Model structures
 - Update functions

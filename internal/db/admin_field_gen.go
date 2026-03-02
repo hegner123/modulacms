@@ -28,7 +28,7 @@ type AdminFields struct {
 	Validation   string                        `json:"validation"`
 	UIConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
-	Translatable int64                         `json:"translatable"`
+	Translatable bool                          `json:"translatable"`
 	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
@@ -45,7 +45,7 @@ type CreateAdminFieldParams struct {
 	Validation   string                        `json:"validation"`
 	UIConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
-	Translatable int64                         `json:"translatable"`
+	Translatable bool                          `json:"translatable"`
 	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
@@ -62,7 +62,7 @@ type UpdateAdminFieldParams struct {
 	Validation   string                        `json:"validation"`
 	UIConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
-	Translatable int64                         `json:"translatable"`
+	Translatable bool                          `json:"translatable"`
 	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
@@ -89,7 +89,7 @@ func MapStringAdminField(a AdminFields) StringAdminFields {
 		Validation:   a.Validation,
 		UIConfig:     a.UIConfig,
 		Type:         string(a.Type),
-		Translatable: fmt.Sprintf("%d", a.Translatable),
+		Translatable: fmt.Sprintf("%t", a.Translatable),
 		Roles: func() string {
 			if a.Roles.Valid {
 				return a.Roles.String
@@ -121,7 +121,7 @@ func (d Database) MapAdminField(a mdb.AdminFields) AdminFields {
 		Validation:   a.Validation,
 		UIConfig:     a.UiConfig,
 		Type:         a.Type,
-		Translatable: a.Translatable,
+		Translatable: a.Translatable.Bool(),
 		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -141,7 +141,7 @@ func (d Database) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdb.Create
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
-		Translatable: a.Translatable,
+		Translatable: types.SafeBool{Val: a.Translatable},
 		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -160,7 +160,7 @@ func (d Database) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdb.Update
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
-		Translatable: a.Translatable,
+		Translatable: types.SafeBool{Val: a.Translatable},
 		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -278,7 +278,7 @@ func (d MysqlDatabase) MapAdminField(a mdbm.AdminFields) AdminFields {
 		Validation:   a.Validation,
 		UIConfig:     a.UiConfig,
 		Type:         a.Type,
-		Translatable: a.Translatable,
+		Translatable: a.Translatable.Bool(),
 		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -298,7 +298,7 @@ func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
-		Translatable: a.Translatable,
+		Translatable: types.SafeBool{Val: a.Translatable},
 		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -317,7 +317,7 @@ func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
-		Translatable: a.Translatable,
+		Translatable: types.SafeBool{Val: a.Translatable},
 		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -435,7 +435,7 @@ func (d PsqlDatabase) MapAdminField(a mdbp.AdminFields) AdminFields {
 		Validation:   a.Validation,
 		UIConfig:     a.UiConfig,
 		Type:         a.Type,
-		Translatable: a.Translatable,
+		Translatable: a.Translatable.Bool(),
 		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -455,7 +455,7 @@ func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.C
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
-		Translatable: a.Translatable,
+		Translatable: types.SafeBool{Val: a.Translatable},
 		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -474,7 +474,7 @@ func (d PsqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbp.U
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
-		Translatable: a.Translatable,
+		Translatable: types.SafeBool{Val: a.Translatable},
 		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -621,7 +621,7 @@ func (c NewAdminFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Adm
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
-		Translatable: c.params.Translatable,
+		Translatable: types.SafeBool{Val: c.params.Translatable},
 		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -684,7 +684,7 @@ func (c UpdateAdminFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
-		Translatable: c.params.Translatable,
+		Translatable: types.SafeBool{Val: c.params.Translatable},
 		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -789,7 +789,7 @@ func (c NewAdminFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (md
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
-		Translatable: c.params.Translatable,
+		Translatable: types.SafeBool{Val: c.params.Translatable},
 		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -856,7 +856,7 @@ func (c UpdateAdminFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) 
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
-		Translatable: c.params.Translatable,
+		Translatable: types.SafeBool{Val: c.params.Translatable},
 		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -961,7 +961,7 @@ func (c NewAdminFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdb
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
-		Translatable: c.params.Translatable,
+		Translatable: types.SafeBool{Val: c.params.Translatable},
 		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -1024,7 +1024,7 @@ func (c UpdateAdminFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) e
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
-		Translatable: c.params.Translatable,
+		Translatable: types.SafeBool{Val: c.params.Translatable},
 		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,

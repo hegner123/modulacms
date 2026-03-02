@@ -151,7 +151,7 @@ func apiCreateTranslation(w http.ResponseWriter, r *http.Request, c config.Confi
 	created := 0
 
 	for _, f := range *fields {
-		if f.Translatable == 0 {
+		if !f.Translatable {
 			continue
 		}
 		if existingFieldSet[f.FieldID] {
@@ -295,7 +295,7 @@ func apiCreateAdminTranslation(w http.ResponseWriter, r *http.Request, c config.
 	created := 0
 
 	for _, f := range *fields {
-		if f.Translatable == 0 {
+		if !f.Translatable {
 			continue
 		}
 		if existingFieldSet[f.AdminFieldID] {

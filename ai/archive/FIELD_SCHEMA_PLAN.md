@@ -527,7 +527,7 @@ Additionally, every place that references `types.NullableContentID` for field `P
 | File | Line | Context |
 |------|------|---------|
 | `internal/router/import.go` | ~320 | Import handler — add `Validation: types.EmptyJSON, UIConfig: types.EmptyJSON` |
-| `internal/cli/update_dialog.go` | ~1486 | TUI create field dialog — add `Validation: types.EmptyJSON, UIConfig: types.EmptyJSON` |
+| `internal/tui/update_dialog.go` | ~1486 | TUI create field dialog — add `Validation: types.EmptyJSON, UIConfig: types.EmptyJSON` |
 | `internal/definitions/install.go` | ~44 | Install definitions — add `Validation: types.EmptyJSON, UIConfig: types.EmptyJSON` |
 | `internal/db/db.go` | ~690 | Bootstrap data (SQLite) — add `Validation: types.EmptyJSON, UIConfig: types.EmptyJSON` |
 | `internal/db/db.go` | ~1385 | Bootstrap data (MySQL) — add `Validation: types.EmptyJSON, UIConfig: types.EmptyJSON` |
@@ -537,13 +537,13 @@ Additionally, every place that references `types.NullableContentID` for field `P
 
 | File | Line | Context |
 |------|------|---------|
-| `internal/cli/update_dialog.go` | ~1832 | TUI edit field — add `Validation: existing.Validation, UIConfig: existing.UIConfig` |
+| `internal/tui/update_dialog.go` | ~1832 | TUI edit field — add `Validation: existing.Validation, UIConfig: existing.UIConfig` |
 
 **CreateAdminFieldParams call sites:**
 
 | File | Line | Context |
 |------|------|---------|
-| `internal/cli/admin_update_dialog.go` | ~450 | TUI create admin field — add `Validation: types.EmptyJSON, UIConfig: types.EmptyJSON` |
+| `internal/tui/admin_update_dialog.go` | ~450 | TUI create admin field — add `Validation: types.EmptyJSON, UIConfig: types.EmptyJSON` |
 | `internal/db/db.go` | ~673 | Bootstrap data (SQLite) — add `Validation: types.EmptyJSON, UIConfig: types.EmptyJSON` |
 | `internal/db/db.go` | ~1368 | Bootstrap data (MySQL) — add `Validation: types.EmptyJSON, UIConfig: types.EmptyJSON` |
 | `internal/db/db.go` | ~2036 | Bootstrap data (PostgreSQL) — add `Validation: types.EmptyJSON, UIConfig: types.EmptyJSON` |
@@ -552,7 +552,7 @@ Additionally, every place that references `types.NullableContentID` for field `P
 
 | File | Line | Context |
 |------|------|---------|
-| `internal/cli/admin_update_dialog.go` | ~542 | TUI edit admin field — add `Validation: existing.Validation, UIConfig: existing.UIConfig` |
+| `internal/tui/admin_update_dialog.go` | ~542 | TUI edit admin field — add `Validation: existing.Validation, UIConfig: existing.UIConfig` |
 
 **HTTP router handlers (parse request bodies into params):**
 
@@ -588,8 +588,8 @@ Additionally, every place that references `types.NullableContentID` for field `P
 | `internal/db/content_relation.go` **(new)** | Full entity file (including UpdateSortOrder) |
 | `internal/db/admin_content_relation.go` **(new)** | Full entity file (including UpdateSortOrder) |
 | `internal/db/db.go` | Add interface methods + CreateAllTables + bootstrap data; fix ListFieldsByDatatypeID param type |
-| `internal/cli/update_dialog.go` | Add Validation, UIConfig to field create/update params |
-| `internal/cli/admin_update_dialog.go` | Add Validation, UIConfig to admin field create/update params |
+| `internal/tui/update_dialog.go` | Add Validation, UIConfig to field create/update params |
+| `internal/tui/admin_update_dialog.go` | Add Validation, UIConfig to admin field create/update params |
 | `internal/router/import.go` | Add Validation, UIConfig to import field create |
 | `internal/router/fields.go` | Update request parsing for new fields |
 | `internal/router/adminFields.go` | Update request parsing for new fields |

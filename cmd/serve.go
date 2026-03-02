@@ -22,7 +22,6 @@ import (
 	"github.com/charmbracelet/wish/logging"
 	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/bucket"
-	"github.com/hegner123/modulacms/internal/cli"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
@@ -32,6 +31,7 @@ import (
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/router"
+	"github.com/hegner123/modulacms/internal/tui"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/hegner123/modulacms/internal/webhooks"
 	"github.com/spf13/cobra"
@@ -186,7 +186,7 @@ var serveCmd = &cobra.Command{
 				middleware.SSHSessionLoggingMiddleware(cfg),
 				middleware.SSHAuthenticationMiddleware(cfg),
 				middleware.SSHAuthorizationMiddleware(cfg),
-				cli.CliMiddleware(&verbose, cfg, driver, utility.DefaultLogger, pluginManager, mgr, dbReadyCh),
+				tui.CliMiddleware(&verbose, cfg, driver, utility.DefaultLogger, pluginManager, mgr, dbReadyCh),
 				logging.Middleware(),
 			),
 		)
@@ -345,7 +345,7 @@ var serveCmd = &cobra.Command{
 		if !initStatus.UseSSL && cfg.Environment != "http-only" {
 			go func() {
 				utility.DefaultLogger.Info("HTTPS is up — locked and loaded", "address", httpsServer.Addr)
-			utility.DefaultLogger.Debug("HTTPS server listener binding", "address", httpsServer.Addr, "cert_dir", certDir)
+				utility.DefaultLogger.Debug("HTTPS server listener binding", "address", httpsServer.Addr, "cert_dir", certDir)
 				httpsErr := httpsServer.ListenAndServeTLS(
 					filepath.Join(certDir, "localhost.crt"),
 					filepath.Join(certDir, "localhost.key"),
@@ -390,13 +390,13 @@ var serveCmd = &cobra.Command{
 				select {
 				case <-dbReadyCh:
 					utility.DefaultLogger.Info("Database is alive — the TUI worked its magic, reloading permissions...")
-				utility.DefaultLogger.Debug("DB initialized via SSH TUI session, reloading PermissionCache from freshly bootstrapped role_permissions table")
+					utility.DefaultLogger.Debug("DB initialized via SSH TUI session, reloading PermissionCache from freshly bootstrapped role_permissions table")
 					if pcErr := pc.Load(driver); pcErr != nil {
 						utility.DefaultLogger.Error("Permission cache reload after DB init failed", pcErr)
 						return
 					}
 					utility.DefaultLogger.Info("Bouncer updated, swapping in the real deal")
-				utility.DefaultLogger.Debug("PermissionCache reloaded, handlerSwap atomically replaced placeholder with full router + middleware stack")
+					utility.DefaultLogger.Debug("PermissionCache reloaded, handlerSwap atomically replaced placeholder with full router + middleware stack")
 					pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
 					handler.set(buildRealHandler())
 					publishInterval := time.Duration(cfg.PublishScheduleInterval()) * time.Second
@@ -486,7 +486,7 @@ var serveCmd = &cobra.Command{
 // generates a new token, inserts it into the database, and writes it to a file.
 // Returns the token row ID and file path on success.
 func generatePluginAPIToken(ctx context.Context, driver db.DbDriver, nodeID string) (string, string, error) {
-	// Look up the system user (same pattern as internal/cli/model.go:218-224).
+	// Look up the system user (same pattern as internal/tui/model.go:218-224).
 	users, err := driver.ListUsers()
 	if err != nil {
 		return "", "", fmt.Errorf("list users for plugin API token: %w", err)

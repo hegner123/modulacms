@@ -274,7 +274,7 @@
 
  18. Add page constants
 
- File: internal/cli/pages.go
+ File: internal/tui/pages.go
 
  Add FIELDTYPES and ADMINFIELDTYPES to the PageIndex iota block (after QUICKSTARTPAGE).
  In InitPages():
@@ -286,7 +286,7 @@
 
  19. Add model state
 
- File: internal/cli/model.go
+ File: internal/tui/model.go
 
  Add to the Model struct:
    FieldTypesList      []db.FieldTypes
@@ -294,7 +294,7 @@
 
  20. Add message types
 
- File: internal/cli/admin_message_types.go
+ File: internal/tui/admin_message_types.go
 
  Add message structs for field_types:
    FieldTypesFetchMsg struct{}
@@ -320,7 +320,7 @@
 
  21. Add command constructors
 
- File: internal/cli/admin_constructors.go (or commands.go)
+ File: internal/tui/admin_constructors.go (or commands.go)
 
  Add Cmd functions for both entities:
    FieldTypesFetchCmd() tea.Msg -- returns FieldTypesFetchMsg{}
@@ -330,7 +330,7 @@
 
  22. Add panel view rendering
 
- File: internal/cli/panel_view.go
+ File: internal/tui/panel_view.go
 
  Add FIELDTYPES and ADMINFIELDTYPES to isCMSPanelPage() check.
  Add case FIELDTYPES to cmsPanelTitles(): return "Field Types", "Details", "Actions".
@@ -338,7 +338,7 @@
  Add case FIELDTYPES to cmsPanelContent(): dispatch to renderFieldTypesList, renderFieldTypeDetail, renderFieldTypeActions.
  Add case ADMINFIELDTYPES to cmsPanelContent(): dispatch to renderAdminFieldTypesList, renderAdminFieldTypeDetail, renderAdminFieldTypeActions.
 
- File: internal/cli/admin_panel_view.go (or panel_view.go)
+ File: internal/tui/admin_panel_view.go (or panel_view.go)
 
  Add six rendering functions (three per entity):
    renderFieldTypesList(m Model) string -- iterate m.FieldTypesList, show cursor + type + label
@@ -350,7 +350,7 @@
 
  23. Add keyboard controls
 
- File: internal/cli/admin_controls.go (or update_controls.go)
+ File: internal/tui/admin_controls.go (or update_controls.go)
 
  Add FieldTypesControls(m Model, msg tea.Msg) (Model, tea.Cmd):
    up/down: cursor navigation through FieldTypesList
@@ -367,7 +367,7 @@
 
  24. Add form dialog actions
 
- File: internal/cli/form_dialog.go
+ File: internal/tui/form_dialog.go
 
  Add FormDialogAction constants:
    FORMDIALOGCREATEFIELDTYPE       FormDialogAction = "create_field_type"
@@ -377,14 +377,14 @@
 
  25. Add fetch/update handlers
 
- File: internal/cli/admin_update_fetch.go
+ File: internal/tui/admin_update_fetch.go
 
  Handle FieldTypesFetchMsg: call d.ListFieldTypes(), return FieldTypesFetchResultsMsg.
  Handle FieldTypesFetchResultsMsg: call FieldTypesSetCmd(msg.Data), LoadingStopCmd().
  Handle AdminFieldTypesFetchMsg: call d.ListAdminFieldTypes(), return AdminFieldTypesFetchResultsMsg.
  Handle AdminFieldTypesFetchResultsMsg: call AdminFieldTypesSetCmd(msg.Data), LoadingStopCmd().
 
- File: internal/cli/admin_update_cms.go
+ File: internal/tui/admin_update_cms.go
 
  Handle CRUD request messages for field_types:
    CreateFieldTypeFromDialogRequestMsg -> HandleCreateFieldTypeFromDialog() -> FieldTypeCreatedFromDialogMsg
@@ -404,7 +404,7 @@
    AdminFieldTypeUpdatedFromDialogMsg -> AdminFieldTypesFetchCmd()
    AdminFieldTypeDeletedMsg -> AdminFieldTypesFetchCmd()
 
- File: internal/cli/admin_update_dialog.go
+ File: internal/tui/admin_update_dialog.go
 
  Handle dialog handlers that perform DB operations for field_types:
    HandleCreateFieldTypeFromDialog: d.CreateFieldType(ctx, ac, params)
@@ -418,7 +418,7 @@
 
  26. Add menu entries
 
- File: internal/cli/menus.go
+ File: internal/tui/menus.go
 
  Add m.PageMap[FIELDTYPES] to CmsMenuInit() (alongside DATATYPES, ROUTES, MEDIA, USERSADMIN).
  Add m.PageMap[ADMINFIELDTYPES] to AdminCmsMenuInit() (alongside ADMINCONTENT, ADMINDATATYPES, ADMINROUTES).
@@ -706,18 +706,18 @@
  │                │ sql/all_schema*.sql (x3)                                                │
  │                │ internal/router/mux.go                                                  │
  ├────────────────┼──────────────────────────────────────────────────────────────────────────┤
- │ Modify (TUI)   │ internal/cli/pages.go                                                   │
- │                │ internal/cli/model.go                                                   │
- │                │ internal/cli/menus.go                                                   │
- │                │ internal/cli/admin_message_types.go                                     │
- │                │ internal/cli/admin_constructors.go                                      │
- │                │ internal/cli/panel_view.go                                              │
- │                │ internal/cli/admin_panel_view.go                                        │
- │                │ internal/cli/admin_controls.go                                          │
- │                │ internal/cli/form_dialog.go                                             │
- │                │ internal/cli/admin_update_fetch.go                                      │
- │                │ internal/cli/admin_update_cms.go                                        │
- │                │ internal/cli/admin_update_dialog.go                                     │
+ │ Modify (TUI)   │ internal/tui/pages.go                                                   │
+ │                │ internal/tui/model.go                                                   │
+ │                │ internal/tui/menus.go                                                   │
+ │                │ internal/tui/admin_message_types.go                                     │
+ │                │ internal/tui/admin_constructors.go                                      │
+ │                │ internal/tui/panel_view.go                                              │
+ │                │ internal/tui/admin_panel_view.go                                        │
+ │                │ internal/tui/admin_controls.go                                          │
+ │                │ internal/tui/form_dialog.go                                             │
+ │                │ internal/tui/admin_update_fetch.go                                      │
+ │                │ internal/tui/admin_update_cms.go                                        │
+ │                │ internal/tui/admin_update_dialog.go                                     │
  ├────────────────┼──────────────────────────────────────────────────────────────────────────┤
  │ Modify (TS)    │ sdks/typescript/types/src/ids.ts                                        │
  │                │ sdks/typescript/types/src/index.ts                                      │

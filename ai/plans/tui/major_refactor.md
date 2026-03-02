@@ -7,41 +7,18 @@
 
  Context
 
- The TUI (internal/cli/) is a ~20,000 LOC Bubbletea app built during learning. It has a single monolithic Model with 68+ fields holding ALL state for 46 pages, ~292 message types scattered
+ The TUI (internal/tui/) is a ~20,000 LOC Bubbletea app built during learning. It has a single monolithic Model with 68+ fields holding ALL state for 46 pages, ~292 message types scattered
  across 13+ files, 12 chained sub-handlers using early-return dispatch, and zero test coverage. The goal is to introduce component isolation: each major screen becomes a self-contained
  struct with its own Update/View, the root Model shrinks to global state + active screen, and messages become domain-scoped.
 
  Phase 0: Prerequisites
 
- 0.1 Move package-level context vars into Model
+ 0.1 Move package-level context vars into Model [DONE 2026-03-02]
 
- 19 package-level var pointers in update_dialog.go and admin_update_dialog.go store state between "show dialog" and "accept dialog" messages. These are unsafe for concurrent SSH sessions.
+ Moved 24 package-level mutable vars into a DialogContext struct on Model. Added Locales []string to DialogModel for the locale dialog special case. Replaced ~80 references across 6 files.
+ Removed the side-effect-only InitializeRouteContentContextCmd function and inlined the assignment. Build clean, all tests pass, zero old var names remain.
 
- Add to model.go:
- type DialogContext struct {
-     DeleteContent       *DeleteContentContext
-     DeleteDatatype      *DeleteDatatypeContext
-     DeleteField         *DeleteFieldContext
-     DeleteRoute         *DeleteRouteContext
-     DeleteMedia         *DeleteMediaContext
-     DeleteUser          *DeleteUserContext
-     DeleteAdminRoute    *DeleteAdminRouteContext
-     DeleteAdminDatatype *DeleteAdminDatatypeContext
-     DeleteAdminField    *DeleteAdminFieldContext
-     DeleteContentField  *DeleteContentFieldContext
-     EditSingleField     *editSingleFieldCtx
-     AddContentField     *addContentFieldCtx
-     InitRouteContent    *InitializeRouteContentContext
-     RestoreBackup       *RestoreBackupContext
-     ApprovePlugin       *ApprovePluginContext
-     RestoreRequiresQuit bool
- }
-
- Add DCtx DialogContext field to Model. Change every deleteContentContext = &DeleteContentContext{...} to m.DCtx.DeleteContent = &DeleteContentContext{...}, and similarly for reads and
- clears.
-
- Files: model.go, update_dialog.go, admin_update_dialog.go
- Verify: just check
+ Files changed: model.go, dialog.go, update_dialog.go, admin_update_dialog.go, deploy_update.go, update_controls.go
 
  0.2 Consolidate message types (existing plan)
 
@@ -54,7 +31,7 @@
  Files: message_types.go, admin_message_types.go, constructors.go, admin_constructors.go, update_state.go, update_cms.go, plus new msg_*.go files
  Verify: just check, just test
 
- ---
+---
  Phase 1: Unify the Dialog System
 
  Replace 6 dialog pointer+bool pairs with a single interface.
@@ -115,7 +92,7 @@
  Files: model.go, overlay.go (new), update.go, view.go, panel_view.go, update_state.go, update_dialog.go, admin_update_dialog.go, constructors.go, admin_constructors.go, each dialog file
  Verify: just check. Manual test of each dialog type.
 
- ---
+---
  Phase 2: Screen Interface and AppContext
 
  2.1 Define AppContext
@@ -179,7 +156,7 @@
  Files: app_context.go (new), screen.go (new), model.go, update.go, view.go, update_navigation.go
  Verify: just check. No behavior change -- ActiveScreen is always nil.
 
- ---
+---
  Phase 3: Pilot Screen Migrations
 
  Migrate 3 simple screens to validate the pattern.
@@ -224,7 +201,7 @@
  Files per screen: one new screen_*.go. Remove corresponding code from update_controls.go and view.go.
  Verify per screen: just check. Navigate to screen, test all controls, test dialogs, test back nav.
 
- ---
+---
  Phase 4: Panel Screen Base and CMS Migrations
 
  4.1 PanelScreen base
@@ -333,7 +310,7 @@
  Files: screen_panel.go (new), one new screen_*.go per screen. Remove from update_controls.go, panel_view.go, admin_panel_view.go, update_cms.go, admin_update_cms.go.
  Verify per screen: just check. Full manual walkthrough.
 
- ---
+---
  Phase 5: Migrate Fetch Logic Into Screens
 
  Move fetch request/result handling from UpdateFetch/UpdateAdminFetch into each screen's Update.
@@ -348,7 +325,7 @@
  Files: each screen_*.go, update_fetch.go, admin_update_fetch.go, update.go
  Verify: just check after each screen's fetch migration.
 
- ---
+---
  Phase 6: Slim Down Model
 
  Remove fields from Model that now live in screen components:
@@ -368,7 +345,7 @@
  Files: model.go, delete emptied update_*.go files, update.go (remove dead handler calls)
  Verify: just check, just test, grep for removed field names.
 
- ---
+---
  Phase 7: Cleanup
 
  1. Delete message_types.go and admin_message_types.go if all types have moved to msg_*.go or screen files
@@ -380,7 +357,7 @@
  Files: various deletions, workflow doc update
  Verify: just check, just test
 
- ---
+---
  Implementation Order and Parallelism
 
  Phase 0.1 (context vars) ──┐

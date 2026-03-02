@@ -235,7 +235,7 @@ var tuiV1Cmd = &cobra.Command{
 }
 ```
 
-Runs the original TUI from internal/cli package. Initializes model with cli.InitialModel() and runs with cli.CliRun(). Requires DbDriver instance unlike the new TUI.
+Runs the original TUI from internal/tui package. Initializes model with tui.InitialModel() and runs with tui.CliRun(). Requires DbDriver instance unlike the new TUI.
 
 ### cert Command
 

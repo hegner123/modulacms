@@ -55,7 +55,7 @@ templ FieldDetailContent(field db.Fields, availableRoles []db.Roles, csrfToken s
                         <div class="form-field form-field-checkbox">
                             <label>
                                 <input type="hidden" name="translatable" value="0"/>
-                                if field.Translatable != 0 {
+                                if field.Translatable {
                                     <input type="checkbox" name="translatable" value="1" checked/>
                                 } else {
                                     <input type="checkbox" name="translatable" value="1"/>

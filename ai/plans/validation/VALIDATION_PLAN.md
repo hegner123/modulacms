@@ -330,7 +330,7 @@ Flow per field:
 | relation                 | validate ULID format via types.ContentID.Validate()                      | types_ids.go                                     |
 | json                     | json.Valid()                                                             | stdlib                                           |
 
-**Select validator note:** The select validator parses `fields.data` JSON independently using `json.Unmarshal` into `[]struct{Label string; Value string}`, matching the same format as `SelectBubble.ParseOptionsFromData` in `internal/cli/`. Do not import from `internal/cli/` — the validation package must have no dependency on the TUI package. Consider extracting the select option struct to the `types` package as a shared type so both parsers agree on the format.
+**Select validator note:** The select validator parses `fields.data` JSON independently using `json.Unmarshal` into `[]struct{Label string; Value string}`, matching the same format as `SelectBubble.ParseOptionsFromData` in `internal/tui/`. Do not import from `internal/tui/` — the validation package must have no dependency on the TUI package. Consider extracting the select option struct to the `types` package as a shared type so both parsers agree on the format.
 
 **Unknown field types:** If `ValidateField` encounters a `FieldType` not in the table above (e.g., a custom field type registered via the `field_types` table), skip type-specific validation and run composable rules only. Do not error on unknown types — the CMS supports extensible field types.
 
@@ -498,7 +498,7 @@ Verify GetField(types.FieldID) exists on DbDriver. If not, it needs to be added.
 
 ### Expand ContentFieldInput struct
 
-In internal/cli/form_dialog.go, add validation/data JSON to ContentFieldInput:
+In internal/tui/form_dialog.go, add validation/data JSON to ContentFieldInput:
 
 ```go
 type ContentFieldInput struct {
@@ -590,8 +590,8 @@ In the field rendering loop (`for i, f := range d.Fields` inside `Render`), afte
 | internal/admin/handlers/content.go           | Add validation in ContentCreateHandler (field value validation) and ContentTreeSaveHandler (Phase 4 field updates) |
 | internal/admin/handlers/fields.go            | Add `ValidateValidationConfig` call in FieldCreateHandler and FieldUpdateHandler before persisting field definitions |
 | internal/admin/handlers/datatypes.go         | Add `ValidateValidationConfig` call in DatatypeCreateFieldHandler before creating field   |
-| internal/cli/form_dialog.go                 | Expand structs, add validation state, pre-submit check, per-field error rendering/clearing |
-| internal/cli/commands.go                    | In `HandleFetchContentForEdit`, populate `ValidationJSON` and `DataJSON` on each `ExistingContentField` from the corresponding `db.Fields` lookup |
+| internal/tui/form_dialog.go                 | Expand structs, add validation state, pre-submit check, per-field error rendering/clearing |
+| internal/tui/commands.go                    | In `HandleFetchContentForEdit`, populate `ValidationJSON` and `DataJSON` on each `ExistingContentField` from the corresponding `db.Fields` lookup |
 
 ## Files to Read (reference, existing validators to reuse)
 

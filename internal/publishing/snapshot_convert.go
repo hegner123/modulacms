@@ -129,11 +129,7 @@ func SnapshotFieldsToSlice(items []db.FieldsJSON) ([]db.Fields, error) {
 			sortOrder = 0
 		}
 
-		translatable, err := strconv.ParseInt(item.Translatable, 10, 64)
-		if err != nil {
-			// Default to 0 (not translatable) for snapshots created before i18n.
-			translatable = 0
-		}
+		translatable := item.Translatable == "1" || item.Translatable == "true"
 
 		var roles types.NullableString
 		if item.Roles != "" {

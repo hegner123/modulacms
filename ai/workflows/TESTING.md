@@ -806,7 +806,7 @@ func TestRemoveChild(t *testing.T) {
 
 ### Testing Update Functions
 
-**File:** `internal/cli/update_test.go`
+**File:** `internal/tui/update_test.go`
 
 ```go
 package cli
@@ -1117,7 +1117,7 @@ go tool cover -html=coverage.out
 # Check coverage for specific package
 go test -cover ./internal/db
 go test -cover ./internal/model
-go test -cover ./internal/cli
+go test -cover ./internal/tui
 ```
 
 ### Coverage Output
@@ -1125,7 +1125,7 @@ go test -cover ./internal/cli
 ```
 ok      github.com/hegner123/modulacms/internal/db      2.341s  coverage: 67.8% of statements
 ok      github.com/hegner123/modulacms/internal/model   1.892s  coverage: 82.3% of statements
-ok      github.com/hegner123/modulacms/internal/cli     3.105s  coverage: 45.2% of statements
+ok      github.com/hegner123/modulacms/internal/tui     3.105s  coverage: 45.2% of statements
 ```
 
 ### Coverage Goals

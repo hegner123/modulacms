@@ -1660,7 +1660,7 @@ func main() {
 
 **Why:** CLI has different architecture (Bubbletea). Needs its own design.
 
-**Files:** `internal/cli/*.go` (~20 files, ~3000 lines)
+**Files:** `internal/tui/*.go` (~20 files, ~3000 lines)
 
 **Architecture:**
 
@@ -1674,7 +1674,7 @@ The challenge: Models can't easily accept interfaces in constructors because the
 **Solution: CLIServices container**
 
 ```go
-// internal/cli/services.go
+// internal/tui/services.go
 package cli
 
 import (
@@ -1709,7 +1709,7 @@ type ContentService interface {
 ```
 
 ```go
-// internal/cli/model.go
+// internal/tui/model.go
 package cli
 
 type Model struct {
