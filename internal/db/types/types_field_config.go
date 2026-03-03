@@ -129,13 +129,13 @@ func ClassifyChar(c rune, class CharClass) bool {
 // ValidationRule is a single validation predicate.
 type ValidationRule struct {
 	Op      RuleOp    `json:"op"`                // operation to perform
-	Value   string    `json:"value,omitempty"`    // literal string (for contains, starts_with, ends_with, equals)
-	Values  []string  `json:"values,omitempty"`   // set of values (for one_of)
-	Class   CharClass `json:"class,omitempty"`    // character class (alternative to Value for contains/count)
-	Cmp     Cmp       `json:"cmp,omitempty"`      // comparison operator (required for length, count, range, item_count)
-	N       *float64  `json:"n,omitempty"`        // numeric operand (for length, count, range, item_count)
-	Negate  bool      `json:"negate,omitempty"`   // invert the result (contains -> not_contains)
-	Message string    `json:"message,omitempty"`  // custom error message (overrides default)
+	Value   string    `json:"value,omitempty"`   // literal string (for contains, starts_with, ends_with, equals)
+	Values  []string  `json:"values,omitempty"`  // set of values (for one_of)
+	Class   CharClass `json:"class,omitempty"`   // character class (alternative to Value for contains/count)
+	Cmp     Cmp       `json:"cmp,omitempty"`     // comparison operator (required for length, count, range, item_count)
+	N       *float64  `json:"n,omitempty"`       // numeric operand (for length, count, range, item_count)
+	Negate  bool      `json:"negate,omitempty"`  // invert the result (contains -> not_contains)
+	Message string    `json:"message,omitempty"` // custom error message (overrides default)
 }
 
 // RuleEntry is a single entry in a validation rule list, containing either a

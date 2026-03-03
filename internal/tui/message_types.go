@@ -3,6 +3,7 @@ package tui
 import (
 	"database/sql"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -570,6 +571,13 @@ type MediaUploadStartMsg struct {
 // MediaUploadedMsg signals upload completed successfully
 type MediaUploadedMsg struct {
 	Name string
+}
+
+// MediaUploadProgressMsg carries upload progress for the status display.
+type MediaUploadProgressMsg struct {
+	BytesSent  int64
+	Total      int64
+	ProgressCh <-chan tea.Msg // channel for the next progress message
 }
 
 // ReorderSiblingRequestMsg requests reordering content siblings.

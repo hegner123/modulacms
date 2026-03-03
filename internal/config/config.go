@@ -75,6 +75,10 @@ type Config struct {
 	Db_Name                 string              `json:"db_name"`
 	Db_User                 string              `json:"db_username"`
 	Db_Password             string              `json:"db_password"`
+
+	// Remote connection (mutually exclusive with Db_Driver for connect command)
+	Remote_URL     string `json:"remote_url"`
+	Remote_API_Key string `json:"remote_api_key"`
 	Bucket_Region           string              `json:"bucket_region"`
 	Bucket_Media            string              `json:"bucket_media"`
 	Bucket_Backup           string              `json:"bucket_backup"`

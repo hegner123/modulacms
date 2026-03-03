@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -82,7 +83,8 @@ func TokenCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
-		tokenValue := hex.EncodeToString(tokenBytes)
+		rawToken := "mcms_" + hex.EncodeToString(tokenBytes)
+		hashedToken := utility.HashToken(rawToken)
 
 		now := time.Now()
 		expiresAt := types.NewTimestamp(now.Add(365 * 24 * time.Hour))
@@ -97,7 +99,7 @@ func TokenCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		params := db.CreateTokenParams{
 			UserID:    types.NullableUserID{ID: user.UserID, Valid: true},
 			TokenType: tokenType,
-			Token:     tokenValue,
+			Token:     hashedToken,
 			IssuedAt:  types.TimestampNow(),
 			ExpiresAt: expiresAt,
 			Revoked:   false,
@@ -127,7 +129,8 @@ func TokenCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			if items != nil {
 				tokens = *items
 			}
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "API token created", "type": "success"}}`)
+			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Copy your token now — it will not be shown again: %s", "type": "success", "persist": true}}`, rawToken)
+			w.Header().Set("HX-Trigger", toastMsg)
 			Render(w, r, partials.TokensTableRows(tokens))
 			return
 		}

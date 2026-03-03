@@ -11,8 +11,8 @@ import (
 func TestFuzzyScore(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name  string
-		query string
+		name   string
+		query  string
 		target string
 		wantOK bool
 	}{

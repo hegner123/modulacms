@@ -18,7 +18,7 @@ import (
 func LocalesHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	switch r.Method {
 	case http.MethodGet:
-		apiListLocales(w, c)
+		apiListLocales(w, r, c)
 	case http.MethodPost:
 		apiCreateLocale(w, r, c)
 	default:
@@ -89,8 +89,24 @@ func apiGetLocale(w http.ResponseWriter, r *http.Request, c config.Config) error
 }
 
 // apiListLocales handles GET requests for listing all locales.
-func apiListLocales(w http.ResponseWriter, c config.Config) error {
+// Supports optional enabled=true query parameter to return only enabled locales.
+func apiListLocales(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
+
+	enabledParam := r.URL.Query().Get("enabled")
+	if enabledParam == "true" {
+		locales, err := d.ListEnabledLocales()
+		if err != nil {
+			utility.DefaultLogger.Error("", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(locales)
+		return nil
+	}
 
 	locales, err := d.ListLocales()
 	if err != nil {

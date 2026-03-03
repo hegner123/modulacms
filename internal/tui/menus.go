@@ -7,11 +7,16 @@ import (
 )
 
 // HomepageMenuInit initializes the menu for the homepage with main navigation pages.
+// In remote mode, DATABASEPAGE is excluded because it requires raw SQL access.
 func (m Model) HomepageMenuInit() []Page {
-	HomepageMenu := []Page{
+	pages := []Page{
 		m.PageMap[CMSPAGE],
 		m.PageMap[ADMINCMSPAGE],
-		m.PageMap[DATABASEPAGE],
+	}
+	if !m.IsRemote {
+		pages = append(pages, m.PageMap[DATABASEPAGE])
+	}
+	pages = append(pages,
 		m.PageMap[QUICKSTARTPAGE],
 		m.PageMap[CONFIGPAGE],
 		m.PageMap[ACTIONSPAGE],
@@ -19,9 +24,8 @@ func (m Model) HomepageMenuInit() []Page {
 		m.PageMap[PIPELINESPAGE],
 		m.PageMap[DEPLOYPAGE],
 		m.PageMap[WEBHOOKSPAGE],
-	}
-
-	return HomepageMenu
+	)
+	return pages
 }
 
 // CmsMenuInit initializes the menu for CMS navigation with content management pages.

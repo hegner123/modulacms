@@ -12,7 +12,31 @@ var (
 var rootCmd = &cobra.Command{
 	Use:           "modula",
 	Short:         "Modula - A headless CMS written in Go",
-	Long:          "Modula serves content over HTTP/HTTPS and provides SSH access for backend management.",
+	Long: `ModulaCMS is a headless content management system that runs as a single binary.
+
+It serves content over HTTP/HTTPS and provides an SSH-accessible terminal UI for
+backend management. Content is managed via the SSH TUI, a web admin panel, or the
+REST API and delivered to frontend clients over HTTP/HTTPS.
+
+Core commands:
+  serve      Start all servers (HTTP, HTTPS, SSH)
+  install    Run the first-time setup wizard
+  connect    Launch the TUI for a remote or registered project
+  tui        Launch the TUI locally without starting the server
+
+Management commands:
+  db         Initialize, wipe, reset, or export the database
+  backup     Create, restore, or list backups
+  config     Show, validate, or update configuration
+  cert       Generate self-signed SSL certificates
+  deploy     Export, import, and sync content between environments
+  plugin     Manage Lua plugins (install, enable, reload, approve)
+  pipeline   View and manage plugin pipeline entries
+  update     Check for and apply binary updates
+
+Global flags:
+  --config   Path to config.json (default: ./config.json)
+  --verbose  Enable debug-level log output`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
@@ -33,6 +57,7 @@ func init() {
 	rootCmd.AddCommand(pluginCmd)
 	rootCmd.AddCommand(pipelineCmd)
 	rootCmd.AddCommand(deployCmd)
+	rootCmd.AddCommand(connectCmd)
 }
 
 // Execute runs the root CLI command and returns any error encountered.

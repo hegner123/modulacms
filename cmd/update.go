@@ -13,6 +13,14 @@ import (
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Check for and apply updates",
+	Long: `Check GitHub releases for a newer version of ModulaCMS and apply it in place.
+
+Compares the current binary version against the latest stable release. If an
+update is available, downloads the platform-appropriate binary and replaces
+the running executable. Requires a restart after updating.
+
+Examples:
+  modula update`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 

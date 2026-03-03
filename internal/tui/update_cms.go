@@ -215,6 +215,10 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		return m, m.HandleDeleteRoute(msg)
 	case MediaUploadStartMsg:
 		return m, m.HandleMediaUpload(msg)
+	case MediaUploadProgressMsg:
+		// Chain next progress read; the final message will be
+		// MediaUploadedMsg or ActionResultMsg, not another progress.
+		return m, waitForMsg(msg.ProgressCh)
 	case MediaUploadedMsg:
 		return m, tea.Batch(
 			MediaFetchCmd(),

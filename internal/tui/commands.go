@@ -308,31 +308,55 @@ func (m Model) CreateContentWithFields(
 			}
 		}
 
-		// Step 2: Create ContentFields (we have the ID now!)
+		// Step 2: Create ContentFields for every field defined on the datatype.
+		// Uses the canonical field list so all fields get a content_field row,
+		// matching the API/admin panel behavior.
 		var failedFields []types.FieldID
 		createdFields := 0
 
-		for fieldID, value := range fieldValues {
-			// Skip empty values
-			if value == "" {
-				continue
+		allFields, fieldListErr := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: datatypeID, Valid: true})
+		if fieldListErr != nil {
+			logger.Ferror("Failed to list datatype fields, falling back to user-provided fields only", fieldListErr)
+		}
+
+		if allFields != nil && len(*allFields) > 0 {
+			for _, field := range *allFields {
+				value := fieldValues[field.FieldID] // "" if not in map
+
+				fieldResult, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
+					ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
+					FieldID:       types.NullableFieldID{ID: field.FieldID, Valid: true},
+					FieldValue:    value,
+					RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
+					AuthorID:      authorID,
+					DateCreated:   types.TimestampNow(),
+					DateModified:  types.TimestampNow(),
+				})
+
+				if fieldErr != nil || fieldResult.ContentFieldID.IsZero() {
+					failedFields = append(failedFields, field.FieldID)
+				} else {
+					createdFields++
+				}
 			}
+		} else if fieldListErr != nil {
+			// Fallback: use only user-provided values when canonical list unavailable
+			for fieldID, value := range fieldValues {
+				fieldResult, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
+					ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
+					FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
+					FieldValue:    value,
+					RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
+					AuthorID:      authorID,
+					DateCreated:   types.TimestampNow(),
+					DateModified:  types.TimestampNow(),
+				})
 
-			fieldResult, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
-				ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
-				FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
-				FieldValue:    value,
-				RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
-				AuthorID:      authorID,
-				DateCreated:   types.TimestampNow(),
-				DateModified:  types.TimestampNow(),
-			})
-
-			// Track failures
-			if fieldErr != nil || fieldResult.ContentFieldID.IsZero() {
-				failedFields = append(failedFields, fieldID)
-			} else {
-				createdFields++
+				if fieldErr != nil || fieldResult.ContentFieldID.IsZero() {
+					failedFields = append(failedFields, fieldID)
+				} else {
+					createdFields++
+				}
 			}
 		}
 
@@ -399,31 +423,53 @@ func (m Model) HandleCreateContentFromDialog(
 			}
 		}
 
-		// Step 2: Create ContentFields
+		// Step 2: Create ContentFields for every field defined on the datatype.
 		var failedFields []types.FieldID
 		createdFields := 0
 
-		for fieldID, value := range msg.FieldValues {
-			// Skip empty values
-			if value == "" {
-				continue
+		allFields, fieldListErr := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true})
+		if fieldListErr != nil {
+			logger.Ferror("Failed to list datatype fields, falling back to user-provided fields only", fieldListErr)
+		}
+
+		if allFields != nil && len(*allFields) > 0 {
+			for _, field := range *allFields {
+				value := msg.FieldValues[field.FieldID] // "" if not in map
+
+				fieldResult, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
+					ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
+					FieldID:       types.NullableFieldID{ID: field.FieldID, Valid: true},
+					FieldValue:    value,
+					RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
+					AuthorID:      authorID,
+					DateCreated:   types.TimestampNow(),
+					DateModified:  types.TimestampNow(),
+				})
+
+				if fieldErr != nil || fieldResult.ContentFieldID.IsZero() {
+					failedFields = append(failedFields, field.FieldID)
+				} else {
+					createdFields++
+				}
 			}
+		} else if fieldListErr != nil {
+			// Fallback: use only user-provided values when canonical list unavailable
+			for fieldID, value := range msg.FieldValues {
+				fieldResult, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
+					ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
+					FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
+					FieldValue:    value,
+					RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
+					AuthorID:      authorID,
+					DateCreated:   types.TimestampNow(),
+					DateModified:  types.TimestampNow(),
+				})
 
-			fieldResult, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
-				ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
-				FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
-				FieldValue:    value,
-				RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
-				AuthorID:      authorID,
-				DateCreated:   types.TimestampNow(),
-				DateModified:  types.TimestampNow(),
-			})
-
-			// Track failures
-			if fieldErr != nil || fieldResult.ContentFieldID.IsZero() {
-				failedFields = append(failedFields, fieldID)
-			} else {
-				createdFields++
+				if fieldErr != nil || fieldResult.ContentFieldID.IsZero() {
+					failedFields = append(failedFields, fieldID)
+				} else {
+					createdFields++
+				}
 			}
 		}
 
@@ -1589,19 +1635,98 @@ func (m Model) ReloadContentTree(c *config.Config, routeID types.RouteID) tea.Cm
 	}
 }
 
+// MediaUploader is a consumer-defined interface satisfied by RemoteDriver.
+// The TUI type-asserts the DbDriver to this interface for remote media uploads.
+type MediaUploader interface {
+	UploadMedia(ctx context.Context, filePath string) (*db.Media, error)
+}
+
+// MediaProgressUploader extends MediaUploader with progress callback support.
+type MediaProgressUploader interface {
+	MediaUploader
+	UploadMediaWithProgress(ctx context.Context, filePath string, progressFn func(bytesSent int64, total int64)) (*db.Media, error)
+}
+
+// waitForMsg returns a tea.Cmd that blocks until a message arrives on ch.
+func waitForMsg(ch <-chan tea.Msg) tea.Cmd {
+	return func() tea.Msg {
+		return <-ch
+	}
+}
+
 // HandleMediaUpload runs the media upload pipeline asynchronously.
+// In remote mode, the file is sent to the server via the SDK with progress.
+// In local mode, the existing optimize+S3 pipeline runs.
 func (m Model) HandleMediaUpload(msg MediaUploadStartMsg) tea.Cmd {
 	logger := m.Logger
 	if logger == nil {
 		logger = utility.DefaultLogger
 	}
 	cfg := m.Config
+	isRemote := m.IsRemote
 	return func() tea.Msg {
 		filename := filepath.Base(msg.FilePath)
 		baseName := strings.TrimSuffix(filename, filepath.Ext(filename))
 
 		logger.Finfo(fmt.Sprintf("Starting media upload: %s", filename))
 
+		// Remote mode: upload via SDK with progress channel
+		if isRemote {
+			d := db.ConfigDB(*cfg)
+			progressCh := make(chan tea.Msg, 1)
+
+			// Try progress-aware uploader first, fall back to basic
+			if pu, ok := d.(MediaProgressUploader); ok {
+				go func() {
+					progressFn := func(bytesSent int64, total int64) {
+						select {
+						case progressCh <- MediaUploadProgressMsg{
+							BytesSent:  bytesSent,
+							Total:      total,
+							ProgressCh: progressCh,
+						}:
+						default: // don't block if channel is full
+						}
+					}
+					_, err := pu.UploadMediaWithProgress(context.Background(), msg.FilePath, progressFn)
+					if err != nil {
+						logger.Ferror("Remote media upload failed", err)
+						progressCh <- ActionResultMsg{
+							Title:   "Upload Error",
+							Message: fmt.Sprintf("Upload failed: %v", err),
+							IsError: true,
+						}
+						return
+					}
+					logger.Finfo(fmt.Sprintf("Media uploaded remotely: %s", baseName))
+					progressCh <- MediaUploadedMsg{Name: baseName}
+				}()
+				return <-progressCh
+			}
+
+			// Fall back to basic uploader without progress
+			uploader, ok := d.(MediaUploader)
+			if !ok {
+				return ActionResultMsg{
+					Title:   "Upload Error",
+					Message: "Remote driver does not support media upload",
+					IsError: true,
+				}
+			}
+			_, err := uploader.UploadMedia(context.Background(), msg.FilePath)
+			if err != nil {
+				logger.Ferror("Remote media upload failed", err)
+				return ActionResultMsg{
+					Title:   "Upload Error",
+					Message: fmt.Sprintf("Upload failed: %v", err),
+					IsError: true,
+				}
+			}
+			logger.Finfo(fmt.Sprintf("Media uploaded remotely: %s", baseName))
+			return MediaUploadedMsg{Name: baseName}
+		}
+
+		// Local mode: existing pipeline
 		// Step 1: Create placeholder DB record
 		_, err := media.CreateMedia(baseName, *cfg)
 		if err != nil {
@@ -2024,23 +2149,83 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 			}
 		}
 
-		// Copy fields
+		// Copy fields — iterate the canonical datatype field list so all fields
+		// get a content_field row, even if the source was created via the old
+		// sparse TUI path.
 		fieldCount := 0
+
+		// Build lookup map from source content fields
+		sourceFieldMap := make(map[types.FieldID]string)
 		if sourceFields != nil {
-			for _, field := range *sourceFields {
-				_, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
-					RouteID:       field.RouteID,
-					ContentDataID: types.NullableContentID{ID: newContent.ContentDataID, Valid: true},
-					FieldID:       field.FieldID,
-					FieldValue:    field.FieldValue,
-					AuthorID:      userID,
-					DateCreated:   now,
-					DateModified:  now,
-				})
-				if fieldErr != nil {
-					logger.Ferror(fmt.Sprintf("Failed to copy field: %v", fieldErr), fieldErr)
+			for _, sf := range *sourceFields {
+				if sf.FieldID.Valid {
+					sourceFieldMap[sf.FieldID.ID] = sf.FieldValue
 				}
-				fieldCount++
+			}
+		}
+
+		if source.DatatypeID.Valid {
+			allFields, fieldListErr := d.ListFieldsByDatatypeID(source.DatatypeID)
+			if fieldListErr != nil {
+				logger.Ferror("Failed to list datatype fields for copy, falling back to source fields only", fieldListErr)
+			}
+
+			if allFields != nil && len(*allFields) > 0 {
+				for _, field := range *allFields {
+					value := sourceFieldMap[field.FieldID] // "" if not in source
+
+					_, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
+						RouteID:       source.RouteID,
+						ContentDataID: types.NullableContentID{ID: newContent.ContentDataID, Valid: true},
+						FieldID:       types.NullableFieldID{ID: field.FieldID, Valid: true},
+						FieldValue:    value,
+						AuthorID:      userID,
+						DateCreated:   now,
+						DateModified:  now,
+					})
+					if fieldErr != nil {
+						logger.Ferror(fmt.Sprintf("Failed to copy field: %v", fieldErr), fieldErr)
+					}
+					fieldCount++
+				}
+			} else if fieldListErr != nil {
+				// Fallback: copy only source fields when canonical list unavailable
+				if sourceFields != nil {
+					for _, field := range *sourceFields {
+						_, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
+							RouteID:       field.RouteID,
+							ContentDataID: types.NullableContentID{ID: newContent.ContentDataID, Valid: true},
+							FieldID:       field.FieldID,
+							FieldValue:    field.FieldValue,
+							AuthorID:      userID,
+							DateCreated:   now,
+							DateModified:  now,
+						})
+						if fieldErr != nil {
+							logger.Ferror(fmt.Sprintf("Failed to copy field: %v", fieldErr), fieldErr)
+						}
+						fieldCount++
+					}
+				}
+			}
+		} else {
+			// No datatype — just copy whatever source fields exist
+			if sourceFields != nil {
+				for _, field := range *sourceFields {
+					_, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
+						RouteID:       field.RouteID,
+						ContentDataID: types.NullableContentID{ID: newContent.ContentDataID, Valid: true},
+						FieldID:       field.FieldID,
+						FieldValue:    field.FieldValue,
+						AuthorID:      userID,
+						DateCreated:   now,
+						DateModified:  now,
+					})
+					if fieldErr != nil {
+						logger.Ferror(fmt.Sprintf("Failed to copy field: %v", fieldErr), fieldErr)
+					}
+					fieldCount++
+				}
 			}
 		}
 
@@ -2107,6 +2292,7 @@ func (m Model) HandleConfirmedPublish(msg ConfirmedPublishMsg) tea.Cmd {
 
 	userID := m.UserID
 	locale := m.ActiveLocale
+	dispatcher := m.Dispatcher
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
 		ctx := context.Background()
@@ -2114,7 +2300,7 @@ func (m Model) HandleConfirmedPublish(msg ConfirmedPublishMsg) tea.Cmd {
 		logger := utility.DefaultLogger
 
 		retentionCap := cfg.VersionMaxPerContent()
-		_, pubErr := publishing.PublishContent(ctx, d, msg.ContentID, locale, userID, ac, retentionCap, nil)
+		_, pubErr := publishing.PublishContent(ctx, d, msg.ContentID, locale, userID, ac, retentionCap, dispatcher)
 		if pubErr != nil {
 			logger.Ferror(fmt.Sprintf("Failed to publish content %s", msg.ContentID), pubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Publish failed: %v", pubErr)}
@@ -2139,13 +2325,14 @@ func (m Model) HandleConfirmedUnpublish(msg ConfirmedUnpublishMsg) tea.Cmd {
 
 	userID := m.UserID
 	locale := m.ActiveLocale
+	dispatcher := m.Dispatcher
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
 		ctx := context.Background()
 		ac := middleware.AuditContextFromCLI(*cfg, userID)
 		logger := utility.DefaultLogger
 
-		unpubErr := publishing.UnpublishContent(ctx, d, msg.ContentID, locale, userID, ac, nil)
+		unpubErr := publishing.UnpublishContent(ctx, d, msg.ContentID, locale, userID, ac, dispatcher)
 		if unpubErr != nil {
 			logger.Ferror(fmt.Sprintf("Failed to unpublish content %s", msg.ContentID), unpubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Unpublish failed: %v", unpubErr)}

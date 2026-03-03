@@ -30,33 +30,56 @@ type ActionParams struct {
 
 // ActionItem describes a single action available on the Actions page.
 type ActionItem struct {
+	Index       int // Original index into the full actions list, used by RunActionCmd.
 	Label       string
 	Description string
 	Destructive bool
 }
 
 // ActionsMenu returns the ordered list of action items.
-// The index in this slice matches the cursor position on the Actions page.
+// Each item's Index matches its position in this canonical list and is used
+// by RunActionCmd/RunDestructiveActionCmd to dispatch the correct handler.
 func ActionsMenu() []ActionItem {
 	return []ActionItem{
-		{Label: "DB Init", Description: "Create database tables and bootstrap data"},
-		{Label: "DB Wipe", Description: "Drop ALL tables and delete ALL data", Destructive: true},
-		{Label: "DB Wipe & Redeploy", Description: "Drop all tables, recreate schema, and bootstrap data", Destructive: true},
-		{Label: "DB Reset", Description: "Delete the database file (SQLite only)", Destructive: true},
-		{Label: "DB Export", Description: "Dump database SQL to file"},
-		{Label: "Generate Certs", Description: "Generate self-signed SSL certificates"},
-		{Label: "Check for Updates", Description: "Check for and apply updates"},
-		{Label: "Validate Config", Description: "Validate the configuration file"},
-		{Label: "Generate API Token", Description: "Create a new API token for the current user"},
-		{Label: "Register SSH Key", Description: "Create a new user and register the current SSH key"},
-		{Label: "Create Backup", Description: "Create a backup of database and configured paths"},
-		{Label: "Restore Backup", Description: "Restore from a backup archive", Destructive: true},
+		{Index: 0, Label: "DB Init", Description: "Create database tables and bootstrap data"},
+		{Index: 1, Label: "DB Wipe", Description: "Drop ALL tables and delete ALL data", Destructive: true},
+		{Index: 2, Label: "DB Wipe & Redeploy", Description: "Drop all tables, recreate schema, and bootstrap data", Destructive: true},
+		{Index: 3, Label: "DB Reset", Description: "Delete the database file (SQLite only)", Destructive: true},
+		{Index: 4, Label: "DB Export", Description: "Dump database SQL to file"},
+		{Index: 5, Label: "Generate Certs", Description: "Generate self-signed SSL certificates"},
+		{Index: 6, Label: "Check for Updates", Description: "Check for and apply updates"},
+		{Index: 7, Label: "Validate Config", Description: "Validate the configuration file"},
+		{Index: 8, Label: "Generate API Token", Description: "Create a new API token for the current user"},
+		{Index: 9, Label: "Register SSH Key", Description: "Create a new user and register the current SSH key"},
+		{Index: 10, Label: "Create Backup", Description: "Create a backup of database and configured paths"},
+		{Index: 11, Label: "Restore Backup", Description: "Restore from a backup archive", Destructive: true},
 	}
+}
+
+// ActionsMenuForMode returns the action items appropriate for the current mode.
+// In remote mode, only Check for Updates, Validate Config, and Generate API Token
+// are available. All other actions require local database access.
+func ActionsMenuForMode(isRemote bool) []ActionItem {
+	all := ActionsMenu()
+	if !isRemote {
+		return all
+	}
+	return []ActionItem{all[6], all[7], all[8]}
 }
 
 // ActionsMenuLabels returns just the label strings for menu rendering.
 func ActionsMenuLabels() []string {
 	items := ActionsMenu()
+	labels := make([]string, len(items))
+	for i, item := range items {
+		labels[i] = item.Label
+	}
+	return labels
+}
+
+// ActionsMenuLabelsForMode returns labels for the mode-appropriate action items.
+func ActionsMenuLabelsForMode(isRemote bool) []string {
+	items := ActionsMenuForMode(isRemote)
 	labels := make([]string, len(items))
 	for i, item := range items {
 		labels[i] = item.Label
@@ -358,21 +381,30 @@ func runCheckForUpdates() tea.Cmd {
 }
 
 // runValidateConfig creates a command to validate the configuration file.
+// Validates either remote (remote_url) or local (db_driver + db_url + ports) config.
 func runValidateConfig(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
 		var errs []string
 
-		if cfg.Db_Driver == "" {
-			errs = append(errs, "db_driver is required")
-		}
-		if cfg.Db_URL == "" {
-			errs = append(errs, "db_url is required")
-		}
-		if cfg.Port == "" {
-			errs = append(errs, "port is required")
-		}
-		if cfg.SSH_Port == "" {
-			errs = append(errs, "ssh_port is required")
+		if cfg.Remote_URL != "" {
+			// Remote mode: only remote_url and remote_api_key are needed
+			if cfg.Remote_API_Key == "" {
+				errs = append(errs, "remote_api_key is required when remote_url is set")
+			}
+		} else {
+			// Local mode: database and server config required
+			if cfg.Db_Driver == "" {
+				errs = append(errs, "db_driver is required")
+			}
+			if cfg.Db_URL == "" {
+				errs = append(errs, "db_url is required")
+			}
+			if cfg.Port == "" {
+				errs = append(errs, "port is required")
+			}
+			if cfg.SSH_Port == "" {
+				errs = append(errs, "ssh_port is required")
+			}
 		}
 
 		if len(errs) > 0 {
@@ -387,9 +419,13 @@ func runValidateConfig(cfg *config.Config) tea.Cmd {
 			}
 		}
 
+		mode := "local"
+		if cfg.Remote_URL != "" {
+			mode = "remote (" + cfg.Remote_URL + ")"
+		}
 		return ActionResultMsg{
 			Title:   "Validation Passed",
-			Message: "Configuration is valid.",
+			Message: fmt.Sprintf("Configuration is valid.\nMode: %s", mode),
 		}
 	}
 }
@@ -448,7 +484,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 			}
 		}
 
-		token, err := utility.MakeRandomString()
+		rawToken, err := utility.MakeRandomString()
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Token Generation Failed",
@@ -456,6 +492,8 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 				IsError: true,
 			}
 		}
+		token := "mcms_" + rawToken
+		hashedToken := utility.HashToken(token)
 
 		now := time.Now().UTC()
 		expiry := now.AddDate(0, 0, 90)
@@ -466,7 +504,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 		_, tokenErr := driver.CreateToken(ctx, ac, db.CreateTokenParams{
 			UserID:    types.NullableUserID{ID: ownerID, Valid: true},
 			TokenType: "api_key",
-			Token:     token,
+			Token:     hashedToken,
 			IssuedAt:  types.NewTimestamp(now),
 			ExpiresAt: types.NewTimestamp(expiry),
 			Revoked:   false,

@@ -22,6 +22,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
 	"github.com/hegner123/modulacms/internal/plugin"
+	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/tree"
 
 	"github.com/hegner123/modulacms/internal/utility"
@@ -193,6 +194,7 @@ type Model struct {
 
 	// Webhook management
 	WebhooksList []db.Webhook
+	Dispatcher   publishing.WebhookDispatcher // nil when webhooks disabled
 
 	// i18n locale state
 	ActiveLocale string // Current locale code; "" means i18n disabled / default behavior
@@ -203,6 +205,14 @@ type Model struct {
 	VersionContentID types.ContentID
 	VersionRouteID   types.RouteID
 	VersionCursor    int
+
+	// IsRemote is true when connected to a remote CMS server via Go SDK.
+	// Used to guard operations that require local database access.
+	IsRemote bool
+
+	// RemoteURL is the base URL of the remote CMS server (e.g., "https://cms.example.com").
+	// Empty when running in local mode. Displayed in the status bar.
+	RemoteURL string
 
 	// DBReadyCh is signalled after DB init/redeploy so serve can reload
 	// the permission cache and start HTTP/HTTPS servers.
@@ -303,7 +313,7 @@ func ShowDialog(title, message string, showCancel bool) tea.Cmd {
 
 // InitialModel creates and initializes a new Model with the provided configuration, database driver, logger, and optional plugin manager.
 // dbReadyCh is an optional channel signalled after DB init so the serve command can start HTTP.
-func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, pluginMgr *plugin.Manager, mgr *config.Manager, dbReadyCh chan struct{}) (Model, tea.Cmd) {
+func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, pluginMgr *plugin.Manager, mgr *config.Manager, dbReadyCh chan struct{}, dispatcher publishing.WebhookDispatcher) (Model, tea.Cmd) {
 	// Use provided logger or fall back to utility.DefaultLogger
 	if logger == nil {
 		logger = utility.DefaultLogger
@@ -375,6 +385,7 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, 
 		PluginManager: pluginMgr,
 		ConfigManager: mgr,
 		DBReadyCh:     dbReadyCh,
+		Dispatcher:    dispatcher,
 	}
 	m.PageMenu = m.HomepageMenuInit()
 	return m, tea.Batch(

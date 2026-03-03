@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/hegner123/modulacms/internal/config"
@@ -12,11 +13,34 @@ import (
 var configParentCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Configuration management commands",
+	Long: `View, validate, and modify the ModulaCMS configuration file (config.json).
+
+Subcommands:
+  show       Print the full loaded configuration as JSON
+  validate   Check that required fields are present and valid
+  set        Update a single configuration field and save to disk
+  fields     List every available configuration field with its description
+
+Examples:
+  modula config show
+  modula config validate
+  modula config set port ":9090"
+  modula config fields
+  modula config fields --category server
+  modula config fields port`,
 }
 
 var configShowCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Print the loaded configuration as JSON",
+	Long: `Load config.json and print its full contents as formatted JSON to stdout.
+
+Reads from the path specified by --config (default: ./config.json). Environment
+variable references (${VAR}) in the config file are expanded before display.
+
+Examples:
+  modula config show
+  modula config show --config /etc/modula/config.json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -38,6 +62,14 @@ var configShowCmd = &cobra.Command{
 var configValidateCmd = &cobra.Command{
 	Use:   "validate",
 	Short: "Validate the configuration file",
+	Long: `Load config.json and check that all required fields are present and non-empty.
+
+Required fields: db_driver, db_url, port, ssh_port. Reports the count and
+details of any validation errors found.
+
+Examples:
+  modula config validate
+  modula config validate --config /etc/modula/config.json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -74,6 +106,21 @@ var configValidateCmd = &cobra.Command{
 var configSetCmd = &cobra.Command{
 	Use:   "set <key> <value>",
 	Short: "Update a configuration field and save to disk",
+	Long: `Update a single field in config.json and write the file back to disk.
+
+The key must be a known configuration field name. Use "modula config fields" to
+see all available keys and their descriptions. If the updated field requires a
+server restart to take effect, a notice is printed.
+
+Arguments:
+  key     Configuration field name (e.g. port, db_driver, environment)
+  value   New value for the field
+
+Examples:
+  modula config set port ":9090"
+  modula config set environment "production"
+  modula config set db_driver "postgres"
+  modula config set ssh_port "2223"`,
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
@@ -83,7 +130,7 @@ var configSetCmd = &cobra.Command{
 
 		// Validate the key exists in the field registry
 		if _, ok := config.FieldByKey(key); !ok {
-			return fmt.Errorf("unknown config key %q; run 'config show' to see available keys", key)
+			return fmt.Errorf("unknown config key %q; run 'modula config fields' to see available keys", key)
 		}
 
 		mgr, err := loadConfig()
@@ -111,8 +158,138 @@ var configSetCmd = &cobra.Command{
 	},
 }
 
+var configFieldsCmd = &cobra.Command{
+	Use:   "fields [field-name]",
+	Short: "List every available configuration field",
+	Long: `List all configuration fields that config.json accepts, grouped by category.
+
+Each field shows its JSON key (used with "modula config set"), a description,
+and flags indicating whether it is required, hot-reloadable (takes effect
+without restart), or sensitive (contains secrets).
+
+When filtering by --category or looking up a specific field by name, example
+values and usage are shown for each field.
+
+Arguments:
+  field-name   Optional. A specific field key to look up (e.g. port, db_driver).
+               Shows full detail including example value and config set usage.
+
+Flags:
+  --category   Filter by category (server, database, storage, cors, cookie,
+               oauth, observability, email, plugin, update, misc)
+
+Examples:
+  modula config fields                     # list all fields (compact)
+  modula config fields --category server   # list server fields with examples
+  modula config fields --category database # list database fields with examples
+  modula config fields port                # show detail for a single field`,
+	Args: cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		categoryFlag, _ := cmd.Flags().GetString("category")
+		out := cmd.OutOrStdout()
+
+		// Single field lookup
+		if len(args) == 1 {
+			f, ok := config.FieldByKey(args[0])
+			if !ok {
+				return fmt.Errorf("unknown field %q; run 'modula config fields' to see all available fields", args[0])
+			}
+			printFieldDetail(out, f)
+			return nil
+		}
+
+		// Determine whether to show examples (filtered view) or compact (full listing)
+		showExamples := categoryFlag != ""
+
+		categories := config.AllCategories()
+		if categoryFlag != "" {
+			matched := false
+			for _, c := range categories {
+				if string(c) == categoryFlag {
+					categories = []config.FieldCategory{c}
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				var names []string
+				for _, c := range config.AllCategories() {
+					names = append(names, string(c))
+				}
+				return fmt.Errorf("unknown category %q; available: %s", categoryFlag, strings.Join(names, ", "))
+			}
+		}
+
+		for i, cat := range categories {
+			if i > 0 {
+				fmt.Fprintln(out)
+			}
+			fmt.Fprintf(out, "[%s]\n", config.CategoryLabel(cat))
+
+			fields := config.FieldsByCategory(cat)
+			for _, f := range fields {
+				var tags []string
+				if f.Required {
+					tags = append(tags, "required")
+				}
+				if f.HotReloadable {
+					tags = append(tags, "hot-reload")
+				}
+				if f.Sensitive {
+					tags = append(tags, "sensitive")
+				}
+
+				tagStr := ""
+				if len(tags) > 0 {
+					tagStr = "  [" + strings.Join(tags, ", ") + "]"
+				}
+
+				fmt.Fprintf(out, "  %-35s %s%s\n", f.JSONKey, f.Description, tagStr)
+
+				if showExamples && f.Example != "" {
+					fmt.Fprintf(out, "  %-35s example: %s\n", "", f.Example)
+					fmt.Fprintf(out, "  %-35s usage:   modula config set %s %q\n", "", f.JSONKey, f.Example)
+				}
+			}
+		}
+
+		return nil
+	},
+}
+
+// printFieldDetail prints full information for a single field, including
+// its category, description, flags, example value, and config set usage.
+func printFieldDetail(out io.Writer, f config.FieldMeta) {
+	fmt.Fprintf(out, "Field:       %s\n", f.JSONKey)
+	fmt.Fprintf(out, "Label:       %s\n", f.Label)
+	fmt.Fprintf(out, "Category:    %s\n", config.CategoryLabel(f.Category))
+	fmt.Fprintf(out, "Description: %s\n", f.Description)
+
+	var flags []string
+	if f.Required {
+		flags = append(flags, "required")
+	}
+	if f.HotReloadable {
+		flags = append(flags, "hot-reloadable")
+	} else {
+		flags = append(flags, "requires restart")
+	}
+	if f.Sensitive {
+		flags = append(flags, "sensitive")
+	}
+	fmt.Fprintf(out, "Flags:       %s\n", strings.Join(flags, ", "))
+
+	if f.Example != "" {
+		fmt.Fprintf(out, "Example:     %s\n", f.Example)
+		fmt.Fprintf(out, "\nUsage:\n  modula config set %s %q\n", f.JSONKey, f.Example)
+	}
+}
+
 func init() {
 	configParentCmd.AddCommand(configShowCmd)
 	configParentCmd.AddCommand(configValidateCmd)
 	configParentCmd.AddCommand(configSetCmd)
+	configParentCmd.AddCommand(configFieldsCmd)
+
+	configFieldsCmd.Flags().String("category", "", "filter by category (server, database, storage, cors, cookie, oauth, observability, email, plugin, update, misc)")
 }

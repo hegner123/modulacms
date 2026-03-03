@@ -151,7 +151,7 @@ type NewWebhookCmd struct {
 }
 
 func (c NewWebhookCmd) Context() context.Context              { return c.ctx }
-func (c NewWebhookCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewWebhookCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewWebhookCmd) Connection() *sql.DB                   { return c.conn }
 func (c NewWebhookCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewWebhookCmd) TableName() string                     { return "webhooks" }
@@ -190,7 +190,7 @@ type UpdateWebhookCmd struct {
 }
 
 func (c UpdateWebhookCmd) Context() context.Context              { return c.ctx }
-func (c UpdateWebhookCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateWebhookCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateWebhookCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdateWebhookCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateWebhookCmd) TableName() string                     { return "webhooks" }
@@ -232,7 +232,7 @@ type DeleteWebhookCmd struct {
 }
 
 func (c DeleteWebhookCmd) Context() context.Context              { return c.ctx }
-func (c DeleteWebhookCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteWebhookCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteWebhookCmd) Connection() *sql.DB                   { return c.conn }
 func (c DeleteWebhookCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteWebhookCmd) TableName() string                     { return "webhooks" }
@@ -337,7 +337,7 @@ type NewWebhookCmdMysql struct {
 }
 
 func (c NewWebhookCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewWebhookCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewWebhookCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewWebhookCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c NewWebhookCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewWebhookCmdMysql) TableName() string                     { return "webhooks" }
@@ -380,7 +380,7 @@ type UpdateWebhookCmdMysql struct {
 }
 
 func (c UpdateWebhookCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateWebhookCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateWebhookCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateWebhookCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateWebhookCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateWebhookCmdMysql) TableName() string                     { return "webhooks" }
@@ -422,7 +422,7 @@ type DeleteWebhookCmdMysql struct {
 }
 
 func (c DeleteWebhookCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeleteWebhookCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteWebhookCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteWebhookCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteWebhookCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteWebhookCmdMysql) TableName() string                     { return "webhooks" }
@@ -527,7 +527,7 @@ type NewWebhookCmdPsql struct {
 }
 
 func (c NewWebhookCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewWebhookCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewWebhookCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewWebhookCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c NewWebhookCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewWebhookCmdPsql) TableName() string                     { return "webhooks" }
@@ -566,7 +566,7 @@ type UpdateWebhookCmdPsql struct {
 }
 
 func (c UpdateWebhookCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateWebhookCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateWebhookCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateWebhookCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateWebhookCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateWebhookCmdPsql) TableName() string                     { return "webhooks" }
@@ -608,7 +608,7 @@ type DeleteWebhookCmdPsql struct {
 }
 
 func (c DeleteWebhookCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeleteWebhookCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteWebhookCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteWebhookCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteWebhookCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteWebhookCmdPsql) TableName() string                     { return "webhooks" }

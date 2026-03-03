@@ -204,7 +204,8 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		fp := filepicker.New()
 		fp.AllowedTypes = []string{".zip"}
 		fp.CurrentDirectory, _ = os.UserHomeDir()
-		fp.Height = m.Height - 4
+		fp.AutoHeight = false
+		fp.Height = filePickerHeight(m.Height)
 		m.FilePicker = fp
 		m.FilePickerActive = true
 		m.FilePickerPurpose = FILEPICKER_RESTORE

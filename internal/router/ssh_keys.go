@@ -86,6 +86,7 @@ func AddSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 
 // ListSSHKeysHandler handles GET /api/v1/ssh-keys
 // Returns all SSH keys for the authenticated user.
+// Supports optional fingerprint query parameter to return a single key matching the fingerprint.
 func ListSSHKeysHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	// Get authenticated user from context
 	var authCtx authcontext = "authenticated"
@@ -101,8 +102,31 @@ func ListSSHKeysHandler(w http.ResponseWriter, r *http.Request, c config.Config)
 		return
 	}
 
-	// Get user's SSH keys
 	dbc := db.ConfigDB(c)
+
+	// If fingerprint query param is provided, return the matching key.
+	fingerprintParam := r.URL.Query().Get("fingerprint")
+	if fingerprintParam != "" {
+		sshKey, err := dbc.GetUserSshKeyByFingerprint(fingerprintParam)
+		if err != nil {
+			utility.DefaultLogger.Error("Failed to get SSH key by fingerprint", err)
+			http.Error(w, "SSH key not found", http.StatusNotFound)
+			return
+		}
+
+		// Only return the key if it belongs to the authenticated user.
+		if !sshKey.UserID.Valid || sshKey.UserID.ID != authUser.UserID {
+			http.Error(w, "SSH key not found", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(sshKey)
+		return
+	}
+
+	// Get user's SSH keys
 	keys, err := dbc.ListUserSshKeys(types.NullableUserID{ID: authUser.UserID, Valid: true})
 	if err != nil {
 		utility.DefaultLogger.Error("Failed to list SSH keys", err)

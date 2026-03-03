@@ -145,11 +145,12 @@ func RequestPasswordResetHandler(w http.ResponseWriter, r *http.Request, c confi
 		return
 	}
 	tokenValue := hex.EncodeToString(tokenBytes)
+	hashedToken := utility.HashToken(tokenValue)
 
 	_, err = driver.CreateToken(ctx, ac, db.CreateTokenParams{
 		UserID:    userNullID,
 		TokenType: "password_reset",
-		Token:     tokenValue,
+		Token:     hashedToken,
 		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.NewTimestamp(time.Now().UTC().Add(1 * time.Hour)),
 		Revoked:   false,
@@ -200,7 +201,7 @@ func ConfirmPasswordResetHandler(w http.ResponseWriter, r *http.Request, c confi
 		return
 	}
 
-	tok, err := driver.GetTokenByTokenValue(req.Token)
+	tok, err := driver.GetTokenByTokenValue(utility.HashToken(req.Token))
 	if err != nil || tok == nil {
 		http.Error(w, "invalid or expired reset token", http.StatusBadRequest)
 		return

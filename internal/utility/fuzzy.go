@@ -8,11 +8,11 @@ import (
 
 // Scoring constants tuned for short CMS identifiers (names, labels, slugs).
 const (
-	scoreMatch        = 1   // base score per matched character
-	bonusConsecutive  = 15  // per char in a consecutive run
-	bonusWordBoundary = 30  // after separator or camelCase transition
-	bonusFirstChar    = 15  // query[0] matches target[0]
-	penaltyGap        = -3  // per unmatched target character between matches
+	scoreMatch        = 1    // base score per matched character
+	bonusConsecutive  = 15   // per char in a consecutive run
+	bonusWordBoundary = 30   // after separator or camelCase transition
+	bonusFirstChar    = 15   // query[0] matches target[0]
+	penaltyGap        = -3   // per unmatched target character between matches
 	scoreExact        = 1000 // ceiling for exact and prefix matches
 )
 

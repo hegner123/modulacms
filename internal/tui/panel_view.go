@@ -374,7 +374,18 @@ func renderCMSPanelStatusBar(m Model) string {
 		localeBadge = barStyle.Render("  ") + localeStyle.Render(strings.ToUpper(m.ActiveLocale))
 	}
 
-	line1 := statusBadge + barStyle.Render(" ") + focusIndicator + localeBadge
+	// Optional remote connection badge
+	var remoteBadge string
+	if m.IsRemote && m.RemoteURL != "" {
+		remoteStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#7dc4e4")).
+			Background(barBG).
+			Bold(true).
+			Padding(0, 1)
+		remoteBadge = barStyle.Render("  ") + remoteStyle.Render("[remote: "+m.RemoteURL+"]")
+	}
+
+	line1 := statusBadge + barStyle.Render(" ") + focusIndicator + localeBadge + remoteBadge
 
 	// --- line 2: context-sensitive key hints, split with separators ---
 
@@ -1293,7 +1304,7 @@ func renderHomeInfo(m Model) string {
 
 // renderActionsMenu renders the action items list for the left panel on ACTIONSPAGE.
 func renderActionsMenu(m Model) string {
-	actions := ActionsMenu()
+	actions := ActionsMenuForMode(m.IsRemote)
 	if len(actions) == 0 {
 		return "(no actions)"
 	}
@@ -1315,7 +1326,7 @@ func renderActionsMenu(m Model) string {
 
 // renderActionsDetail renders the description of the hovered action for the center panel.
 func renderActionsDetail(m Model) string {
-	actions := ActionsMenu()
+	actions := ActionsMenuForMode(m.IsRemote)
 	if len(actions) == 0 || m.Cursor >= len(actions) {
 		return "No action selected"
 	}
@@ -1325,7 +1336,7 @@ func renderActionsDetail(m Model) string {
 
 // renderActionsStatus renders action count and destructive warning for the right panel.
 func renderActionsStatus(m Model) string {
-	actions := ActionsMenu()
+	actions := ActionsMenuForMode(m.IsRemote)
 	lines := []string{
 		"Actions",
 		"",

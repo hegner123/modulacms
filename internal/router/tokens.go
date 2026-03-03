@@ -11,6 +11,12 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// tokenCreateResponse wraps a created token with the raw value shown once.
+type tokenCreateResponse struct {
+	db.Tokens
+	RawToken string `json:"raw_token"`
+}
+
 // TokensHandler handles CRUD operations that do not require a specific user ID.
 func TokensHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	switch r.Method {
@@ -60,7 +66,9 @@ func apiGetToken(w http.ResponseWriter, r *http.Request, c config.Config) error 
 	return nil
 }
 
-// apiCreateToken handles POST requests to create a new token
+// apiCreateToken handles POST requests to create a new token.
+// The raw token value is returned once in the response as "raw_token".
+// Only the SHA-256 hash is stored in the database.
 func apiCreateToken(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 
@@ -72,6 +80,9 @@ func apiCreateToken(w http.ResponseWriter, r *http.Request, c config.Config) err
 		return err
 	}
 
+	rawToken := newToken.Token
+	newToken.Token = utility.HashToken(rawToken)
+
 	ac := middleware.AuditContextFromRequest(r, c)
 	createdToken, err := d.CreateToken(r.Context(), ac, newToken)
 	if err != nil {
@@ -82,7 +93,10 @@ func apiCreateToken(w http.ResponseWriter, r *http.Request, c config.Config) err
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdToken)
+	json.NewEncoder(w).Encode(tokenCreateResponse{
+		Tokens:   *createdToken,
+		RawToken: rawToken,
+	})
 	return nil
 }
 

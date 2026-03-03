@@ -2,7 +2,9 @@ package utility
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"regexp"
 	"strconv"
@@ -41,6 +43,13 @@ func MakeRandomString() (string, error) {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+// HashToken returns the SHA-256 hex digest of a raw token string.
+// Used to store and compare tokens without keeping the plaintext in the database.
+func HashToken(rawToken string) string {
+	h := sha256.Sum256([]byte(rawToken))
+	return hex.EncodeToString(h[:])
 }
 
 // IsValidEmail checks if an email address is valid

@@ -17,12 +17,41 @@ import (
 var dbCmd = &cobra.Command{
 	Use:   "db",
 	Short: "Database management commands",
+	Long: `Initialize, inspect, and manage the ModulaCMS database.
+
+Supports SQLite, MySQL, and PostgreSQL as configured in config.json.
+
+Subcommands:
+  init           Create all tables and seed bootstrap data (roles, permissions, admin user)
+  wipe           Drop all tables (prompts for confirmation)
+  wipe-redeploy  Drop all tables, recreate schema, and re-seed with new admin password
+  reset          Delete the SQLite database file (SQLite only)
+  export         Dump the database to a SQL file
+
+Examples:
+  modula db init
+  modula db wipe
+  modula db wipe-redeploy
+  modula db reset
+  modula db export`,
 }
 
 // dbInitCmd creates database tables and bootstrap data after prompting for admin credentials.
 var dbInitCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Create database tables and bootstrap data",
+	Long: `Create all database tables and seed bootstrap data for a fresh installation.
+
+Prompts for a system admin password (minimum 8 characters) and confirmation.
+Creates tables, default roles (admin, editor, viewer), permissions, and the
+system admin user.
+
+Use this when config.json and the database already exist but tables have not
+been created (e.g. after a manual database reset or fresh PostgreSQL/MySQL setup).
+
+Examples:
+  modula db init
+  modula db init --config /etc/modula/config.json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -75,6 +104,16 @@ var dbInitCmd = &cobra.Command{
 var dbWipeCmd = &cobra.Command{
 	Use:   "wipe",
 	Short: "Drop all database tables (data is lost)",
+	Long: `Drop every table in the database. All data is permanently deleted.
+
+Prompts for confirmation before proceeding. The database connection and file
+remain intact; only the tables are removed. After wiping, use "modula db init"
+to recreate tables.
+
+This is a destructive, irreversible operation. Create a backup first.
+
+Examples:
+  modula db wipe`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -119,6 +158,16 @@ var dbWipeCmd = &cobra.Command{
 var dbWipeRedeployCmd = &cobra.Command{
 	Use:   "wipe-redeploy",
 	Short: "Drop all tables and recreate schema with bootstrap data",
+	Long: `Drop all tables, recreate the full schema, and seed fresh bootstrap data.
+
+Equivalent to running "db wipe" followed by "db init" in a single command.
+Prompts for confirmation and a new system admin password. Useful for resetting
+a development database to a clean state.
+
+This is a destructive, irreversible operation. Create a backup first.
+
+Examples:
+  modula db wipe-redeploy`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -204,6 +253,16 @@ var dbWipeRedeployCmd = &cobra.Command{
 var dbResetCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "Delete the database file (SQLite only)",
+	Long: `Delete the SQLite database file from disk.
+
+Only works with SQLite. The file path is read from db_url in config.json.
+After deletion, use "modula db init" or "modula serve" (which auto-initializes)
+to create a fresh database.
+
+This is a destructive, irreversible operation. Create a backup first.
+
+Examples:
+  modula db reset`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -226,6 +285,14 @@ var dbResetCmd = &cobra.Command{
 var dbExportCmd = &cobra.Command{
 	Use:   "export",
 	Short: "Dump database SQL to file",
+	Long: `Export the full database schema and data as a SQL file.
+
+The output file location depends on the database driver configuration.
+This produces a plain SQL dump (not a backup archive). For full backup
+archives with metadata, use "modula backup create" instead.
+
+Examples:
+  modula db export`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 

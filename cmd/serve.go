@@ -49,7 +49,28 @@ func init() {
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Start the HTTP, HTTPS, and SSH servers",
-	Long:  "Start all ModulaCMS servers. Use --wizard for interactive setup.",
+	Long: `Start all three ModulaCMS servers concurrently: HTTP, HTTPS, and SSH.
+
+HTTP serves the REST API and admin panel. HTTPS uses autocert (Let's Encrypt)
+in production or self-signed certificates locally. SSH runs the Bubbletea TUI
+for terminal-based content management.
+
+If no config.json exists, an automatic setup runs with generated defaults and
+prints the system admin password. Use --wizard for an interactive setup instead.
+
+Graceful shutdown: first SIGINT/SIGTERM triggers a 30-second drain; a second
+signal forces immediate exit.
+
+Flags:
+  --wizard   Run the interactive configuration wizard before starting
+  --config   Path to config.json (default: ./config.json)
+  --verbose  Enable debug-level log output
+
+Examples:
+  modula serve                        # start with existing or auto-generated config
+  modula serve --wizard               # run interactive setup first
+  modula serve --config /etc/modula/config.json
+  modula serve --verbose              # start with debug logging`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -176,6 +197,18 @@ var serveCmd = &cobra.Command{
 		// permission cache and start HTTP/HTTPS servers.
 		dbReadyCh := make(chan struct{}, 1)
 
+		// Initialize webhook dispatcher (nil if disabled).
+		// Created before SSH so TUI publish actions can fire webhook events.
+		var dispatcher publishing.WebhookDispatcher
+		if cfg.WebhookEnabled() {
+			wd := webhooks.New(driver, *cfg)
+			wd.Start(rootCtx)
+			defer wd.Shutdown()
+			dispatcher = wd
+			utility.DefaultLogger.Info("Carrier pigeons on standby")
+			utility.DefaultLogger.Debug("Webhook dispatcher goroutine started, event channel open, HMAC signing active")
+		}
+
 		// SSH server — started before permission cache so it remains available
 		// even when the HTTP stack cannot initialize (e.g. missing bootstrap data).
 		sshServer, err := wish.NewServer(
@@ -186,7 +219,7 @@ var serveCmd = &cobra.Command{
 				middleware.SSHSessionLoggingMiddleware(cfg),
 				middleware.SSHAuthenticationMiddleware(cfg),
 				middleware.SSHAuthorizationMiddleware(cfg),
-				tui.CliMiddleware(&verbose, cfg, driver, utility.DefaultLogger, pluginManager, mgr, dbReadyCh),
+				tui.CliMiddleware(&verbose, cfg, driver, utility.DefaultLogger, pluginManager, mgr, dbReadyCh, dispatcher),
 				logging.Middleware(),
 			),
 		)
@@ -232,17 +265,6 @@ var serveCmd = &cobra.Command{
 
 		if pluginManager != nil {
 			bridge = pluginManager.Bridge()
-		}
-
-		// Initialize webhook dispatcher (nil if disabled).
-		var dispatcher publishing.WebhookDispatcher
-		if cfg.WebhookEnabled() {
-			wd := webhooks.New(driver, *cfg)
-			wd.Start(rootCtx)
-			defer wd.Shutdown()
-			dispatcher = wd
-			utility.DefaultLogger.Info("Carrier pigeons on standby")
-			utility.DefaultLogger.Debug("Webhook dispatcher goroutine started, event channel open, HMAC signing active")
 		}
 
 		// buildRealHandler creates the full router + middleware stack.
@@ -535,12 +557,13 @@ func generatePluginAPIToken(ctx context.Context, driver db.DbDriver, nodeID stri
 		return "", "", fmt.Errorf("generate random token: %w", err)
 	}
 	tokenValue := hex.EncodeToString(tokenBytes)
+	hashedToken := utility.HashToken(tokenValue)
 
-	// Insert the token into the database.
+	// Insert the hashed token into the database.
 	created, err := driver.CreateToken(ctx, auditCtx, db.CreateTokenParams{
 		UserID:    systemNullableID,
 		TokenType: "plugin_api_key",
-		Token:     tokenValue,
+		Token:     hashedToken,
 		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.NewTimestamp(time.Now().UTC().Add(24 * time.Hour)),
 		Revoked:   false,

@@ -194,13 +194,19 @@ func (m Model) RenderStatusBar() string {
 	p := m.Page.Label
 	cm := strconv.FormatInt(int64(m.CursorMax), 10)
 
+	// Remote connection badge
+	var remotePart string
+	if m.IsRemote && m.RemoteURL != "" {
+		remotePart = " [remote: " + m.RemoteURL + "]"
+	}
+
 	nugget := nuggetStyle.Render("Page: " + p + "  CursorMax: " + cm)
 	fishCake := fishCakeStyle.Render(v)
 
 	w := lipgloss.Width
 	statusVal := statusText.
 		Width(m.Width - w(statusKey) - w(nugget) - w(fishCake) - 34).
-		Render(status[m.Focus])
+		Render(status[m.Focus] + remotePart)
 
 	bar := lipgloss.JoinHorizontal(lipgloss.Top,
 		statusKey,

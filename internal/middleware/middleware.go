@@ -62,7 +62,7 @@ func APIKeyAuth(r *http.Request, c *config.Config) (*authcontext, *db.Users) {
 
 	dbc := db.ConfigDB(*c)
 
-	token, err := dbc.GetTokenByTokenValue(key)
+	token, err := dbc.GetTokenByTokenValue(utility.HashToken(key))
 	if err != nil {
 		utility.DefaultLogger.Finfo("api key lookup failed", err)
 		return nil, nil

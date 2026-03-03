@@ -15,6 +15,29 @@ import (
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "Export, import, snapshot, push, and pull content data",
+	Long: `Sync content data between ModulaCMS environments.
+
+Export and import move data as JSON files. Push and pull transfer data between
+the local database and a remote CMS environment configured in config.json.
+Snapshots provide rollback points for import operations.
+
+Subcommands:
+  export     Export content tables to a JSON file
+  import     Import content from a JSON export file
+  pull       Download data from a remote environment and apply locally
+  push       Upload local data to a remote environment
+  snapshot   List, show, or restore import snapshots
+  env        List and test configured deploy environments
+
+All subcommands support --json for machine-readable output.
+
+Examples:
+  modula deploy export --file data.json
+  modula deploy import data.json
+  modula deploy pull staging
+  modula deploy push production
+  modula deploy snapshot list
+  modula deploy env list`,
 }
 
 // --- deploy export ---
@@ -22,6 +45,21 @@ var deployCmd = &cobra.Command{
 var deployExportCmd = &cobra.Command{
 	Use:   "export",
 	Short: "Export content data to a JSON file",
+	Long: `Export content tables from the local database to a JSON file.
+
+By default, exports all sync-eligible tables. Use --tables to export only
+specific tables. The output includes a manifest with table names, row counts,
+schema version, and timestamp.
+
+Flags:
+  --file     Output file path (required)
+  --tables   Comma-separated table names to export (default: all sync tables)
+  --json     Print the export manifest as JSON instead of log output
+
+Examples:
+  modula deploy export --file data.json
+  modula deploy export --file content-only.json --tables content_data,content_tree
+  modula deploy export --file data.json --json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -82,7 +120,25 @@ var deployExportCmd = &cobra.Command{
 var deployImportCmd = &cobra.Command{
 	Use:   "import <file>",
 	Short: "Import content data from a JSON export file",
-	Args:  cobra.ExactArgs(1),
+	Long: `Import content data from a previously exported JSON file into the local database.
+
+By default, creates a pre-import backup and a snapshot for rollback. Use
+--dry-run to validate the payload and see an impact report without modifying
+the database. Supports gzip-compressed files (.json.gz).
+
+Arguments:
+  file   Path to the JSON export file
+
+Flags:
+  --dry-run       Validate and report impact without importing
+  --skip-backup   Skip the pre-import backup
+  --json          Output results as JSON
+
+Examples:
+  modula deploy import data.json
+  modula deploy import data.json --dry-run
+  modula deploy import data.json.gz --skip-backup`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -160,11 +216,33 @@ var deployImportCmd = &cobra.Command{
 var deploySnapshotCmd = &cobra.Command{
 	Use:   "snapshot",
 	Short: "Manage import snapshots",
+	Long: `List, inspect, and restore import snapshots.
+
+Snapshots are automatically created during imports and provide rollback points.
+They are stored in ./deploy/snapshots/.
+
+Subcommands:
+  list      Show available snapshots with timestamps and sizes
+  show      Display detailed manifest for a specific snapshot
+  restore   Re-import data from a snapshot
+
+Examples:
+  modula deploy snapshot list
+  modula deploy snapshot show 01HXYZ...
+  modula deploy snapshot restore 01HXYZ...`,
 }
 
 var deploySnapshotListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available snapshots",
+	Long: `Show all available import snapshots with their ID, timestamp, table count, and size.
+
+Flags:
+  --json   Output as JSON
+
+Examples:
+  modula deploy snapshot list
+  modula deploy snapshot list --json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 		jsonOutput, _ := cmd.Flags().GetBool("json")
@@ -204,7 +282,18 @@ var deploySnapshotListCmd = &cobra.Command{
 var deploySnapshotShowCmd = &cobra.Command{
 	Use:   "show <id>",
 	Short: "Show snapshot details",
-	Args:  cobra.ExactArgs(1),
+	Long: `Display the full manifest for a specific snapshot including timestamp, version,
+schema hash, strategy, tables, row counts, and user references.
+
+Arguments:
+  id   Snapshot ULID (from "modula deploy snapshot list")
+
+Flags:
+  --json   Output manifest as JSON
+
+Examples:
+  modula deploy snapshot show 01HXYZ1234567890ABCDEFGH`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 		jsonOutput, _ := cmd.Flags().GetBool("json")
@@ -240,7 +329,22 @@ var deploySnapshotShowCmd = &cobra.Command{
 var deploySnapshotRestoreCmd = &cobra.Command{
 	Use:   "restore <id>",
 	Short: "Restore a snapshot",
-	Args:  cobra.ExactArgs(1),
+	Long: `Restore the database to the state captured in a snapshot.
+
+Loads the snapshot payload and imports it into the current database. A backup
+is created before restoring by default.
+
+Arguments:
+  id   Snapshot ULID (from "modula deploy snapshot list")
+
+Flags:
+  --skip-backup   Skip the pre-restore backup
+  --json          Output results as JSON
+
+Examples:
+  modula deploy snapshot restore 01HXYZ1234567890ABCDEFGH
+  modula deploy snapshot restore 01HXYZ... --skip-backup`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 		skipBackup, _ := cmd.Flags().GetBool("skip-backup")
@@ -296,7 +400,26 @@ var deploySnapshotRestoreCmd = &cobra.Command{
 var deployPullCmd = &cobra.Command{
 	Use:   "pull <source>",
 	Short: "Pull data from a remote environment and apply locally",
-	Args:  cobra.ExactArgs(1),
+	Long: `Download content data from a remote CMS environment and import it into the local
+database.
+
+The source environment must be configured in config.json under deploy_environments
+with a name, URL, and API key. A pre-import backup is created by default.
+
+Arguments:
+  source   Environment name (from config.json deploy_environments)
+
+Flags:
+  --tables        Comma-separated table names (default: all sync tables)
+  --skip-backup   Skip the pre-import backup
+  --dry-run       Validate and show impact report without importing
+  --json          Output results as JSON
+
+Examples:
+  modula deploy pull staging
+  modula deploy pull production --tables content_data,content_tree
+  modula deploy pull staging --dry-run`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -366,7 +489,25 @@ var deployPullCmd = &cobra.Command{
 var deployPushCmd = &cobra.Command{
 	Use:   "push <target>",
 	Short: "Export local data and push to a remote environment",
-	Args:  cobra.ExactArgs(1),
+	Long: `Export content data from the local database and upload it to a remote CMS
+environment.
+
+The target environment must be configured in config.json under deploy_environments
+with a name, URL, and API key.
+
+Arguments:
+  target   Environment name (from config.json deploy_environments)
+
+Flags:
+  --tables     Comma-separated table names (default: all sync tables)
+  --dry-run    Validate and show impact report without pushing
+  --json       Output results as JSON
+
+Examples:
+  modula deploy push staging
+  modula deploy push production --tables content_data,content_tree
+  modula deploy push staging --dry-run`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -435,11 +576,34 @@ var deployPushCmd = &cobra.Command{
 var deployEnvCmd = &cobra.Command{
 	Use:   "env",
 	Short: "Manage deploy environments",
+	Long: `List and test remote deploy environments configured in config.json.
+
+Environments are defined under deploy_environments in config.json, each with
+a name, URL, and API key.
+
+Subcommands:
+  list   Show all configured environments (API keys are redacted)
+  test   Test connectivity to a specific environment
+
+Examples:
+  modula deploy env list
+  modula deploy env test staging`,
 }
 
 var deployEnvListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List configured deploy environments",
+	Long: `Display all deploy environments from config.json with name, URL, and API key status.
+
+API keys are not printed in plain text; only "set" or "missing" is shown.
+Use --json for machine-readable output (keys redacted as has_api_key boolean).
+
+Flags:
+  --json   Output as JSON
+
+Examples:
+  modula deploy env list
+  modula deploy env list --json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 		jsonOutput, _ := cmd.Flags().GetBool("json")
@@ -489,7 +653,21 @@ var deployEnvListCmd = &cobra.Command{
 var deployEnvTestCmd = &cobra.Command{
 	Use:   "test <name>",
 	Short: "Test connectivity to a deploy environment",
-	Args:  cobra.ExactArgs(1),
+	Long: `Send a health check request to a remote deploy environment and report the result.
+
+Tests that the URL is reachable, the API key is valid, and the remote CMS is
+responding. Displays the remote server's status, version, and node ID.
+
+Arguments:
+  name   Environment name (from config.json deploy_environments)
+
+Flags:
+  --json   Output as JSON
+
+Examples:
+  modula deploy env test staging
+  modula deploy env test production --json`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 		jsonOutput, _ := cmd.Flags().GetBool("json")

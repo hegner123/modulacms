@@ -24,6 +24,42 @@ type MediaUploadOptions struct {
 	Path string
 }
 
+// ProgressFunc is called during upload with bytes sent so far and total bytes.
+// Total is -1 when the size is unknown.
+type ProgressFunc func(bytesSent int64, total int64)
+
+// UploadWithProgress uploads a file with progress reporting.
+// The progressFn is called periodically with the number of bytes sent and total size.
+// If totalSize is 0, the file size is unknown and total is passed as -1 to the callback.
+func (m *MediaUploadResource) UploadWithProgress(ctx context.Context, r io.Reader, filename string, totalSize int64, progressFn ProgressFunc, opts *MediaUploadOptions) (*Media, error) {
+	if progressFn == nil {
+		return m.Upload(ctx, r, filename, opts)
+	}
+	pr := &progressReader{r: r, total: totalSize, fn: progressFn}
+	return m.Upload(ctx, pr, filename, opts)
+}
+
+// progressReader wraps an io.Reader and calls fn on each Read with cumulative progress.
+type progressReader struct {
+	r     io.Reader
+	total int64
+	sent  int64
+	fn    ProgressFunc
+}
+
+func (pr *progressReader) Read(p []byte) (int, error) {
+	n, err := pr.r.Read(p)
+	if n > 0 {
+		pr.sent += int64(n)
+		t := pr.total
+		if t == 0 {
+			t = -1
+		}
+		pr.fn(pr.sent, t)
+	}
+	return n, err
+}
+
 // Upload uploads a file and returns the created media entity.
 // An optional MediaUploadOptions can control the storage path.
 func (m *MediaUploadResource) Upload(ctx context.Context, r io.Reader, filename string, opts *MediaUploadOptions) (*Media, error) {

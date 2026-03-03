@@ -153,6 +153,11 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 		ContentTreeSaveHandler(w, r, *c)
 	})))
 
+	// Content tree get (read tree by route ID)
+	mux.Handle("GET /api/v1/content/tree/{routeID}", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ContentTreeGetHandler(w, r, driver)
+	})))
+
 	// Content publish / unpublish / schedule
 	mux.Handle("POST /api/v1/content/publish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		PublishHandler(w, r, *c, dispatcher)
@@ -162,6 +167,11 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	})))
 	mux.Handle("POST /api/v1/content/schedule", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ScheduleHandler(w, r, *c)
+	})))
+
+	// Content versions list (filtered by content_id)
+	mux.Handle("GET /api/v1/contentversions", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ContentVersionsListHandler(w, r, driver)
 	})))
 
 	// Content version management
@@ -253,6 +263,17 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	mux.Handle("/api/v1/fields", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		FieldsHandler(w, r, *c)
 	})))
+
+	// Field sort order update
+	mux.Handle("PUT /api/v1/fields/{id}/sort-order", middleware.RequirePermission("fields:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		FieldSortOrderHandler(w, r, driver, *c)
+	})))
+
+	// Field max sort order query
+	mux.Handle("GET /api/v1/fields/max-sort-order", middleware.RequirePermission("fields:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		FieldMaxSortOrderHandler(w, r, driver)
+	})))
+
 	mux.Handle("/api/v1/fields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		FieldHandler(w, r, *c)
 	})))

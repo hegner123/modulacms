@@ -17,12 +17,33 @@ import (
 var backupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backup and restore commands",
+	Long: `Create, restore, and list database backups.
+
+Backups include a full SQL dump and any configured media/path data, saved as
+a zip archive. Backup records are stored in the database for history tracking.
+
+Subcommands:
+  create    Create a full backup archive
+  restore   Restore from a backup archive file
+  list      Show backup history from the database
+
+Examples:
+  modula backup create
+  modula backup restore ./backups/backup-2024-01-15.zip
+  modula backup list`,
 }
 
 // backupCreateCmd represents the backup create subcommand that creates a full backup of the database and configured paths.
 var backupCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a full backup of the database and configured paths",
+	Long: `Create a full backup archive containing a SQL dump and any configured backup paths.
+
+The backup is saved as a zip file and a record is inserted into the backups table
+with status, duration, and file size. On failure, the record is updated to "failed".
+
+Examples:
+  modula backup create`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -100,7 +121,20 @@ var backupCreateCmd = &cobra.Command{
 var backupRestoreCmd = &cobra.Command{
 	Use:   "restore <path>",
 	Short: "Restore from a backup archive",
-	Args:  cobra.ExactArgs(1),
+	Long: `Restore the database from a previously created backup archive.
+
+Reads the archive manifest to display the backup's driver, timestamp, version,
+and node ID, then prompts for confirmation before replacing the current database.
+
+This is a destructive operation: the existing database is replaced with the
+backup contents.
+
+Arguments:
+  path   Path to the backup zip archive
+
+Examples:
+  modula backup restore ./backups/backup-2024-01-15.zip`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 		backupPath := args[0]
@@ -156,6 +190,13 @@ var backupRestoreCmd = &cobra.Command{
 var backupListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List backup history from the database",
+	Long: `Display the most recent backup records from the database (up to 50).
+
+Shows a table with backup ID, type, status, start time, file size, and
+storage path for each recorded backup.
+
+Examples:
+  modula backup list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 

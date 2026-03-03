@@ -4,7 +4,12 @@ go 1.24.0
 
 require github.com/mattn/go-sqlite3 v1.14.24
 
+require github.com/hegner123/modulacms/sdks/go v0.0.0
+
+replace github.com/hegner123/modulacms/sdks/go => ./sdks/go
+
 require (
+	github.com/a-h/templ v0.3.977
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.10
@@ -17,6 +22,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/kolesa-team/go-webp v1.0.5
 	github.com/lib/pq v1.10.9
+	github.com/mattn/go-isatty v0.0.20
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/termenv v0.16.0
 	github.com/oklog/ulid/v2 v2.1.1
@@ -26,12 +32,12 @@ require (
 	golang.org/x/crypto v0.40.0
 	golang.org/x/image v0.22.0
 	golang.org/x/oauth2 v0.29.0
+	golang.org/x/sync v0.19.0
 	golang.org/x/time v0.14.0
 )
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/a-h/templ v0.3.977 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
@@ -54,7 +60,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
@@ -65,7 +70,6 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

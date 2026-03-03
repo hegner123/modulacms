@@ -2,6 +2,7 @@ package modula
 
 import (
 	"context"
+	"fmt"
 )
 
 // ContentTreeResource provides bulk content tree operations.
@@ -159,6 +160,31 @@ func (t *ContentTreeResource) Save(ctx context.Context, req TreeSaveRequest) (*T
 		return nil, err
 	}
 	return &resp, nil
+}
+
+// GetByRoute returns the content tree for a given route ID.
+func (t *ContentTreeResource) GetByRoute(ctx context.Context, routeID RouteID) ([]ContentTreeNode, error) {
+	var result []ContentTreeNode
+	if err := t.http.get(ctx, "/api/v1/content/tree/"+string(routeID), nil, &result); err != nil {
+		return nil, fmt.Errorf("get content tree by route %s: %w", string(routeID), err)
+	}
+	return result, nil
+}
+
+// ContentTreeNode represents a node in the content tree for a route.
+type ContentTreeNode struct {
+	ContentID     ContentID  `json:"content_id"`
+	DatatypeID    *string    `json:"datatype_id"`
+	ParentID      *string    `json:"parent_id"`
+	FirstChildID  *string    `json:"first_child_id"`
+	NextSiblingID *string    `json:"next_sibling_id"`
+	PrevSiblingID *string    `json:"prev_sibling_id"`
+	RouteID       *string    `json:"route_id"`
+	Title         string     `json:"title"`
+	Slug          string     `json:"slug"`
+	Status        string     `json:"status"`
+	DateCreated   string     `json:"date_created"`
+	DateModified  string     `json:"date_modified"`
 }
 
 // StringPtr returns a pointer to s. Convenience helper for building

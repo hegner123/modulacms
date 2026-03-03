@@ -125,9 +125,25 @@ func ApiGetUser(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	return nil
 }
 
-// ApiListUsers handles GET requests for listing users
+// ApiListUsers handles GET requests for listing users.
+// Supports optional email query parameter to return a single user matching the email.
 func ApiListUsers(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
+
+	emailParam := r.URL.Query().Get("email")
+	if emailParam != "" {
+		user, err := d.GetUserByEmail(types.Email(emailParam))
+		if err != nil {
+			utility.DefaultLogger.Error("", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(user)
+		return nil
+	}
 
 	users, err := d.ListUsers()
 	if err != nil {

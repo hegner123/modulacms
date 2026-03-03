@@ -6,18 +6,20 @@ import (
 )
 
 // GetSuggestionsString retrieves column value suggestions from the database.
+// Returns nil when the connection is unavailable (e.g., remote mode).
 func (m Model) GetSuggestionsString(c *config.Config, column string) []string {
-	d := db.ConfigDB(*c)
-	con, ctx, _ := d.GetConnection()
 	if column == "NIll" {
 		return nil
-	} else {
-		r, err := db.GetColumnRowsString(con, ctx, m.TableState.Table, column)
-		if err != nil {
-			m.Logger.Error("ERROR", err)
-			return nil
-		}
-		return r
-
 	}
+	d := db.ConfigDB(*c)
+	con, ctx, err := d.GetConnection()
+	if err != nil {
+		return nil
+	}
+	r, err := db.GetColumnRowsString(con, ctx, m.TableState.Table, column)
+	if err != nil {
+		m.Logger.Error("ERROR", err)
+		return nil
+	}
+	return r
 }

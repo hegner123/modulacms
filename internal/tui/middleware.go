@@ -14,6 +14,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/plugin"
+	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/muesli/termenv"
 )
 
@@ -22,7 +23,7 @@ type timeMsg time.Time
 
 // CliMiddleware returns a Wish middleware that launches the CLI TUI application for SSH sessions.
 // dbReadyCh is an optional channel signalled after DB init so the serve command can start HTTP.
-func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver, logger Logger, pluginMgr *plugin.Manager, mgr *config.Manager, dbReadyCh chan struct{}) wish.Middleware {
+func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver, logger Logger, pluginMgr *plugin.Manager, mgr *config.Manager, dbReadyCh chan struct{}, dispatcher publishing.WebhookDispatcher) wish.Middleware {
 	newProg := func(m tea.Model, opts ...tea.ProgramOption) *tea.Program {
 		p := tea.NewProgram(m, opts...)
 		go func() {
@@ -39,7 +40,7 @@ func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver, logger Logger,
 			wish.Fatalln(s, "no active terminal, skipping")
 			return nil
 		}
-		m, _ := InitialModel(v, c, driver, logger, pluginMgr, mgr, dbReadyCh)
+		m, _ := InitialModel(v, c, driver, logger, pluginMgr, mgr, dbReadyCh, dispatcher)
 		m.Term = pty.Term
 		m.Width = pty.Window.Width
 		m.Height = pty.Window.Height

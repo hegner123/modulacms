@@ -362,7 +362,6 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 
 	log.Info("buildTreeJSON: built block nodes", "blockCount", len(blocks))
 
-
 	// Build editor state: blocks map + rootId (first child of current node)
 	type editorState struct {
 		Blocks map[string]blockNode `json:"blocks"`

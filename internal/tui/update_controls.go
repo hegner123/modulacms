@@ -828,11 +828,8 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		}
 		if km.Matches(key, config.ActionPublish) {
-			if !m.PageRouteId.IsZero() {
-				node := m.Root.NodeAtIndex(m.Cursor)
-				if node != nil && node.Instance != nil {
-					return m, TogglePublishCmd(node.Instance.ContentDataID, m.PageRouteId)
-				}
+			if !m.PageRouteId.IsZero() && m.Root.Root != nil && m.Root.Root.Instance != nil {
+				return m, TogglePublishCmd(m.Root.Root.Instance.ContentDataID, m.PageRouteId)
 			}
 		}
 		if km.Matches(key, config.ActionVersions) {
@@ -1069,7 +1066,8 @@ func (m Model) MediaControls(msg tea.Msg) (Model, tea.Cmd) {
 			fp := filepicker.New()
 			fp.AllowedTypes = []string{".png", ".jpg", ".jpeg", ".webp", ".gif"}
 			fp.CurrentDirectory, _ = os.UserHomeDir()
-			fp.Height = m.Height - 4
+			fp.AutoHeight = false
+			fp.Height = filePickerHeight(m.Height)
 			m.FilePicker = fp
 			m.FilePickerActive = true
 			m.FilePickerPurpose = FILEPICKER_MEDIA
@@ -1454,7 +1452,7 @@ func (m Model) UpdateDatabaseDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // ActionsControls handles keyboard navigation for the actions menu page.
 func (m Model) ActionsControls(msg tea.Msg) (Model, tea.Cmd) {
-	actions := ActionsMenu()
+	actions := ActionsMenuForMode(m.IsRemote)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		km := m.Config.KeyBindings
@@ -1494,7 +1492,7 @@ func (m Model) ActionsControls(msg tea.Msg) (Model, tea.Cmd) {
 			action := actions[m.Cursor]
 			if action.Destructive {
 				return m, func() tea.Msg {
-					return ActionConfirmMsg{ActionIndex: m.Cursor}
+					return ActionConfirmMsg{ActionIndex: action.Index}
 				}
 			}
 			return m, tea.Batch(
@@ -1505,7 +1503,7 @@ func (m Model) ActionsControls(msg tea.Msg) (Model, tea.Cmd) {
 					SSHFingerprint: m.SSHFingerprint,
 					SSHKeyType:     m.SSHKeyType,
 					SSHPublicKey:   m.SSHPublicKey,
-				}, m.Cursor),
+				}, action.Index),
 			)
 		}
 	}

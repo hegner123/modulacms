@@ -19,7 +19,7 @@ func ContentFieldsHandler(w http.ResponseWriter, r *http.Request, c config.Confi
 		if HasPaginationParams(r) {
 			apiListContentFieldsPaginated(w, r, c)
 		} else {
-			apiListContentFields(w, c)
+			apiListContentFields(w, r, c)
 		}
 	case http.MethodPost:
 		apiCreateContentField(w, r, c)
@@ -66,9 +66,31 @@ func apiGetContentField(w http.ResponseWriter, r *http.Request, c config.Config)
 	return nil
 }
 
-// apiListContentFields handles GET requests for listing content fields
-func apiListContentFields(w http.ResponseWriter, c config.Config) error {
+// apiListContentFields handles GET requests for listing content fields.
+// Supports optional locale query parameter to filter by locale code.
+func apiListContentFields(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
+
+	locale := r.URL.Query().Get("locale")
+	contentDataIDStr := r.URL.Query().Get("content_data_id")
+
+	if locale != "" && contentDataIDStr != "" {
+		contentDataID := types.NullableContentID{
+			ID:    types.ContentID(contentDataIDStr),
+			Valid: true,
+		}
+		contentFields, err := d.ListContentFieldsByContentDataAndLocale(contentDataID, locale)
+		if err != nil {
+			utility.DefaultLogger.Error("", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(contentFields)
+		return nil
+	}
 
 	contentFields, err := d.ListContentFields()
 	if err != nil {

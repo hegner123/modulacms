@@ -330,6 +330,21 @@ type ContentDeletedMsg struct {
 	RouteID   string
 }
 
+// filePickerChrome is the number of lines consumed by the overlay frame
+// around the filepicker content: border (2) + padding (2) + title (1) +
+// gap after title (1) + gap before hint (1) + hint (1) = 8.
+const filePickerChrome = 8
+
+// filePickerHeight returns the filepicker row count that fits inside the
+// overlay for a terminal of the given height.
+func filePickerHeight(termHeight int) int {
+	h := termHeight - filePickerChrome
+	if h < 4 {
+		h = 4
+	}
+	return h
+}
+
 // FilePickerOverlay renders a file picker as a full-screen overlay.
 func FilePickerOverlay(base string, fp filepicker.Model, width, height int) string {
 	title := lipgloss.NewStyle().
@@ -341,12 +356,15 @@ func FilePickerOverlay(base string, fp filepicker.Model, width, height int) stri
 		Foreground(config.DefaultStyle.Secondary).
 		Render("esc: cancel")
 
+	// Content height = filepicker rows + title (1) + gaps (2) + hint (1).
+	contentHeight := filePickerHeight(height) + 4
+
 	pickerView := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(config.DefaultStyle.Accent).
 		Padding(1, 2).
 		Width(width - 4).
-		Height(height - 4).
+		Height(contentHeight).
 		Render(title + "\n\n" + fp.View() + "\n\n" + hint)
 
 	return lipgloss.Place(width, height,

@@ -97,6 +97,12 @@ type Client struct {
 
 	// Content Query
 	Query *QueryResource
+
+	// Content Versions
+	ContentVersions *ContentVersionsResource
+
+	// Fields extra (sort order, max sort order)
+	FieldsExtra *FieldsExtraResource
 }
 
 // NewClient creates a new Modula API client.
@@ -193,6 +199,12 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 		// Content Query
 		Query: &QueryResource{http: h},
+
+		// Content Versions
+		ContentVersions: &ContentVersionsResource{http: h},
+
+		// Fields extra
+		FieldsExtra: &FieldsExtraResource{http: h},
 	}, nil
 }
 

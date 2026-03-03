@@ -31,6 +31,38 @@ var pluginTokenFlag string
 var pluginCmd = &cobra.Command{
 	Use:   "plugin",
 	Short: "Plugin management commands",
+	Long: `Manage Lua plugins for ModulaCMS.
+
+Plugins extend CMS functionality with custom HTTP routes, content lifecycle
+hooks, and database tables. Some subcommands work offline (filesystem/DB only)
+while others require the CMS server to be running (online, via admin API).
+
+Offline subcommands (no running server needed):
+  list       Scan the plugin directory and list installed plugins
+  init       Scaffold a new plugin with init.lua and lib/ directory
+  validate   Parse and validate a plugin without loading it
+  install    Install a plugin into the database
+
+Online subcommands (require running server):
+  info       Show detailed plugin state, VM pool, and circuit breaker info
+  reload     Trigger a hot reload of a plugin
+  enable     Re-enable a disabled plugin
+  disable    Disable a running plugin
+  approve    Approve plugin routes or hooks for execution
+  revoke     Revoke approval for plugin routes or hooks
+
+Flags:
+  --token    Admin API token for online commands (overrides token file, for CI/CD)
+
+Examples:
+  modula plugin list
+  modula plugin init my-plugin
+  modula plugin validate ./plugins/my-plugin
+  modula plugin install my-plugin
+  modula plugin info my-plugin
+  modula plugin reload my-plugin
+  modula plugin enable my-plugin
+  modula plugin disable my-plugin`,
 }
 
 // pluginAPIClient reads config.json for the server port and the admin API token
@@ -110,6 +142,16 @@ func (c *apiClient) do(method, path string, body io.Reader) (*http.Response, err
 var pluginListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List installed plugins",
+	Long: `Scan the plugin directory and print a summary table of all discovered plugins.
+
+Reads from the plugin_directory configured in config.json (default: ./plugins/).
+Each subdirectory is checked for a valid init.lua manifest. Plugins with parse
+errors are listed as "[invalid]".
+
+Does not require the CMS server to be running.
+
+Examples:
+  modula plugin list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -211,7 +253,27 @@ var (
 var pluginInitCmd = &cobra.Command{
 	Use:   "init <name>",
 	Short: "Create a new plugin scaffold",
-	Args:  cobra.ExactArgs(1),
+	Long: `Scaffold a new plugin directory with init.lua and lib/ subdirectory.
+
+Creates <plugin_directory>/<name>/ with a starter init.lua containing a manifest
+skeleton (plugin_info table) and lifecycle stubs (on_init, on_shutdown).
+
+In interactive mode (terminal detected), prompts for version, description, author,
+and license. Use flags to skip prompts in CI/CD.
+
+Arguments:
+  name   Plugin name (lowercase, alphanumeric, hyphens, underscores)
+
+Flags:
+  --version       Plugin version (default: 0.1.0)
+  --description   Plugin description (required in non-interactive mode)
+  --author        Plugin author
+  --license       Plugin license (default: MIT)
+
+Examples:
+  modula plugin init my-plugin
+  modula plugin init my-plugin --version 1.0.0 --description "My plugin" --author "Me" --license MIT`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -333,7 +395,20 @@ var pluginInitCmd = &cobra.Command{
 var pluginValidateCmd = &cobra.Command{
 	Use:   "validate <path>",
 	Short: "Validate a plugin without loading",
-	Args:  cobra.ExactArgs(1),
+	Long: `Parse and validate a plugin's init.lua manifest without loading it into the runtime.
+
+Checks for required manifest fields, valid capability declarations, and correct
+Lua syntax. Reports errors (fatal) and warnings (informational) to stderr.
+Exits with code 1 if any errors are found.
+
+Does not require the CMS server to be running.
+
+Arguments:
+  path   Path to the plugin directory (must contain init.lua)
+
+Examples:
+  modula plugin validate ./plugins/my-plugin`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -475,7 +550,20 @@ SQLite concurrent writes may briefly block.`,
 var pluginInfoCmd = &cobra.Command{
 	Use:   "info <name>",
 	Short: "Show detailed plugin information",
-	Args:  cobra.ExactArgs(1),
+	Long: `Query the running CMS server for detailed plugin state.
+
+Displays the plugin's manifest info, runtime state, circuit breaker status,
+VM pool usage, dependencies, and any schema drift.
+
+Requires the CMS server to be running. Uses the admin API token from
+<config_dir>/.plugin-api-token or the --token flag.
+
+Arguments:
+  name   Plugin name
+
+Examples:
+  modula plugin info my-plugin`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -567,7 +655,19 @@ var pluginInfoCmd = &cobra.Command{
 var pluginReloadCmd = &cobra.Command{
 	Use:   "reload <name>",
 	Short: "Hot reload a plugin",
-	Args:  cobra.ExactArgs(1),
+	Long: `Trigger a hot reload of a plugin on the running CMS server.
+
+Reloads the plugin's init.lua and recreates its VM pool without restarting the
+server. Useful after editing plugin source files.
+
+Requires the CMS server to be running.
+
+Arguments:
+  name   Plugin name
+
+Examples:
+  modula plugin reload my-plugin`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -594,7 +694,17 @@ var pluginReloadCmd = &cobra.Command{
 var pluginEnableCmd = &cobra.Command{
 	Use:   "enable <name>",
 	Short: "Enable a disabled plugin",
-	Args:  cobra.ExactArgs(1),
+	Long: `Re-enable a previously disabled plugin on the running CMS server.
+
+The plugin is loaded back into the runtime and its routes/hooks become active
+again. Requires the CMS server to be running.
+
+Arguments:
+  name   Plugin name
+
+Examples:
+  modula plugin enable my-plugin`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -621,7 +731,18 @@ var pluginEnableCmd = &cobra.Command{
 var pluginDisableCmd = &cobra.Command{
 	Use:   "disable <name>",
 	Short: "Disable a running plugin",
-	Args:  cobra.ExactArgs(1),
+	Long: `Disable a running plugin on the CMS server without uninstalling it.
+
+The plugin's routes and hooks stop executing. The plugin remains installed
+and can be re-enabled with "modula plugin enable". Requires the CMS server
+to be running.
+
+Arguments:
+  name   Plugin name
+
+Examples:
+  modula plugin disable my-plugin`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 

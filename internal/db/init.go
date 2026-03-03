@@ -205,6 +205,14 @@ func InitDB(env config.Config) (DbDriver, error) {
 	return dbInstance, dbInitErr
 }
 
+// SetInstance sets the singleton database driver directly.
+// Used by modula connect to inject a RemoteDriver so that the 83
+// db.ConfigDB(*cfg) call sites in TUI code return the remote driver
+// via the existing dbInstance fast path.
+func SetInstance(d DbDriver) {
+	dbInstance = d
+}
+
 // ConfigDB returns the singleton database driver.
 // If InitDB has not been called, it falls back to creating a new connection
 // (backward-compatible for CLI/install paths that run before the server starts).

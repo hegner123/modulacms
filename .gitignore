@@ -56,7 +56,7 @@ references/
 public/media/
 plugins/
 !internal/plugin/testdata/plugins/
-tests/
+/tests/
 backups/
 legacydb/
 .Ignore/
@@ -70,8 +70,8 @@ testing-config.json
 certs/
 *.pem
 config.json
-*config.json
 config.*.json
+!tsconfig*.json
 bookmark.md
 test.png
 testSite/

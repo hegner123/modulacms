@@ -12,12 +12,33 @@ import (
 var certCmd = &cobra.Command{
 	Use:   "cert",
 	Short: "Certificate management commands",
+	Long: `Manage SSL/TLS certificates for local HTTPS development.
+
+Subcommands:
+  generate   Create self-signed certificates for localhost
+
+Examples:
+  modula cert generate`,
 }
 
 // certGenerateCmd generates self-signed SSL certificates for local development use.
 var certGenerateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate self-signed SSL certificates for local development",
+	Long: `Generate a self-signed SSL certificate and private key for local HTTPS.
+
+Creates localhost.crt and localhost.key in the cert_dir configured in config.json
+(default: ./certs). If a client_site domain is configured, the certificate is
+issued for that domain instead of localhost.
+
+After generation, attempts to add the certificate to the system trust store
+(macOS Keychain). On failure, prints instructions for manual trust.
+
+To use HTTPS locally, set "environment": "local" in config.json.
+
+Examples:
+  modula cert generate
+  modula cert generate --config /path/to/config.json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 

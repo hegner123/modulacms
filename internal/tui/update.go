@@ -110,6 +110,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, cmd
 		}
+		// Recalculate filepicker height on terminal resize.
+		if _, ok := msg.(tea.WindowSizeMsg); ok {
+			m.FilePicker.SetHeight(filePickerHeight(m.Height))
+		}
 		// Non-key messages still forwarded to filepicker (for directory reads)
 		var cmd tea.Cmd
 		m.FilePicker, cmd = m.FilePicker.Update(msg)

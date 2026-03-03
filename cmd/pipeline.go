@@ -17,6 +17,27 @@ import (
 var pipelineCmd = &cobra.Command{
 	Use:   "pipeline",
 	Short: "Pipeline management commands",
+	Long: `View and manage plugin pipeline entries in the database.
+
+Pipelines define the execution order of plugin handlers for content operations
+(before_insert, after_update, etc.) on specific tables. Each pipeline entry
+links a plugin handler to a table + operation with a priority.
+
+All subcommands connect directly to the database (offline).
+
+Subcommands:
+  list      Show all pipeline entries in a table
+  show      Show pipelines for a specific table, grouped by operation
+  enable    Enable a pipeline entry by ID
+  disable   Disable a pipeline entry by ID
+  remove    Delete a pipeline entry by ID
+
+Examples:
+  modula pipeline list
+  modula pipeline show content_data
+  modula pipeline enable 01HXYZ...
+  modula pipeline disable 01HXYZ...
+  modula pipeline remove 01HXYZ...`,
 }
 
 // pipelineListCmd lists all pipeline entries with a formatted table.
@@ -24,6 +45,13 @@ var pipelineCmd = &cobra.Command{
 var pipelineListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all pipeline entries",
+	Long: `Display all pipeline entries across all tables in a formatted table.
+
+Shows pipeline ID, plugin name, table, operation, handler function, priority,
+and enabled status for every entry in the database.
+
+Examples:
+  modula pipeline list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -65,7 +93,15 @@ var pipelineListCmd = &cobra.Command{
 var pipelineShowCmd = &cobra.Command{
 	Use:   "show <table>",
 	Short: "Show pipelines for a table",
-	Args:  cobra.ExactArgs(1),
+	Long: `Display pipeline entries for a specific table, grouped by operation.
+
+Arguments:
+  table   Database table name (e.g. content_data, media, users)
+
+Examples:
+  modula pipeline show content_data
+  modula pipeline show media`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -125,7 +161,14 @@ var pipelineShowCmd = &cobra.Command{
 var pipelineEnableCmd = &cobra.Command{
 	Use:   "enable <pipeline_id>",
 	Short: "Enable a pipeline entry",
-	Args:  cobra.ExactArgs(1),
+	Long: `Enable a disabled pipeline entry so its handler executes during content operations.
+
+Arguments:
+  pipeline_id   ULID of the pipeline entry (from "modula pipeline list")
+
+Examples:
+  modula pipeline enable 01HXYZ1234567890ABCDEFGH`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -157,7 +200,16 @@ var pipelineEnableCmd = &cobra.Command{
 var pipelineDisableCmd = &cobra.Command{
 	Use:   "disable <pipeline_id>",
 	Short: "Disable a pipeline entry",
-	Args:  cobra.ExactArgs(1),
+	Long: `Disable a pipeline entry so its handler is skipped during content operations.
+
+The entry remains in the database and can be re-enabled later.
+
+Arguments:
+  pipeline_id   ULID of the pipeline entry (from "modula pipeline list")
+
+Examples:
+  modula pipeline disable 01HXYZ1234567890ABCDEFGH`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -189,7 +241,17 @@ var pipelineDisableCmd = &cobra.Command{
 var pipelineRemoveCmd = &cobra.Command{
 	Use:   "remove <pipeline_id>",
 	Short: "Remove a pipeline entry",
-	Args:  cobra.ExactArgs(1),
+	Long: `Permanently delete a pipeline entry from the database.
+
+This is irreversible. To temporarily stop a handler, use "modula pipeline disable"
+instead.
+
+Arguments:
+  pipeline_id   ULID of the pipeline entry (from "modula pipeline list")
+
+Examples:
+  modula pipeline remove 01HXYZ1234567890ABCDEFGH`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
