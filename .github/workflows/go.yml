@@ -54,7 +54,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest
+          - os: macos-13
             goos: darwin
             goarch: amd64
             cc: clang
@@ -87,6 +87,8 @@ jobs:
         if: matrix.crossarch
         run: |
           sudo dpkg --add-architecture ${{ matrix.crossarch }}
+          echo "deb [arch=${{ matrix.crossarch }}] http://ports.ubuntu.com/ noble main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/${{ matrix.crossarch }}.list
+          echo "deb [arch=${{ matrix.crossarch }}] http://ports.ubuntu.com/ noble-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/${{ matrix.crossarch }}.list
 
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
