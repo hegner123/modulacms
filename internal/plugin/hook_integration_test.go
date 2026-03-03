@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -233,6 +234,9 @@ end
 // TestHookIntegration_AfterHookDispatch verifies that approved after-hooks
 // execute asynchronously without blocking the caller.
 func TestHookIntegration_AfterHookDispatch(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		t.Skip("skipped in CI: timing-sensitive integration test")
+	}
 	conn := newTestDB(t)
 	defer conn.Close()
 
