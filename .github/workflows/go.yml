@@ -36,6 +36,8 @@ jobs:
       run: go mod download
 
     - name: Test
+      env:
+        CGO_ENABLED: 1
       run: |
         touch testdb/create_tests.db
         touch testdb/testing2348263.db
@@ -79,11 +81,18 @@ jobs:
         with:
           go-version: '1.26'
 
-      - name: Install cross-compiler
-        if: matrix.packages
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ${{ matrix.packages }}
+          sudo apt-get install -y libwebp-dev ${{ matrix.packages }}
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install webp
+
+      - name: Download modules
+        run: go mod download
 
       - name: Build
         env:
@@ -150,7 +159,10 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-x86-64-linux-gnu g++-x86-64-linux-gnu
+          sudo apt-get install -y libwebp-dev gcc-x86-64-linux-gnu g++-x86-64-linux-gnu
+
+      - name: Download modules
+        run: go mod download
 
       - name: Build for Linux AMD64
         env:
