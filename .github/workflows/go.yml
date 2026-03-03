@@ -32,6 +32,9 @@ jobs:
       run: |
         mkdir -p testdb backups
 
+    - name: Download modules
+      run: go mod download
+
     - name: Test
       run: |
         touch testdb/create_tests.db
@@ -96,7 +99,7 @@ jobs:
           COMMIT=$(git rev-parse --short HEAD)
           BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
 
-          go build -mod vendor \
+          go build \
             -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
             -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
             -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
@@ -161,7 +164,7 @@ jobs:
           COMMIT=$(git rev-parse --short HEAD)
           BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
 
-          go build -mod vendor \
+          go build \
             -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
             -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
             -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
