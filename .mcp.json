@@ -3,8 +3,8 @@
                 "modula": {
                         "command": "./mcp/modula-mcp",
                         "env": {
-                                "MODULACMS_URL": "https://api.modulacms.com",
-                                "MODULACMS_API_KEY": "BxjSqGN86okFAi_HO9q73NXzNxcgKQXdmjQXeZ0Z3OM"
+                                "MODULACMS_URL": "${MODULACMS_URL:-https://api.modulacms.com}",
+                                "MODULACMS_API_KEY": "123123123"
                         }
                 }
         }

@@ -306,6 +306,7 @@ sdk lang action:
 # [MCP] Build MCP server binary
 mcp-build:
     cd mcp && go build -o modula-mcp .
+    codesign -s - mcp/modula-mcp
 
 # [MCP] Install MCP server binary to /usr/local/bin
 mcp-install: mcp-build
