@@ -178,6 +178,77 @@ func (page *Root) LoadFromRows(rows *[]db.GetContentTreeByRouteRow) (*LoadStats,
 	return stats, coreErr
 }
 
+// LoadFromAdminData builds the tree from admin content slices by delegating to
+// core.BuildAdminTree, then wrapping the core nodes with TUI-specific state.
+// The core layer converts admin ID types to ContentID via string casting, so the
+// resulting NodeIndex uses ContentID keys and all tree traversal methods work
+// without modification.
+func (page *Root) LoadFromAdminData(
+	cd []db.AdminContentData,
+	dt []db.AdminDatatypes,
+	cf []db.AdminContentFields,
+	df []db.AdminFields,
+) (*LoadStats, error) {
+	coreRoot, coreStats, coreErr := core.BuildAdminTree(cd, dt, cf, df)
+	page.Core = coreRoot
+
+	// Build a map from core.Node to tree.Node for pointer re-linking
+	coreToTree := make(map[*core.Node]*Node, len(coreRoot.NodeIndex))
+
+	// Phase 1: Create tree.Node wrappers for every core.Node
+	for id, cn := range coreRoot.NodeIndex {
+		tn := &Node{
+			Instance:       cn.ContentData,
+			InstanceFields: cn.ContentFields,
+			Datatype:       cn.Datatype,
+			Fields:         cn.Fields,
+			Expand:         true,
+			CoreNode:       cn,
+		}
+		coreToTree[cn] = tn
+		page.NodeIndex[id] = tn
+	}
+
+	// Phase 2: Re-link pointers in tree.Node space
+	for cn, tn := range coreToTree {
+		if cn.Parent != nil {
+			tn.Parent = coreToTree[cn.Parent]
+		}
+		if cn.FirstChild != nil {
+			tn.FirstChild = coreToTree[cn.FirstChild]
+		}
+		if cn.NextSibling != nil {
+			tn.NextSibling = coreToTree[cn.NextSibling]
+		}
+		if cn.PrevSibling != nil {
+			tn.PrevSibling = coreToTree[cn.PrevSibling]
+		}
+	}
+
+	// Set root
+	if coreRoot.Node != nil {
+		page.Root = coreToTree[coreRoot.Node]
+	}
+
+	// Collect root-level nodes
+	for _, tn := range page.NodeIndex {
+		if tn.Parent == nil {
+			page.rootNodes = append(page.rootNodes, tn)
+		}
+	}
+
+	// Convert core stats to tree stats
+	stats := &LoadStats{
+		NodesCount:      coreStats.NodesCount,
+		OrphansResolved: coreStats.OrphansResolved,
+		RetryAttempts:   coreStats.RetryAttempts,
+		CircularRefs:    coreStats.CircularRefs,
+		FinalOrphans:    coreStats.FinalOrphans,
+	}
+
+	return stats, coreErr
+}
+
 // InsertNodeByIndex adds a node to the tree with the given relationships.
 func (page *Root) InsertNodeByIndex(parent, firstChild, prevSibling, nextSibling, n *Node) {
 	page.NodeIndex[n.Instance.ContentDataID] = n
