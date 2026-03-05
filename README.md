@@ -17,6 +17,7 @@ A headless CMS written in Go that ships as a single binary with three concurrent
 - **OAuth** -- pluggable OAuth providers (Google, GitHub, Azure) alongside password authentication
 - **Import** -- bulk data import from Contentful, Sanity, Strapi, WordPress, or ModulaCMS clean format
 - **Backup/Restore** -- ZIP archives containing SQL dumps plus media, stored locally or in S3
+- **Connect** -- project registry with multi-environment support; connect locally or remotely via the Go SDK
 - **SDKs** -- official TypeScript, Go, and Swift SDKs with zero external dependencies
 
 ## Requirements
@@ -293,6 +294,59 @@ The SSH-accessible TUI is built with Charmbracelet Bubbletea following the Elm A
 
 The TUI uses a focus system (page, table, form, dialog) for keyboard input routing, custom form dialogs for data entry, and async commands for database operations.
 
+## Connect System
+
+The `connect` command provides a project registry for managing multiple CMS instances and environments from a single CLI. Each project can have multiple environments (local, dev, staging, prod), each pointing to a different `config.json`. The registry lives at `~/.modula/configs.json`.
+
+### Local vs Remote
+
+When a config has `db_driver` set, the TUI connects directly to the local database. When a config has `remote_url` and `remote_api_key` set instead, the TUI connects to a remote CMS server over HTTPS using the Go SDK as a `DbDriver` implementation. This means the same TUI works identically whether managing a local database or a remote server -- the `RemoteDriver` in `internal/remote/` implements the full `DbDriver` interface by delegating to SDK calls.
+
+Remote connections include:
+- **Health check** on startup (fails fast if server unreachable)
+- **Connection tracking** with atomic status (connected/disconnected/unknown), reflected in the TUI status bar
+- **Retry logic** for transient failures (502/503/504, timeouts) with a single retry after 1s delay
+- **Graceful degradation** -- DDL and infrastructure methods return `ErrNotSupported` or `ErrRemoteMode`
+
+### Registry Management
+
+```bash
+# Register a project environment
+modula connect set mysite local ./config.json
+modula connect set mysite prod /srv/mysite/config.json
+
+# Connect to a project
+modula connect                      # default project, default env
+modula connect mysite               # mysite, default env
+modula connect mysite prod          # mysite, prod env
+
+# Manage defaults
+modula connect default mysite       # set default project
+modula connect default mysite prod  # set default env for project
+
+# List and remove
+modula connect list                 # show all projects and environments
+modula connect remove mysite        # remove entire project
+modula connect remove mysite --env dev  # remove single environment
+```
+
+### Resolution Order
+
+1. Both name and env given: use that exact project + environment
+2. Only name given: use that project's default environment
+3. Neither given: use the default project's default environment
+4. Registry empty: look for `config.json` in the current directory
+
+### Config Fields
+
+| Field | Purpose |
+|-------|---------|
+| `remote_url` | Base URL of the remote CMS server (e.g. `https://cms.example.com`) |
+| `remote_api_key` | API key for authenticating SDK calls to the remote server |
+| `db_driver` | Local database driver (`sqlite`, `mysql`, `postgres`) -- mutually exclusive with `remote_url` |
+
+A config must have either `remote_url` or `db_driver` set (not both).
+
 ## Lua Plugin System
 
 Plugins extend ModulaCMS with sandboxed Lua scripts via gopher-lua.
@@ -549,6 +603,21 @@ modula [--config=path] [--verbose] <command>
   cert check         Verify certificate validity
   update check       Check for updates
   update install     Install new version
+  connect            Launch TUI for a registered project (default project + env)
+  connect <name>     Launch TUI for named project (default env)
+  connect <name> <env>  Launch TUI for named project + specific env
+  connect set        Register a project environment
+  connect list       List registered projects and environments
+  connect remove     Remove a project or environment
+  connect default    Set the default project or environment
+  deploy export      Export content data to JSON file
+  deploy import      Import content from JSON export
+  deploy pull        Download data from remote environment
+  deploy push        Upload local data to remote environment
+  deploy snapshot    List, show, or restore import snapshots
+  deploy env         List and test configured deploy environments
+  pipeline list      Show all pipeline entries
+  pipeline show      Show pipelines for a specific table
   plugin list        List plugins
   plugin init        Create plugin scaffold
   plugin validate    Validate plugin structure
@@ -584,6 +653,8 @@ internal/
   middleware/                  CORS, rate limiting, sessions, RBAC authorization
   model/                      Domain structs (Node, Datatype, Field)
   plugin/                     Lua plugin system (gopher-lua)
+  registry/                   Project registry (~/.modula/configs.json)
+  remote/                     RemoteDriver -- DbDriver over Go SDK (HTTPS)
   router/                     HTTP route registration, slug handling, pagination
   transform/                  Content format transformers
   utility/                    Logging (slog), version info, helpers
