@@ -71,7 +71,10 @@ func (rl *RateLimiter) getLimiter(ip string) *rate.Limiter {
 // If a client exceeds the rate limit, it receives a 429 Too Many Requests response.
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := getIP(r)
+		ip := ClientIPFromContext(r.Context())
+		if ip == "" {
+			ip = getIP(r)
+		}
 		limiter := rl.getLimiter(ip)
 
 		if !limiter.Allow() {

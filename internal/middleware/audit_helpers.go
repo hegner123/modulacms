@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"net"
 	"net/http"
 
 	"github.com/hegner123/modulacms/internal/config"
@@ -39,10 +38,7 @@ func AuditContextFromRequest(r *http.Request, c config.Config) audited.AuditCont
 		userID = user.UserID
 	}
 
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		ip = r.RemoteAddr
-	}
+	ip := ClientIPFromContext(r.Context())
 
 	actx := audited.Ctx(
 		types.NodeID(c.Node_ID),

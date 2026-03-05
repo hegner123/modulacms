@@ -24,11 +24,13 @@ func DefaultMiddlewareChain(mgr *config.Manager, pc *PermissionCache) func(http.
 	}
 	return Chain(
 		RequestIDMiddleware(),             // 1. Request ID generation
-		HTTPLoggingMiddleware(),           // 2. Request/response logging
-		CorsMiddleware(cfg),               // 3. CORS headers
-		HTTPAuthenticationMiddleware(cfg), // 4. Session authentication
-		HTTPPublicEndpointMiddleware(cfg), // 5. Public endpoint protection
-		PermissionInjector(pc),            // 6. Permission set injection
+		ClientIPMiddleware(),              // 2. Client IP resolution
+		UserAgentMiddleware(),             // 3. User-Agent + Client Hints parsing
+		HTTPLoggingMiddleware(),           // 4. Request/response logging
+		CorsMiddleware(cfg),               // 5. CORS headers
+		HTTPAuthenticationMiddleware(cfg), // 6. Session authentication
+		HTTPPublicEndpointMiddleware(cfg), // 7. Public endpoint protection
+		PermissionInjector(pc),            // 8. Permission set injection
 	)
 }
 
@@ -46,10 +48,12 @@ func AuthenticatedChain(mgr *config.Manager) func(http.Handler) http.Handler {
 	}
 	return Chain(
 		RequestIDMiddleware(),             // 1. Request ID generation
-		HTTPLoggingMiddleware(),           // 2. Request/response logging
-		CorsMiddleware(cfg),               // 3. CORS headers
-		HTTPAuthenticationMiddleware(cfg), // 4. Session authentication
-		HTTPAuthorizationMiddleware(cfg),  // 5. Require authentication
+		ClientIPMiddleware(),              // 2. Client IP resolution
+		UserAgentMiddleware(),             // 3. User-Agent + Client Hints parsing
+		HTTPLoggingMiddleware(),           // 4. Request/response logging
+		CorsMiddleware(cfg),               // 5. CORS headers
+		HTTPAuthenticationMiddleware(cfg), // 6. Session authentication
+		HTTPAuthorizationMiddleware(cfg),  // 7. Require authentication
 	)
 }
 
@@ -60,9 +64,11 @@ func AuthEndpointChain(c *config.Config) func(http.Handler) http.Handler {
 
 	return Chain(
 		RequestIDMiddleware(),   // 1. Request ID generation
-		HTTPLoggingMiddleware(), // 2. Request/response logging
-		CorsMiddleware(c),       // 3. CORS headers
-		authLimiter.Middleware,  // 4. Rate limiting
+		ClientIPMiddleware(),    // 2. Client IP resolution
+		UserAgentMiddleware(),   // 3. User-Agent + Client Hints parsing
+		HTTPLoggingMiddleware(), // 4. Request/response logging
+		CorsMiddleware(c),       // 5. CORS headers
+		authLimiter.Middleware,  // 6. Rate limiting
 	)
 }
 
@@ -71,7 +77,9 @@ func AuthEndpointChain(c *config.Config) func(http.Handler) http.Handler {
 func PublicAPIChain(c *config.Config) func(http.Handler) http.Handler {
 	return Chain(
 		RequestIDMiddleware(),   // 1. Request ID generation
-		HTTPLoggingMiddleware(), // 2. Request/response logging
-		CorsMiddleware(c),       // 3. CORS headers
+		ClientIPMiddleware(),    // 2. Client IP resolution
+		UserAgentMiddleware(),   // 3. User-Agent + Client Hints parsing
+		HTTPLoggingMiddleware(), // 4. Request/response logging
+		CorsMiddleware(c),       // 5. CORS headers
 	)
 }
