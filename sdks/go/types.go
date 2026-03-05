@@ -203,6 +203,35 @@ type UpdateFieldParams struct {
 }
 
 // ---------------------------------------------------------------------------
+// Datatype-Field Link
+// ---------------------------------------------------------------------------
+
+// DatatypeField represents a junction record linking a field to a datatype.
+type DatatypeField struct {
+	ID           DatatypeFieldID `json:"id"`
+	DatatypeID   DatatypeID      `json:"datatype_id"`
+	FieldID      FieldID         `json:"field_id"`
+	SortOrder    int64           `json:"sort_order"`
+	DateCreated  Timestamp       `json:"date_created"`
+	DateModified Timestamp       `json:"date_modified"`
+}
+
+// CreateDatatypeFieldParams holds parameters for linking a field to a datatype.
+type CreateDatatypeFieldParams struct {
+	DatatypeID DatatypeID `json:"datatype_id"`
+	FieldID    FieldID    `json:"field_id"`
+	SortOrder  int64      `json:"sort_order"`
+}
+
+// UpdateDatatypeFieldParams holds parameters for updating a datatype-field link.
+type UpdateDatatypeFieldParams struct {
+	ID         DatatypeFieldID `json:"id"`
+	DatatypeID DatatypeID      `json:"datatype_id"`
+	FieldID    FieldID         `json:"field_id"`
+	SortOrder  int64           `json:"sort_order"`
+}
+
+// ---------------------------------------------------------------------------
 // Media
 // ---------------------------------------------------------------------------
 
@@ -751,6 +780,33 @@ type UpdateAdminFieldParams struct {
 	Type         FieldType        `json:"type"`
 	Roles        []string         `json:"roles,omitempty"` // nil = unrestricted
 	AuthorID     *UserID          `json:"author_id"`
+}
+
+// ---------------------------------------------------------------------------
+// Admin Datatype-Field Link
+// ---------------------------------------------------------------------------
+
+// AdminDatatypeField represents an admin junction record linking a field to a datatype.
+type AdminDatatypeField struct {
+	ID              AdminDatatypeFieldID `json:"id"`
+	AdminDatatypeID AdminDatatypeID      `json:"admin_datatype_id"`
+	AdminFieldID    AdminFieldID         `json:"admin_field_id"`
+	SortOrder       int64                `json:"sort_order"`
+	DateCreated     Timestamp            `json:"date_created"`
+	DateModified    Timestamp            `json:"date_modified"`
+}
+
+// CreateAdminDatatypeFieldParams holds parameters for linking an admin field to an admin datatype.
+type CreateAdminDatatypeFieldParams struct {
+	AdminDatatypeID AdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    AdminFieldID    `json:"admin_field_id"`
+}
+
+// UpdateAdminDatatypeFieldParams holds parameters for updating an admin datatype-field link.
+type UpdateAdminDatatypeFieldParams struct {
+	ID              AdminDatatypeFieldID `json:"id"`
+	AdminDatatypeID AdminDatatypeID      `json:"admin_datatype_id"`
+	AdminFieldID    AdminFieldID         `json:"admin_field_id"`
 }
 
 // ---------------------------------------------------------------------------

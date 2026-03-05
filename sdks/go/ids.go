@@ -62,6 +62,12 @@ type FieldTypeID string
 func (id FieldTypeID) String() string { return string(id) }
 func (id FieldTypeID) IsZero() bool   { return id == "" }
 
+// DatatypeFieldID identifies a datatype-field junction link.
+type DatatypeFieldID string
+
+func (id DatatypeFieldID) String() string { return string(id) }
+func (id DatatypeFieldID) IsZero() bool   { return id == "" }
+
 // Admin schema IDs
 
 // AdminDatatypeID identifies an admin datatype.
@@ -81,6 +87,12 @@ type AdminFieldTypeID string
 
 func (id AdminFieldTypeID) String() string { return string(id) }
 func (id AdminFieldTypeID) IsZero() bool   { return id == "" }
+
+// AdminDatatypeFieldID identifies an admin datatype-field junction link.
+type AdminDatatypeFieldID string
+
+func (id AdminDatatypeFieldID) String() string { return string(id) }
+func (id AdminDatatypeFieldID) IsZero() bool   { return id == "" }
 
 // Media IDs
 

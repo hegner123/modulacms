@@ -2,7 +2,9 @@ package modula
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/url"
 )
 
 // LocaleResource provides CRUD operations for locales, plus translation creation.
@@ -16,6 +18,21 @@ func newLocaleResource(h *httpClient) *LocaleResource {
 		Resource: newResource[Locale, CreateLocaleRequest, UpdateLocaleRequest, LocaleID](h, "/api/v1/locales"),
 		http:     h,
 	}
+}
+
+// ListEnabled returns only enabled locales.
+func (r *LocaleResource) ListEnabled(ctx context.Context) ([]Locale, error) {
+	params := url.Values{}
+	params.Set("enabled", "true")
+	raw, err := r.RawList(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("list enabled locales: %w", err)
+	}
+	var result []Locale
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return nil, fmt.Errorf("decode enabled locales: %w", err)
+	}
+	return result, nil
 }
 
 // CreateTranslation creates translated content fields for a content data node in the given locale.

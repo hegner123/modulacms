@@ -173,18 +173,18 @@ func (t *ContentTreeResource) GetByRoute(ctx context.Context, routeID RouteID) (
 
 // ContentTreeNode represents a node in the content tree for a route.
 type ContentTreeNode struct {
-	ContentID     ContentID  `json:"content_id"`
-	DatatypeID    *string    `json:"datatype_id"`
-	ParentID      *string    `json:"parent_id"`
-	FirstChildID  *string    `json:"first_child_id"`
-	NextSiblingID *string    `json:"next_sibling_id"`
-	PrevSiblingID *string    `json:"prev_sibling_id"`
-	RouteID       *string    `json:"route_id"`
-	Title         string     `json:"title"`
-	Slug          string     `json:"slug"`
-	Status        string     `json:"status"`
-	DateCreated   string     `json:"date_created"`
-	DateModified  string     `json:"date_modified"`
+	ContentID     ContentID `json:"content_id"`
+	DatatypeID    *string   `json:"datatype_id"`
+	ParentID      *string   `json:"parent_id"`
+	FirstChildID  *string   `json:"first_child_id"`
+	NextSiblingID *string   `json:"next_sibling_id"`
+	PrevSiblingID *string   `json:"prev_sibling_id"`
+	RouteID       *string   `json:"route_id"`
+	Title         string    `json:"title"`
+	Slug          string    `json:"slug"`
+	Status        string    `json:"status"`
+	DateCreated   string    `json:"date_created"`
+	DateModified  string    `json:"date_modified"`
 }
 
 // StringPtr returns a pointer to s. Convenience helper for building

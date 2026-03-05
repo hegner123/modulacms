@@ -2,6 +2,7 @@ package modula
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 )
 
@@ -24,6 +25,17 @@ func (s *SSHKeysResource) Create(ctx context.Context, params CreateSSHKeyParams)
 	var result SshKey
 	if err := s.http.post(ctx, "/api/v1/ssh-keys", params, &result); err != nil {
 		return nil, err
+	}
+	return &result, nil
+}
+
+// GetByFingerprint returns a single SSH key matching the fingerprint.
+func (s *SSHKeysResource) GetByFingerprint(ctx context.Context, fingerprint string) (*SshKeyListItem, error) {
+	params := url.Values{}
+	params.Set("fingerprint", fingerprint)
+	var result SshKeyListItem
+	if err := s.http.get(ctx, "/api/v1/ssh-keys", params, &result); err != nil {
+		return nil, fmt.Errorf("get ssh key by fingerprint %s: %w", fingerprint, err)
 	}
 	return &result, nil
 }

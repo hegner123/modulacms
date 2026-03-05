@@ -70,6 +70,7 @@ func registerContentTools(srv *server.MCPServer, client *modulacms.Client) {
 			mcp.WithDescription("Get assembled page content by slug via the public content delivery endpoint. Returns the full content tree with field values in the requested format."),
 			mcp.WithString("slug", mcp.Required(), mcp.Description("URL slug of the page (e.g. 'about' or 'blog/my-post')")),
 			mcp.WithString("format", mcp.Description("Response format: contentful, sanity, strapi, wordpress, clean, raw (default: server default)"), mcp.Enum("contentful", "sanity", "strapi", "wordpress", "clean", "raw")),
+			mcp.WithString("locale", mcp.Description("Locale code for localized content (e.g. 'en', 'de', 'fr')")),
 		),
 		handleGetPage(client),
 	)
@@ -300,7 +301,8 @@ func handleGetPage(client *modulacms.Client) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("slug is required"), nil
 		}
 		format := req.GetString("format", "")
-		result, err := client.Content.GetPage(ctx, slug, format)
+		locale := req.GetString("locale", "")
+		result, err := client.Content.GetPage(ctx, slug, format, locale)
 		if err != nil {
 			return errResult(err), nil
 		}
