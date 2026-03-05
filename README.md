@@ -1,23 +1,32 @@
 # ModulaCMS
 
-A headless CMS written in Go that ships as a single binary with three concurrent servers: HTTP, HTTPS (with Let's Encrypt autocert), and SSH (running a Bubbletea terminal UI). Content is managed through the SSH TUI or REST API and delivered to frontend clients over HTTP/HTTPS in multiple output formats.
+A headless CMS written in Go that ships as a single binary with three concurrent servers: HTTP, HTTPS (with Let's Encrypt autocert), and SSH (running a Bubbletea terminal UI). Content is managed through the SSH TUI, web admin panel, or REST API and delivered to frontend clients over HTTP/HTTPS in multiple output formats.
 
 ## Features
 
-- **Single Binary** -- one compiled artifact runs everything: API server, admin TUI, and background services
+- **Single Binary** -- one compiled artifact runs everything: API server, admin panel, TUI, and background services
 - **Three Servers** -- HTTP, HTTPS (autocert), and SSH run concurrently with graceful shutdown
-- **Terminal UI** -- full content management via SSH using Charmbracelet Bubbletea (Elm Architecture)
+- **Admin Panel** -- server-rendered HTMX + templ web interface with block editor, tree navigation, and content versioning
+- **Terminal UI** -- full content management via SSH using Charmbracelet Bubbletea with responsive layouts, panel tabs, scroll indicators, and screen modes
 - **Tri-Database** -- SQLite, MySQL, and PostgreSQL supported interchangeably via a single `DbDriver` interface
 - **Multi-Format Delivery** -- content responses can mimic Contentful, Sanity, Strapi, WordPress, or use a clean/raw format
-- **RBAC** -- role-based access control with 47 granular permissions, three bootstrap roles, and an in-memory permission cache
+- **Publishing** -- publish, unpublish, schedule, version, and restore content with snapshot-based delivery
+- **i18n** -- locale management, translatable fields, locale-aware content delivery with fallback chains
+- **Webhooks** -- event-driven HTTP notifications with delivery tracking, retry, and test endpoints
+- **RBAC** -- role-based access control with 47+ granular permissions, three bootstrap roles, and an in-memory permission cache
+- **Field Validation** -- composable validation rules enforced at HTTP, admin panel, and TUI write paths
+- **Cascade Operations** -- content creation with fields, recursive delete, datatype cascade, user reassignment, and media reference cleanup
 - **Lua Plugins** -- sandboxed gopher-lua VMs with database access, content lifecycle hooks, custom HTTP routes, and hot-reload
 - **Typed IDs** -- 26-character ULIDs wrapped in distinct Go types for compile-time safety across all entities
 - **Audit Trail** -- every mutation atomically records old/new JSON values, user, IP, and timestamps in `change_events`
 - **Media Pipeline** -- S3-compatible storage with image optimization, WebP conversion, responsive dimension presets, and focal points
 - **OAuth** -- pluggable OAuth providers (Google, GitHub, Azure) alongside password authentication
+- **Email** -- transactional email via SMTP, SendGrid, SES, or Postmark for password resets and notifications
 - **Import** -- bulk data import from Contentful, Sanity, Strapi, WordPress, or ModulaCMS clean format
 - **Backup/Restore** -- ZIP archives containing SQL dumps plus media, stored locally or in S3
+- **Deploy** -- content sync between environments with export, import, push, pull, and snapshot management
 - **Connect** -- project registry with multi-environment support; connect locally or remotely via the Go SDK
+- **MCP Server** -- 40+ tool Model Context Protocol server for AI-assisted content management
 - **SDKs** -- official TypeScript, Go, and Swift SDKs with zero external dependencies
 
 ## Requirements
@@ -52,6 +61,8 @@ On first run without a `config.json`, ModulaCMS generates one with defaults, cre
 
 Connect to the TUI: `ssh localhost -p 2222`
 
+Access the admin panel: `http://localhost:8080/admin/`
+
 ## Build & Development
 
 ```bash
@@ -78,24 +89,39 @@ go test -v ./internal/db -run TestSpecificName
 just test-minio       # Start MinIO container
 just test-integration # Run integration tests
 just test-minio-down  # Stop MinIO
+
+# Cross-backend DB integration tests
+just docker-infra         # Start Postgres, MySQL, MinIO
+just test-integration-db  # Run cross-backend tests
 ```
 
 ## Docker
 
+Unified via `just dc <backend> <action>`:
+
 ```bash
-just docker-up        # Full stack (CMS + all databases + MinIO)
-just docker-dev       # Rebuild and restart CMS container only
-just docker-infra     # Infrastructure only (Postgres, MySQL, MinIO)
-just docker-down      # Stop containers, keep volumes
-just docker-reset     # Stop containers and delete volumes
+# Backends: full, sqlite, mysql, postgres, prod
+# Actions: up, down, reset, dev, fresh, logs, destroy (full only), minio-reset (postgres only)
+
+just dc full up       # Full stack (CMS + all databases + MinIO)
+just dc full down     # Stop containers, keep volumes
+just dc full reset    # Stop containers and delete volumes
+just dc full dev      # Rebuild and restart CMS container only
+just dc full fresh    # Reset volumes then rebuild everything
+just dc full logs     # Tail CMS logs
+just dc full destroy  # Remove containers, volumes, and images
+
+just dc sqlite up     # SQLite stack
+just dc mysql up      # MySQL stack
+just dc postgres up   # PostgreSQL stack
 ```
 
-Per-database stacks:
+Other Docker commands:
 
 ```bash
-just docker-sqlite-up   / just docker-sqlite-down   / just docker-sqlite-reset
-just docker-mysql-up    / just docker-mysql-down     / just docker-mysql-reset
-just docker-postgres-up / just docker-postgres-down  / just docker-postgres-reset
+just docker-infra     # Infrastructure only (Postgres, MySQL, MinIO)
+just docker-build     # Build standalone CMS image (for CI)
+just docker-release   # Tag and push image with version tags
 ```
 
 The Docker image exposes ports 8080 (HTTP), 4000 (HTTPS), and 2233 (SSH), with volumes for `/app/data`, `/app/certs`, `/app/.ssh`, `/app/backups`, and `/app/plugins`.
@@ -162,6 +188,8 @@ Content items have a status lifecycle: **draft** -> **pending** -> **published**
 | **Media** | media, media_dimensions |
 | **Routing** | routes, admin_routes |
 | **Users & Auth** | users, roles, permissions, role_permissions, tokens, user_oauth, sessions, user_ssh_keys |
+| **i18n** | locales |
+| **Webhooks** | webhooks, webhook_deliveries |
 | **System** | backups, change_events, tables |
 
 All entity IDs are 26-character ULIDs wrapped in distinct Go types (`ContentID`, `UserID`, `FieldID`, etc.) that provide compile-time type safety.
@@ -186,9 +214,34 @@ All database mutations are wrapped in transactions that atomically record `chang
 - User ID, request ID, IP address
 - Hybrid Logical Clock timestamps for distributed ordering
 
+## Admin Panel
+
+Server-rendered HTMX + templ web interface. No SPA -- all pages are server-rendered with HTMX for interactivity.
+
+- **Content** -- tree navigation, block editor with drag-and-drop, inline field editing
+- **Schema** -- datatypes, fields, and field-datatype associations
+- **Media** -- upload, browse, image preview with dimension presets
+- **Users & Roles** -- user management, role assignment, permission configuration
+- **Routes** -- URL slug management
+- **Plugins** -- browse, enable, disable, view details
+- **Webhooks** -- create, test, view delivery history
+- **Locales** -- i18n configuration and locale management
+- **Settings** -- server configuration
+- **Audit Log** -- change event browser
+- **Import** -- bulk import from external CMS platforms
+- **Sessions & Tokens** -- active session and API token management
+
+Light DOM web components (`mcms-*`) provide dialog, data-table, field-renderer, media-picker, tree-nav, toast, confirm, and search widgets.
+
+```bash
+just admin generate      # Regenerate templ Go code
+just admin watch         # Watch .templ files for changes
+just admin bundle        # Bundle block editor JS via esbuild
+```
+
 ## API
 
-All endpoints are prefixed with `/api/v1/` and follow standard REST conventions. Content delivery uses slug-based routing at `/api/v1/content/{slug}` and requires API key authentication.
+All endpoints are prefixed with `/api/v1/` and follow standard REST conventions. Content delivery uses slug-based routing at `/api/v1/content/{slug}`.
 
 ### Authentication
 
@@ -207,13 +260,41 @@ GET    /api/v1/auth/oauth/callback # OAuth callback
 ```
 GET|POST          /api/v1/contentdata            # List / Create
 GET|PUT|DELETE    /api/v1/contentdata/{id}        # Get / Update / Delete
+POST              /api/v1/content/create          # Create content with fields (cascade)
 POST              /api/v1/content/batch           # Batch operations
+POST              /api/v1/contentdata/move        # Move node in tree
+POST              /api/v1/contentdata/reorder     # Reorder siblings
 
 GET|POST          /api/v1/contentfields           # Content field values
 GET|POST          /api/v1/contentrelations        # Content relationships
 ```
 
-Admin content mirrors exist at `/api/v1/admincontentdatas` and `/api/v1/admincontentfields` for draft management.
+### Publishing & Versioning
+
+```
+POST              /api/v1/content/publish         # Publish content (creates snapshot)
+POST              /api/v1/content/unpublish       # Unpublish content
+POST              /api/v1/content/schedule        # Schedule future publish
+GET               /api/v1/content/versions        # List versions
+POST              /api/v1/content/versions        # Create manual version
+DELETE            /api/v1/content/versions/{id}   # Delete version
+POST              /api/v1/content/restore         # Restore from version
+```
+
+Admin content mirrors exist at `/api/v1/admin/content/` for draft management.
+
+### Content Delivery
+
+```
+GET               /api/v1/content/{slug}          # Published content by slug
+GET               /api/v1/content/{slug}?preview=true  # Live draft (requires auth)
+GET               /api/v1/content/{slug}?locale=en     # Locale-specific delivery
+GET               /api/v1/content/{slug}?format=clean  # Format override
+GET               /api/v1/globals                 # All global content trees
+GET               /api/v1/query/{datatype}        # Query by datatype
+```
+
+The `format` query parameter controls response structure: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, or `raw`.
 
 ### Schema
 
@@ -235,20 +316,19 @@ DELETE            /api/v1/media/cleanup          # Remove orphaned S3 objects
 GET|POST          /api/v1/mediadimensions        # Dimension presets
 ```
 
-### Routes & Content Delivery
+### Routes & Locales
 
 ```
 GET|POST          /api/v1/routes                 # Route management
-GET               /api/v1/content/{slug}          # Content delivery (requires API key, format via query param)
-GET               /api/v1/admin/tree/            # Admin content tree
+GET               /api/v1/locales                # Public locale list
+CRUD              /api/v1/admin/locales          # Admin locale management
 ```
-
-The `format` query parameter controls response structure: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, or `raw`.
 
 ### Users & Access Control
 
 ```
 GET|POST          /api/v1/users                  # User management
+POST              /api/v1/users/reassign-delete  # Reassign content and delete user
 GET|POST          /api/v1/roles                  # Roles
 GET|POST          /api/v1/permissions            # Permissions
 GET|POST          /api/v1/role-permissions       # Role-permission mappings
@@ -257,7 +337,16 @@ GET|POST|DELETE   /api/v1/sessions               # Session management
 GET|POST|DELETE   /api/v1/tokens                 # API token management
 ```
 
-### Import
+### Webhooks
+
+```
+CRUD              /api/v1/admin/webhooks         # Webhook management
+POST              /api/v1/admin/webhooks/{id}/test       # Test delivery
+GET               /api/v1/admin/webhooks/{id}/deliveries # Delivery history
+POST              /api/v1/admin/webhooks/deliveries/{id}/retry # Retry delivery
+```
+
+### Import & Configuration
 
 ```
 POST   /api/v1/import/contentful   # Import from Contentful
@@ -266,33 +355,32 @@ POST   /api/v1/import/strapi       # Import from Strapi
 POST   /api/v1/import/wordpress    # Import from WordPress
 POST   /api/v1/import/clean        # Import ModulaCMS format
 POST   /api/v1/import              # Bulk import
-```
 
-### Configuration & Plugins
-
-```
 GET               /api/v1/admin/config           # Get config (redacted)
 PATCH             /api/v1/admin/config           # Update config
 GET               /api/v1/admin/config/meta      # Config field metadata
 GET               /api/v1/admin/plugins          # List plugins
 GET               /api/v1/admin/plugins/routes   # Plugin route approval
-GET               /api/v1/admin/plugins/hooks    # Plugin hook approval
 ```
 
 ## Terminal UI
 
-The SSH-accessible TUI is built with Charmbracelet Bubbletea following the Elm Architecture (Model-Update-View). It provides 26+ screens for managing all CMS operations:
+The SSH-accessible TUI is built with Charmbracelet Bubbletea following the Elm Architecture (Model-Update-View). Each screen implements a `Screen` interface with its own state, update, and view methods.
 
-- **Content** -- browse, create, edit content with tree navigation
+- **Content** -- browse, create, edit content with tree navigation (regular and admin views)
 - **Datatypes & Fields** -- define and manage content schemas
 - **Media** -- upload and manage media assets with file picker
 - **Users** -- user management with role assignment
 - **Routes** -- URL slug configuration
 - **Plugins** -- browse, enable, disable, reload Lua plugins
+- **Webhooks** -- webhook management and delivery monitoring
+- **Pipelines** -- pipeline entry management
+- **Deploy** -- content sync between environments
 - **Configuration** -- edit server configuration
+- **Database** -- database info and table browser
 - **Quick Start** -- guided setup wizard
 
-The TUI uses a focus system (page, table, form, dialog) for keyboard input routing, custom form dialogs for data entry, and async commands for database operations.
+UI features: responsive panel layouts with three screen modes (normal/wide/full), accordion focus, panel tabs, scroll indicators, adaptive statusbar, compact/full header with breadcrumbs.
 
 ## Connect System
 
@@ -386,6 +474,33 @@ plugins/my-plugin/
 ./modula plugin disable my-plugin  # Disable
 ```
 
+## Deploy
+
+The `deploy` command syncs content between environments via JSON exports and the Go SDK.
+
+```bash
+modula deploy export -o export.json           # Export content to JSON
+modula deploy import -f export.json           # Import from JSON
+modula deploy pull --env prod                 # Download from remote
+modula deploy push --env staging              # Upload to remote
+modula deploy snapshot list                   # List import snapshots
+modula deploy snapshot show <id>              # Show snapshot details
+modula deploy snapshot restore <id>           # Restore from snapshot
+modula deploy env list                        # List configured environments
+modula deploy env test                        # Test environment connectivity
+```
+
+## MCP Server
+
+ModulaCMS includes a Model Context Protocol server with 40+ tools for AI-assisted content management. The MCP server connects to the CMS via the Go SDK.
+
+```bash
+just mcp-build        # Build MCP server binary
+just mcp-install      # Build and install to /usr/local/bin/modula-mcp
+```
+
+Tools cover content CRUD, content fields, batch operations, schema management, media, routes, users, roles, permissions, configuration, and import.
+
 ## Configuration
 
 Configuration lives in `config.json` at the project root. Environment variables can be referenced as `${VAR}` or `${VAR:-default}`.
@@ -400,6 +515,7 @@ Key configuration categories:
 | **S3 Storage** | `bucket_endpoint`, `bucket_media`, `bucket_backup`, `bucket_access_key`, `bucket_secret_key` |
 | **Email** | `email_enabled`, `email_provider` (smtp/sendgrid/ses/postmark), `email_from_*` |
 | **CORS** | `cors_origins`, `cors_methods`, `cors_headers`, `cors_credentials` |
+| **i18n** | `i18n_enabled`, `i18n_default_locale`, `i18n_fallback_chain` |
 | **Output** | `output_format` (contentful/sanity/strapi/wordpress/clean/raw) |
 | **Plugins** | `plugin_enabled`, `plugin_directory`, `plugin_max_vms`, `plugin_timeout`, `plugin_hot_reload` |
 | **Observability** | `observability_enabled`, `observability_provider` (sentry/datadog/newrelic), `observability_dsn` |
@@ -472,10 +588,10 @@ await client.mediaUpload.upload(file)
 Both SDKs ship as dual ESM + CommonJS builds via tsup with full type declarations.
 
 ```bash
-just sdk-install      # pnpm install (workspace root)
-just sdk-build        # Build all packages
-just sdk-test         # Run all SDK tests (Vitest)
-just sdk-typecheck    # Typecheck all packages
+just sdk ts install      # pnpm install (workspace root)
+just sdk ts build        # Build all packages
+just sdk ts test         # Run all SDK tests (Vitest)
+just sdk ts typecheck    # Typecheck all packages
 ```
 
 ### Go
@@ -515,8 +631,8 @@ if modula.IsUnauthorized(err) { ... }
 The SDK exposes 23+ typed resource endpoints including content, schema, media, users, roles, permissions, plugins, configuration, sessions, SSH keys, and bulk import.
 
 ```bash
-just sdk-go-test      # Run Go SDK tests
-just sdk-go-vet       # Vet Go SDK
+just sdk go test      # Run Go SDK tests
+just sdk go vet       # Vet Go SDK
 ```
 
 ### Swift
@@ -565,9 +681,9 @@ do {
 The SDK uses async/await throughout, marks all types as `Sendable` for actor isolation, and provides 30 branded ID types via a `ResourceID` protocol. It covers 26 CRUD resources plus 13 specialized endpoints (auth, media upload, admin tree, plugins, config, etc.).
 
 ```bash
-just sdk-swift-build  # Build Swift SDK
-just sdk-swift-test   # Run Swift SDK tests
-just sdk-swift-clean  # Clean build artifacts
+just sdk swift build  # Build Swift SDK
+just sdk swift test   # Run Swift SDK tests
+just sdk swift clean  # Clean build artifacts
 ```
 
 ## Backup & Restore
@@ -637,27 +753,37 @@ Two GitHub Actions workflows:
 ## Project Structure
 
 ```
-cmd/                          Cobra CLI commands (serve, install, tui, db, backup, config, cert, plugin, version)
+cmd/                          Cobra CLI commands (serve, install, tui, connect, deploy, pipeline, db, backup, config, cert, plugin, version)
 internal/
+  admin/                      HTMX admin panel: CSRF, auth middleware, static file embed, web components
+  admin/handlers/             Admin page handlers (render, auth, CRUD for all resources)
+  admin/pages/                templ full-page components (~28 pages)
+  admin/static/               CSS, JS, block editor, web components (go:embed)
   auth/                       Authentication (bcrypt, OAuth, sessions)
   backup/                     Backup/restore (SQL dump + ZIP)
-  cli/                        Bubbletea TUI (40+ files, Elm Architecture)
   config/                     Configuration loading, validation, hot-reload
   db/                         DbDriver interface, wrapper structs, application types
   db/types/                   ULID-based typed IDs, enums, nullable wrappers
   db/audited/                 Audited command pattern for change events
   db-sqlite/, db-mysql/, db-psql/  sqlc-generated code (do not edit)
   definitions/                CMS format definitions (Contentful, Sanity, Strapi, WordPress)
+  deploy/                     Content sync: export, import, push, pull, snapshots
+  email/                      Transactional email (SMTP, SendGrid, SES, Postmark)
   install/                    Setup wizard and bootstrap
   media/                      Image optimization, S3 upload
   middleware/                  CORS, rate limiting, sessions, RBAC authorization
   model/                      Domain structs (Node, Datatype, Field)
   plugin/                     Lua plugin system (gopher-lua)
+  publishing/                 Publish, snapshot, version management
   registry/                   Project registry (~/.modula/configs.json)
   remote/                     RemoteDriver -- DbDriver over Go SDK (HTTPS)
-  router/                     HTTP route registration, slug handling, pagination
+  router/                     HTTP route registration, slug handling, globals, pagination
+  service/                    Service layer (SchemaService with composable store interfaces)
   transform/                  Content format transformers
+  tui/                        Bubbletea TUI (Screen interface, PanelScreen base, 12+ screens)
   utility/                    Logging (slog), version info, helpers
+  validation/                 Composable field validation rules
+mcp/                          MCP server (40+ tools for AI-assisted CMS management)
 sql/
   schema/                     27 numbered schema directories (DDL + queries per dialect)
   sqlc.yml                    sqlc configuration
