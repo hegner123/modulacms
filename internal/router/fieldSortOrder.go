@@ -4,16 +4,15 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // FieldSortOrderHandler updates the sort order for a specific field.
 // Registered as: PUT /api/v1/fields/{id}/sort-order
-func FieldSortOrderHandler(w http.ResponseWriter, r *http.Request, d db.DbDriver, c config.Config) {
+func FieldSortOrderHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	fieldIDStr := r.PathValue("id")
 	if fieldIDStr == "" {
 		http.Error(w, "field id is required", http.StatusBadRequest)
@@ -36,14 +35,19 @@ func FieldSortOrderHandler(w http.ResponseWriter, r *http.Request, d db.DbDriver
 		return
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.UpdateFieldSortOrder(r.Context(), ac, db.UpdateFieldSortOrderParams{
+	ac, err := svc.AuditCtx(r.Context())
+	if err != nil {
+		utility.DefaultLogger.Error("failed to build audit context", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = svc.Schema.UpdateFieldSortOrder(r.Context(), ac, db.UpdateFieldSortOrderParams{
 		FieldID:   fieldID,
 		SortOrder: req.SortOrder,
 	})
 	if err != nil {
-		utility.DefaultLogger.Error("failed to update field sort order", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return
 	}
 
@@ -54,7 +58,7 @@ func FieldSortOrderHandler(w http.ResponseWriter, r *http.Request, d db.DbDriver
 
 // FieldMaxSortOrderHandler returns the maximum sort order for fields under a parent datatype.
 // Registered as: GET /api/v1/fields/max-sort-order
-func FieldMaxSortOrderHandler(w http.ResponseWriter, r *http.Request, d db.DbDriver) {
+func FieldMaxSortOrderHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	parentIDStr := r.URL.Query().Get("parent_id")
 	if parentIDStr == "" {
 		http.Error(w, "parent_id query parameter is required", http.StatusBadRequest)
@@ -69,10 +73,9 @@ func FieldMaxSortOrderHandler(w http.ResponseWriter, r *http.Request, d db.DbDri
 	}
 
 	nullableParentID := types.NullableDatatypeID{ID: parentID, Valid: true}
-	maxSortOrder, err := d.GetMaxSortOrderByParentID(nullableParentID)
+	maxSortOrder, err := svc.Schema.GetMaxSortOrder(r.Context(), nullableParentID)
 	if err != nil {
-		utility.DefaultLogger.Error("failed to get max sort order", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return
 	}
 

@@ -2,32 +2,30 @@ package handlers
 
 import (
 	"encoding/json"
-	"net"
+	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // DatatypesListHandler handles GET /admin/schema/datatypes.
 // Lists all datatypes with pagination, search, type filter, and sorting.
 // HTMX requests receive partial table rows only.
-func DatatypesListHandler(driver db.DbDriver) http.HandlerFunc {
+func DatatypesListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		search := strings.TrimSpace(r.URL.Query().Get("search"))
 		typeFilter := r.URL.Query().Get("type")
 		sortBy := r.URL.Query().Get("sort")
 
 		// Fetch all datatypes and filter in Go (table is small).
-		all, err := driver.ListDatatypes()
+		all, err := svc.Schema.ListDatatypes(r.Context())
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list datatypes", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -36,13 +34,11 @@ func DatatypesListHandler(driver db.DbDriver) http.HandlerFunc {
 
 		// Apply type filter first
 		list := make([]db.Datatypes, 0)
-		if all != nil {
-			for _, dt := range *all {
-				if typeFilter != "" && dt.Type != typeFilter {
-					continue
-				}
-				list = append(list, dt)
+		for _, dt := range all {
+			if typeFilter != "" && dt.Type != typeFilter {
+				continue
 			}
+			list = append(list, dt)
 		}
 
 		// Fuzzy search: ranked results supersede user sort (intentional —
@@ -92,11 +88,9 @@ func DatatypesListHandler(driver db.DbDriver) http.HandlerFunc {
 
 		// Collect distinct types for the filter dropdown
 		typeSet := make(map[string]bool)
-		if all != nil {
-			for _, dt := range *all {
-				if dt.Type != "" {
-					typeSet[dt.Type] = true
-				}
+		for _, dt := range all {
+			if dt.Type != "" {
+				typeSet[dt.Type] = true
 			}
 		}
 		distinctTypes := make([]string, 0, len(typeSet))
@@ -150,7 +144,7 @@ func sortStrings(s []string) {
 
 // DatatypeDetailHandler handles GET /admin/schema/datatypes/{id}.
 // Shows datatype detail with linked fields list.
-func DatatypeDetailHandler(driver db.DbDriver) http.HandlerFunc {
+func DatatypeDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -158,22 +152,23 @@ func DatatypeDetailHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
-		dt, err := driver.GetDatatype(types.DatatypeID(id))
+		dt, err := svc.Schema.GetDatatype(r.Context(), types.DatatypeID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to get datatype", err)
-			http.Error(w, "Datatype not found", http.StatusNotFound)
+			var nfe *service.NotFoundError
+			if errors.As(err, &nfe) {
+				http.Error(w, "Datatype not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
 		// Fetch linked fields by parent_id (fields belong to datatype directly)
-		fieldList, err := driver.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: types.DatatypeID(id), Valid: true})
+		linkedFields, err := svc.Schema.ListFieldsByDatatypeID(r.Context(), types.NullableDatatypeID{ID: types.DatatypeID(id), Valid: true})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list datatype fields", err)
-			fieldList = &[]db.Fields{}
-		}
-		linkedFields := make([]db.Fields, 0)
-		if fieldList != nil {
-			linkedFields = *fieldList
+			linkedFields = []db.Fields{}
 		}
 
 		csrfToken := CSRFTokenFromContext(r.Context())
@@ -191,15 +186,9 @@ func DatatypeDetailHandler(driver db.DbDriver) http.HandlerFunc {
 }
 
 // DatatypeCreateHandler handles POST /admin/schema/datatypes.
-// Validates label and type are required, creates via audited context.
-func DatatypeCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+// Creates a datatype via the service layer, which validates label and type.
+func DatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
-		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
@@ -209,39 +198,32 @@ func DatatypeCreateHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 		label := strings.TrimSpace(r.FormValue("label"))
 		dtype := strings.TrimSpace(r.FormValue("type"))
 
-		errs := make(map[string]string)
-		if label == "" {
-			errs["label"] = "Label is required"
-		}
-		if dtype == "" {
-			errs["type"] = "Type is required"
-		}
-
-		if len(errs) > 0 {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeForm(name, label, dtype, errs, csrfToken))
+		ac, acErr := svc.AuditCtx(r.Context())
+		if acErr != nil {
+			utility.DefaultLogger.Error("failed to build audit context", acErr)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
 		user := middleware.AuthenticatedUser(r.Context())
-		clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			clientIP = r.RemoteAddr
-		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
-
-		now := types.NewTimestamp(time.Now())
-		_, err := driver.CreateDatatype(r.Context(), ac, db.CreateDatatypeParams{
-			DatatypeID:   types.NewDatatypeID(),
-			Name:         name,
-			Label:        label,
-			Type:         dtype,
-			AuthorID:     user.UserID,
-			DateCreated:  now,
-			DateModified: now,
+		_, err := svc.Schema.CreateDatatype(r.Context(), ac, db.CreateDatatypeParams{
+			Name:     name,
+			Label:    label,
+			Type:     dtype,
+			AuthorID: user.UserID,
 		})
 		if err != nil {
+			var ve *service.ValidationError
+			if errors.As(err, &ve) {
+				errs := make(map[string]string, len(ve.Errors))
+				for _, fe := range ve.Errors {
+					errs[fe.Field] = fe.Message
+				}
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				csrfToken := CSRFTokenFromContext(r.Context())
+				Render(w, r, partials.DatatypeForm(name, label, dtype, errs, csrfToken))
+				return
+			}
 			utility.DefaultLogger.Error("failed to create datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
@@ -260,15 +242,9 @@ func DatatypeCreateHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 }
 
 // DatatypeUpdateHandler handles POST /admin/schema/datatypes/{id}.
-// Updates label and type via audited context.
-func DatatypeUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+// Updates user-editable fields via the service layer, which preserves immutable fields.
+func DatatypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
-		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
 		id := r.PathValue("id")
 		if id == "" {
 			http.Error(w, "Missing datatype ID", http.StatusBadRequest)
@@ -284,45 +260,36 @@ func DatatypeUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 		label := strings.TrimSpace(r.FormValue("label"))
 		dtype := strings.TrimSpace(r.FormValue("type"))
 
-		errs := make(map[string]string)
-		if label == "" {
-			errs["label"] = "Label is required"
-		}
-		if dtype == "" {
-			errs["type"] = "Type is required"
-		}
-
-		if len(errs) > 0 {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeEditForm(id, name, label, dtype, errs, csrfToken))
+		ac, acErr := svc.AuditCtx(r.Context())
+		if acErr != nil {
+			utility.DefaultLogger.Error("failed to build audit context", acErr)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
-		existing, err := driver.GetDatatype(types.DatatypeID(id))
-		if err != nil {
-			http.Error(w, "Datatype not found", http.StatusNotFound)
-			return
-		}
-
-		user := middleware.AuthenticatedUser(r.Context())
-		clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			clientIP = r.RemoteAddr
-		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
-
-		_, err = driver.UpdateDatatype(r.Context(), ac, db.UpdateDatatypeParams{
-			DatatypeID:   types.DatatypeID(id),
-			ParentID:     existing.ParentID,
-			Name:         name,
-			Label:        label,
-			Type:         dtype,
-			AuthorID:     existing.AuthorID,
-			DateCreated:  existing.DateCreated,
-			DateModified: types.NewTimestamp(time.Now()),
+		_, err := svc.Schema.UpdateDatatype(r.Context(), ac, db.UpdateDatatypeParams{
+			DatatypeID: types.DatatypeID(id),
+			Name:       name,
+			Label:      label,
+			Type:       dtype,
 		})
 		if err != nil {
+			var ve *service.ValidationError
+			if errors.As(err, &ve) {
+				errs := make(map[string]string, len(ve.Errors))
+				for _, fe := range ve.Errors {
+					errs[fe.Field] = fe.Message
+				}
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				csrfToken := CSRFTokenFromContext(r.Context())
+				Render(w, r, partials.DatatypeEditForm(id, name, label, dtype, errs, csrfToken))
+				return
+			}
+			var nfe *service.NotFoundError
+			if errors.As(err, &nfe) {
+				http.Error(w, "Datatype not found", http.StatusNotFound)
+				return
+			}
 			utility.DefaultLogger.Error("failed to update datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
@@ -342,14 +309,8 @@ func DatatypeUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 
 // DatatypeDeleteHandler handles DELETE /admin/schema/datatypes/{id}.
 // HTMX-only endpoint. Non-HTMX requests receive 405.
-func DatatypeDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func DatatypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
-		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -361,14 +322,15 @@ func DatatypeDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 			return
 		}
 
-		user := middleware.AuthenticatedUser(r.Context())
-		clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			clientIP = r.RemoteAddr
+		ac, acErr := svc.AuditCtx(r.Context())
+		if acErr != nil {
+			utility.DefaultLogger.Error("failed to build audit context", acErr)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete datatype", "type": "error"}}`)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
-		err := driver.DeleteDatatype(r.Context(), ac, types.DatatypeID(id))
+		err := svc.Schema.DeleteDatatype(r.Context(), ac, types.DatatypeID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to delete datatype", err)
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete datatype", "type": "error"}}`)
@@ -382,15 +344,9 @@ func DatatypeDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 }
 
 // DatatypeCreateFieldHandler handles POST /admin/schema/datatypes/{id}/fields.
-// Creates a new field with parent_id set to this datatype.
-func DatatypeCreateFieldHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+// Creates a new field with parent_id set to this datatype via the service layer.
+func DatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
-		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
 		id := r.PathValue("id")
 		if id == "" {
 			http.Error(w, "Missing datatype ID", http.StatusBadRequest)
@@ -409,64 +365,36 @@ func DatatypeCreateFieldHandler(driver db.DbDriver, mgr *config.Manager) http.Ha
 		validationJSON := strings.TrimSpace(r.FormValue("validation"))
 		uiConfig := strings.TrimSpace(r.FormValue("ui_config"))
 
-		if data == "" {
-			data = "{}"
-		}
-		if validationJSON == "" {
-			validationJSON = "{}"
-		}
-		if uiConfig == "" {
-			uiConfig = "{}"
-		}
-
-		errs := make(map[string]string)
-		if label == "" {
-			errs["label"] = "Label is required"
-		}
-		if fieldType == "" {
-			errs["type"] = "Type is required"
-		} else if _, lookupErr := driver.GetFieldTypeByType(fieldType); lookupErr != nil {
-			errs["type"] = "Invalid field type"
-		}
-
-		// Validate the validation config JSON before persisting.
-		vc, vcErr := types.ParseValidationConfig(validationJSON)
-		if vcErr != nil {
-			errs["validation"] = vcErr.Error()
-		} else if vcValErr := types.ValidateValidationConfig(vc); vcValErr != nil {
-			errs["validation"] = vcValErr.Error()
-		}
-
-		if len(errs) > 0 {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeCreateFieldForm(id, name, label, fieldType, data, validationJSON, uiConfig, errs, csrfToken))
+		ac, acErr := svc.AuditCtx(r.Context())
+		if acErr != nil {
+			utility.DefaultLogger.Error("failed to build audit context", acErr)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
 		user := middleware.AuthenticatedUser(r.Context())
-		clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			clientIP = r.RemoteAddr
-		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
-
-		now := types.NewTimestamp(time.Now())
-		_, err := driver.CreateField(r.Context(), ac, db.CreateFieldParams{
-			FieldID:      types.NewFieldID(),
-			ParentID:     types.NullableDatatypeID{ID: types.DatatypeID(id), Valid: true},
-			SortOrder:    0,
-			Name:         name,
-			Label:        label,
-			Type:         types.FieldType(fieldType),
-			Data:         data,
-			Validation:   validationJSON,
-			UIConfig:     uiConfig,
-			AuthorID:     types.NullableUserID{ID: user.UserID, Valid: true},
-			DateCreated:  now,
-			DateModified: now,
+		_, err := svc.Schema.CreateField(r.Context(), ac, db.CreateFieldParams{
+			ParentID:   types.NullableDatatypeID{ID: types.DatatypeID(id), Valid: true},
+			Name:       name,
+			Label:      label,
+			Type:       types.FieldType(fieldType),
+			Data:       data,
+			Validation: validationJSON,
+			UIConfig:   uiConfig,
+			AuthorID:   types.NullableUserID{ID: user.UserID, Valid: true},
 		})
 		if err != nil {
+			var ve *service.ValidationError
+			if errors.As(err, &ve) {
+				errs := make(map[string]string, len(ve.Errors))
+				for _, fe := range ve.Errors {
+					errs[fe.Field] = fe.Message
+				}
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				csrfToken := CSRFTokenFromContext(r.Context())
+				Render(w, r, partials.DatatypeCreateFieldForm(id, name, label, fieldType, data, validationJSON, uiConfig, errs, csrfToken))
+				return
+			}
 			utility.DefaultLogger.Error("failed to create field for datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
@@ -486,18 +414,13 @@ func DatatypeCreateFieldHandler(driver db.DbDriver, mgr *config.Manager) http.Ha
 
 // DatatypesJSONHandler handles GET /admin/api/datatypes.
 // Returns all datatypes as JSON for the block editor insert dialog.
-func DatatypesJSONHandler(driver db.DbDriver) http.HandlerFunc {
+func DatatypesJSONHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		items, err := driver.ListDatatypes()
+		list, err := svc.Schema.ListDatatypes(r.Context())
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list datatypes", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
-		}
-
-		list := make([]db.Datatypes, 0)
-		if items != nil {
-			list = *items
 		}
 
 		w.Header().Set("Content-Type", "application/json")

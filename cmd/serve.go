@@ -31,6 +31,7 @@ import (
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/router"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/tui"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/hegner123/modulacms/internal/webhooks"
@@ -267,6 +268,8 @@ Examples:
 			bridge = pluginManager.Bridge()
 		}
 
+		svc := service.NewRegistry(driver, mgr, pc, emailSvc, dispatcher)
+
 		// buildRealHandler creates the full router + middleware stack.
 		buildRealHandler := func() http.Handler {
 			// Ensure S3 buckets exist (media + backup)
@@ -297,7 +300,7 @@ Examples:
 				}
 			}
 
-			mux := router.NewModulacmsMux(mgr, bridge, driver, pc, emailSvc, dispatcher)
+			mux := router.NewModulacmsMux(mgr, bridge, driver, pc, emailSvc, dispatcher, svc)
 
 			var hookRunner audited.HookRunner
 			if pluginManager != nil {

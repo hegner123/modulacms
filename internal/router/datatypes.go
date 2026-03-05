@@ -4,61 +4,58 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // DatatypesHandler handles CRUD operations that do not require a specific datatype ID.
-func DatatypesHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func DatatypesHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		if HasPaginationParams(r) {
-			apiListDatatypesPaginated(w, r, c)
+			apiListDatatypesPaginated(w, r, svc)
 		} else {
-			apiListDatatypes(w, c)
+			apiListDatatypes(w, r, svc)
 		}
 	case http.MethodPost:
-		apiCreateDatatype(w, r, c)
+		apiCreateDatatype(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteDatatype(w, r, c)
+		apiDeleteDatatype(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // DatatypeHandler handles CRUD operations for specific datatype items.
-func DatatypeHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func DatatypeHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetDatatype(w, r, c)
+		apiGetDatatype(w, r, svc)
 	case http.MethodPut:
-		apiUpdateDatatype(w, r, c)
+		apiUpdateDatatype(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteDatatype(w, r, c)
+		apiDeleteDatatype(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // DatatypeFullHandler handles requests for the composed datatype+fields view.
-func DatatypeFullHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func DatatypeFullHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetDatatypeFull(w, r, c)
+		apiGetDatatypeFull(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // apiGetDatatypeFull handles GET requests for a datatype with all field definitions.
-func apiGetDatatypeFull(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiGetDatatypeFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
 	dtID, err := types.ParseDatatypeID(q)
 	if err != nil {
@@ -67,10 +64,9 @@ func apiGetDatatypeFull(w http.ResponseWriter, r *http.Request, c config.Config)
 		return err
 	}
 
-	view, err := db.AssembleDatatypeFullView(d, dtID)
+	view, err := svc.Schema.GetDatatypeFull(r.Context(), dtID)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -81,9 +77,7 @@ func apiGetDatatypeFull(w http.ResponseWriter, r *http.Request, c config.Config)
 }
 
 // apiGetDatatype handles GET requests for a single datatype
-func apiGetDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiGetDatatype(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
 	dId, err := types.ParseDatatypeID(q)
 	if err != nil {
@@ -91,10 +85,9 @@ func apiGetDatatype(w http.ResponseWriter, r *http.Request, c config.Config) err
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	datatype, err := d.GetDatatype(dId)
+	datatype, err := svc.Schema.GetDatatype(r.Context(), dId)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -105,13 +98,10 @@ func apiGetDatatype(w http.ResponseWriter, r *http.Request, c config.Config) err
 }
 
 // apiListDatatypes handles GET requests for listing datatypes
-func apiListDatatypes(w http.ResponseWriter, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	datatypes, err := d.ListDatatypes()
+func apiListDatatypes(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	datatypes, err := svc.Schema.ListDatatypes(r.Context())
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -122,9 +112,7 @@ func apiListDatatypes(w http.ResponseWriter, c config.Config) error {
 }
 
 // apiCreateDatatype handles POST requests to create a new datatype
-func apiCreateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiCreateDatatype(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	var newDatatype db.CreateDatatypeParams
 	err := json.NewDecoder(r.Body).Decode(&newDatatype)
 	if err != nil {
@@ -133,35 +121,16 @@ func apiCreateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		return err
 	}
 
-	if newDatatype.Label == "" {
-		http.Error(w, "label is required", http.StatusBadRequest)
-		return fmt.Errorf("label is required")
-	}
-	if newDatatype.Type == "" {
-		http.Error(w, "type is required", http.StatusBadRequest)
-		return fmt.Errorf("type is required")
-	}
-	if err := types.ValidateUserDatatypeType(newDatatype.Type); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
-	}
-
-	if newDatatype.DatatypeID.IsZero() {
-		newDatatype.DatatypeID = types.NewDatatypeID()
-	}
-	now := types.NewTimestamp(time.Now().UTC())
-	if !newDatatype.DateCreated.Valid {
-		newDatatype.DateCreated = now
-	}
-	if !newDatatype.DateModified.Valid {
-		newDatatype.DateModified = now
-	}
-
-	ac := middleware.AuditContextFromRequest(r, c)
-	createdDatatype, err := d.CreateDatatype(r.Context(), ac, newDatatype)
+	ac, err := svc.AuditCtx(r.Context())
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	createdDatatype, err := svc.Schema.CreateDatatype(r.Context(), ac, newDatatype)
+	if err != nil {
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -177,9 +146,7 @@ func apiCreateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 }
 
 // apiUpdateDatatype handles PUT requests to update an existing datatype
-func apiUpdateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiUpdateDatatype(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	var updateDatatype db.UpdateDatatypeParams
 	err := json.NewDecoder(r.Body).Decode(&updateDatatype)
 	if err != nil {
@@ -188,25 +155,16 @@ func apiUpdateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		return err
 	}
 
-	if updateDatatype.Type != "" {
-		if err := types.ValidateUserDatatypeType(updateDatatype.Type); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return err
-		}
-	}
-
-	ac := middleware.AuditContextFromRequest(r, c)
-	_, err = d.UpdateDatatype(r.Context(), ac, updateDatatype)
+	ac, err := svc.AuditCtx(r.Context())
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
-	updated, err := d.GetDatatype(updateDatatype.DatatypeID)
+	updated, err := svc.Schema.UpdateDatatype(r.Context(), ac, updateDatatype)
 	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated datatype", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -217,9 +175,7 @@ func apiUpdateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 }
 
 // apiDeleteDatatype handles DELETE requests for datatypes
-func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
 	dtID, err := types.ParseDatatypeID(q)
 	if err != nil {
@@ -228,11 +184,16 @@ func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		return err
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	err = d.DeleteDatatype(r.Context(), ac, dtID)
+	ac, err := svc.AuditCtx(r.Context())
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	err = svc.Schema.DeleteDatatype(r.Context(), ac, dtID)
+	if err != nil {
+		writeServiceError(w, err)
 		return err
 	}
 	res := fmt.Sprintf("Deleted %s", dtID)
@@ -244,29 +205,13 @@ func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 }
 
 // apiListDatatypesPaginated handles GET requests for listing datatypes with pagination.
-func apiListDatatypesPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+func apiListDatatypesPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	params := ParsePaginationParams(r)
 
-	items, err := d.ListDatatypesPaginated(params)
+	response, err := svc.Schema.ListDatatypesPaginated(r.Context(), params)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return err
-	}
-
-	total, err := d.CountDatatypes()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
-	response := db.PaginatedResponse[db.Datatypes]{
-		Data:   *items,
-		Total:  *total,
-		Limit:  params.Limit,
-		Offset: params.Offset,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

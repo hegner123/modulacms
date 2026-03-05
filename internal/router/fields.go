@@ -2,51 +2,48 @@ package router
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // FieldsHandler handles CRUD operations that do not require a specific field ID.
-func FieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func FieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		if HasPaginationParams(r) {
-			apiListFieldsPaginated(w, r, c)
+			apiListFieldsPaginated(w, r, svc)
 		} else {
-			apiListFields(w, r, c)
+			apiListFields(w, r, svc)
 		}
 	case http.MethodPost:
-		apiCreateField(w, r, c)
+		apiCreateField(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // FieldHandler handles CRUD operations for specific field items.
-func FieldHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func FieldHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetField(w, r, c)
+		apiGetField(w, r, svc)
 	case http.MethodPut:
-		apiUpdateField(w, r, c)
+		apiUpdateField(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteField(w, r, c)
+		apiDeleteField(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // apiGetField handles GET requests for a single field
-func apiGetField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiGetField(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
 	fID := types.FieldID(q)
 	if err := fID.Validate(); err != nil {
@@ -54,23 +51,19 @@ func apiGetField(w http.ResponseWriter, r *http.Request, c config.Config) error 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	field, err := d.GetField(fID)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
 
-	// Check field-level role access.
+	// Extract role info from middleware context for field-level access check.
 	user := middleware.AuthenticatedUser(r.Context())
 	isAdmin := middleware.ContextIsAdmin(r.Context())
 	roleID := ""
 	if user != nil {
 		roleID = user.Role
 	}
-	if !db.IsFieldAccessible(*field, roleID, isAdmin) {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return fmt.Errorf("field %s not accessible to role %s", fID, roleID)
+
+	field, err := svc.Schema.GetField(r.Context(), fID, roleID, isAdmin)
+	if err != nil {
+		writeServiceError(w, err)
+		return err
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -81,23 +74,19 @@ func apiGetField(w http.ResponseWriter, r *http.Request, c config.Config) error 
 
 // apiListFields handles GET requests for listing fields.
 // Filters results by the authenticated user's role.
-func apiListFields(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	fields, err := d.ListFields()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
+func apiListFields(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	user := middleware.AuthenticatedUser(r.Context())
 	isAdmin := middleware.ContextIsAdmin(r.Context())
 	roleID := ""
 	if user != nil {
 		roleID = user.Role
 	}
-	filtered := db.FilterFieldsByRole(*fields, roleID, isAdmin)
+
+	filtered, err := svc.Schema.ListFieldsFiltered(r.Context(), roleID, isAdmin)
+	if err != nil {
+		writeServiceError(w, err)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -106,9 +95,7 @@ func apiListFields(w http.ResponseWriter, r *http.Request, c config.Config) erro
 }
 
 // apiCreateField handles POST requests to create a new field
-func apiCreateField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiCreateField(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	var newField db.CreateFieldParams
 	err := json.NewDecoder(r.Body).Decode(&newField)
 	if err != nil {
@@ -117,28 +104,16 @@ func apiCreateField(w http.ResponseWriter, r *http.Request, c config.Config) err
 		return err
 	}
 
-	if newField.FieldID.IsZero() {
-		newField.FieldID = types.NewFieldID()
-	}
-	now := types.NewTimestamp(time.Now().UTC())
-	if !newField.DateCreated.Valid {
-		newField.DateCreated = now
-	}
-	if !newField.DateModified.Valid {
-		newField.DateModified = now
-	}
-	if newField.Validation == "" {
-		newField.Validation = types.EmptyJSON
-	}
-	if newField.UIConfig == "" {
-		newField.UIConfig = types.EmptyJSON
-	}
-
-	ac := middleware.AuditContextFromRequest(r, c)
-	createdField, err := d.CreateField(r.Context(), ac, newField)
+	ac, err := svc.AuditCtx(r.Context())
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	createdField, err := svc.Schema.CreateField(r.Context(), ac, newField)
+	if err != nil {
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -149,9 +124,7 @@ func apiCreateField(w http.ResponseWriter, r *http.Request, c config.Config) err
 }
 
 // apiUpdateField handles PUT requests to update an existing field
-func apiUpdateField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiUpdateField(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	var updateField db.UpdateFieldParams
 	err := json.NewDecoder(r.Body).Decode(&updateField)
 	if err != nil {
@@ -160,25 +133,16 @@ func apiUpdateField(w http.ResponseWriter, r *http.Request, c config.Config) err
 		return err
 	}
 
-	if updateField.Validation == "" {
-		updateField.Validation = types.EmptyJSON
-	}
-	if updateField.UIConfig == "" {
-		updateField.UIConfig = types.EmptyJSON
-	}
-
-	ac := middleware.AuditContextFromRequest(r, c)
-	_, err = d.UpdateField(r.Context(), ac, updateField)
+	ac, err := svc.AuditCtx(r.Context())
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
-	updated, err := d.GetField(updateField.FieldID)
+	updated, err := svc.Schema.UpdateField(r.Context(), ac, updateField)
 	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated field", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -189,9 +153,7 @@ func apiUpdateField(w http.ResponseWriter, r *http.Request, c config.Config) err
 }
 
 // apiDeleteField handles DELETE requests for fields
-func apiDeleteField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiDeleteField(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
 	fID := types.FieldID(q)
 	if err := fID.Validate(); err != nil {
@@ -199,11 +161,17 @@ func apiDeleteField(w http.ResponseWriter, r *http.Request, c config.Config) err
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.DeleteField(r.Context(), ac, fID)
+
+	ac, err := svc.AuditCtx(r.Context())
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	err = svc.Schema.DeleteField(r.Context(), ac, fID)
+	if err != nil {
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -215,23 +183,8 @@ func apiDeleteField(w http.ResponseWriter, r *http.Request, c config.Config) err
 // apiListFieldsPaginated handles GET requests for listing fields with pagination.
 // Filters results by the authenticated user's role. Total count reflects
 // the pre-filter database count; Data contains only accessible fields.
-func apiListFieldsPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+func apiListFieldsPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	params := ParsePaginationParams(r)
-
-	items, err := d.ListFieldsPaginated(params)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
-	total, err := d.CountFields()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
 
 	user := middleware.AuthenticatedUser(r.Context())
 	isAdmin := middleware.ContextIsAdmin(r.Context())
@@ -239,13 +192,11 @@ func apiListFieldsPaginated(w http.ResponseWriter, r *http.Request, c config.Con
 	if user != nil {
 		roleID = user.Role
 	}
-	filtered := db.FilterFieldsByRole(*items, roleID, isAdmin)
 
-	response := db.PaginatedResponse[db.Fields]{
-		Data:   filtered,
-		Total:  *total,
-		Limit:  params.Limit,
-		Offset: params.Offset,
+	response, err := svc.Schema.ListFieldsPaginated(r.Context(), params, roleID, isAdmin)
+	if err != nil {
+		writeServiceError(w, err)
+		return err
 	}
 
 	w.Header().Set("Content-Type", "application/json")

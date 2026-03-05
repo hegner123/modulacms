@@ -13,10 +13,11 @@ import (
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/publishing"
+	"github.com/hegner123/modulacms/internal/service"
 	"golang.org/x/time/rate"
 )
 
-func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher) *http.ServeMux {
+func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher, svc *service.Registry) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	c, err := mgr.Config()
@@ -105,18 +106,18 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 
 	// Admin datatypes
 	mux.Handle("/api/v1/admindatatypes", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminDatatypesHandler(w, r, *c)
+		AdminDatatypesHandler(w, r, *c, svc)
 	})))
 	mux.Handle("/api/v1/admindatatypes/", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminDatatypeHandler(w, r, *c)
+		AdminDatatypeHandler(w, r, *c, svc)
 	})))
 
 	// Admin fields
 	mux.Handle("/api/v1/adminfields", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminFieldsHandler(w, r, *c)
+		AdminFieldsHandler(w, r, *c, svc)
 	})))
 	mux.Handle("/api/v1/adminfields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminFieldHandler(w, r, *c)
+		AdminFieldHandler(w, r, *c, svc)
 	})))
 
 	// Admin routes
@@ -250,48 +251,48 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 
 	// Datatypes
 	mux.Handle("/api/v1/datatype", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		DatatypesHandler(w, r, *c)
+		DatatypesHandler(w, r, *c, svc)
 	})))
 	mux.Handle("GET /api/v1/datatype/full", middleware.RequirePermission("datatypes:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		DatatypeFullHandler(w, r, *c)
+		DatatypeFullHandler(w, r, *c, svc)
 	})))
 	mux.Handle("/api/v1/datatype/", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		DatatypeHandler(w, r, *c)
+		DatatypeHandler(w, r, *c, svc)
 	})))
 
 	// Fields
 	mux.Handle("/api/v1/fields", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FieldsHandler(w, r, *c)
+		FieldsHandler(w, r, *c, svc)
 	})))
 
 	// Field sort order update
 	mux.Handle("PUT /api/v1/fields/{id}/sort-order", middleware.RequirePermission("fields:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FieldSortOrderHandler(w, r, driver, *c)
+		FieldSortOrderHandler(w, r, svc)
 	})))
 
 	// Field max sort order query
 	mux.Handle("GET /api/v1/fields/max-sort-order", middleware.RequirePermission("fields:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FieldMaxSortOrderHandler(w, r, driver)
+		FieldMaxSortOrderHandler(w, r, svc)
 	})))
 
 	mux.Handle("/api/v1/fields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FieldHandler(w, r, *c)
+		FieldHandler(w, r, *c, svc)
 	})))
 
 	// Field types
 	mux.Handle("/api/v1/fieldtypes", middleware.RequireResourcePermission("field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FieldTypesHandler(w, r, *c)
+		FieldTypesHandler(w, r, *c, svc)
 	})))
 	mux.Handle("/api/v1/fieldtypes/", middleware.RequireResourcePermission("field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FieldTypeHandler(w, r, *c)
+		FieldTypeHandler(w, r, *c, svc)
 	})))
 
 	// Admin field types
 	mux.Handle("/api/v1/adminfieldtypes", middleware.RequireResourcePermission("admin_field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminFieldTypesHandler(w, r, *c)
+		AdminFieldTypesHandler(w, r, *c, svc)
 	})))
 	mux.Handle("/api/v1/adminfieldtypes/", middleware.RequireResourcePermission("admin_field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminFieldTypeHandler(w, r, *c)
+		AdminFieldTypeHandler(w, r, *c, svc)
 	})))
 
 	// Media
@@ -520,7 +521,7 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	})
 
 	// HTMX admin panel
-	registerAdminRoutes(mux, mgr, driver, pc, emailSvc, dispatcher)
+	registerAdminRoutes(mux, mgr, driver, pc, emailSvc, dispatcher, svc)
 
 	// Root redirects to admin panel
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -610,7 +611,7 @@ func pluginRoutesApproveHandler(bridge *plugin.HTTPBridge) http.Handler {
 }
 
 // registerAdminRoutes registers all HTMX-based admin panel routes.
-func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher) {
+func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher, svc *service.Registry) {
 	// Static assets (no auth, no CSRF)
 	staticFS, staticErr := htmxadmin.StaticFS()
 	if staticErr == nil {
@@ -668,26 +669,26 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("GET /admin/api/config/richtext-toolbar", viewing("config", adminhandlers.RichtextToolbarHandler(mgr)))
 
 	// Schema — datatypes (JSON API for block editor)
-	mux.Handle("GET /admin/api/datatypes", viewing("datatypes", adminhandlers.DatatypesJSONHandler(driver)))
-	mux.Handle("GET /admin/api/datatypes/{id}/fields", viewing("datatypes", adminhandlers.DatatypeFieldsJSONHandler(driver)))
+	mux.Handle("GET /admin/api/datatypes", viewing("datatypes", adminhandlers.DatatypesJSONHandler(svc)))
+	mux.Handle("GET /admin/api/datatypes/{id}/fields", viewing("datatypes", adminhandlers.DatatypeFieldsJSONHandler(svc)))
 
 	// Schema — datatypes
-	mux.Handle("GET /admin/schema/datatypes", viewing("datatypes", adminhandlers.DatatypesListHandler(driver)))
-	mux.Handle("GET /admin/schema/datatypes/{id}", viewing("datatypes", adminhandlers.DatatypeDetailHandler(driver)))
-	mux.Handle("POST /admin/schema/datatypes", mutating("datatypes:create", adminhandlers.DatatypeCreateHandler(driver, mgr)))
-	mux.Handle("POST /admin/schema/datatypes/{id}", mutating("datatypes:update", adminhandlers.DatatypeUpdateHandler(driver, mgr)))
-	mux.Handle("DELETE /admin/schema/datatypes/{id}", mutating("datatypes:delete", adminhandlers.DatatypeDeleteHandler(driver, mgr)))
+	mux.Handle("GET /admin/schema/datatypes", viewing("datatypes", adminhandlers.DatatypesListHandler(svc)))
+	mux.Handle("GET /admin/schema/datatypes/{id}", viewing("datatypes", adminhandlers.DatatypeDetailHandler(svc)))
+	mux.Handle("POST /admin/schema/datatypes", mutating("datatypes:create", adminhandlers.DatatypeCreateHandler(svc)))
+	mux.Handle("POST /admin/schema/datatypes/{id}", mutating("datatypes:update", adminhandlers.DatatypeUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/schema/datatypes/{id}", mutating("datatypes:delete", adminhandlers.DatatypeDeleteHandler(svc)))
 
 	// Schema — fields (detail, update, delete only — no standalone list or create)
-	mux.Handle("GET /admin/schema/fields/{id}", viewing("fields", adminhandlers.FieldDetailHandler(driver, mgr)))
-	mux.Handle("POST /admin/schema/fields/{id}", mutating("fields:update", adminhandlers.FieldUpdateHandler(driver, mgr)))
-	mux.Handle("DELETE /admin/schema/fields/{id}", mutating("fields:delete", adminhandlers.FieldDeleteHandler(driver, mgr)))
+	mux.Handle("GET /admin/schema/fields/{id}", viewing("fields", adminhandlers.FieldDetailHandler(svc)))
+	mux.Handle("POST /admin/schema/fields/{id}", mutating("fields:update", adminhandlers.FieldUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/schema/fields/{id}", mutating("fields:delete", adminhandlers.FieldDeleteHandler(svc)))
 
 	// Schema — field types
 	mux.Handle("GET /admin/schema/field-types", viewing("field_types", adminhandlers.FieldTypesListHandler()))
 
 	// Schema — datatype field creation
-	mux.Handle("POST /admin/schema/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeCreateFieldHandler(driver, mgr)))
+	mux.Handle("POST /admin/schema/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeCreateFieldHandler(svc)))
 
 	// Media
 	mux.Handle("GET /admin/media", viewing("media", adminhandlers.MediaListHandler(driver)))

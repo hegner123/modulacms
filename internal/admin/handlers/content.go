@@ -17,6 +17,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/publishing"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/hegner123/modulacms/internal/validation"
 )
@@ -1549,7 +1550,7 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 // Used by the block editor when a new block is created client-side and needs
 // empty field inputs for the side panel.
 // GET /admin/api/datatypes/{id}/fields
-func DatatypeFieldsJSONHandler(driver db.DbDriver) http.HandlerFunc {
+func DatatypeFieldsJSONHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -1563,7 +1564,8 @@ func DatatypeFieldsJSONHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
-		fields, fieldsErr := driver.ListFieldsByDatatypeID(
+		fields, fieldsErr := svc.Schema.ListFieldsByDatatypeID(
+			r.Context(),
 			types.NullableDatatypeID{ID: dtID, Valid: true},
 		)
 		if fieldsErr != nil {
@@ -1580,23 +1582,21 @@ func DatatypeFieldsJSONHandler(driver db.DbDriver) http.HandlerFunc {
 			dtRoleID = dtUser.Role
 		}
 
-		result := make([]blockFieldData, 0)
-		if fields != nil {
-			filtered := db.FilterFieldsByRole(*fields, dtRoleID, dtIsAdmin)
-			for _, f := range filtered {
-				bfd := blockFieldData{
-					FieldID: f.FieldID.String(),
-					Label:   f.Label,
-					Type:    string(f.Type),
-				}
-				if f.Type == types.FieldTypeRichText {
-					rtCfg, parseErr := types.ParseRichTextConfig(f.Data)
-					if parseErr == nil && len(rtCfg.Toolbar) > 0 {
-						bfd.Toolbar = rtCfg.Toolbar
-					}
-				}
-				result = append(result, bfd)
+		filtered := db.FilterFieldsByRole(fields, dtRoleID, dtIsAdmin)
+		result := make([]blockFieldData, 0, len(filtered))
+		for _, f := range filtered {
+			bfd := blockFieldData{
+				FieldID: f.FieldID.String(),
+				Label:   f.Label,
+				Type:    string(f.Type),
 			}
+			if f.Type == types.FieldTypeRichText {
+				rtCfg, parseErr := types.ParseRichTextConfig(f.Data)
+				if parseErr == nil && len(rtCfg.Toolbar) > 0 {
+					bfd.Toolbar = rtCfg.Toolbar
+				}
+			}
+			result = append(result, bfd)
 		}
 
 		w.Header().Set("Content-Type", "application/json")

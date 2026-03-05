@@ -2,50 +2,47 @@ package router
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // AdminFieldsHandler handles CRUD operations that do not require a specific field ID.
-func AdminFieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func AdminFieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		if HasPaginationParams(r) {
-			apiListAdminFieldsPaginated(w, r, c)
+			apiListAdminFieldsPaginated(w, r, svc)
 		} else {
-			apiListAdminFields(w, r, c)
+			apiListAdminFields(w, r, svc)
 		}
 	case http.MethodPost:
-		apiCreateAdminField(w, r, c)
+		apiCreateAdminField(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // AdminFieldHandler handles CRUD operations for specific field items.
-func AdminFieldHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func AdminFieldHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetAdminField(w, r, c)
+		apiGetAdminField(w, r, svc)
 	case http.MethodPut:
-		apiUpdateAdminField(w, r, c)
+		apiUpdateAdminField(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteAdminField(w, r, c)
+		apiDeleteAdminField(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // apiGetAdminField handles GET requests for a single admin field
-func apiGetAdminField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiGetAdminField(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
 	afID := types.AdminFieldID(q)
 	if err := afID.Validate(); err != nil {
@@ -53,10 +50,9 @@ func apiGetAdminField(w http.ResponseWriter, r *http.Request, c config.Config) e
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	adminField, err := d.GetAdminField(afID)
+	adminField, err := svc.Schema.GetAdminField(r.Context(), afID)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -67,18 +63,10 @@ func apiGetAdminField(w http.ResponseWriter, r *http.Request, c config.Config) e
 }
 
 // apiListAdminFields handles GET requests for listing admin fields
-func apiListAdminFields(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-	if r == nil {
-		err := fmt.Errorf("request error")
-		http.Error(w, "request error", http.StatusInternalServerError)
-		return err
-	}
-
-	adminFields, err := d.ListAdminFields()
+func apiListAdminFields(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	adminFields, err := svc.Schema.ListAdminFields(r.Context())
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -89,9 +77,7 @@ func apiListAdminFields(w http.ResponseWriter, r *http.Request, c config.Config)
 }
 
 // apiCreateAdminField handles POST requests to create a new admin field
-func apiCreateAdminField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiCreateAdminField(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	var newAdminField db.CreateAdminFieldParams
 	err := json.NewDecoder(r.Body).Decode(&newAdminField)
 	if err != nil {
@@ -100,18 +86,16 @@ func apiCreateAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 		return err
 	}
 
-	if newAdminField.Validation == "" {
-		newAdminField.Validation = types.EmptyJSON
-	}
-	if newAdminField.UIConfig == "" {
-		newAdminField.UIConfig = types.EmptyJSON
-	}
-
-	ac := middleware.AuditContextFromRequest(r, c)
-	createdAdminField, err := d.CreateAdminField(r.Context(), ac, newAdminField)
+	ac, err := svc.AuditCtx(r.Context())
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	createdAdminField, err := svc.Schema.CreateAdminField(r.Context(), ac, newAdminField)
+	if err != nil {
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -122,9 +106,7 @@ func apiCreateAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 }
 
 // apiUpdateAdminField handles PUT requests to update an existing admin field
-func apiUpdateAdminField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiUpdateAdminField(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	var updateAdminField db.UpdateAdminFieldParams
 	err := json.NewDecoder(r.Body).Decode(&updateAdminField)
 	if err != nil {
@@ -133,25 +115,16 @@ func apiUpdateAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 		return err
 	}
 
-	if updateAdminField.Validation == "" {
-		updateAdminField.Validation = types.EmptyJSON
-	}
-	if updateAdminField.UIConfig == "" {
-		updateAdminField.UIConfig = types.EmptyJSON
-	}
-
-	ac := middleware.AuditContextFromRequest(r, c)
-	_, err = d.UpdateAdminField(r.Context(), ac, updateAdminField)
+	ac, err := svc.AuditCtx(r.Context())
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
-	updated, err := d.GetAdminField(updateAdminField.AdminFieldID)
+	updated, err := svc.Schema.UpdateAdminField(r.Context(), ac, updateAdminField)
 	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated admin field", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -162,9 +135,7 @@ func apiUpdateAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 }
 
 // apiDeleteAdminField handles DELETE requests for admin fields
-func apiDeleteAdminField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiDeleteAdminField(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
 	afID := types.AdminFieldID(q)
 	if err := afID.Validate(); err != nil {
@@ -172,11 +143,17 @@ func apiDeleteAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.DeleteAdminField(r.Context(), ac, afID)
+
+	ac, err := svc.AuditCtx(r.Context())
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	err = svc.Schema.DeleteAdminField(r.Context(), ac, afID)
+	if err != nil {
+		writeServiceError(w, err)
 		return err
 	}
 
@@ -186,29 +163,13 @@ func apiDeleteAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 }
 
 // apiListAdminFieldsPaginated handles GET requests for listing admin fields with pagination
-func apiListAdminFieldsPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+func apiListAdminFieldsPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	params := ParsePaginationParams(r)
 
-	items, err := d.ListAdminFieldsPaginated(params)
+	response, err := svc.Schema.ListAdminFieldsPaginated(r.Context(), params)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeServiceError(w, err)
 		return err
-	}
-
-	total, err := d.CountAdminFields()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
-	response := db.PaginatedResponse[db.AdminFields]{
-		Data:   *items,
-		Total:  *total,
-		Limit:  params.Limit,
-		Offset: params.Offset,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
