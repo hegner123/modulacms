@@ -29,6 +29,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		case HOMEPAGE:
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, PanelFocusResetCmd())
+			cmds = append(cmds, HomeDashboardFetchCmd(m.DB))
 			return m, tea.Batch(cmds...)
 		case CMSPAGE:
 			cmds = append(cmds, LoadingStartCmd())

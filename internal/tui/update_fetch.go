@@ -83,7 +83,7 @@ func filterChildDatatypes(all []db.Datatypes, rootDatatypeID types.DatatypeID) [
 
 	// Category 3: _global datatypes and their children
 	for _, dt := range all {
-		if dt.Type == "_global" && !systemDatatypeTypes[dt.Type] {
+		if dt.Type == string(types.DatatypeTypeGlobal) && !systemDatatypeTypes[dt.Type] {
 			if !seen[dt.DatatypeID] {
 				seen[dt.DatatypeID] = true
 				filtered = append(filtered, dt)

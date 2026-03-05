@@ -38,6 +38,7 @@ const (
 	ActionAccordion    Action = "accordion"
 	ActionTabPrev      Action = "tab_prev"
 	ActionTabNext      Action = "tab_next"
+	ActionAdminToggle  Action = "admin_toggle"
 )
 
 // KeyMap maps semantic actions to one or more key strings (as reported by
@@ -80,6 +81,7 @@ func DefaultKeyMap() KeyMap {
 		ActionAccordion:    {"a"},
 		ActionTabPrev:      {"["},
 		ActionTabNext:      {"]"},
+		ActionAdminToggle:  {"ctrl+a"},
 	}
 }
 

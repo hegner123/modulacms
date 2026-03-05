@@ -6,26 +6,58 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-// HomepageMenuInit initializes the menu for the homepage with main navigation pages.
-// In remote mode, DATABASEPAGE is excluded because it requires raw SQL access.
+// HomepageMenuInit builds the flattened home navigation menu.
+// CMS items (Content, Datatypes, etc.) are top-level; admin mode
+// is resolved at navigation time via AdminPageIndex, not via submenus.
 func (m Model) HomepageMenuInit() []Page {
+	// Daily workflow
 	pages := []Page{
-		m.PageMap[CMSPAGE],
-		m.PageMap[ADMINCMSPAGE],
+		m.PageMap[CONTENT],
+		m.PageMap[MEDIA],
+		m.PageMap[ROUTES],
 	}
+
+	// Schema / structure
+	pages = append(pages,
+		m.PageMap[DATATYPES],
+		m.PageMap[FIELDTYPES],
+		m.PageMap[USERSADMIN],
+	)
+
+	// System
+	pages = append(pages,
+		m.PageMap[PLUGINSPAGE],
+		m.PageMap[PIPELINESPAGE],
+		m.PageMap[WEBHOOKSPAGE],
+		m.PageMap[CONFIGPAGE],
+		m.PageMap[DEPLOYPAGE],
+	)
+
+	// Power user
+	pages = append(pages, m.PageMap[ACTIONSPAGE])
 	if !m.IsRemote {
 		pages = append(pages, m.PageMap[DATABASEPAGE])
 	}
-	pages = append(pages,
-		m.PageMap[QUICKSTARTPAGE],
-		m.PageMap[CONFIGPAGE],
-		m.PageMap[ACTIONSPAGE],
-		m.PageMap[PLUGINSPAGE],
-		m.PageMap[PIPELINESPAGE],
-		m.PageMap[DEPLOYPAGE],
-		m.PageMap[WEBHOOKSPAGE],
-	)
+	pages = append(pages, m.PageMap[QUICKSTARTPAGE])
+
 	return pages
+}
+
+// AdminPageIndex maps a client page index to its admin variant when
+// admin mode is active. Pages without an admin variant return unchanged.
+func AdminPageIndex(idx PageIndex) PageIndex {
+	switch idx {
+	case CONTENT:
+		return ADMINCONTENT
+	case DATATYPES:
+		return ADMINDATATYPES
+	case ROUTES:
+		return ADMINROUTES
+	case FIELDTYPES:
+		return ADMINFIELDTYPES
+	default:
+		return idx
+	}
 }
 
 // CmsMenuInit initializes the menu for CMS navigation with content management pages.

@@ -155,6 +155,11 @@ type Model struct {
 	ScreenModeManual bool       // true when user explicitly set mode; disables auto-breakpoint
 	AccordionEnabled bool       // when true, focused panel gets 60% width in ScreenNormal
 
+	// AdminMode toggles between client and admin CMS pages.
+	// When true, selecting Content/Datatypes/Routes/FieldTypes navigates
+	// to the admin variant. Toggled globally via ctrl+a.
+	AdminMode bool
+
 	// ActiveScreen holds the Screen implementation for the current page.
 	ActiveScreen Screen
 
@@ -364,6 +369,7 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, 
 	m.ActiveScreen = m.screenForPage(m.Page)
 	return m, tea.Batch(
 		GetTablesCMD(m.Config),
+		HomeDashboardFetchCmd(driver),
 	)
 }
 

@@ -80,6 +80,7 @@ type Panel struct {
 	ScrollOffset int      // first visible line index
 	TabLabels    []string // tab labels for tab bar (shown when len > 1)
 	ActiveTab    int      // index of the currently active tab
+	Accent       lipgloss.CompleteAdaptiveColor // override accent; zero value uses DefaultStyle.Accent
 }
 
 // Render draws the panel as a bordered box with a title bar.
@@ -87,14 +88,19 @@ type Panel struct {
 // rendered in the rightmost column and a position indicator is appended
 // to the title.
 func (p Panel) Render() string {
+	accent := config.DefaultStyle.Accent
+	if p.Accent != (lipgloss.CompleteAdaptiveColor{}) {
+		accent = p.Accent
+	}
+
 	borderColor := config.DefaultStyle.Tertiary
 	if p.Focused {
-		borderColor = config.DefaultStyle.Accent
+		borderColor = accent
 	}
 
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(config.DefaultStyle.Accent)
+		Foreground(accent)
 
 	// Inner width is panel width minus border columns (2 chars for left+right border)
 	innerWidth := p.Width - 2

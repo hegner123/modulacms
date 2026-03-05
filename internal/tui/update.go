@@ -336,6 +336,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.ScreenModeManual = false
 				return m, nil
 			}
+			if km.Matches(key, config.ActionAdminToggle) {
+				m.AdminMode = !m.AdminMode
+				return m, nil
+			}
 		}
 
 		// Overlay intercepts key input even for Screen-based pages

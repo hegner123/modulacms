@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -26,6 +27,8 @@ type AppContext struct {
 	SSHPublicKey     string
 	ActiveLocale     string
 	AccordionEnabled bool
+	AdminMode        bool
+	ActiveAccent     lipgloss.CompleteAdaptiveColor
 }
 
 // AppCtx builds an AppContext snapshot from the current Model state.
@@ -47,5 +50,15 @@ func (m Model) AppCtx() AppContext {
 		SSHPublicKey:     m.SSHPublicKey,
 		ActiveLocale:     m.ActiveLocale,
 		AccordionEnabled: m.AccordionEnabled,
+		AdminMode:        m.AdminMode,
+		ActiveAccent:     m.activeAccent(),
 	}
+}
+
+// activeAccent returns the accent color based on admin mode.
+func (m Model) activeAccent() lipgloss.CompleteAdaptiveColor {
+	if m.AdminMode {
+		return config.DefaultStyle.AdminAccent
+	}
+	return config.DefaultStyle.Accent
 }

@@ -139,6 +139,7 @@ func renderCMSPanelLayout(m Model) string {
 	}
 
 	ctx := m.AppCtx()
+	ctx.Height = bodyH
 	screenContent := m.ActiveScreen.View(ctx)
 
 	body := lipgloss.NewStyle().
@@ -284,41 +285,27 @@ func renderFullStatusBar(m Model) string {
 		return padStatusLine(content, m.Width, barStyle)
 	}
 
-	// --- line 1: status badge + panel focus + locale ---
+	// --- line 1: status badge + admin/client + mode + locale ---
 	statusBadge := m.GetStatus()
+	activeAccent := m.activeAccent()
 
-	panels := []FocusPanel{TreePanel, ContentPanel, RoutePanel}
-	focusParts := make([]string, len(panels))
-	for i, p := range panels {
-		label := p.String()
-		if m.PanelFocus == p {
-			focusParts[i] = lipgloss.NewStyle().
-				Bold(true).
-				Foreground(config.DefaultStyle.Accent).
-				Background(barBG).
-				Padding(0, 1).
-				Render("[" + label + "]")
-		} else {
-			focusParts[i] = barStyle.Padding(0, 1).Render(" " + label + " ")
-		}
-	}
-	focusIndicator := lipgloss.JoinHorizontal(lipgloss.Center, focusParts...)
-
-	modeBadge := barStyle.Render("  ") + lipgloss.NewStyle().
-		Foreground(config.DefaultStyle.Accent).
+	badgeStyle := lipgloss.NewStyle().
+		Foreground(activeAccent).
 		Background(barBG).
 		Bold(true).
-		Padding(0, 1).
-		Render("["+m.ScreenMode.String()+"]")
+		Padding(0, 1)
+	gap := barStyle.Render("  ")
+
+	cmsLabel := "Client"
+	if m.AdminMode {
+		cmsLabel = "Admin"
+	}
+	cmsBadge := gap + badgeStyle.Render("["+cmsLabel+"]")
+	modeBadge := gap + badgeStyle.Render("["+m.ScreenMode.String()+"]")
 
 	var localeBadge string
 	if m.Config.I18nEnabled() && m.ActiveLocale != "" {
-		localeStyle := lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Accent).
-			Background(barBG).
-			Bold(true).
-			Padding(0, 1)
-		localeBadge = barStyle.Render("  ") + localeStyle.Render(strings.ToUpper(m.ActiveLocale))
+		localeBadge = gap + badgeStyle.Render(strings.ToUpper(m.ActiveLocale))
 	}
 
 	var remoteBadge string
@@ -335,20 +322,15 @@ func renderFullStatusBar(m Model) string {
 			Background(barBG).
 			Bold(true).
 			Padding(0, 1)
-		remoteBadge = barStyle.Render("  ") + remoteStyle.Render(remoteLabel)
+		remoteBadge = gap + remoteStyle.Render(remoteLabel)
 	}
 
 	var accordionBadge string
 	if m.AccordionEnabled {
-		accordionBadge = barStyle.Render("  ") + lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Accent).
-			Background(barBG).
-			Bold(true).
-			Padding(0, 1).
-			Render("[Accordion]")
+		accordionBadge = gap + badgeStyle.Render("[Accordion]")
 	}
 
-	line1 := statusBadge + barStyle.Render(" ") + focusIndicator + modeBadge + accordionBadge + localeBadge + remoteBadge
+	line1 := statusBadge + cmsBadge + modeBadge + accordionBadge + localeBadge + remoteBadge
 
 	// --- line 2: context-sensitive key hints ---
 	hints := collectKeyHints(m)
@@ -395,11 +377,17 @@ func renderCondensedStatusBar(m Model) string {
 
 	// Compact badges: [Page] [Mode] [locale]
 	accentBadge := lipgloss.NewStyle().
-		Foreground(config.DefaultStyle.Accent).
+		Foreground(m.activeAccent()).
 		Background(barBG).
 		Bold(true)
 
+	cmsLabelC := "Client"
+	if m.AdminMode {
+		cmsLabelC = "Admin"
+	}
+
 	var badges []string
+	badges = append(badges, accentBadge.Render("["+cmsLabelC+"]"))
 	badges = append(badges, accentBadge.Render("["+m.Page.Label+"]"))
 	badges = append(badges, accentBadge.Render("["+m.ScreenMode.String()+"]"))
 	if m.Config.I18nEnabled() && m.ActiveLocale != "" {

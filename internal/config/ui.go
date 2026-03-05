@@ -15,6 +15,7 @@ var (
 	Yellow      = lipgloss.CompleteColor{TrueColor: "#F1C40F", ANSI256: "220", ANSI: "11"}
 	Orange      = lipgloss.CompleteColor{TrueColor: "#F75C03", ANSI256: "202", ANSI: "3"}
 	Blue        = lipgloss.CompleteColor{TrueColor: "#5f5fff", ANSI256: "63", ANSI: "4"}
+	Amber       = lipgloss.CompleteColor{TrueColor: "#FFBF00", ANSI256: "214", ANSI: "11"}
 
 	DefaultStyle Color = Color{
 		Primary: lipgloss.CompleteAdaptiveColor{
@@ -42,8 +43,8 @@ var (
 			Dark:  Black,
 		},
 		Accent: lipgloss.CompleteAdaptiveColor{
-			Light: Purple,
-			Dark:  Purple,
+			Light: Blue,
+			Dark:  Blue,
 		},
 		AccentBG: lipgloss.CompleteAdaptiveColor{
 			Light: White,
@@ -93,6 +94,10 @@ var (
 			Light: Purple,
 			Dark:  Purple,
 		},
+		AdminAccent: lipgloss.CompleteAdaptiveColor{
+			Light: Amber,
+			Dark:  Amber,
+		},
 		Warn: lipgloss.CompleteAdaptiveColor{
 			Light: Orange,
 			Dark:  Orange,
@@ -125,6 +130,7 @@ type Color struct {
 	Status3       lipgloss.CompleteAdaptiveColor `json:"staus_3"`
 	Status3BG     lipgloss.CompleteAdaptiveColor `json:"satus_3_background"`
 	PrimaryBorder lipgloss.CompleteAdaptiveColor `json:"primary_border"`
+	AdminAccent   lipgloss.CompleteAdaptiveColor `json:"admin_accent"`
 	Warn          lipgloss.CompleteAdaptiveColor `json:"warn"`
 	WarnBG        lipgloss.CompleteAdaptiveColor `json:"warn_background"`
 }

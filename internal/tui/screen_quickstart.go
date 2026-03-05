@@ -84,21 +84,15 @@ func (s *QuickstartScreen) View(ctx AppContext) string {
 	centerW := int(float64(ctx.Width) * layout.Ratios[1])
 	rightW := ctx.Width - leftW - centerW
 
-	// Single-panel page: render center panel full width
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
-	}
-
 	var panels []string
 	if leftW > 0 {
-		panels = append(panels, Panel{Title: "Schemas", Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel}.Render())
+		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel}.Render())
 	}
 	if centerW > 0 {
-		panels = append(panels, Panel{Title: "Details", Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
+		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
 	}
 	if rightW > 0 {
-		panels = append(panels, Panel{Title: "Status", Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
+		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
 	}
 
 	return strings.Join(panels, "")
