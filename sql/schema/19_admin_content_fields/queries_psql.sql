@@ -93,6 +93,11 @@ WHERE admin_route_id = $1
 ORDER BY admin_content_field_id
 LIMIT $2 OFFSET $3;
 
+-- name: ListAdminContentFieldsByContentData :many
+SELECT * FROM admin_content_fields
+WHERE admin_content_data_id = $1
+ORDER BY admin_content_field_id;
+
 -- name: ListAdminContentFieldsByContentDataAndLocale :many
 SELECT * FROM admin_content_fields
 WHERE admin_content_data_id = $1 AND locale IN ($2, '')

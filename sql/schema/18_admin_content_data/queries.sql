@@ -153,3 +153,13 @@ WHERE admin_content_data_id = ?;
 -- name: ListAdminContentDataDueForPublish :many
 SELECT * FROM admin_content_data
 WHERE publish_at IS NOT NULL AND publish_at <= ? AND status = 'draft';
+
+-- name: GetAdminContentDataDescendants :many
+WITH RECURSIVE tree AS (
+    SELECT cd1.admin_content_data_id AS cid FROM admin_content_data cd1 WHERE cd1.admin_content_data_id = ?
+    UNION ALL
+    SELECT cd2.admin_content_data_id FROM admin_content_data cd2
+    INNER JOIN tree t ON cd2.parent_id = t.cid
+)
+SELECT cd.* FROM admin_content_data cd
+INNER JOIN tree t ON cd.admin_content_data_id = t.cid;

@@ -107,6 +107,7 @@ type DbDriver interface {
 	UpdateAdminContentDataSchedule(context.Context, UpdateAdminContentDataScheduleParams) error
 	ClearAdminContentDataSchedule(context.Context, ClearAdminContentDataScheduleParams) error
 	ListAdminContentDataDueForPublish(types.Timestamp) (*[]AdminContentData, error)
+	GetAdminContentDataDescendants(context.Context, types.AdminContentID) (*[]AdminContentData, error)
 
 	// AdminContentFields
 	CountAdminContentFields() (*int64, error)
@@ -119,8 +120,11 @@ type DbDriver interface {
 	ListAdminContentFieldsPaginated(PaginationParams) (*[]AdminContentFields, error)
 	ListAdminContentFieldsByRoutePaginated(ListAdminContentFieldsByRoutePaginatedParams) (*[]AdminContentFields, error)
 	ListAdminContentFieldsWithFieldByRoute(types.NullableAdminRouteID) (*[]AdminContentFieldsWithFieldRow, error)
+	ListAdminContentFieldsByContentData(types.NullableAdminContentID) (*[]AdminContentFields, error)
 	ListAdminContentFieldsByContentDataAndLocale(types.NullableAdminContentID, string) (*[]AdminContentFields, error)
 	ListAdminContentFieldsByRouteAndLocale(types.NullableAdminRouteID, string) (*[]AdminContentFields, error)
+	ListAdminContentFieldsWithFieldByContentData(types.NullableAdminContentID) (*[]AdminContentFieldsWithFieldRow, error)
+	ListAdminContentFieldsByContentDataIDs(context.Context, []types.AdminContentID, string) (*[]AdminContentFields, error)
 	UpdateAdminContentField(context.Context, audited.AuditContext, UpdateAdminContentFieldParams) (*string, error)
 
 	// AdminContentRelations

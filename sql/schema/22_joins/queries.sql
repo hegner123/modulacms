@@ -125,6 +125,27 @@ JOIN admin_fields af ON acf.admin_field_id = af.admin_field_id
 WHERE acf.admin_route_id = ?
 ORDER BY acf.admin_content_data_id, acf.admin_field_id;
 
+-- name: ListAdminContentFieldsWithFieldByContentData :many
+SELECT
+    acf.admin_content_field_id, acf.admin_route_id,
+    acf.admin_content_data_id, acf.admin_field_id,
+    acf.admin_field_value, acf.author_id,
+    acf.date_created, acf.date_modified,
+    af.admin_field_id AS f_admin_field_id,
+    af.parent_id AS f_parent_id,
+    af.label AS f_label,
+    af.data AS f_data,
+    af.validation AS f_validation,
+    af.ui_config AS f_ui_config,
+    af.type AS f_type,
+    af.author_id AS f_author_id,
+    af.date_created AS f_date_created,
+    af.date_modified AS f_date_modified
+FROM admin_content_fields acf
+JOIN admin_fields af ON acf.admin_field_id = af.admin_field_id
+WHERE acf.admin_content_data_id = ?
+ORDER BY acf.admin_field_id;
+
 -- name: ListContentFieldsWithFieldByContentData :many
 SELECT
     cf.content_field_id, cf.route_id,

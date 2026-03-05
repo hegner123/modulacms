@@ -92,6 +92,11 @@ WHERE admin_route_id = ?
 ORDER BY admin_content_field_id
 LIMIT ? OFFSET ?;
 
+-- name: ListAdminContentFieldsByContentData :many
+SELECT * FROM admin_content_fields
+WHERE admin_content_data_id = ?
+ORDER BY admin_content_field_id;
+
 -- name: ListAdminContentFieldsByContentDataAndLocale :many
 SELECT * FROM admin_content_fields
 WHERE admin_content_data_id = ? AND locale IN (?, '')

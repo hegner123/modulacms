@@ -337,6 +337,44 @@ func (d Database) ListAdminContentFieldsWithFieldByRoute(routeID types.NullableA
 	return &res, nil
 }
 
+// MapAdminContentFieldsWithFieldByContentDataRow maps SQLite admin content field+field JOIN row (by content data) to wrapper struct.
+func (d Database) MapAdminContentFieldsWithFieldByContentDataRow(a mdb.ListAdminContentFieldsWithFieldByContentDataRow) AdminContentFieldsWithFieldRow {
+	return AdminContentFieldsWithFieldRow{
+		AdminContentFieldID: a.AdminContentFieldID,
+		AdminRouteID:        a.AdminRouteID,
+		AdminContentDataID:  a.AdminContentDataID,
+		AdminFieldID:        a.AdminFieldID,
+		AdminFieldValue:     a.AdminFieldValue,
+		AuthorID:            a.AuthorID,
+		DateCreated:         a.DateCreated,
+		DateModified:        a.DateModified,
+		FAdminFieldID:       a.FAdminFieldId,
+		FParentID:           a.FParentId,
+		FLabel:              a.FLabel,
+		FData:               a.FData,
+		FValidation:         a.FValidation,
+		FUIConfig:           a.FUiConfig,
+		FType:               a.FType,
+		FAuthorID:           a.FAuthorId,
+		FDateCreated:        a.FDateCreated,
+		FDateModified:       a.FDateModified,
+	}
+}
+
+// ListAdminContentFieldsWithFieldByContentData retrieves admin content fields joined with field definitions for a content item (SQLite).
+func (d Database) ListAdminContentFieldsWithFieldByContentData(contentDataID types.NullableAdminContentID) (*[]AdminContentFieldsWithFieldRow, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsWithFieldByContentData(d.Context, mdb.ListAdminContentFieldsWithFieldByContentDataParams{AdminContentDataID: contentDataID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content fields with field definitions by content data: %w", err)
+	}
+	res := make([]AdminContentFieldsWithFieldRow, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentFieldsWithFieldByContentDataRow(v))
+	}
+	return &res, nil
+}
+
 // MapContentFieldWithFieldRow maps SQLite content field+field JOIN row to wrapper struct.
 func (d Database) MapContentFieldWithFieldRow(a mdb.ListContentFieldsWithFieldByContentDataRow) ContentFieldWithFieldRow {
 	return ContentFieldWithFieldRow{
@@ -618,6 +656,44 @@ func (d MysqlDatabase) ListAdminContentFieldsWithFieldByRoute(routeID types.Null
 	return &res, nil
 }
 
+// MapAdminContentFieldsWithFieldByContentDataRow maps MySQL admin content field+field JOIN row (by content data) to wrapper struct.
+func (d MysqlDatabase) MapAdminContentFieldsWithFieldByContentDataRow(a mdbm.ListAdminContentFieldsWithFieldByContentDataRow) AdminContentFieldsWithFieldRow {
+	return AdminContentFieldsWithFieldRow{
+		AdminContentFieldID: a.AdminContentFieldID,
+		AdminRouteID:        a.AdminRouteID,
+		AdminContentDataID:  a.AdminContentDataID,
+		AdminFieldID:        a.AdminFieldID,
+		AdminFieldValue:     a.AdminFieldValue,
+		AuthorID:            a.AuthorID,
+		DateCreated:         a.DateCreated,
+		DateModified:        a.DateModified,
+		FAdminFieldID:       a.FAdminFieldId,
+		FParentID:           a.FParentId,
+		FLabel:              a.FLabel,
+		FData:               a.FData,
+		FValidation:         a.FValidation,
+		FUIConfig:           a.FUiConfig,
+		FType:               a.FType,
+		FAuthorID:           a.FAuthorId,
+		FDateCreated:        a.FDateCreated,
+		FDateModified:       a.FDateModified,
+	}
+}
+
+// ListAdminContentFieldsWithFieldByContentData retrieves admin content fields joined with field definitions for a content item (MySQL).
+func (d MysqlDatabase) ListAdminContentFieldsWithFieldByContentData(contentDataID types.NullableAdminContentID) (*[]AdminContentFieldsWithFieldRow, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsWithFieldByContentData(d.Context, mdbm.ListAdminContentFieldsWithFieldByContentDataParams{AdminContentDataID: contentDataID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content fields with field definitions by content data: %w", err)
+	}
+	res := make([]AdminContentFieldsWithFieldRow, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentFieldsWithFieldByContentDataRow(v))
+	}
+	return &res, nil
+}
+
 // MapContentFieldWithFieldRow maps MySQL content field+field JOIN row to wrapper struct.
 func (d MysqlDatabase) MapContentFieldWithFieldRow(a mdbm.ListContentFieldsWithFieldByContentDataRow) ContentFieldWithFieldRow {
 	return ContentFieldWithFieldRow{
@@ -895,6 +971,44 @@ func (d PsqlDatabase) ListAdminContentFieldsWithFieldByRoute(routeID types.Nulla
 	res := []AdminContentFieldsWithFieldRow{}
 	for _, v := range rows {
 		res = append(res, d.MapAdminContentFieldsWithFieldRow(v))
+	}
+	return &res, nil
+}
+
+// MapAdminContentFieldsWithFieldByContentDataRow maps PostgreSQL admin content field+field JOIN row (by content data) to wrapper struct.
+func (d PsqlDatabase) MapAdminContentFieldsWithFieldByContentDataRow(a mdbp.ListAdminContentFieldsWithFieldByContentDataRow) AdminContentFieldsWithFieldRow {
+	return AdminContentFieldsWithFieldRow{
+		AdminContentFieldID: a.AdminContentFieldID,
+		AdminRouteID:        a.AdminRouteID,
+		AdminContentDataID:  a.AdminContentDataID,
+		AdminFieldID:        a.AdminFieldID,
+		AdminFieldValue:     a.AdminFieldValue,
+		AuthorID:            a.AuthorID,
+		DateCreated:         a.DateCreated,
+		DateModified:        a.DateModified,
+		FAdminFieldID:       a.FAdminFieldId,
+		FParentID:           a.FParentId,
+		FLabel:              a.FLabel,
+		FData:               a.FData,
+		FValidation:         a.FValidation,
+		FUIConfig:           a.FUiConfig,
+		FType:               a.FType,
+		FAuthorID:           a.FAuthorId,
+		FDateCreated:        a.FDateCreated,
+		FDateModified:       a.FDateModified,
+	}
+}
+
+// ListAdminContentFieldsWithFieldByContentData retrieves admin content fields joined with field definitions for a content item (PostgreSQL).
+func (d PsqlDatabase) ListAdminContentFieldsWithFieldByContentData(contentDataID types.NullableAdminContentID) (*[]AdminContentFieldsWithFieldRow, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsWithFieldByContentData(d.Context, mdbp.ListAdminContentFieldsWithFieldByContentDataParams{AdminContentDataID: contentDataID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content fields with field definitions by content data: %w", err)
+	}
+	res := make([]AdminContentFieldsWithFieldRow, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentFieldsWithFieldByContentDataRow(v))
 	}
 	return &res, nil
 }

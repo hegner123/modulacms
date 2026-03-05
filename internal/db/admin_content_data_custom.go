@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
@@ -213,4 +214,50 @@ func (d PsqlDatabase) CountAdminContentDataTopLevel() (*int64, error) {
 		return nil, fmt.Errorf("failed to count top-level AdminContentData: %v", err)
 	}
 	return &c, nil
+}
+
+///////////////////////////////
+// ADMIN CONTENT DATA DESCENDANTS
+//////////////////////////////
+
+// GetAdminContentDataDescendants returns a node and all its descendants via recursive CTE (SQLite).
+func (d Database) GetAdminContentDataDescendants(ctx context.Context, id types.AdminContentID) (*[]AdminContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.GetAdminContentDataDescendants(ctx, mdb.GetAdminContentDataDescendantsParams{AdminContentDataID: id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin content data descendants: %w", err)
+	}
+	res := make([]AdminContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentData(v))
+	}
+	return &res, nil
+}
+
+// GetAdminContentDataDescendants returns a node and all its descendants via recursive CTE (MySQL).
+func (d MysqlDatabase) GetAdminContentDataDescendants(ctx context.Context, id types.AdminContentID) (*[]AdminContentData, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.GetAdminContentDataDescendants(ctx, mdbm.GetAdminContentDataDescendantsParams{AdminContentDataID: id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin content data descendants: %w", err)
+	}
+	res := make([]AdminContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentData(v))
+	}
+	return &res, nil
+}
+
+// GetAdminContentDataDescendants returns a node and all its descendants via recursive CTE (PostgreSQL).
+func (d PsqlDatabase) GetAdminContentDataDescendants(ctx context.Context, id types.AdminContentID) (*[]AdminContentData, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.GetAdminContentDataDescendants(ctx, mdbp.GetAdminContentDataDescendantsParams{AdminContentDataID: id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin content data descendants: %w", err)
+	}
+	res := make([]AdminContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentData(v))
+	}
+	return &res, nil
 }

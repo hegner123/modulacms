@@ -4302,6 +4302,60 @@ func (q *Queries) GetAdminContentData(ctx context.Context, arg GetAdminContentDa
 	return i, err
 }
 
+const getAdminContentDataDescendants = `-- name: GetAdminContentDataDescendants :many
+WITH RECURSIVE tree AS (
+    SELECT cd1.admin_content_data_id AS cid FROM admin_content_data cd1 WHERE cd1.admin_content_data_id = ?
+    UNION ALL
+    SELECT cd2.admin_content_data_id FROM admin_content_data cd2
+    INNER JOIN tree t ON cd2.parent_id = t.cid
+)
+SELECT cd.admin_content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.admin_route_id, cd.admin_datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision FROM admin_content_data cd
+INNER JOIN tree t ON cd.admin_content_data_id = t.cid
+`
+
+type GetAdminContentDataDescendantsParams struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+}
+
+func (q *Queries) GetAdminContentDataDescendants(ctx context.Context, arg GetAdminContentDataDescendantsParams) ([]AdminContentData, error) {
+	rows, err := q.db.QueryContext(ctx, getAdminContentDataDescendants, arg.AdminContentDataID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentData{}
+	for rows.Next() {
+		var i AdminContentData
+		if err := rows.Scan(
+			&i.AdminContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.AdminRouteID,
+			&i.AdminDatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAdminContentField = `-- name: GetAdminContentField :one
 SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 WHERE admin_content_field_id = ? LIMIT 1
@@ -7474,6 +7528,49 @@ func (q *Queries) ListAdminContentFields(ctx context.Context) ([]AdminContentFie
 	return items, nil
 }
 
+const listAdminContentFieldsByContentData = `-- name: ListAdminContentFieldsByContentData :many
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+WHERE admin_content_data_id = ?
+ORDER BY admin_content_field_id
+`
+
+type ListAdminContentFieldsByContentDataParams struct {
+	AdminContentDataID types.NullableAdminContentID `json:"admin_content_data_id"`
+}
+
+func (q *Queries) ListAdminContentFieldsByContentData(ctx context.Context, arg ListAdminContentFieldsByContentDataParams) ([]AdminContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsByContentData, arg.AdminContentDataID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentFields{}
+	for rows.Next() {
+		var i AdminContentFields
+		if err := rows.Scan(
+			&i.AdminContentFieldID,
+			&i.AdminRouteID,
+			&i.AdminContentDataID,
+			&i.AdminFieldID,
+			&i.AdminFieldValue,
+			&i.Locale,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAdminContentFieldsByContentDataAndLocale = `-- name: ListAdminContentFieldsByContentDataAndLocale :many
 SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 WHERE admin_content_data_id = ? AND locale IN (?, '')
@@ -7681,6 +7778,95 @@ func (q *Queries) ListAdminContentFieldsPaginated(ctx context.Context, arg ListA
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentFieldsWithFieldByContentData = `-- name: ListAdminContentFieldsWithFieldByContentData :many
+SELECT
+    acf.admin_content_field_id, acf.admin_route_id,
+    acf.admin_content_data_id, acf.admin_field_id,
+    acf.admin_field_value, acf.author_id,
+    acf.date_created, acf.date_modified,
+    af.admin_field_id AS f_admin_field_id,
+    af.parent_id AS f_parent_id,
+    af.label AS f_label,
+    af.data AS f_data,
+    af.validation AS f_validation,
+    af.ui_config AS f_ui_config,
+    af.type AS f_type,
+    af.author_id AS f_author_id,
+    af.date_created AS f_date_created,
+    af.date_modified AS f_date_modified
+FROM admin_content_fields acf
+JOIN admin_fields af ON acf.admin_field_id = af.admin_field_id
+WHERE acf.admin_content_data_id = ?
+ORDER BY acf.admin_field_id
+`
+
+type ListAdminContentFieldsWithFieldByContentDataParams struct {
+	AdminContentDataID types.NullableAdminContentID `json:"admin_content_data_id"`
+}
+
+type ListAdminContentFieldsWithFieldByContentDataRow struct {
+	AdminContentFieldID types.AdminContentFieldID     `json:"admin_content_field_id"`
+	AdminRouteID        types.NullableAdminRouteID    `json:"admin_route_id"`
+	AdminContentDataID  types.NullableAdminContentID  `json:"admin_content_data_id"`
+	AdminFieldID        types.NullableAdminFieldID    `json:"admin_field_id"`
+	AdminFieldValue     string                        `json:"admin_field_value"`
+	AuthorID            types.UserID                  `json:"author_id"`
+	DateCreated         types.Timestamp               `json:"date_created"`
+	DateModified        types.Timestamp               `json:"date_modified"`
+	FAdminFieldId       types.AdminFieldID            `json:"f_admin_field_id"`
+	FParentId           types.NullableAdminDatatypeID `json:"f_parent_id"`
+	FLabel              string                        `json:"f_label"`
+	FData               string                        `json:"f_data"`
+	FValidation         string                        `json:"f_validation"`
+	FUiConfig           string                        `json:"f_ui_config"`
+	FType               types.FieldType               `json:"f_type"`
+	FAuthorId           types.NullableUserID          `json:"f_author_id"`
+	FDateCreated        types.Timestamp               `json:"f_date_created"`
+	FDateModified       types.Timestamp               `json:"f_date_modified"`
+}
+
+func (q *Queries) ListAdminContentFieldsWithFieldByContentData(ctx context.Context, arg ListAdminContentFieldsWithFieldByContentDataParams) ([]ListAdminContentFieldsWithFieldByContentDataRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsWithFieldByContentData, arg.AdminContentDataID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAdminContentFieldsWithFieldByContentDataRow{}
+	for rows.Next() {
+		var i ListAdminContentFieldsWithFieldByContentDataRow
+		if err := rows.Scan(
+			&i.AdminContentFieldID,
+			&i.AdminRouteID,
+			&i.AdminContentDataID,
+			&i.AdminFieldID,
+			&i.AdminFieldValue,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.FAdminFieldId,
+			&i.FParentId,
+			&i.FLabel,
+			&i.FData,
+			&i.FValidation,
+			&i.FUiConfig,
+			&i.FType,
+			&i.FAuthorId,
+			&i.FDateCreated,
+			&i.FDateModified,
 		); err != nil {
 			return nil, err
 		}

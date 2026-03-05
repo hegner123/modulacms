@@ -9,6 +9,54 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
+// ListAdminContentFieldsByContentData returns all admin content fields for a content item (SQLite).
+func (d Database) ListAdminContentFieldsByContentData(contentDataID types.NullableAdminContentID) (*[]AdminContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByContentData(d.Context, mdb.ListAdminContentFieldsByContentDataParams{
+		AdminContentDataID: contentDataID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by contentDataID: %w", err)
+	}
+	res := make([]AdminContentFields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentField(v))
+	}
+	return &res, nil
+}
+
+// ListAdminContentFieldsByContentData returns all admin content fields for a content item (MySQL).
+func (d MysqlDatabase) ListAdminContentFieldsByContentData(contentDataID types.NullableAdminContentID) (*[]AdminContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByContentData(d.Context, mdbm.ListAdminContentFieldsByContentDataParams{
+		AdminContentDataID: contentDataID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by contentDataID: %w", err)
+	}
+	res := make([]AdminContentFields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentField(v))
+	}
+	return &res, nil
+}
+
+// ListAdminContentFieldsByContentData returns all admin content fields for a content item (PostgreSQL).
+func (d PsqlDatabase) ListAdminContentFieldsByContentData(contentDataID types.NullableAdminContentID) (*[]AdminContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByContentData(d.Context, mdbp.ListAdminContentFieldsByContentDataParams{
+		AdminContentDataID: contentDataID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by contentDataID: %w", err)
+	}
+	res := make([]AdminContentFields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentField(v))
+	}
+	return &res, nil
+}
+
 // ListAdminContentFieldsByContentDataAndLocale returns admin content fields filtered by locale (SQLite).
 // Returns fields matching the given locale plus non-translatable fields (locale = "").
 func (d Database) ListAdminContentFieldsByContentDataAndLocale(contentDataID types.NullableAdminContentID, locale string) (*[]AdminContentFields, error) {
