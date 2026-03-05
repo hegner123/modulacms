@@ -114,7 +114,7 @@ type Color struct {
 	Primary       lipgloss.CompleteAdaptiveColor `json:"primary"`
 	PrimaryBG     lipgloss.CompleteAdaptiveColor `json:"primary_background"`
 	Secondary     lipgloss.CompleteAdaptiveColor `json:"secondary"`
-	SecondaryBG   lipgloss.CompleteAdaptiveColor `json:"secondary_backgroundg"`
+	SecondaryBG   lipgloss.CompleteAdaptiveColor `json:"secondary_background"`
 	Tertiary      lipgloss.CompleteAdaptiveColor `json:"tertiary"`
 	TertiaryBG    lipgloss.CompleteAdaptiveColor `json:"tertiary_background"`
 	Accent        lipgloss.CompleteAdaptiveColor `json:"accent"`
@@ -123,12 +123,12 @@ type Color struct {
 	Accent2BG     lipgloss.CompleteAdaptiveColor `json:"accent2_background"`
 	Active        lipgloss.CompleteAdaptiveColor `json:"active"`
 	ActiveBG      lipgloss.CompleteAdaptiveColor `json:"active_background"`
-	Status1       lipgloss.CompleteAdaptiveColor `json:"staus_1"`
-	Status1BG     lipgloss.CompleteAdaptiveColor `json:"staus_1_background"`
-	Status2       lipgloss.CompleteAdaptiveColor `json:"staus_2"`
+	Status1       lipgloss.CompleteAdaptiveColor `json:"status_1"`
+	Status1BG     lipgloss.CompleteAdaptiveColor `json:"status_1_background"`
+	Status2       lipgloss.CompleteAdaptiveColor `json:"status_2"`
 	Status2BG     lipgloss.CompleteAdaptiveColor `json:"status_2_background"`
-	Status3       lipgloss.CompleteAdaptiveColor `json:"staus_3"`
-	Status3BG     lipgloss.CompleteAdaptiveColor `json:"satus_3_background"`
+	Status3       lipgloss.CompleteAdaptiveColor `json:"status_3"`
+	Status3BG     lipgloss.CompleteAdaptiveColor `json:"status_3_background"`
 	PrimaryBorder lipgloss.CompleteAdaptiveColor `json:"primary_border"`
 	AdminAccent   lipgloss.CompleteAdaptiveColor `json:"admin_accent"`
 	Warn          lipgloss.CompleteAdaptiveColor `json:"warn"`

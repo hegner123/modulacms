@@ -45,10 +45,10 @@ func TestDefaultStyle_FieldCount(t *testing.T) {
 	// and update this count.
 	v := reflect.ValueOf(config.DefaultStyle)
 	got := v.NumField()
-	want := 21 // Primary, PrimaryBG, Secondary, SecondaryBG, Tertiary, TertiaryBG,
+	want := 22 // Primary, PrimaryBG, Secondary, SecondaryBG, Tertiary, TertiaryBG,
 	// Accent, AccentBG, Accent2, Accent2BG, Active, ActiveBG,
 	// Status1, Status1BG, Status2, Status2BG, Status3, Status3BG,
-	// PrimaryBorder, Warn, WarnBG
+	// PrimaryBorder, AdminAccent, Warn, WarnBG
 
 	if got != want {
 		t.Errorf("Color struct has %d fields, want %d -- update DefaultStyle and this test", got, want)
@@ -78,12 +78,12 @@ func TestDefaultStyle_AccentPair(t *testing.T) {
 
 	s := config.DefaultStyle
 
-	// Accent uses purple in both light and dark modes.
-	if s.Accent.Dark.TrueColor != "#6612e3" {
-		t.Errorf("Accent.Dark.TrueColor = %q, want %q", s.Accent.Dark.TrueColor, "#6612e3")
+	// Accent uses blue in both light and dark modes.
+	if s.Accent.Dark.TrueColor != "#5f5fff" {
+		t.Errorf("Accent.Dark.TrueColor = %q, want %q", s.Accent.Dark.TrueColor, "#5f5fff")
 	}
-	if s.Accent.Light.TrueColor != "#6612e3" {
-		t.Errorf("Accent.Light.TrueColor = %q, want %q", s.Accent.Light.TrueColor, "#6612e3")
+	if s.Accent.Light.TrueColor != "#5f5fff" {
+		t.Errorf("Accent.Light.TrueColor = %q, want %q", s.Accent.Light.TrueColor, "#5f5fff")
 	}
 }
 
