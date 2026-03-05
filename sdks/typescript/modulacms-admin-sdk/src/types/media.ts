@@ -107,6 +107,30 @@ export type UpdateMediaDimensionParams = {
 }
 
 // ---------------------------------------------------------------------------
+// Media reference scan (GET /media/references?q=media_id)
+// ---------------------------------------------------------------------------
+
+/** A single content field that references a media asset. */
+export type MediaReferenceInfo = {
+  /** ID of the content field containing the media reference. */
+  content_field_id: string
+  /** ID of the content data node the field belongs to. */
+  content_data_id: string
+  /** ID of the field definition. */
+  field_id: string
+}
+
+/** Response from the media reference scan endpoint (`GET /media/references`). */
+export type MediaReferenceScanResponse = {
+  /** ID of the media asset scanned. */
+  media_id: string
+  /** Content fields that reference this media asset. */
+  references: MediaReferenceInfo[]
+  /** Total number of references found. */
+  reference_count: number
+}
+
+// ---------------------------------------------------------------------------
 // Media health/cleanup
 // ---------------------------------------------------------------------------
 

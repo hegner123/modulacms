@@ -1216,3 +1216,88 @@ type CreateTranslationResponse struct {
 	Locale        string `json:"locale"`
 	FieldsCreated int    `json:"fields_created"`
 }
+
+// ---------------------------------------------------------------------------
+// Content Composite (create with fields)
+// ---------------------------------------------------------------------------
+
+// ContentCreateParams holds parameters for creating content with fields in one request.
+type ContentCreateParams struct {
+	ParentID   string            `json:"parent_id,omitempty"`
+	RouteID    string            `json:"route_id,omitempty"`
+	DatatypeID string            `json:"datatype_id"`
+	Status     string            `json:"status,omitempty"`
+	Fields     map[string]string `json:"fields,omitempty"`
+}
+
+// ContentCreateResponse is the response from a composite content creation.
+type ContentCreateResponse struct {
+	ContentData   ContentData    `json:"content_data"`
+	Fields        []ContentField `json:"fields"`
+	FieldsCreated int            `json:"fields_created"`
+	FieldsFailed  int            `json:"fields_failed"`
+	Errors        []string       `json:"errors"`
+}
+
+// ---------------------------------------------------------------------------
+// User Reassign-Delete
+// ---------------------------------------------------------------------------
+
+// UserReassignDeleteParams holds parameters for reassigning a user's content
+// to another user and then deleting the original user.
+type UserReassignDeleteParams struct {
+	UserID     string `json:"user_id"`
+	ReassignTo string `json:"reassign_to,omitempty"`
+}
+
+// UserReassignDeleteResponse is the response from a user reassign-delete operation.
+type UserReassignDeleteResponse struct {
+	DeletedUserID              string `json:"deleted_user_id"`
+	ReassignedTo               string `json:"reassigned_to"`
+	ContentDataReassigned      int64  `json:"content_data_reassigned"`
+	DatatypesReassigned        int64  `json:"datatypes_reassigned"`
+	AdminContentDataReassigned int64  `json:"admin_content_data_reassigned"`
+}
+
+// ---------------------------------------------------------------------------
+// Datatype Cascade Delete
+// ---------------------------------------------------------------------------
+
+// DatatypeCascadeDeleteResponse is the response from a cascade datatype deletion
+// that also removes all content associated with the datatype.
+type DatatypeCascadeDeleteResponse struct {
+	DeletedDatatypeID string   `json:"deleted_datatype_id"`
+	ContentDeleted    int      `json:"content_deleted"`
+	Errors            []string `json:"errors"`
+}
+
+// ---------------------------------------------------------------------------
+// Recursive Content Delete
+// ---------------------------------------------------------------------------
+
+// RecursiveDeleteResponse is the response from a recursive content deletion
+// that removes a content node and all of its descendants.
+type RecursiveDeleteResponse struct {
+	DeletedRoot  string   `json:"deleted_root"`
+	TotalDeleted int      `json:"total_deleted"`
+	DeletedIDs   []string `json:"deleted_ids"`
+}
+
+// ---------------------------------------------------------------------------
+// Media References
+// ---------------------------------------------------------------------------
+
+// MediaReferenceInfo describes a single content field that references a media item.
+type MediaReferenceInfo struct {
+	ContentFieldID string `json:"content_field_id"`
+	ContentDataID  string `json:"content_data_id"`
+	FieldID        string `json:"field_id"`
+}
+
+// MediaReferenceScanResponse is the response from a media reference scan
+// that lists all content fields referencing a given media item.
+type MediaReferenceScanResponse struct {
+	MediaID        string               `json:"media_id"`
+	References     []MediaReferenceInfo `json:"references"`
+	ReferenceCount int                  `json:"reference_count"`
+}

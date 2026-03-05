@@ -2780,3 +2780,146 @@ public struct WebhookTestResponse: Decodable, Sendable {
         case error
     }
 }
+
+// MARK: - Content Composite (Create with Fields)
+
+/// Parameters for creating content data along with its field values in a single request.
+public struct ContentCreateParams: Encodable, Sendable {
+    public let parentID: String?
+    public let routeID: String?
+    public let datatypeID: String
+    public let status: String?
+    public let fields: [String: String]?
+
+    public init(
+        parentID: String? = nil,
+        routeID: String? = nil,
+        datatypeID: String,
+        status: String? = nil,
+        fields: [String: String]? = nil
+    ) {
+        self.parentID = parentID
+        self.routeID = routeID
+        self.datatypeID = datatypeID
+        self.status = status
+        self.fields = fields
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case parentID = "parent_id"
+        case routeID = "route_id"
+        case datatypeID = "datatype_id"
+        case status
+        case fields
+    }
+}
+
+/// Response from the composite content create endpoint.
+public struct ContentCreateResponse: Codable, Sendable {
+    public let contentData: ContentData
+    public let fields: [ContentField]
+    public let fieldsCreated: Int
+    public let fieldsFailed: Int
+    public let errors: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case contentData = "content_data"
+        case fields
+        case fieldsCreated = "fields_created"
+        case fieldsFailed = "fields_failed"
+        case errors
+    }
+}
+
+// MARK: - User Reassign-Delete
+
+/// Parameters for deleting a user and reassigning their content to another user.
+public struct UserReassignDeleteParams: Encodable, Sendable {
+    public let userID: String
+    public let reassignTo: String?
+
+    public init(userID: String, reassignTo: String? = nil) {
+        self.userID = userID
+        self.reassignTo = reassignTo
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case userID = "user_id"
+        case reassignTo = "reassign_to"
+    }
+}
+
+/// Response from the user reassign-delete endpoint.
+public struct UserReassignDeleteResponse: Codable, Sendable {
+    public let deletedUserID: String
+    public let reassignedTo: String
+    public let contentDataReassigned: Int64
+    public let datatypesReassigned: Int64
+    public let adminContentDataReassigned: Int64
+
+    enum CodingKeys: String, CodingKey {
+        case deletedUserID = "deleted_user_id"
+        case reassignedTo = "reassigned_to"
+        case contentDataReassigned = "content_data_reassigned"
+        case datatypesReassigned = "datatypes_reassigned"
+        case adminContentDataReassigned = "admin_content_data_reassigned"
+    }
+}
+
+// MARK: - Datatype Cascade Delete
+
+/// Response from the datatype cascade delete endpoint.
+public struct DatatypeCascadeDeleteResponse: Codable, Sendable {
+    public let deletedDatatypeID: String
+    public let contentDeleted: Int
+    public let errors: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case deletedDatatypeID = "deleted_datatype_id"
+        case contentDeleted = "content_deleted"
+        case errors
+    }
+}
+
+// MARK: - Recursive Content Delete
+
+/// Response from the recursive content delete endpoint.
+public struct RecursiveDeleteResponse: Codable, Sendable {
+    public let deletedRoot: String
+    public let totalDeleted: Int
+    public let deletedIDs: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case deletedRoot = "deleted_root"
+        case totalDeleted = "total_deleted"
+        case deletedIDs = "deleted_ids"
+    }
+}
+
+// MARK: - Media References
+
+/// Information about a single content field that references a media item.
+public struct MediaReferenceInfo: Codable, Sendable {
+    public let contentFieldID: String
+    public let contentDataID: String
+    public let fieldID: String
+
+    enum CodingKeys: String, CodingKey {
+        case contentFieldID = "content_field_id"
+        case contentDataID = "content_data_id"
+        case fieldID = "field_id"
+    }
+}
+
+/// Response from the media reference scan endpoint.
+public struct MediaReferenceScanResponse: Codable, Sendable {
+    public let mediaID: String
+    public let references: [MediaReferenceInfo]
+    public let referenceCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case mediaID = "media_id"
+        case references
+        case referenceCount = "reference_count"
+    }
+}

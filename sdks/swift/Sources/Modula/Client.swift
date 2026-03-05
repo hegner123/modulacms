@@ -72,6 +72,12 @@ public final class ModulaClient: Sendable {
     // Content query
     public let query: QueryResource
 
+    // Composite resources
+    public let contentComposite: ContentCompositeResource
+    public let userComposite: UserCompositeResource
+    public let mediaComposite: MediaCompositeResource
+    public let datatypeComposite: DatatypeCompositeResource
+
     // Config resource
     public let config: ConfigResource
 
@@ -158,6 +164,12 @@ public final class ModulaClient: Sendable {
         plugins = PluginsResource(http: http)
         pluginRoutes = PluginRoutesResource(http: http)
         pluginHooks = PluginHooksResource(http: http)
+
+        // Composite
+        contentComposite = ContentCompositeResource(http: http)
+        userComposite = UserCompositeResource(http: http)
+        mediaComposite = MediaCompositeResource(http: http)
+        datatypeComposite = DatatypeCompositeResource(http: http)
 
         // Config
         self.config = ConfigResource(http: http)

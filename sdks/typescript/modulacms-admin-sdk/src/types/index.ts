@@ -83,6 +83,9 @@ export type {
   UpdateContentFieldParams,
   BatchContentUpdateParams,
   BatchContentUpdateResponse,
+  ContentCreateParams,
+  ContentCreateResponse,
+  RecursiveDeleteResponse,
 } from './content.js'
 
 export type {
@@ -100,6 +103,7 @@ export type {
   UpdateFieldParams,
   UpdateFieldTypeParams,
   UpdateAdminFieldTypeParams,
+  DatatypeCascadeDeleteResponse,
 } from './schema.js'
 
 export type {
@@ -111,6 +115,8 @@ export type {
   UpdateMediaDimensionParams,
   MediaHealthResponse,
   MediaCleanupResponse,
+  MediaReferenceInfo,
+  MediaReferenceScanResponse,
 } from './media.js'
 
 export type {
@@ -137,6 +143,8 @@ export type {
   UpdateTokenParams,
   UpdateUserOauthParams,
   UpdateSessionParams,
+  UserReassignDeleteParams,
+  UserReassignDeleteResponse,
 } from './users.js'
 
 export type {

@@ -294,6 +294,32 @@ export type UserFullView = {
 }
 
 // ---------------------------------------------------------------------------
+// User reassign-delete (POST /users/reassign-delete)
+// ---------------------------------------------------------------------------
+
+/** Parameters for reassigning a user's owned content and then deleting the user via `POST /users/reassign-delete`. */
+export type UserReassignDeleteParams = {
+  /** ID of the user to delete. */
+  user_id: UserID
+  /** ID of the user to reassign owned content to. If omitted, content is orphaned. */
+  reassign_to?: UserID
+}
+
+/** Response from the user reassign-delete endpoint. */
+export type UserReassignDeleteResponse = {
+  /** ID of the user that was deleted. */
+  deleted_user_id: string
+  /** ID of the user content was reassigned to. */
+  reassigned_to: string
+  /** Number of content_data rows reassigned. */
+  content_data_reassigned: number
+  /** Number of datatypes reassigned. */
+  datatypes_reassigned: number
+  /** Number of admin content_data rows reassigned. */
+  admin_content_data_reassigned: number
+}
+
+// ---------------------------------------------------------------------------
 // Create params
 // ---------------------------------------------------------------------------
 

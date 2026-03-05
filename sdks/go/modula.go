@@ -105,6 +105,12 @@ type Client struct {
 
 	// Fields extra (sort order, max sort order)
 	FieldsExtra *FieldsExtraResource
+
+	// Composite / cascade operations
+	ContentComposite  *ContentCompositeResource
+	UserComposite     *UserCompositeResource
+	DatatypeComposite *DatatypeCompositeResource
+	MediaComposite    *MediaCompositeResource
 }
 
 // NewClient creates a new Modula API client.
@@ -209,6 +215,12 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 		// Fields extra
 		FieldsExtra: &FieldsExtraResource{http: h},
+
+		// Composite / cascade
+		ContentComposite:  &ContentCompositeResource{http: h},
+		UserComposite:     &UserCompositeResource{http: h},
+		DatatypeComposite: &DatatypeCompositeResource{http: h},
+		MediaComposite:    &MediaCompositeResource{http: h},
 	}, nil
 }
 

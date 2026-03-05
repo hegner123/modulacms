@@ -1531,6 +1531,34 @@ func (r *RemoteDriver) ListContentDataByDatatypeID(datatypeID types.DatatypeID) 
 	})
 }
 
+func (r *RemoteDriver) ListContentDataGlobal() (*[]db.ContentData, error) {
+	return nil, ErrNotSupported{Method: "ListContentDataGlobal"}
+}
+
+func (r *RemoteDriver) ReassignContentDataAuthor(_ context.Context, _, _ types.UserID) error {
+	return ErrNotSupported{Method: "ReassignContentDataAuthor"}
+}
+
+func (r *RemoteDriver) CountContentDataByAuthor(_ context.Context, _ types.UserID) (int64, error) {
+	return 0, ErrNotSupported{Method: "CountContentDataByAuthor"}
+}
+
+func (r *RemoteDriver) ReassignDatatypeAuthor(_ context.Context, _, _ types.UserID) error {
+	return ErrNotSupported{Method: "ReassignDatatypeAuthor"}
+}
+
+func (r *RemoteDriver) CountDatatypesByAuthor(_ context.Context, _ types.UserID) (int64, error) {
+	return 0, ErrNotSupported{Method: "CountDatatypesByAuthor"}
+}
+
+func (r *RemoteDriver) ReassignAdminContentDataAuthor(_ context.Context, _, _ types.UserID) error {
+	return ErrNotSupported{Method: "ReassignAdminContentDataAuthor"}
+}
+
+func (r *RemoteDriver) CountAdminContentDataByAuthor(_ context.Context, _ types.UserID) (int64, error) {
+	return 0, ErrNotSupported{Method: "CountAdminContentDataByAuthor"}
+}
+
 func (r *RemoteDriver) ListContentDataPaginated(p db.PaginationParams) (*[]db.ContentData, error) {
 	return doRead(r, func() (*[]db.ContentData, error) {
 		ctx := context.Background()
@@ -2372,6 +2400,10 @@ func (r *RemoteDriver) ListDatatypesRoot() (*[]db.Datatypes, error) {
 		}
 		return &result, nil
 	})
+}
+
+func (r *RemoteDriver) ListDatatypesGlobal() (*[]db.Datatypes, error) {
+	return nil, ErrNotSupported{Method: "ListDatatypesGlobal"}
 }
 
 func (r *RemoteDriver) ListDatatypeChildren(parentID types.DatatypeID) (*[]db.Datatypes, error) {

@@ -17,6 +17,7 @@ import type {
 
 // Re-export shared entity types
 export type { ContentData, ContentField, ContentRelation, ContentVersion, AdminContentVersion } from '@modulacms/types'
+import type { ContentData, ContentField } from '@modulacms/types'
 
 // ---------------------------------------------------------------------------
 // Create params
@@ -310,6 +311,52 @@ export type TreeSaveResponse = {
   id_map?: Record<string, string>
   /** Per-node error messages for partial failures. Empty when all operations succeeded. */
   errors?: string[]
+}
+
+// ---------------------------------------------------------------------------
+// Composite content create (POST /content/create)
+// ---------------------------------------------------------------------------
+
+/** Parameters for creating content with fields in a single request via `POST /content/create`. */
+export type ContentCreateParams = {
+  /** Parent content node ID, or `null` for root nodes. */
+  parent_id?: string | null
+  /** Public route this content belongs to, or `null`. */
+  route_id?: string | null
+  /** Datatype ID for the new content node. */
+  datatype_id: string
+  /** Publication lifecycle status (defaults to server default if omitted). */
+  status?: string
+  /** Map of field name to field value for initial field creation. */
+  fields?: Record<string, string>
+}
+
+/** Response from the composite content create endpoint (`POST /content/create`). */
+export type ContentCreateResponse = {
+  /** The newly created content data node. */
+  content_data: ContentData
+  /** Content fields that were created. */
+  fields: ContentField[]
+  /** Number of fields successfully created. */
+  fields_created: number
+  /** Number of fields that failed to create. */
+  fields_failed: number
+  /** Error messages for partial failures. */
+  errors: string[]
+}
+
+// ---------------------------------------------------------------------------
+// Recursive content delete (DELETE /contentdata/?q=id&recursive=true)
+// ---------------------------------------------------------------------------
+
+/** Response from the recursive content delete endpoint. */
+export type RecursiveDeleteResponse = {
+  /** ID of the root node that was deleted. */
+  deleted_root: string
+  /** Total number of nodes deleted (including the root). */
+  total_deleted: number
+  /** IDs of all nodes that were deleted. */
+  deleted_ids: string[]
 }
 
 /** Parameters for updating a public content field value via `PUT /contentfields/`. */

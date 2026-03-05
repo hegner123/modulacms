@@ -61,6 +61,20 @@ export type DatatypeFullView = {
 }
 
 // ---------------------------------------------------------------------------
+// Datatype cascade delete (DELETE /datatype/?q=id&cascade=true)
+// ---------------------------------------------------------------------------
+
+/** Response from the datatype cascade delete endpoint. */
+export type DatatypeCascadeDeleteResponse = {
+  /** ID of the datatype that was deleted. */
+  deleted_datatype_id: string
+  /** Number of content nodes deleted along with the datatype. */
+  content_deleted: number
+  /** Error messages for partial failures. */
+  errors: string[]
+}
+
+// ---------------------------------------------------------------------------
 // Create params
 // ---------------------------------------------------------------------------
 

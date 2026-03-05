@@ -142,6 +142,9 @@ export type {
   TreeNodeUpdate,
   TreeSaveRequest,
   TreeSaveResponse,
+  ContentCreateParams,
+  ContentCreateResponse,
+  RecursiveDeleteResponse,
 } from './types/content.js'
 export type {
   Datatype,
@@ -150,6 +153,7 @@ export type {
   AdminFieldTypeInfo,
   AuthorView,
   DatatypeFullView,
+  DatatypeCascadeDeleteResponse,
   CreateDatatypeParams,
   CreateFieldParams,
   CreateFieldTypeParams,
@@ -168,6 +172,8 @@ export type {
   UpdateMediaDimensionParams,
   MediaHealthResponse,
   MediaCleanupResponse,
+  MediaReferenceInfo,
+  MediaReferenceScanResponse,
 } from './types/media.js'
 export type {
   User,
@@ -198,6 +204,8 @@ export type {
   UpdateTokenParams,
   UpdateUserOauthParams,
   UpdateSessionParams,
+  UserReassignDeleteParams,
+  UserReassignDeleteResponse,
 } from './types/users.js'
 export type { Route, CreateRouteParams, UpdateRouteParams } from './types/routing.js'
 export type { Table, CreateTableParams, UpdateTableParams } from './types/tables.js'
@@ -319,6 +327,9 @@ import type {
   HealReport,
   TreeSaveRequest,
   TreeSaveResponse,
+  ContentCreateParams,
+  ContentCreateResponse,
+  RecursiveDeleteResponse,
 } from './types/content.js'
 import type {
   Datatype,
@@ -326,6 +337,7 @@ import type {
   FieldTypeInfo,
   AdminFieldTypeInfo,
   DatatypeFullView,
+  DatatypeCascadeDeleteResponse,
   CreateDatatypeParams,
   CreateFieldParams,
   CreateFieldTypeParams,
@@ -344,6 +356,7 @@ import type {
   UpdateMediaDimensionParams,
   MediaHealthResponse,
   MediaCleanupResponse,
+  MediaReferenceScanResponse,
 } from './types/media.js'
 import type {
   User,
@@ -363,6 +376,8 @@ import type {
   UpdatePermissionParams,
   UpdateTokenParams,
   UpdateUserOauthParams,
+  UserReassignDeleteParams,
+  UserReassignDeleteResponse,
 } from './types/users.js'
 import type { Route, CreateRouteParams, UpdateRouteParams } from './types/routing.js'
 import type { Table, CreateTableParams, UpdateTableParams } from './types/tables.js'
@@ -525,6 +540,10 @@ export type ModulaCMSAdminClient = {
     move: (params: MoveContentDataParams, opts?: RequestOptions) => Promise<MoveContentDataResponse>
     /** Batch update content data and field values in a single request. */
     batch: (params: BatchContentUpdateParams, opts?: RequestOptions) => Promise<BatchContentUpdateResponse>
+    /** Create a content node with fields in a single composite request. */
+    createWithFields: (params: ContentCreateParams, opts?: RequestOptions) => Promise<ContentCreateResponse>
+    /** Recursively delete a content node and all its descendants. */
+    deleteRecursive: (id: ContentID, opts?: RequestOptions) => Promise<RecursiveDeleteResponse>
   }
   /** Public content field values. */
   contentFields: CrudResource<ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID>
@@ -532,6 +551,8 @@ export type ModulaCMSAdminClient = {
   datatypes: CrudResource<Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID> & {
     /** Get a fully composed datatype with all field definitions. */
     getFull: (id: DatatypeID, opts?: RequestOptions) => Promise<DatatypeFullView>
+    /** Delete a datatype and cascade-delete all content nodes that use it. */
+    deleteCascade: (id: DatatypeID, opts?: RequestOptions) => Promise<DatatypeCascadeDeleteResponse>
   }
   /** Field schema definitions. */
   fields: CrudResource<Field, CreateFieldParams, UpdateFieldParams, FieldID>
@@ -547,6 +568,10 @@ export type ModulaCMSAdminClient = {
     health: (opts?: RequestOptions) => Promise<MediaHealthResponse>
     /** Delete orphaned files from the media S3 bucket. */
     cleanup: (opts?: RequestOptions) => Promise<MediaCleanupResponse>
+    /** Scan for content fields that reference a media asset. */
+    getReferences: (id: MediaID, opts?: RequestOptions) => Promise<MediaReferenceScanResponse>
+    /** Delete a media asset and clean up all content field references to it. */
+    deleteWithCleanup: (id: MediaID, opts?: RequestOptions) => Promise<void>
   }
   /** Media dimension presets for responsive rendering. */
   mediaDimensions: CrudResource<MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams>
@@ -556,6 +581,8 @@ export type ModulaCMSAdminClient = {
     listFull: (opts?: RequestOptions) => Promise<UserWithRoleLabel[]>
     /** Get a fully composed user with OAuth, SSH keys, sessions, and tokens. */
     getFull: (id: UserID, opts?: RequestOptions) => Promise<UserFullView>
+    /** Reassign a user's owned content to another user and then delete the user. */
+    reassignDelete: (params: UserReassignDeleteParams, opts?: RequestOptions) => Promise<UserReassignDeleteResponse>
   }
   /** Permission roles. */
   roles: CrudResource<Role, CreateRoleParams, UpdateRoleParams, RoleID>
@@ -785,12 +812,45 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
       batch(params: BatchContentUpdateParams, opts?: RequestOptions): Promise<BatchContentUpdateResponse> {
         return http.post<BatchContentUpdateResponse>('/content/batch', params as unknown as Record<string, unknown>, opts)
       },
+      createWithFields(params: ContentCreateParams, opts?: RequestOptions): Promise<ContentCreateResponse> {
+        return http.post<ContentCreateResponse>('/content/create', params as unknown as Record<string, unknown>, opts)
+      },
+      async deleteRecursive(id: ContentID, opts?: RequestOptions): Promise<RecursiveDeleteResponse> {
+        const h: Record<string, string> = { 'Content-Type': 'application/json' }
+        if (config.apiKey) h['Authorization'] = `Bearer ${config.apiKey}`
+        const response = await http.raw('/contentdata/?q=' + encodeURIComponent(String(id)) + '&recursive=true', {
+          method: 'DELETE',
+          headers: h,
+          credentials,
+          ...(opts?.signal ? { signal: opts.signal } : {}),
+        })
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error(`recursive content delete failed (${response.status}): ${text}`)
+        }
+        return response.json() as Promise<RecursiveDeleteResponse>
+      },
     },
     contentFields: createResource<ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID>(http, 'contentfields'),
     datatypes: {
       ...createResource<Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID>(http, 'datatype'),
       getFull(id: DatatypeID, opts?: RequestOptions): Promise<DatatypeFullView> {
         return http.get<DatatypeFullView>('/datatype/full', { q: String(id) }, opts)
+      },
+      async deleteCascade(id: DatatypeID, opts?: RequestOptions): Promise<DatatypeCascadeDeleteResponse> {
+        const h: Record<string, string> = { 'Content-Type': 'application/json' }
+        if (config.apiKey) h['Authorization'] = `Bearer ${config.apiKey}`
+        const response = await http.raw('/datatype/?q=' + encodeURIComponent(String(id)) + '&cascade=true', {
+          method: 'DELETE',
+          headers: h,
+          credentials,
+          ...(opts?.signal ? { signal: opts.signal } : {}),
+        })
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error(`datatype cascade delete failed (${response.status}): ${text}`)
+        }
+        return response.json() as Promise<DatatypeCascadeDeleteResponse>
       },
     },
     fields: createResource<Field, CreateFieldParams, UpdateFieldParams, FieldID>(http, 'fields'),
@@ -817,6 +877,23 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
         }
         return response.json() as Promise<MediaCleanupResponse>
       },
+      getReferences(id: MediaID, opts?: RequestOptions): Promise<MediaReferenceScanResponse> {
+        return http.get<MediaReferenceScanResponse>('/media/references', { q: String(id) }, opts)
+      },
+      async deleteWithCleanup(id: MediaID, opts?: RequestOptions): Promise<void> {
+        const h: Record<string, string> = { 'Content-Type': 'application/json' }
+        if (config.apiKey) h['Authorization'] = `Bearer ${config.apiKey}`
+        const response = await http.raw('/media/?q=' + encodeURIComponent(String(id)) + '&clean_refs=true', {
+          method: 'DELETE',
+          headers: h,
+          credentials,
+          ...(opts?.signal ? { signal: opts.signal } : {}),
+        })
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error(`media delete with cleanup failed (${response.status}): ${text}`)
+        }
+      },
     },
     mediaDimensions: createResource<MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams>(http, 'mediadimensions'),
     users: {
@@ -826,6 +903,9 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
       },
       getFull(id: UserID, opts?: RequestOptions): Promise<UserFullView> {
         return http.get<UserFullView>('/users/full/', { q: String(id) }, opts)
+      },
+      reassignDelete(params: UserReassignDeleteParams, opts?: RequestOptions): Promise<UserReassignDeleteResponse> {
+        return http.post<UserReassignDeleteResponse>('/users/reassign-delete', params as unknown as Record<string, unknown>, opts)
       },
     },
     roles: createResource<Role, CreateRoleParams, UpdateRoleParams, RoleID>(http, 'roles'),
