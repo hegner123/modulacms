@@ -1507,6 +1507,146 @@ func TestErrorCases(t *testing.T) {
 
 ---
 
+## MCP Server Testing
+
+The MCP server (`mcp/`) is a thin wrapper around the Go SDK. Tests live in `mcp/helpers_test.go` (unit) and `mcp/tools_test.go` (integration).
+
+### Running MCP Tests
+
+```bash
+cd mcp && go test -v ./...
+```
+
+The MCP module has its own `go.mod` (separate from the main module), so run tests from inside the `mcp/` directory.
+
+### Test Architecture
+
+Tests use `net/http/httptest` to create a fake API server, then pass a real SDK client (pointed at the test server) to the handler functions. This validates the full pipeline: parameter extraction, SDK call, response formatting.
+
+```
+Test → httptest.Server → modulacms.Client → handler function → MCP result
+```
+
+### Helper Utilities
+
+All test helpers live in the test files:
+
+| Helper | Purpose |
+|--------|---------|
+| `resultText(t, result)` | Extract text from first content block of a `CallToolResult` |
+| `makeReq(args)` | Build a `CallToolRequest` with a `map[string]any` arguments |
+| `newTestClient(t, srv)` | Create a `modulacms.Client` backed by an `httptest.Server` |
+| `callTool(t, handler, args)` | Invoke a handler function directly, returning the result |
+
+### Writing Unit Tests (helpers_test.go)
+
+Test the helper functions (`errResult`, `jsonResult`, `optionalIDPtr`, etc.) directly:
+
+```go
+func TestOptionalStrPtr_Missing(t *testing.T) {
+    req := makeReq(map[string]any{})
+    result := optionalStrPtr(req, "name")
+    if result != nil {
+        t.Errorf("expected nil, got %v", result)
+    }
+}
+```
+
+### Writing Integration Tests (tools_test.go)
+
+Test handler functions against a mock HTTP server:
+
+```go
+func TestHandleListRoutes(t *testing.T) {
+    routes := []modulacms.Route{
+        {RouteID: "rt-001", Slug: "about", Title: "About"},
+    }
+
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        if r.Method != http.MethodGet {
+            t.Errorf("method = %q, want GET", r.Method)
+        }
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(routes)
+    }))
+    defer ts.Close()
+
+    client := newTestClient(t, ts)
+    handler := handleListRoutes(client)
+    result := callTool(t, handler, nil)
+
+    if result.IsError {
+        t.Fatalf("unexpected error: %s", resultText(t, result))
+    }
+
+    text := resultText(t, result)
+    var decoded []modulacms.Route
+    if err := json.Unmarshal([]byte(text), &decoded); err != nil {
+        t.Fatalf("failed to decode: %v", err)
+    }
+    if len(decoded) != 1 {
+        t.Fatalf("len = %d, want 1", len(decoded))
+    }
+}
+```
+
+### What to Test
+
+For each tool handler group, cover:
+
+1. **Success path** -- server returns valid JSON, handler returns text result
+2. **Error propagation** -- server returns 4xx/5xx, handler returns error result with preserved API error details
+3. **Missing required params** -- handler returns error before calling server
+4. **Optional params** -- verify they're passed through (or omitted) correctly
+5. **Tool registration** -- `TestToolRegistration_AllGroupsRegistered` verifies all register functions don't panic
+
+### Key Patterns
+
+**Verify HTTP method and path:**
+```go
+if r.Method != http.MethodPost {
+    t.Errorf("method = %q, want POST", r.Method)
+}
+```
+
+**Verify request body (for create/update):**
+```go
+var params modulacms.CreateRouteParams
+if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+    t.Fatalf("failed to decode body: %v", err)
+}
+if params.Slug != "contact" {
+    t.Errorf("slug = %q, want %q", params.Slug, "contact")
+}
+```
+
+**Test error results:**
+```go
+if !result.IsError {
+    t.Fatal("expected error result")
+}
+text := resultText(t, result)
+var detail map[string]any
+json.Unmarshal([]byte(text), &detail)
+if detail["status"] != float64(404) {
+    t.Errorf("status = %v, want 404", detail["status"])
+}
+```
+
+**Test auth header propagation:**
+```go
+auth := r.Header.Get("Authorization")
+if auth != "Bearer test-key" {
+    t.Errorf("Authorization = %q, want %q", auth, "Bearer test-key")
+}
+```
+
+### SDK Type Alignment
+
+The MCP server depends on types from `sdks/go/`. If the SDK adds or changes a method signature, the MCP handlers must be updated to match. The `TestToolRegistration_AllGroupsRegistered` test catches compilation-level mismatches -- if a handler references a missing SDK type, the entire test binary fails to build.
+
+---
+
 ## CI/CD Integration
 
 ### GitHub Actions Example

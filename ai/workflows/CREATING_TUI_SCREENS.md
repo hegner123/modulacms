@@ -1,12 +1,203 @@
 # CREATING_TUI_SCREENS.md
 
-Step-by-step guide for creating TUI (Terminal User Interface) screens in ModulaCMS using Charmbracelet Bubbletea.
+Step-by-step guide for creating TUI (Terminal User Interface) screens in ModulaCMS using the Screen interface pattern.
 
 **Path:** `/Users/home/Documents/Code/Go_dev/modulacms/ai/workflows/CREATING_TUI_SCREENS.md`
 **Purpose:** Complete guide to building TUI screens from scratch
-**Last Updated:** 2026-01-12
+**Last Updated:** 2026-03-05
 
 ---
+
+## Screen Interface Pattern (Current)
+
+All TUI pages implement the `Screen` interface defined in `screen.go`. Each screen is a self-contained struct that owns its state, update logic, and rendering. Screens receive an `AppContext` snapshot (read-only shared state) and return commands -- they never mutate the root Model directly.
+
+### Interface
+
+```go
+type Screen interface {
+    Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd)
+    View(ctx AppContext) string
+    PageIndex() PageIndex
+}
+```
+
+Optional: implement `KeyHinter` for statusbar key hints:
+
+```go
+type KeyHinter interface {
+    KeyHints(km config.KeyMap) []KeyHint
+}
+```
+
+### Step-by-Step: Creating a New Screen
+
+#### 1. Add a PageIndex constant
+
+In `pages.go`, add a new constant to the `PageIndex` iota block and add a `PageLayout` entry to the `pageLayouts` map:
+
+```go
+MYPAGE  // in the iota block
+
+// in pageLayouts:
+MYPAGE: {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Left", "Center", "Right"}},
+```
+
+Create the Page in `NewPages()`:
+
+```go
+myPage := NewPage(MYPAGE, "My Page")
+p[MYPAGE] = myPage
+```
+
+#### 2. Create the screen file
+
+Create `screen_mypage.go`. Embed `PanelScreen` for 3-panel layouts:
+
+```go
+package tui
+
+import (
+    tea "github.com/charmbracelet/bubbletea"
+    "github.com/hegner123/modulacms/internal/config"
+)
+
+type MyScreen struct {
+    PanelScreen
+    Items []string  // screen-owned state
+}
+
+func NewMyScreen(items []string) *MyScreen {
+    return &MyScreen{
+        PanelScreen: PanelScreen{
+            Layout:     layoutForPage(MYPAGE),
+            PanelFocus: ContentPanel,
+            CursorMax:  len(items) - 1,
+        },
+        Items: items,
+    }
+}
+
+func (s *MyScreen) PageIndex() PageIndex { return MYPAGE }
+
+func (s *MyScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
+    switch msg := msg.(type) {
+    case MyDataSetMsg:
+        s.Items = msg.Items
+        s.CursorMax = len(s.Items) - 1
+        return s, nil
+
+    case tea.KeyMsg:
+        km := ctx.Config.KeyBindings
+        key := msg.String()
+
+        if s.HandlePanelNav(key, km) {
+            return s, nil
+        }
+        if s.HandleTabNav(key, km) {
+            return s, nil
+        }
+        if km.Matches(key, config.ActionSelect) {
+            // handle selection
+        }
+
+        newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, s.CursorMax)
+        if handled {
+            s.Cursor = newCursor
+            return s, cmd
+        }
+    }
+    return s, nil
+}
+
+func (s *MyScreen) KeyHints(km config.KeyMap) []KeyHint {
+    return []KeyHint{
+        {km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
+        {km.HintString(config.ActionSelect), "select"},
+        {km.HintString(config.ActionNextPanel), "panel"},
+        {km.HintString(config.ActionBack), "back"},
+        {km.HintString(config.ActionQuit), "quit"},
+    }
+}
+
+func (s *MyScreen) View(ctx AppContext) string {
+    left := s.renderLeft()
+    center := s.renderCenter()
+    right := s.renderRight()
+    return s.RenderPanels(ctx, left, center, right)
+}
+```
+
+#### 3. Wire into screenForPage
+
+In `screen.go`, add a case to `screenForPage()`:
+
+```go
+case MYPAGE:
+    return NewMyScreen(nil)
+```
+
+#### 4. Add navigation case
+
+In `update_navigation.go`, add an init case in `UpdateNavigation`:
+
+```go
+case MYPAGE:
+    cmds = append(cmds, LoadingStartCmd())
+    cmds = append(cmds, MyDataFetchCmd())
+    cmds = append(cmds, PageSetCmd(msg.Page))
+    cmds = append(cmds, PanelFocusResetCmd())
+    return m, tea.Batch(cmds...)
+```
+
+#### 5. Handle screen messages in update.go
+
+If your screen emits messages that need Model-level handling (overlays, navigation, fetches), add cases to the `ActiveScreen` dispatch block in `update.go`:
+
+```go
+case MyFetchMsg:
+    return m.UpdateMyFetch(msg)
+case MyDialogMsg:
+    return m.UpdateDialog(msg)
+```
+
+Messages the screen handles internally (like `MyDataSetMsg`) flow through automatically to `m.ActiveScreen.Update()` at the bottom of the dispatch block.
+
+### Key Patterns
+
+**PanelScreen base:** Embed `PanelScreen` for automatic 3-panel layout, ScreenMode/accordion handling, gutter strips, and tab support. Call `s.RenderPanels(ctx, left, center, right)` from View.
+
+**AppContext:** Read-only snapshot of shared state (DB, Config, Logger, dimensions, etc.). Never mutate -- emit messages to change Model state.
+
+**Scroll indicators:** Pass `PanelScrollInfo` to `RenderPanels()` for scroll indicators:
+
+```go
+return s.RenderPanels(ctx, left, center, right,
+    PanelScrollInfo{TotalLines: totalLeft, ScrollOffset: s.leftOffset},
+    PanelScrollInfo{TotalLines: totalCenter, ScrollOffset: s.centerOffset},
+)
+```
+
+**Panel tabs:** Set `s.TabSets[panelIndex]` with `PanelTab` entries. Each tab has a Label and a `Render(ctx, width, height)` function.
+
+**Overlays/dialogs:** Emit `OverlaySetCmd(&dialog)` to show, `OverlayClearCmd()` to hide. The root Model handles overlay compositing.
+
+**Navigation:** Emit `NavigateToPageCmd(page)` to navigate. Emit `HistoryPopCmd()` to go back.
+
+### File Naming Convention
+
+All screen files follow `screen_<name>.go`. Examples:
+- `screen_home.go` -- HOMEPAGE
+- `screen_cms_menu.go` -- CMSPAGE / ADMINCMSPAGE
+- `screen_content.go` -- CONTENT / ADMINCONTENT
+- `screen_routes.go` -- ROUTES / ADMINROUTES
+- `screen_quickstart.go` -- QUICKSTARTPAGE
+
+---
+
+## Legacy Pattern (Historical Reference)
+
+> The sections below describe the **old monolithic approach** where all state lived on Model and rendering/controls were dispatched via switch statements. All pages now use the Screen interface above. This section is retained for historical context only.
 
 ## Overview
 
