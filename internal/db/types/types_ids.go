@@ -118,6 +118,10 @@ func ParseDatatypeID(s string) (DatatypeID, error) {
 // UserID uniquely identifies a user.
 type UserID string
 
+// SystemUserID is a well-known sentinel ULID for the protected system user.
+// This user is created during bootstrap and cannot be deleted or have its role changed.
+const SystemUserID = UserID("00000000000000000000SYSTEM")
+
 // NewUserID generates a new ULID-based UserID.
 func NewUserID() UserID { return UserID(NewULID().String()) }
 

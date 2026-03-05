@@ -190,6 +190,12 @@ SELECT COUNT(*) FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 WHERE dt.type IN ('_root', '_global') AND cd.status = $1;
 
+-- name: ListContentDataGlobal :many
+SELECT cd.* FROM content_data cd
+LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+WHERE dt.type = '_global' AND cd.parent_id IS NULL
+ORDER BY cd.content_data_id;
+
 -- name: ListContentDataDueForPublish :many
 SELECT * FROM content_data
 WHERE publish_at IS NOT NULL AND publish_at <= $1 AND status = 'draft';
@@ -197,3 +203,9 @@ WHERE publish_at IS NOT NULL AND publish_at <= $1 AND status = 'draft';
 -- name: ListContentDataByDatatypeID :many
 SELECT * FROM content_data
 WHERE datatype_id = $1;
+
+-- name: ReassignContentDataAuthor :exec
+UPDATE content_data SET author_id = $1 WHERE author_id = $2;
+
+-- name: CountContentDataByAuthor :one
+SELECT COUNT(*) FROM content_data WHERE author_id = $1;

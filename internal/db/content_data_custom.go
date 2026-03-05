@@ -109,6 +109,48 @@ func (d PsqlDatabase) ListContentDataByDatatypeID(datatypeID types.DatatypeID) (
 	return &res, nil
 }
 
+// ListContentDataGlobal returns root-level content data whose datatype is _global (SQLite).
+func (d Database) ListContentDataGlobal() (*[]ContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentDataGlobal(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list global content data: %w", err)
+	}
+	res := make([]ContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapContentData(v))
+	}
+	return &res, nil
+}
+
+// ListContentDataGlobal returns root-level content data whose datatype is _global (MySQL).
+func (d MysqlDatabase) ListContentDataGlobal() (*[]ContentData, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentDataGlobal(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list global content data: %w", err)
+	}
+	res := make([]ContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapContentData(v))
+	}
+	return &res, nil
+}
+
+// ListContentDataGlobal returns root-level content data whose datatype is _global (PostgreSQL).
+func (d PsqlDatabase) ListContentDataGlobal() (*[]ContentData, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentDataGlobal(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list global content data: %w", err)
+	}
+	res := make([]ContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapContentData(v))
+	}
+	return &res, nil
+}
+
 ///////////////////////////////
 // _root CONTENT SUMMARY
 //////////////////////////////

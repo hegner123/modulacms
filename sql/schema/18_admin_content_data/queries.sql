@@ -163,3 +163,9 @@ WITH RECURSIVE tree AS (
 )
 SELECT cd.* FROM admin_content_data cd
 INNER JOIN tree t ON cd.admin_content_data_id = t.cid;
+
+-- name: ReassignAdminContentDataAuthor :exec
+UPDATE admin_content_data SET author_id = ? WHERE author_id = ?;
+
+-- name: CountAdminContentDataByAuthor :one
+SELECT COUNT(*) FROM admin_content_data WHERE author_id = ?;

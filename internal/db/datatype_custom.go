@@ -145,6 +145,51 @@ func (d PsqlDatabase) ListDatatypesRoot() (*[]Datatypes, error) {
 	return &res, nil
 }
 
+// ListDatatypesGlobal returns all datatypes with type _global.
+func (d Database) ListDatatypesGlobal() (*[]Datatypes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListDatatypeGlobal(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get global Datatypes: %w", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListDatatypesGlobal returns all datatypes with type _global.
+func (d MysqlDatabase) ListDatatypesGlobal() (*[]Datatypes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListDatatypeGlobal(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get global Datatypes: %w", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListDatatypesGlobal returns all datatypes with type _global.
+func (d PsqlDatabase) ListDatatypesGlobal() (*[]Datatypes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListDatatypeGlobal(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get global Datatypes: %w", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 // ListDatatypesPaginated returns datatypes with pagination (SQLite).
 func (d Database) ListDatatypesPaginated(params PaginationParams) (*[]Datatypes, error) {
 	queries := mdb.New(d.Connection)

@@ -13,6 +13,7 @@ const (
 	DatatypeTypeNestedRoot DatatypeType = "_nested_root"
 	DatatypeTypeSystemLog  DatatypeType = "_system_log"
 	DatatypeTypeCollection DatatypeType = "_collection"
+	DatatypeTypeGlobal     DatatypeType = "_global"
 )
 
 // reservedTypes maps each reserved type to a description of its engine behavior.
@@ -22,6 +23,7 @@ var reservedTypes = map[DatatypeType]string{
 	DatatypeTypeNestedRoot: "Root of a composed subtree, assigned by the engine during tree composition",
 	DatatypeTypeSystemLog:  "Synthetic node injected when a reference cannot be resolved",
 	DatatypeTypeCollection: "Marks content as a queryable collection; signals to clients that children support filtering",
+	DatatypeTypeGlobal:     "Singleton site-wide content (menus, footers, settings); no route association, delivered via /globals endpoint",
 }
 
 // IsReserved returns true if the type is engine-reserved.

@@ -12,6 +12,8 @@ func TestDatatypeType_IsReserved(t *testing.T) {
 		{"reference is reserved", DatatypeTypeReference, true},
 		{"nested_root is reserved", DatatypeTypeNestedRoot, true},
 		{"system_log is reserved", DatatypeTypeSystemLog, true},
+		{"collection is reserved", DatatypeTypeCollection, true},
+		{"global is reserved", DatatypeTypeGlobal, true},
 		{"page is not reserved", DatatypeType("page"), false},
 		{"empty is not reserved", DatatypeType(""), false},
 		{"unknown underscore is not reserved", DatatypeType("_unknown"), false},
@@ -78,6 +80,8 @@ func TestValidateDatatypeType(t *testing.T) {
 		{"_reference is valid", "_reference", false},
 		{"_nested_root is valid", "_nested_root", false},
 		{"_system_log is valid", "_system_log", false},
+		{"_collection is valid", "_collection", false},
+		{"_global is valid", "_global", false},
 		{"_unknown is error", "_unknown", true},
 		{"page is valid", "page", false},
 		{"hero_banner is valid", "hero_banner", false},
@@ -116,13 +120,13 @@ func TestValidateUserDatatypeType(t *testing.T) {
 
 func TestReservedTypes_ReturnsCopy(t *testing.T) {
 	rt := ReservedTypes()
-	if len(rt) != 5 {
-		t.Fatalf("expected 5 reserved types, got %d", len(rt))
+	if len(rt) != 6 {
+		t.Fatalf("expected 6 reserved types, got %d", len(rt))
 	}
 
 	// Mutating the copy should not affect the original
 	rt[DatatypeType("_test")] = "test"
-	if len(ReservedTypes()) != 5 {
+	if len(ReservedTypes()) != 6 {
 		t.Fatal("mutating returned map affected the internal registry")
 	}
 }

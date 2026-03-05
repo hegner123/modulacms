@@ -190,6 +190,21 @@ func (q *Queries) CountAdminContentData(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countAdminContentDataByAuthor = `-- name: CountAdminContentDataByAuthor :one
+SELECT COUNT(*) FROM admin_content_data WHERE author_id = ?
+`
+
+type CountAdminContentDataByAuthorParams struct {
+	AuthorID types.UserID `json:"author_id"`
+}
+
+func (q *Queries) CountAdminContentDataByAuthor(ctx context.Context, arg CountAdminContentDataByAuthorParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminContentDataByAuthor, arg.AuthorID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countAdminContentDataTopLevel = `-- name: CountAdminContentDataTopLevel :one
 SELECT COUNT(*) FROM admin_content_data acd
 LEFT JOIN admin_datatypes adt ON acd.admin_datatype_id = adt.admin_datatype_id
@@ -379,6 +394,21 @@ func (q *Queries) CountContentData(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countContentDataByAuthor = `-- name: CountContentDataByAuthor :one
+SELECT COUNT(*) FROM content_data WHERE author_id = ?
+`
+
+type CountContentDataByAuthorParams struct {
+	AuthorID types.UserID `json:"author_id"`
+}
+
+func (q *Queries) CountContentDataByAuthor(ctx context.Context, arg CountContentDataByAuthorParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countContentDataByAuthor, arg.AuthorID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countContentDataTopLevel = `-- name: CountContentDataTopLevel :one
 SELECT COUNT(*) FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
@@ -466,6 +496,21 @@ FROM datatypes
 
 func (q *Queries) CountDatatype(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countDatatype)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countDatatypesByAuthor = `-- name: CountDatatypesByAuthor :one
+SELECT COUNT(*) FROM datatypes WHERE author_id = ?
+`
+
+type CountDatatypesByAuthorParams struct {
+	AuthorID types.UserID `json:"author_id"`
+}
+
+func (q *Queries) CountDatatypesByAuthor(ctx context.Context, arg CountDatatypesByAuthorParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countDatatypesByAuthor, arg.AuthorID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -9247,6 +9292,52 @@ func (q *Queries) ListContentDataDueForPublish(ctx context.Context, arg ListCont
 	return items, nil
 }
 
+const listContentDataGlobal = `-- name: ListContentDataGlobal :many
+SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision FROM content_data cd
+LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+WHERE dt.type = '_global' AND cd.parent_id IS NULL
+ORDER BY cd.content_data_id
+`
+
+func (q *Queries) ListContentDataGlobal(ctx context.Context) ([]ContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listContentDataGlobal)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentData{}
+	for rows.Next() {
+		var i ContentData
+		if err := rows.Scan(
+			&i.ContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.RouteID,
+			&i.DatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listContentDataPaginated = `-- name: ListContentDataPaginated :many
 SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 ORDER BY content_data_id
@@ -10245,7 +10336,7 @@ func (q *Queries) ListDatatypeChildrenPaginated(ctx context.Context, arg ListDat
 
 const listDatatypeGlobal = `-- name: ListDatatypeGlobal :many
 SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
-WHERE type = 'GLOBAL'
+WHERE type = '_global'
 ORDER BY datatype_id
 `
 
@@ -12162,6 +12253,48 @@ type PruneOldVersionsParams struct {
 
 func (q *Queries) PruneOldVersions(ctx context.Context, arg PruneOldVersionsParams) error {
 	_, err := q.db.ExecContext(ctx, pruneOldVersions, arg.ContentDataID, arg.Locale, arg.Limit)
+	return err
+}
+
+const reassignAdminContentDataAuthor = `-- name: ReassignAdminContentDataAuthor :exec
+UPDATE admin_content_data SET author_id = ? WHERE author_id = ?
+`
+
+type ReassignAdminContentDataAuthorParams struct {
+	AuthorID   types.UserID `json:"author_id"`
+	AuthorID_2 types.UserID `json:"author_id_2"`
+}
+
+func (q *Queries) ReassignAdminContentDataAuthor(ctx context.Context, arg ReassignAdminContentDataAuthorParams) error {
+	_, err := q.db.ExecContext(ctx, reassignAdminContentDataAuthor, arg.AuthorID, arg.AuthorID_2)
+	return err
+}
+
+const reassignContentDataAuthor = `-- name: ReassignContentDataAuthor :exec
+UPDATE content_data SET author_id = ? WHERE author_id = ?
+`
+
+type ReassignContentDataAuthorParams struct {
+	AuthorID   types.UserID `json:"author_id"`
+	AuthorID_2 types.UserID `json:"author_id_2"`
+}
+
+func (q *Queries) ReassignContentDataAuthor(ctx context.Context, arg ReassignContentDataAuthorParams) error {
+	_, err := q.db.ExecContext(ctx, reassignContentDataAuthor, arg.AuthorID, arg.AuthorID_2)
+	return err
+}
+
+const reassignDatatypeAuthor = `-- name: ReassignDatatypeAuthor :exec
+UPDATE datatypes SET author_id = ? WHERE author_id = ?
+`
+
+type ReassignDatatypeAuthorParams struct {
+	AuthorID   types.UserID `json:"author_id"`
+	AuthorID_2 types.UserID `json:"author_id_2"`
+}
+
+func (q *Queries) ReassignDatatypeAuthor(ctx context.Context, arg ReassignDatatypeAuthorParams) error {
+	_, err := q.db.ExecContext(ctx, reassignDatatypeAuthor, arg.AuthorID, arg.AuthorID_2)
 	return err
 }
 

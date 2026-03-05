@@ -33,7 +33,7 @@ ORDER BY datatype_id;
 
 -- name: ListDatatypeGlobal :many
 SELECT * FROM datatypes
-WHERE type = 'GLOBAL'
+WHERE type = '_global'
 ORDER BY datatype_id;
 
 -- name: ListDatatypeRoot :many
@@ -101,4 +101,10 @@ SELECT * FROM datatypes
 WHERE parent_id = $1
 ORDER BY label
 LIMIT $2 OFFSET $3;
+
+-- name: ReassignDatatypeAuthor :exec
+UPDATE datatypes SET author_id = $1 WHERE author_id = $2;
+
+-- name: CountDatatypesByAuthor :one
+SELECT COUNT(*) FROM datatypes WHERE author_id = $1;
 
