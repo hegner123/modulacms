@@ -216,3 +216,23 @@ func contentVersionFromDb(d db.ContentVersion) modula.ContentVersion {
 		DateCreated:      dbTimestampToSdk(d.DateCreated),
 	}
 }
+
+// ---------------------------------------------------------------------------
+// AdminContentVersion: SDK <-> db
+// ---------------------------------------------------------------------------
+
+// adminContentVersionToDb converts a SDK AdminContentVersion to a db AdminContentVersion.
+func adminContentVersionToDb(s *modula.AdminContentVersion) db.AdminContentVersion {
+	return db.AdminContentVersion{
+		AdminContentVersionID: types.AdminContentVersionID(string(s.AdminContentVersionID)),
+		AdminContentDataID:    types.AdminContentID(string(s.AdminContentDataID)),
+		VersionNumber:         s.VersionNumber,
+		Locale:                s.Locale,
+		Snapshot:              s.Snapshot,
+		Trigger:               s.Trigger,
+		Label:                 s.Label,
+		Published:             s.Published,
+		PublishedBy:           nullUserID(s.PublishedBy),
+		DateCreated:           sdkTimestampToDb(s.DateCreated),
+	}
+}
