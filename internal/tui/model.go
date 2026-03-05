@@ -20,10 +20,8 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/hegner123/modulacms/internal/model"
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/publishing"
-	"github.com/hegner123/modulacms/internal/tree"
 
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -78,112 +76,66 @@ const (
 	DBModeDelete
 )
 
-// ModelInterface defines the interface for interacting with CLI model
-type ModelInterface interface {
-	GetConfig() *config.Config
-	GetRoot() model.Root
-	SetRoot(root model.Root)
-	SetError(err error)
+// RemoteStatusProvider is implemented by drivers that track connection health.
+// Used by the TUI to display live connection status without importing internal/remote.
+type RemoteStatusProvider interface {
+	RemoteConnectionStatus() string // "connected", "disconnected", "unknown"
 }
 
 // Model is the root Bubbletea model for the ModulaCMS TUI, containing all application state, UI components, and database connections.
 type Model struct {
-	DB                     db.DbDriver
-	Config                 *config.Config
-	Logger                 Logger
-	Status                 ApplicationState
-	TitleFont              int
-	Titles                 []string
-	Term                   string
-	Profile                string
-	Width                  int
-	Height                 int
-	Bg                     string
-	PageRouteId            types.RouteID
-	TxtStyle               lipgloss.Style
-	QuitStyle              lipgloss.Style
-	Loading                bool
-	Cursor                 int
-	CursorMax              int
-	FocusIndex             int
-	Paginator              paginator.Model
-	PageMod                int
-	MaxRows                int
-	Page                   Page
-	PageMenu               []Page
-	Pages                  []Page
-	PageMap                map[PageIndex]Page
-	DatatypeMenu           []string
-	Tables                 []string
-	FormState              *FormModel
-	TableState             *TableModel
-	DatabaseMode           DatabaseMode
-	Focus                  FocusKey
-	Verbose                bool
-	Content                string
-	Ready                  bool
-	Err                    error
-	Spinner                spinner.Model
-	Viewport               viewport.Model
-	History                []PageHistory
-	QueryResults           []sql.Row
-	Time                   time.Time
-	ActiveOverlay          ModalOverlay // nil = no dialog active
-	Root                   tree.Root
-	PanelFocus             FocusPanel
-	Routes                 []db.Routes
-	RootDatatypes          []db.Datatypes
-	AllDatatypes           []db.Datatypes
-	SelectedDatatype       types.DatatypeID
-	SelectedDatatypeFields []db.Fields
-	FieldCursor            int // Cursor for fields panel (datatypes: center, content: right)
-	SelectedContentFields  []ContentFieldDisplay
-	MediaList              []db.Media
-	FilePicker             filepicker.Model
-	FilePickerActive       bool
-	FilePickerPurpose      FilePickerPurpose
-	RootContentSummary     []db.ContentDataTopLevel
-	UsersList              []db.UserWithRoleLabelRow
-	RolesList              []db.Roles
-
-	// Admin CMS state
-	AdminRoutes                 []db.AdminRoutes
-	AdminAllDatatypes           []db.AdminDatatypes
-	AdminSelectedDatatypeFields []db.AdminFields
-	AdminRootContentSummary     []db.AdminContentDataTopLevel
-	AdminSelectedContentFields  []AdminContentFieldDisplay
-	AdminFieldCursor            int
-
-	// Field types state
-	FieldTypesList      []db.FieldTypes
-	AdminFieldTypesList []db.AdminFieldTypes
-
-	// Cursor tracking across tree reloads (e.g., after sibling reorder)
-	PendingCursorContentID types.ContentID
+	DB                db.DbDriver
+	Config            *config.Config
+	Logger            Logger
+	Status            ApplicationState
+	TitleFont         int
+	Titles            []string
+	Term              string
+	Profile           string
+	Width             int
+	Height            int
+	Bg                string
+	PageRouteId       types.RouteID
+	TxtStyle          lipgloss.Style
+	QuitStyle         lipgloss.Style
+	Loading           bool
+	Cursor            int
+	FocusIndex        int
+	Paginator         paginator.Model
+	PageMod           int
+	MaxRows           int
+	Page              Page
+	PageMenu          []Page
+	Pages             []Page
+	PageMap           map[PageIndex]Page
+	DatatypeMenu      []string
+	Tables            []string
+	FormState         *FormModel
+	TableState        *TableModel
+	DatabaseMode      DatabaseMode
+	Focus             FocusKey
+	Verbose           bool
+	Content           string
+	Ready             bool
+	Err               error
+	Spinner           spinner.Model
+	Viewport          viewport.Model
+	History           []PageHistory
+	QueryResults      []sql.Row
+	Time              time.Time
+	ActiveOverlay     ModalOverlay // nil = no dialog active
+	PanelFocus        FocusPanel
+	FilePicker        filepicker.Model
+	FilePickerActive  bool
+	FilePickerPurpose FilePickerPurpose
 
 	// Plugin management
 	PluginManager  *plugin.Manager
-	PluginsList    []PluginDisplay
 	SelectedPlugin string
 	AdminUsername  string
 
-	// Pipeline management
-	PipelinesList       []PipelineDisplay
-	PipelineEntries     []PipelineEntryDisplay
-	SelectedPipelineKey string
-
 	// Config management
-	ConfigManager        *config.Manager
-	ConfigCategory       config.FieldCategory
-	ConfigCategoryFields []config.FieldMeta
-	ConfigFieldCursor    int
-
-	// Deploy state
-	DeployEnvironments    []config.DeployEnvironmentConfig
-	DeployLastResult      *DeploySyncResult
-	DeployLastHealth      *DeployHealthResult
-	DeployStatusMessage   string
-	DeployOperationActive bool
+	ConfigManager *config.Manager
 
 	// SSH User Provisioning
 	NeedsProvisioning bool
@@ -193,18 +145,18 @@ type Model struct {
 	UserID            types.UserID
 
 	// Webhook management
-	WebhooksList []db.Webhook
-	Dispatcher   publishing.WebhookDispatcher // nil when webhooks disabled
+	Dispatcher publishing.WebhookDispatcher // nil when webhooks disabled
 
 	// i18n locale state
 	ActiveLocale string // Current locale code; "" means i18n disabled / default behavior
 
-	// Version list state
-	Versions         []db.ContentVersion
-	ShowVersionList  bool
-	VersionContentID types.ContentID
-	VersionRouteID   types.RouteID
-	VersionCursor    int
+	// Screen mode state
+	ScreenMode       ScreenMode // default ScreenNormal
+	ScreenModeManual bool       // true when user explicitly set mode; disables auto-breakpoint
+	AccordionEnabled bool       // when true, focused panel gets 60% width in ScreenNormal
+
+	// ActiveScreen holds the Screen implementation for the current page.
+	ActiveScreen Screen
 
 	// IsRemote is true when connected to a remote CMS server via Go SDK.
 	// Used to guard operations that require local database access.
@@ -295,6 +247,15 @@ type DialogContext struct {
 	// from deploy_update.go
 	DeployPull *DeployPullContext
 	DeployPush *DeployPushContext
+
+	// from admin content operations (Plan 3)
+	DeleteAdminContent      *DeleteAdminContentContext
+	PublishAdminContent     *PublishAdminContentContext
+	RestoreAdminVersion     *RestoreAdminVersionContext
+	MoveAdminContent        *MoveAdminContentContext
+	DeleteAdminContentField *DeleteAdminContentFieldContext
+	EditAdminSingleField    *editAdminSingleFieldCtx
+	AddAdminContentField    *addAdminContentFieldCtx
 }
 
 // CliContinue controls whether the CLI should continue running after processing a command.
@@ -309,6 +270,19 @@ func ShowDialog(title, message string, showCancel bool) tea.Cmd {
 			ShowCancel: showCancel,
 		}
 	}
+}
+
+// GetRemoteStatus returns the live connection status label ("connected", "disconnected")
+// by checking if the DB driver implements RemoteStatusProvider. Returns empty string
+// when not in remote mode.
+func (m *Model) GetRemoteStatus() string {
+	if !m.IsRemote {
+		return ""
+	}
+	if rsp, ok := m.DB.(RemoteStatusProvider); ok {
+		return rsp.RemoteConnectionStatus()
+	}
+	return "unknown"
 }
 
 // InitialModel creates and initializes a new Model with the provided configuration, database driver, logger, and optional plugin manager.
@@ -369,7 +343,6 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, 
 		Loading:       false,
 		Spinner:       s,
 		PageMod:       0,
-		CursorMax:     0,
 		MaxRows:       10,
 		Viewport:      viewport.Model{},
 		PageMap:       *InitPages(),
@@ -388,6 +361,7 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, 
 		Dispatcher:    dispatcher,
 	}
 	m.PageMenu = m.HomepageMenuInit()
+	m.ActiveScreen = m.screenForPage(m.Page)
 	return m, tea.Batch(
 		GetTablesCMD(m.Config),
 	)

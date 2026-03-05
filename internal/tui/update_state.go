@@ -18,57 +18,55 @@ func NewStateUpdate() tea.Cmd {
 func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
-	case LoadingTrue:
+	case SetLoadingMsg:
 		newModel := m
-		newModel.Loading = true
+		newModel.Loading = msg.Loading
 		return newModel, NewStateUpdate()
-	case LoadingFalse:
+	case SetReadyMsg:
 		newModel := m
-		newModel.Loading = false
+		newModel.Ready = msg.Ready
 		return newModel, NewStateUpdate()
-	case CursorUp:
+	case CursorMsg:
 		newModel := m
-		newModel.Cursor = m.Cursor - 1
+		switch msg.Action {
+		case CursorMoveUp:
+			newModel.Cursor = m.Cursor - 1
+		case CursorMoveDown:
+			newModel.Cursor = m.Cursor + 1
+		case CursorMoveReset:
+			newModel.Cursor = 0
+		case CursorMoveSet:
+			newModel.Cursor = msg.Index
+		}
 		return newModel, NewStateUpdate()
-	case CursorDown:
+	case PageModMsg:
 		newModel := m
-		newModel.Cursor = m.Cursor + 1
-		return newModel, NewStateUpdate()
-	case CursorReset:
-		newModel := m
-		newModel.Cursor = 0
-		return newModel, NewStateUpdate()
-	case CursorSet:
-		newModel := m
-		newModel.Cursor = msg.Index
-		return newModel, NewStateUpdate()
-	case PageModNext:
-		newModel := m
-		newModel.PageMod = m.PageMod + 1
-		return newModel, NewStateUpdate()
-	case PageModPrevious:
-		newModel := m
-		newModel.PageMod = m.PageMod - 1
+		if msg.Forward {
+			newModel.PageMod = m.PageMod + 1
+		} else {
+			newModel.PageMod = m.PageMod - 1
+		}
 		return newModel, NewStateUpdate()
 	case FocusSet:
 		newModel := m
 		newModel.Focus = msg.Focus
 		return newModel, NewStateUpdate()
-	case TitleFontNext:
+	case TitleFontMsg:
 		newModel := m
-		if newModel.TitleFont < len(m.Titles)-1 {
-			newModel.TitleFont++
-		}
-		return newModel, NewStateUpdate()
-	case TitleFontPrevious:
-		newModel := m
-		if newModel.TitleFont > 0 {
-			newModel.TitleFont--
+		if msg.Forward {
+			if newModel.TitleFont < len(m.Titles)-1 {
+				newModel.TitleFont++
+			}
+		} else {
+			if newModel.TitleFont > 0 {
+				newModel.TitleFont--
+			}
 		}
 		return newModel, NewStateUpdate()
 	case PageSet:
 		newModel := m
 		newModel.Page = msg.Page
+		newModel.ActiveScreen = newModel.screenForPage(msg.Page)
 		return newModel, NewStateUpdate()
 	case HistoryPush:
 		newModel := m
@@ -82,12 +80,9 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.Tables = msg.Tables
 		return newModel, tea.Batch(NewStateUpdate(), LoadingStopCmd())
-	case ColumnsSet:
+	case ColumnInfoSetMsg:
 		newModel := m
 		newModel.TableState.Columns = msg.Columns
-		return newModel, NewStateUpdate()
-	case ColumnTypesSet:
-		newModel := m
 		newModel.TableState.ColumnTypes = msg.ColumnTypes
 		return newModel, NewStateUpdate()
 	case HeadersSet:
@@ -110,10 +105,6 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 	case SetViewportContent:
 		newModel := m
 		newModel.Viewport.SetContent(msg.Content)
-		return newModel, NewStateUpdate()
-	case CursorMaxSet:
-		newModel := m
-		newModel.CursorMax = msg.CursorMax
 		return newModel, NewStateUpdate()
 	case PaginatorUpdate:
 		newModel := m
@@ -140,42 +131,6 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.DatatypeMenu = msg.DatatypeMenu
 		return newModel, NewStateUpdate()
-	case RoutesSet:
-		newModel := m
-		newModel.Routes = msg.Routes
-		return newModel, NewStateUpdate()
-	case MediaListSet:
-		newModel := m
-		newModel.MediaList = msg.MediaList
-		return newModel, NewStateUpdate()
-	case UsersListSet:
-		newModel := m
-		newModel.UsersList = msg.UsersList
-		return newModel, NewStateUpdate()
-	case RolesListSet:
-		newModel := m
-		newModel.RolesList = msg.RolesList
-		return newModel, NewStateUpdate()
-	case RootContentSummarySet:
-		newModel := m
-		newModel.RootContentSummary = msg.RootContentSummary
-		return newModel, NewStateUpdate()
-	case RootDatatypesSet:
-		newModel := m
-		newModel.RootDatatypes = msg.RootDatatypes
-		return newModel, NewStateUpdate()
-	case AllDatatypesSet:
-		newModel := m
-		newModel.AllDatatypes = msg.AllDatatypes
-		return newModel, NewStateUpdate()
-	case DatatypeFieldsSet:
-		newModel := m
-		newModel.SelectedDatatypeFields = msg.Fields
-		return newModel, NewStateUpdate()
-	case SelectedDatatypeSet:
-		newModel := m
-		newModel.SelectedDatatype = msg.DatatypeID
-		return newModel, NewStateUpdate()
 	case PanelFocusReset:
 		newModel := m
 		newModel.PanelFocus = TreePanel
@@ -183,10 +138,6 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 	case PageMenuSet:
 		newModel := m
 		newModel.PageMenu = msg.PageMenu
-		return newModel, NewStateUpdate()
-	case PluginsListSet:
-		newModel := m
-		newModel.PluginsList = msg.PluginsList
 		return newModel, NewStateUpdate()
 	case UpdatePagination:
 		p, cmd := m.Paginator.Update(msg)
@@ -214,60 +165,6 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.FormState.FormOptions = msg.Options
 		return newModel, NewStateUpdate()
-
-	// Admin CMS state setters
-	case AdminRoutesSet:
-		newModel := m
-		newModel.AdminRoutes = msg.AdminRoutes
-		return newModel, NewStateUpdate()
-	case AdminAllDatatypesSet:
-		newModel := m
-		newModel.AdminAllDatatypes = msg.AdminAllDatatypes
-		return newModel, NewStateUpdate()
-	case AdminDatatypeFieldsSet:
-		newModel := m
-		newModel.AdminSelectedDatatypeFields = msg.Fields
-		return newModel, NewStateUpdate()
-	case AdminContentDataSet:
-		newModel := m
-		newModel.AdminRootContentSummary = msg.AdminContentData
-		return newModel, NewStateUpdate()
-	case AdminLoadContentFieldsMsg:
-		newModel := m
-		newModel.AdminSelectedContentFields = msg.Fields
-		return newModel, NewStateUpdate()
-	case FieldTypesSet:
-		newModel := m
-		newModel.FieldTypesList = msg.FieldTypes
-		return newModel, NewStateUpdate()
-	case AdminFieldTypesSet:
-		newModel := m
-		newModel.AdminFieldTypesList = msg.AdminFieldTypes
-		return newModel, NewStateUpdate()
-
-	// Deploy state setters
-	case DeployEnvsSet:
-		newModel := m
-		newModel.DeployEnvironments = msg.Envs
-		return newModel, NewStateUpdate()
-
-	case UpdateMaxCursorMsg:
-		cursorUpdate := func() tea.Msg {
-			if m.Cursor > msg.CursorMax-1 {
-				return CursorSet{Index: msg.CursorMax - 1}
-			}
-			return nil
-		}()
-
-		cmds := []tea.Cmd{
-			CursorMaxSetCmd(msg.CursorMax),
-		}
-
-		if cursorUpdate != nil {
-			cmds = append(cmds, func() tea.Msg { return cursorUpdate })
-		}
-
-		return m, tea.Batch(cmds...)
 	default:
 		return m, nil
 	}

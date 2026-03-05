@@ -4,7 +4,6 @@ import (
 	"embed"
 	"encoding/json"
 
-	"github.com/charmbracelet/lipgloss"
 	config "github.com/hegner123/modulacms/internal/config"
 )
 
@@ -17,29 +16,7 @@ func (m Model) View() string {
 		return "Initializing user provisioning..."
 	}
 
-	if isCMSPanelPage(m.Page.Index) {
-		return renderCMSPanelLayout(m)
-	}
-
-	// Fallback for any unrecognized page index
-	return m.renderFallback()
-}
-
-// renderFallback renders a minimal UI with status bar and dialog overlay
-// for any page not handled by the panel layout.
-func (m Model) renderFallback() string {
-	docStyle := lipgloss.NewStyle().Width(m.Width).Height(m.Height)
-	doc := lipgloss.JoinVertical(
-		lipgloss.Top,
-		lipgloss.NewStyle().Padding(0, 2).Render(),
-		m.RenderStatusBar(),
-	)
-	ui := docStyle.Render(doc)
-
-	if m.ActiveOverlay != nil {
-		return RenderOverlay(ui, m.ActiveOverlay, m.Width, m.Height)
-	}
-	return ui
+	return renderCMSPanelLayout(m)
 }
 
 // Rendering utilities

@@ -53,6 +53,12 @@ const (
 	FORMDIALOGEDITFIELDTYPE          FormDialogAction = "edit_field_type"
 	FORMDIALOGCREATEADMINFIELDTYPE   FormDialogAction = "create_admin_field_type"
 	FORMDIALOGEDITADMINFIELDTYPE     FormDialogAction = "edit_admin_field_type"
+	FORMDIALOGCREATEADMINCONTENT     FormDialogAction = "create_admin_content"
+	FORMDIALOGEDITADMINCONTENT       FormDialogAction = "edit_admin_content"
+	FORMDIALOGMOVEADMINCONTENT       FormDialogAction = "move_admin_content"
+	FORMDIALOGCHILDADMINDATATYPE     FormDialogAction = "child_admin_datatype"
+	FORMDIALOGADDADMINCONTENTFIELD   FormDialogAction = "add_admin_content_field"
+	FORMDIALOGEDITADMINSINGLEFIELD   FormDialogAction = "edit_admin_single_field"
 )
 
 // FormDialogField constants define focus indices for dialog fields.
@@ -740,20 +746,24 @@ func ShowFormDialogCmd(action FormDialogAction, title string, parents []db.Datat
 	}
 }
 
-// ShowFieldFormDialogCmd shows a field creation dialog (no parent selector)
-func ShowFieldFormDialogCmd(action FormDialogAction, title string) tea.Cmd {
+// ShowFieldFormDialogCmd shows a field creation dialog (no parent selector).
+// contextID is the parent datatype ID that the new field will be linked to.
+func ShowFieldFormDialogCmd(action FormDialogAction, title string, contextID string) tea.Cmd {
 	return func() tea.Msg {
 		return ShowFieldFormDialogMsg{
-			Action: action,
-			Title:  title,
+			Action:    action,
+			Title:     title,
+			ContextID: contextID,
 		}
 	}
 }
 
-// ShowFieldFormDialogMsg is the message for showing a field form dialog
+// ShowFieldFormDialogMsg is the message for showing a field form dialog.
+// ContextID carries the parent datatype ID for field creation.
 type ShowFieldFormDialogMsg struct {
-	Action FormDialogAction
-	Title  string
+	Action    FormDialogAction
+	Title     string
+	ContextID string // parent datatype ID (stored as EntityID on the dialog model)
 }
 
 // ShowRouteFormDialogCmd shows a route creation dialog

@@ -51,6 +51,56 @@ const (
 	WEBHOOKSPAGE
 )
 
+// defaultLayout is the fallback 3-panel 25/50/25 layout.
+var defaultLayout = PageLayout{
+	Panels: 3,
+	Ratios: [3]float64{0.25, 0.50, 0.25},
+	Titles: [3]string{"Tree", "Content", "Route"},
+}
+
+// pageLayouts maps each page to its preferred panel configuration.
+// Pages not in the map use defaultLayout.
+var pageLayouts = map[PageIndex]PageLayout{
+	// Single-panel pages
+	HOMEPAGE:         {1, [3]float64{0, 1, 0}, [3]string{"", "Home", ""}},
+	QUICKSTARTPAGE:   {1, [3]float64{0, 1, 0}, [3]string{"", "Quickstart", ""}},
+	ACTIONSPAGE:      {1, [3]float64{0, 1, 0}, [3]string{"", "Actions", ""}},
+	PLUGINDETAILPAGE: {1, [3]float64{0, 1, 0}, [3]string{"", "Plugin", ""}},
+
+	// Two-panel pages
+	CONFIGPAGE:   {2, [3]float64{0.30, 0.70, 0}, [3]string{"Categories", "Fields", "Detail"}},
+	DATABASEPAGE: {2, [3]float64{0.30, 0.70, 0}, [3]string{"Tables", "Actions", "Info"}},
+	MEDIA:        {2, [3]float64{0.30, 0.70, 0}, [3]string{"Media", "Details", "Info"}},
+
+	// Three-panel pages
+	CONTENT:            {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Tree", "Content", "Fields"}},
+	DATATYPES:          {3, [3]float64{0.25, 0.40, 0.35}, [3]string{"Datatypes", "Fields", "Actions"}},
+	ROUTES:             {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Routes", "Details", "Actions"}},
+	USERSADMIN:         {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Users", "Details", "Permissions"}},
+	ADMINROUTES:        {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Admin Routes", "Details", "Actions"}},
+	ADMINDATATYPES:     {3, [3]float64{0.25, 0.40, 0.35}, [3]string{"Admin Datatypes", "Fields", "Actions"}},
+	ADMINCONTENT:       {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Admin Content", "Details", "Info"}},
+	PLUGINSPAGE:        {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Plugins", "Details", "Info"}},
+	FIELDTYPES:         {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Field Types", "Details", "Actions"}},
+	ADMINFIELDTYPES:    {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Admin Field Types", "Details", "Actions"}},
+	DEPLOYPAGE:         {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Environments", "Details", "Actions"}},
+	PIPELINESPAGE:      {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Pipelines", "Entries", "Info"}},
+	PIPELINEDETAILPAGE: {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Pipelines", "Configuration", "Status"}},
+	WEBHOOKSPAGE:       {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Webhooks", "Details", "Info"}},
+	CMSPAGE:            {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"System", "Navigation", "Info"}},
+	ADMINCMSPAGE:       {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"System", "Navigation", "Info"}},
+	READPAGE:           {3, [3]float64{0.20, 0.55, 0.25}, [3]string{"Mode", "Data", "Detail"}},
+}
+
+// layoutForPage returns the PageLayout for a given page index,
+// falling back to defaultLayout if the page is not in the map.
+func layoutForPage(idx PageIndex) PageLayout {
+	if l, ok := pageLayouts[idx]; ok {
+		return l
+	}
+	return defaultLayout
+}
+
 // NewPage creates a new page with the specified index and label.
 func NewPage(index PageIndex, label string) Page {
 	return Page{Index: index, Label: label}

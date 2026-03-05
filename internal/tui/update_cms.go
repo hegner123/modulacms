@@ -8,7 +8,6 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/tree"
 )
 
 // CmsUpdate signals a CMS-specific operation update.
@@ -26,9 +25,6 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case BuildTreeFromRouteMsg:
 		return m, nil
-	case CmsDefineDatatypeLoadMsg:
-		// Show form dialog instead of navigating to separate page
-		return m, ShowFormDialogCmd(FORMDIALOGCREATEDATATYPE, "New Datatype", m.AllDatatypes)
 	case CreateDatatypeFromDialogRequestMsg:
 		return m, m.HandleCreateDatatypeFromDialog(msg)
 	case CreateFieldFromDialogRequestMsg:
@@ -111,16 +107,6 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case BuildContentFormMsg:
 		// Build dynamic form for content creation
 		return m, m.BuildContentFieldsForm(msg.DatatypeID, msg.RouteID)
-	case ChildDatatypeSelectedMsg:
-		// User selected a child datatype from the dialog - fetch fields and show content form
-		m.Logger.Finfo(fmt.Sprintf("ChildDatatypeSelectedMsg received: DatatypeID=%s, RouteID=%s", msg.DatatypeID, msg.RouteID))
-		selectedNode := m.Root.NodeAtIndex(m.Cursor)
-		var parentContentID types.NullableContentID
-		if selectedNode != nil && selectedNode.Instance != nil {
-			parentContentID = types.NullableContentID{ID: selectedNode.Instance.ContentDataID, Valid: true}
-			m.Logger.Finfo(fmt.Sprintf("Parent content ID: %s", parentContentID.ID))
-		}
-		return m, FetchContentFieldsCmd(msg.DatatypeID, msg.RouteID, parentContentID, "New Content")
 	case CreateContentFromDialogRequestMsg:
 		// Create content from dialog values using authenticated user
 		return m, m.HandleCreateContentFromDialog(msg, m.UserID)
@@ -141,12 +127,6 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		)
 	case ReorderSiblingRequestMsg:
 		return m, m.HandleReorderSibling(msg)
-	case ContentReorderedMsg:
-		m.PendingCursorContentID = msg.ContentID
-		return m, tea.Batch(
-			LoadingStopCmd(),
-			ReloadContentTreeCmd(m.Config, msg.RouteID),
-		)
 	case CopyContentRequestMsg:
 		return m, m.HandleCopyContent(msg)
 	case ContentCopiedMsg:
@@ -185,25 +165,19 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		)
 	case ListVersionsRequestMsg:
 		return m, m.HandleListVersions(msg)
-	case VersionsListedMsg:
-		m.Versions = msg.Versions
-		m.ShowVersionList = true
-		m.VersionContentID = msg.ContentID
-		m.VersionRouteID = msg.RouteID
-		m.VersionCursor = 0
-		return m, LoadingStopCmd()
 	case ConfirmedRestoreVersionMsg:
 		return m, m.HandleConfirmedRestoreVersion(msg)
-	case VersionRestoredMsg:
-		m.ShowVersionList = false
-		return m, tea.Batch(
-			LoadingStopCmd(),
-			ShowDialog("Restored", fmt.Sprintf("Restored %d fields from version.", msg.FieldsRestored), false),
-			ReloadContentTreeCmd(m.Config, msg.RouteID),
-		)
 	case DeleteContentRequestMsg:
 		// Delete content
 		return m, m.HandleDeleteContent(msg)
+	case ContentDeletedMsg:
+		// Content deleted successfully - reload tree and show success
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			ShowDialog("Success", "Content deleted successfully", false),
+			LogMessageCmd(fmt.Sprintf("Content deleted: ID=%s", msg.ContentID)),
+			ReloadContentTreeCmd(m.Config, types.RouteID(msg.RouteID)),
+		)
 	case DeleteDatatypeRequestMsg:
 		// Delete datatype and its junction records
 		return m, m.HandleDeleteDatatype(msg)
@@ -236,26 +210,13 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case DeleteUserRequestMsg:
 		// Delete user
 		return m, m.HandleDeleteUser(msg)
-	case CmsAddNewContentDataMsg:
-		// Collect field values from form state
-		fieldValues := m.CollectFieldValuesFromForm()
-
-		// Dispatch specialized command using typed methods with authenticated user
-		return m, CreateContentWithFieldsCmd(
-			m.Config,
-			msg.Datatype,
-			m.PageRouteId,
-			m.UserID,
-			fieldValues,
-		)
-
 	case ContentCreatedMsg:
 		// Success path - reload tree and navigate back to content browser
 		contentPage := m.PageMap[CONTENT]
 		return m, tea.Batch(
 			ShowDialog(
 				"Success",
-				fmt.Sprintf("✓ Created content with %d fields", msg.FieldCount),
+				fmt.Sprintf("Created content with %d fields", msg.FieldCount),
 				false,
 			),
 			LogMessageCmd(fmt.Sprintf("ContentData created: ID=%s, RouteID=%s", msg.ContentDataID, msg.RouteID)),
@@ -269,7 +230,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(
 			ShowDialog(
 				"Warning",
-				fmt.Sprintf("⚠ Content created but %d/%d fields failed",
+				fmt.Sprintf("Content created but %d/%d fields failed",
 					len(msg.FailedFields),
 					msg.CreatedFields+len(msg.FailedFields),
 				),
@@ -280,138 +241,25 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 			FormCompletedCmd(&contentPage), // Navigate back to content browser
 		)
 
-	case ContentDeletedMsg:
-		// Content deleted successfully - reload tree and show success
-		newModel := m
-		// Reset cursor if it's beyond the new tree size
-		newModel.Cursor = 0
-		return newModel, tea.Batch(
-			LoadingStopCmd(),
-			ShowDialog(
-				"Success",
-				"Content deleted successfully",
-				false,
-			),
-			LogMessageCmd(fmt.Sprintf("Content deleted: ID=%s", msg.ContentID)),
-			ReloadContentTreeCmd(m.Config, types.RouteID(msg.RouteID)),
-		)
-
-	case TreeLoadedMsg:
-		// Tree has been reloaded from database
-		newModel := m
-
-		// Handle empty tree (route doesn't exist or has no content)
-		if msg.RootNode == nil {
-			newModel.Root = *tree.NewRoot()
-			newModel.PendingCursorContentID = ""
-			return newModel, tea.Batch(
-				LoadingStopCmd(),
-				LogMessageCmd(fmt.Sprintf("No content tree found for route %s", msg.RouteID)),
-			)
-		}
-
-		newModel.Root = *msg.RootNode
-
-		// Restore cursor position after reorder
-		if newModel.PendingCursorContentID != "" {
-			visible := newModel.Root.FlattenVisible()
-			for i, n := range visible {
-				if n.Instance.ContentDataID == newModel.PendingCursorContentID {
-					newModel.Cursor = i
-					break
-				}
-			}
-			newModel.PendingCursorContentID = ""
-		}
-
-		// Load content fields for the currently selected node
-		var fieldCmd tea.Cmd
-		node := newModel.Root.NodeAtIndex(newModel.Cursor)
-		if node != nil && node.Instance != nil {
-			fieldCmd = LoadContentFieldsCmd(newModel.Config, node.Instance.ContentDataID, node.Instance.DatatypeID)
-		}
-
-		return newModel, tea.Batch(
-			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("Tree reloaded: %d nodes, %d orphans resolved",
-				msg.Stats.NodesCount, msg.Stats.OrphansResolved)),
-			fieldCmd,
-		)
-
-	case LoadContentFieldsMsg:
-		m.SelectedContentFields = msg.Fields
-		if m.FieldCursor >= len(msg.Fields) {
-			m.FieldCursor = max(0, len(msg.Fields)-1)
-		}
-		return m, NewStateUpdate()
-
-	case ContentFieldUpdatedMsg:
-		return m, tea.Batch(
-			ShowDialog("Success", "Field updated", false),
-			LoadContentFieldsCmd(m.Config, msg.ContentID, msg.DatatypeID),
-		)
-
-	case ContentFieldDeletedMsg:
-		if m.FieldCursor >= len(m.SelectedContentFields)-1 && m.FieldCursor > 0 {
-			m.FieldCursor--
-		}
-		return m, tea.Batch(
-			ShowDialog("Success", "Field deleted", false),
-			LoadContentFieldsCmd(m.Config, msg.ContentID, msg.DatatypeID),
-		)
-
-	case ContentFieldAddedMsg:
-		return m, tea.Batch(
-			ShowDialog("Success", "Field added", false),
-			LoadContentFieldsCmd(m.Config, msg.ContentID, msg.DatatypeID),
-		)
-
-	case FieldReorderedMsg:
-		if msg.Direction == "up" && m.FieldCursor > 0 {
-			m.FieldCursor--
-		} else if msg.Direction == "down" && m.FieldCursor < len(m.SelectedContentFields)-1 {
-			m.FieldCursor++
-		}
-		return m, LoadContentFieldsCmd(m.Config, msg.ContentID, msg.DatatypeID)
-
 	// Plugin management messages
-	case PluginEnableRequestMsg:
-		return m, m.HandlePluginEnable(msg)
-	case PluginDisableRequestMsg:
-		return m, m.HandlePluginDisable(msg)
-	case PluginReloadRequestMsg:
-		return m, m.HandlePluginReload(msg)
-	case PluginApproveAllRoutesRequestMsg:
-		return m, m.HandlePluginApproveAllRoutes(msg)
-	case PluginApproveAllHooksRequestMsg:
-		return m, m.HandlePluginApproveAllHooks(msg)
-	case PluginEnabledMsg:
+	case PluginActionRequestMsg:
+		return m, m.HandlePluginAction(msg)
+	case PluginActionCompleteMsg:
+		var title, verb string
+		switch msg.Action {
+		case PluginActionEnable:
+			title, verb = "Plugin Enabled", "enabled"
+		case PluginActionDisable:
+			title, verb = "Plugin Disabled", "disabled"
+		case PluginActionReload:
+			title, verb = "Plugin Reloaded", "reloaded"
+		}
 		return m, tea.Batch(
 			PluginsFetchCmd(),
 			func() tea.Msg {
 				return ActionResultMsg{
-					Title:   "Plugin Enabled",
-					Message: fmt.Sprintf("Plugin '%s' has been enabled.", msg.Name),
-				}
-			},
-		)
-	case PluginDisabledMsg:
-		return m, tea.Batch(
-			PluginsFetchCmd(),
-			func() tea.Msg {
-				return ActionResultMsg{
-					Title:   "Plugin Disabled",
-					Message: fmt.Sprintf("Plugin '%s' has been disabled.", msg.Name),
-				}
-			},
-		)
-	case PluginReloadedMsg:
-		return m, tea.Batch(
-			PluginsFetchCmd(),
-			func() tea.Msg {
-				return ActionResultMsg{
-					Title:   "Plugin Reloaded",
-					Message: fmt.Sprintf("Plugin '%s' has been reloaded.", msg.Name),
+					Title:   title,
+					Message: fmt.Sprintf("Plugin '%s' has been %s.", msg.Name, verb),
 				}
 			},
 		)
@@ -442,6 +290,8 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 				Message: msg.Message,
 			}
 		}
+	// PluginSyncCapabilitiesRequestMsg: handler not yet implemented.
+	// The screen emits this message but the sync logic is pending.
 
 	default:
 		return m, nil

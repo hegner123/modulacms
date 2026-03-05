@@ -1,26 +1,218 @@
 package tui
 
 import (
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/tree"
 )
 
-// =============================================================================
-// ADMIN ROUTES MESSAGES
-// =============================================================================
-
-// AdminRoutesFetchMsg requests fetching all admin routes.
-type AdminRoutesFetchMsg struct{}
-
-// AdminRoutesFetchResultsMsg returns fetched admin routes.
-type AdminRoutesFetchResultsMsg struct {
-	Data []db.AdminRoutes
+// DatatypeUpdateSaveMsg requests saving datatype updates.
+type DatatypeUpdateSaveMsg struct {
+	DatatypeID types.DatatypeID
+	Parent     string
+	Name       string
+	Label      string
+	Type       string
 }
 
-// AdminRoutesSet sets the admin routes list.
-type AdminRoutesSet struct {
-	AdminRoutes []db.AdminRoutes
+// DatatypeUpdatedMsg signals successful datatype update.
+type DatatypeUpdatedMsg struct {
+	DatatypeID types.DatatypeID
+	Label      string
 }
+
+// DatatypeUpdateFailedMsg signals datatype update failure.
+type DatatypeUpdateFailedMsg struct {
+	Error error
+}
+
+// CmsDefineDatatypeLoadMsg requests loading the datatype definition form.
+type CmsDefineDatatypeLoadMsg struct{}
+
+// CmsDefineDatatypeReadyMsg signals that datatype definition is ready.
+type CmsDefineDatatypeReadyMsg struct{}
+
+// CmsBuildDefineDatatypeFormMsg requests building the datatype definition form.
+type CmsBuildDefineDatatypeFormMsg struct{}
+
+// CmsDefineDatatypeFormMsg signals that the datatype definition form is ready.
+type CmsDefineDatatypeFormMsg struct{}
+
+// CmsEditDatatypeLoadMsg requests loading an existing datatype for editing.
+type CmsEditDatatypeLoadMsg struct {
+	Datatype db.Datatypes
+}
+
+// CmsEditDatatypeFormMsg signals that the datatype edit form is ready.
+type CmsEditDatatypeFormMsg struct {
+	Datatype db.Datatypes
+}
+
+// CmsGetDatatypeParentOptionsMsg requests fetching parent datatype options.
+type CmsGetDatatypeParentOptionsMsg struct {
+	Admin bool
+}
+
+// CmsAddNewContentDataMsg requests adding new content data for a datatype.
+type CmsAddNewContentDataMsg struct {
+	Datatype types.DatatypeID
+}
+
+// CmsAddNewContentFieldsMsg requests adding new content fields.
+type CmsAddNewContentFieldsMsg struct {
+	Datatype int64
+}
+
+// ContentCreatedMsg signals successful content creation.
+type ContentCreatedMsg struct {
+	ContentDataID types.ContentID
+	RouteID       types.RouteID
+	FieldCount    int
+}
+
+// ContentCreatedWithErrorsMsg signals content creation with partial field failures.
+type ContentCreatedWithErrorsMsg struct {
+	ContentDataID types.ContentID
+	RouteID       types.RouteID
+	CreatedFields int
+	FailedFields  []types.FieldID
+}
+
+// BuildContentFormMsg requests building a content creation form.
+type BuildContentFormMsg struct {
+	DatatypeID types.DatatypeID
+	RouteID    types.RouteID
+}
+
+// ReorderSiblingRequestMsg requests reordering content siblings.
+type ReorderSiblingRequestMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+	Direction string // "up" or "down"
+}
+
+// ContentReorderedMsg signals successful content reordering.
+type ContentReorderedMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+	Direction string
+}
+
+// CopyContentRequestMsg requests copying content to a new instance.
+type CopyContentRequestMsg struct {
+	SourceContentID types.ContentID
+	RouteID         types.RouteID
+}
+
+// ContentCopiedMsg signals successful content copying.
+type ContentCopiedMsg struct {
+	SourceContentID types.ContentID
+	NewContentID    types.ContentID
+	RouteID         types.RouteID
+	FieldCount      int
+}
+
+// TogglePublishRequestMsg requests toggling content publish status.
+// Now triggers a confirmation dialog instead of direct toggle.
+type TogglePublishRequestMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
+// ConfirmedPublishMsg signals user confirmed the publish action.
+type ConfirmedPublishMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
+// ConfirmedUnpublishMsg signals user confirmed the unpublish action.
+type ConfirmedUnpublishMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
+// PublishCompletedMsg signals successful snapshot-based publish.
+type PublishCompletedMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
+// UnpublishCompletedMsg signals successful unpublish.
+type UnpublishCompletedMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
+// ContentPublishToggledMsg signals successful publish status toggle.
+// Kept for backward compatibility; new flow uses PublishCompletedMsg / UnpublishCompletedMsg.
+type ContentPublishToggledMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+	NewStatus types.ContentStatus
+}
+
+// ListVersionsRequestMsg requests listing versions for a content item.
+type ListVersionsRequestMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
+// VersionsListedMsg delivers the version list to the model.
+type VersionsListedMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+	Versions  []db.ContentVersion
+}
+
+// RestoreVersionRequestMsg requests restoring content from a specific version.
+type RestoreVersionRequestMsg struct {
+	ContentID types.ContentID
+	VersionID types.ContentVersionID
+	RouteID   types.RouteID
+}
+
+// ConfirmedRestoreVersionMsg signals user confirmed the restore action.
+type ConfirmedRestoreVersionMsg struct {
+	ContentID types.ContentID
+	VersionID types.ContentVersionID
+	RouteID   types.RouteID
+}
+
+// VersionRestoredMsg signals successful version restore.
+type VersionRestoredMsg struct {
+	ContentID      types.ContentID
+	RouteID        types.RouteID
+	FieldsRestored int
+}
+
+// TreeLoadedMsg signals successful content tree loading.
+type TreeLoadedMsg struct {
+	RouteID  types.RouteID
+	Stats    *tree.LoadStats
+	RootNode *tree.Root
+}
+
+// MediaUploadStartMsg triggers the async upload pipeline
+type MediaUploadStartMsg struct {
+	FilePath string
+}
+
+// MediaUploadedMsg signals upload completed successfully
+type MediaUploadedMsg struct {
+	Name string
+}
+
+// MediaUploadProgressMsg carries upload progress for the status display.
+type MediaUploadProgressMsg struct {
+	BytesSent  int64
+	Total      int64
+	ProgressCh <-chan tea.Msg // channel for the next progress message
+}
+
+// =============================================================================
+// ADMIN ROUTE CRUD MESSAGES
+// =============================================================================
 
 // CreateAdminRouteFromDialogRequestMsg requests creating an admin route from dialog input.
 type CreateAdminRouteFromDialogRequestMsg struct {
@@ -60,48 +252,9 @@ type AdminRouteDeletedMsg struct {
 	AdminRouteID types.AdminRouteID
 }
 
-// ShowDeleteAdminRouteDialogMsg requests showing the delete admin route confirmation dialog.
-type ShowDeleteAdminRouteDialogMsg struct {
-	AdminRouteID types.AdminRouteID
-	Title        string
-}
-
-// ShowEditAdminRouteDialogMsg requests showing the edit admin route dialog.
-type ShowEditAdminRouteDialogMsg struct {
-	Route db.AdminRoutes
-}
-
 // =============================================================================
-// ADMIN DATATYPES MESSAGES
+// ADMIN DATATYPE CRUD MESSAGES
 // =============================================================================
-
-// AdminAllDatatypesFetchMsg requests fetching all admin datatypes.
-type AdminAllDatatypesFetchMsg struct{}
-
-// AdminAllDatatypesFetchResultsMsg returns fetched admin datatypes.
-type AdminAllDatatypesFetchResultsMsg struct {
-	Data []db.AdminDatatypes
-}
-
-// AdminAllDatatypesSet sets the admin datatypes list.
-type AdminAllDatatypesSet struct {
-	AdminAllDatatypes []db.AdminDatatypes
-}
-
-// AdminDatatypeFieldsFetchMsg requests fetching fields for a specific admin datatype.
-type AdminDatatypeFieldsFetchMsg struct {
-	AdminDatatypeID types.AdminDatatypeID
-}
-
-// AdminDatatypeFieldsFetchResultsMsg returns fetched admin datatype fields.
-type AdminDatatypeFieldsFetchResultsMsg struct {
-	Fields []db.AdminFields
-}
-
-// AdminDatatypeFieldsSet sets the admin datatype fields list.
-type AdminDatatypeFieldsSet struct {
-	Fields []db.AdminFields
-}
 
 // CreateAdminDatatypeFromDialogRequestMsg requests creating an admin datatype from dialog input.
 type CreateAdminDatatypeFromDialogRequestMsg struct {
@@ -142,28 +295,8 @@ type AdminDatatypeDeletedMsg struct {
 	AdminDatatypeID types.AdminDatatypeID
 }
 
-// ShowDeleteAdminDatatypeDialogMsg requests showing the delete admin datatype confirmation dialog.
-type ShowDeleteAdminDatatypeDialogMsg struct {
-	AdminDatatypeID types.AdminDatatypeID
-	Label           string
-	HasChildren     bool
-}
-
-// ShowAdminFormDialogMsg requests showing an admin form dialog.
-type ShowAdminFormDialogMsg struct {
-	Action  FormDialogAction
-	Title   string
-	Parents []db.AdminDatatypes
-}
-
-// ShowEditAdminDatatypeDialogMsg requests showing the edit admin datatype dialog.
-type ShowEditAdminDatatypeDialogMsg struct {
-	Datatype db.AdminDatatypes
-	Parents  []db.AdminDatatypes
-}
-
 // =============================================================================
-// ADMIN FIELDS MESSAGES
+// ADMIN FIELD CRUD MESSAGES
 // =============================================================================
 
 // CreateAdminFieldFromDialogRequestMsg requests creating an admin field from dialog input.
@@ -207,58 +340,27 @@ type AdminFieldDeletedMsg struct {
 	AdminDatatypeID types.AdminDatatypeID
 }
 
-// ShowDeleteAdminFieldDialogMsg requests showing the delete admin field confirmation dialog.
-type ShowDeleteAdminFieldDialogMsg struct {
-	AdminFieldID    types.AdminFieldID
-	AdminDatatypeID types.AdminDatatypeID
-	Label           string
-}
-
-// ShowEditAdminFieldDialogMsg requests showing the edit admin field dialog.
-type ShowEditAdminFieldDialogMsg struct {
-	Field db.AdminFields
-}
-
 // =============================================================================
-// ADMIN CONTENT MESSAGES
+// ADMIN CONTENT CRUD MESSAGES
 // =============================================================================
-
-// AdminContentDataFetchMsg requests fetching all admin content data.
-type AdminContentDataFetchMsg struct{}
-
-// AdminContentDataFetchResultsMsg returns fetched admin content data.
-type AdminContentDataFetchResultsMsg struct {
-	Data []db.AdminContentDataTopLevel
-}
-
-// AdminContentDataSet sets the admin content data list.
-type AdminContentDataSet struct {
-	AdminContentData []db.AdminContentDataTopLevel
-}
 
 // AdminContentCreatedMsg signals successful admin content creation.
 type AdminContentCreatedMsg struct {
 	AdminContentID types.AdminContentID
+	AdminRouteID   types.AdminRouteID
 }
 
 // AdminContentDeletedMsg signals successful admin content deletion.
 type AdminContentDeletedMsg struct {
 	AdminContentID types.AdminContentID
+	AdminRouteID   types.AdminRouteID
 }
 
 // DeleteAdminContentRequestMsg requests deleting admin content.
 type DeleteAdminContentRequestMsg struct {
 	AdminContentID types.AdminContentID
+	AdminRouteID   types.AdminRouteID
 }
-
-// AdminLoadContentFieldsMsg requests loading admin content fields for display.
-type AdminLoadContentFieldsMsg struct {
-	Fields []AdminContentFieldDisplay
-}
-
-// =============================================================================
-// ADMIN DISPLAY TYPES
-// =============================================================================
 
 // AdminContentFieldDisplay represents an admin content field for right panel display.
 type AdminContentFieldDisplay struct {
@@ -267,24 +369,13 @@ type AdminContentFieldDisplay struct {
 	Label               string
 	Type                string
 	Value               string
+	ValidationJSON      string
+	DataJSON            string
 }
 
 // =============================================================================
-// FIELD TYPES MESSAGES
+// FIELD TYPE CRUD MESSAGES
 // =============================================================================
-
-// FieldTypesFetchMsg requests fetching all field types.
-type FieldTypesFetchMsg struct{}
-
-// FieldTypesFetchResultsMsg returns fetched field types.
-type FieldTypesFetchResultsMsg struct {
-	Data []db.FieldTypes
-}
-
-// FieldTypesSet sets the field types list.
-type FieldTypesSet struct {
-	FieldTypes []db.FieldTypes
-}
 
 // CreateFieldTypeFromDialogRequestMsg requests creating a field type from dialog input.
 type CreateFieldTypeFromDialogRequestMsg struct {
@@ -323,33 +414,9 @@ type FieldTypeDeletedMsg struct {
 	FieldTypeID types.FieldTypeID
 }
 
-// ShowDeleteFieldTypeDialogMsg requests showing the delete field type confirmation dialog.
-type ShowDeleteFieldTypeDialogMsg struct {
-	FieldTypeID types.FieldTypeID
-	Label       string
-}
-
-// ShowEditFieldTypeDialogMsg requests showing the edit field type dialog.
-type ShowEditFieldTypeDialogMsg struct {
-	FieldType db.FieldTypes
-}
-
 // =============================================================================
-// ADMIN FIELD TYPES MESSAGES
+// ADMIN FIELD TYPE CRUD MESSAGES
 // =============================================================================
-
-// AdminFieldTypesFetchMsg requests fetching all admin field types.
-type AdminFieldTypesFetchMsg struct{}
-
-// AdminFieldTypesFetchResultsMsg returns fetched admin field types.
-type AdminFieldTypesFetchResultsMsg struct {
-	Data []db.AdminFieldTypes
-}
-
-// AdminFieldTypesSet sets the admin field types list.
-type AdminFieldTypesSet struct {
-	AdminFieldTypes []db.AdminFieldTypes
-}
 
 // CreateAdminFieldTypeFromDialogRequestMsg requests creating an admin field type from dialog input.
 type CreateAdminFieldTypeFromDialogRequestMsg struct {
@@ -386,15 +453,4 @@ type AdminFieldTypeUpdatedFromDialogMsg struct {
 // AdminFieldTypeDeletedMsg signals successful admin field type deletion.
 type AdminFieldTypeDeletedMsg struct {
 	AdminFieldTypeID types.AdminFieldTypeID
-}
-
-// ShowDeleteAdminFieldTypeDialogMsg requests showing the delete admin field type confirmation dialog.
-type ShowDeleteAdminFieldTypeDialogMsg struct {
-	AdminFieldTypeID types.AdminFieldTypeID
-	Label            string
-}
-
-// ShowEditAdminFieldTypeDialogMsg requests showing the edit admin field type dialog.
-type ShowEditAdminFieldTypeDialogMsg struct {
-	AdminFieldType db.AdminFieldTypes
 }

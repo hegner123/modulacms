@@ -16,34 +16,38 @@ type DialogAction string
 
 // Dialog action types.
 const (
-	DIALOGGENERIC              DialogAction = "generic"
-	DIALOGDELETE               DialogAction = "delete"
-	DIALOGACTIONCONFIRM        DialogAction = "action_confirm"
-	DIALOGINITCONTENT          DialogAction = "init_content"
-	DIALOGQUITCONFIRM          DialogAction = "quit_confirm"
-	DIALOGDELETECONTENT        DialogAction = "delete_content"
-	DIALOGDELETEDATATYPE       DialogAction = "delete_datatype"
-	DIALOGDELETEFIELD          DialogAction = "delete_field"
-	DIALOGDELETEROUTE          DialogAction = "delete_route"
-	DIALOGDELETEMEDIA          DialogAction = "delete_media"
-	DIALOGDELETEUSER           DialogAction = "delete_user"
-	DIALOGDELETECONTENTFIELD   DialogAction = "delete_content_field"
-	DIALOGDELETEADMINROUTE     DialogAction = "delete_admin_route"
-	DIALOGDELETEADMINDATATYPE  DialogAction = "delete_admin_datatype"
-	DIALOGDELETEADMINFIELD     DialogAction = "delete_admin_field"
-	DIALOGDELETEADMINCONTENT   DialogAction = "delete_admin_content"
-	DIALOGBACKUPRESTORE        DialogAction = "backup_restore"
-	DIALOGAPPROVEPLUGINROUTES  DialogAction = "approve_plugin_routes"
-	DIALOGAPPROVEPLUGINSHOOKS  DialogAction = "approve_plugin_hooks"
-	DIALOGQUICKSTART           DialogAction = "quickstart_confirm"
-	DIALOGDELETEFIELDTYPE      DialogAction = "delete_field_type"
-	DIALOGDELETEADMINFIELDTYPE DialogAction = "delete_admin_field_type"
-	DIALOGDEPLOYPULL           DialogAction = "deploy_pull"
-	DIALOGDEPLOYPUSH           DialogAction = "deploy_push"
-	DIALOGPUBLISHCONTENT       DialogAction = "publish_content"
-	DIALOGUNPUBLISHCONTENT     DialogAction = "unpublish_content"
-	DIALOGRESTOREVERSION       DialogAction = "restore_version"
-	DIALOGLOCALESELECT         DialogAction = "locale_select"
+	DIALOGGENERIC                 DialogAction = "generic"
+	DIALOGDELETE                  DialogAction = "delete"
+	DIALOGACTIONCONFIRM           DialogAction = "action_confirm"
+	DIALOGINITCONTENT             DialogAction = "init_content"
+	DIALOGQUITCONFIRM             DialogAction = "quit_confirm"
+	DIALOGDELETECONTENT           DialogAction = "delete_content"
+	DIALOGDELETEDATATYPE          DialogAction = "delete_datatype"
+	DIALOGDELETEFIELD             DialogAction = "delete_field"
+	DIALOGDELETEROUTE             DialogAction = "delete_route"
+	DIALOGDELETEMEDIA             DialogAction = "delete_media"
+	DIALOGDELETEUSER              DialogAction = "delete_user"
+	DIALOGDELETECONTENTFIELD      DialogAction = "delete_content_field"
+	DIALOGDELETEADMINROUTE        DialogAction = "delete_admin_route"
+	DIALOGDELETEADMINDATATYPE     DialogAction = "delete_admin_datatype"
+	DIALOGDELETEADMINFIELD        DialogAction = "delete_admin_field"
+	DIALOGDELETEADMINCONTENT      DialogAction = "delete_admin_content"
+	DIALOGBACKUPRESTORE           DialogAction = "backup_restore"
+	DIALOGAPPROVEPLUGINROUTES     DialogAction = "approve_plugin_routes"
+	DIALOGAPPROVEPLUGINSHOOKS     DialogAction = "approve_plugin_hooks"
+	DIALOGQUICKSTART              DialogAction = "quickstart_confirm"
+	DIALOGDELETEFIELDTYPE         DialogAction = "delete_field_type"
+	DIALOGDELETEADMINFIELDTYPE    DialogAction = "delete_admin_field_type"
+	DIALOGDEPLOYPULL              DialogAction = "deploy_pull"
+	DIALOGDEPLOYPUSH              DialogAction = "deploy_push"
+	DIALOGPUBLISHCONTENT          DialogAction = "publish_content"
+	DIALOGUNPUBLISHCONTENT        DialogAction = "unpublish_content"
+	DIALOGRESTOREVERSION          DialogAction = "restore_version"
+	DIALOGLOCALESELECT            DialogAction = "locale_select"
+	DIALOGPUBLISHADMINCONTENT     DialogAction = "publish_admin_content"
+	DIALOGUNPUBLISHADMINCONTENT   DialogAction = "unpublish_admin_content"
+	DIALOGRESTOREADMINVERSION     DialogAction = "restore_admin_version"
+	DIALOGDELETEADMINCONTENTFIELD DialogAction = "delete_admin_content_field"
 )
 
 // DialogModel represents a dialog that can be rendered on top of other content
@@ -118,7 +122,9 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 		DIALOGDELETEADMINCONTENT, DIALOGBACKUPRESTORE, DIALOGAPPROVEPLUGINROUTES, DIALOGAPPROVEPLUGINSHOOKS,
 		DIALOGQUICKSTART, DIALOGDELETEFIELDTYPE, DIALOGDELETEADMINFIELDTYPE,
 		DIALOGDEPLOYPULL, DIALOGDEPLOYPUSH,
-		DIALOGPUBLISHCONTENT, DIALOGUNPUBLISHCONTENT, DIALOGRESTOREVERSION:
+		DIALOGPUBLISHCONTENT, DIALOGUNPUBLISHCONTENT, DIALOGRESTOREVERSION,
+		DIALOGPUBLISHADMINCONTENT, DIALOGUNPUBLISHADMINCONTENT, DIALOGRESTOREADMINVERSION,
+		DIALOGDELETEADMINCONTENTFIELD:
 		return d.ToggleControls(msg)
 	case DIALOGLOCALESELECT:
 		return d.LocaleSelectControls(msg)

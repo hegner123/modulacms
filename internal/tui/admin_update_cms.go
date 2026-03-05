@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 // UpdateAdminCms routes admin CMS create/update/delete messages.
@@ -72,8 +73,6 @@ func (m Model) UpdateAdminCms(msg tea.Msg) (Model, tea.Cmd) {
 	case AdminDatatypeDeletedMsg:
 		newModel := m
 		newModel.Cursor = 0
-		newModel.AdminFieldCursor = 0
-		newModel.AdminSelectedDatatypeFields = nil
 		return newModel, tea.Batch(
 			LoadingStopCmd(),
 			LogMessageCmd(fmt.Sprintf("Admin datatype deleted: %s", msg.AdminDatatypeID)),
@@ -115,20 +114,118 @@ func (m Model) UpdateAdminCms(msg tea.Msg) (Model, tea.Cmd) {
 	// =========================================================================
 	// ADMIN CONTENT REQUEST MESSAGES → dispatch to handlers
 	// =========================================================================
-	case DeleteAdminContentRequestMsg:
+	case ConfirmedDeleteAdminContentMsg:
 		return m, m.HandleDeleteAdminContent(msg)
+	case AdminReorderSiblingRequestMsg:
+		return m, m.HandleAdminReorderSibling(msg)
+	case AdminCopyContentRequestMsg:
+		return m, m.HandleCopyAdminContent(msg)
+	case AdminMoveContentRequestMsg:
+		return m, m.HandleMoveAdminContent(msg)
+	case ConfirmedPublishAdminContentMsg:
+		return m, m.HandleAdminConfirmedPublish(msg)
+	case ConfirmedUnpublishAdminContentMsg:
+		return m, m.HandleAdminConfirmedUnpublish(msg)
+	case AdminListVersionsRequestMsg:
+		return m, m.HandleAdminListVersions(msg)
+	case ConfirmedRestoreAdminVersionMsg:
+		return m, m.HandleAdminConfirmedRestoreVersion(msg)
+	case ConfirmedDeleteAdminContentFieldMsg:
+		return m, m.HandleDeleteAdminContentField(msg)
+
+	case AdminFetchContentForEditMsg:
+		locale := m.ActiveLocale
+		return m, FetchAdminContentForEditCmd(m.Config, msg.AdminContentID, msg.AdminDatatypeID, msg.AdminRouteID, msg.Title, locale)
 
 	// =========================================================================
-	// ADMIN CONTENT RESULT MESSAGES → re-fetch data
+	// ADMIN CONTENT RESULT MESSAGES → update model + re-fetch
 	// =========================================================================
+	case AdminTreeLoadedMsg:
+		// Screen handles tree state; Model-level just stops loading.
+		return m, LoadingStopCmd()
+
+	case AdminContentCreatedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin content created: %s", msg.AdminContentID)),
+			ReloadAdminContentTreeCmd(m.Config, msg.AdminRouteID),
+		)
 	case AdminContentDeletedMsg:
 		newModel := m
 		newModel.Cursor = 0
 		return newModel, tea.Batch(
 			LoadingStopCmd(),
 			LogMessageCmd(fmt.Sprintf("Admin content deleted: %s", msg.AdminContentID)),
-			AdminContentDataFetchCmd(),
+			ReloadAdminContentTreeCmd(m.Config, msg.AdminRouteID),
 		)
+	case AdminContentUpdatedFromDialogMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin content updated: %s", msg.AdminContentID)),
+			ReloadAdminContentTreeCmd(m.Config, msg.AdminRouteID),
+		)
+	case AdminContentReorderedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			ReloadAdminContentTreeCmd(m.Config, msg.AdminRouteID),
+		)
+	case AdminContentCopiedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin content copied: %s", msg.NewID)),
+			ReloadAdminContentTreeCmd(m.Config, msg.AdminRouteID),
+		)
+	case AdminContentMovedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin content moved: %s", msg.AdminContentID)),
+			ReloadAdminContentTreeCmd(m.Config, msg.AdminRouteID),
+		)
+	case AdminPublishCompletedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin content published: %s", msg.AdminContentID)),
+			ReloadAdminContentTreeCmd(m.Config, msg.AdminRouteID),
+		)
+	case AdminUnpublishCompletedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin content unpublished: %s", msg.AdminContentID)),
+			ReloadAdminContentTreeCmd(m.Config, msg.AdminRouteID),
+		)
+	case AdminVersionsListedMsg:
+		// Screen handles version list state; Model-level just stops loading.
+		return m, LoadingStopCmd()
+	case AdminVersionRestoredMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin version restored (%d fields)", msg.FieldsRestored)),
+			ReloadAdminContentTreeCmd(m.Config, msg.AdminRouteID),
+		)
+	case AdminContentFieldAddedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd("Admin content field added"),
+			LoadAdminContentFieldsCmd(m.Config, msg.AdminContentID, types.NullableAdminDatatypeID{}, m.ActiveLocale),
+		)
+	case AdminContentFieldDeletedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd("Admin content field deleted"),
+			LoadAdminContentFieldsCmd(m.Config, msg.AdminContentID, types.NullableAdminDatatypeID{}, m.ActiveLocale),
+		)
+	case AdminContentFieldUpdatedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd("Admin content field updated"),
+			LoadAdminContentFieldsCmd(m.Config, msg.AdminContentID, types.NullableAdminDatatypeID{}, m.ActiveLocale),
+		)
+	case AdminLoadContentFieldsMsg:
+		// Screen handles field display state directly.
+		return m, nil
+	case AdminRootDatatypesFetchResultsMsg:
+		// Screen handles root datatypes state directly.
+		return m, nil
 
 	// =========================================================================
 	// FIELD TYPE REQUEST MESSAGES -> dispatch to handlers

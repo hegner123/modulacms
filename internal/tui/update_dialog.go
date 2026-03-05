@@ -112,13 +112,9 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 
 	case LocaleSwitchMsg:
 		m.ActiveLocale = msg.Locale
-		// Reload content fields for the new locale if viewing content
-		if !m.PageRouteId.IsZero() {
-			node := m.Root.NodeAtIndex(m.Cursor)
-			if node != nil && node.Instance != nil {
-				return m, LoadContentFieldsForLocaleCmd(m.Config, node.Instance.ContentDataID, node.Instance.DatatypeID, m.ActiveLocale)
-			}
-		}
+		// NOTE: Content field reload for the new locale is handled by the
+		// ContentScreen via its own Update(). This Model-level handler only
+		// persists the locale choice.
 		return m, nil
 
 	case ShowDeleteContentDialogMsg:
@@ -542,6 +538,260 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(DIALOGFOCUS),
 		)
 
+	// =========================================================================
+	// ADMIN CONTENT CONFIRMATION DIALOGS
+	// =========================================================================
+	case ShowDeleteAdminContentDialogMsg:
+		if msg.HasChildren {
+			dialog := NewDialog("Cannot Delete", fmt.Sprintf("Cannot delete '%s' because it has children.\nDelete child content first.", msg.ContentName), false, DIALOGGENERIC)
+			return m, tea.Batch(
+				OverlaySetCmd(&dialog),
+				FocusSetCmd(DIALOGFOCUS),
+			)
+		}
+		dialog := NewDialog("Delete Admin Content", fmt.Sprintf("Delete '%s'?\nAll field values will be deleted.", msg.ContentName), true, DIALOGDELETEADMINCONTENT)
+		dialog.SetButtons("Delete", "Cancel")
+		m.DCtx.DeleteAdminContent = &DeleteAdminContentContext{
+			AdminContentID: msg.AdminContentID,
+			AdminRouteID:   msg.AdminRouteID,
+			Name:           msg.ContentName,
+			HasChildren:    msg.HasChildren,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowPublishAdminContentDialogMsg:
+		var dialogMsg string
+		var dialogAction DialogAction
+		var title string
+		if msg.IsPublished {
+			title = "Unpublish Admin Content"
+			dialogMsg = fmt.Sprintf("Unpublish '%s'?\nIt will no longer be publicly accessible.", msg.Name)
+			dialogAction = DIALOGUNPUBLISHADMINCONTENT
+		} else {
+			title = "Publish Admin Content"
+			dialogMsg = fmt.Sprintf("Publish '%s'?\nThis creates a public snapshot.", msg.Name)
+			dialogAction = DIALOGPUBLISHADMINCONTENT
+		}
+		dialog := NewDialog(title, dialogMsg, true, dialogAction)
+		if msg.IsPublished {
+			dialog.SetButtons("Unpublish", "Cancel")
+		} else {
+			dialog.SetButtons("Publish", "Cancel")
+		}
+		m.DCtx.PublishAdminContent = &PublishAdminContentContext{
+			AdminContentID: msg.AdminContentID,
+			AdminRouteID:   msg.AdminRouteID,
+			Name:           msg.Name,
+			IsPublished:    msg.IsPublished,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowRestoreVersionDialogMsg:
+		dialog := NewDialog("Restore Version", fmt.Sprintf("Restore version %d?\nCurrent field values will be overwritten.", msg.VersionNumber), true, DIALOGRESTOREVERSION)
+		dialog.SetButtons("Restore", "Cancel")
+		m.DCtx.RestoreVersion = &RestoreVersionContext{
+			ContentID: msg.ContentID,
+			VersionID: msg.VersionID,
+			RouteID:   msg.RouteID,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowRestoreAdminVersionDialogMsg:
+		dialog := NewDialog("Restore Version", fmt.Sprintf("Restore version %d?\nCurrent field values will be overwritten.", msg.VersionNumber), true, DIALOGRESTOREADMINVERSION)
+		dialog.SetButtons("Restore", "Cancel")
+		m.DCtx.RestoreAdminVersion = &RestoreAdminVersionContext{
+			AdminContentID: msg.AdminContentID,
+			VersionID:      msg.VersionID,
+			AdminRouteID:   msg.AdminRouteID,
+			VersionNumber:  msg.VersionNumber,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteAdminContentFieldDialogMsg:
+		dialog := NewDialog("Delete Field Value", fmt.Sprintf("Delete value for field '%s'?\nThis removes the stored value.", msg.Label), true, DIALOGDELETEADMINCONTENTFIELD)
+		dialog.SetButtons("Delete", "Cancel")
+		m.DCtx.DeleteAdminContentField = &DeleteAdminContentFieldContext{
+			AdminContentFieldID: msg.AdminContentFieldID,
+			AdminContentID:      msg.AdminContentID,
+			AdminRouteID:        msg.AdminRouteID,
+			AdminDatatypeID:     msg.AdminDatatypeID,
+			Label:               msg.Label,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowMoveAdminContentDialogMsg:
+		if len(msg.Targets) == 0 {
+			dialog := NewDialog("Cannot Move", "No valid move targets available.", false, DIALOGGENERIC)
+			return m, tea.Batch(
+				OverlaySetCmd(&dialog),
+				FocusSetCmd(DIALOGFOCUS),
+			)
+		}
+		m.DCtx.MoveAdminContent = &MoveAdminContentContext{
+			SourceNode:   msg.SourceNode,
+			AdminRouteID: msg.AdminRouteID,
+		}
+		dialog := FormDialogModel{
+			dialogStyles:  newDialogStyles(),
+			Title:         "Move Content",
+			Width:         50,
+			Action:        FORMDIALOGMOVEADMINCONTENT,
+			LabelInput:    textinput.New(),
+			TypeInput:     textinput.New(),
+			ParentOptions: msg.Targets,
+			ParentIndex:   0,
+			focusIndex:    FormDialogFieldParent,
+			EntityID:      string(msg.SourceNode.Instance.ContentDataID) + "|" + string(msg.AdminRouteID),
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+
+	// =========================================================================
+	// ADMIN SINGLE-FIELD AND ADD-FIELD DIALOGS
+	// =========================================================================
+	case ShowEditAdminSingleFieldDialogMsg:
+		m.DCtx.EditAdminSingleField = &editAdminSingleFieldCtx{
+			AdminContentFieldID: msg.Field.AdminContentFieldID,
+			AdminContentID:      msg.AdminContentID,
+			AdminFieldID:        msg.Field.AdminFieldID,
+			AdminRouteID:        msg.AdminRouteID,
+			AdminDatatypeID:     msg.AdminDatatypeID,
+			Label:               msg.Field.Label,
+			Type:                msg.Field.Type,
+			Value:               msg.Field.Value,
+		}
+		// Build a single-field edit form using the regular ContentFormDialog
+		// with admin-mapped types and FORMDIALOGEDITADMINSINGLEFIELD action.
+		existingFields := []ExistingContentField{{
+			ContentFieldID: types.ContentFieldID(msg.Field.AdminContentFieldID),
+			FieldID:        types.FieldID(msg.Field.AdminFieldID),
+			Label:          msg.Field.Label,
+			Type:           msg.Field.Type,
+			Value:          msg.Field.Value,
+			ValidationJSON: msg.Field.ValidationJSON,
+			DataJSON:       msg.Field.DataJSON,
+		}}
+		dialog := NewEditContentFormDialog(
+			fmt.Sprintf("Edit: %s", msg.Field.Label),
+			types.ContentID(msg.AdminContentID),
+			types.DatatypeID(msg.AdminDatatypeID.ID),
+			types.RouteID(msg.AdminRouteID),
+			existingFields,
+		)
+		dialog.Action = FORMDIALOGEDITADMINSINGLEFIELD
+		dialog.Logger = m.Logger
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowAddAdminContentFieldDialogMsg:
+		m.DCtx.AddAdminContentField = &addAdminContentFieldCtx{
+			AdminContentID:  msg.AdminContentID,
+			AdminRouteID:    msg.AdminRouteID,
+			AdminDatatypeID: msg.AdminDatatypeID,
+		}
+		parents := make([]ParentOption, 0, len(msg.Options))
+		for _, opt := range msg.Options {
+			parents = append(parents, ParentOption{
+				Label: opt.Key,
+				Value: opt.Value,
+			})
+		}
+		dialog := FormDialogModel{
+			dialogStyles:  newDialogStyles(),
+			Title:         "Add Field",
+			Width:         50,
+			Action:        FORMDIALOGADDADMINCONTENTFIELD,
+			LabelInput:    textinput.New(),
+			TypeInput:     textinput.New(),
+			ParentOptions: parents,
+			ParentIndex:   0,
+			focusIndex:    FormDialogFieldParent,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+
+	// =========================================================================
+	// ADMIN CONTENT FORM BUILD/EDIT DIALOGS
+	// =========================================================================
+	case AdminBuildContentFormMsg:
+		// Build creation form using regular ContentFormDialog with admin action.
+		var dbFields []db.Fields
+		for _, f := range msg.Fields {
+			dbFields = append(dbFields, db.Fields{
+				FieldID: types.FieldID(f.AdminFieldID),
+				Label:   f.Label,
+				Type:    f.Type,
+				Data:    f.Data,
+			})
+		}
+		dialog := NewContentFormDialog(
+			"New Admin Content",
+			FORMDIALOGCREATEADMINCONTENT,
+			types.DatatypeID(msg.AdminDatatypeID),
+			types.RouteID(msg.AdminRouteID),
+			dbFields,
+		)
+		dialog.Logger = m.Logger
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditAdminContentFormDialogMsg:
+		// Build edit form using regular ContentFormDialog with admin action.
+		var existingFields []ExistingContentField
+		for _, f := range msg.Fields {
+			existingFields = append(existingFields, ExistingContentField{
+				ContentFieldID: types.ContentFieldID(f.AdminContentFieldID),
+				FieldID:        types.FieldID(f.AdminFieldID),
+				Label:          f.Label,
+				Type:           f.Type,
+				Value:          f.Value,
+				ValidationJSON: f.ValidationJSON,
+				DataJSON:       f.DataJSON,
+			})
+		}
+		dialog := NewEditContentFormDialog(
+			"Edit Admin Content",
+			types.ContentID(msg.AdminContentID),
+			types.DatatypeID(msg.AdminDatatypeID),
+			types.RouteID(msg.AdminRouteID),
+			existingFields,
+		)
+		dialog.Action = FORMDIALOGEDITADMINCONTENT
+		dialog.Logger = m.Logger
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+
+	// =========================================================================
+	// ADMIN CONTENT FORM DIALOG HANDLING
+	// =========================================================================
+	case AdminContentFormDialogAcceptMsg:
+		return m.HandleAdminContentFormDialogAccept(msg)
+	case AdminContentFormDialogCancelMsg:
+		m.DCtx.EditAdminSingleField = nil
+		m.DCtx.AddAdminContentField = nil
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+
 	case UserFormDialogAcceptMsg:
 		switch msg.Action {
 		case FORMDIALOGCREATEUSER:
@@ -923,7 +1173,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 					FocusSetCmd(PAGEFOCUS),
 					LoadingStartCmd(),
 					func() tea.Msg {
-						return PluginApproveAllRoutesRequestMsg{Name: pluginName}
+						return PluginActionRequestMsg{Name: pluginName, Action: PluginActionApproveRoutes}
 					},
 				)
 			}
@@ -940,7 +1190,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 					FocusSetCmd(PAGEFOCUS),
 					LoadingStartCmd(),
 					func() tea.Msg {
-						return PluginApproveAllHooksRequestMsg{Name: pluginName}
+						return PluginActionRequestMsg{Name: pluginName, Action: PluginActionApproveHooks}
 					},
 				)
 			}
@@ -1001,6 +1251,96 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				OverlayClearCmd(),
 				FocusSetCmd(PAGEFOCUS),
 			)
+		case DIALOGDELETEADMINCONTENT:
+			if m.DCtx.DeleteAdminContent != nil {
+				ctx := m.DCtx.DeleteAdminContent
+				m.DCtx.DeleteAdminContent = nil
+				return m, tea.Batch(
+					OverlayClearCmd(),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						return ConfirmedDeleteAdminContentMsg{AdminContentID: ctx.AdminContentID, AdminRouteID: ctx.AdminRouteID}
+					},
+				)
+			}
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGPUBLISHADMINCONTENT:
+			if m.DCtx.PublishAdminContent != nil {
+				ctx := m.DCtx.PublishAdminContent
+				m.DCtx.PublishAdminContent = nil
+				return m, tea.Batch(
+					OverlayClearCmd(),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						return ConfirmedPublishAdminContentMsg{AdminContentID: ctx.AdminContentID, AdminRouteID: ctx.AdminRouteID}
+					},
+				)
+			}
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGUNPUBLISHADMINCONTENT:
+			if m.DCtx.PublishAdminContent != nil {
+				ctx := m.DCtx.PublishAdminContent
+				m.DCtx.PublishAdminContent = nil
+				return m, tea.Batch(
+					OverlayClearCmd(),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						return ConfirmedUnpublishAdminContentMsg{AdminContentID: ctx.AdminContentID, AdminRouteID: ctx.AdminRouteID}
+					},
+				)
+			}
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGRESTOREADMINVERSION:
+			if m.DCtx.RestoreAdminVersion != nil {
+				ctx := m.DCtx.RestoreAdminVersion
+				m.DCtx.RestoreAdminVersion = nil
+				return m, tea.Batch(
+					OverlayClearCmd(),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						return ConfirmedRestoreAdminVersionMsg{AdminContentID: ctx.AdminContentID, VersionID: ctx.VersionID, AdminRouteID: ctx.AdminRouteID}
+					},
+				)
+			}
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDELETEADMINCONTENTFIELD:
+			if m.DCtx.DeleteAdminContentField != nil {
+				ctx := m.DCtx.DeleteAdminContentField
+				m.DCtx.DeleteAdminContentField = nil
+				return m, tea.Batch(
+					OverlayClearCmd(),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						return ConfirmedDeleteAdminContentFieldMsg{
+							AdminContentFieldID: ctx.AdminContentFieldID,
+							AdminContentID:      ctx.AdminContentID,
+							AdminRouteID:        ctx.AdminRouteID,
+							AdminDatatypeID:     ctx.AdminDatatypeID,
+						}
+					},
+				)
+			}
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+			)
 		default:
 			return m, tea.Batch(
 				OverlayClearCmd(),
@@ -1027,8 +1367,10 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(DIALOGFOCUS),
 		)
 	case ShowFieldFormDialogMsg:
-		// Field form dialog has no parent selector
+		// Field form dialog has no parent selector.
+		// ContextID carries the parent datatype ID for field creation.
 		dialog := NewFieldFormDialog(msg.Title, msg.Action)
+		dialog.EntityID = msg.ContextID
 		return m, tea.Batch(
 			OverlaySetCmd(&dialog),
 			FocusSetCmd(DIALOGFOCUS),
@@ -1180,19 +1522,19 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				CreateDatatypeFromDialogCmd(msg.Name, msg.Label, msg.Type, msg.ParentID),
 			)
 		case FORMDIALOGCREATEFIELD:
-			// Create a field and link it to the selected datatype
-			if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
-				dt := m.AllDatatypes[m.Cursor]
+			// Create a field and link it to the datatype passed via EntityID
+			datatypeID := types.DatatypeID(msg.EntityID)
+			if datatypeID.IsZero() {
 				return m, tea.Batch(
 					OverlayClearCmd(),
 					FocusSetCmd(PAGEFOCUS),
-					LoadingStartCmd(),
-					CreateFieldFromDialogCmd(msg.Name, msg.Label, msg.Type, dt.DatatypeID),
 				)
 			}
 			return m, tea.Batch(
 				OverlayClearCmd(),
 				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				CreateFieldFromDialogCmd(msg.Name, msg.Label, msg.Type, datatypeID),
 			)
 		case FORMDIALOGCREATEROUTE:
 			// Create a new route (Label=Title, Type=Slug)
@@ -1316,19 +1658,19 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				UpdateAdminDatatypeFromDialogCmd(msg.EntityID, msg.Name, msg.Label, msg.Type, msg.ParentID),
 			)
 		case FORMDIALOGCREATEADMINFIELD:
-			// Create a field and link it to the selected admin datatype
-			if len(m.AdminAllDatatypes) > 0 && m.Cursor < len(m.AdminAllDatatypes) {
-				dt := m.AdminAllDatatypes[m.Cursor]
+			// Create a field and link it to the admin datatype passed via EntityID
+			adminDatatypeID := types.AdminDatatypeID(msg.EntityID)
+			if adminDatatypeID.IsZero() {
 				return m, tea.Batch(
 					OverlayClearCmd(),
 					FocusSetCmd(PAGEFOCUS),
-					LoadingStartCmd(),
-					CreateAdminFieldFromDialogCmd(msg.Name, msg.Label, msg.Type, dt.AdminDatatypeID),
 				)
 			}
 			return m, tea.Batch(
 				OverlayClearCmd(),
 				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				CreateAdminFieldFromDialogCmd(msg.Name, msg.Label, msg.Type, adminDatatypeID),
 			)
 		case FORMDIALOGEDITADMINFIELD:
 			return m, tea.Batch(
@@ -1380,6 +1722,60 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 						Value: msg.Label,
 					}
 				},
+			)
+		case FORMDIALOGMOVEADMINCONTENT:
+			// ParentID = selected target content ID, EntityID = "sourceContentID|routeID"
+			parts := strings.SplitN(msg.EntityID, "|", 2)
+			if len(parts) == 2 && msg.ParentID != "" {
+				return m, tea.Batch(
+					OverlayClearCmd(),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						return AdminMoveContentRequestMsg{
+							SourceID:     types.AdminContentID(parts[0]),
+							TargetID:     types.AdminContentID(msg.ParentID),
+							AdminRouteID: types.AdminRouteID(parts[1]),
+						}
+					},
+				)
+			}
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case FORMDIALOGCHILDADMINDATATYPE:
+			// ParentID = selected child datatype ID, EntityID = routeID
+			if msg.ParentID != "" {
+				return m, tea.Batch(
+					OverlayClearCmd(),
+					FocusSetCmd(PAGEFOCUS),
+					func() tea.Msg {
+						return AdminBuildContentFormMsg{
+							AdminDatatypeID: types.AdminDatatypeID(msg.ParentID),
+							AdminRouteID:    types.AdminRouteID(msg.EntityID),
+						}
+					},
+				)
+			}
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case FORMDIALOGADDADMINCONTENTFIELD:
+			// ParentID = selected field ID from the picker
+			if m.DCtx.AddAdminContentField != nil && msg.ParentID != "" {
+				ctx := m.DCtx.AddAdminContentField
+				m.DCtx.AddAdminContentField = nil
+				return m, tea.Batch(
+					OverlayClearCmd(),
+					FocusSetCmd(PAGEFOCUS),
+					m.HandleAddAdminContentField(ctx.AdminContentID, types.AdminFieldID(msg.ParentID), ctx.AdminRouteID),
+				)
+			}
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
 			)
 		default:
 			return m, tea.Batch(
@@ -1440,6 +1836,59 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 						ctx.ContentFieldID,
 						ctx.ContentID, ctx.FieldID, newValue, ctx.RouteID,
 						ctx.DatatypeID,
+					),
+				)
+			}
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case FORMDIALOGCREATEADMINCONTENT:
+			// Convert regular types to admin types and forward
+			adminFields := make(map[types.AdminFieldID]string)
+			for fid, val := range msg.FieldValues {
+				adminFields[types.AdminFieldID(fid)] = val
+			}
+			adminMsg := AdminContentFormDialogAcceptMsg{
+				Action:      FORMDIALOGCREATEADMINCONTENT,
+				DatatypeID:  types.AdminDatatypeID(msg.DatatypeID),
+				RouteID:     types.AdminRouteID(msg.RouteID),
+				FieldValues: adminFields,
+			}
+			return m.HandleAdminContentFormDialogAccept(adminMsg)
+		case FORMDIALOGEDITADMINCONTENT:
+			adminFields := make(map[types.AdminFieldID]string)
+			for fid, val := range msg.FieldValues {
+				adminFields[types.AdminFieldID(fid)] = val
+			}
+			adminMsg := AdminContentFormDialogAcceptMsg{
+				Action:      FORMDIALOGEDITADMINCONTENT,
+				DatatypeID:  types.AdminDatatypeID(msg.DatatypeID),
+				RouteID:     types.AdminRouteID(msg.RouteID),
+				ContentID:   types.AdminContentID(msg.ContentID),
+				FieldValues: adminFields,
+			}
+			return m.HandleAdminContentFormDialogAccept(adminMsg)
+		case FORMDIALOGEDITADMINSINGLEFIELD:
+			// Admin single-field edit: use stored admin context
+			if m.DCtx.EditAdminSingleField != nil {
+				ctx := m.DCtx.EditAdminSingleField
+				m.DCtx.EditAdminSingleField = nil
+				var newValue string
+				for _, val := range msg.FieldValues {
+					newValue = val
+					break
+				}
+				return m, tea.Batch(
+					OverlayClearCmd(),
+					FocusSetCmd(PAGEFOCUS),
+					m.HandleEditAdminSingleField(
+						ctx.AdminContentFieldID,
+						ctx.AdminContentID,
+						ctx.AdminFieldID,
+						newValue,
+						ctx.AdminRouteID,
+						ctx.AdminDatatypeID,
 					),
 				)
 			}
@@ -1559,11 +2008,10 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
 		)
 	case DatatypeDeletedMsg:
-		// Refresh datatypes list after deletion
+		// Refresh datatypes list after deletion.
+		// Screen manages its own field cursor and field list state.
 		newModel := m
 		newModel.Cursor = 0
-		newModel.FieldCursor = 0
-		newModel.SelectedDatatypeFields = nil
 		return newModel, tea.Batch(
 			LoadingStopCmd(),
 			LogMessageCmd(fmt.Sprintf("Datatype deleted: %s", msg.DatatypeID)),
@@ -2252,11 +2700,6 @@ func UpdateFieldFromDialogCmd(fieldID, name, label, fieldType string) tea.Cmd {
 // HandleUpdateFieldFromDialog processes the field update request.
 func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) tea.Cmd {
 	cfg := m.Config
-	// Capture the current datatype ID to refresh fields after update
-	var datatypeID types.DatatypeID
-	if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
-		datatypeID = m.AllDatatypes[m.Cursor].DatatypeID
-	}
 
 	// Validate config
 	if cfg == nil {
@@ -2283,6 +2726,9 @@ func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) 
 				Message: fmt.Sprintf("Failed to get field for update: %v", err),
 			}
 		}
+
+		// Derive parent datatype ID from the fetched field record
+		datatypeID := existing.ParentID.ID
 
 		// Prepare the field type - default to existing type if empty
 		fieldTypeStr := msg.Type
@@ -2329,10 +2775,6 @@ func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) 
 // HandleUpdateFieldUIConfig processes a field UIConfig update request.
 func (m Model) HandleUpdateFieldUIConfig(msg UpdateFieldUIConfigRequestMsg) tea.Cmd {
 	cfg := m.Config
-	var datatypeID types.DatatypeID
-	if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
-		datatypeID = m.AllDatatypes[m.Cursor].DatatypeID
-	}
 
 	if cfg == nil {
 		return func() tea.Msg {
@@ -2357,6 +2799,9 @@ func (m Model) HandleUpdateFieldUIConfig(msg UpdateFieldUIConfigRequestMsg) tea.
 				Message: fmt.Sprintf("Failed to get field for UIConfig update: %v", err),
 			}
 		}
+
+		// Derive parent datatype ID from the fetched field record
+		datatypeID := existing.ParentID.ID
 
 		params := db.UpdateFieldParams{
 			FieldID:      fieldID,

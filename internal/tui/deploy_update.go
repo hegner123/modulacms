@@ -55,8 +55,7 @@ func (m Model) UpdateDeployCms(msg tea.Msg) (Model, tea.Cmd) {
 			return m, nil
 		}
 		envName := msg.EnvName
-		m.DeployOperationActive = true
-		m.DeployStatusMessage = fmt.Sprintf("Testing connection to %s...", envName)
+		// Screen manages its own OperationActive/StatusMessage state
 		return m, func() tea.Msg {
 			ctx := context.Background()
 			health, err := deploy.TestEnvConnection(ctx, *cfg, envName)
@@ -79,14 +78,14 @@ func (m Model) UpdateDeployCms(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case DeployTestConnectionResultMsg:
-		m.DeployOperationActive = false
-		m.DeployLastHealth = msg.Health
+		// Screen manages display state; log the result at Model level
+		var logMsg string
 		if msg.Health.Err != "" {
-			m.DeployStatusMessage = fmt.Sprintf("Connection failed: %s", msg.Health.Err)
+			logMsg = fmt.Sprintf("Connection failed: %s", msg.Health.Err)
 		} else {
-			m.DeployStatusMessage = fmt.Sprintf("Connected to %s (v%s)", msg.Health.EnvName, msg.Health.Version)
+			logMsg = fmt.Sprintf("Connected to %s (v%s)", msg.Health.EnvName, msg.Health.Version)
 		}
-		return m, LogMessageCmd(m.DeployStatusMessage)
+		return m, LogMessageCmd(logMsg)
 
 	// =========================================================================
 	// PULL REQUEST → execute
@@ -99,12 +98,11 @@ func (m Model) UpdateDeployCms(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		envName := msg.EnvName
 		dryRun := msg.DryRun
-		m.DeployOperationActive = true
+		// Screen manages its own OperationActive/StatusMessage state
 		opLabel := "pull"
 		if dryRun {
 			opLabel = "dry-run pull"
 		}
-		m.DeployStatusMessage = fmt.Sprintf("Running %s from %s...", opLabel, envName)
 		return m, func() tea.Msg {
 			ctx := context.Background()
 			result, err := deploy.Pull(ctx, *cfg, driver, envName, nil, false, dryRun)
@@ -125,18 +123,14 @@ func (m Model) UpdateDeployCms(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case DeployPullResultMsg:
-		m.DeployOperationActive = false
+		// Screen manages display state; log the result at Model level
+		var logMsg string
 		if msg.Err != "" {
-			m.DeployStatusMessage = fmt.Sprintf("Pull failed: %s", msg.Err)
-			if msg.Result != nil {
-				m.DeployLastResult = msg.Result
-				m.DeployLastResult.Errors = append(m.DeployLastResult.Errors, msg.Err)
-			}
+			logMsg = fmt.Sprintf("Pull failed: %s", msg.Err)
 		} else {
-			m.DeployLastResult = msg.Result
-			m.DeployStatusMessage = fmt.Sprintf("Pull completed: %d tables", len(msg.Result.TablesAffected))
+			logMsg = fmt.Sprintf("Pull completed: %d tables", len(msg.Result.TablesAffected))
 		}
-		return m, LogMessageCmd(m.DeployStatusMessage)
+		return m, LogMessageCmd(logMsg)
 
 	// =========================================================================
 	// PUSH REQUEST → execute
@@ -149,12 +143,11 @@ func (m Model) UpdateDeployCms(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		envName := msg.EnvName
 		dryRun := msg.DryRun
-		m.DeployOperationActive = true
+		// Screen manages its own OperationActive/StatusMessage state
 		opLabel := "push"
 		if dryRun {
 			opLabel = "dry-run push"
 		}
-		m.DeployStatusMessage = fmt.Sprintf("Running %s to %s...", opLabel, envName)
 		return m, func() tea.Msg {
 			ctx := context.Background()
 			result, err := deploy.Push(ctx, *cfg, driver, envName, nil, dryRun)
@@ -175,18 +168,14 @@ func (m Model) UpdateDeployCms(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case DeployPushResultMsg:
-		m.DeployOperationActive = false
+		// Screen manages display state; log the result at Model level
+		var logMsg string
 		if msg.Err != "" {
-			m.DeployStatusMessage = fmt.Sprintf("Push failed: %s", msg.Err)
-			if msg.Result != nil {
-				m.DeployLastResult = msg.Result
-				m.DeployLastResult.Errors = append(m.DeployLastResult.Errors, msg.Err)
-			}
+			logMsg = fmt.Sprintf("Push failed: %s", msg.Err)
 		} else {
-			m.DeployLastResult = msg.Result
-			m.DeployStatusMessage = fmt.Sprintf("Push completed: %d tables", len(msg.Result.TablesAffected))
+			logMsg = fmt.Sprintf("Push completed: %d tables", len(msg.Result.TablesAffected))
 		}
-		return m, LogMessageCmd(m.DeployStatusMessage)
+		return m, LogMessageCmd(logMsg)
 	}
 
 	return m, nil

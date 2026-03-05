@@ -6,32 +6,38 @@ import "encoding/json"
 type Action string
 
 const (
-	ActionQuit        Action = "quit"
-	ActionDismiss     Action = "dismiss"
-	ActionUp          Action = "up"
-	ActionDown        Action = "down"
-	ActionBack        Action = "back"
-	ActionSelect      Action = "select"
-	ActionNextPanel   Action = "next_panel"
-	ActionPrevPanel   Action = "prev_panel"
-	ActionNew         Action = "new"
-	ActionEdit        Action = "edit"
-	ActionDelete      Action = "delete"
-	ActionMove        Action = "move"
-	ActionTitlePrev   Action = "title_prev"
-	ActionTitleNext   Action = "title_next"
-	ActionPagePrev    Action = "page_prev"
-	ActionPageNext    Action = "page_next"
-	ActionExpand      Action = "expand"
-	ActionCollapse    Action = "collapse"
-	ActionReorderUp   Action = "reorder_up"
-	ActionReorderDown Action = "reorder_down"
-	ActionCopy        Action = "copy"
-	ActionPublish     Action = "publish"
-	ActionGoParent    Action = "go_parent"
-	ActionGoChild     Action = "go_child"
-	ActionVersions    Action = "versions"
-	ActionLocale      Action = "locale"
+	ActionQuit         Action = "quit"
+	ActionDismiss      Action = "dismiss"
+	ActionUp           Action = "up"
+	ActionDown         Action = "down"
+	ActionBack         Action = "back"
+	ActionSelect       Action = "select"
+	ActionNextPanel    Action = "next_panel"
+	ActionPrevPanel    Action = "prev_panel"
+	ActionNew          Action = "new"
+	ActionEdit         Action = "edit"
+	ActionDelete       Action = "delete"
+	ActionMove         Action = "move"
+	ActionTitlePrev    Action = "title_prev"
+	ActionTitleNext    Action = "title_next"
+	ActionPagePrev     Action = "page_prev"
+	ActionPageNext     Action = "page_next"
+	ActionExpand       Action = "expand"
+	ActionCollapse     Action = "collapse"
+	ActionReorderUp    Action = "reorder_up"
+	ActionReorderDown  Action = "reorder_down"
+	ActionCopy         Action = "copy"
+	ActionPublish      Action = "publish"
+	ActionGoParent     Action = "go_parent"
+	ActionGoChild      Action = "go_child"
+	ActionVersions     Action = "versions"
+	ActionLocale       Action = "locale"
+	ActionScreenNext   Action = "screen_next"
+	ActionScreenToggle Action = "screen_toggle"
+	ActionScreenReset  Action = "screen_reset"
+	ActionAccordion    Action = "accordion"
+	ActionTabPrev      Action = "tab_prev"
+	ActionTabNext      Action = "tab_next"
 )
 
 // KeyMap maps semantic actions to one or more key strings (as reported by
@@ -42,32 +48,38 @@ type KeyMap map[Action][]string
 // hardcoded values in the control handlers.
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
-		ActionQuit:        {"q", "ctrl+c"},
-		ActionDismiss:     {"esc"},
-		ActionUp:          {"up", "k"},
-		ActionDown:        {"down", "j"},
-		ActionBack:        {"h", "left", "backspace"},
-		ActionSelect:      {"enter", "l", "right"},
-		ActionNextPanel:   {"tab"},
-		ActionPrevPanel:   {"shift+tab"},
-		ActionNew:         {"n"},
-		ActionEdit:        {"e"},
-		ActionDelete:      {"d"},
-		ActionMove:        {"m"},
-		ActionTitlePrev:   {"shift+left"},
-		ActionTitleNext:   {"shift+right"},
-		ActionPagePrev:    {"left"},
-		ActionPageNext:    {"right"},
-		ActionExpand:      {"+", "="},
-		ActionCollapse:    {"-", "_"},
-		ActionReorderUp:   {"shift+up", "K"},
-		ActionReorderDown: {"shift+down", "J"},
-		ActionCopy:        {"c"},
-		ActionPublish:     {"p"},
-		ActionGoParent:    {"g"},
-		ActionGoChild:     {"G"},
-		ActionVersions:    {"v"},
-		ActionLocale:      {"L"},
+		ActionQuit:         {"q", "ctrl+c"},
+		ActionDismiss:      {"esc"},
+		ActionUp:           {"up", "k"},
+		ActionDown:         {"down", "j"},
+		ActionBack:         {"h", "left", "backspace"},
+		ActionSelect:       {"enter", "l", "right"},
+		ActionNextPanel:    {"tab"},
+		ActionPrevPanel:    {"shift+tab"},
+		ActionNew:          {"n"},
+		ActionEdit:         {"e"},
+		ActionDelete:       {"d"},
+		ActionMove:         {"m"},
+		ActionTitlePrev:    {"shift+left"},
+		ActionTitleNext:    {"shift+right"},
+		ActionPagePrev:     {"left"},
+		ActionPageNext:     {"right"},
+		ActionExpand:       {"+", "="},
+		ActionCollapse:     {"-", "_"},
+		ActionReorderUp:    {"shift+up", "K"},
+		ActionReorderDown:  {"shift+down", "J"},
+		ActionCopy:         {"c"},
+		ActionPublish:      {"p"},
+		ActionGoParent:     {"g"},
+		ActionGoChild:      {"G"},
+		ActionVersions:     {"v"},
+		ActionLocale:       {"L"},
+		ActionScreenNext:   {"F"},
+		ActionScreenToggle: {"f"},
+		ActionScreenReset:  {},
+		ActionAccordion:    {"a"},
+		ActionTabPrev:      {"["},
+		ActionTabNext:      {"]"},
 	}
 }
 

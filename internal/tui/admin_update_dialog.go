@@ -463,12 +463,6 @@ func (m Model) HandleUpdateAdminFieldFromDialog(msg UpdateAdminFieldFromDialogRe
 	cfg := m.Config
 	authorID := m.UserID
 
-	// Capture current admin datatype ID for field refresh
-	var adminDatatypeID types.AdminDatatypeID
-	if len(m.AdminAllDatatypes) > 0 && m.Cursor < len(m.AdminAllDatatypes) {
-		adminDatatypeID = m.AdminAllDatatypes[m.Cursor].AdminDatatypeID
-	}
-
 	if cfg == nil {
 		return func() tea.Msg {
 			return ActionResultMsg{
@@ -490,6 +484,12 @@ func (m Model) HandleUpdateAdminFieldFromDialog(msg UpdateAdminFieldFromDialogRe
 				Title:   "Error",
 				Message: fmt.Sprintf("Failed to get admin field for update: %v", err),
 			}
+		}
+
+		// Derive parent datatype from the fetched field record
+		var adminDatatypeID types.AdminDatatypeID
+		if existing.ParentID.Valid {
+			adminDatatypeID = existing.ParentID.ID
 		}
 
 		fieldTypeStr := msg.Type
@@ -534,12 +534,6 @@ func (m Model) HandleDeleteAdminField(msg DeleteAdminFieldRequestMsg) tea.Cmd {
 	cfg := m.Config
 	authorID := m.UserID
 
-	// Capture current admin datatype ID for field refresh
-	var adminDatatypeID types.AdminDatatypeID
-	if len(m.AdminAllDatatypes) > 0 && m.Cursor < len(m.AdminAllDatatypes) {
-		adminDatatypeID = m.AdminAllDatatypes[m.Cursor].AdminDatatypeID
-	}
-
 	if cfg == nil {
 		return func() tea.Msg {
 			return ActionResultMsg{
@@ -554,8 +548,18 @@ func (m Model) HandleDeleteAdminField(msg DeleteAdminFieldRequestMsg) tea.Cmd {
 		ctx := context.Background()
 		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
+		// Fetch field first to determine parent datatype ID for refresh
+		existing, err := d.GetAdminField(msg.AdminFieldID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to get admin field for delete: %v", err),
+			}
+		}
+		adminDatatypeID := existing.ParentID.ID
+
 		// Delete the field (parent_id FK on admin_datatypes is handled by cascade)
-		err := d.DeleteAdminField(ctx, ac, msg.AdminFieldID)
+		err = d.DeleteAdminField(ctx, ac, msg.AdminFieldID)
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
@@ -874,40 +878,5 @@ func (m Model) HandleDeleteAdminFieldType(msg DeleteAdminFieldTypeRequestMsg) te
 		}
 
 		return AdminFieldTypeDeletedMsg{AdminFieldTypeID: msg.AdminFieldTypeID}
-	}
-}
-
-// =============================================================================
-// ADMIN CONTENT HANDLERS
-// =============================================================================
-
-// HandleDeleteAdminContent processes the admin content deletion request.
-func (m Model) HandleDeleteAdminContent(msg DeleteAdminContentRequestMsg) tea.Cmd {
-	cfg := m.Config
-	authorID := m.UserID
-
-	if cfg == nil {
-		return func() tea.Msg {
-			return ActionResultMsg{
-				Title:   "Error",
-				Message: "Cannot delete admin content: configuration not loaded",
-			}
-		}
-	}
-
-	return func() tea.Msg {
-		d := db.ConfigDB(*cfg)
-		ctx := context.Background()
-		ac := middleware.AuditContextFromCLI(*cfg, authorID)
-
-		err := d.DeleteAdminContentData(ctx, ac, msg.AdminContentID)
-		if err != nil {
-			return ActionResultMsg{
-				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete admin content: %v", err),
-			}
-		}
-
-		return AdminContentDeletedMsg{AdminContentID: msg.AdminContentID}
 	}
 }

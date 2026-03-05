@@ -8,7 +8,6 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/hegner123/modulacms/internal/model"
 )
 
 // LogModelCMD creates a command to log the model state with optional filters.
@@ -25,19 +24,19 @@ func LogModelCMD(include *[]string, exclude *[]string) tea.Cmd {
 func ClearScreenCmd() tea.Cmd { return func() tea.Msg { return ClearScreen{} } }
 
 // TitleFontNextCmd creates a command to cycle to the next title font.
-func TitleFontNextCmd() tea.Cmd { return func() tea.Msg { return TitleFontNext{} } }
+func TitleFontNextCmd() tea.Cmd { return func() tea.Msg { return TitleFontMsg{Forward: true} } }
 
 // TitleFontPreviousCmd creates a command to cycle to the previous title font.
-func TitleFontPreviousCmd() tea.Cmd { return func() tea.Msg { return TitleFontPrevious{} } }
+func TitleFontPreviousCmd() tea.Cmd { return func() tea.Msg { return TitleFontMsg{Forward: false} } }
 
 // LogMessageCmd creates a command to log a message.
 func LogMessageCmd(msg string) tea.Cmd { return func() tea.Msg { return LogMsg{Message: msg} } }
 
 // ReadyTrueCmd creates a command to set application ready state to true.
-func ReadyTrueCmd() tea.Cmd { return func() tea.Msg { return ReadyTrue{} } }
+func ReadyTrueCmd() tea.Cmd { return func() tea.Msg { return SetReadyMsg{Ready: true} } }
 
 // ReadyFalseCmd creates a command to set application ready state to false.
-func ReadyFalseCmd() tea.Cmd { return func() tea.Msg { return ReadyFalse{} } }
+func ReadyFalseCmd() tea.Cmd { return func() tea.Msg { return SetReadyMsg{Ready: false} } }
 
 // TablesFetchCmd creates a command to fetch the list of database tables.
 func TablesFetchCmd() tea.Cmd { return func() tea.Msg { return TablesFetch{} } }
@@ -48,33 +47,32 @@ func TablesSetCmd(tables []string) tea.Cmd {
 }
 
 // LoadingStartCmd creates a command to start the loading state.
-func LoadingStartCmd() tea.Cmd { return func() tea.Msg { return LoadingTrue{} } }
+func LoadingStartCmd() tea.Cmd { return func() tea.Msg { return SetLoadingMsg{Loading: true} } }
 
 // LoadingStopCmd creates a command to stop the loading state.
-func LoadingStopCmd() tea.Cmd { return func() tea.Msg { return LoadingFalse{} } }
+func LoadingStopCmd() tea.Cmd { return func() tea.Msg { return SetLoadingMsg{Loading: false} } }
 
 // CursorUpCmd creates a command to move the cursor up.
-func CursorUpCmd() tea.Cmd { return func() tea.Msg { return CursorUp{} } }
+func CursorUpCmd() tea.Cmd { return func() tea.Msg { return CursorMsg{Action: CursorMoveUp} } }
 
 // CursorDownCmd creates a command to move the cursor down.
-func CursorDownCmd() tea.Cmd { return func() tea.Msg { return CursorDown{} } }
+func CursorDownCmd() tea.Cmd { return func() tea.Msg { return CursorMsg{Action: CursorMoveDown} } }
 
 // CursorResetCmd creates a command to reset the cursor position.
-func CursorResetCmd() tea.Cmd { return func() tea.Msg { return CursorReset{} } }
+func CursorResetCmd() tea.Cmd {
+	return func() tea.Msg { return CursorMsg{Action: CursorMoveReset} }
+}
 
 // CursorSetCmd creates a command to set the cursor to a specific index.
-func CursorSetCmd(index int) tea.Cmd { return func() tea.Msg { return CursorSet{Index: index} } }
-
-// CursorMaxSetCmd creates a command to set the maximum cursor value.
-func CursorMaxSetCmd(cursorMax int) tea.Cmd {
-	return func() tea.Msg { return CursorMaxSet{CursorMax: cursorMax} }
+func CursorSetCmd(index int) tea.Cmd {
+	return func() tea.Msg { return CursorMsg{Action: CursorMoveSet, Index: index} }
 }
 
 // PageModNextCmd creates a command to navigate to the next page.
-func PageModNextCmd() tea.Cmd { return func() tea.Msg { return PageModNext{} } }
+func PageModNextCmd() tea.Cmd { return func() tea.Msg { return PageModMsg{Forward: true} } }
 
 // PageModPreviousCmd creates a command to navigate to the previous page.
-func PageModPreviousCmd() tea.Cmd { return func() tea.Msg { return PageModPrevious{} } }
+func PageModPreviousCmd() tea.Cmd { return func() tea.Msg { return PageModMsg{Forward: false} } }
 
 // PaginationUpdateCmd creates a command to update pagination state.
 func PaginationUpdateCmd() tea.Cmd { return func() tea.Msg { return UpdatePagination{} } }
@@ -276,14 +274,9 @@ func ColumnsFetchedCmd(columns *[]string, columnTypes *[]*sql.ColumnType) tea.Cm
 	return func() tea.Msg { return ColumnsFetched{Columns: columns, ColumnTypes: columnTypes} }
 }
 
-// ColumnsSetCmd creates a command to set table columns.
-func ColumnsSetCmd(columns *[]string) tea.Cmd {
-	return func() tea.Msg { return ColumnsSet{Columns: columns} }
-}
-
-// ColumnTypesSetCmd creates a command to set column types.
-func ColumnTypesSetCmd(columnTypes *[]*sql.ColumnType) tea.Cmd {
-	return func() tea.Msg { return ColumnTypesSet{ColumnTypes: columnTypes} }
+// ColumnInfoSetCmd creates a command to set column names and types together.
+func ColumnInfoSetCmd(columns *[]string, columnTypes *[]*sql.ColumnType) tea.Cmd {
+	return func() tea.Msg { return ColumnInfoSetMsg{Columns: columns, ColumnTypes: columnTypes} }
 }
 
 // HeadersSetCmd creates a command to set table headers.
@@ -313,9 +306,6 @@ func StatusSetCmd(status ApplicationState) tea.Cmd {
 func DialogReadyOKSetCmd(ready bool) tea.Cmd {
 	return func() tea.Msg { return DialogReadyOKSet{Ready: ready} }
 }
-
-// RootSetCmd creates a command to set the root model.
-func RootSetCmd(root model.Root) tea.Cmd { return func() tea.Msg { return RootSet{Root: root} } }
 
 // DatatypeMenuSetCmd creates a command to set the datatype menu.
 func DatatypeMenuSetCmd(menu []string) tea.Cmd {
@@ -455,15 +445,6 @@ func BuildTreeFromRowsCmd(rows []db.GetRouteTreeByRouteIDRow) tea.Cmd {
 func DatabaseTreeCMD() tea.Cmd {
 	return func() tea.Msg {
 		return DatabaseTreeMsg{}
-	}
-}
-
-// UpdateMaxCursorCmd creates a command to update the maximum cursor based on current page view.
-func (m Model) UpdateMaxCursorCmd() tea.Cmd {
-	return func() tea.Msg {
-		start, end := m.Paginator.GetSliceBounds(len(m.TableState.Rows))
-		currentView := m.TableState.Rows[start:end]
-		return UpdateMaxCursorMsg{CursorMax: len(currentView)}
 	}
 }
 

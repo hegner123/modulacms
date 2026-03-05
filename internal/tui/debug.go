@@ -72,10 +72,6 @@ func (m Model) Stringify() string {
 	crs := fmt.Sprintf("Cursor: %d", m.Cursor)
 	out = append(out, crs)
 
-	//CursorMax    int
-	crsm := fmt.Sprintf("CursorMax: %d", m.CursorMax)
-	out = append(out, crsm)
-
 	//FocusIndex   int
 	fi := fmt.Sprintf("FocusIndex: %d", m.FocusIndex)
 	out = append(out, fi)
@@ -251,10 +247,6 @@ func (m Model) Stringify() string {
 	}
 	dialog := fmt.Sprintf("ActiveOverlay: %s", dialogStr)
 	out = append(out, dialog)
-
-	//Root         TreeRoot
-	root := fmt.Sprintf("Root: %v", m.Root)
-	out = append(out, root)
 
 	return lipgloss.JoinVertical(lipgloss.Top, out...)
 }

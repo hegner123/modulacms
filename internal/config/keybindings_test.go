@@ -41,6 +41,13 @@ func TestDefaultKeyMap_AllActionsBound(t *testing.T) {
 		config.ActionPublish,
 		config.ActionGoParent,
 		config.ActionGoChild,
+		config.ActionVersions,
+		config.ActionLocale,
+		config.ActionScreenNext,
+		config.ActionScreenToggle,
+		// ActionScreenReset intentionally has no default binding.
+		config.ActionTabPrev,
+		config.ActionTabNext,
 	}
 
 	km := config.DefaultKeyMap()
@@ -480,6 +487,13 @@ func TestActionConstants_StringValues(t *testing.T) {
 
 		{name: "go_parent", got: config.ActionGoParent, want: "go_parent"},
 		{name: "go_child", got: config.ActionGoChild, want: "go_child"},
+		{name: "versions", got: config.ActionVersions, want: "versions"},
+		{name: "locale", got: config.ActionLocale, want: "locale"},
+		{name: "screen_next", got: config.ActionScreenNext, want: "screen_next"},
+		{name: "screen_toggle", got: config.ActionScreenToggle, want: "screen_toggle"},
+		{name: "screen_reset", got: config.ActionScreenReset, want: "screen_reset"},
+		{name: "tab_prev", got: config.ActionTabPrev, want: "tab_prev"},
+		{name: "tab_next", got: config.ActionTabNext, want: "tab_next"},
 	}
 
 	for _, tt := range tests {

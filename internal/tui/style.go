@@ -1,9 +1,6 @@
 package tui
 
 import (
-	"strconv"
-	"strings"
-
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/hegner123/modulacms/internal/config"
@@ -162,73 +159,6 @@ func RenderBlockFixed(s string) string {
 func (m Model) RenderSpace(content string) string {
 	spaceStyle := lipgloss.NewStyle().Height(m.Height - lipgloss.Height(content) - 2)
 	return spaceStyle.Render("")
-}
-
-// RenderStatusBar renders the application status bar.
-func (m Model) RenderStatusBar() string {
-	doc := strings.Builder{}
-	status := []string{"Page", "Table", "Form", "Dialog"}
-	statusNugget := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#ffffff")).
-		Padding(0, 1)
-
-	statusBarStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#ffffff")).
-		Background(lipgloss.Color("#000000"))
-
-	nuggetStyle := statusNugget.
-		Background(lipgloss.Color("#000000")).
-		Align(lipgloss.Right)
-
-	statusText := lipgloss.NewStyle().Inherit(statusBarStyle)
-
-	fishCakeStyle := statusNugget.Background(lipgloss.Color("#000000")).Foreground(lipgloss.Color("#ffffff"))
-	var v string
-
-	v = m.Page.Label
-	if m.TableState.Table != "" {
-		v = m.TableState.Table
-	}
-
-	statusKey := m.GetStatus()
-	p := m.Page.Label
-	cm := strconv.FormatInt(int64(m.CursorMax), 10)
-
-	// Remote connection badge
-	var remotePart string
-	if m.IsRemote && m.RemoteURL != "" {
-		remotePart = " [remote: " + m.RemoteURL + "]"
-	}
-
-	nugget := nuggetStyle.Render("Page: " + p + "  CursorMax: " + cm)
-	fishCake := fishCakeStyle.Render(v)
-
-	w := lipgloss.Width
-	statusVal := statusText.
-		Width(m.Width - w(statusKey) - w(nugget) - w(fishCake) - 34).
-		Render(status[m.Focus] + remotePart)
-
-	bar := lipgloss.JoinHorizontal(lipgloss.Top,
-		statusKey,
-		statusVal,
-		nugget,
-		lipgloss.JoinHorizontal(
-			lipgloss.Center,
-			HorizontalSpace(34-(lipgloss.Width(fishCake))/2),
-			fishCake,
-			HorizontalSpace((34-lipgloss.Width(fishCake))/2),
-		),
-	)
-
-	doc.WriteString(statusBarStyle.Width(m.Width).Render(bar))
-	return statusBarStyle.Render(doc.String())
-
-}
-
-// HorizontalSpace returns a string of repeated spaces for layout.
-func HorizontalSpace(i int) string {
-	s := strings.Repeat(" ", i)
-	return s
 }
 
 // RenderBorderBlock renders a string in a styled block.

@@ -726,20 +726,12 @@ func TestDeployCommand_Subcommands(t *testing.T) {
 	}
 }
 
-func TestTuiCommand_Subcommands(t *testing.T) {
+func TestTuiCommand_NoSubcommands(t *testing.T) {
 	t.Parallel()
 
-	expectedSubs := []string{"default", "v1"}
 	subCmds := tuiCmd.Commands()
-	cmdNames := make(map[string]bool, len(subCmds))
-	for _, c := range subCmds {
-		cmdNames[c.Name()] = true
-	}
-
-	for _, name := range expectedSubs {
-		if !cmdNames[name] {
-			t.Errorf("expected tui subcommand %q not found", name)
-		}
+	if len(subCmds) != 0 {
+		t.Errorf("expected tui to have no subcommands, got %d", len(subCmds))
 	}
 }
 

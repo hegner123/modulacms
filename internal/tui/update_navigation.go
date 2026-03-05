@@ -21,27 +21,26 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		var cmds []tea.Cmd
 		cmds = append(cmds, HistoryPushCmd(PageHistory{Page: m.Page, Cursor: m.Cursor, Menu: m.PageMenu}))
 		cmds = append(cmds, CursorResetCmd())
+
+		// Set ActiveScreen for Screen-based pages (nil = legacy path)
+		m.ActiveScreen = m.screenForPage(msg.Page)
+
 		switch msg.Page.Index {
 		case HOMEPAGE:
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case CMSPAGE:
 			cmds = append(cmds, LoadingStartCmd())
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, PageMenuSetCmd(m.CmsMenuInit()))
 			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case ADMINCMSPAGE:
 			cmds = append(cmds, LoadingStartCmd())
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, PageMenuSetCmd(m.AdminCmsMenuInit()))
 			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case DATABASEPAGE:
 			cmds = append(cmds, LoadingStartCmd())
@@ -78,11 +77,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 			cmds = append(cmds, PanelFocusResetCmd())
-
-			// If a datatype is already selected, fetch its routes
-			if !m.SelectedDatatype.IsZero() {
-				cmds = append(cmds, RoutesByDatatypeFetchCmd(m.SelectedDatatype))
-			}
 
 			// Load content tree if PageRouteId is set
 			if !m.PageRouteId.IsZero() {

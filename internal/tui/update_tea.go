@@ -25,6 +25,20 @@ func (m Model) UpdateTea(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.Height = msg.Height
 		m.Width = msg.Width
+
+		// Auto-select screen mode based on terminal width when user hasn't
+		// explicitly overridden via keybinding.
+		if !m.ScreenModeManual {
+			switch {
+			case m.Width < 80:
+				m.ScreenMode = ScreenFull
+			case m.Width < 120:
+				m.ScreenMode = ScreenWide
+			default:
+				m.ScreenMode = ScreenNormal
+			}
+		}
+
 		headerHeight := lipgloss.Height(m.headerView() + RenderTitle(m.Titles[m.TitleFont]))
 		footerHeight := lipgloss.Height(m.footerView())
 		verticalMarginHeight := headerHeight + footerHeight
