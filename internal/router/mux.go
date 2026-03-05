@@ -144,6 +144,11 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 		ContentFieldHandler(w, r, *c)
 	})))
 
+	// Content create with fields (composite)
+	mux.Handle("POST /api/v1/content/create", middleware.RequirePermission("content:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ContentCreateHandler(w, r, *c)
+	})))
+
 	// Content batch
 	mux.Handle("POST /api/v1/content/batch", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ContentBatchHandler(w, r, *c)
@@ -299,6 +304,9 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	mux.Handle("/api/v1/media", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediasHandler(w, r, *c)
 	})))
+	mux.Handle("GET /api/v1/media/references", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		MediaReferencesHandler(w, r, *c)
+	})))
 	mux.Handle("GET /api/v1/media/health", middleware.RequirePermission("media:admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediaHealthHandler(w, r, *c)
 	})))
@@ -371,6 +379,11 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	})))
 	mux.Handle("/api/v1/usersoauth/", middleware.RequireResourcePermission("users")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		UserOauthHandler(w, r, *c)
+	})))
+
+	// User reassign-delete (composite)
+	mux.Handle("POST /api/v1/users/reassign-delete", middleware.RequirePermission("users:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		UserReassignDeleteHandler(w, r, *c)
 	})))
 
 	// Users
@@ -513,6 +526,11 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	// Content query by datatype (PUBLIC - no auth required)
 	mux.Handle("GET /api/v1/query/{datatype}", corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		QueryHandler(w, r, *c)
+	})))
+
+	// Global content delivery (PUBLIC - no auth required)
+	mux.Handle("GET /api/v1/globals", corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		GlobalsHandler(w, r, *c)
 	})))
 
 	// Content delivery via slug

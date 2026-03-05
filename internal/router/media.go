@@ -263,6 +263,16 @@ func apiDeleteMedia(w http.ResponseWriter, r *http.Request, c config.Config) err
 		return err
 	}
 
+	// If clean_refs=true, blank out content fields referencing this media.
+	if r.URL.Query().Get("clean_refs") == "true" {
+		cleaned, cleanErr := cleanMediaReferences(d, r, c, mID, string(record.URL))
+		if cleanErr != nil {
+			utility.DefaultLogger.Error("clean refs failed", cleanErr)
+		} else if cleaned > 0 {
+			utility.DefaultLogger.Info(fmt.Sprintf("cleaned %d media references for %s", cleaned, mID))
+		}
+	}
+
 	// Collect all S3 keys: original URL + srcset variants
 	// URL format: {BucketPublicURL}/{Bucket_Media}/{year}/{month}/{file}
 	// S3 key format: {year}/{month}/{file} (bucket name is separate)
@@ -488,6 +498,134 @@ func MediaCleanupHandler(w http.ResponseWriter, r *http.Request, c config.Config
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// MediaReferenceInfo describes a content field that references a media asset.
+type MediaReferenceInfo struct {
+	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
+	ContentDataID  types.NullableContentID `json:"content_data_id"`
+	FieldID        types.NullableFieldID   `json:"field_id"`
+}
+
+// MediaReferenceScanResponse is the JSON response for GET /api/v1/media/references.
+type MediaReferenceScanResponse struct {
+	MediaID        types.MediaID        `json:"media_id"`
+	References     []MediaReferenceInfo `json:"references"`
+	ReferenceCount int                  `json:"reference_count"`
+}
+
+// MediaReferencesHandler handles GET /api/v1/media/references?q=<media_id>.
+func MediaReferencesHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+	apiMediaReferences(w, r, c)
+}
+
+// apiMediaReferences scans content fields for references to a media asset.
+func apiMediaReferences(w http.ResponseWriter, r *http.Request, c config.Config) {
+	d := db.ConfigDB(c)
+
+	q := r.URL.Query().Get("q")
+	mID := types.MediaID(q)
+	if err := mID.Validate(); err != nil {
+		http.Error(w, fmt.Sprintf("invalid media_id: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	mediaRecord, err := d.GetMedia(mID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("media not found: %v", err), http.StatusNotFound)
+		return
+	}
+
+	// Build search strings: media ID and URL.
+	searchTerms := []string{string(mID)}
+	if string(mediaRecord.URL) != "" {
+		searchTerms = append(searchTerms, string(mediaRecord.URL))
+	}
+
+	allFields, err := d.ListContentFields()
+	if err != nil {
+		utility.DefaultLogger.Error("media references: failed to list content fields", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var refs []MediaReferenceInfo
+	if allFields != nil {
+		for _, cf := range *allFields {
+			if cf.FieldValue == "" {
+				continue
+			}
+			for _, term := range searchTerms {
+				if strings.Contains(cf.FieldValue, term) {
+					refs = append(refs, MediaReferenceInfo{
+						ContentFieldID: cf.ContentFieldID,
+						ContentDataID:  cf.ContentDataID,
+						FieldID:        cf.FieldID,
+					})
+					break
+				}
+			}
+		}
+	}
+
+	if refs == nil {
+		refs = make([]MediaReferenceInfo, 0)
+	}
+
+	writeJSON(w, MediaReferenceScanResponse{
+		MediaID:        mID,
+		References:     refs,
+		ReferenceCount: len(refs),
+	})
+}
+
+// cleanMediaReferences blanks content field values that reference the given media.
+func cleanMediaReferences(d db.DbDriver, r *http.Request, c config.Config, mID types.MediaID, mediaURL string) (int, error) {
+	searchTerms := []string{string(mID)}
+	if mediaURL != "" {
+		searchTerms = append(searchTerms, mediaURL)
+	}
+
+	allFields, err := d.ListContentFields()
+	if err != nil {
+		return 0, fmt.Errorf("list content fields: %w", err)
+	}
+
+	cleaned := 0
+	if allFields != nil {
+		ctx := r.Context()
+		ac := middleware.AuditContextFromRequest(r, c)
+		now := types.TimestampNow()
+
+		for _, cf := range *allFields {
+			if cf.FieldValue == "" {
+				continue
+			}
+			for _, term := range searchTerms {
+				if strings.Contains(cf.FieldValue, term) {
+					_, uErr := d.UpdateContentField(ctx, ac, db.UpdateContentFieldParams{
+						ContentFieldID: cf.ContentFieldID,
+						RouteID:        cf.RouteID,
+						ContentDataID:  cf.ContentDataID,
+						FieldID:        cf.FieldID,
+						FieldValue:     "",
+						Locale:         cf.Locale,
+						AuthorID:       cf.AuthorID,
+						DateCreated:    cf.DateCreated,
+						DateModified:   now,
+					})
+					if uErr != nil {
+						utility.DefaultLogger.Error(fmt.Sprintf("clean ref: failed to clear field %s", cf.ContentFieldID), uErr)
+					} else {
+						cleaned++
+					}
+					break
+				}
+			}
+		}
+	}
+
+	return cleaned, nil
 }
 
 // apiListMediaPaginated handles GET requests for listing media with pagination.

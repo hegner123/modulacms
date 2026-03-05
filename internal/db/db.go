@@ -108,6 +108,8 @@ type DbDriver interface {
 	ClearAdminContentDataSchedule(context.Context, ClearAdminContentDataScheduleParams) error
 	ListAdminContentDataDueForPublish(types.Timestamp) (*[]AdminContentData, error)
 	GetAdminContentDataDescendants(context.Context, types.AdminContentID) (*[]AdminContentData, error)
+	ReassignAdminContentDataAuthor(context.Context, types.UserID, types.UserID) error
+	CountAdminContentDataByAuthor(context.Context, types.UserID) (int64, error)
 
 	// AdminContentFields
 	CountAdminContentFields() (*int64, error)
@@ -246,6 +248,7 @@ type DbDriver interface {
 	ListContentData() (*[]ContentData, error)
 	ListContentDataByRoute(types.NullableRouteID) (*[]ContentData, error)
 	ListContentDataByDatatypeID(types.DatatypeID) (*[]ContentData, error)
+	ListContentDataGlobal() (*[]ContentData, error)
 	ListContentDataPaginated(PaginationParams) (*[]ContentData, error)
 	ListContentDataTopLevelPaginated(PaginationParams) (*[]ContentDataTopLevel, error)
 	ListContentDataTopLevelPaginatedByStatus(PaginationParams, types.ContentStatus) (*[]ContentDataTopLevel, error)
@@ -260,6 +263,8 @@ type DbDriver interface {
 	UpdateContentDataSchedule(context.Context, UpdateContentDataScheduleParams) error
 	ClearContentDataSchedule(context.Context, ClearContentDataScheduleParams) error
 	ListContentDataDueForPublish(types.Timestamp) (*[]ContentData, error)
+	ReassignContentDataAuthor(context.Context, types.UserID, types.UserID) error
+	CountContentDataByAuthor(context.Context, types.UserID) (int64, error)
 
 	// ContentFields
 	CountContentFields() (*int64, error)
@@ -318,10 +323,13 @@ type DbDriver interface {
 	GetDatatypeByName(string) (*Datatypes, error)
 	ListDatatypes() (*[]Datatypes, error)
 	ListDatatypesRoot() (*[]Datatypes, error)
+	ListDatatypesGlobal() (*[]Datatypes, error)
 	ListDatatypeChildren(types.DatatypeID) (*[]Datatypes, error)
 	ListDatatypesPaginated(PaginationParams) (*[]Datatypes, error)
 	ListDatatypeChildrenPaginated(ListDatatypeChildrenPaginatedParams) (*[]Datatypes, error)
 	UpdateDatatype(context.Context, audited.AuditContext, UpdateDatatypeParams) (*string, error)
+	ReassignDatatypeAuthor(context.Context, types.UserID, types.UserID) error
+	CountDatatypesByAuthor(context.Context, types.UserID) (int64, error)
 
 	// Fields
 	ListFieldsWithSortOrderByDatatypeID(types.NullableDatatypeID) (*[]FieldWithSortOrderRow, error)
@@ -942,8 +950,8 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 4. Create system admin user (user_id = 1)
-	systemUser, err := d.CreateUser(ctx, ac, CreateUserParams{
+	// 4. Create system user with well-known SystemUserID
+	systemUser, err := d.CreateSystemUser(CreateUserParams{
 		Username:     "system",
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),
@@ -1841,8 +1849,8 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 4. Create system admin user (user_id = 1)
-	systemUser, err := d.CreateUser(ctx, ac, CreateUserParams{
+	// 4. Create system user with well-known SystemUserID
+	systemUser, err := d.CreateSystemUser(CreateUserParams{
 		Username:     "system",
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),
@@ -2713,8 +2721,8 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 4. Create system admin user (user_id = 1)
-	systemUser, err := d.CreateUser(ctx, ac, CreateUserParams{
+	// 4. Create system user with well-known SystemUserID
+	systemUser, err := d.CreateSystemUser(CreateUserParams{
 		Username:     "system",
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),

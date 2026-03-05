@@ -256,6 +256,15 @@ func ApiUpdateUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		return err
 	}
 
+	// Reject modifications to the system user's role
+	if req.UserID == types.SystemUserID && req.Role != "" {
+		existing, gErr := d.GetUser(req.UserID)
+		if gErr == nil && req.Role != existing.Role {
+			http.Error(w, "cannot change the system user's role", http.StatusForbidden)
+			return fmt.Errorf("attempted to change system user role")
+		}
+	}
+
 	// Always fetch the existing user for role comparison and password fallback
 	existing, getErr := d.GetUser(req.UserID)
 	if getErr != nil {
@@ -324,6 +333,12 @@ func ApiDeleteUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
+
+	if uId == types.SystemUserID {
+		http.Error(w, "cannot delete the system user", http.StatusForbidden)
+		return fmt.Errorf("attempted to delete system user")
+	}
+
 	ac := middleware.AuditContextFromRequest(r, c)
 	err = d.DeleteUser(r.Context(), ac, uId)
 	if err != nil {

@@ -174,7 +174,15 @@ func apiUpdateDatatype(w http.ResponseWriter, r *http.Request, svc *service.Regi
 	return nil
 }
 
-// apiDeleteDatatype handles DELETE requests for datatypes
+// DatatypeCascadeDeleteResponse is the JSON response for DELETE with cascade=true.
+type DatatypeCascadeDeleteResponse struct {
+	DeletedDatatypeID types.DatatypeID `json:"deleted_datatype_id"`
+	ContentDeleted    int              `json:"content_deleted"`
+	Errors            []string         `json:"errors"`
+}
+
+// apiDeleteDatatype handles DELETE requests for datatypes.
+// When cascade=true, deletes all content using the datatype first.
 func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
 	dtID, err := types.ParseDatatypeID(q)
@@ -189,6 +197,44 @@ func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, svc *service.Regi
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
+	}
+
+	cascade := r.URL.Query().Get("cascade") == "true"
+
+	if cascade {
+		d := svc.Driver()
+		ctx := r.Context()
+
+		contentList, listErr := d.ListContentDataByDatatypeID(dtID)
+		if listErr != nil {
+			utility.DefaultLogger.Error("cascade delete: failed to list content by datatype", listErr)
+			http.Error(w, listErr.Error(), http.StatusInternalServerError)
+			return listErr
+		}
+
+		contentDeleted := 0
+		if contentList != nil {
+			for _, cd := range *contentList {
+				if delErr := deleteContentWithSiblingRepair(ctx, ac, d, cd.ContentDataID); delErr != nil {
+					utility.DefaultLogger.Error(fmt.Sprintf("cascade delete: failed to delete content %s", cd.ContentDataID), delErr)
+					http.Error(w, fmt.Sprintf("failed to delete content %s: %v", cd.ContentDataID, delErr), http.StatusInternalServerError)
+					return delErr
+				}
+				contentDeleted++
+			}
+		}
+
+		if delErr := svc.Schema.DeleteDatatype(ctx, ac, dtID); delErr != nil {
+			writeServiceError(w, delErr)
+			return delErr
+		}
+
+		writeJSON(w, DatatypeCascadeDeleteResponse{
+			DeletedDatatypeID: dtID,
+			ContentDeleted:    contentDeleted,
+			Errors:            make([]string, 0),
+		})
+		return nil
 	}
 
 	err = svc.Schema.DeleteDatatype(r.Context(), ac, dtID)

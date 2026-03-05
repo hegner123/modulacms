@@ -106,196 +106,18 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 		return err
 	}
 
-	// Insert new node into the parent's sibling chain at the requested position.
-	// If prev_sibling_id/next_sibling_id are provided, splice between them.
-	// Otherwise, append to the end of the chain.
+	// Insert new node into the parent's sibling chain.
 	if createdContentData.ParentID.Valid {
-		ctx := r.Context()
-		now := types.TimestampNow()
-		parent, pErr := d.GetContentData(createdContentData.ParentID.ID)
-		if pErr != nil {
-			utility.DefaultLogger.Error("create: failed to fetch parent", pErr)
-			http.Error(w, fmt.Sprintf("failed to fetch parent: %v", pErr), http.StatusInternalServerError)
-			return pErr
+		updated, chainErr := appendToSiblingChain(
+			r.Context(), ac, d, createdContentData,
+			newContentData.PrevSiblingID, newContentData.NextSiblingID,
+		)
+		if chainErr != nil {
+			utility.DefaultLogger.Error("create: sibling chain error", chainErr)
+			http.Error(w, chainErr.Error(), http.StatusInternalServerError)
+			return chainErr
 		}
-
-		reqPrev := newContentData.PrevSiblingID
-		reqNext := newContentData.NextSiblingID
-		hasPosition := reqPrev.Valid || reqNext.Valid
-
-		if !parent.FirstChildID.Valid {
-			// Parent has no children — set first_child_id to new node.
-			_, pErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-				ContentDataID: parent.ContentDataID,
-				ParentID:      parent.ParentID,
-				FirstChildID:  types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
-				NextSiblingID: parent.NextSiblingID,
-				PrevSiblingID: parent.PrevSiblingID,
-				RouteID:       parent.RouteID,
-				DatatypeID:    parent.DatatypeID,
-				AuthorID:      parent.AuthorID,
-				Status:        parent.Status,
-				DateCreated:   parent.DateCreated,
-				DateModified:  now,
-			})
-			if pErr != nil {
-				utility.DefaultLogger.Error("create: failed to set parent first_child_id", pErr)
-				http.Error(w, fmt.Sprintf("failed to update parent: %v", pErr), http.StatusInternalServerError)
-				return pErr
-			}
-		} else if hasPosition {
-			// Splice into specific position in the sibling chain.
-
-			// Link prev sibling → new node
-			if reqPrev.Valid {
-				prev, gErr := d.GetContentData(reqPrev.ID)
-				if gErr != nil {
-					utility.DefaultLogger.Error("create: failed to fetch prev sibling", gErr)
-				} else {
-					_, uErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-						ContentDataID: prev.ContentDataID,
-						ParentID:      prev.ParentID,
-						FirstChildID:  prev.FirstChildID,
-						NextSiblingID: types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
-						PrevSiblingID: prev.PrevSiblingID,
-						RouteID:       prev.RouteID,
-						DatatypeID:    prev.DatatypeID,
-						AuthorID:      prev.AuthorID,
-						Status:        prev.Status,
-						DateCreated:   prev.DateCreated,
-						DateModified:  now,
-					})
-					if uErr != nil {
-						utility.DefaultLogger.Error("create: failed to update prev sibling next_sibling_id", uErr)
-					}
-				}
-			} else {
-				// Inserting at the start — update parent's first_child_id.
-				_, uErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-					ContentDataID: parent.ContentDataID,
-					ParentID:      parent.ParentID,
-					FirstChildID:  types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
-					NextSiblingID: parent.NextSiblingID,
-					PrevSiblingID: parent.PrevSiblingID,
-					RouteID:       parent.RouteID,
-					DatatypeID:    parent.DatatypeID,
-					AuthorID:      parent.AuthorID,
-					Status:        parent.Status,
-					DateCreated:   parent.DateCreated,
-					DateModified:  now,
-				})
-				if uErr != nil {
-					utility.DefaultLogger.Error("create: failed to update parent first_child_id for insert-at-start", uErr)
-				}
-			}
-
-			// Link next sibling → new node
-			if reqNext.Valid {
-				next, gErr := d.GetContentData(reqNext.ID)
-				if gErr != nil {
-					utility.DefaultLogger.Error("create: failed to fetch next sibling", gErr)
-				} else {
-					_, uErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-						ContentDataID: next.ContentDataID,
-						ParentID:      next.ParentID,
-						FirstChildID:  next.FirstChildID,
-						NextSiblingID: next.NextSiblingID,
-						PrevSiblingID: types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
-						RouteID:       next.RouteID,
-						DatatypeID:    next.DatatypeID,
-						AuthorID:      next.AuthorID,
-						Status:        next.Status,
-						DateCreated:   next.DateCreated,
-						DateModified:  now,
-					})
-					if uErr != nil {
-						utility.DefaultLogger.Error("create: failed to update next sibling prev_sibling_id", uErr)
-					}
-				}
-			}
-
-			// Update the new node's sibling pointers.
-			_, wErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-				ContentDataID: createdContentData.ContentDataID,
-				ParentID:      createdContentData.ParentID,
-				FirstChildID:  createdContentData.FirstChildID,
-				NextSiblingID: reqNext,
-				PrevSiblingID: reqPrev,
-				RouteID:       createdContentData.RouteID,
-				DatatypeID:    createdContentData.DatatypeID,
-				AuthorID:      createdContentData.AuthorID,
-				Status:        createdContentData.Status,
-				DateCreated:   createdContentData.DateCreated,
-				DateModified:  now,
-			})
-			if wErr != nil {
-				utility.DefaultLogger.Error("create: failed to set new node sibling pointers", wErr)
-			}
-
-			// Re-fetch to return updated state.
-			createdContentData, _ = d.GetContentData(createdContentData.ContentDataID)
-		} else {
-			// No position specified — append to end of sibling chain.
-			last, wErr := d.GetContentData(parent.FirstChildID.ID)
-			if wErr != nil {
-				utility.DefaultLogger.Error("create: failed to fetch first child", wErr)
-				http.Error(w, fmt.Sprintf("failed to fetch first child: %v", wErr), http.StatusInternalServerError)
-				return wErr
-			}
-			for last.NextSiblingID.Valid {
-				last, wErr = d.GetContentData(last.NextSiblingID.ID)
-				if wErr != nil {
-					utility.DefaultLogger.Error("create: failed to walk sibling chain", wErr)
-					http.Error(w, fmt.Sprintf("failed to walk sibling chain: %v", wErr), http.StatusInternalServerError)
-					return wErr
-				}
-			}
-			// Link last sibling → new node
-			_, wErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-				ContentDataID: last.ContentDataID,
-				ParentID:      last.ParentID,
-				FirstChildID:  last.FirstChildID,
-				NextSiblingID: types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
-				PrevSiblingID: last.PrevSiblingID,
-				RouteID:       last.RouteID,
-				DatatypeID:    last.DatatypeID,
-				AuthorID:      last.AuthorID,
-				Status:        last.Status,
-				DateCreated:   last.DateCreated,
-				DateModified:  now,
-			})
-			if wErr != nil {
-				utility.DefaultLogger.Error("create: failed to link last sibling", wErr)
-				http.Error(w, fmt.Sprintf("failed to link last sibling: %v", wErr), http.StatusInternalServerError)
-				return wErr
-			}
-			// Set new node's prev_sibling_id to last sibling
-			_, wErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-				ContentDataID: createdContentData.ContentDataID,
-				ParentID:      createdContentData.ParentID,
-				FirstChildID:  createdContentData.FirstChildID,
-				NextSiblingID: createdContentData.NextSiblingID,
-				PrevSiblingID: types.NullableContentID{ID: last.ContentDataID, Valid: true},
-				RouteID:       createdContentData.RouteID,
-				DatatypeID:    createdContentData.DatatypeID,
-				AuthorID:      createdContentData.AuthorID,
-				Status:        createdContentData.Status,
-				DateCreated:   createdContentData.DateCreated,
-				DateModified:  now,
-			})
-			if wErr != nil {
-				utility.DefaultLogger.Error("create: failed to set new node prev_sibling_id", wErr)
-				http.Error(w, fmt.Sprintf("failed to update new node: %v", wErr), http.StatusInternalServerError)
-				return wErr
-			}
-			// Re-fetch to return updated state.
-			createdContentData, wErr = d.GetContentData(createdContentData.ContentDataID)
-			if wErr != nil {
-				utility.DefaultLogger.Error("create: failed to re-fetch created node", wErr)
-				http.Error(w, fmt.Sprintf("failed to re-fetch created node: %v", wErr), http.StatusInternalServerError)
-				return wErr
-			}
-		}
+		createdContentData = updated
 	}
 
 	// Auto-create empty content fields for every field belonging to the datatype
@@ -401,7 +223,15 @@ func apiUpdateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 	return nil
 }
 
-// apiDeleteContentData handles DELETE requests for content data
+// RecursiveDeleteResponse is the JSON response for DELETE with recursive=true.
+type RecursiveDeleteResponse struct {
+	DeletedRoot  types.ContentID   `json:"deleted_root"`
+	TotalDeleted int               `json:"total_deleted"`
+	DeletedIDs   []types.ContentID `json:"deleted_ids"`
+}
+
+// apiDeleteContentData handles DELETE requests for content data.
+// When recursive=true, collects and deletes all descendants first (leaves first).
 func apiDeleteContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 
@@ -413,107 +243,77 @@ func apiDeleteContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 		return err
 	}
 
-	// Fetch the node to repair sibling pointers before deleting
-	node, err := d.GetContentData(cdID)
-	if err != nil {
-		utility.DefaultLogger.Error("delete: failed to fetch node", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
+	recursive := r.URL.Query().Get("recursive") == "true"
 	ac := middleware.AuditContextFromRequest(r, c)
 	ctx := r.Context()
-	now := types.TimestampNow()
 
-	// Repair prev sibling's next pointer
-	if node.PrevSiblingID.Valid {
-		prev, pErr := d.GetContentData(node.PrevSiblingID.ID)
-		if pErr != nil {
-			utility.DefaultLogger.Error("delete: failed to fetch prev sibling", pErr)
-			http.Error(w, fmt.Sprintf("failed to fetch prev sibling: %v", pErr), http.StatusInternalServerError)
-			return pErr
+	if recursive {
+		descendants, err := collectDescendants(d, cdID, 100, 1000)
+		if err != nil {
+			utility.DefaultLogger.Error("recursive delete: collect failed", err)
+			http.Error(w, fmt.Sprintf("recursive delete failed: %v", err), http.StatusBadRequest)
+			return err
 		}
-		_, pErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-			ContentDataID: prev.ContentDataID,
-			ParentID:      prev.ParentID,
-			FirstChildID:  prev.FirstChildID,
-			NextSiblingID: node.NextSiblingID,
-			PrevSiblingID: prev.PrevSiblingID,
-			RouteID:       prev.RouteID,
-			DatatypeID:    prev.DatatypeID,
-			AuthorID:      prev.AuthorID,
-			Status:        prev.Status,
-			DateCreated:   prev.DateCreated,
-			DateModified:  now,
-		})
-		if pErr != nil {
-			utility.DefaultLogger.Error("delete: failed to update prev sibling", pErr)
-			http.Error(w, fmt.Sprintf("failed to update prev sibling: %v", pErr), http.StatusInternalServerError)
-			return pErr
-		}
-	}
 
-	// Repair next sibling's prev pointer
-	if node.NextSiblingID.Valid {
-		next, nErr := d.GetContentData(node.NextSiblingID.ID)
-		if nErr != nil {
-			utility.DefaultLogger.Error("delete: failed to fetch next sibling", nErr)
-			http.Error(w, fmt.Sprintf("failed to fetch next sibling: %v", nErr), http.StatusInternalServerError)
-			return nErr
+		// Build a set of IDs being deleted for parent-membership checks.
+		deleteSet := make(map[types.ContentID]struct{}, len(descendants)+1)
+		deleteSet[cdID] = struct{}{}
+		for _, id := range descendants {
+			deleteSet[id] = struct{}{}
 		}
-		_, nErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-			ContentDataID: next.ContentDataID,
-			ParentID:      next.ParentID,
-			FirstChildID:  next.FirstChildID,
-			NextSiblingID: next.NextSiblingID,
-			PrevSiblingID: node.PrevSiblingID,
-			RouteID:       next.RouteID,
-			DatatypeID:    next.DatatypeID,
-			AuthorID:      next.AuthorID,
-			Status:        next.Status,
-			DateCreated:   next.DateCreated,
-			DateModified:  now,
-		})
-		if nErr != nil {
-			utility.DefaultLogger.Error("delete: failed to update next sibling", nErr)
-			http.Error(w, fmt.Sprintf("failed to update next sibling: %v", nErr), http.StatusInternalServerError)
-			return nErr
-		}
-	}
 
-	// If this node is the parent's first child, update parent
-	if node.ParentID.Valid {
-		parent, pErr := d.GetContentData(node.ParentID.ID)
-		if pErr != nil {
-			utility.DefaultLogger.Error("delete: failed to fetch parent", pErr)
-			http.Error(w, fmt.Sprintf("failed to fetch parent: %v", pErr), http.StatusInternalServerError)
-			return pErr
-		}
-		if parent.FirstChildID.Valid && parent.FirstChildID.ID == cdID {
-			_, pErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-				ContentDataID: parent.ContentDataID,
-				ParentID:      parent.ParentID,
-				FirstChildID:  node.NextSiblingID,
-				NextSiblingID: parent.NextSiblingID,
-				PrevSiblingID: parent.PrevSiblingID,
-				RouteID:       parent.RouteID,
-				DatatypeID:    parent.DatatypeID,
-				AuthorID:      parent.AuthorID,
-				Status:        parent.Status,
-				DateCreated:   parent.DateCreated,
-				DateModified:  now,
-			})
-			if pErr != nil {
-				utility.DefaultLogger.Error("delete: failed to update parent first_child_id", pErr)
-				http.Error(w, fmt.Sprintf("failed to update parent: %v", pErr), http.StatusInternalServerError)
-				return pErr
+		deletedIDs := make([]types.ContentID, 0, len(descendants)+1)
+
+		// Delete descendants (leaves first). Skip sibling repair when the
+		// parent is also being deleted (the entire level is removed).
+		for _, descID := range descendants {
+			node, gErr := d.GetContentData(descID)
+			if gErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("recursive delete: failed to fetch %s", descID), gErr)
+				http.Error(w, gErr.Error(), http.StatusInternalServerError)
+				return gErr
 			}
+
+			parentInSet := node.ParentID.Valid && func() bool {
+				_, ok := deleteSet[node.ParentID.ID]
+				return ok
+			}()
+
+			if parentInSet {
+				// Parent is also being deleted; skip sibling repair, just delete.
+				if err := d.DeleteContentData(ctx, ac, descID); err != nil {
+					utility.DefaultLogger.Error(fmt.Sprintf("recursive delete: failed to delete %s", descID), err)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return err
+				}
+			} else {
+				if err := deleteContentWithSiblingRepair(ctx, ac, d, descID); err != nil {
+					utility.DefaultLogger.Error(fmt.Sprintf("recursive delete: failed to delete %s", descID), err)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return err
+				}
+			}
+			deletedIDs = append(deletedIDs, descID)
 		}
+
+		// Delete the root node itself with sibling repair.
+		if err := deleteContentWithSiblingRepair(ctx, ac, d, cdID); err != nil {
+			utility.DefaultLogger.Error("recursive delete: failed to delete root", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
+		deletedIDs = append(deletedIDs, cdID)
+
+		writeJSON(w, RecursiveDeleteResponse{
+			DeletedRoot:  cdID,
+			TotalDeleted: len(deletedIDs),
+			DeletedIDs:   deletedIDs,
+		})
+		return nil
 	}
 
-	err = d.DeleteContentData(ctx, ac, cdID)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+	if err := deleteContentWithSiblingRepair(ctx, ac, d, cdID); err != nil {
+		utility.DefaultLogger.Error("delete: failed", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
