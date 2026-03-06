@@ -177,14 +177,18 @@ Examples:
 			return fmt.Errorf("invalid pipeline ID %q: %w", args[0], err)
 		}
 
-		_, driver, err := loadConfigAndDB()
+		mgr, driver, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
 		defer closeDBWithLog()
 
 		ctx := context.Background()
-		ac := audited.Ctx(types.NodeID(""), types.UserID(""), "pipeline-enable", "cli")
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			return cfgErr
+		}
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), types.UserID(""), "pipeline-enable", "cli")
 
 		if updateErr := driver.UpdatePipelineEnabled(ctx, ac, pipelineID, true); updateErr != nil {
 			return fmt.Errorf("enabling pipeline %s: %w", pipelineID, updateErr)
@@ -218,14 +222,18 @@ Examples:
 			return fmt.Errorf("invalid pipeline ID %q: %w", args[0], err)
 		}
 
-		_, driver, err := loadConfigAndDB()
+		mgr, driver, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
 		defer closeDBWithLog()
 
 		ctx := context.Background()
-		ac := audited.Ctx(types.NodeID(""), types.UserID(""), "pipeline-disable", "cli")
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			return cfgErr
+		}
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), types.UserID(""), "pipeline-disable", "cli")
 
 		if updateErr := driver.UpdatePipelineEnabled(ctx, ac, pipelineID, false); updateErr != nil {
 			return fmt.Errorf("disabling pipeline %s: %w", pipelineID, updateErr)
@@ -260,14 +268,18 @@ Examples:
 			return fmt.Errorf("invalid pipeline ID %q: %w", args[0], err)
 		}
 
-		_, driver, err := loadConfigAndDB()
+		mgr, driver, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
 		defer closeDBWithLog()
 
 		ctx := context.Background()
-		ac := audited.Ctx(types.NodeID(""), types.UserID(""), "pipeline-remove", "cli")
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			return cfgErr
+		}
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), types.UserID(""), "pipeline-remove", "cli")
 
 		if deleteErr := driver.DeletePipeline(ctx, ac, pipelineID); deleteErr != nil {
 			return fmt.Errorf("removing pipeline %s: %w", pipelineID, deleteErr)

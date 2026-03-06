@@ -136,9 +136,10 @@ type PluginInstance struct {
 type ManagerConfig struct {
 	Enabled         bool
 	Directory       string
-	MaxVMsPerPlugin int // default 4
-	ExecTimeoutSec  int // default 5
-	MaxOpsPerExec   int // default 1000, per VM checkout
+	NodeID          string // config node_id for audited operations
+	MaxVMsPerPlugin int    // default 4
+	ExecTimeoutSec  int    // default 5
+	MaxOpsPerExec   int    // default 1000, per VM checkout
 
 	// Hook engine configuration (Phase 3).
 	HookReserveVMs           int // VMs reserved for hook execution; default 1
@@ -1372,7 +1373,7 @@ func (m *Manager) DeactivatePlugin(ctx context.Context, name string) error {
 				nil,
 			)
 		} else {
-			ac := audited.Ctx(types.NodeID("system"), types.UserID(""), "plugin-deactivate", "127.0.0.1")
+			ac := audited.Ctx(types.NodeID(m.cfg.NodeID), types.UserID(""), "plugin-deactivate", "127.0.0.1")
 			if updateErr := m.driver.UpdatePluginStatus(ctx, ac, record.PluginID, types.PluginStatusInstalled); updateErr != nil {
 				utility.DefaultLogger.Warn(
 					fmt.Sprintf("plugin %q: failed to update DB status to installed: %s", name, updateErr.Error()),
@@ -1416,7 +1417,7 @@ func (m *Manager) ActivatePlugin(ctx context.Context, name string, adminUser str
 				nil,
 			)
 		} else {
-			ac := audited.Ctx(types.NodeID("system"), types.UserID(adminUser), "plugin-activate", "127.0.0.1")
+			ac := audited.Ctx(types.NodeID(m.cfg.NodeID), types.UserID(adminUser), "plugin-activate", "127.0.0.1")
 			if updateErr := m.driver.UpdatePluginStatus(ctx, ac, record.PluginID, types.PluginStatusEnabled); updateErr != nil {
 				utility.DefaultLogger.Warn(
 					fmt.Sprintf("plugin %q: failed to update DB status to enabled: %s", name, updateErr.Error()),
@@ -1469,7 +1470,7 @@ func (m *Manager) EvictPlugin(ctx context.Context, name string, reason string) e
 				nil,
 			)
 		} else {
-			ac := audited.Ctx(types.NodeID("system"), types.UserID(""), "plugin-eviction", "127.0.0.1")
+			ac := audited.Ctx(types.NodeID(m.cfg.NodeID), types.UserID(""), "plugin-eviction", "127.0.0.1")
 			if updateErr := m.driver.UpdatePluginStatus(ctx, ac, record.PluginID, types.PluginStatusInstalled); updateErr != nil {
 				utility.DefaultLogger.Warn(
 					fmt.Sprintf("plugin %q: failed to update DB status after eviction: %s", name, updateErr.Error()),
@@ -1619,7 +1620,7 @@ func (m *Manager) InstallPlugin(ctx context.Context, name string) (*db.Plugin, e
 	}
 
 	// Create the plugin record via driver (audited).
-	ac := audited.Ctx(types.NodeID(""), types.UserID(""), "install", "cli")
+	ac := audited.Ctx(types.NodeID(m.cfg.NodeID), types.UserID(""), "install", "cli")
 	pluginRecord, err := m.driver.CreatePlugin(ctx, ac, db.CreatePluginParams{
 		Name:           info.Name,
 		Version:        info.Version,
@@ -1679,7 +1680,7 @@ func (m *Manager) EnablePlugin(ctx context.Context, name string) error {
 	}
 
 	// Update DB status to enabled.
-	ac := audited.Ctx(types.NodeID(""), types.UserID(""), "enable", "cli")
+	ac := audited.Ctx(types.NodeID(m.cfg.NodeID), types.UserID(""), "enable", "cli")
 	if err := m.driver.UpdatePluginStatus(ctx, ac, record.PluginID, types.PluginStatusEnabled); err != nil {
 		return fmt.Errorf("updating plugin status for %q: %w", name, err)
 	}
@@ -1742,7 +1743,7 @@ func (m *Manager) DisablePlugin(ctx context.Context, name string) error {
 	}
 
 	// Update DB status to installed.
-	ac := audited.Ctx(types.NodeID(""), types.UserID(""), "disable", "cli")
+	ac := audited.Ctx(types.NodeID(m.cfg.NodeID), types.UserID(""), "disable", "cli")
 	if err := m.driver.UpdatePluginStatus(ctx, ac, record.PluginID, types.PluginStatusInstalled); err != nil {
 		return fmt.Errorf("updating plugin status for %q: %w", name, err)
 	}
@@ -1993,7 +1994,7 @@ func (m *Manager) SyncCapabilities(ctx context.Context, name string, adminUser s
 	}
 
 	// Construct audit context.
-	ac := audited.Ctx(types.NodeID("system"), types.UserID(adminUser), "sync-capabilities", "api")
+	ac := audited.Ctx(types.NodeID(m.cfg.NodeID), types.UserID(adminUser), "sync-capabilities", "api")
 
 	// Update the plugin record with new hash and capabilities.
 	if updateErr := m.driver.UpdatePlugin(ctx, ac, db.UpdatePluginParams{

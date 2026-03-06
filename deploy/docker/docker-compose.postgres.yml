@@ -22,7 +22,10 @@ services:
       - postgres_cms_data:/app/data
       - postgres_cms_ssh:/app/.ssh
       - postgres_cms_backups:/app/backups
+      - postgres_cms_plugins:/app/plugins
       - ./config.postgres.json:/app/config.json:ro
+      - ../../examples/plugins/hello_world:/app/plugins/hello_world:ro
+      - ../../examples/plugins/task_tracker:/app/plugins/task_tracker:ro
     env_file:
       - .env
     depends_on:
@@ -74,5 +77,6 @@ volumes:
   postgres_cms_data:
   postgres_cms_ssh:
   postgres_cms_backups:
+  postgres_cms_plugins:
   postgres_db_data:
   postgres_minio_data:

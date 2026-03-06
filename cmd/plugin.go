@@ -532,6 +532,7 @@ SQLite concurrent writes may briefly block.`,
 
 		mgr := plugin.NewManager(plugin.ManagerConfig{
 			Directory: dir,
+			NodeID:    cfg.Node_ID,
 		}, pool, dialect, driver, nil)
 
 		ctx := context.Background()

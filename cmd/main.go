@@ -3,10 +3,14 @@
 // command-line arguments and configuration.
 package main
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 func main() {
 	if err := Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }

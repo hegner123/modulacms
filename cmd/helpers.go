@@ -277,6 +277,7 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB, dr
 	mgr := plugin.NewManager(plugin.ManagerConfig{
 		Enabled:         cfg.Plugin_Enabled,
 		Directory:       dir,
+		NodeID:          cfg.Node_ID,
 		MaxVMsPerPlugin: cfg.Plugin_Max_VMs,
 		ExecTimeoutSec:  cfg.Plugin_Timeout,
 		MaxOpsPerExec:   cfg.Plugin_Max_Ops,
