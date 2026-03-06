@@ -189,11 +189,13 @@ func padContentWithScroll(content string, width, height, scrollOffset int, scrol
 		lines = lines[:height]
 	}
 
-	// Truncate each line to width
+	// Truncate or pad each line to exact visual width (accounts for ANSI escapes)
 	for i, line := range lines {
-		runeCount := len([]rune(line))
-		if runeCount > width {
-			lines[i] = string([]rune(line)[:width])
+		visWidth := lipgloss.Width(line)
+		if visWidth > width {
+			lines[i] = truncateToVisualWidth(line, width)
+		} else if visWidth < width {
+			lines[i] = line + strings.Repeat(" ", width-visWidth)
 		}
 	}
 
@@ -272,6 +274,89 @@ func renderTabBar(labels []string, active, maxWidth int) string {
 		}
 	}
 	return strings.Join(parts, "")
+}
+
+// truncateToVisualWidth truncates a string (possibly containing ANSI escape
+// codes) to the given visual width. It walks rune-by-rune, skipping ANSI
+// sequences, and stops once the visible width reaches the limit.
+func truncateToVisualWidth(s string, maxWidth int) string {
+	var visWidth int
+	var result []byte
+	bytes := []byte(s)
+	i := 0
+	for i < len(bytes) {
+		// Skip ANSI escape sequences (ESC [ ... final byte)
+		if bytes[i] == 0x1b && i+1 < len(bytes) && bytes[i+1] == '[' {
+			start := i
+			i += 2
+			for i < len(bytes) && bytes[i] >= 0x20 && bytes[i] <= 0x3f {
+				i++
+			}
+			if i < len(bytes) {
+				i++ // consume final byte
+			}
+			result = append(result, bytes[start:i]...)
+			continue
+		}
+		// Decode one rune
+		r, size := rune(bytes[i]), 1
+		if bytes[i] >= 0x80 {
+			var n int
+			r, n = decodeRune(bytes[i:])
+			size = n
+		}
+		rw := runeWidth(r)
+		if visWidth+rw > maxWidth {
+			break
+		}
+		visWidth += rw
+		result = append(result, bytes[i:i+size]...)
+		i += size
+	}
+	return string(result)
+}
+
+// decodeRune decodes a single UTF-8 rune from the byte slice.
+func decodeRune(b []byte) (rune, int) {
+	if len(b) == 0 {
+		return 0, 0
+	}
+	r := rune(b[0])
+	switch {
+	case r < 0x80:
+		return r, 1
+	case r < 0xC0:
+		return r, 1
+	case r < 0xE0 && len(b) >= 2:
+		return rune(b[0]&0x1F)<<6 | rune(b[1]&0x3F), 2
+	case r < 0xF0 && len(b) >= 3:
+		return rune(b[0]&0x0F)<<12 | rune(b[1]&0x3F)<<6 | rune(b[2]&0x3F), 3
+	case r < 0xF8 && len(b) >= 4:
+		return rune(b[0]&0x07)<<18 | rune(b[1]&0x3F)<<12 | rune(b[2]&0x3F)<<6 | rune(b[3]&0x3F), 4
+	default:
+		return r, 1
+	}
+}
+
+// runeWidth returns the visual column width of a rune (1 for most, 2 for CJK).
+func runeWidth(r rune) int {
+	if r >= 0x1100 &&
+		(r <= 0x115F || r == 0x2329 || r == 0x232A ||
+			(r >= 0x2E80 && r <= 0x303E) ||
+			(r >= 0x3040 && r <= 0x33BF) ||
+			(r >= 0x3400 && r <= 0x4DBF) ||
+			(r >= 0x4E00 && r <= 0xA4CF) ||
+			(r >= 0xA960 && r <= 0xA97C) ||
+			(r >= 0xAC00 && r <= 0xD7A3) ||
+			(r >= 0xF900 && r <= 0xFAFF) ||
+			(r >= 0xFE10 && r <= 0xFE6B) ||
+			(r >= 0xFF01 && r <= 0xFF60) ||
+			(r >= 0xFFE0 && r <= 0xFFE6) ||
+			(r >= 0x1F000 && r <= 0x1FAFF) ||
+			(r >= 0x20000 && r <= 0x2FA1F)) {
+		return 2
+	}
+	return 1
 }
 
 // ClampScroll computes a scroll offset that keeps the cursor visible

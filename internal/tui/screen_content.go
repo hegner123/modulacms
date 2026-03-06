@@ -4,23 +4,49 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/tree"
 )
 
+// Grid definitions for content screen phases.
+var contentSelectGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1.0, Title: "Content"},
+		}},
+		{Span: 9, Cells: []GridCell{
+			{Height: 0.65, Title: "Details"},
+			{Height: 0.35, Title: "Stats"},
+		}},
+	},
+}
+
+var contentTreeGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1.0, Title: "Tree"},
+		}},
+		{Span: 9, Cells: []GridCell{
+			{Height: 1.0, Title: "Preview"},
+		}},
+	},
+}
+
 // ContentScreen implements Screen for both CONTENT and ADMINCONTENT pages.
 // It supports multiple phases: route list, tree browsing, field editing,
 // and version management. AdminMode selects admin vs regular data and IDs.
 type ContentScreen struct {
+	GridScreen
 	AdminMode bool
 
-	// Cursors and focus
-	Cursor      int
-	FieldCursor int
-	PanelFocus  FocusPanel
+	// Cursors
+	Cursor int
+
+	// Select phase (slug tree)
+	SelectTree     []*ContentSelectNode
+	FlatSelectList []*ContentSelectNode
 
 	// Route list phase
 	RootContentSummary      []db.ContentDataTopLevel
@@ -33,9 +59,11 @@ type ContentScreen struct {
 	AdminPageRouteId       types.AdminRouteID
 	Root                   tree.Root
 	SelectedDatatypeID     types.DatatypeID
-	SelectedContentFields  []ContentFieldDisplay
-	AdminSelectedFields    []AdminContentFieldDisplay
 	PendingCursorContentID types.ContentID
+
+	// Batch-loaded fields for all tree nodes (used by grid preview)
+	AllFields      map[types.ContentID][]ContentFieldDisplay
+	AllAdminFields map[types.AdminContentID][]AdminContentFieldDisplay
 
 	// Version state
 	ShowVersionList       bool
@@ -61,17 +89,20 @@ func NewContentScreen(
 	adminRootDatatypes []db.AdminDatatypes,
 	pageRouteId types.RouteID,
 ) *ContentScreen {
-	return &ContentScreen{
+	s := &ContentScreen{
+		GridScreen: GridScreen{
+			Grid: contentSelectGrid,
+		},
 		AdminMode:               adminMode,
 		Cursor:                  0,
-		FieldCursor:             0,
-		PanelFocus:              TreePanel,
 		RootContentSummary:      rootContentSummary,
 		AdminRootContentSummary: adminRootContentSummary,
 		RootDatatypes:           rootDatatypes,
 		AdminRootDatatypes:      adminRootDatatypes,
 		PageRouteId:             pageRouteId,
 	}
+	s.rebuildSelectTree()
+	return s
 }
 
 func (s *ContentScreen) KeyHints(km config.KeyMap) []KeyHint {
@@ -84,32 +115,26 @@ func (s *ContentScreen) KeyHints(km config.KeyMap) []KeyHint {
 		}
 	}
 	if s.inTreePhase() {
-		switch s.PanelFocus {
-		case RoutePanel:
-			return []KeyHint{
-				{km.HintString(config.ActionEdit), "edit"},
-				{km.HintString(config.ActionNew), "new"},
-				{km.HintString(config.ActionDelete), "del"},
-				{km.HintString(config.ActionNextPanel), "panel"},
-				{km.HintString(config.ActionBack), "back"},
-				{km.HintString(config.ActionQuit), "quit"},
-			}
-		default:
-			return []KeyHint{
-				{km.HintString(config.ActionNew), "new"},
-				{km.HintString(config.ActionEdit), "edit"},
-				{km.HintString(config.ActionDelete), "del"},
-				{km.HintString(config.ActionNextPanel), "panel"},
-				{km.HintString(config.ActionBack), "back"},
-				{km.HintString(config.ActionQuit), "quit"},
-			}
+		return []KeyHint{
+			{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
+			{km.HintString(config.ActionSelect), "expand"},
+			{km.HintString(config.ActionEdit), "edit"},
+			{km.HintString(config.ActionNew), "new"},
+			{km.HintString(config.ActionDelete), "del"},
+			{km.HintString(config.ActionCopy), "copy"},
+			{km.HintString(config.ActionMove), "move"},
+			{km.HintString(config.ActionPublish), "publish"},
+			{km.HintString(config.ActionVersions), "versions"},
+			{km.HintString(config.ActionBack), "back"},
+			{km.HintString(config.ActionQuit), "quit"},
 		}
 	}
-	// Route list phase
+	// Select phase
 	return []KeyHint{
-		{km.HintString(config.ActionSelect), "select"},
 		{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
-		{km.HintString(config.ActionNextPanel), "panel"},
+		{km.HintString(config.ActionSelect), "select"},
+		{km.HintString(config.ActionNew), "new"},
+		{km.HintString(config.ActionDelete), "del"},
 		{km.HintString(config.ActionBack), "back"},
 		{km.HintString(config.ActionQuit), "quit"},
 	}
@@ -145,14 +170,6 @@ func (s *ContentScreen) inRouteListPhase() bool {
 	return !s.inTreePhase() && s.PageRouteId.IsZero()
 }
 
-// routeListLen returns the number of items in the route/content list.
-func (s *ContentScreen) routeListLen() int {
-	if s.AdminMode {
-		return len(s.AdminRootContentSummary)
-	}
-	return len(s.RootContentSummary)
-}
-
 // visibleNodeCount returns the number of visible nodes in the tree.
 func (s *ContentScreen) visibleNodeCount() int {
 	if s.Root.Root == nil {
@@ -180,13 +197,6 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 
 		// Tree phase
 		if s.inTreePhase() {
-			switch s.PanelFocus {
-			case TreePanel:
-				return s.handleTreeKeys(ctx, key, km)
-			case RoutePanel:
-				return s.handleFieldPanelKeys(ctx, key, km)
-			}
-			// ContentPanel is skipped in focus cycle, but handle basic nav
 			return s.handleTreeKeys(ctx, key, km)
 		}
 
@@ -212,6 +222,7 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	case RootContentSummaryFetchResultsMsg:
 		s.RootContentSummary = msg.Data
 		s.Cursor = 0
+		s.rebuildSelectTree()
 		return s, LoadingStopCmd()
 	case AdminContentDataFetchMsg:
 		d := ctx.DB
@@ -231,6 +242,7 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	case AdminContentDataFetchResultsMsg:
 		s.AdminRootContentSummary = msg.Data
 		s.Cursor = 0
+		s.rebuildSelectTree()
 		return s, LoadingStopCmd()
 	case RootDatatypesFetchMsg:
 		d := ctx.DB
@@ -333,9 +345,11 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	// Data refresh messages (from CMS operations)
 	case RootContentSummarySet:
 		s.RootContentSummary = msg.RootContentSummary
+		s.rebuildSelectTree()
 		return s, nil
 	case AdminContentDataSet:
 		s.AdminRootContentSummary = msg.AdminContentData
+		s.rebuildSelectTree()
 		return s, nil
 	case RootDatatypesSet:
 		s.RootDatatypes = msg.RootDatatypes
@@ -359,9 +373,7 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		} else {
 			s.Cursor = 0
 		}
-		s.FieldCursor = 0
-		// Load fields for first node
-		return s, s.loadFieldsForCurrentNode(ctx)
+		return s, BatchLoadContentFieldsCmd(ctx.Config, s.PageRouteId, s.collectDatatypeIDs(), ctx.ActiveLocale)
 
 	case AdminTreeLoadedMsg:
 		s.clearError()
@@ -377,17 +389,14 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		} else {
 			s.Cursor = 0
 		}
-		s.FieldCursor = 0
-		return s, s.loadAdminFieldsForCurrentNode(ctx)
+		return s, BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale)
 
-	// Field loading results
-	case LoadContentFieldsMsg:
-		s.SelectedContentFields = msg.Fields
-		s.FieldCursor = 0
+	// Batch field loading results
+	case BatchContentFieldsLoadedMsg:
+		s.AllFields = msg.Fields
 		return s, nil
-	case AdminLoadContentFieldsMsg:
-		s.AdminSelectedFields = msg.Fields
-		s.FieldCursor = 0
+	case BatchAdminContentFieldsLoadedMsg:
+		s.AllAdminFields = msg.Fields
 		return s, nil
 
 	// Content CRUD completion messages → reload tree
@@ -453,7 +462,6 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		s.VersionCursor = 0
 		s.VersionContentID = msg.ContentID
 		s.VersionRouteID = msg.RouteID
-		s.PanelFocus = RoutePanel
 		return s, nil
 	case AdminVersionsListedMsg:
 		s.clearError()
@@ -462,7 +470,6 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		s.VersionCursor = 0
 		s.AdminVersionContentID = msg.AdminContentID
 		s.AdminVersionRouteID = msg.AdminRouteID
-		s.PanelFocus = RoutePanel
 		return s, nil
 
 	// Version restore results
@@ -475,16 +482,16 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		s.ShowVersionList = false
 		return s, ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID)
 
-	// Content field operation results → reload fields
+	// Content field operation results → reload batch fields
 	case AdminContentFieldUpdatedMsg:
 		s.clearError()
-		return s, s.loadAdminFieldsForCurrentNode(ctx)
+		return s, BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale)
 	case AdminContentFieldAddedMsg:
 		s.clearError()
-		return s, s.loadAdminFieldsForCurrentNode(ctx)
+		return s, BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale)
 	case AdminContentFieldDeletedMsg:
 		s.clearError()
-		return s, s.loadAdminFieldsForCurrentNode(ctx)
+		return s, BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale)
 
 	// Content publish toggled (legacy compat)
 	case ContentPublishToggledMsg:
@@ -504,17 +511,7 @@ func (s *ContentScreen) handleRouteListKeys(ctx AppContext, key string, km confi
 		return s, HistoryPopCmd()
 	}
 
-	// Panel navigation
-	if km.Matches(key, config.ActionNextPanel) {
-		s.PanelFocus = (s.PanelFocus + 1) % 3
-		return s, nil
-	}
-	if km.Matches(key, config.ActionPrevPanel) {
-		s.PanelFocus = (s.PanelFocus + 2) % 3
-		return s, nil
-	}
-
-	// Cursor movement
+	// Cursor movement (using FlatSelectList)
 	if km.Matches(key, config.ActionUp) {
 		if s.Cursor > 0 {
 			s.Cursor--
@@ -522,7 +519,7 @@ func (s *ContentScreen) handleRouteListKeys(ctx AppContext, key string, km confi
 		return s, nil
 	}
 	if km.Matches(key, config.ActionDown) {
-		max := s.routeListLen() - 1
+		max := len(s.FlatSelectList) - 1
 		if max < 0 {
 			max = 0
 		}
@@ -532,19 +529,26 @@ func (s *ContentScreen) handleRouteListKeys(ctx AppContext, key string, km confi
 		return s, nil
 	}
 
-	// Select route → load tree
-	if km.Matches(key, config.ActionSelect) {
-		if s.AdminMode {
-			return s.handleAdminRouteSelect(ctx)
+	// Expand/collapse group nodes
+	if km.Matches(key, config.ActionExpand) || km.Matches(key, config.ActionCollapse) {
+		if s.Cursor < len(s.FlatSelectList) {
+			node := s.FlatSelectList[s.Cursor]
+			if node.Kind == NodeGroup || node.hasChildren() {
+				node.Expand = !node.Expand
+				s.FlatSelectList = FlattenSelectTree(s.SelectTree)
+			}
 		}
-		return s.handleRegularRouteSelect(ctx)
+		return s, nil
+	}
+
+	// Select content → load tree
+	if km.Matches(key, config.ActionSelect) {
+		return s.handleSelectPhaseEnter(ctx)
 	}
 
 	// New content
 	if km.Matches(key, config.ActionNew) {
 		if s.AdminMode {
-			// Admin: new content requires an admin route and datatypes
-			// For now, show a dialog — this is handled through the existing form system
 			return s, nil
 		}
 		if len(s.RootDatatypes) == 0 {
@@ -553,34 +557,32 @@ func (s *ContentScreen) handleRouteListKeys(ctx AppContext, key string, km confi
 		return s, ShowCreateRouteWithContentDialogCmd(s.RootDatatypes)
 	}
 
-	// Edit content from route list
+	// Edit content from select list
 	if km.Matches(key, config.ActionEdit) {
-		if !s.AdminMode {
-			if len(s.RootContentSummary) > 0 && s.Cursor < len(s.RootContentSummary) {
-				content := s.RootContentSummary[s.Cursor]
-				if content.RouteID.Valid && content.DatatypeID.Valid {
-					return s, FetchContentForEditCmd(
-						content.ContentDataID,
-						content.DatatypeID.ID,
-						content.RouteID.ID,
-						fmt.Sprintf("Edit: %s", content.RouteTitle),
-					)
-				}
+		if s.Cursor < len(s.FlatSelectList) {
+			node := s.FlatSelectList[s.Cursor]
+			if node.Content != nil && node.Content.RouteID.Valid && node.Content.DatatypeID.Valid {
+				return s, FetchContentForEditCmd(
+					node.Content.ContentDataID,
+					node.Content.DatatypeID.ID,
+					node.Content.RouteID.ID,
+					fmt.Sprintf("Edit: %s", node.Content.RouteTitle),
+				)
 			}
 		}
 		return s, nil
 	}
 
-	// Delete content from route list
+	// Delete content from select list
 	if km.Matches(key, config.ActionDelete) {
-		if s.AdminMode {
-			if len(s.AdminRootContentSummary) > 0 && s.Cursor < len(s.AdminRootContentSummary) {
-				content := s.AdminRootContentSummary[s.Cursor]
-				hasChildren := content.FirstChildID.Valid
+		if s.Cursor < len(s.FlatSelectList) {
+			node := s.FlatSelectList[s.Cursor]
+			if s.AdminMode && node.AdminContent != nil {
+				hasChildren := node.AdminContent.FirstChildID.Valid
 				return s, ShowDeleteAdminContentDialogCmd(
-					content.AdminContentDataID,
-					content.AdminRouteID.ID,
-					content.DatatypeLabel,
+					node.AdminContent.AdminContentDataID,
+					node.AdminContent.AdminRouteID.ID,
+					node.AdminContent.DatatypeLabel,
 					hasChildren,
 				)
 			}
@@ -591,41 +593,52 @@ func (s *ContentScreen) handleRouteListKeys(ctx AppContext, key string, km confi
 	return s, nil
 }
 
-// handleRegularRouteSelect handles selecting a route from the regular content list.
-func (s *ContentScreen) handleRegularRouteSelect(ctx AppContext) (Screen, tea.Cmd) {
-	if len(s.RootContentSummary) == 0 || s.Cursor >= len(s.RootContentSummary) {
+// handleSelectPhaseEnter handles selecting an item from the slug tree to enter tree phase.
+func (s *ContentScreen) handleSelectPhaseEnter(ctx AppContext) (Screen, tea.Cmd) {
+	if s.Cursor >= len(s.FlatSelectList) {
 		return s, nil
 	}
-	content := s.RootContentSummary[s.Cursor]
-	if !content.RouteID.Valid {
-		return s, nil
-	}
-	s.PageRouteId = content.RouteID.ID
-	if content.DatatypeID.Valid {
-		s.SelectedDatatypeID = content.DatatypeID.ID
-	}
-	s.Cursor = 0
-	return s, tea.Batch(
-		LoadingStartCmd(),
-		ReloadContentTreeCmd(ctx.Config, content.RouteID.ID),
-	)
-}
+	node := s.FlatSelectList[s.Cursor]
 
-// handleAdminRouteSelect handles selecting from the admin content list.
-func (s *ContentScreen) handleAdminRouteSelect(ctx AppContext) (Screen, tea.Cmd) {
-	if len(s.AdminRootContentSummary) == 0 || s.Cursor >= len(s.AdminRootContentSummary) {
+	// Toggle expand/collapse on group nodes
+	if node.Kind == NodeGroup && (node.Content == nil && node.AdminContent == nil) {
+		node.Expand = !node.Expand
+		s.FlatSelectList = FlattenSelectTree(s.SelectTree)
 		return s, nil
 	}
-	content := s.AdminRootContentSummary[s.Cursor]
-	if !content.AdminRouteID.Valid {
-		return s, nil
+
+	// Regular content
+	if node.Content != nil {
+		if !node.Content.RouteID.Valid {
+			return s, nil
+		}
+		s.PageRouteId = node.Content.RouteID.ID
+		if node.Content.DatatypeID.Valid {
+			s.SelectedDatatypeID = node.Content.DatatypeID.ID
+		}
+		s.Cursor = 0
+		s.Grid = contentTreeGrid
+		return s, tea.Batch(
+			LoadingStartCmd(),
+			ReloadContentTreeCmd(ctx.Config, node.Content.RouteID.ID),
+		)
 	}
-	s.AdminPageRouteId = content.AdminRouteID.ID
-	s.Cursor = 0
-	return s, tea.Batch(
-		LoadingStartCmd(),
-		ReloadAdminContentTreeCmd(ctx.Config, content.AdminRouteID.ID),
-	)
+
+	// Admin content
+	if node.AdminContent != nil {
+		if !node.AdminContent.AdminRouteID.Valid {
+			return s, nil
+		}
+		s.AdminPageRouteId = node.AdminContent.AdminRouteID.ID
+		s.Cursor = 0
+		s.Grid = contentTreeGrid
+		return s, tea.Batch(
+			LoadingStartCmd(),
+			ReloadAdminContentTreeCmd(ctx.Config, node.AdminContent.AdminRouteID.ID),
+		)
+	}
+
+	return s, nil
 }
 
 // handleTreeKeys handles key input in the tree browsing phase.
@@ -639,39 +652,10 @@ func (s *ContentScreen) handleTreeKeys(ctx AppContext, key string, km config.Key
 		return s.handleBackKey(ctx)
 	}
 
-	// Panel navigation (skip ContentPanel)
-	if km.Matches(key, config.ActionNextPanel) {
-		if s.PanelFocus == TreePanel {
-			s.PanelFocus = RoutePanel
-		} else {
-			s.PanelFocus = TreePanel
-		}
-		return s, nil
-	}
-	if km.Matches(key, config.ActionPrevPanel) {
-		if s.PanelFocus == RoutePanel {
-			s.PanelFocus = TreePanel
-		} else {
-			s.PanelFocus = RoutePanel
-		}
-		return s, nil
-	}
-
-	// Right arrow: TreePanel → RoutePanel
-	if key == "l" || key == "right" {
-		if s.PanelFocus == TreePanel {
-			s.PanelFocus = RoutePanel
-			s.FieldCursor = 0
-			return s, nil
-		}
-	}
-
 	// Cursor up/down
 	if km.Matches(key, config.ActionUp) {
 		if s.Cursor > 0 {
 			s.Cursor--
-			s.FieldCursor = 0
-			return s, s.loadFieldsForCurrentNodeAuto(ctx)
 		}
 		return s, nil
 	}
@@ -682,8 +666,6 @@ func (s *ContentScreen) handleTreeKeys(ctx AppContext, key string, km config.Key
 		}
 		if s.Cursor < max {
 			s.Cursor++
-			s.FieldCursor = 0
-			return s, s.loadFieldsForCurrentNodeAuto(ctx)
 		}
 		return s, nil
 	}
@@ -718,8 +700,6 @@ func (s *ContentScreen) handleTreeKeys(ctx AppContext, key string, km config.Key
 			idx := s.Root.FindVisibleIndex(node.Parent.Instance.ContentDataID)
 			if idx >= 0 {
 				s.Cursor = idx
-				s.FieldCursor = 0
-				return s, s.loadFieldsForCurrentNodeAuto(ctx)
 			}
 		}
 		return s, nil
@@ -733,8 +713,6 @@ func (s *ContentScreen) handleTreeKeys(ctx AppContext, key string, km config.Key
 				idx := s.Root.FindVisibleIndex(node.FirstChild.Instance.ContentDataID)
 				if idx >= 0 {
 					s.Cursor = idx
-					s.FieldCursor = 0
-					return s, s.loadFieldsForCurrentNodeAuto(ctx)
 				}
 			}
 		}
@@ -886,81 +864,6 @@ func (s *ContentScreen) handleTreeKeys(ctx AppContext, key string, km config.Key
 	return s, nil
 }
 
-// handleFieldPanelKeys handles key input when the field panel (RoutePanel) is focused.
-func (s *ContentScreen) handleFieldPanelKeys(ctx AppContext, key string, km config.KeyMap) (Screen, tea.Cmd) {
-	if km.Matches(key, config.ActionQuit) {
-		return s, tea.Quit
-	}
-
-	// Back/dismiss: move focus back to TreePanel
-	if km.Matches(key, config.ActionDismiss) || km.Matches(key, config.ActionBack) {
-		s.PanelFocus = TreePanel
-		return s, nil
-	}
-
-	// Panel navigation (skip ContentPanel)
-	if km.Matches(key, config.ActionNextPanel) {
-		s.PanelFocus = TreePanel
-		return s, nil
-	}
-	if km.Matches(key, config.ActionPrevPanel) {
-		s.PanelFocus = TreePanel
-		return s, nil
-	}
-
-	// Cursor up/down on fields
-	if km.Matches(key, config.ActionUp) {
-		if s.FieldCursor > 0 {
-			s.FieldCursor--
-		}
-		return s, nil
-	}
-	if km.Matches(key, config.ActionDown) {
-		max := s.fieldsLen() - 1
-		if max < 0 {
-			max = 0
-		}
-		if s.FieldCursor < max {
-			s.FieldCursor++
-		}
-		return s, nil
-	}
-
-	// Edit field
-	if km.Matches(key, config.ActionEdit) {
-		if s.AdminMode {
-			return s.handleAdminFieldEdit(ctx)
-		}
-		return s.handleRegularFieldEdit(ctx)
-	}
-
-	// Add field
-	if km.Matches(key, config.ActionNew) {
-		if s.AdminMode {
-			return s.handleAdminFieldAdd(ctx)
-		}
-		return s.handleRegularFieldAdd(ctx)
-	}
-
-	// Delete field
-	if km.Matches(key, config.ActionDelete) {
-		if s.AdminMode {
-			return s.handleAdminFieldDelete(ctx)
-		}
-		return s.handleRegularFieldDelete(ctx)
-	}
-
-	// Reorder fields
-	if km.Matches(key, config.ActionReorderUp) {
-		return s.handleFieldReorder(ctx, "up")
-	}
-	if km.Matches(key, config.ActionReorderDown) {
-		return s.handleFieldReorder(ctx, "down")
-	}
-
-	return s, nil
-}
-
 // handleVersionListKeys handles key input when viewing the version list.
 func (s *ContentScreen) handleVersionListKeys(ctx AppContext, key string, km config.KeyMap) (Screen, tea.Cmd) {
 	if km.Matches(key, config.ActionQuit) {
@@ -1021,31 +924,19 @@ func (s *ContentScreen) handleVersionListKeys(ctx AppContext, key string, km con
 
 // handleBackKey navigates back from tree to route list, or pops history.
 func (s *ContentScreen) handleBackKey(ctx AppContext) (Screen, tea.Cmd) {
-	if s.PanelFocus != TreePanel {
-		s.PanelFocus = TreePanel
-		return s, nil
-	}
 	if s.inTreePhase() {
-		// Go back to route list
+		// Go back to select phase
 		s.Root = tree.Root{}
 		s.PageRouteId = types.RouteID("")
 		s.AdminPageRouteId = types.AdminRouteID("")
-		s.SelectedContentFields = nil
-		s.AdminSelectedFields = nil
+		s.AllFields = nil
+		s.AllAdminFields = nil
 		s.Cursor = 0
-		s.FieldCursor = 0
-		s.PanelFocus = TreePanel
+		s.Grid = contentSelectGrid
+		s.FocusIndex = 0
 		return s, nil
 	}
 	return s, HistoryPopCmd()
-}
-
-// fieldsLen returns the number of fields for the current mode.
-func (s *ContentScreen) fieldsLen() int {
-	if s.AdminMode {
-		return len(s.AdminSelectedFields)
-	}
-	return len(s.SelectedContentFields)
 }
 
 // versionListLen returns the number of versions for the current mode.
@@ -1054,37 +945,6 @@ func (s *ContentScreen) versionListLen() int {
 		return len(s.AdminVersions)
 	}
 	return len(s.Versions)
-}
-
-// loadFieldsForCurrentNode loads fields for the node at the current cursor position (regular mode).
-func (s *ContentScreen) loadFieldsForCurrentNode(ctx AppContext) tea.Cmd {
-	node := s.Root.NodeAtIndex(s.Cursor)
-	if node == nil || node.Instance == nil {
-		return nil
-	}
-	return LoadContentFieldsCmd(ctx.Config, node.Instance.ContentDataID, node.Instance.DatatypeID)
-}
-
-// loadAdminFieldsForCurrentNode loads fields for the node at the current cursor position (admin mode).
-func (s *ContentScreen) loadAdminFieldsForCurrentNode(ctx AppContext) tea.Cmd {
-	node := s.Root.NodeAtIndex(s.Cursor)
-	if node == nil || node.Instance == nil {
-		return nil
-	}
-	adminID := types.AdminContentID(node.Instance.ContentDataID)
-	dtID := types.NullableAdminDatatypeID{}
-	if node.Instance.DatatypeID.Valid {
-		dtID = types.NullableAdminDatatypeID{ID: types.AdminDatatypeID(node.Instance.DatatypeID.ID), Valid: true}
-	}
-	return LoadAdminContentFieldsCmd(ctx.Config, adminID, dtID, ctx.ActiveLocale)
-}
-
-// loadFieldsForCurrentNodeAuto dispatches to the correct mode-specific loader.
-func (s *ContentScreen) loadFieldsForCurrentNodeAuto(ctx AppContext) tea.Cmd {
-	if s.AdminMode {
-		return s.loadAdminFieldsForCurrentNode(ctx)
-	}
-	return s.loadFieldsForCurrentNode(ctx)
 }
 
 // handleRegularTreeNew handles creating new content in regular mode.
@@ -1201,145 +1061,47 @@ func (s *ContentScreen) handleAdminTreeMove(ctx AppContext) (Screen, tea.Cmd) {
 	return s, ShowMoveAdminContentDialogCmd(node, s.AdminPageRouteId, targets)
 }
 
-// handleRegularFieldEdit opens a single-field edit dialog (regular mode).
-func (s *ContentScreen) handleRegularFieldEdit(ctx AppContext) (Screen, tea.Cmd) {
-	if len(s.SelectedContentFields) == 0 || s.FieldCursor >= len(s.SelectedContentFields) {
-		return s, ShowDialog("Info", "No field selected", false)
+// rebuildSelectTree rebuilds the slug-grouped select tree and flat cursor list
+// from the current content summary data.
+func (s *ContentScreen) rebuildSelectTree() {
+	if s.AdminMode {
+		s.SelectTree = BuildAdminContentSelectTree(s.AdminRootContentSummary)
+	} else {
+		s.SelectTree = BuildContentSelectTree(s.RootContentSummary)
 	}
-	cf := s.SelectedContentFields[s.FieldCursor]
-	if cf.ContentFieldID.IsZero() {
-		return s, ShowDialog("Info", "Field has no value yet. Use 'n' to add.", false)
-	}
-	node := s.Root.NodeAtIndex(s.Cursor)
-	if node == nil || node.Instance == nil {
-		return s, nil
-	}
-	return s, ShowEditSingleFieldDialogCmd(cf, node.Instance.ContentDataID, s.PageRouteId, node.Instance.DatatypeID)
+	s.FlatSelectList = FlattenSelectTree(s.SelectTree)
 }
 
-// handleAdminFieldEdit opens a single-field edit dialog (admin mode).
-func (s *ContentScreen) handleAdminFieldEdit(ctx AppContext) (Screen, tea.Cmd) {
-	if len(s.AdminSelectedFields) == 0 || s.FieldCursor >= len(s.AdminSelectedFields) {
-		return s, ShowDialog("Info", "No field selected", false)
+// collectDatatypeIDs returns distinct DatatypeIDs from all nodes in the tree.
+func (s *ContentScreen) collectDatatypeIDs() []types.DatatypeID {
+	if s.Root.Root == nil {
+		return nil
 	}
-	cf := s.AdminSelectedFields[s.FieldCursor]
-	if cf.AdminContentFieldID.IsZero() {
-		return s, ShowDialog("Info", "Field has no value yet. Use 'n' to add.", false)
-	}
-	node := s.Root.NodeAtIndex(s.Cursor)
-	if node == nil || node.Instance == nil {
-		return s, nil
-	}
-	adminContentID := types.AdminContentID(node.Instance.ContentDataID)
-	dtID := types.NullableAdminDatatypeID{}
-	if node.Instance.DatatypeID.Valid {
-		dtID = types.NullableAdminDatatypeID{ID: types.AdminDatatypeID(node.Instance.DatatypeID.ID), Valid: true}
-	}
-	return s, ShowEditAdminSingleFieldDialogCmd(cf, adminContentID, s.AdminPageRouteId, dtID)
-}
-
-// handleRegularFieldAdd adds a field to the current content node (regular mode).
-func (s *ContentScreen) handleRegularFieldAdd(ctx AppContext) (Screen, tea.Cmd) {
-	node := s.Root.NodeAtIndex(s.Cursor)
-	if node == nil || node.Instance == nil {
-		return s, nil
-	}
-
-	// Find fields not yet populated
-	var missing []ContentFieldDisplay
-	for _, cf := range s.SelectedContentFields {
-		if cf.ContentFieldID.IsZero() {
-			missing = append(missing, cf)
+	seen := make(map[types.DatatypeID]struct{})
+	var ids []types.DatatypeID
+	for _, n := range s.Root.NodeIndex {
+		dtID := n.Datatype.DatatypeID
+		if _, ok := seen[dtID]; !ok {
+			seen[dtID] = struct{}{}
+			ids = append(ids, dtID)
 		}
 	}
-	if len(missing) == 0 {
-		return s, ShowDialog("Info", "All fields already populated", false)
-	}
-
-	options := make([]huh.Option[string], 0, len(missing))
-	for _, mf := range missing {
-		options = append(options, huh.NewOption(mf.Label, string(mf.FieldID)))
-	}
-	return s, ShowAddContentFieldDialogCmd(options, node.Instance.ContentDataID, s.PageRouteId, node.Instance.DatatypeID)
+	return ids
 }
 
-// handleAdminFieldAdd adds a field to the current content node (admin mode).
-func (s *ContentScreen) handleAdminFieldAdd(ctx AppContext) (Screen, tea.Cmd) {
-	node := s.Root.NodeAtIndex(s.Cursor)
-	if node == nil || node.Instance == nil {
-		return s, nil
+// collectAdminDatatypeIDs returns distinct AdminDatatypeIDs from all tree nodes.
+func (s *ContentScreen) collectAdminDatatypeIDs() []types.AdminDatatypeID {
+	if s.Root.Root == nil {
+		return nil
 	}
-	adminContentID := types.AdminContentID(node.Instance.ContentDataID)
-	dtID := types.NullableAdminDatatypeID{}
-	if node.Instance.DatatypeID.Valid {
-		dtID = types.NullableAdminDatatypeID{ID: types.AdminDatatypeID(node.Instance.DatatypeID.ID), Valid: true}
-	}
-
-	// Find fields not yet populated
-	var missing []AdminContentFieldDisplay
-	for _, cf := range s.AdminSelectedFields {
-		if cf.AdminContentFieldID.IsZero() {
-			missing = append(missing, cf)
+	seen := make(map[types.DatatypeID]struct{})
+	var ids []types.AdminDatatypeID
+	for _, n := range s.Root.NodeIndex {
+		dtID := n.Datatype.DatatypeID
+		if _, ok := seen[dtID]; !ok {
+			seen[dtID] = struct{}{}
+			ids = append(ids, types.AdminDatatypeID(dtID))
 		}
 	}
-	if len(missing) == 0 {
-		return s, ShowDialog("Info", "All fields already populated", false)
-	}
-
-	options := make([]huh.Option[string], 0, len(missing))
-	for _, mf := range missing {
-		options = append(options, huh.NewOption(mf.Label, string(mf.AdminFieldID)))
-	}
-	return s, ShowAddAdminContentFieldDialogCmd(options, adminContentID, s.AdminPageRouteId, dtID)
-}
-
-// handleRegularFieldDelete deletes the selected field (regular mode).
-func (s *ContentScreen) handleRegularFieldDelete(ctx AppContext) (Screen, tea.Cmd) {
-	if len(s.SelectedContentFields) == 0 || s.FieldCursor >= len(s.SelectedContentFields) {
-		return s, nil
-	}
-	cf := s.SelectedContentFields[s.FieldCursor]
-	if cf.ContentFieldID.IsZero() {
-		return s, nil
-	}
-	node := s.Root.NodeAtIndex(s.Cursor)
-	if node == nil || node.Instance == nil {
-		return s, nil
-	}
-	return s, ShowDeleteContentFieldDialogCmd(cf, node.Instance.ContentDataID, s.PageRouteId, node.Instance.DatatypeID)
-}
-
-// handleAdminFieldDelete deletes the selected field (admin mode).
-func (s *ContentScreen) handleAdminFieldDelete(ctx AppContext) (Screen, tea.Cmd) {
-	if len(s.AdminSelectedFields) == 0 || s.FieldCursor >= len(s.AdminSelectedFields) {
-		return s, nil
-	}
-	cf := s.AdminSelectedFields[s.FieldCursor]
-	if cf.AdminContentFieldID.IsZero() {
-		return s, nil
-	}
-	node := s.Root.NodeAtIndex(s.Cursor)
-	if node == nil || node.Instance == nil {
-		return s, nil
-	}
-	adminContentID := types.AdminContentID(node.Instance.ContentDataID)
-	dtID := types.NullableAdminDatatypeID{}
-	if node.Instance.DatatypeID.Valid {
-		dtID = types.NullableAdminDatatypeID{ID: types.AdminDatatypeID(node.Instance.DatatypeID.ID), Valid: true}
-	}
-	return s, func() tea.Msg {
-		return ShowDeleteAdminContentFieldDialogMsg{
-			AdminContentFieldID: cf.AdminContentFieldID,
-			AdminContentID:      adminContentID,
-			AdminRouteID:        s.AdminPageRouteId,
-			AdminDatatypeID:     dtID,
-			Label:               cf.Label,
-		}
-	}
-}
-
-// handleFieldReorder handles reordering fields (stub for now).
-func (s *ContentScreen) handleFieldReorder(ctx AppContext, direction string) (Screen, tea.Cmd) {
-	// Field reordering not yet implemented for content fields
-	return s, nil
+	return ids
 }

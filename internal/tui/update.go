@@ -60,7 +60,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case HistoryPop:
 			return m.UpdateNavigation(msg)
 		case HistoryPush:
-			return m.UpdateNavigation(msg)
+			return m.UpdateState(msg)
 
 		// State messages that Screens may emit via constructors.
 		case SetLoadingMsg:

@@ -10,212 +10,247 @@ import (
 	"github.com/hegner123/modulacms/internal/tree"
 )
 
-// View renders the ContentScreen content based on current state.
+// View renders the ContentScreen using the grid layout system.
 func (s *ContentScreen) View(ctx AppContext) string {
-	var left, center, right string
-	var leftTotal, leftCursor int
-	var rightTotal, rightCursor int
-
 	if s.inTreePhase() {
-		// Tree browsing phase
-		left = s.renderTree()
-		center = s.renderContentPreview(ctx)
-		leftTotal = s.visibleNodeCount()
-		leftCursor = s.Cursor
-		if s.ShowVersionList {
-			right = s.renderVersionList()
-			rightTotal = s.versionListLen()
-			rightCursor = s.VersionCursor
-		} else {
-			right = s.renderFields()
-			rightTotal = s.fieldsLen()
-			rightCursor = s.FieldCursor
-		}
-	} else if s.AdminMode {
-		// Admin route list phase
-		left = s.renderAdminContentList()
-		center = s.renderAdminContentDetail()
-		right = s.renderRouteActions()
-		leftTotal = len(s.AdminRootContentSummary)
-		leftCursor = s.Cursor
-	} else {
-		// Regular route list phase
-		left = s.renderRouteList()
-		center = s.renderRouteDetail()
-		right = s.renderRouteActions()
-		leftTotal = len(s.RootContentSummary)
-		leftCursor = s.Cursor
+		return s.viewTreePhase(ctx)
 	}
+	return s.viewSelectPhase(ctx)
+}
 
-	// Error display in right panel
-	if s.LastError != nil {
-		right = s.renderError() + "\n\n" + right
-	}
-
-	layout := layoutForPage(s.PageIndex())
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
-	}
-
+// viewSelectPhase renders the content select grid (2 columns: content list + details/stats).
+func (s *ContentScreen) viewSelectPhase(ctx AppContext) string {
 	innerH := PanelInnerHeight(ctx.Height)
+	listTotal := len(s.FlatSelectList)
 
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: s.panelTitle(0, layout), Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel, TotalLines: leftTotal, ScrollOffset: ClampScroll(leftCursor, leftTotal, innerH)}.Render())
-	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: s.panelTitle(1, layout), Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: s.panelTitle(2, layout), Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel, TotalLines: rightTotal, ScrollOffset: ClampScroll(rightCursor, rightTotal, innerH)}.Render())
+	cells := []CellContent{
+		{
+			Content:      s.renderSelectList(),
+			TotalLines:   listTotal,
+			ScrollOffset: ClampScroll(s.Cursor, listTotal, innerH),
+		},
+		{Content: s.renderSelectDetail()},
+		{Content: s.renderSelectStats()},
 	}
 
-	return strings.Join(panels, "")
+	if s.LastError != nil {
+		cells[1].Content = s.renderError() + "\n\n" + cells[1].Content
+	}
+
+	return s.RenderGrid(ctx, cells)
 }
 
-// panelTitle returns a dynamic panel title based on screen state.
-func (s *ContentScreen) panelTitle(panel int, layout PageLayout) string {
-	if s.inTreePhase() {
-		switch panel {
-		case 0:
-			return "Tree"
-		case 1:
-			return "Content"
-		case 2:
-			if s.ShowVersionList {
-				return "Versions"
-			}
-			return "Fields"
+// viewTreePhase renders the tree browsing grid (2 columns: tree + preview).
+func (s *ContentScreen) viewTreePhase(ctx AppContext) string {
+	innerH := PanelInnerHeight(ctx.Height)
+	treeTotal := s.visibleNodeCount()
+
+	treeCell := CellContent{
+		Content:      s.renderTree(),
+		TotalLines:   treeTotal,
+		ScrollOffset: ClampScroll(s.Cursor, treeTotal, innerH),
+	}
+	preview := s.renderDocumentPreview(ctx)
+	previewCell := CellContent{
+		Content:      preview.content,
+		TotalLines:   preview.totalLines,
+		ScrollOffset: ClampScroll(preview.selectedLine, preview.totalLines, innerH),
+	}
+
+	if !s.ShowVersionList {
+		cells := []CellContent{treeCell, previewCell}
+		if s.LastError != nil {
+			cells[1].Content = s.renderError() + "\n\n" + cells[1].Content
 		}
+		return s.RenderGrid(ctx, cells)
 	}
-	return layout.Titles[panel]
+
+	// Version list: split height between grid and footer
+	gridHeight := int(float64(ctx.Height) * 0.65)
+	footerHeight := ctx.Height - gridHeight
+
+	gridCtx := ctx
+	gridCtx.Height = gridHeight
+	cells := []CellContent{treeCell, previewCell}
+	gridStr := s.RenderGrid(gridCtx, cells)
+
+	versionPanel := Panel{
+		Title:        "Versions",
+		Width:        ctx.Width,
+		Height:       footerHeight,
+		Content:      s.renderVersionList(),
+		Focused:      true,
+		TotalLines:   s.versionListLen(),
+		ScrollOffset: ClampScroll(s.VersionCursor, s.versionListLen(), footerHeight-2),
+		Accent:       ctx.ActiveAccent,
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, gridStr, versionPanel.Render())
 }
 
 // =============================================================================
-// ROUTE LIST RENDERING (regular mode)
+// SELECT PHASE RENDERING (slug tree)
 // =============================================================================
 
-func (s *ContentScreen) renderRouteList() string {
-	if len(s.RootContentSummary) == 0 {
+func (s *ContentScreen) renderSelectList() string {
+	if len(s.FlatSelectList) == 0 && len(s.SelectTree) == 0 {
 		return "(no content)"
 	}
 
-	lines := make([]string, 0, len(s.RootContentSummary))
-	for i, content := range s.RootContentSummary {
-		cursor := "   "
-		if s.Cursor == i {
-			cursor = " ->"
+	var lines []string
+	flatIdx := 0
+
+	for _, node := range s.SelectTree {
+		if node.Kind == NodeSection {
+			sectionStyle := lipgloss.NewStyle().Bold(true).Faint(true)
+			lines = append(lines, sectionStyle.Render("-- "+node.Label+" --"))
+			continue
 		}
-		lines = append(lines, fmt.Sprintf("%s [%s] %s", cursor, content.DatatypeLabel, content.RouteSlug))
+		s.renderSelectNode(node, &lines, &flatIdx, 0)
+	}
+
+	if len(lines) == 0 {
+		return "(no content)"
 	}
 	return strings.Join(lines, "\n")
 }
 
-func (s *ContentScreen) renderRouteDetail() string {
-	if len(s.RootContentSummary) == 0 || s.Cursor >= len(s.RootContentSummary) {
+func (s *ContentScreen) renderSelectNode(node *ContentSelectNode, lines *[]string, flatIdx *int, depth int) {
+	indent := strings.Repeat("  ", depth)
+	cursorMark := "  "
+	if s.Cursor == *flatIdx {
+		cursorMark = "->"
+	}
+
+	switch node.Kind {
+	case NodeGroup:
+		expandIcon := "▶"
+		if node.Expand {
+			expandIcon = "▼"
+		}
+		// A group that is also content (e.g., /about with children)
+		if node.Content != nil || node.AdminContent != nil {
+			status := s.selectNodeStatus(node)
+			dtLabel := s.selectNodeDatatypeLabel(node)
+			*lines = append(*lines, fmt.Sprintf("%s%s%s %s %s [%s]", cursorMark, indent, expandIcon, node.Label, status, dtLabel))
+		} else {
+			*lines = append(*lines, fmt.Sprintf("%s%s%s %s", cursorMark, indent, expandIcon, node.Label))
+		}
+		*flatIdx++
+		if node.Expand {
+			child := node.FirstChild
+			for child != nil {
+				s.renderSelectNode(child, lines, flatIdx, depth+1)
+				child = child.NextSibling
+			}
+		}
+
+	case NodeContent:
+		status := s.selectNodeStatus(node)
+		dtLabel := s.selectNodeDatatypeLabel(node)
+		*lines = append(*lines, fmt.Sprintf("%s%s  %s %s [%s]", cursorMark, indent, node.Label, status, dtLabel))
+		*flatIdx++
+	}
+}
+
+func (s *ContentScreen) selectNodeStatus(node *ContentSelectNode) string {
+	publishedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#16a34a"))
+	draftStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#ca8a04"))
+
+	var status types.ContentStatus
+	if node.Content != nil {
+		status = node.Content.Status
+	} else if node.AdminContent != nil {
+		status = node.AdminContent.Status
+	}
+
+	if status == types.ContentStatusPublished {
+		return publishedStyle.Render("●")
+	}
+	return draftStyle.Render("○")
+}
+
+func (s *ContentScreen) selectNodeDatatypeLabel(node *ContentSelectNode) string {
+	if node.Content != nil {
+		return node.Content.DatatypeLabel
+	}
+	if node.AdminContent != nil {
+		return node.AdminContent.DatatypeLabel
+	}
+	return ""
+}
+
+func (s *ContentScreen) renderSelectDetail() string {
+	if s.Cursor >= len(s.FlatSelectList) || len(s.FlatSelectList) == 0 {
 		return "No content selected"
 	}
 
-	content := s.RootContentSummary[s.Cursor]
-	lines := []string{
-		fmt.Sprintf("Route:    %s", content.RouteSlug),
-		fmt.Sprintf("Title:    %s", content.RouteTitle),
-		fmt.Sprintf("Datatype: %s", content.DatatypeLabel),
-		"",
-		fmt.Sprintf("ID:       %s", content.ContentDataID),
-		fmt.Sprintf("Route ID: %s", content.RouteID.String()),
-		"",
-		fmt.Sprintf("Created:  %s", content.DateCreated.String()),
-		fmt.Sprintf("Modified: %s", content.DateModified.String()),
-	}
+	node := s.FlatSelectList[s.Cursor]
 
-	return strings.Join(lines, "\n")
-}
-
-func (s *ContentScreen) renderRouteActions() string {
-	if s.inTreePhase() {
-		return s.renderTreeActions()
-	}
-
-	if s.AdminMode {
+	if node.Content != nil {
+		c := node.Content
 		lines := []string{
-			"Actions",
+			fmt.Sprintf("Route:    %s", c.RouteSlug),
+			fmt.Sprintf("Title:    %s", c.RouteTitle),
+			fmt.Sprintf("Datatype: %s", c.DatatypeLabel),
+			fmt.Sprintf("Status:   %s", c.Status),
 			"",
-			"  enter: View content tree",
-			"  d: Delete",
+			fmt.Sprintf("Author:   %s", c.AuthorName),
+			fmt.Sprintf("ID:       %s", c.ContentDataID),
 			"",
-			fmt.Sprintf("Content: %d", len(s.AdminRootContentSummary)),
+			fmt.Sprintf("Created:  %s", c.DateCreated.String()),
+			fmt.Sprintf("Modified: %s", c.DateModified.String()),
 		}
 		return strings.Join(lines, "\n")
 	}
 
-	lines := []string{
-		"Actions",
-		"",
-		"  enter: View content tree",
-		"  n: New content",
-		"  e: Edit",
-		"  d: Delete",
-		"",
-		fmt.Sprintf("Content: %d", len(s.RootContentSummary)),
+	if node.AdminContent != nil {
+		c := node.AdminContent
+		lines := []string{
+			fmt.Sprintf("Route:    %s", c.RouteSlug),
+			fmt.Sprintf("Title:    %s", c.RouteTitle),
+			fmt.Sprintf("Datatype: %s", c.DatatypeLabel),
+			fmt.Sprintf("Status:   %s", c.Status),
+			"",
+			fmt.Sprintf("Author:   %s", c.AuthorName),
+			fmt.Sprintf("ID:       %s", c.AdminContentDataID),
+			"",
+			fmt.Sprintf("Created:  %s", c.DateCreated.String()),
+			fmt.Sprintf("Modified: %s", c.DateModified.String()),
+		}
+		return strings.Join(lines, "\n")
 	}
-	return strings.Join(lines, "\n")
+
+	// Group node without content
+	return fmt.Sprintf("Group: %s", node.Label)
 }
 
-// =============================================================================
-// ADMIN CONTENT LIST RENDERING
-// =============================================================================
-
-func (s *ContentScreen) renderAdminContentList() string {
-	if len(s.AdminRootContentSummary) == 0 {
-		return "(no admin content)"
-	}
-
-	lines := make([]string, 0, len(s.AdminRootContentSummary))
-	for i, content := range s.AdminRootContentSummary {
-		cursor := "   "
-		if s.Cursor == i {
-			cursor = " ->"
+func (s *ContentScreen) renderSelectStats() string {
+	routedCount := 0
+	standaloneCount := 0
+	if s.AdminMode {
+		for _, item := range s.AdminRootContentSummary {
+			if item.AdminRouteID.Valid {
+				routedCount++
+			} else {
+				standaloneCount++
+			}
 		}
-		label := string(content.AdminContentDataID)
-		if content.DatatypeLabel != "" {
-			label = fmt.Sprintf("[%s] %s", content.DatatypeLabel, content.RouteSlug)
-		} else if content.AdminDatatypeID.Valid {
-			label = fmt.Sprintf("[%s] %s", content.AdminDatatypeID.ID, label)
+	} else {
+		for _, item := range s.RootContentSummary {
+			if item.RouteID.Valid {
+				routedCount++
+			} else {
+				standaloneCount++
+			}
 		}
-		lines = append(lines, fmt.Sprintf("%s %s", cursor, label))
-	}
-	return strings.Join(lines, "\n")
-}
-
-func (s *ContentScreen) renderAdminContentDetail() string {
-	if len(s.AdminRootContentSummary) == 0 || s.Cursor >= len(s.AdminRootContentSummary) {
-		return "No admin content selected"
 	}
 
-	content := s.AdminRootContentSummary[s.Cursor]
 	lines := []string{
-		fmt.Sprintf("ID:        %s", content.AdminContentDataID),
-		fmt.Sprintf("Route:     %s", content.RouteSlug),
-		fmt.Sprintf("Title:     %s", content.RouteTitle),
-		fmt.Sprintf("Status:    %s", content.Status),
-		fmt.Sprintf("Author:    %s", content.AuthorName),
-		"",
-		fmt.Sprintf("Created:   %s", content.DateCreated.String()),
-		fmt.Sprintf("Modified:  %s", content.DateModified.String()),
+		fmt.Sprintf("Total:      %d", routedCount+standaloneCount),
+		fmt.Sprintf("Pages:      %d", routedCount),
+		fmt.Sprintf("Standalone: %d", standaloneCount),
 	}
-
-	if content.DatatypeLabel != "" {
-		lines = append([]string{fmt.Sprintf("Datatype:  %s", content.DatatypeLabel)}, lines...)
-	} else if content.AdminDatatypeID.Valid {
-		lines = append([]string{fmt.Sprintf("Datatype:  %s", content.AdminDatatypeID.ID)}, lines...)
-	}
-
 	return strings.Join(lines, "\n")
 }
 
@@ -285,61 +320,101 @@ func (s *ContentScreen) formatTreeRow(node *tree.Node, isSelected bool, depth in
 }
 
 // =============================================================================
-// CONTENT PREVIEW RENDERING
+// DOCUMENT PREVIEW RENDERING (tree phase)
 // =============================================================================
 
-func (s *ContentScreen) renderContentPreview(ctx AppContext) string {
-	node := s.Root.NodeAtIndex(s.Cursor)
-	if node == nil {
-		return "No content selected"
+// previewResult holds the rendered preview content and scroll metadata.
+type previewResult struct {
+	content      string
+	totalLines   int
+	selectedLine int // line index where the selected node's section starts
+}
+
+// renderDocumentPreview renders all tree nodes depth-first with their field values.
+// The selected node's section is highlighted; others are dimmed.
+func (s *ContentScreen) renderDocumentPreview(ctx AppContext) previewResult {
+	if s.Root.Root == nil {
+		return previewResult{content: "No content loaded"}
 	}
 
-	preview := []string{}
-
-	title := DecideNodeName(*node)
+	selectedNode := s.Root.NodeAtIndex(s.Cursor)
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent2)
-	preview = append(preview, titleStyle.Render(title))
-	preview = append(preview, "")
-
-	metaParts := []string{node.Datatype.Label}
-	metaParts = append(metaParts, string(node.Instance.Status))
-	if !node.Instance.AuthorID.IsZero() {
-		metaParts = append(metaParts, string(node.Instance.AuthorID))
-	}
+	selectedStyle := lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent)
 	dimStyle := lipgloss.NewStyle().Faint(true)
-	preview = append(preview, dimStyle.Render(strings.Join(metaParts, " | ")))
-	preview = append(preview, "")
+	labelStyle := lipgloss.NewStyle().Bold(true)
 
-	// Field values preview
-	fields := s.currentFields()
-	if len(fields) > 0 {
-		labelStyle := lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent)
-		for _, cf := range fields {
-			preview = append(preview, labelStyle.Render(cf.label))
-			if cf.value == "" {
-				preview = append(preview, dimStyle.Render("  (empty)"))
-			} else {
-				lines := strings.Split(cf.value, "\n")
-				for _, line := range lines {
-					preview = append(preview, fmt.Sprintf("  %s", line))
-				}
-			}
-			preview = append(preview, "")
+	var preview []string
+	currentIndex := 0
+	selectedLine := 0
+	s.renderPreviewNode(s.Root.Root, selectedNode, &preview, &currentIndex, &selectedLine, 0, titleStyle, selectedStyle, dimStyle, labelStyle)
+
+	if len(preview) == 0 {
+		return previewResult{content: "Empty content tree"}
+	}
+	return previewResult{
+		content:      strings.Join(preview, "\n"),
+		totalLines:   len(preview),
+		selectedLine: selectedLine,
+	}
+}
+
+func (s *ContentScreen) renderPreviewNode(
+	node *tree.Node,
+	selectedNode *tree.Node,
+	preview *[]string,
+	currentIndex *int,
+	selectedLine *int,
+	depth int,
+	titleStyle, selectedStyle, dimStyle, labelStyle lipgloss.Style,
+) {
+	if node == nil {
+		return
+	}
+
+	indent := strings.Repeat("  ", depth)
+	name := DecideNodeName(*node)
+	isSelected := selectedNode != nil && node.Instance != nil && selectedNode.Instance != nil &&
+		node.Instance.ContentDataID == selectedNode.Instance.ContentDataID
+
+	// Record line position of the selected node
+	if isSelected {
+		*selectedLine = len(*preview)
+	}
+
+	// Section title
+	if isSelected {
+		*preview = append(*preview, selectedStyle.Render(indent+name+" ════════"))
+	} else {
+		*preview = append(*preview, dimStyle.Render(indent+name))
+	}
+
+	// Field values from batch-loaded data
+	fields := s.fieldsForNode(node)
+	fieldIndent := indent + "  "
+	for _, f := range fields {
+		if f.value == "" {
+			continue
+		}
+		if isSelected {
+			*preview = append(*preview, labelStyle.Render(fieldIndent+f.label)+": "+f.value)
+		} else {
+			*preview = append(*preview, dimStyle.Render(fieldIndent+f.label+": "+f.value))
 		}
 	}
 
-	// Children summary
+	if len(fields) > 0 || isSelected {
+		*preview = append(*preview, "")
+	}
+
+	*currentIndex++
+
+	// Recurse into children (always show in preview, regardless of expand state)
 	if node.FirstChild != nil {
-		preview = append(preview, dimStyle.Render("Children:"))
-		child := node.FirstChild
-		for child != nil {
-			childName := DecideNodeName(*child)
-			preview = append(preview, dimStyle.Render(fmt.Sprintf("  %s (%s)", childName, child.Datatype.Label)))
-			child = child.NextSibling
-		}
+		s.renderPreviewNode(node.FirstChild, selectedNode, preview, currentIndex, selectedLine, depth+1, titleStyle, selectedStyle, dimStyle, labelStyle)
 	}
-
-	return lipgloss.JoinVertical(lipgloss.Left, preview...)
+	if node.NextSibling != nil {
+		s.renderPreviewNode(node.NextSibling, selectedNode, preview, currentIndex, selectedLine, depth, titleStyle, selectedStyle, dimStyle, labelStyle)
+	}
 }
 
 // fieldInfo is a mode-agnostic wrapper for rendering field data.
@@ -348,133 +423,32 @@ type fieldInfo struct {
 	value string
 }
 
-// currentFields returns field info for the current mode.
-func (s *ContentScreen) currentFields() []fieldInfo {
+// fieldsForNode returns field info for a tree node from batch-loaded data.
+func (s *ContentScreen) fieldsForNode(node *tree.Node) []fieldInfo {
+	if node == nil || node.Instance == nil {
+		return nil
+	}
+
 	if s.AdminMode {
-		result := make([]fieldInfo, len(s.AdminSelectedFields))
-		for i, f := range s.AdminSelectedFields {
+		adminID := types.AdminContentID(node.Instance.ContentDataID)
+		if fields, ok := s.AllAdminFields[adminID]; ok {
+			result := make([]fieldInfo, len(fields))
+			for i, f := range fields {
+				result[i] = fieldInfo{label: f.Label, value: f.Value}
+			}
+			return result
+		}
+		return nil
+	}
+
+	if fields, ok := s.AllFields[node.Instance.ContentDataID]; ok {
+		result := make([]fieldInfo, len(fields))
+		for i, f := range fields {
 			result[i] = fieldInfo{label: f.Label, value: f.Value}
 		}
 		return result
 	}
-	result := make([]fieldInfo, len(s.SelectedContentFields))
-	for i, f := range s.SelectedContentFields {
-		result[i] = fieldInfo{label: f.Label, value: f.Value}
-	}
-	return result
-}
-
-// =============================================================================
-// FIELDS RENDERING (right panel)
-// =============================================================================
-
-func (s *ContentScreen) renderFields() string {
-	if s.AdminMode {
-		return s.renderAdminFields()
-	}
-	return s.renderRegularFields()
-}
-
-func (s *ContentScreen) renderRegularFields() string {
-	if len(s.SelectedContentFields) == 0 {
-		return "No fields"
-	}
-
-	fields := []string{}
-	for i, cf := range s.SelectedContentFields {
-		cursor := "   "
-		if s.PanelFocus == RoutePanel && s.FieldCursor == i {
-			cursor = " > "
-		}
-
-		value := cf.Value
-		if value == "" {
-			value = "(empty)"
-		} else if len(value) > 40 {
-			value = value[:37] + "..."
-		}
-
-		fields = append(fields, fmt.Sprintf("%s%s: %s", cursor, cf.Label, value))
-	}
-
-	return lipgloss.JoinVertical(lipgloss.Left, fields...)
-}
-
-func (s *ContentScreen) renderAdminFields() string {
-	if len(s.AdminSelectedFields) == 0 {
-		return "No fields"
-	}
-
-	fields := []string{}
-	for i, cf := range s.AdminSelectedFields {
-		cursor := "   "
-		if s.PanelFocus == RoutePanel && s.FieldCursor == i {
-			cursor = " > "
-		}
-
-		value := cf.Value
-		if value == "" {
-			value = "(empty)"
-		} else if len(value) > 40 {
-			value = value[:37] + "..."
-		}
-
-		fields = append(fields, fmt.Sprintf("%s%s: %s", cursor, cf.Label, value))
-	}
-
-	return lipgloss.JoinVertical(lipgloss.Left, fields...)
-}
-
-// =============================================================================
-// TREE ACTIONS (right panel when in tree phase and no version list)
-// =============================================================================
-
-func (s *ContentScreen) renderTreeActions() string {
-	lines := []string{
-		"Actions",
-		"",
-	}
-
-	switch s.PanelFocus {
-	case TreePanel:
-		lines = append(lines,
-			"Tree Panel",
-			"",
-			"  n: New content",
-			"  e: Edit",
-			"  d: Delete",
-			"  c: Copy",
-			"  m: Move",
-			"  +/-: Reorder",
-			"  p: Publish",
-			"  v: Versions",
-			"",
-			"  enter: Expand/collapse",
-			"  tab: Switch to fields",
-			"  esc: Back to list",
-		)
-	case RoutePanel:
-		lines = append(lines,
-			"Fields Panel",
-			"",
-			"  e: Edit field",
-			"  n: Add field",
-			"  d: Delete field",
-			"",
-			"  esc: Back to tree",
-			"  tab: Switch to tree",
-		)
-	default:
-		lines = append(lines,
-			"  tab: Switch panel",
-		)
-	}
-
-	lines = append(lines, "")
-	lines = append(lines, fmt.Sprintf("Nodes: %d", s.visibleNodeCount()))
-	lines = append(lines, fmt.Sprintf("Fields: %d", s.fieldsLen()))
-
-	return strings.Join(lines, "\n")
+	return nil
 }
 
 // =============================================================================

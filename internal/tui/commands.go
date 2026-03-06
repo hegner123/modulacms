@@ -1293,6 +1293,101 @@ func LoadContentFieldsForLocaleCmd(cfg *config.Config, contentDataID types.Conte
 	}
 }
 
+// =============================================================================
+// BATCH FIELD LOADING (for grid layout preview)
+// =============================================================================
+
+// BatchContentFieldsLoadedMsg carries batch-loaded fields for all tree nodes.
+type BatchContentFieldsLoadedMsg struct {
+	Fields map[types.ContentID][]ContentFieldDisplay
+}
+
+// BatchAdminContentFieldsLoadedMsg carries batch-loaded admin fields for all tree nodes.
+type BatchAdminContentFieldsLoadedMsg struct {
+	Fields map[types.AdminContentID][]AdminContentFieldDisplay
+}
+
+// BatchLoadContentFieldsCmd loads ALL content fields for a route in one pass,
+// resolves field definitions, and returns them grouped by ContentDataID.
+func BatchLoadContentFieldsCmd(cfg *config.Config, routeID types.RouteID, datatypeIDs []types.DatatypeID, locale string) tea.Cmd {
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+
+		nRouteID := types.NullableRouteID{ID: routeID, Valid: true}
+		var contentFields *[]db.ContentFields
+		var err error
+		if locale != "" {
+			contentFields, err = d.ListContentFieldsByRouteAndLocale(nRouteID, locale)
+		} else {
+			contentFields, err = d.ListContentFieldsByRoute(nRouteID)
+		}
+		if err != nil {
+			return FetchErrMsg{Error: fmt.Errorf("batch load content fields: %w", err)}
+		}
+
+		var allDefs []db.Fields
+		for _, dtID := range datatypeIDs {
+			nDtID := types.NullableDatatypeID{ID: dtID, Valid: true}
+			defs, defErr := d.ListFieldsByDatatypeID(nDtID)
+			if defErr != nil {
+				continue
+			}
+			if defs != nil {
+				allDefs = append(allDefs, *defs...)
+			}
+		}
+
+		var cfs []db.ContentFields
+		if contentFields != nil {
+			cfs = *contentFields
+		}
+
+		return BatchContentFieldsLoadedMsg{
+			Fields: MapContentFieldsToDisplay(cfs, allDefs),
+		}
+	}
+}
+
+// BatchLoadAdminContentFieldsCmd loads ALL admin content fields for a route in one pass.
+func BatchLoadAdminContentFieldsCmd(cfg *config.Config, adminRouteID types.AdminRouteID, datatypeIDs []types.AdminDatatypeID, locale string) tea.Cmd {
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+
+		nRouteID := types.NullableAdminRouteID{ID: adminRouteID, Valid: true}
+		var contentFields *[]db.AdminContentFields
+		var err error
+		if locale != "" {
+			contentFields, err = d.ListAdminContentFieldsByRouteAndLocale(nRouteID, locale)
+		} else {
+			contentFields, err = d.ListAdminContentFieldsByRoute(nRouteID)
+		}
+		if err != nil {
+			return FetchErrMsg{Error: fmt.Errorf("batch load admin content fields: %w", err)}
+		}
+
+		var allDefs []db.AdminFields
+		for _, dtID := range datatypeIDs {
+			nDtID := types.NullableAdminDatatypeID{ID: dtID, Valid: true}
+			defs, defErr := d.ListAdminFieldsByDatatypeID(nDtID)
+			if defErr != nil {
+				continue
+			}
+			if defs != nil {
+				allDefs = append(allDefs, *defs...)
+			}
+		}
+
+		var cfs []db.AdminContentFields
+		if contentFields != nil {
+			cfs = *contentFields
+		}
+
+		return BatchAdminContentFieldsLoadedMsg{
+			Fields: MapAdminContentFieldsToDisplay(cfs, allDefs),
+		}
+	}
+}
+
 // ContentFieldUpdatedMsg signals that a single content field was updated.
 type ContentFieldUpdatedMsg struct {
 	ContentID  types.ContentID

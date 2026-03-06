@@ -73,13 +73,13 @@ var pageLayouts = map[PageIndex]PageLayout{
 	MEDIA:        {2, [3]float64{0.30, 0.70, 0}, [3]string{"Media", "Details", "Info"}},
 
 	// Three-panel pages
-	CONTENT:            {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Tree", "Content", "Fields"}},
+	// CONTENT uses GridScreen, no legacy layout needed
 	DATATYPES:          {3, [3]float64{0.25, 0.40, 0.35}, [3]string{"Datatypes", "Fields", "Actions"}},
 	ROUTES:             {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Routes", "Details", "Actions"}},
 	USERSADMIN:         {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Users", "Details", "Permissions"}},
 	ADMINROUTES:        {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Admin Routes", "Details", "Actions"}},
 	ADMINDATATYPES:     {3, [3]float64{0.25, 0.40, 0.35}, [3]string{"Admin Datatypes", "Fields", "Actions"}},
-	ADMINCONTENT:       {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Admin Content", "Details", "Info"}},
+	// ADMINCONTENT uses GridScreen, no legacy layout needed
 	PLUGINSPAGE:        {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Plugins", "Details", "Info"}},
 	FIELDTYPES:         {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Field Types", "Details", "Actions"}},
 	ADMINFIELDTYPES:    {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Admin Field Types", "Details", "Actions"}},
