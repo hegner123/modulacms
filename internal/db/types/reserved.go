@@ -1,6 +1,9 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // DatatypeType represents the type classification of a datatype.
 // Values prefixed with underscore are engine-reserved and trigger
@@ -14,7 +17,10 @@ const (
 	DatatypeTypeSystemLog  DatatypeType = "_system_log"
 	DatatypeTypeCollection DatatypeType = "_collection"
 	DatatypeTypeGlobal     DatatypeType = "_global"
+	DatatypeTypePlugin     DatatypeType = "_plugin"
 )
+
+const pluginTypePrefix = "_plugin_"
 
 // reservedTypes maps each reserved type to a description of its engine behavior.
 var reservedTypes = map[DatatypeType]string{
@@ -24,6 +30,7 @@ var reservedTypes = map[DatatypeType]string{
 	DatatypeTypeSystemLog:  "Synthetic node injected when a reference cannot be resolved",
 	DatatypeTypeCollection: "Marks content as a queryable collection; signals to clients that children support filtering",
 	DatatypeTypeGlobal:     "Singleton site-wide content (menus, footers, settings); no route association, delivered via /globals endpoint",
+	DatatypeTypePlugin:     "Plugin-provided content; actual types use _plugin_{name} namespace registered by plugin OnInit",
 }
 
 // IsReserved returns true if the type is engine-reserved.
@@ -43,6 +50,32 @@ func IsReservedPrefix(t string) bool {
 // Used by the tree-building algorithm to find root nodes.
 func (t DatatypeType) IsRootType() bool {
 	return t == DatatypeTypeRoot || t == DatatypeTypeNestedRoot
+}
+
+// IsGlobalType returns true if the type is _global.
+func (t DatatypeType) IsGlobalType() bool {
+	return t == DatatypeTypeGlobal
+}
+
+// IsPluginType returns true if the type uses the _plugin_ namespace
+// (e.g., "_plugin_analytics", "_plugin_seo"). The base "_plugin" type
+// is the registry sentinel; actual plugin types use "_plugin_{name}".
+func (t DatatypeType) IsPluginType() bool {
+	return strings.HasPrefix(string(t), pluginTypePrefix)
+}
+
+// PluginName extracts the plugin name from a _plugin_{name} type.
+// Returns empty string if not a plugin type.
+func (t DatatypeType) PluginName() string {
+	if !t.IsPluginType() {
+		return ""
+	}
+	return string(t)[len(pluginTypePrefix):]
+}
+
+// PluginDatatypeType returns the _plugin_{name} type for a given plugin name.
+func PluginDatatypeType(pluginName string) DatatypeType {
+	return DatatypeType(pluginTypePrefix + pluginName)
 }
 
 // String returns the string representation of DatatypeType.
@@ -71,6 +104,10 @@ func ValidateDatatypeType(t string) error {
 	}
 	if t[0] == '_' {
 		dt := DatatypeType(t)
+		// Allow _plugin_{name} types (validated by plugin system at load time)
+		if dt.IsPluginType() {
+			return nil
+		}
 		if !dt.IsReserved() {
 			return fmt.Errorf("DatatypeType: %q uses reserved prefix '_' but is not a recognized engine type", t)
 		}

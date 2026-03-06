@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 // ContentSelectNodeKind discriminates the three node types in the select tree.
@@ -56,10 +57,12 @@ func (n *ContentSelectNode) hasChildren() bool {
 // "Pages" section. Standalone items (no route) are grouped by datatype label
 // under a "Standalone" section.
 func BuildContentSelectTree(items []db.ContentDataTopLevel) []*ContentSelectNode {
-	var routed, standalone []db.ContentDataTopLevel
+	var routed, globals, standalone []db.ContentDataTopLevel
 	for i := range items {
 		if items[i].RouteID.Valid {
 			routed = append(routed, items[i])
+		} else if types.DatatypeType(items[i].DatatypeType).IsGlobalType() {
+			globals = append(globals, items[i])
 		} else {
 			standalone = append(standalone, items[i])
 		}
@@ -72,6 +75,11 @@ func BuildContentSelectTree(items []db.ContentDataTopLevel) []*ContentSelectNode
 		roots = append(roots, buildRoutedNodes(routed)...)
 	}
 
+	if len(globals) > 0 {
+		roots = append(roots, &ContentSelectNode{Kind: NodeSection, Label: "Globals"})
+		roots = append(roots, buildStandaloneNodes(globals)...)
+	}
+
 	if len(standalone) > 0 {
 		roots = append(roots, &ContentSelectNode{Kind: NodeSection, Label: "Standalone"})
 		roots = append(roots, buildStandaloneNodes(standalone)...)
@@ -82,10 +90,12 @@ func BuildContentSelectTree(items []db.ContentDataTopLevel) []*ContentSelectNode
 
 // BuildAdminContentSelectTree builds the slug tree for admin content items.
 func BuildAdminContentSelectTree(items []db.AdminContentDataTopLevel) []*ContentSelectNode {
-	var routed, standalone []db.AdminContentDataTopLevel
+	var routed, globals, standalone []db.AdminContentDataTopLevel
 	for i := range items {
 		if items[i].AdminRouteID.Valid {
 			routed = append(routed, items[i])
+		} else if types.DatatypeType(items[i].DatatypeType).IsGlobalType() {
+			globals = append(globals, items[i])
 		} else {
 			standalone = append(standalone, items[i])
 		}
@@ -96,6 +106,11 @@ func BuildAdminContentSelectTree(items []db.AdminContentDataTopLevel) []*Content
 	if len(routed) > 0 {
 		roots = append(roots, &ContentSelectNode{Kind: NodeSection, Label: "Pages"})
 		roots = append(roots, buildAdminRoutedNodes(routed)...)
+	}
+
+	if len(globals) > 0 {
+		roots = append(roots, &ContentSelectNode{Kind: NodeSection, Label: "Globals"})
+		roots = append(roots, buildAdminStandaloneNodes(globals)...)
 	}
 
 	if len(standalone) > 0 {

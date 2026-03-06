@@ -119,6 +119,43 @@ func TestBuildContentSelectTree_MixedRoutedStandalone(t *testing.T) {
 	}
 }
 
+func TestBuildContentSelectTree_GlobalsSectionSeparation(t *testing.T) {
+	items := []db.ContentDataTopLevel{
+		makeTopLevel("/", "Page", "_root", true),
+		makeTopLevel("", "Menu", "_global", false),
+		makeTopLevel("", "Footer", "_global", false),
+		makeTopLevel("", "Banner", "component", false),
+	}
+	items[1].RouteTitle = "Main Menu"
+	items[2].RouteTitle = "Footer Nav"
+	items[3].RouteTitle = "Hero Banner"
+
+	tree := BuildContentSelectTree(items)
+
+	// Check section headers exist in correct order
+	var sections []string
+	for _, n := range tree {
+		if n.Kind == NodeSection {
+			sections = append(sections, n.Label)
+		}
+	}
+	want := []string{"Pages", "Globals", "Standalone"}
+	if len(sections) != len(want) {
+		t.Fatalf("sections = %v, want %v", sections, want)
+	}
+	for i, s := range sections {
+		if s != want[i] {
+			t.Errorf("sections[%d] = %q, want %q", i, s, want[i])
+		}
+	}
+
+	// Flat list should have 4 items total (1 routed + 1 globals group with 2 children + 1 standalone group with 1 child)
+	flat := FlattenSelectTree(tree)
+	if len(flat) < 4 {
+		t.Errorf("flat len = %d, want at least 4", len(flat))
+	}
+}
+
 func TestBuildContentSelectTree_StandaloneGrouping(t *testing.T) {
 	items := []db.ContentDataTopLevel{
 		makeTopLevel("", "Menu", "_global", false),

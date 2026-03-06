@@ -14,6 +14,7 @@ func TestDatatypeType_IsReserved(t *testing.T) {
 		{"system_log is reserved", DatatypeTypeSystemLog, true},
 		{"collection is reserved", DatatypeTypeCollection, true},
 		{"global is reserved", DatatypeTypeGlobal, true},
+		{"plugin is reserved", DatatypeTypePlugin, true},
 		{"page is not reserved", DatatypeType("page"), false},
 		{"empty is not reserved", DatatypeType(""), false},
 		{"unknown underscore is not reserved", DatatypeType("_unknown"), false},
@@ -82,6 +83,9 @@ func TestValidateDatatypeType(t *testing.T) {
 		{"_system_log is valid", "_system_log", false},
 		{"_collection is valid", "_collection", false},
 		{"_global is valid", "_global", false},
+		{"_plugin is valid", "_plugin", false},
+		{"_plugin_analytics is valid", "_plugin_analytics", false},
+		{"_plugin_seo is valid", "_plugin_seo", false},
 		{"_unknown is error", "_unknown", true},
 		{"page is valid", "page", false},
 		{"hero_banner is valid", "hero_banner", false},
@@ -118,15 +122,83 @@ func TestValidateUserDatatypeType(t *testing.T) {
 	}
 }
 
+func TestDatatypeType_IsGlobalType(t *testing.T) {
+	tests := []struct {
+		name string
+		dt   DatatypeType
+		want bool
+	}{
+		{"_global is global", DatatypeTypeGlobal, true},
+		{"_root is not global", DatatypeTypeRoot, false},
+		{"page is not global", DatatypeType("page"), false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.dt.IsGlobalType(); got != tc.want {
+				t.Errorf("DatatypeType(%q).IsGlobalType() = %v, want %v", tc.dt, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestDatatypeType_IsPluginType(t *testing.T) {
+	tests := []struct {
+		name string
+		dt   DatatypeType
+		want bool
+	}{
+		{"_plugin_analytics is plugin type", DatatypeType("_plugin_analytics"), true},
+		{"_plugin_seo is plugin type", DatatypeType("_plugin_seo"), true},
+		{"_plugin alone is not plugin type", DatatypeTypePlugin, false},
+		{"_root is not plugin type", DatatypeTypeRoot, false},
+		{"page is not plugin type", DatatypeType("page"), false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.dt.IsPluginType(); got != tc.want {
+				t.Errorf("DatatypeType(%q).IsPluginType() = %v, want %v", tc.dt, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestDatatypeType_PluginName(t *testing.T) {
+	tests := []struct {
+		name     string
+		dt       DatatypeType
+		wantName string
+	}{
+		{"_plugin_analytics", DatatypeType("_plugin_analytics"), "analytics"},
+		{"_plugin_seo", DatatypeType("_plugin_seo"), "seo"},
+		{"_plugin (base)", DatatypeTypePlugin, ""},
+		{"_root", DatatypeTypeRoot, ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.dt.PluginName(); got != tc.wantName {
+				t.Errorf("DatatypeType(%q).PluginName() = %q, want %q", tc.dt, got, tc.wantName)
+			}
+		})
+	}
+}
+
+func TestPluginDatatypeType(t *testing.T) {
+	got := PluginDatatypeType("analytics")
+	want := DatatypeType("_plugin_analytics")
+	if got != want {
+		t.Errorf("PluginDatatypeType(\"analytics\") = %q, want %q", got, want)
+	}
+}
+
 func TestReservedTypes_ReturnsCopy(t *testing.T) {
 	rt := ReservedTypes()
-	if len(rt) != 6 {
-		t.Fatalf("expected 6 reserved types, got %d", len(rt))
+	if len(rt) != 7 {
+		t.Fatalf("expected 7 reserved types, got %d", len(rt))
 	}
 
 	// Mutating the copy should not affect the original
 	rt[DatatypeType("_test")] = "test"
-	if len(ReservedTypes()) != 6 {
+	if len(ReservedTypes()) != 7 {
 		t.Fatal("mutating returned map affected the internal registry")
 	}
 }
