@@ -265,6 +265,7 @@ type ContentDataTopLevel struct {
 	RouteSlug     types.Slug `json:"route_slug"`
 	RouteTitle    string     `json:"route_title"`
 	DatatypeLabel string     `json:"datatype_label"`
+	DatatypeType  string     `json:"datatype_type"`
 }
 
 // SQLITE
@@ -292,6 +293,7 @@ func (d Database) mapContentDataTopLevel(a mdb.ListContentDataTopLevelPaginatedR
 		RouteSlug:     a.RouteSlug,
 		RouteTitle:    a.RouteTitle,
 		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
 	}
 }
 
@@ -345,6 +347,7 @@ func (d Database) mapContentDataTopLevelByStatus(a mdb.ListContentDataTopLevelPa
 		RouteSlug:     a.RouteSlug,
 		RouteTitle:    a.RouteTitle,
 		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
 	}
 }
 
@@ -403,6 +406,7 @@ func (d MysqlDatabase) mapContentDataTopLevel(a mdbm.ListContentDataTopLevelPagi
 		RouteSlug:     a.RouteSlug,
 		RouteTitle:    a.RouteTitle,
 		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
 	}
 }
 
@@ -456,6 +460,7 @@ func (d MysqlDatabase) mapContentDataTopLevelByStatus(a mdbm.ListContentDataTopL
 		RouteSlug:     a.RouteSlug,
 		RouteTitle:    a.RouteTitle,
 		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
 	}
 }
 
@@ -514,6 +519,7 @@ func (d PsqlDatabase) mapContentDataTopLevel(a mdbp.ListContentDataTopLevelPagin
 		RouteSlug:     a.RouteSlug,
 		RouteTitle:    a.RouteTitle,
 		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
 	}
 }
 
@@ -567,6 +573,7 @@ func (d PsqlDatabase) mapContentDataTopLevelByStatus(a mdbp.ListContentDataTopLe
 		RouteSlug:     a.RouteSlug,
 		RouteTitle:    a.RouteTitle,
 		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
 	}
 }
 

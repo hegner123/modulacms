@@ -129,7 +129,7 @@ SELECT cd.* FROM content_data cd
 INNER JOIN tree t ON cd.content_data_id = t.cid;
 
 -- name: ListContentDataTopLevelPaginated :many
-SELECT cd.*, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label FROM content_data cd
+SELECT cd.*, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label, COALESCE(dt.type, '') AS datatype_type FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 LEFT JOIN users u ON cd.author_id = u.user_id
 LEFT JOIN routes r ON cd.route_id = r.route_id
@@ -178,7 +178,7 @@ SET publish_at = NULL,
 WHERE content_data_id = ?;
 
 -- name: ListContentDataTopLevelPaginatedByStatus :many
-SELECT cd.*, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label FROM content_data cd
+SELECT cd.*, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label, COALESCE(dt.type, '') AS datatype_type FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 LEFT JOIN users u ON cd.author_id = u.user_id
 LEFT JOIN routes r ON cd.route_id = r.route_id

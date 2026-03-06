@@ -7370,7 +7370,7 @@ func (q *Queries) ListAdminContentDataPaginated(ctx context.Context, arg ListAdm
 }
 
 const listAdminContentDataTopLevelPaginated = `-- name: ListAdminContentDataTopLevelPaginated :many
-SELECT acd.admin_content_data_id, acd.parent_id, acd.first_child_id, acd.next_sibling_id, acd.prev_sibling_id, acd.admin_route_id, acd.admin_datatype_id, acd.author_id, acd.status, acd.date_created, acd.date_modified, acd.published_at, acd.published_by, acd.publish_at, acd.revision, u.name AS author_name, COALESCE(ar.slug, '') AS route_slug, COALESCE(ar.title, '') AS route_title, COALESCE(adt.label, '') AS datatype_label FROM admin_content_data acd
+SELECT acd.admin_content_data_id, acd.parent_id, acd.first_child_id, acd.next_sibling_id, acd.prev_sibling_id, acd.admin_route_id, acd.admin_datatype_id, acd.author_id, acd.status, acd.date_created, acd.date_modified, acd.published_at, acd.published_by, acd.publish_at, acd.revision, u.name AS author_name, COALESCE(ar.slug, '') AS route_slug, COALESCE(ar.title, '') AS route_title, COALESCE(adt.label, '') AS datatype_label, COALESCE(adt.type, '') AS datatype_type FROM admin_content_data acd
 LEFT JOIN admin_datatypes adt ON acd.admin_datatype_id = adt.admin_datatype_id
 LEFT JOIN users u ON acd.author_id = u.user_id
 LEFT JOIN admin_routes ar ON acd.admin_route_id = ar.admin_route_id
@@ -7404,6 +7404,7 @@ type ListAdminContentDataTopLevelPaginatedRow struct {
 	RouteSlug          types.Slug                    `json:"route_slug"`
 	RouteTitle         string                        `json:"route_title"`
 	DatatypeLabel      string                        `json:"datatype_label"`
+	DatatypeType       string                        `json:"datatype_type"`
 }
 
 func (q *Queries) ListAdminContentDataTopLevelPaginated(ctx context.Context, arg ListAdminContentDataTopLevelPaginatedParams) ([]ListAdminContentDataTopLevelPaginatedRow, error) {
@@ -7435,6 +7436,7 @@ func (q *Queries) ListAdminContentDataTopLevelPaginated(ctx context.Context, arg
 			&i.RouteSlug,
 			&i.RouteTitle,
 			&i.DatatypeLabel,
+			&i.DatatypeType,
 		); err != nil {
 			return nil, err
 		}
@@ -9389,7 +9391,7 @@ func (q *Queries) ListContentDataPaginated(ctx context.Context, arg ListContentD
 }
 
 const listContentDataTopLevelPaginated = `-- name: ListContentDataTopLevelPaginated :many
-SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label FROM content_data cd
+SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label, COALESCE(dt.type, '') AS datatype_type FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 LEFT JOIN users u ON cd.author_id = u.user_id
 LEFT JOIN routes r ON cd.route_id = r.route_id
@@ -9423,6 +9425,7 @@ type ListContentDataTopLevelPaginatedRow struct {
 	RouteSlug     types.Slug               `json:"route_slug"`
 	RouteTitle    string                   `json:"route_title"`
 	DatatypeLabel string                   `json:"datatype_label"`
+	DatatypeType  string                   `json:"datatype_type"`
 }
 
 func (q *Queries) ListContentDataTopLevelPaginated(ctx context.Context, arg ListContentDataTopLevelPaginatedParams) ([]ListContentDataTopLevelPaginatedRow, error) {
@@ -9454,6 +9457,7 @@ func (q *Queries) ListContentDataTopLevelPaginated(ctx context.Context, arg List
 			&i.RouteSlug,
 			&i.RouteTitle,
 			&i.DatatypeLabel,
+			&i.DatatypeType,
 		); err != nil {
 			return nil, err
 		}
@@ -9469,7 +9473,7 @@ func (q *Queries) ListContentDataTopLevelPaginated(ctx context.Context, arg List
 }
 
 const listContentDataTopLevelPaginatedByStatus = `-- name: ListContentDataTopLevelPaginatedByStatus :many
-SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label FROM content_data cd
+SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label, COALESCE(dt.type, '') AS datatype_type FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 LEFT JOIN users u ON cd.author_id = u.user_id
 LEFT JOIN routes r ON cd.route_id = r.route_id
@@ -9504,6 +9508,7 @@ type ListContentDataTopLevelPaginatedByStatusRow struct {
 	RouteSlug     types.Slug               `json:"route_slug"`
 	RouteTitle    string                   `json:"route_title"`
 	DatatypeLabel string                   `json:"datatype_label"`
+	DatatypeType  string                   `json:"datatype_type"`
 }
 
 func (q *Queries) ListContentDataTopLevelPaginatedByStatus(ctx context.Context, arg ListContentDataTopLevelPaginatedByStatusParams) ([]ListContentDataTopLevelPaginatedByStatusRow, error) {
@@ -9535,6 +9540,7 @@ func (q *Queries) ListContentDataTopLevelPaginatedByStatus(ctx context.Context, 
 			&i.RouteSlug,
 			&i.RouteTitle,
 			&i.DatatypeLabel,
+			&i.DatatypeType,
 		); err != nil {
 			return nil, err
 		}

@@ -49,6 +49,7 @@ type AdminContentDataTopLevel struct {
 	RouteSlug     types.Slug `json:"route_slug"`
 	RouteTitle    string     `json:"route_title"`
 	DatatypeLabel string     `json:"datatype_label"`
+	DatatypeType  string     `json:"datatype_type"`
 }
 
 // SQLITE
@@ -76,6 +77,7 @@ func (d Database) mapAdminContentDataTopLevel(a mdb.ListAdminContentDataTopLevel
 		RouteSlug:     a.RouteSlug,
 		RouteTitle:    a.RouteTitle,
 		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
 	}
 }
 
@@ -131,6 +133,7 @@ func (d MysqlDatabase) mapAdminContentDataTopLevel(a mdbm.ListAdminContentDataTo
 		RouteSlug:     a.RouteSlug,
 		RouteTitle:    a.RouteTitle,
 		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
 	}
 }
 
@@ -186,6 +189,7 @@ func (d PsqlDatabase) mapAdminContentDataTopLevel(a mdbp.ListAdminContentDataTop
 		RouteSlug:     a.RouteSlug,
 		RouteTitle:    a.RouteTitle,
 		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
 	}
 }
 
