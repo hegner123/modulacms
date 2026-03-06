@@ -167,6 +167,10 @@ type Model struct {
 	// Used to guard operations that require local database access.
 	IsRemote bool
 
+	// IsSSH is true when the TUI is running over an SSH session (via Wish middleware).
+	// File picker operations are unavailable over SSH.
+	IsSSH bool
+
 	// RemoteURL is the base URL of the remote CMS server (e.g., "https://cms.example.com").
 	// Empty when running in local mode. Displayed in the status bar.
 	RemoteURL string

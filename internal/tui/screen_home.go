@@ -201,7 +201,16 @@ func (s *HomeScreen) renderSiteConfig(ctx AppContext) string {
 		return "(no config)"
 	}
 	c := ctx.Config
+
+	mode := "local"
+	if ctx.IsSSH {
+		mode = "SSH"
+	} else if ctx.IsRemote {
+		mode = "remote"
+	}
+
 	lines := []string{
+		fmt.Sprintf(" Mode %s", mode),
 		fmt.Sprintf(" HTTP %s", c.Port),
 		fmt.Sprintf(" SSL  %s", c.SSL_Port),
 		fmt.Sprintf(" SSH  %s", c.SSH_Port),

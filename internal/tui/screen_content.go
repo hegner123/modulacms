@@ -118,12 +118,14 @@ func (s *ContentScreen) KeyHints(km config.KeyMap) []KeyHint {
 		return []KeyHint{
 			{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
 			{km.HintString(config.ActionSelect), "expand"},
+			{km.HintString(config.ActionExpand) + "/" + km.HintString(config.ActionCollapse), "+/-"},
 			{km.HintString(config.ActionEdit), "edit"},
 			{km.HintString(config.ActionNew), "new"},
 			{km.HintString(config.ActionDelete), "del"},
 			{km.HintString(config.ActionCopy), "copy"},
 			{km.HintString(config.ActionMove), "move"},
 			{km.HintString(config.ActionPublish), "publish"},
+			{km.HintString(config.ActionReorderUp) + "/" + km.HintString(config.ActionReorderDown), "reorder"},
 			{km.HintString(config.ActionVersions), "versions"},
 			{km.HintString(config.ActionBack), "back"},
 			{km.HintString(config.ActionQuit), "quit"},
@@ -133,8 +135,11 @@ func (s *ContentScreen) KeyHints(km config.KeyMap) []KeyHint {
 	return []KeyHint{
 		{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
 		{km.HintString(config.ActionSelect), "select"},
+		{km.HintString(config.ActionExpand) + "/" + km.HintString(config.ActionCollapse), "+/-"},
+		{km.HintString(config.ActionEdit), "edit"},
 		{km.HintString(config.ActionNew), "new"},
 		{km.HintString(config.ActionDelete), "del"},
+		{km.HintString(config.ActionPublish), "publish"},
 		{km.HintString(config.ActionBack), "back"},
 		{km.HintString(config.ActionQuit), "quit"},
 	}
@@ -373,7 +378,7 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		} else {
 			s.Cursor = 0
 		}
-		return s, BatchLoadContentFieldsCmd(ctx.Config, s.PageRouteId, s.collectDatatypeIDs(), ctx.ActiveLocale)
+		return s, tea.Batch(BatchLoadContentFieldsCmd(ctx.Config, s.PageRouteId, s.collectDatatypeIDs(), ctx.ActiveLocale), s.refreshSelectCmd())
 
 	case AdminTreeLoadedMsg:
 		s.clearError()
@@ -389,7 +394,7 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		} else {
 			s.Cursor = 0
 		}
-		return s, BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale)
+		return s, tea.Batch(BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale), s.refreshSelectCmd())
 
 	// Batch field loading results
 	case BatchContentFieldsLoadedMsg:
@@ -399,60 +404,60 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		s.AllAdminFields = msg.Fields
 		return s, nil
 
-	// Content CRUD completion messages → reload tree
+	// Content CRUD completion messages → reload tree + refresh select list
 	case ContentCreatedMsg:
 		s.clearError()
-		return s, ReloadContentTreeCmd(ctx.Config, msg.RouteID)
+		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
 	case AdminContentCreatedMsg:
 		s.clearError()
-		return s, ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID)
+		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 	case ContentCreatedWithErrorsMsg:
 		s.clearError()
-		return s, ReloadContentTreeCmd(ctx.Config, msg.RouteID)
+		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
 
 	case AdminContentUpdatedFromDialogMsg:
 		s.clearError()
-		return s, ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID)
+		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 
 	case AdminContentDeletedMsg:
 		s.clearError()
-		return s, ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID)
+		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 
 	case ContentReorderedMsg:
 		s.clearError()
 		s.PendingCursorContentID = msg.ContentID
-		return s, ReloadContentTreeCmd(ctx.Config, msg.RouteID)
+		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
 	case AdminContentReorderedMsg:
 		s.clearError()
 		s.PendingCursorContentID = types.ContentID(msg.AdminContentID)
-		return s, ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID)
+		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 
 	case ContentCopiedMsg:
 		s.clearError()
 		s.PendingCursorContentID = msg.NewContentID
-		return s, ReloadContentTreeCmd(ctx.Config, msg.RouteID)
+		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
 	case AdminContentCopiedMsg:
 		s.clearError()
 		s.PendingCursorContentID = types.ContentID(msg.NewID)
-		return s, ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID)
+		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 
 	case AdminContentMovedMsg:
 		s.clearError()
-		return s, ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID)
+		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 
 	// Publish/Unpublish completion
 	case PublishCompletedMsg:
 		s.clearError()
-		return s, ReloadContentTreeCmd(ctx.Config, msg.RouteID)
+		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
 	case AdminPublishCompletedMsg:
 		s.clearError()
-		return s, ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID)
+		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 	case UnpublishCompletedMsg:
 		s.clearError()
-		return s, ReloadContentTreeCmd(ctx.Config, msg.RouteID)
+		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
 	case AdminUnpublishCompletedMsg:
 		s.clearError()
-		return s, ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID)
+		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 
 	// Version list results
 	case VersionsListedMsg:
@@ -549,7 +554,10 @@ func (s *ContentScreen) handleRouteListKeys(ctx AppContext, key string, km confi
 	// New content
 	if km.Matches(key, config.ActionNew) {
 		if s.AdminMode {
-			return s, nil
+			if len(s.AdminRootDatatypes) == 0 {
+				return s, ShowDialog("Info", "No admin root datatypes available", false)
+			}
+			return s, ShowCreateAdminRouteWithContentDialogCmd(s.AdminRootDatatypes)
 		}
 		if len(s.RootDatatypes) == 0 {
 			return s, ShowDialog("Info", "No root datatypes available", false)
@@ -561,7 +569,21 @@ func (s *ContentScreen) handleRouteListKeys(ctx AppContext, key string, km confi
 	if km.Matches(key, config.ActionEdit) {
 		if s.Cursor < len(s.FlatSelectList) {
 			node := s.FlatSelectList[s.Cursor]
-			if node.Content != nil && node.Content.RouteID.Valid && node.Content.DatatypeID.Valid {
+			if s.AdminMode && node.AdminContent != nil && node.AdminContent.AdminRouteID.Valid && node.AdminContent.AdminDatatypeID.Valid {
+				adminContentID := node.AdminContent.AdminContentDataID
+				adminDatatypeID := node.AdminContent.AdminDatatypeID.ID
+				adminRouteID := node.AdminContent.AdminRouteID.ID
+				title := fmt.Sprintf("Edit: %s", node.AdminContent.RouteTitle)
+				return s, func() tea.Msg {
+					return AdminFetchContentForEditMsg{
+						AdminContentID:  adminContentID,
+						AdminDatatypeID: adminDatatypeID,
+						AdminRouteID:    adminRouteID,
+						Title:           title,
+					}
+				}
+			}
+			if !s.AdminMode && node.Content != nil && node.Content.RouteID.Valid && node.Content.DatatypeID.Valid {
 				return s, FetchContentForEditCmd(
 					node.Content.ContentDataID,
 					node.Content.DatatypeID.ID,
@@ -585,6 +607,32 @@ func (s *ContentScreen) handleRouteListKeys(ctx AppContext, key string, km confi
 					node.AdminContent.DatatypeLabel,
 					hasChildren,
 				)
+			}
+			if !s.AdminMode && node.Content != nil {
+				contentName := node.Label
+				hasChildren := node.Content.FirstChildID.Valid
+				return s, ShowDeleteContentDialogCmd(
+					string(node.Content.ContentDataID),
+					contentName,
+					hasChildren,
+				)
+			}
+		}
+		return s, nil
+	}
+
+	// Publish from select list
+	if km.Matches(key, config.ActionPublish) {
+		if s.Cursor < len(s.FlatSelectList) {
+			node := s.FlatSelectList[s.Cursor]
+			if s.AdminMode && node.AdminContent != nil {
+				adminID := types.AdminContentID(node.AdminContent.AdminContentDataID)
+				isPublished := node.AdminContent.Status == types.ContentStatusPublished
+				return s, ShowPublishAdminContentDialogCmd(adminID, node.AdminContent.AdminRouteID.ID, node.AdminContent.DatatypeLabel, isPublished)
+			}
+			if node.Content != nil && node.Content.RouteID.Valid {
+				isPublished := node.Content.Status == types.ContentStatusPublished
+				return s, ShowPublishDialogCmd(node.Content.ContentDataID, node.Content.RouteID.ID, string(node.Content.RouteTitle), isPublished)
 			}
 		}
 		return s, nil
@@ -831,7 +879,9 @@ func (s *ContentScreen) handleTreeKeys(ctx AppContext, key string, km config.Key
 			}
 		} else {
 			if s.Root.Root != nil && s.Root.Root.Instance != nil {
-				return s, TogglePublishCmd(s.Root.Root.Instance.ContentDataID, s.PageRouteId)
+				name := DecideNodeName(*s.Root.Root)
+				isPublished := s.Root.Root.Instance.Status == types.ContentStatusPublished
+				return s, ShowPublishDialogCmd(s.Root.Root.Instance.ContentDataID, s.PageRouteId, name, isPublished)
 			}
 		}
 		return s, nil
@@ -1059,6 +1109,15 @@ func (s *ContentScreen) handleAdminTreeMove(ctx AppContext) (Screen, tea.Cmd) {
 		return s, ShowDialog("Cannot Move", "No valid move targets", false)
 	}
 	return s, ShowMoveAdminContentDialogCmd(node, s.AdminPageRouteId, targets)
+}
+
+// refreshSelectCmd returns the command to refetch the select list data for the
+// current mode. Batch this into completion handlers so the select phase stays current.
+func (s *ContentScreen) refreshSelectCmd() tea.Cmd {
+	if s.AdminMode {
+		return AdminContentDataFetchCmd()
+	}
+	return RootContentSummaryFetchCmd()
 }
 
 // rebuildSelectTree rebuilds the slug-grouped select tree and flat cursor list

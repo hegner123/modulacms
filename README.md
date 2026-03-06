@@ -1,33 +1,59 @@
 # ModulaCMS
 
-A headless CMS written in Go that ships as a single binary with three concurrent servers: HTTP, HTTPS (with Let's Encrypt autocert), and SSH (running a Bubbletea terminal UI). Content is managed through the SSH TUI, web admin panel, or REST API and delivered to frontend clients over HTTP/HTTPS in multiple output formats.
+A headless CMS written in Go, built on three core values: **performance**, **flexibility**, and **transparency**.
 
-## Features
+## Performance
 
-- **Single Binary** -- one compiled artifact runs everything: API server, admin panel, TUI, and background services
-- **Three Servers** -- HTTP, HTTPS (autocert), and SSH run concurrently with graceful shutdown
-- **Admin Panel** -- server-rendered HTMX + templ web interface with block editor, tree navigation, and content versioning
-- **Terminal UI** -- full content management via SSH using Charmbracelet Bubbletea with responsive layouts, panel tabs, scroll indicators, and screen modes
-- **Tri-Database** -- SQLite, MySQL, and PostgreSQL supported interchangeably via a single `DbDriver` interface
-- **Multi-Format Delivery** -- content responses can mimic Contentful, Sanity, Strapi, WordPress, or use a clean/raw format
-- **Publishing** -- publish, unpublish, schedule, version, and restore content with snapshot-based delivery
-- **i18n** -- locale management, translatable fields, locale-aware content delivery with fallback chains
-- **Webhooks** -- event-driven HTTP notifications with delivery tracking, retry, and test endpoints
-- **RBAC** -- role-based access control with 47+ granular permissions, three bootstrap roles, and an in-memory permission cache
-- **Field Validation** -- composable validation rules enforced at HTTP, admin panel, and TUI write paths
-- **Cascade Operations** -- content creation with fields, recursive delete, datatype cascade, user reassignment, and media reference cleanup
-- **Lua Plugins** -- sandboxed gopher-lua VMs with database access, content lifecycle hooks, custom HTTP routes, and hot-reload
-- **Typed IDs** -- 26-character ULIDs wrapped in distinct Go types for compile-time safety across all entities
-- **Audit Trail** -- every mutation atomically records old/new JSON values, user, IP, and timestamps in `change_events`
-- **Media Pipeline** -- S3-compatible storage with image optimization, WebP conversion, responsive dimension presets, and focal points
-- **OAuth** -- pluggable OAuth providers (Google, GitHub, Azure) alongside password authentication
-- **Email** -- transactional email via SMTP, SendGrid, SES, or Postmark for password resets and notifications
-- **Import** -- bulk data import from Contentful, Sanity, Strapi, WordPress, or ModulaCMS clean format
-- **Backup/Restore** -- ZIP archives containing SQL dumps plus media, stored locally or in S3
-- **Deploy** -- content sync between environments with export, import, push, pull, and snapshot management
-- **Connect** -- project registry with multi-environment support; connect locally or remotely via the Go SDK
-- **MCP Server** -- 40+ tool Model Context Protocol server for AI-assisted content management
-- **SDKs** -- official TypeScript, Go, and Swift SDKs with zero external dependencies
+ModulaCMS is built in Go and ships as a single compiled binary. There is no runtime to install, no interpreter overhead, and no dependency tree to manage in production. One artifact runs everything: API server, admin panel, SSH terminal UI, and background services.
+
+- **Single binary** -- one compiled artifact, zero runtime dependencies
+- **Three concurrent servers** -- HTTP, HTTPS (Let's Encrypt autocert), and SSH start together and share a single database connection pool with graceful shutdown on SIGINT/SIGTERM
+- **Indexed SQL databases** -- SQLite, MySQL, and PostgreSQL via sqlc-generated type-safe queries with prepared statements -- no ORM, no reflection
+- **REST API** -- stdlib `net/http` ServeMux (Go 1.22+) with an eight-layer middleware chain; no framework overhead
+- **SSH TUI** -- full content management over SSH using Charmbracelet Bubbletea with responsive panel layouts, eliminating round-trips to a web browser
+- **Lock-free permission cache** -- RBAC permissions are held in memory with build-then-swap updates and `RWMutex` for reader-heavy workloads; permission checks are O(1) map lookups
+- **O(1) content tree navigation** -- content uses doubly-linked sibling pointers (`next_sibling_id`, `prev_sibling_id`, `first_child_id`) for constant-time reordering and traversal without recursive queries
+- **Compiled templates** -- the admin panel uses templ, which compiles templates to Go bytecode with buffer pooling; no template parsing at runtime
+- **Embedded static assets** -- CSS, JS, and web components are compiled into the binary via `go:embed`; zero file I/O in production
+- **Image optimization pipeline** -- uploads are converted to WebP with responsive dimension presets and focal-point cropping; variants are precomputed at upload time, not on demand
+- **Per-IP rate limiting** -- token-bucket rate limiter with background cleanup of stale entries; applied to auth endpoints to prevent brute-force attacks
+- **Connection pooling** -- database connections are pooled (25 max open, 10 idle, 5-minute lifetime) across all three backends
+- **Plugin VM pooling** -- Lua plugin VMs use lock-free buffered channels with backpressure; reserved channels guarantee hook execution under load
+
+## Flexibility
+
+ModulaCMS uses a dual content schema -- admin tables for editorial work and public tables for delivery -- so editors work on drafts without affecting live content. The schema itself is defined at runtime: datatypes, fields, content data, content fields, and routes combine to let you create any content structure you need without code changes or redeployment.
+
+- **Runtime schema** -- define datatypes, attach fields, create content, and configure routes entirely through the API, admin panel, or TUI; no migrations, no redeploys
+- **Dual content schema** -- parallel admin and client table sets (`admin_content_data` / `content_data`, `admin_content_fields` / `content_fields`, etc.) give you a second full content layer with no prescribed purpose. Agencies use it to build custom admin panels where features toggle per client and upgrades distribute universally -- but it is just data, so use it for whatever you need
+- **Tri-database support** -- switch between SQLite, MySQL, and PostgreSQL by changing one field in `config.json`; the `DbDriver` interface (~150 methods) abstracts all differences
+- **Six output formats** -- content responses can mimic Contentful, Sanity, Strapi, WordPress, or use ModulaCMS clean/raw format; set a default or override per request with `?format=`
+- **Multi-CMS import** -- bulk import content from Contentful, Sanity, Strapi, WordPress, or ModulaCMS clean format with automatic datatype and field creation
+- **Built-in backup and deploy** -- ZIP backups (SQL dump + media) stored locally or in S3; content sync between environments with export, import, push, pull, and snapshot restore with dry-run validation
+- **Full spec compliance** -- OAuth works with any provider that implements the standard (Google, GitHub, Azure, Okta, Auth0) via configurable endpoints; S3 storage works with AWS, MinIO, DigitalOcean Spaces, Wasabi, or any S3-compatible service; email works with SMTP, SendGrid, SES, or Postmark. You are never locked into a vendor
+- **Plugin system** -- Lua plugins can define custom database tables, register HTTP routes, hook into content lifecycle events, and access core CMS data through a gated API
+- **Connect system** -- manage multiple CMS instances and environments from a single CLI; the same TUI works identically whether connected to a local database or a remote server over HTTPS
+- **Content versioning and i18n** -- publish, unpublish, schedule, version, and restore content with locale-aware delivery and fallback chains
+- **Webhooks** -- event-driven HTTP notifications with HMAC-SHA256 signing, delivery tracking, retry, and test endpoints
+- **Three SDKs** -- official TypeScript (ESM + CJS), Go, and Swift SDKs with zero external dependencies
+- **Multi-format delivery** -- slug-based content delivery with preview mode, locale selection, format override, datatype queries, and global content trees
+- **MCP server** -- 40+ tool Model Context Protocol server for AI-assisted content management
+
+## Transparency
+
+Plugins always tell you what they need. Every plugin declares its capabilities and core table access requirements in a `plugin_info` manifest -- there are no hidden lifecycles. Access is enforced through three sequential gates: a hardcoded table whitelist, per-table read/write policies with column-level filtering, and per-plugin approved access stored in the database.
+
+- **Plugin manifest** -- plugins declare capabilities (hooks, routes, core table access) in `plugin_info`; the system enforces exactly what was declared and nothing more
+- **Plugin safety** -- operation counting (default 1000 ops per checkout), per-hook timeouts (2000ms), per-event timeouts (5000ms), circuit breaker on consecutive failures, sandboxed Lua VMs with stripped globals, and table namespace isolation between plugins
+- **Single config file** -- `config.json` contains every setting: database, server ports, auth, OAuth, S3 storage, CORS, email, plugins, observability, i18n, and update preferences. Environment variables are referenced as `${VAR}` or `${VAR:-default}`, not scattered across the system
+- **Config introspection** -- `modula config fields` lists all 190+ config fields with metadata, `modula config validate` checks required fields, and `PATCH /api/v1/admin/config` with `GET /api/v1/admin/config/meta` expose field metadata programmatically
+- **Audit trail** -- every database mutation atomically records a `change_event` with operation type, old and new JSON values, user ID, request ID, IP address, hybrid logical clock timestamp, and optional metadata
+- **Request traceability** -- every request gets a UUID v4 `X-Request-ID` that flows through middleware, handlers, audit records, and logs for end-to-end tracing
+- **Explicit RBAC** -- permissions use `resource:operation` labels (e.g., `content:read`, `media:create`) with O(1) set lookups; three bootstrap roles (admin, editor, viewer) with 47 granular permissions; system-protected roles cannot be deleted or renamed
+- **Webhook delivery tracking** -- every webhook delivery is recorded with status (pending/success/failed), attempt count, and payload; failed deliveries are retried on a 60-second interval with full history available via API
+- **Structured logging** -- severity-based structured logging via slog with request context; never logs credentials, tokens, or PII
+- **Observability** -- metrics collection (HTTP requests/duration, DB queries, SSH connections, cache hits, plugin health, goroutine count) with export to Sentry, Datadog, or console
+- **Version and update checks** -- `modula version` prints semantic version, git commit, and build timestamp; `modula update check` compares against GitHub releases with configurable channels
 
 ## Requirements
 
@@ -715,6 +741,7 @@ modula [--config=path] [--verbose] <command>
   config show        Print config as JSON
   config validate    Validate config.json
   config set         Update config field
+  config fields      List all config fields with metadata
   cert generate      Generate self-signed certificates
   cert check         Verify certificate validity
   update check       Check for updates

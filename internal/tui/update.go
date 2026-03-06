@@ -274,6 +274,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.UpdateDialog(msg)
 		case ShowCreateRouteWithContentDialogMsg:
 			return m.UpdateDialog(msg)
+		case ShowCreateAdminRouteWithContentDialogMsg:
+			return m.UpdateDialog(msg)
+		case CreateAdminRouteWithContentRequestMsg:
+			return m.UpdateAdminCms(msg)
+		case AdminRouteWithContentCreatedMsg:
+			return m.UpdateAdminCms(msg)
+		case FormDialogAcceptMsg:
+			return m.UpdateDialog(msg)
+		case FormDialogCancelMsg:
+			return m.UpdateDialog(msg)
 		case AdminContentFormDialogAcceptMsg:
 			return m.UpdateDialog(msg)
 
@@ -311,6 +321,50 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case ConfirmedDeleteAdminContentFieldMsg:
 			return m.UpdateAdminCms(msg)
 
+		// Content screen: route+content creation flow → UpdateCms.
+		case CreateRouteWithContentRequestMsg:
+			return m.UpdateCms(msg)
+		case RouteWithContentCreatedMsg:
+			return m.UpdateDialog(msg)
+
+		// Content screen: content CRUD operations → UpdateCms.
+		case CreateContentFromDialogRequestMsg:
+			return m.UpdateCms(msg)
+		case ContentCreatedMsg:
+			return m.UpdateCms(msg)
+		case ContentCreatedWithErrorsMsg:
+			return m.UpdateCms(msg)
+		case MoveContentRequestMsg:
+			return m.UpdateCms(msg)
+		case ContentMovedMsg:
+			return m.UpdateCms(msg)
+		case DeleteContentRequestMsg:
+			return m.UpdateCms(msg)
+		case ContentDeletedMsg:
+			return m.UpdateCms(msg)
+
+		// Content screen: publish flow → UpdateDialog/UpdateCms.
+		case ShowPublishDialogMsg:
+			return m.UpdateDialog(msg)
+		case TogglePublishRequestMsg:
+			return m.UpdateCms(msg)
+		case ConfirmedPublishMsg:
+			return m.UpdateCms(msg)
+		case ConfirmedUnpublishMsg:
+			return m.UpdateCms(msg)
+		case PublishCompletedMsg:
+			return m.UpdateCms(msg)
+		case UnpublishCompletedMsg:
+			return m.UpdateCms(msg)
+		case ContentPublishToggledMsg:
+			return m.UpdateCms(msg)
+
+		// Content screen: child datatype selection → UpdateDialog.
+		case ChildDatatypeSelectedMsg:
+			return m.UpdateDialog(msg)
+		case ShowContentFormDialogMsg:
+			return m.UpdateDialog(msg)
+
 		// Content screen: admin form building.
 		case AdminBuildContentFormMsg:
 			return m.UpdateDialog(msg)
@@ -328,6 +382,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.UpdateDialog(msg)
 		case ShowEditContentFormDialogMsg:
 			return m.UpdateDialog(msg)
+		}
+
+		// Overlay intercepts key input even for Screen-based pages.
+		// Must run before global keys so modals receive all keystrokes.
+		if m.ActiveOverlay != nil {
+			if keyMsg, ok := msg.(tea.KeyMsg); ok {
+				overlay, cmd := m.ActiveOverlay.OverlayUpdate(keyMsg)
+				m.ActiveOverlay = overlay
+				return m, cmd
+			}
 		}
 
 		// Global key handling for Screen-based pages (screen mode + accordion).
@@ -360,15 +424,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if km.Matches(key, config.ActionAdminToggle) {
 				m.AdminMode = !m.AdminMode
 				return m, nil
-			}
-		}
-
-		// Overlay intercepts key input even for Screen-based pages
-		if m.ActiveOverlay != nil {
-			if keyMsg, ok := msg.(tea.KeyMsg); ok {
-				overlay, cmd := m.ActiveOverlay.OverlayUpdate(keyMsg)
-				m.ActiveOverlay = overlay
-				return m, cmd
 			}
 		}
 

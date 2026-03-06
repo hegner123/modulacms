@@ -880,3 +880,118 @@ func (m Model) HandleDeleteAdminFieldType(msg DeleteAdminFieldTypeRequestMsg) te
 		return AdminFieldTypeDeletedMsg{AdminFieldTypeID: msg.AdminFieldTypeID}
 	}
 }
+
+// HandleCreateAdminRouteWithContent processes the admin route with content creation request.
+func (m Model) HandleCreateAdminRouteWithContent(msg CreateAdminRouteWithContentRequestMsg) tea.Cmd {
+	authorID := m.UserID
+	cfg := m.Config
+
+	if authorID.IsZero() {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot create admin route: no user is logged in",
+			}
+		}
+	}
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot create admin route: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+		adminDatatypeID := types.AdminDatatypeID(msg.AdminDatatypeID)
+
+		var adminRouteID types.AdminRouteID
+		var routeSlug string
+
+		if msg.Slug != "" {
+			validSlug := types.Slugify(msg.Slug)
+			if err := validSlug.Validate(); err != nil {
+				return ActionResultMsg{
+					Title:   "Invalid Slug",
+					Message: fmt.Sprintf("Could not create admin route: %v", err),
+				}
+			}
+
+			existing, _ := d.GetAdminRoute(validSlug)
+			if existing != nil {
+				return ActionResultMsg{
+					Title:   "Duplicate Slug",
+					Message: fmt.Sprintf("An admin route with slug %q already exists", validSlug),
+				}
+			}
+
+			route, routeErr := d.CreateAdminRoute(ctx, ac, db.CreateAdminRouteParams{
+				Slug:   validSlug,
+				Title:  msg.Title,
+				Status: 1,
+				AuthorID: types.NullableUserID{
+					ID:    authorID,
+					Valid: true,
+				},
+				DateCreated:  types.TimestampNow(),
+				DateModified: types.TimestampNow(),
+			})
+			if routeErr != nil {
+				return ActionResultMsg{
+					Title:   "Error",
+					Message: fmt.Sprintf("Failed to create admin route: %v", routeErr),
+				}
+			}
+			if route.AdminRouteID.IsZero() {
+				return ActionResultMsg{
+					Title:   "Error",
+					Message: "Failed to create admin route in database",
+				}
+			}
+			adminRouteID = route.AdminRouteID
+			routeSlug = string(route.Slug)
+		}
+
+		contentParams := db.CreateAdminContentDataParams{
+			AdminRouteID: types.NullableAdminRouteID{
+				ID:    adminRouteID,
+				Valid: !adminRouteID.IsZero(),
+			},
+			AdminDatatypeID: types.NullableAdminDatatypeID{
+				ID:    adminDatatypeID,
+				Valid: true,
+			},
+			AuthorID:     authorID,
+			Status:       types.ContentStatusDraft,
+			DateCreated:  types.TimestampNow(),
+			DateModified: types.TimestampNow(),
+		}
+
+		contentData, contentErr := d.CreateAdminContentData(ctx, ac, contentParams)
+		if contentErr != nil || contentData.AdminContentDataID.IsZero() {
+			if !adminRouteID.IsZero() {
+				return ActionResultMsg{
+					Title:   "Warning",
+					Message: fmt.Sprintf("Admin route created but failed to create initial content. Route: %s", msg.Title),
+				}
+			}
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to create admin content: %v", contentErr),
+			}
+		}
+
+		return AdminRouteWithContentCreatedMsg{
+			AdminRouteID:       adminRouteID,
+			AdminContentDataID: contentData.AdminContentDataID,
+			AdminDatatypeID:    adminDatatypeID,
+			Title:              msg.Title,
+			Slug:               routeSlug,
+		}
+	}
+}

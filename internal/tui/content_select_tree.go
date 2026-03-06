@@ -198,8 +198,9 @@ func buildRoutedNodes(items []db.ContentDataTopLevel) []*ContentSelectNode {
 		for _, item := range g.items {
 			segs := splitSlug(string(item.RouteSlug))
 			if len(segs) <= 1 {
-				// This is the prefix item itself (e.g., "/about")
-				groupNode.Kind = NodeContent
+				// This is the prefix item itself (e.g., "/about") — keep Kind as
+				// NodeGroup so the renderer recurses children. Content is set so
+				// it remains selectable and shows status/datatype.
 				groupNode.Content = func() *db.ContentDataTopLevel { c := item; return &c }()
 				groupNode.Label = slugLabel(string(item.RouteSlug))
 				groupNode.Slug = string(item.RouteSlug)
@@ -271,7 +272,6 @@ func buildAdminRoutedNodes(items []db.AdminContentDataTopLevel) []*ContentSelect
 		for _, item := range g.items {
 			segs := splitSlug(string(item.RouteSlug))
 			if len(segs) <= 1 {
-				groupNode.Kind = NodeContent
 				groupNode.AdminContent = func() *db.AdminContentDataTopLevel { c := item; return &c }()
 				groupNode.Label = slugLabel(string(item.RouteSlug))
 				groupNode.Slug = string(item.RouteSlug)

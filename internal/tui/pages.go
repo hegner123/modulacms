@@ -62,23 +62,23 @@ var defaultLayout = PageLayout{
 // Pages not in the map use defaultLayout.
 var pageLayouts = map[PageIndex]PageLayout{
 	// Single-panel pages
-	HOMEPAGE:         {1, [3]float64{0, 1, 0}, [3]string{"", "Home", ""}},
-	QUICKSTARTPAGE:   {1, [3]float64{0, 1, 0}, [3]string{"", "Quickstart", ""}},
+	HOMEPAGE:       {1, [3]float64{0, 1, 0}, [3]string{"", "Home", ""}},
+	QUICKSTARTPAGE: {1, [3]float64{0, 1, 0}, [3]string{"", "Quickstart", ""}},
 	// ACTIONSPAGE uses GridScreen, no legacy layout needed
 	PLUGINDETAILPAGE: {1, [3]float64{0, 1, 0}, [3]string{"", "Plugin", ""}},
 
 	// Two-panel pages
 	CONFIGPAGE:   {2, [3]float64{0.30, 0.70, 0}, [3]string{"Categories", "Fields", "Detail"}},
 	DATABASEPAGE: {2, [3]float64{0.30, 0.70, 0}, [3]string{"Tables", "Actions", "Info"}},
-	MEDIA:        {2, [3]float64{0.30, 0.70, 0}, [3]string{"Media", "Details", "Info"}},
+	// MEDIA uses GridScreen, no legacy layout needed
 
 	// Three-panel pages
 	// CONTENT uses GridScreen, no legacy layout needed
-	DATATYPES:          {3, [3]float64{0.25, 0.40, 0.35}, [3]string{"Datatypes", "Fields", "Actions"}},
-	ROUTES:             {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Routes", "Details", "Actions"}},
-	USERSADMIN:         {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Users", "Details", "Permissions"}},
-	ADMINROUTES:        {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Admin Routes", "Details", "Actions"}},
-	ADMINDATATYPES:     {3, [3]float64{0.25, 0.40, 0.35}, [3]string{"Admin Datatypes", "Fields", "Actions"}},
+	DATATYPES:      {3, [3]float64{0.25, 0.40, 0.35}, [3]string{"Datatypes", "Fields", "Actions"}},
+	ROUTES:         {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Routes", "Details", "Actions"}},
+	USERSADMIN:     {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Users", "Details", "Permissions"}},
+	ADMINROUTES:    {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Admin Routes", "Details", "Actions"}},
+	ADMINDATATYPES: {3, [3]float64{0.25, 0.40, 0.35}, [3]string{"Admin Datatypes", "Fields", "Actions"}},
 	// ADMINCONTENT uses GridScreen, no legacy layout needed
 	PLUGINSPAGE:        {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Plugins", "Details", "Info"}},
 	FIELDTYPES:         {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Field Types", "Details", "Actions"}},

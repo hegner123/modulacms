@@ -39,6 +39,7 @@ const (
 	ActionTabPrev      Action = "tab_prev"
 	ActionTabNext      Action = "tab_next"
 	ActionAdminToggle  Action = "admin_toggle"
+	ActionSearch       Action = "search"
 )
 
 // KeyMap maps semantic actions to one or more key strings (as reported by
@@ -78,10 +79,11 @@ func DefaultKeyMap() KeyMap {
 		ActionScreenNext:   {"F"},
 		ActionScreenToggle: {"f"},
 		ActionScreenReset:  {},
-		ActionAccordion:    {"a"},
+		ActionAccordion:    {"ctrl+x"},
 		ActionTabPrev:      {"["},
 		ActionTabNext:      {"]"},
 		ActionAdminToggle:  {"ctrl+a"},
+		ActionSearch:       {"/"},
 	}
 }
 

@@ -186,7 +186,7 @@ func (d *DialogModel) Render(windowWidth, windowHeight int) string {
 	header := d.titleStyle.Render(d.Title)
 
 	// --- Message lines as scroll items ---
-	messageText := d.textStyle.Render(d.Message)
+	messageText := d.textStyle.Width(innerW).Render(d.Message)
 	messageLines := strings.Split(messageText, "\n")
 	// Wrap each line as a single-item for scrollableBody
 	items := make([]string, len(messageLines))

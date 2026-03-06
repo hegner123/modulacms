@@ -1480,6 +1480,13 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			OverlaySetCmd(&dialog),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	case ShowCreateAdminRouteWithContentDialogMsg:
+		// Create admin route with initial content dialog
+		dialog := NewAdminRouteWithContentDialog("New Admin Content", FORMDIALOGCREATEADMINROUTEWITHCONTENT, msg.AdminRootDatatypes)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
 	case ShowInitializeRouteContentDialogMsg:
 		// Show confirmation dialog to initialize content for an existing route
 		dialog := NewDialog(
@@ -1575,6 +1582,14 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
 				CreateRouteWithContentCmd(msg.Label, msg.Type, msg.ParentID),
+			)
+		case FORMDIALOGCREATEADMINROUTEWITHCONTENT:
+			// Create a new admin route with initial content (ParentID=AdminDatatypeID from carousel, Label=Title, Type=Slug)
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				CreateAdminRouteWithContentCmd(msg.Label, msg.Type, msg.ParentID),
 			)
 		case FORMDIALOGCHILDDATATYPE:
 			// User selected a child datatype from the dialog

@@ -53,7 +53,8 @@ const (
 	FORMDIALOGEDITFIELDTYPE          FormDialogAction = "edit_field_type"
 	FORMDIALOGCREATEADMINFIELDTYPE   FormDialogAction = "create_admin_field_type"
 	FORMDIALOGEDITADMINFIELDTYPE     FormDialogAction = "edit_admin_field_type"
-	FORMDIALOGCREATEADMINCONTENT     FormDialogAction = "create_admin_content"
+	FORMDIALOGCREATEADMINROUTEWITHCONTENT FormDialogAction = "create_admin_route_with_content"
+	FORMDIALOGCREATEADMINCONTENT          FormDialogAction = "create_admin_content"
 	FORMDIALOGEDITADMINCONTENT       FormDialogAction = "edit_admin_content"
 	FORMDIALOGMOVEADMINCONTENT       FormDialogAction = "move_admin_content"
 	FORMDIALOGCHILDADMINDATATYPE     FormDialogAction = "child_admin_datatype"
@@ -545,7 +546,8 @@ func (d FormDialogModel) Render(windowWidth, windowHeight int) string {
 	secondFieldLabel := "Type"
 	if d.Action == FORMDIALOGCREATEROUTE || d.Action == FORMDIALOGEDITROUTE ||
 		d.Action == FORMDIALOGCREATEADMINROUTE || d.Action == FORMDIALOGEDITADMINROUTE ||
-		d.Action == FORMDIALOGCREATEROUTEWITHCONTENT {
+		d.Action == FORMDIALOGCREATEROUTEWITHCONTENT ||
+		d.Action == FORMDIALOGCREATEADMINROUTEWITHCONTENT {
 		firstFieldLabel = "Title"
 		secondFieldLabel = "Slug"
 	}
@@ -611,7 +613,7 @@ func (d FormDialogModel) Render(windowWidth, windowHeight int) string {
 	// Parent selector (only for dialogs with parent options)
 	if d.HasParentSelector() {
 		parentLabelText := "Parent"
-		if d.Action == FORMDIALOGCREATEROUTEWITHCONTENT {
+		if d.Action == FORMDIALOGCREATEROUTEWITHCONTENT || d.Action == FORMDIALOGCREATEADMINROUTEWITHCONTENT {
 			parentLabelText = "Datatype"
 		}
 		parentLabel := d.labelStyle.Render(parentLabelText)
@@ -993,6 +995,54 @@ func ShowCreateRouteWithContentDialogCmd(rootDatatypes []db.Datatypes) tea.Cmd {
 		return ShowCreateRouteWithContentDialogMsg{
 			RootDatatypes: rootDatatypes,
 		}
+	}
+}
+
+// ShowCreateAdminRouteWithContentDialogMsg triggers showing a create admin route with content dialog.
+type ShowCreateAdminRouteWithContentDialogMsg struct {
+	AdminRootDatatypes []db.AdminDatatypes
+}
+
+// ShowCreateAdminRouteWithContentDialogCmd shows a dialog to create a new admin route with initial content.
+func ShowCreateAdminRouteWithContentDialogCmd(adminRootDatatypes []db.AdminDatatypes) tea.Cmd {
+	return func() tea.Msg {
+		return ShowCreateAdminRouteWithContentDialogMsg{
+			AdminRootDatatypes: adminRootDatatypes,
+		}
+	}
+}
+
+// NewAdminRouteWithContentDialog creates a form dialog for creating a new admin route with initial content.
+func NewAdminRouteWithContentDialog(title string, action FormDialogAction, adminRootDatatypes []db.AdminDatatypes) FormDialogModel {
+	titleInput := textinput.New()
+	titleInput.Placeholder = "Page title"
+	titleInput.CharLimit = 128
+	titleInput.Width = 40
+	titleInput.Focus()
+
+	slugInput := textinput.New()
+	slugInput.Placeholder = "url-slug"
+	slugInput.CharLimit = 128
+	slugInput.Width = 40
+
+	parentOptions := make([]ParentOption, len(adminRootDatatypes))
+	for i, dt := range adminRootDatatypes {
+		parentOptions[i] = ParentOption{
+			Label: dt.Label,
+			Value: string(dt.AdminDatatypeID),
+		}
+	}
+
+	return FormDialogModel{
+		dialogStyles:  newDialogStyles(),
+		Title:         title,
+		Width:         60,
+		Action:        action,
+		LabelInput:    titleInput,
+		TypeInput:     slugInput,
+		ParentOptions: parentOptions,
+		ParentIndex:   0,
+		focusIndex:    FormDialogFieldLabel,
 	}
 }
 

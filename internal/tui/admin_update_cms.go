@@ -20,10 +20,18 @@ func (m Model) UpdateAdminCms(msg tea.Msg) (Model, tea.Cmd) {
 		return m, m.HandleUpdateAdminRouteFromDialog(msg)
 	case DeleteAdminRouteRequestMsg:
 		return m, m.HandleDeleteAdminRoute(msg)
+	case CreateAdminRouteWithContentRequestMsg:
+		return m, m.HandleCreateAdminRouteWithContent(msg)
 
 	// =========================================================================
 	// ADMIN ROUTE RESULT MESSAGES → re-fetch data
 	// =========================================================================
+	case AdminRouteWithContentCreatedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin route created with content: %s (ContentID: %s)", msg.Title, msg.AdminContentDataID)),
+			AdminRoutesFetchCmd(),
+		)
 	case AdminRouteCreatedFromDialogMsg:
 		return m, tea.Batch(
 			LoadingStopCmd(),

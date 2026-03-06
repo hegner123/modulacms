@@ -22,6 +22,7 @@ type AppContext struct {
 	PluginManager    *plugin.Manager
 	ConfigManager    *config.Manager
 	IsRemote         bool
+	IsSSH            bool
 	SSHFingerprint   string
 	SSHKeyType       string
 	SSHPublicKey     string
@@ -45,6 +46,7 @@ func (m Model) AppCtx() AppContext {
 		PluginManager:    m.PluginManager,
 		ConfigManager:    m.ConfigManager,
 		IsRemote:         m.IsRemote,
+		IsSSH:            m.IsSSH,
 		SSHFingerprint:   m.SSHFingerprint,
 		SSHKeyType:       m.SSHKeyType,
 		SSHPublicKey:     m.SSHPublicKey,

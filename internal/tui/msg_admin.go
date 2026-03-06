@@ -499,3 +499,19 @@ type AdminContentFormDialogAcceptMsg struct {
 
 // AdminContentFormDialogCancelMsg is sent when an admin content form dialog is cancelled.
 type AdminContentFormDialogCancelMsg struct{}
+
+// CreateAdminRouteWithContentRequestMsg requests creating an admin route with initial content.
+type CreateAdminRouteWithContentRequestMsg struct {
+	Title            string
+	Slug             string
+	AdminDatatypeID  string
+}
+
+// AdminRouteWithContentCreatedMsg signals that an admin route and content were created.
+type AdminRouteWithContentCreatedMsg struct {
+	AdminRouteID       types.AdminRouteID
+	AdminContentDataID types.AdminContentID
+	AdminDatatypeID    types.AdminDatatypeID
+	Title              string
+	Slug               string
+}

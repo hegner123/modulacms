@@ -730,3 +730,14 @@ func ShowEditFieldTypeDialogCmd(ft db.FieldTypes) tea.Cmd {
 func ShowEditAdminFieldTypeDialogCmd(ft db.AdminFieldTypes) tea.Cmd {
 	return func() tea.Msg { return ShowEditAdminFieldTypeDialogMsg{AdminFieldType: ft} }
 }
+
+// CreateAdminRouteWithContentCmd creates a command to create an admin route with initial content.
+func CreateAdminRouteWithContentCmd(title, slug, adminDatatypeID string) tea.Cmd {
+	return func() tea.Msg {
+		return CreateAdminRouteWithContentRequestMsg{
+			Title:           title,
+			Slug:            slug,
+			AdminDatatypeID: adminDatatypeID,
+		}
+	}
+}

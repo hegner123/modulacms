@@ -2,30 +2,89 @@ package tui
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 )
 
+// Media grid: 2 columns
+//
+//	Col 0 (span 3): Media tree with inline search
+//	Col 1 (span 9): Summary (top), Metadata (bottom)
+var mediaGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1.0, Title: "Media"},
+		}},
+		{Span: 9, Cells: []GridCell{
+			{Height: 0.40, Title: "Summary"},
+			{Height: 0.60, Title: "Metadata"},
+		}},
+	},
+}
+
 // MediaScreen implements Screen for the media library page.
 type MediaScreen struct {
-	Cursor     int
-	PanelFocus FocusPanel
-	MediaList  []db.Media
+	GridScreen
+	MediaList    []db.Media       // full list from DB
+	FilteredList []db.Media       // displayed subset (== MediaList when no filter)
+	MediaTree    []*MediaTreeNode // tree built from FilteredList
+	FlatList     []*MediaTreeNode // flattened for cursor navigation
+	Searching    bool             // true when search input is active
+	SearchInput  textinput.Model
+	SearchQuery  string // persisted query (set on enter)
 }
 
 // NewMediaScreen creates a MediaScreen with the provided media list.
 func NewMediaScreen(mediaList []db.Media) *MediaScreen {
-	return &MediaScreen{
-		Cursor:     0,
-		PanelFocus: TreePanel,
-		MediaList:  mediaList,
+	if mediaList == nil {
+		mediaList = []db.Media{}
 	}
+
+	ti := textinput.New()
+	ti.Placeholder = "filter..."
+	ti.CharLimit = 128
+
+	s := &MediaScreen{
+		GridScreen: GridScreen{
+			Grid:       mediaGrid,
+			FocusIndex: 0,
+		},
+		MediaList:    mediaList,
+		FilteredList: mediaList,
+		SearchInput:  ti,
+	}
+	s.rebuildTree()
+	return s
 }
 
 func (s *MediaScreen) PageIndex() PageIndex { return MEDIA }
+
+func (s *MediaScreen) rebuildTree() {
+	s.MediaTree = BuildMediaTree(s.FilteredList)
+	s.FlatList = FlattenMediaTree(s.MediaTree)
+	s.CursorMax = len(s.FlatList) - 1
+	if s.CursorMax < 0 {
+		s.CursorMax = 0
+	}
+	if s.Cursor > s.CursorMax {
+		s.Cursor = s.CursorMax
+	}
+}
+
+// selectedMedia returns the db.Media for the currently selected file node, or nil.
+func (s *MediaScreen) selectedMedia() *db.Media {
+	if len(s.FlatList) == 0 || s.Cursor >= len(s.FlatList) {
+		return nil
+	}
+	node := s.FlatList[s.Cursor]
+	if node.Kind == MediaNodeFile {
+		return node.Media
+	}
+	return nil
+}
 
 func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -33,18 +92,81 @@ func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
+		// Search mode: all input goes to textinput except enter/esc
+		if s.Searching {
+			switch key {
+			case "enter":
+				s.Searching = false
+				s.SearchQuery = s.SearchInput.Value()
+				s.SearchInput.Blur()
+				return s, nil
+			case "esc":
+				s.Searching = false
+				s.SearchQuery = ""
+				s.SearchInput.SetValue("")
+				s.SearchInput.Blur()
+				s.FilteredList = s.MediaList
+				s.Cursor = 0
+				s.rebuildTree()
+				return s, nil
+			default:
+				var cmd tea.Cmd
+				s.SearchInput, cmd = s.SearchInput.Update(msg)
+				// Live filter on each keystroke
+				s.FilteredList = FilterMediaList(s.MediaList, s.SearchInput.Value())
+				s.Cursor = 0
+				s.rebuildTree()
+				return s, cmd
+			}
 		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
+
+		// Browse mode
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
-		// Upload new media (open file picker)
+		// Search activation
+		if km.Matches(key, config.ActionSearch) {
+			s.Searching = true
+			s.SearchInput.Focus()
+			return s, textinput.Blink
+		}
+
+		// Expand/collapse or select on enter (only when tree panel focused)
+		if km.Matches(key, config.ActionSelect) && s.FocusIndex == 0 {
+			if len(s.FlatList) > 0 && s.Cursor < len(s.FlatList) {
+				node := s.FlatList[s.Cursor]
+				if node.Kind == MediaNodeFolder {
+					node.Expand = !node.Expand
+					s.FlatList = FlattenMediaTree(s.MediaTree)
+					s.CursorMax = len(s.FlatList) - 1
+					if s.CursorMax < 0 {
+						s.CursorMax = 0
+					}
+					if s.Cursor > s.CursorMax {
+						s.Cursor = s.CursorMax
+					}
+					return s, nil
+				}
+				// File node: no-op (details shown automatically)
+			}
+			return s, nil
+		}
+
+		// Upload new media (open file picker — requires local filesystem)
 		if km.Matches(key, config.ActionNew) {
+			if ctx.IsSSH {
+				dialog := NewDialog(
+					"Upload Not Available",
+					"Media upload requires a local file picker and is not available over SSH connections.\n\nTo upload media, run the CMS binary locally and use the 'connect' command to access this server.",
+					false,
+					DIALOGGENERIC,
+				)
+				return s, tea.Batch(
+					OverlaySetCmd(&dialog),
+					FocusSetCmd(DIALOGFOCUS),
+				)
+			}
 			return s, func() tea.Msg {
 				return OpenFilePickerMsg{Purpose: FILEPICKER_MEDIA}
 			}
@@ -52,8 +174,8 @@ func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 
 		// Delete selected media
 		if km.Matches(key, config.ActionDelete) {
-			if len(s.MediaList) > 0 && s.Cursor < len(s.MediaList) {
-				media := s.MediaList[s.Cursor]
+			media := s.selectedMedia()
+			if media != nil {
 				label := media.MediaID.String()
 				if media.DisplayName.Valid && media.DisplayName.String != "" {
 					label = media.DisplayName.String
@@ -65,11 +187,7 @@ func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		}
 
 		// Common keys (quit, back, cursor)
-		cursorMax := len(s.MediaList) - 1
-		if cursorMax < 0 {
-			cursorMax = 0
-		}
-		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, cursorMax)
+		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, s.CursorMax)
 		if handled {
 			s.Cursor = newCursor
 			return s, cmd
@@ -93,24 +211,16 @@ func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		}
 	case MediaFetchResultsMsg:
 		s.MediaList = msg.Data
+		s.FilteredList = FilterMediaList(s.MediaList, s.SearchQuery)
 		s.Cursor = 0
-		if s.Cursor >= len(s.MediaList) {
-			s.Cursor = len(s.MediaList) - 1
-		}
-		if s.Cursor < 0 {
-			s.Cursor = 0
-		}
+		s.rebuildTree()
 		return s, LoadingStopCmd()
 
 	// Data refresh (from CMS operations)
 	case MediaListSet:
 		s.MediaList = msg.MediaList
-		if s.Cursor >= len(s.MediaList) {
-			s.Cursor = len(s.MediaList) - 1
-		}
-		if s.Cursor < 0 {
-			s.Cursor = 0
-		}
+		s.FilteredList = FilterMediaList(s.MediaList, s.SearchQuery)
+		s.rebuildTree()
 		return s, nil
 	}
 
@@ -118,120 +228,20 @@ func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 }
 
 func (s *MediaScreen) KeyHints(km config.KeyMap) []KeyHint {
+	if s.Searching {
+		return []KeyHint{
+			{"type", "filter"},
+			{"enter", "accept"},
+			{"esc", "clear"},
+		}
+	}
 	return []KeyHint{
+		{km.HintString(config.ActionSearch), "search"},
 		{km.HintString(config.ActionNew), "upload"},
 		{km.HintString(config.ActionDelete), "del"},
+		{"enter", "expand"},
 		{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionBack), "back"},
-		{km.HintString(config.ActionQuit), "quit"},
 	}
-}
-
-func (s *MediaScreen) View(ctx AppContext) string {
-	left := s.renderMediaList()
-	center := s.renderMediaDetail()
-	right := s.renderMediaInfo()
-
-	layout := layoutForPage(MEDIA)
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
-	}
-
-	innerH := PanelInnerHeight(ctx.Height)
-	listLen := len(s.MediaList)
-
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel, TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)}.Render())
-	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
-}
-
-func (s *MediaScreen) renderMediaList() string {
-	if len(s.MediaList) == 0 {
-		return "(no media)"
-	}
-
-	lines := make([]string, 0, len(s.MediaList))
-	for i, media := range s.MediaList {
-		cursor := "   "
-		if s.Cursor == i {
-			cursor = " ->"
-		}
-		name := media.MediaID.String()
-		if media.DisplayName.Valid && media.DisplayName.String != "" {
-			name = media.DisplayName.String
-		} else if media.Name.Valid && media.Name.String != "" {
-			name = media.Name.String
-		}
-		mime := ""
-		if media.Mimetype.Valid && media.Mimetype.String != "" {
-			mime = " [" + media.Mimetype.String + "]"
-		}
-		lines = append(lines, fmt.Sprintf("%s %s%s", cursor, name, mime))
-	}
-	return strings.Join(lines, "\n")
-}
-
-func (s *MediaScreen) renderMediaDetail() string {
-	if len(s.MediaList) == 0 || s.Cursor >= len(s.MediaList) {
-		return "No media selected"
-	}
-
-	media := s.MediaList[s.Cursor]
-
-	nullStr := func(ns db.NullString) string {
-		if ns.Valid {
-			return ns.String
-		}
-		return "(none)"
-	}
-
-	lines := []string{
-		fmt.Sprintf("Name:        %s", nullStr(media.Name)),
-		fmt.Sprintf("Display:     %s", nullStr(media.DisplayName)),
-		fmt.Sprintf("Alt:         %s", nullStr(media.Alt)),
-		fmt.Sprintf("Caption:     %s", nullStr(media.Caption)),
-		fmt.Sprintf("Description: %s", nullStr(media.Description)),
-		"",
-		fmt.Sprintf("Mimetype:    %s", nullStr(media.Mimetype)),
-		fmt.Sprintf("Dimensions:  %s", nullStr(media.Dimensions)),
-		fmt.Sprintf("URL:         %s", media.URL),
-		"",
-		fmt.Sprintf("Created:     %s", media.DateCreated.String()),
-		fmt.Sprintf("Modified:    %s", media.DateModified.String()),
-	}
-
-	return strings.Join(lines, "\n")
-}
-
-func (s *MediaScreen) renderMediaInfo() string {
-	lines := []string{
-		"Media Library",
-		"",
-		fmt.Sprintf("  Total: %d", len(s.MediaList)),
-	}
-
-	if len(s.MediaList) > 0 && s.Cursor < len(s.MediaList) {
-		lines = append(lines, "")
-		lines = append(lines, fmt.Sprintf("  ID: %s", s.MediaList[s.Cursor].MediaID))
-		if s.MediaList[s.Cursor].Class.Valid && s.MediaList[s.Cursor].Class.String != "" {
-			lines = append(lines, fmt.Sprintf("  Class: %s", s.MediaList[s.Cursor].Class.String))
-		}
-	}
-
-	return strings.Join(lines, "\n")
 }
