@@ -194,6 +194,11 @@ func (d {{$driver.Struct}}) Create{{$.Entity.Singular}}(ctx context.Context, ac 
 
 // Delete{{$.Entity.Singular}} removes a {{lower $.Entity.Singular}} and records an audit event.
 func (d {{$driver.Struct}}) Delete{{$.Entity.Singular}}(ctx context.Context, ac audited.AuditContext, id {{$.Entity.IDType}}) error {
+{{- range $.Entity.ProtectedIDs}}
+	if id == {{.}} {
+		return fmt.Errorf("cannot delete protected {{lower $.Entity.Singular}}")
+	}
+{{- end}}
 	cmd := d.Delete{{$.Entity.Singular}}Cmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }

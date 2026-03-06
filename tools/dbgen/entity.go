@@ -120,6 +120,10 @@ type Entity struct {
 	StringTypeName    string             // e.g., "StringUsers" (empty = no MapString generated)
 	ExtraStringFields []ExtraStringField // fields in StringX not from entity (e.g., History: "")
 
+	// ProtectedIDs lists constant expressions (e.g., "types.SystemUserID") that cannot
+	// be deleted. The generated DeleteEntity method returns an error if id matches any.
+	ProtectedIDs []string
+
 	// Additional queries beyond standard CRUD
 	ExtraQueries          []ExtraQuery
 	PaginatedExtraQueries []PaginatedExtraQuery

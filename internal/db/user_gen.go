@@ -146,6 +146,9 @@ func (d Database) CreateUser(ctx context.Context, ac audited.AuditContext, s Cre
 
 // DeleteUser removes a user and records an audit event.
 func (d Database) DeleteUser(ctx context.Context, ac audited.AuditContext, id types.UserID) error {
+	if id == types.SystemUserID {
+		return fmt.Errorf("cannot delete protected user")
+	}
 	cmd := d.DeleteUserCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
@@ -277,6 +280,9 @@ func (d MysqlDatabase) CreateUser(ctx context.Context, ac audited.AuditContext, 
 
 // DeleteUser removes a user and records an audit event.
 func (d MysqlDatabase) DeleteUser(ctx context.Context, ac audited.AuditContext, id types.UserID) error {
+	if id == types.SystemUserID {
+		return fmt.Errorf("cannot delete protected user")
+	}
 	cmd := d.DeleteUserCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
@@ -408,6 +414,9 @@ func (d PsqlDatabase) CreateUser(ctx context.Context, ac audited.AuditContext, s
 
 // DeleteUser removes a user and records an audit event.
 func (d PsqlDatabase) DeleteUser(ctx context.Context, ac audited.AuditContext, id types.UserID) error {
+	if id == types.SystemUserID {
+		return fmt.Errorf("cannot delete protected user")
+	}
 	cmd := d.DeleteUserCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }

@@ -38,7 +38,8 @@ var Entities = []Entity{
 				},
 			},
 		},
-		OutputFile: "user_gen.go",
+		ProtectedIDs: []string{"types.SystemUserID"},
+		OutputFile:   "user_gen.go",
 	},
 
 	// Media
