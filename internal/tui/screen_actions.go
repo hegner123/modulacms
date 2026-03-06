@@ -2,26 +2,83 @@ package tui
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/update"
+	"github.com/hegner123/modulacms/internal/utility"
 )
+
+// Actions grid: 3 columns
+//
+//	Col 0 (span 3): Actions menu
+//	Col 1 (span 6): Details (top), Help (bottom)
+//	Col 2 (span 3): System (top), Updates (bottom)
+var actionsGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1, Title: "Actions"},
+		}},
+		{Span: 6, Cells: []GridCell{
+			{Height: 0.70, Title: "Details"},
+			{Height: 0.30, Title: "Help"},
+		}},
+		{Span: 3, Cells: []GridCell{
+			{Height: 0.55, Title: "System"},
+			{Height: 0.45, Title: "Updates"},
+		}},
+	},
+}
+
+// UpdateCheckMsg delivers the result of an async update check.
+type UpdateCheckMsg struct {
+	Available  bool
+	NewVersion string
+	Err        error
+}
+
+// UpdateCheckCmd runs an async update check against the GitHub releases API.
+func UpdateCheckCmd() tea.Cmd {
+	return func() tea.Msg {
+		current := utility.GetCurrentVersion()
+		release, available, err := update.CheckForUpdates(current, "stable")
+		if err != nil {
+			return UpdateCheckMsg{Err: err}
+		}
+		version := ""
+		if release != nil {
+			version = release.TagName
+		}
+		return UpdateCheckMsg{Available: available, NewVersion: version}
+	}
+}
 
 // ActionsScreen implements Screen for the actions page.
 type ActionsScreen struct {
-	Cursor     int
-	IsRemote   bool
-	PanelFocus FocusPanel
+	GridScreen
+	IsRemote       bool
+	UpdateChecked  bool
+	UpdateAvail    bool
+	UpdateVersion  string
+	UpdateCheckErr error
 }
 
 // NewActionsScreen creates an ActionsScreen.
 func NewActionsScreen(isRemote bool) *ActionsScreen {
+	actions := ActionsMenuForMode(isRemote)
+	cursorMax := len(actions) - 1
+	if cursorMax < 0 {
+		cursorMax = 0
+	}
 	return &ActionsScreen{
-		Cursor:     0,
-		IsRemote:   isRemote,
-		PanelFocus: ContentPanel,
+		GridScreen: GridScreen{
+			Grid:      actionsGrid,
+			CursorMax: cursorMax,
+		},
+		IsRemote: isRemote,
 	}
 }
 
@@ -29,26 +86,27 @@ func (s *ActionsScreen) PageIndex() PageIndex { return ACTIONSPAGE }
 
 func (s *ActionsScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	actions := ActionsMenuForMode(s.IsRemote)
-	cursorMax := len(actions) - 1
+	s.CursorMax = len(actions) - 1
 
 	switch msg := msg.(type) {
+	case UpdateCheckMsg:
+		s.UpdateChecked = true
+		s.UpdateAvail = msg.Available
+		s.UpdateVersion = msg.NewVersion
+		s.UpdateCheckErr = msg.Err
+		return s, nil
+
 	case tea.KeyMsg:
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
 		// Select action
 		if km.Matches(key, config.ActionSelect) {
-			if s.Cursor >= len(actions) {
+			if s.FocusIndex != 0 || s.Cursor >= len(actions) {
 				return s, nil
 			}
 			action := actions[s.Cursor]
@@ -70,7 +128,7 @@ func (s *ActionsScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		}
 
 		// Common keys (quit, back, cursor)
-		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, cursorMax)
+		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, s.CursorMax)
 		if handled {
 			s.Cursor = newCursor
 			return s, cmd
@@ -92,33 +150,15 @@ func (s *ActionsScreen) KeyHints(km config.KeyMap) []KeyHint {
 
 func (s *ActionsScreen) View(ctx AppContext) string {
 	actions := ActionsMenuForMode(s.IsRemote)
-	left := s.renderMenu(actions)
-	center := s.renderDetail(actions)
-	right := s.renderStatus(actions)
 
-	layout := layoutForPage(ACTIONSPAGE)
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	// Single-panel page: render center panel full width
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
+	cells := []CellContent{
+		{Content: s.renderMenu(actions)},
+		{Content: s.renderDetail(actions)},
+		{Content: s.renderHelp(actions)},
+		{Content: s.renderSystem(ctx)},
+		{Content: s.renderUpdates()},
 	}
-
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: "Actions", Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel}.Render())
-	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: "Details", Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: "Status", Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return s.RenderGrid(ctx, cells)
 }
 
 func (s *ActionsScreen) renderMenu(actions []ActionItem) string {
@@ -128,37 +168,116 @@ func (s *ActionsScreen) renderMenu(actions []ActionItem) string {
 	warnStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn)
 	lines := make([]string, 0, len(actions))
 	for i, action := range actions {
-		cursor := "   "
+		cursor := "  "
 		if s.Cursor == i {
-			cursor = " ->"
+			cursor = "->"
 		}
 		label := action.Label
 		if action.Destructive {
 			label = warnStyle.Render(label)
 		}
-		lines = append(lines, fmt.Sprintf("%s %s", cursor, label))
+		lines = append(lines, fmt.Sprintf(" %s %s", cursor, label))
 	}
 	return strings.Join(lines, "\n")
 }
 
 func (s *ActionsScreen) renderDetail(actions []ActionItem) string {
 	if len(actions) == 0 || s.Cursor >= len(actions) {
-		return "No action selected"
+		return " No action selected"
 	}
 	action := actions[s.Cursor]
-	return fmt.Sprintf("%s\n\n%s", action.Label, action.Description)
+
+	accent := lipgloss.NewStyle().Bold(true)
+	lines := []string{
+		accent.Render(" " + action.Label),
+		"",
+		" " + action.Description,
+	}
+
+	if action.Destructive {
+		warnStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn)
+		lines = append(lines, "")
+		lines = append(lines, warnStyle.Render(" Requires confirmation before execution"))
+	}
+
+	return strings.Join(lines, "\n")
 }
 
-func (s *ActionsScreen) renderStatus(actions []ActionItem) string {
+func (s *ActionsScreen) renderHelp(actions []ActionItem) string {
 	lines := []string{
-		"Actions",
-		"",
-		fmt.Sprintf("  Total: %d", len(actions)),
+		" Press Enter to run the selected action.",
+		" Use Tab to switch between panels.",
 	}
-	if s.Cursor < len(actions) && actions[s.Cursor].Destructive {
+	if s.IsRemote {
 		lines = append(lines, "")
-		warnStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn)
-		lines = append(lines, warnStyle.Render("  !! Destructive"))
+		lines = append(lines, " Remote mode: limited actions available.")
 	}
 	return strings.Join(lines, "\n")
+}
+
+func (s *ActionsScreen) renderSystem(ctx AppContext) string {
+	faint := lipgloss.NewStyle().Faint(true)
+
+	version := utility.Version
+	if utility.IsDevBuild() {
+		version += " " + faint.Render("(dev)")
+	}
+
+	lines := []string{
+		fmt.Sprintf(" Version  %s", version),
+		fmt.Sprintf(" Commit   %s", shortenHash(utility.GitCommit, 8)),
+		fmt.Sprintf(" Built    %s", utility.BuildDate),
+		fmt.Sprintf(" Go       %s", runtime.Version()),
+		fmt.Sprintf(" OS/Arch  %s/%s", runtime.GOOS, runtime.GOARCH),
+	}
+
+	if ctx.Config != nil {
+		lines = append(lines, "")
+		lines = append(lines, fmt.Sprintf(" DB       %s", ctx.Config.Db_Driver))
+		lines = append(lines, fmt.Sprintf(" Env      %s", ctx.Config.Environment))
+		if ctx.Config.Plugin_Enabled {
+			lines = append(lines, fmt.Sprintf(" Plugins  %s", "enabled"))
+		}
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+func (s *ActionsScreen) renderUpdates() string {
+	accent := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent)
+	warn := lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn)
+	faint := lipgloss.NewStyle().Faint(true)
+
+	if !s.UpdateChecked {
+		return faint.Render(" Checking for updates...")
+	}
+
+	if s.UpdateCheckErr != nil {
+		return warn.Render(fmt.Sprintf(" Check failed: %s", s.UpdateCheckErr))
+	}
+
+	current := utility.GetCurrentVersion()
+	lines := []string{
+		fmt.Sprintf(" Current  %s", current),
+	}
+
+	if s.UpdateAvail {
+		lines = append(lines, accent.Render(fmt.Sprintf(" Latest   %s", s.UpdateVersion)))
+		lines = append(lines, "")
+		lines = append(lines, accent.Render(" Update available!"))
+		lines = append(lines, " Select \"Check for Updates\" to install.")
+	} else {
+		lines = append(lines, "")
+		lines = append(lines, accent.Render(" Up to date"))
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// shortenHash returns the first n characters of s, or s if shorter.
+func shortenHash(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
 }

@@ -64,7 +64,7 @@ var pageLayouts = map[PageIndex]PageLayout{
 	// Single-panel pages
 	HOMEPAGE:         {1, [3]float64{0, 1, 0}, [3]string{"", "Home", ""}},
 	QUICKSTARTPAGE:   {1, [3]float64{0, 1, 0}, [3]string{"", "Quickstart", ""}},
-	ACTIONSPAGE:      {1, [3]float64{0, 1, 0}, [3]string{"", "Actions", ""}},
+	// ACTIONSPAGE uses GridScreen, no legacy layout needed
 	PLUGINDETAILPAGE: {1, [3]float64{0, 1, 0}, [3]string{"", "Plugin", ""}},
 
 	// Two-panel pages

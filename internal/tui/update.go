@@ -11,6 +11,21 @@ import (
 
 // Update dispatches messages through the update handler chain and returns the updated model and command.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Ctrl+c always force-quits, regardless of overlay, focus, or screen state.
+	// Esc shows a quit confirmation dialog (or quits immediately if one is already showing).
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
+		case "ctrl+c":
+			return m, tea.Quit
+		case "esc":
+			if d, ok := m.ActiveOverlay.(*DialogModel); ok && d != nil && d.Action == DIALOGQUITCONFIRM {
+				return m, tea.Quit
+			}
+			m.ActiveOverlay = nil
+			return m.UpdateDialog(ShowQuitConfirmDialogMsg{})
+		}
+	}
+
 	// Handle user provisioning first if needed
 	if m, cmd := m.UpdateProvisioning(msg); cmd != nil {
 		return m, cmd
@@ -219,6 +234,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.UpdateDialog(msg)
 		case ActionResultMsg:
 			return m.UpdateDialog(msg)
+		case DialogAcceptMsg:
+			return m.UpdateDialog(msg)
+		case DialogCancelMsg:
+			return m.UpdateDialog(msg)
+		case FocusSet:
+			return m.UpdateState(msg)
 		case ShowApproveAllRoutesDialogMsg:
 			return m.UpdateDialog(msg)
 		case ShowApproveAllHooksDialogMsg:

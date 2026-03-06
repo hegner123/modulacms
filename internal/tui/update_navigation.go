@@ -121,6 +121,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		case ACTIONSPAGE:
 			cmds = append(cmds, PageSetCmd(m.PageMap[ACTIONSPAGE]))
 			cmds = append(cmds, PanelFocusResetCmd())
+			cmds = append(cmds, UpdateCheckCmd())
 
 			return m, tea.Batch(cmds...)
 		case QUICKSTARTPAGE:
