@@ -412,6 +412,7 @@ var Entities = []Entity{
 		Fields: []Field{
 			{AppName: "AdminDatatypeID", Type: "types.AdminDatatypeID", JSONTag: "admin_datatype_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "toString"},
 			{AppName: "ParentID", Type: "types.NullableAdminDatatypeID", JSONTag: "parent_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "SortOrder", Type: "int64", JSONTag: "sort_order", InCreate: true, InUpdate: true, NarrowInt: true, StringConvert: "sprintf"},
 			{AppName: "Name", Type: "string", JSONTag: "name", InCreate: true, InUpdate: true, StringConvert: "string"},
 			{AppName: "Label", Type: "string", JSONTag: "label", InCreate: true, InUpdate: true, StringConvert: "string"},
 			{AppName: "Type", Type: "string", JSONTag: "type", InCreate: true, InUpdate: true, StringConvert: "string"},
@@ -515,6 +516,7 @@ var Entities = []Entity{
 		Fields: []Field{
 			{AppName: "DatatypeID", Type: "types.DatatypeID", JSONTag: "datatype_id", IsPrimaryID: true, InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "ParentID", Type: "types.NullableDatatypeID", JSONTag: "parent_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "SortOrder", Type: "int64", JSONTag: "sort_order", InCreate: true, InUpdate: true, NarrowInt: true, StringConvert: "sprintf"},
 			{AppName: "Name", Type: "string", JSONTag: "name", InCreate: true, InUpdate: true, StringConvert: "string"},
 			{AppName: "Label", Type: "string", JSONTag: "label", InCreate: true, InUpdate: true, StringConvert: "string"},
 			{AppName: "Type", Type: "string", JSONTag: "type", InCreate: true, InUpdate: true, StringConvert: "string"},

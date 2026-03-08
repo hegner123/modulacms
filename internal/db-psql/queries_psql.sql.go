@@ -1132,6 +1132,7 @@ const createAdminDatatype = `-- name: CreateAdminDatatype :one
 INSERT INTO admin_datatypes (
     admin_datatype_id,
     parent_id,
+    sort_order,
     name,
     label,
     type,
@@ -1146,14 +1147,16 @@ INSERT INTO admin_datatypes (
     $5,
     $6,
     $7,
-    $8
+    $8,
+    $9
 )
-RETURNING admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified
+RETURNING admin_datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified
 `
 
 type CreateAdminDatatypeParams struct {
 	AdminDatatypeID types.AdminDatatypeID         `json:"admin_datatype_id"`
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	SortOrder       int32                         `json:"sort_order"`
 	Name            string                        `json:"name"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
@@ -1166,6 +1169,7 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 	row := q.db.QueryRowContext(ctx, createAdminDatatype,
 		arg.AdminDatatypeID,
 		arg.ParentID,
+		arg.SortOrder,
 		arg.Name,
 		arg.Label,
 		arg.Type,
@@ -1177,6 +1181,7 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 	err := row.Scan(
 		&i.AdminDatatypeID,
 		&i.ParentID,
+		&i.SortOrder,
 		&i.Name,
 		&i.Label,
 		&i.Type,
@@ -1194,6 +1199,7 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
         CONSTRAINT fk_parent_id
             REFERENCES admin_datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -1984,6 +1990,7 @@ const createDatatype = `-- name: CreateDatatype :one
 INSERT INTO datatypes (
     datatype_id,
     parent_id,
+    sort_order,
     name,
     label,
     type,
@@ -1998,13 +2005,15 @@ INSERT INTO datatypes (
     $5,
     $6,
     $7,
-    $8
-    ) RETURNING datatype_id, parent_id, name, label, type, author_id, date_created, date_modified
+    $8,
+    $9
+    ) RETURNING datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified
 `
 
 type CreateDatatypeParams struct {
 	DatatypeID   types.DatatypeID         `json:"datatype_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	SortOrder    int32                    `json:"sort_order"`
 	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
@@ -2017,6 +2026,7 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 	row := q.db.QueryRowContext(ctx, createDatatype,
 		arg.DatatypeID,
 		arg.ParentID,
+		arg.SortOrder,
 		arg.Name,
 		arg.Label,
 		arg.Type,
@@ -2028,6 +2038,7 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 	err := row.Scan(
 		&i.DatatypeID,
 		&i.ParentID,
+		&i.SortOrder,
 		&i.Name,
 		&i.Label,
 		&i.Type,
@@ -2045,6 +2056,7 @@ CREATE TABLE IF NOT EXISTS datatypes (
         CONSTRAINT fk_datatypes_parent
             REFERENCES datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -4602,7 +4614,7 @@ func (q *Queries) GetAdminContentVersion(ctx context.Context, arg GetAdminConten
 }
 
 const getAdminDatatype = `-- name: GetAdminDatatype :one
-SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
 WHERE admin_datatype_id = $1
 LIMIT 1
 `
@@ -4617,6 +4629,7 @@ func (q *Queries) GetAdminDatatype(ctx context.Context, arg GetAdminDatatypePara
 	err := row.Scan(
 		&i.AdminDatatypeID,
 		&i.ParentID,
+		&i.SortOrder,
 		&i.Name,
 		&i.Label,
 		&i.Type,
@@ -5466,7 +5479,7 @@ func (q *Queries) GetContentVersion(ctx context.Context, arg GetContentVersionPa
 }
 
 const getDatatype = `-- name: GetDatatype :one
-SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE datatype_id = $1 LIMIT 1
 `
 
@@ -5480,6 +5493,7 @@ func (q *Queries) GetDatatype(ctx context.Context, arg GetDatatypeParams) (Datat
 	err := row.Scan(
 		&i.DatatypeID,
 		&i.ParentID,
+		&i.SortOrder,
 		&i.Name,
 		&i.Label,
 		&i.Type,
@@ -5491,7 +5505,7 @@ func (q *Queries) GetDatatype(ctx context.Context, arg GetDatatypeParams) (Datat
 }
 
 const getDatatypeByName = `-- name: GetDatatypeByName :one
-SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE name = $1 LIMIT 1
 `
 
@@ -5505,6 +5519,7 @@ func (q *Queries) GetDatatypeByName(ctx context.Context, arg GetDatatypeByNamePa
 	err := row.Scan(
 		&i.DatatypeID,
 		&i.ParentID,
+		&i.SortOrder,
 		&i.Name,
 		&i.Label,
 		&i.Type,
@@ -5516,7 +5531,7 @@ func (q *Queries) GetDatatypeByName(ctx context.Context, arg GetDatatypeByNamePa
 }
 
 const getDatatypeByType = `-- name: GetDatatypeByType :one
-SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE type = $1 LIMIT 1
 `
 
@@ -5530,6 +5545,7 @@ func (q *Queries) GetDatatypeByType(ctx context.Context, arg GetDatatypeByTypePa
 	err := row.Scan(
 		&i.DatatypeID,
 		&i.ParentID,
+		&i.SortOrder,
 		&i.Name,
 		&i.Label,
 		&i.Type,
@@ -5868,6 +5884,32 @@ func (q *Queries) GetLocaleByCode(ctx context.Context, arg GetLocaleByCodeParams
 	return i, err
 }
 
+const getMaxAdminDatatypeRootSortOrder = `-- name: GetMaxAdminDatatypeRootSortOrder :one
+SELECT COALESCE(MAX(sort_order), -1) FROM admin_datatypes WHERE parent_id IS NULL
+`
+
+func (q *Queries) GetMaxAdminDatatypeRootSortOrder(ctx context.Context) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, getMaxAdminDatatypeRootSortOrder)
+	var coalesce interface{}
+	err := row.Scan(&coalesce)
+	return coalesce, err
+}
+
+const getMaxAdminDatatypeSortOrderByParentID = `-- name: GetMaxAdminDatatypeSortOrderByParentID :one
+SELECT COALESCE(MAX(sort_order), -1) FROM admin_datatypes WHERE parent_id = $1
+`
+
+type GetMaxAdminDatatypeSortOrderByParentIDParams struct {
+	ParentID types.NullableAdminDatatypeID `json:"parent_id"`
+}
+
+func (q *Queries) GetMaxAdminDatatypeSortOrderByParentID(ctx context.Context, arg GetMaxAdminDatatypeSortOrderByParentIDParams) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, getMaxAdminDatatypeSortOrderByParentID, arg.ParentID)
+	var coalesce interface{}
+	err := row.Scan(&coalesce)
+	return coalesce, err
+}
+
 const getMaxAdminSortOrderByParentID = `-- name: GetMaxAdminSortOrderByParentID :one
 SELECT COALESCE(MAX(sort_order), -1)
 FROM admin_fields
@@ -5880,6 +5922,32 @@ type GetMaxAdminSortOrderByParentIDParams struct {
 
 func (q *Queries) GetMaxAdminSortOrderByParentID(ctx context.Context, arg GetMaxAdminSortOrderByParentIDParams) (interface{}, error) {
 	row := q.db.QueryRowContext(ctx, getMaxAdminSortOrderByParentID, arg.ParentID)
+	var coalesce interface{}
+	err := row.Scan(&coalesce)
+	return coalesce, err
+}
+
+const getMaxDatatypeRootSortOrder = `-- name: GetMaxDatatypeRootSortOrder :one
+SELECT COALESCE(MAX(sort_order), -1) FROM datatypes WHERE parent_id IS NULL
+`
+
+func (q *Queries) GetMaxDatatypeRootSortOrder(ctx context.Context) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, getMaxDatatypeRootSortOrder)
+	var coalesce interface{}
+	err := row.Scan(&coalesce)
+	return coalesce, err
+}
+
+const getMaxDatatypeSortOrderByParentID = `-- name: GetMaxDatatypeSortOrderByParentID :one
+SELECT COALESCE(MAX(sort_order), -1) FROM datatypes WHERE parent_id = $1
+`
+
+type GetMaxDatatypeSortOrderByParentIDParams struct {
+	ParentID types.NullableDatatypeID `json:"parent_id"`
+}
+
+func (q *Queries) GetMaxDatatypeSortOrderByParentID(ctx context.Context, arg GetMaxDatatypeSortOrderByParentIDParams) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, getMaxDatatypeSortOrderByParentID, arg.ParentID)
 	var coalesce interface{}
 	err := row.Scan(&coalesce)
 	return coalesce, err
@@ -8379,8 +8447,8 @@ func (q *Queries) ListAdminContentVersionsByContentLocale(ctx context.Context, a
 }
 
 const listAdminDatatype = `-- name: ListAdminDatatype :many
-SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
-ORDER BY admin_datatype_id
+SELECT admin_datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
+ORDER BY sort_order, admin_datatype_id
 `
 
 func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatypes, error) {
@@ -8395,6 +8463,7 @@ func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatypes, erro
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -8416,8 +8485,9 @@ func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatypes, erro
 }
 
 const listAdminDatatypeChildren = `-- name: ListAdminDatatypeChildren :many
-SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
 WHERE parent_id = $1
+ORDER BY sort_order, admin_datatype_id
 `
 
 type ListAdminDatatypeChildrenParams struct {
@@ -8436,6 +8506,7 @@ func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, arg ListAdminDa
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -8457,9 +8528,9 @@ func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, arg ListAdminDa
 }
 
 const listAdminDatatypeChildrenPaginated = `-- name: ListAdminDatatypeChildrenPaginated :many
-SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
 WHERE parent_id = $1
-ORDER BY admin_datatype_id
+ORDER BY sort_order, admin_datatype_id
 LIMIT $2 OFFSET $3
 `
 
@@ -8481,6 +8552,7 @@ func (q *Queries) ListAdminDatatypeChildrenPaginated(ctx context.Context, arg Li
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -8502,8 +8574,9 @@ func (q *Queries) ListAdminDatatypeChildrenPaginated(ctx context.Context, arg Li
 }
 
 const listAdminDatatypeGlobal = `-- name: ListAdminDatatypeGlobal :many
-SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
-WHERE type = 'GLOBAL' LIMIT 1
+SELECT admin_datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
+WHERE type = '_global'
+ORDER BY sort_order, admin_datatype_id
 `
 
 func (q *Queries) ListAdminDatatypeGlobal(ctx context.Context) ([]AdminDatatypes, error) {
@@ -8518,6 +8591,7 @@ func (q *Queries) ListAdminDatatypeGlobal(ctx context.Context) ([]AdminDatatypes
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -8539,8 +8613,8 @@ func (q *Queries) ListAdminDatatypeGlobal(ctx context.Context) ([]AdminDatatypes
 }
 
 const listAdminDatatypePaginated = `-- name: ListAdminDatatypePaginated :many
-SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
-ORDER BY admin_datatype_id
+SELECT admin_datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
+ORDER BY sort_order, admin_datatype_id
 LIMIT $1 OFFSET $2
 `
 
@@ -8561,6 +8635,7 @@ func (q *Queries) ListAdminDatatypePaginated(ctx context.Context, arg ListAdminD
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -8582,8 +8657,9 @@ func (q *Queries) ListAdminDatatypePaginated(ctx context.Context, arg ListAdminD
 }
 
 const listAdminDatatypeRoot = `-- name: ListAdminDatatypeRoot :many
-SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
-WHERE type = '_root' LIMIT 1
+SELECT admin_datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
+WHERE type IN ('_root', '_global')
+ORDER BY sort_order, admin_datatype_id
 `
 
 func (q *Queries) ListAdminDatatypeRoot(ctx context.Context) ([]AdminDatatypes, error) {
@@ -8598,6 +8674,7 @@ func (q *Queries) ListAdminDatatypeRoot(ctx context.Context) ([]AdminDatatypes, 
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -10332,8 +10409,8 @@ func (q *Queries) ListContentVersionsByContentLocale(ctx context.Context, arg Li
 }
 
 const listDatatype = `-- name: ListDatatype :many
-SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
-ORDER BY datatype_id
+SELECT datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM datatypes
+ORDER BY sort_order, datatype_id
 `
 
 func (q *Queries) ListDatatype(ctx context.Context) ([]Datatypes, error) {
@@ -10348,6 +10425,7 @@ func (q *Queries) ListDatatype(ctx context.Context) ([]Datatypes, error) {
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -10369,9 +10447,9 @@ func (q *Queries) ListDatatype(ctx context.Context) ([]Datatypes, error) {
 }
 
 const listDatatypeChildren = `-- name: ListDatatypeChildren :many
-SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE parent_id = $1
-ORDER BY label
+ORDER BY sort_order, label
 `
 
 type ListDatatypeChildrenParams struct {
@@ -10390,6 +10468,7 @@ func (q *Queries) ListDatatypeChildren(ctx context.Context, arg ListDatatypeChil
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -10411,9 +10490,9 @@ func (q *Queries) ListDatatypeChildren(ctx context.Context, arg ListDatatypeChil
 }
 
 const listDatatypeChildrenPaginated = `-- name: ListDatatypeChildrenPaginated :many
-SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE parent_id = $1
-ORDER BY label
+ORDER BY sort_order, label
 LIMIT $2 OFFSET $3
 `
 
@@ -10435,6 +10514,7 @@ func (q *Queries) ListDatatypeChildrenPaginated(ctx context.Context, arg ListDat
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -10456,9 +10536,9 @@ func (q *Queries) ListDatatypeChildrenPaginated(ctx context.Context, arg ListDat
 }
 
 const listDatatypeGlobal = `-- name: ListDatatypeGlobal :many
-SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE type = '_global'
-ORDER BY datatype_id
+ORDER BY sort_order, datatype_id
 `
 
 func (q *Queries) ListDatatypeGlobal(ctx context.Context) ([]Datatypes, error) {
@@ -10473,6 +10553,7 @@ func (q *Queries) ListDatatypeGlobal(ctx context.Context) ([]Datatypes, error) {
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -10494,8 +10575,8 @@ func (q *Queries) ListDatatypeGlobal(ctx context.Context) ([]Datatypes, error) {
 }
 
 const listDatatypePaginated = `-- name: ListDatatypePaginated :many
-SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
-ORDER BY datatype_id
+SELECT datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM datatypes
+ORDER BY sort_order, datatype_id
 LIMIT $1 OFFSET $2
 `
 
@@ -10516,6 +10597,7 @@ func (q *Queries) ListDatatypePaginated(ctx context.Context, arg ListDatatypePag
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -10537,9 +10619,9 @@ func (q *Queries) ListDatatypePaginated(ctx context.Context, arg ListDatatypePag
 }
 
 const listDatatypeRoot = `-- name: ListDatatypeRoot :many
-SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE type IN ('_root', '_global')
-ORDER BY datatype_id
+ORDER BY sort_order, datatype_id
 `
 
 func (q *Queries) ListDatatypeRoot(ctx context.Context) ([]Datatypes, error) {
@@ -10554,6 +10636,7 @@ func (q *Queries) ListDatatypeRoot(ctx context.Context) ([]Datatypes, error) {
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.SortOrder,
 			&i.Name,
 			&i.Label,
 			&i.Type,
@@ -12674,18 +12757,20 @@ func (q *Queries) UpdateAdminContentRelationSortOrder(ctx context.Context, arg U
 const updateAdminDatatype = `-- name: UpdateAdminDatatype :exec
 UPDATE admin_datatypes
 SET parent_id = $1,
-    name = $2,
-    label = $3,
-    type = $4,
-    author_id = $5,
-    date_created = $6,
-    date_modified = $7
-WHERE admin_datatype_id = $8
-RETURNING admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified
+    sort_order = $2,
+    name = $3,
+    label = $4,
+    type = $5,
+    author_id = $6,
+    date_created = $7,
+    date_modified = $8
+WHERE admin_datatype_id = $9
+RETURNING admin_datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified
 `
 
 type UpdateAdminDatatypeParams struct {
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	SortOrder       int32                         `json:"sort_order"`
 	Name            string                        `json:"name"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
@@ -12698,6 +12783,7 @@ type UpdateAdminDatatypeParams struct {
 func (q *Queries) UpdateAdminDatatype(ctx context.Context, arg UpdateAdminDatatypeParams) error {
 	_, err := q.db.ExecContext(ctx, updateAdminDatatype,
 		arg.ParentID,
+		arg.SortOrder,
 		arg.Name,
 		arg.Label,
 		arg.Type,
@@ -12706,6 +12792,20 @@ func (q *Queries) UpdateAdminDatatype(ctx context.Context, arg UpdateAdminDataty
 		arg.DateModified,
 		arg.AdminDatatypeID,
 	)
+	return err
+}
+
+const updateAdminDatatypeSortOrder = `-- name: UpdateAdminDatatypeSortOrder :exec
+UPDATE admin_datatypes SET sort_order = $1 WHERE admin_datatype_id = $2
+`
+
+type UpdateAdminDatatypeSortOrderParams struct {
+	SortOrder       int32                 `json:"sort_order"`
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+}
+
+func (q *Queries) UpdateAdminDatatypeSortOrder(ctx context.Context, arg UpdateAdminDatatypeSortOrderParams) error {
+	_, err := q.db.ExecContext(ctx, updateAdminDatatypeSortOrder, arg.SortOrder, arg.AdminDatatypeID)
 	return err
 }
 
@@ -13110,18 +13210,20 @@ func (q *Queries) UpdateContentRelationSortOrder(ctx context.Context, arg Update
 const updateDatatype = `-- name: UpdateDatatype :exec
 UPDATE datatypes
 SET parent_id = $1,
-    name = $2,
-    label = $3,
-    type = $4,
-    author_id = $5,
-    date_created = $6,
-    date_modified = $7
-    WHERE datatype_id = $8
-    RETURNING datatype_id, parent_id, name, label, type, author_id, date_created, date_modified
+    sort_order = $2,
+    name = $3,
+    label = $4,
+    type = $5,
+    author_id = $6,
+    date_created = $7,
+    date_modified = $8
+    WHERE datatype_id = $9
+    RETURNING datatype_id, parent_id, sort_order, name, label, type, author_id, date_created, date_modified
 `
 
 type UpdateDatatypeParams struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	SortOrder    int32                    `json:"sort_order"`
 	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
@@ -13134,6 +13236,7 @@ type UpdateDatatypeParams struct {
 func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) error {
 	_, err := q.db.ExecContext(ctx, updateDatatype,
 		arg.ParentID,
+		arg.SortOrder,
 		arg.Name,
 		arg.Label,
 		arg.Type,
@@ -13142,6 +13245,20 @@ func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) 
 		arg.DateModified,
 		arg.DatatypeID,
 	)
+	return err
+}
+
+const updateDatatypeSortOrder = `-- name: UpdateDatatypeSortOrder :exec
+UPDATE datatypes SET sort_order = $1 WHERE datatype_id = $2
+`
+
+type UpdateDatatypeSortOrderParams struct {
+	SortOrder  int32            `json:"sort_order"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+}
+
+func (q *Queries) UpdateDatatypeSortOrder(ctx context.Context, arg UpdateDatatypeSortOrderParams) error {
+	_, err := q.db.ExecContext(ctx, updateDatatypeSortOrder, arg.SortOrder, arg.DatatypeID)
 	return err
 }
 

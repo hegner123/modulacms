@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS datatypes
     parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -32,27 +33,28 @@ WHERE datatype_id = ? LIMIT 1;
 
 -- name: ListDatatype :many
 SELECT * FROM datatypes
-ORDER BY datatype_id;
+ORDER BY sort_order, datatype_id;
 
 -- name: ListDatatypeGlobal :many
 SELECT * FROM datatypes
 WHERE type = '_global'
-ORDER BY datatype_id;
+ORDER BY sort_order, datatype_id;
 
 -- name: ListDatatypeRoot :many
 SELECT * FROM datatypes
 WHERE type IN ('_root', '_global')
-ORDER BY datatype_id;
+ORDER BY sort_order, datatype_id;
 
 -- name: ListDatatypeChildren :many
 SELECT * FROM datatypes
 WHERE parent_id = ?
-ORDER BY label;
+ORDER BY sort_order, label;
 
 -- name: CreateDatatype :one
 INSERT INTO datatypes (
     datatype_id,
     parent_id,
+    sort_order,
     name,
     label,
     type,
@@ -67,12 +69,14 @@ INSERT INTO datatypes (
     ?,
     ?,
     ?,
+    ?,
     ?
 ) RETURNING *;
 
 -- name: UpdateDatatype :exec
 UPDATE datatypes
 SET parent_id = ?,
+    sort_order = ?,
     name = ?,
     label = ?,
     type = ?,
@@ -96,13 +100,13 @@ WHERE name = ? LIMIT 1;
 
 -- name: ListDatatypePaginated :many
 SELECT * FROM datatypes
-ORDER BY datatype_id
+ORDER BY sort_order, datatype_id
 LIMIT ? OFFSET ?;
 
 -- name: ListDatatypeChildrenPaginated :many
 SELECT * FROM datatypes
 WHERE parent_id = ?
-ORDER BY label
+ORDER BY sort_order, label
 LIMIT ? OFFSET ?;
 
 -- name: ReassignDatatypeAuthor :exec
@@ -110,3 +114,12 @@ UPDATE datatypes SET author_id = ? WHERE author_id = ?;
 
 -- name: CountDatatypesByAuthor :one
 SELECT COUNT(*) FROM datatypes WHERE author_id = ?;
+
+-- name: UpdateDatatypeSortOrder :exec
+UPDATE datatypes SET sort_order = ? WHERE datatype_id = ?;
+
+-- name: GetMaxDatatypeRootSortOrder :one
+SELECT COALESCE(MAX(sort_order), -1) FROM datatypes WHERE parent_id IS NULL;
+
+-- name: GetMaxDatatypeSortOrderByParentID :one
+SELECT COALESCE(MAX(sort_order), -1) FROM datatypes WHERE parent_id = ?;

@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS datatypes(
     parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,

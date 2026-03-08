@@ -1336,7 +1336,7 @@ func TestAdminDatatypesStruct_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"admin_datatype_id", "parent_id", "name", "label",
+		"admin_datatype_id", "parent_id", "sort_order", "name", "label",
 		"type", "author_id", "date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1371,7 +1371,7 @@ func TestCreateAdminDatatypeParams_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"parent_id", "name", "label", "type",
+		"parent_id", "sort_order", "name", "label", "type",
 		"author_id", "date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1408,7 +1408,7 @@ func TestUpdateAdminDatatypeParams_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"parent_id", "name", "label", "type",
+		"parent_id", "sort_order", "name", "label", "type",
 		"author_id", "date_created", "date_modified",
 		"admin_datatype_id",
 	}

@@ -12,6 +12,7 @@ import (
 type DatatypeJSON struct {
 	DatatypeID   string `json:"datatype_id"`
 	ParentID     string `json:"parent_id"`
+	SortOrder    string `json:"sort_order"`
 	Name         string `json:"name"`
 	Label        string `json:"label"`
 	Type         string `json:"type"`
@@ -25,6 +26,7 @@ func MapDatatypeJSON(a Datatypes) DatatypeJSON {
 	return DatatypeJSON{
 		DatatypeID:   a.DatatypeID.String(),
 		ParentID:     a.ParentID.String(),
+		SortOrder:    fmt.Sprintf("%d", a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,

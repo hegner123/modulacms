@@ -21,6 +21,7 @@ import (
 type AdminDatatypes struct {
 	AdminDatatypeID types.AdminDatatypeID         `json:"admin_datatype_id"`
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	SortOrder       int64                         `json:"sort_order"`
 	Name            string                        `json:"name"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
@@ -32,6 +33,7 @@ type AdminDatatypes struct {
 // CreateAdminDatatypeParams contains parameters for creating a new adminDatatype.
 type CreateAdminDatatypeParams struct {
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	SortOrder    int64                         `json:"sort_order"`
 	Name         string                        `json:"name"`
 	Label        string                        `json:"label"`
 	Type         string                        `json:"type"`
@@ -43,6 +45,7 @@ type CreateAdminDatatypeParams struct {
 // UpdateAdminDatatypeParams contains parameters for updating an existing adminDatatype.
 type UpdateAdminDatatypeParams struct {
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	SortOrder       int64                         `json:"sort_order"`
 	Name            string                        `json:"name"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
@@ -64,6 +67,7 @@ func MapStringAdminDatatype(a AdminDatatypes) StringAdminDatatypes {
 	return StringAdminDatatypes{
 		AdminDatatypeID: a.AdminDatatypeID.String(),
 		ParentID:        a.ParentID.String(),
+		SortOrder:       fmt.Sprintf("%d", a.SortOrder),
 		Name:            a.Name,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -85,6 +89,7 @@ func (d Database) MapAdminDatatype(a mdb.AdminDatatypes) AdminDatatypes {
 	return AdminDatatypes{
 		AdminDatatypeID: a.AdminDatatypeID,
 		ParentID:        a.ParentID,
+		SortOrder:       a.SortOrder,
 		Name:            a.Name,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -99,6 +104,7 @@ func (d Database) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) mdb.
 	return mdb.CreateAdminDatatypeParams{
 		AdminDatatypeID: types.NewAdminDatatypeID(),
 		ParentID:        a.ParentID,
+		SortOrder:       a.SortOrder,
 		Name:            a.Name,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -112,6 +118,7 @@ func (d Database) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) mdb.
 func (d Database) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) mdb.UpdateAdminDatatypeParams {
 	return mdb.UpdateAdminDatatypeParams{
 		ParentID:        a.ParentID,
+		SortOrder:       a.SortOrder,
 		Name:            a.Name,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -224,6 +231,7 @@ func (d MysqlDatabase) MapAdminDatatype(a mdbm.AdminDatatypes) AdminDatatypes {
 	return AdminDatatypes{
 		AdminDatatypeID: a.AdminDatatypeID,
 		ParentID:        a.ParentID,
+		SortOrder:       int64(a.SortOrder),
 		Name:            a.Name,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -238,6 +246,7 @@ func (d MysqlDatabase) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams)
 	return mdbm.CreateAdminDatatypeParams{
 		AdminDatatypeID: types.NewAdminDatatypeID(),
 		ParentID:        a.ParentID,
+		SortOrder:       int32(a.SortOrder),
 		Name:            a.Name,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -251,6 +260,7 @@ func (d MysqlDatabase) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams)
 func (d MysqlDatabase) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) mdbm.UpdateAdminDatatypeParams {
 	return mdbm.UpdateAdminDatatypeParams{
 		ParentID:        a.ParentID,
+		SortOrder:       int32(a.SortOrder),
 		Name:            a.Name,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -363,6 +373,7 @@ func (d PsqlDatabase) MapAdminDatatype(a mdbp.AdminDatatypes) AdminDatatypes {
 	return AdminDatatypes{
 		AdminDatatypeID: a.AdminDatatypeID,
 		ParentID:        a.ParentID,
+		SortOrder:       int64(a.SortOrder),
 		Name:            a.Name,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -377,6 +388,7 @@ func (d PsqlDatabase) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) 
 	return mdbp.CreateAdminDatatypeParams{
 		AdminDatatypeID: types.NewAdminDatatypeID(),
 		ParentID:        a.ParentID,
+		SortOrder:       int32(a.SortOrder),
 		Name:            a.Name,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -390,6 +402,7 @@ func (d PsqlDatabase) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) 
 func (d PsqlDatabase) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) mdbp.UpdateAdminDatatypeParams {
 	return mdbp.UpdateAdminDatatypeParams{
 		ParentID:        a.ParentID,
+		SortOrder:       int32(a.SortOrder),
 		Name:            a.Name,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -531,6 +544,7 @@ func (c NewAdminDatatypeCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.
 	return queries.CreateAdminDatatype(ctx, mdb.CreateAdminDatatypeParams{
 		AdminDatatypeID: types.NewAdminDatatypeID(),
 		ParentID:        c.params.ParentID,
+		SortOrder:       c.params.SortOrder,
 		Name:            c.params.Name,
 		Label:           c.params.Label,
 		Type:            c.params.Type,
@@ -588,6 +602,7 @@ func (c UpdateAdminDatatypeCmd) Execute(ctx context.Context, tx audited.DBTX) er
 	queries := mdb.New(tx)
 	return queries.UpdateAdminDatatype(ctx, mdb.UpdateAdminDatatypeParams{
 		ParentID:        c.params.ParentID,
+		SortOrder:       c.params.SortOrder,
 		Name:            c.params.Name,
 		Label:           c.params.Label,
 		Type:            c.params.Type,
@@ -689,6 +704,7 @@ func (c NewAdminDatatypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) 
 	params := mdbm.CreateAdminDatatypeParams{
 		AdminDatatypeID: types.NewAdminDatatypeID(),
 		ParentID:        c.params.ParentID,
+		SortOrder:       int32(c.params.SortOrder),
 		Name:            c.params.Name,
 		Label:           c.params.Label,
 		Type:            c.params.Type,
@@ -750,6 +766,7 @@ func (c UpdateAdminDatatypeCmdMysql) Execute(ctx context.Context, tx audited.DBT
 	queries := mdbm.New(tx)
 	return queries.UpdateAdminDatatype(ctx, mdbm.UpdateAdminDatatypeParams{
 		ParentID:        c.params.ParentID,
+		SortOrder:       int32(c.params.SortOrder),
 		Name:            c.params.Name,
 		Label:           c.params.Label,
 		Type:            c.params.Type,
@@ -851,6 +868,7 @@ func (c NewAdminDatatypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (
 	return queries.CreateAdminDatatype(ctx, mdbp.CreateAdminDatatypeParams{
 		AdminDatatypeID: types.NewAdminDatatypeID(),
 		ParentID:        c.params.ParentID,
+		SortOrder:       int32(c.params.SortOrder),
 		Name:            c.params.Name,
 		Label:           c.params.Label,
 		Type:            c.params.Type,
@@ -908,6 +926,7 @@ func (c UpdateAdminDatatypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX
 	queries := mdbp.New(tx)
 	return queries.UpdateAdminDatatype(ctx, mdbp.UpdateAdminDatatypeParams{
 		ParentID:        c.params.ParentID,
+		SortOrder:       int32(c.params.SortOrder),
 		Name:            c.params.Name,
 		Label:           c.params.Label,
 		Type:            c.params.Type,

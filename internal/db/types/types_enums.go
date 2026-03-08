@@ -162,14 +162,13 @@ const (
 	FieldTypeDatetime       FieldType = "datetime"
 	FieldTypeBoolean        FieldType = "boolean"
 	FieldTypeSelect         FieldType = "select"
-	FieldTypeMedia          FieldType = "media"
-	FieldTypeRelation       FieldType = "relation"
-	FieldTypeJSON           FieldType = "json"
-	FieldTypeRichText       FieldType = "richtext"
-	FieldTypeSlug           FieldType = "slug"
-	FieldTypeEmail          FieldType = "email"
-	FieldTypeURL            FieldType = "url"
-	FieldTypeContentTreeRef FieldType = "content_tree_ref"
+	FieldTypeMedia    FieldType = "media"
+	FieldTypeJSON     FieldType = "json"
+	FieldTypeRichText FieldType = "richtext"
+	FieldTypeSlug     FieldType = "slug"
+	FieldTypeEmail    FieldType = "email"
+	FieldTypeURL      FieldType = "url"
+	FieldTypeIDRef    FieldType = "_id"
 )
 
 // String returns the string representation of FieldType.

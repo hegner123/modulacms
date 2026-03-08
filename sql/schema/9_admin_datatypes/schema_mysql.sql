@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS admin_datatypes (
     admin_datatype_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    sort_order INT NOT NULL DEFAULT 0,
     name VARCHAR(255) NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,

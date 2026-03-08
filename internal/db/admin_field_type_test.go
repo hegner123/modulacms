@@ -445,8 +445,8 @@ func TestCrossDatabaseMapCreateAdminFieldTypeParams_AutoIDGeneration(t *testing.
 	t.Parallel()
 
 	input := CreateAdminFieldTypeParams{
-		Type:  "relation",
-		Label: "Relation",
+		Type:  "_id",
+		Label: "ID Reference",
 	}
 
 	sqliteResult := Database{}.MapCreateAdminFieldTypeParams(input)
@@ -740,8 +740,8 @@ func TestNewAdminFieldTypeCmdPsql_AllAccessors(t *testing.T) {
 		IP:        "172.16.0.1",
 	}
 	params := CreateAdminFieldTypeParams{
-		Type:  "relation",
-		Label: "Relation",
+		Type:  "_id",
+		Label: "ID Reference",
 	}
 
 	cmd := PsqlDatabase{}.NewAdminFieldTypeCmd(ctx, ac, params)
@@ -759,8 +759,8 @@ func TestNewAdminFieldTypeCmdPsql_AllAccessors(t *testing.T) {
 	if !ok {
 		t.Fatalf("Params() returned %T, want CreateAdminFieldTypeParams", cmd.Params())
 	}
-	if p.Type != "relation" {
-		t.Errorf("Params().Type = %q, want %q", p.Type, "relation")
+	if p.Type != "_id" {
+		t.Errorf("Params().Type = %q, want %q", p.Type, "_id")
 	}
 	if cmd.Connection() != nil {
 		t.Error("Connection() should be nil for empty PsqlDatabase")

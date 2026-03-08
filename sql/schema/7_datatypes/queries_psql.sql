@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS datatypes (
         CONSTRAINT fk_datatypes_parent
             REFERENCES datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -29,27 +30,28 @@ WHERE datatype_id = $1 LIMIT 1;
 
 -- name: ListDatatype :many
 SELECT * FROM datatypes
-ORDER BY datatype_id;
+ORDER BY sort_order, datatype_id;
 
 -- name: ListDatatypeGlobal :many
 SELECT * FROM datatypes
 WHERE type = '_global'
-ORDER BY datatype_id;
+ORDER BY sort_order, datatype_id;
 
 -- name: ListDatatypeRoot :many
 SELECT * FROM datatypes
 WHERE type IN ('_root', '_global')
-ORDER BY datatype_id;
+ORDER BY sort_order, datatype_id;
 
 -- name: ListDatatypeChildren :many
 SELECT * FROM datatypes
 WHERE parent_id = $1
-ORDER BY label;
+ORDER BY sort_order, label;
 
 -- name: CreateDatatype :one
 INSERT INTO datatypes (
     datatype_id,
     parent_id,
+    sort_order,
     name,
     label,
     type,
@@ -64,19 +66,21 @@ INSERT INTO datatypes (
     $5,
     $6,
     $7,
-    $8
+    $8,
+    $9
     ) RETURNING *;
 
 -- name: UpdateDatatype :exec
 UPDATE datatypes
 SET parent_id = $1,
-    name = $2,
-    label = $3,
-    type = $4,
-    author_id = $5,
-    date_created = $6,
-    date_modified = $7
-    WHERE datatype_id = $8
+    sort_order = $2,
+    name = $3,
+    label = $4,
+    type = $5,
+    author_id = $6,
+    date_created = $7,
+    date_modified = $8
+    WHERE datatype_id = $9
     RETURNING *;
 
 -- name: DeleteDatatype :exec
@@ -93,13 +97,13 @@ WHERE name = $1 LIMIT 1;
 
 -- name: ListDatatypePaginated :many
 SELECT * FROM datatypes
-ORDER BY datatype_id
+ORDER BY sort_order, datatype_id
 LIMIT $1 OFFSET $2;
 
 -- name: ListDatatypeChildrenPaginated :many
 SELECT * FROM datatypes
 WHERE parent_id = $1
-ORDER BY label
+ORDER BY sort_order, label
 LIMIT $2 OFFSET $3;
 
 -- name: ReassignDatatypeAuthor :exec
@@ -108,3 +112,11 @@ UPDATE datatypes SET author_id = $1 WHERE author_id = $2;
 -- name: CountDatatypesByAuthor :one
 SELECT COUNT(*) FROM datatypes WHERE author_id = $1;
 
+-- name: UpdateDatatypeSortOrder :exec
+UPDATE datatypes SET sort_order = $1 WHERE datatype_id = $2;
+
+-- name: GetMaxDatatypeRootSortOrder :one
+SELECT COALESCE(MAX(sort_order), -1) FROM datatypes WHERE parent_id IS NULL;
+
+-- name: GetMaxDatatypeSortOrderByParentID :one
+SELECT COALESCE(MAX(sort_order), -1) FROM datatypes WHERE parent_id = $1;

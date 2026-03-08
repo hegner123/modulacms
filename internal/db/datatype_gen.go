@@ -21,6 +21,7 @@ import (
 type Datatypes struct {
 	DatatypeID   types.DatatypeID         `json:"datatype_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	SortOrder    int64                    `json:"sort_order"`
 	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
@@ -33,6 +34,7 @@ type Datatypes struct {
 type CreateDatatypeParams struct {
 	DatatypeID   types.DatatypeID         `json:"datatype_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	SortOrder    int64                    `json:"sort_order"`
 	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
@@ -44,6 +46,7 @@ type CreateDatatypeParams struct {
 // UpdateDatatypeParams contains parameters for updating an existing datatype.
 type UpdateDatatypeParams struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	SortOrder    int64                    `json:"sort_order"`
 	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
@@ -65,6 +68,7 @@ func MapStringDatatype(a Datatypes) StringDatatypes {
 	return StringDatatypes{
 		DatatypeID:   a.DatatypeID.String(),
 		ParentID:     a.ParentID.String(),
+		SortOrder:    fmt.Sprintf("%d", a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -86,6 +90,7 @@ func (d Database) MapDatatype(a mdb.Datatypes) Datatypes {
 	return Datatypes{
 		DatatypeID:   a.DatatypeID,
 		ParentID:     a.ParentID,
+		SortOrder:    a.SortOrder,
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -104,6 +109,7 @@ func (d Database) MapCreateDatatypeParams(a CreateDatatypeParams) mdb.CreateData
 	return mdb.CreateDatatypeParams{
 		DatatypeID:   id,
 		ParentID:     a.ParentID,
+		SortOrder:    a.SortOrder,
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -117,6 +123,7 @@ func (d Database) MapCreateDatatypeParams(a CreateDatatypeParams) mdb.CreateData
 func (d Database) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdb.UpdateDatatypeParams {
 	return mdb.UpdateDatatypeParams{
 		ParentID:     a.ParentID,
+		SortOrder:    a.SortOrder,
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -244,6 +251,7 @@ func (d MysqlDatabase) MapDatatype(a mdbm.Datatypes) Datatypes {
 	return Datatypes{
 		DatatypeID:   a.DatatypeID,
 		ParentID:     a.ParentID,
+		SortOrder:    int64(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -262,6 +270,7 @@ func (d MysqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbm.Crea
 	return mdbm.CreateDatatypeParams{
 		DatatypeID:   id,
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -275,6 +284,7 @@ func (d MysqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbm.Crea
 func (d MysqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbm.UpdateDatatypeParams {
 	return mdbm.UpdateDatatypeParams{
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -402,6 +412,7 @@ func (d PsqlDatabase) MapDatatype(a mdbp.Datatypes) Datatypes {
 	return Datatypes{
 		DatatypeID:   a.DatatypeID,
 		ParentID:     a.ParentID,
+		SortOrder:    int64(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -420,6 +431,7 @@ func (d PsqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbp.Creat
 	return mdbp.CreateDatatypeParams{
 		DatatypeID:   id,
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -433,6 +445,7 @@ func (d PsqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbp.Creat
 func (d PsqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbp.UpdateDatatypeParams {
 	return mdbp.UpdateDatatypeParams{
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -593,6 +606,7 @@ func (c NewDatatypeCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Datat
 	return queries.CreateDatatype(ctx, mdb.CreateDatatypeParams{
 		DatatypeID:   id,
 		ParentID:     c.params.ParentID,
+		SortOrder:    c.params.SortOrder,
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Type:         c.params.Type,
@@ -650,6 +664,7 @@ func (c UpdateDatatypeCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.UpdateDatatype(ctx, mdb.UpdateDatatypeParams{
 		ParentID:     c.params.ParentID,
+		SortOrder:    c.params.SortOrder,
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Type:         c.params.Type,
@@ -753,6 +768,7 @@ func (c NewDatatypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm
 	params := mdbm.CreateDatatypeParams{
 		DatatypeID:   id,
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Type:         c.params.Type,
@@ -814,6 +830,7 @@ func (c UpdateDatatypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) er
 	queries := mdbm.New(tx)
 	return queries.UpdateDatatype(ctx, mdbm.UpdateDatatypeParams{
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Type:         c.params.Type,
@@ -917,6 +934,7 @@ func (c NewDatatypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.
 	return queries.CreateDatatype(ctx, mdbp.CreateDatatypeParams{
 		DatatypeID:   id,
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Type:         c.params.Type,
@@ -974,6 +992,7 @@ func (c UpdateDatatypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) err
 	queries := mdbp.New(tx)
 	return queries.UpdateDatatype(ctx, mdbp.UpdateDatatypeParams{
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Type:         c.params.Type,

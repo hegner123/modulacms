@@ -12,15 +12,15 @@ func TestEnsureSystemData_CreatesReferenceDatatype(t *testing.T) {
 	d, seed := testSeededDB(t)
 	ctx := context.Background()
 
-	// Seed field_types so ensureFieldType doesn't fail looking up content_tree_ref.
+	// Seed field_types so ensureFieldType doesn't fail looking up _id.
 	ac := testAuditCtxWithUser(d, seed.User.UserID)
-	_, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: "content_tree_ref", Label: "Content Tree Reference"})
+	_, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: "_id", Label: "ID Reference"})
 	if err != nil {
-		t.Fatalf("seed content_tree_ref field_type: %v", err)
+		t.Fatalf("seed _id field_type: %v", err)
 	}
-	_, err = d.CreateAdminFieldType(ctx, ac, CreateAdminFieldTypeParams{Type: "content_tree_ref", Label: "Content Tree Reference"})
+	_, err = d.CreateAdminFieldType(ctx, ac, CreateAdminFieldTypeParams{Type: "_id", Label: "ID Reference"})
 	if err != nil {
-		t.Fatalf("seed content_tree_ref admin_field_type: %v", err)
+		t.Fatalf("seed _id admin_field_type: %v", err)
 	}
 
 	// _reference should not exist yet
@@ -60,10 +60,10 @@ func TestEnsureSystemData_CreatesReferenceDatatype(t *testing.T) {
 		}())
 	}
 
-	// Verify the linked field is content_tree_ref type
+	// Verify the linked field is _id type
 	linkedField := (*fieldList)[0]
-	if linkedField.Type != types.FieldTypeContentTreeRef {
-		t.Errorf("linked field type = %q, want %q", linkedField.Type, types.FieldTypeContentTreeRef)
+	if linkedField.Type != types.FieldTypeIDRef {
+		t.Errorf("linked field type = %q, want %q", linkedField.Type, types.FieldTypeIDRef)
 	}
 	if linkedField.Label != "Target" {
 		t.Errorf("linked field label = %q, want %q", linkedField.Label, "Target")
@@ -77,13 +77,13 @@ func TestEnsureSystemData_Idempotent(t *testing.T) {
 
 	// Seed field_types
 	ac := testAuditCtxWithUser(d, seed.User.UserID)
-	_, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: "content_tree_ref", Label: "Content Tree Reference"})
+	_, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: "_id", Label: "ID Reference"})
 	if err != nil {
-		t.Fatalf("seed content_tree_ref field_type: %v", err)
+		t.Fatalf("seed _id field_type: %v", err)
 	}
-	_, err = d.CreateAdminFieldType(ctx, ac, CreateAdminFieldTypeParams{Type: "content_tree_ref", Label: "Content Tree Reference"})
+	_, err = d.CreateAdminFieldType(ctx, ac, CreateAdminFieldTypeParams{Type: "_id", Label: "ID Reference"})
 	if err != nil {
-		t.Fatalf("seed content_tree_ref admin_field_type: %v", err)
+		t.Fatalf("seed _id admin_field_type: %v", err)
 	}
 
 	// Run twice
@@ -115,26 +115,26 @@ func TestEnsureSystemData_CreatesFieldTypeIfMissing(t *testing.T) {
 	d, _ := testSeededDB(t)
 	ctx := context.Background()
 
-	// Do NOT seed content_tree_ref — EnsureSystemData should create it
+	// Do NOT seed _id — EnsureSystemData should create it
 	if err := EnsureSystemData(ctx, d); err != nil {
 		t.Fatalf("EnsureSystemData: %v", err)
 	}
 
 	// Verify field_type exists
-	ft, err := d.GetFieldTypeByType("content_tree_ref")
+	ft, err := d.GetFieldTypeByType("_id")
 	if err != nil {
-		t.Fatalf("GetFieldTypeByType(content_tree_ref) after ensure: %v", err)
+		t.Fatalf("GetFieldTypeByType(_id) after ensure: %v", err)
 	}
-	if ft.Type != "content_tree_ref" {
-		t.Errorf("field_type.Type = %q, want %q", ft.Type, "content_tree_ref")
+	if ft.Type != "_id" {
+		t.Errorf("field_type.Type = %q, want %q", ft.Type, "_id")
 	}
 
 	// Verify admin_field_type exists
-	aft, err := d.GetAdminFieldTypeByType("content_tree_ref")
+	aft, err := d.GetAdminFieldTypeByType("_id")
 	if err != nil {
-		t.Fatalf("GetAdminFieldTypeByType(content_tree_ref) after ensure: %v", err)
+		t.Fatalf("GetAdminFieldTypeByType(_id) after ensure: %v", err)
 	}
-	if aft.Type != "content_tree_ref" {
-		t.Errorf("admin_field_type.Type = %q, want %q", aft.Type, "content_tree_ref")
+	if aft.Type != "_id" {
+		t.Errorf("admin_field_type.Type = %q, want %q", aft.Type, "_id")
 	}
 }

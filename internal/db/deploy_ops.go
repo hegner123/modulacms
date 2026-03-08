@@ -351,7 +351,7 @@ func (p *psqlDeployOps) VerifyForeignKeys(ctx context.Context, ex Executor) ([]F
 // ---------- Shared FK verification ----------
 
 // fkWithPK holds a foreign key definition together with the child table's
-// primary key column name — needed because ModulaCMS tables use typed PK
+// primary key column name — needed because Modula tables use typed PK
 // names (datatype_id, content_data_id, etc.), not a uniform "id" column.
 type fkWithPK struct {
 	table     string // child table containing the FK column

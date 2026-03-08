@@ -139,7 +139,7 @@ func TestMapFieldJSON_AllFieldTypes(t *testing.T) {
 	fieldTypes := []types.FieldType{
 		types.FieldTypeText, types.FieldTypeTextarea, types.FieldTypeNumber,
 		types.FieldTypeDate, types.FieldTypeDatetime, types.FieldTypeBoolean,
-		types.FieldTypeSelect, types.FieldTypeMedia, types.FieldTypeRelation,
+		types.FieldTypeSelect, types.FieldTypeMedia, types.FieldTypeIDRef,
 		types.FieldTypeJSON, types.FieldTypeRichText, types.FieldTypeSlug,
 		types.FieldTypeEmail, types.FieldTypeURL,
 	}
@@ -614,7 +614,7 @@ func TestMysqlDatabase_MapUpdateFieldParams_AllFields(t *testing.T) {
 	input := UpdateFieldParams{
 		Label:        "mysql-updated",
 		UIConfig:     "mysql-updated-ui",
-		Type:         types.FieldTypeRelation,
+		Type:         types.FieldTypeIDRef,
 		DateCreated:  ts,
 		DateModified: ts,
 		FieldID:      fID,

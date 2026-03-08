@@ -136,7 +136,7 @@ func TestMapAdminFieldJSON_AllFieldTypes(t *testing.T) {
 	fieldTypes := []types.FieldType{
 		types.FieldTypeText, types.FieldTypeTextarea, types.FieldTypeNumber,
 		types.FieldTypeDate, types.FieldTypeDatetime, types.FieldTypeBoolean,
-		types.FieldTypeSelect, types.FieldTypeMedia, types.FieldTypeRelation,
+		types.FieldTypeSelect, types.FieldTypeMedia, types.FieldTypeIDRef,
 		types.FieldTypeJSON, types.FieldTypeRichText, types.FieldTypeSlug,
 		types.FieldTypeEmail, types.FieldTypeURL,
 	}
@@ -576,7 +576,7 @@ func TestMysqlDatabase_MapUpdateAdminFieldParams_AllFields(t *testing.T) {
 	input := UpdateAdminFieldParams{
 		Label:        "mysql-updated",
 		UIConfig:     "mysql-updated-ui",
-		Type:         types.FieldTypeRelation,
+		Type:         types.FieldTypeIDRef,
 		DateCreated:  ts,
 		DateModified: ts,
 		AdminFieldID: afID,
@@ -1597,7 +1597,7 @@ func TestListAdminFieldsByDatatypeIDRow_PopulatedValues(t *testing.T) {
 		Data:         "datatype-data",
 		Validation:   "datatype-validation",
 		UIConfig:     "datatype-ui-config",
-		Type:         types.FieldTypeRelation,
+		Type:         types.FieldTypeIDRef,
 	}
 
 	if row.AdminFieldID != fieldID {
@@ -1618,8 +1618,8 @@ func TestListAdminFieldsByDatatypeIDRow_PopulatedValues(t *testing.T) {
 	if row.UIConfig != "datatype-ui-config" {
 		t.Errorf("UIConfig = %q, want %q", row.UIConfig, "datatype-ui-config")
 	}
-	if row.Type != types.FieldTypeRelation {
-		t.Errorf("Type = %v, want %v", row.Type, types.FieldTypeRelation)
+	if row.Type != types.FieldTypeIDRef {
+		t.Errorf("Type = %v, want %v", row.Type, types.FieldTypeIDRef)
 	}
 }
 

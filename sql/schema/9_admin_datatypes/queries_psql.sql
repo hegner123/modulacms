@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
         CONSTRAINT fk_parent_id
             REFERENCES admin_datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -30,24 +31,28 @@ LIMIT 1;
 
 -- name: ListAdminDatatype :many
 SELECT * FROM admin_datatypes
-ORDER BY admin_datatype_id;
+ORDER BY sort_order, admin_datatype_id;
 
 -- name: ListAdminDatatypeGlobal :many
 SELECT * FROM admin_datatypes
-WHERE type = 'GLOBAL' LIMIT 1;
+WHERE type = '_global'
+ORDER BY sort_order, admin_datatype_id;
 
 -- name: ListAdminDatatypeRoot :many
 SELECT * FROM admin_datatypes
-WHERE type = '_root' LIMIT 1;
+WHERE type IN ('_root', '_global')
+ORDER BY sort_order, admin_datatype_id;
 
 -- name: ListAdminDatatypeChildren :many
 SELECT * FROM admin_datatypes
-WHERE parent_id = $1;
+WHERE parent_id = $1
+ORDER BY sort_order, admin_datatype_id;
 
 -- name: CreateAdminDatatype :one
 INSERT INTO admin_datatypes (
     admin_datatype_id,
     parent_id,
+    sort_order,
     name,
     label,
     type,
@@ -62,20 +67,22 @@ INSERT INTO admin_datatypes (
     $5,
     $6,
     $7,
-    $8
+    $8,
+    $9
 )
 RETURNING *;
 
 -- name: UpdateAdminDatatype :exec
 UPDATE admin_datatypes
 SET parent_id = $1,
-    name = $2,
-    label = $3,
-    type = $4,
-    author_id = $5,
-    date_created = $6,
-    date_modified = $7
-WHERE admin_datatype_id = $8
+    sort_order = $2,
+    name = $3,
+    label = $4,
+    type = $5,
+    author_id = $6,
+    date_created = $7,
+    date_modified = $8
+WHERE admin_datatype_id = $9
 RETURNING *;
 
 -- name: DeleteAdminDatatype :exec
@@ -84,11 +91,20 @@ WHERE admin_datatype_id = $1;
 
 -- name: ListAdminDatatypePaginated :many
 SELECT * FROM admin_datatypes
-ORDER BY admin_datatype_id
+ORDER BY sort_order, admin_datatype_id
 LIMIT $1 OFFSET $2;
 
 -- name: ListAdminDatatypeChildrenPaginated :many
 SELECT * FROM admin_datatypes
 WHERE parent_id = $1
-ORDER BY admin_datatype_id
+ORDER BY sort_order, admin_datatype_id
 LIMIT $2 OFFSET $3;
+
+-- name: UpdateAdminDatatypeSortOrder :exec
+UPDATE admin_datatypes SET sort_order = $1 WHERE admin_datatype_id = $2;
+
+-- name: GetMaxAdminDatatypeRootSortOrder :one
+SELECT COALESCE(MAX(sort_order), -1) FROM admin_datatypes WHERE parent_id IS NULL;
+
+-- name: GetMaxAdminDatatypeSortOrderByParentID :one
+SELECT COALESCE(MAX(sort_order), -1) FROM admin_datatypes WHERE parent_id = $1;

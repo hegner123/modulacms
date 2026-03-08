@@ -46,6 +46,7 @@ func MapAdminDatatypeJSON(a AdminDatatypes) DatatypeJSON {
 	return DatatypeJSON{
 		DatatypeID:   a.AdminDatatypeID.String(),
 		ParentID:     a.ParentID.String(),
+		SortOrder:    fmt.Sprintf("%d", a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Type:         a.Type,

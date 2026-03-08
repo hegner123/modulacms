@@ -1320,7 +1320,7 @@ func TestDatabase_MapGetRouteTreeByRouteIDRow_FieldTypeVariants(t *testing.T) {
 
 	fieldTypes := []types.FieldType{
 		"text", "textarea", "number", "date", "datetime",
-		"boolean", "select", "media", "relation", "json",
+		"boolean", "select", "media", "_id", "json",
 		"richtext", "slug", "email", "url", "",
 	}
 

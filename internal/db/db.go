@@ -1,4 +1,4 @@
-// Package db provides a multi-database abstraction layer for ModulaCMS supporting SQLite, MySQL, and PostgreSQL.
+// Package db provides a multi-database abstraction layer for Modula supporting SQLite, MySQL, and PostgreSQL.
 // It defines the DbDriver interface and wrapper types that convert sqlc-generated types to application-level types with custom validation and auditing.
 package db
 
@@ -167,6 +167,8 @@ type DbDriver interface {
 	ListAdminDatatypesPaginated(PaginationParams) (*[]AdminDatatypes, error)
 	ListAdminDatatypeChildrenPaginated(ListAdminDatatypeChildrenPaginatedParams) (*[]AdminDatatypes, error)
 	UpdateAdminDatatype(context.Context, audited.AuditContext, UpdateAdminDatatypeParams) (*string, error)
+	UpdateAdminDatatypeSortOrder(context.Context, audited.AuditContext, UpdateAdminDatatypeSortOrderParams) error
+	GetMaxAdminDatatypeSortOrder(types.NullableAdminDatatypeID) (int64, error)
 
 	// AdminFields
 	CountAdminFields() (*int64, error)
@@ -328,6 +330,8 @@ type DbDriver interface {
 	ListDatatypesPaginated(PaginationParams) (*[]Datatypes, error)
 	ListDatatypeChildrenPaginated(ListDatatypeChildrenPaginatedParams) (*[]Datatypes, error)
 	UpdateDatatype(context.Context, audited.AuditContext, UpdateDatatypeParams) (*string, error)
+	UpdateDatatypeSortOrder(context.Context, audited.AuditContext, UpdateDatatypeSortOrderParams) error
+	GetMaxDatatypeSortOrder(types.NullableDatatypeID) (int64, error)
 	ReassignDatatypeAuthor(context.Context, types.UserID, types.UserID) error
 	CountDatatypesByAuthor(context.Context, types.UserID) (int64, error)
 
@@ -954,7 +958,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	systemUser, err := d.CreateSystemUser(CreateUserParams{
 		Username:     "system",
 		Name:         "System Administrator",
-		Email:        types.Email("system@modulacms.local"),
+		Email:        types.Email("system@modula.local"),
 		Hash:         adminHash,
 		Role:         adminRole.RoleID.String(),
 		DateCreated:  types.TimestampNow(),
@@ -986,6 +990,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	// 6. Create default page datatype (datatype_id = 1)
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
+		SortOrder:    0,
 		Label:        "Page",
 		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
@@ -1002,6 +1007,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	// 6b. Create _reference system datatype
 	refDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
+		SortOrder:    1,
 		Label:        "Reference",
 		Type:         string(types.DatatypeTypeReference),
 		AuthorID:     systemUser.UserID,
@@ -1023,7 +1029,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		Data:         "",
 		Validation:   types.EmptyJSON,
 		UIConfig:     types.EmptyJSON,
-		Type:         types.FieldTypeContentTreeRef,
+		Type:         types.FieldTypeIDRef,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -1054,6 +1060,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	// 8. Create default admin datatype (admin_datatype_id = 1)
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableAdminDatatypeID{},
+		SortOrder:    0,
 		Label:        "Admin Page",
 		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
@@ -1271,7 +1278,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	// 19A. Create default user_ssh_key record (ssh_key_id = 1) - Validation record
 	userSshKey, err := d.CreateUserSshKey(ctx, ac, CreateUserSshKeyParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
-		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modulacms",
+		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modula",
 		KeyType:     "ssh-ed25519",
 		Fingerprint: "SHA256:bootstrap_validation_fingerprint",
 		Label:       "Bootstrap Validation Key",
@@ -1288,10 +1295,10 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	fieldTypeSeedData := []struct{ Type, Label string }{
 		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
 		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
-		{"select", "Select"}, {"media", "Media"}, {"relation", "Relation"},
+		{"select", "Select"}, {"media", "Media"},
 		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
 		{"email", "Email"}, {"url", "URL"},
-		{"content_tree_ref", "Content Tree Reference"},
+		{"_id", "ID Reference"},
 	}
 	for _, ft := range fieldTypeSeedData {
 		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})
@@ -1312,7 +1319,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 21. Register all 28 ModulaCMS tables in the tables registry
+	// 21. Register all 28 Modula tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
 		"change_events",
@@ -1853,7 +1860,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	systemUser, err := d.CreateSystemUser(CreateUserParams{
 		Username:     "system",
 		Name:         "System Administrator",
-		Email:        types.Email("system@modulacms.local"),
+		Email:        types.Email("system@modula.local"),
 		Hash:         adminHash,
 		Role:         adminRole.RoleID.String(),
 		DateCreated:  types.TimestampNow(),
@@ -1885,6 +1892,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 6. Create default page datatype (datatype_id = 1)
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
+		SortOrder:    0,
 		Label:        "Page",
 		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
@@ -1901,6 +1909,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 6b. Create _reference system datatype
 	refDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
+		SortOrder:    1,
 		Label:        "Reference",
 		Type:         string(types.DatatypeTypeReference),
 		AuthorID:     systemUser.UserID,
@@ -1922,7 +1931,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		Data:         "",
 		Validation:   types.EmptyJSON,
 		UIConfig:     types.EmptyJSON,
-		Type:         types.FieldTypeContentTreeRef,
+		Type:         types.FieldTypeIDRef,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -1953,6 +1962,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 8. Create default admin datatype (admin_datatype_id = 1)
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableAdminDatatypeID{},
+		SortOrder:    0,
 		Label:        "Admin Page",
 		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
@@ -2170,7 +2180,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 19A. Create default user_ssh_key record (ssh_key_id = 1) - Validation record
 	userSshKey, err := d.CreateUserSshKey(ctx, ac, CreateUserSshKeyParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
-		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modulacms",
+		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modula",
 		KeyType:     "ssh-ed25519",
 		Fingerprint: "SHA256:bootstrap_validation_fingerprint",
 		Label:       "Bootstrap Validation Key",
@@ -2187,10 +2197,10 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	fieldTypeSeedData := []struct{ Type, Label string }{
 		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
 		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
-		{"select", "Select"}, {"media", "Media"}, {"relation", "Relation"},
+		{"select", "Select"}, {"media", "Media"},
 		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
 		{"email", "Email"}, {"url", "URL"},
-		{"content_tree_ref", "Content Tree Reference"},
+		{"_id", "ID Reference"},
 	}
 	for _, ft := range fieldTypeSeedData {
 		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})
@@ -2211,7 +2221,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 21. Register all 28 ModulaCMS tables in the tables registry
+	// 21. Register all 28 Modula tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
 		"change_events",
@@ -2725,7 +2735,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	systemUser, err := d.CreateSystemUser(CreateUserParams{
 		Username:     "system",
 		Name:         "System Administrator",
-		Email:        types.Email("system@modulacms.local"),
+		Email:        types.Email("system@modula.local"),
 		Hash:         adminHash,
 		Role:         adminRole.RoleID.String(),
 		DateCreated:  types.TimestampNow(),
@@ -2757,6 +2767,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 6. Create default page datatype (datatype_id = 1)
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
+		SortOrder:    0,
 		Label:        "Page",
 		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
@@ -2773,6 +2784,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 6b. Create _reference system datatype
 	refDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
+		SortOrder:    1,
 		Label:        "Reference",
 		Type:         string(types.DatatypeTypeReference),
 		AuthorID:     systemUser.UserID,
@@ -2794,7 +2806,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		Data:         "",
 		Validation:   types.EmptyJSON,
 		UIConfig:     types.EmptyJSON,
-		Type:         types.FieldTypeContentTreeRef,
+		Type:         types.FieldTypeIDRef,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -2825,6 +2837,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 8. Create default admin datatype (admin_datatype_id = 1)
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableAdminDatatypeID{},
+		SortOrder:    0,
 		Label:        "Admin Page",
 		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
@@ -3042,7 +3055,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 19A. Create default user_ssh_key record (ssh_key_id = 1) - Validation record
 	userSshKey, err := d.CreateUserSshKey(ctx, ac, CreateUserSshKeyParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
-		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modulacms",
+		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modula",
 		KeyType:     "ssh-ed25519",
 		Fingerprint: "SHA256:bootstrap_validation_fingerprint",
 		Label:       "Bootstrap Validation Key",
@@ -3059,10 +3072,10 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	fieldTypeSeedData := []struct{ Type, Label string }{
 		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
 		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
-		{"select", "Select"}, {"media", "Media"}, {"relation", "Relation"},
+		{"select", "Select"}, {"media", "Media"},
 		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
 		{"email", "Email"}, {"url", "URL"},
-		{"content_tree_ref", "Content Tree Reference"},
+		{"_id", "ID Reference"},
 	}
 	for _, ft := range fieldTypeSeedData {
 		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})
@@ -3083,7 +3096,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 21. Register all 28 ModulaCMS tables in the tables registry
+	// 21. Register all 28 Modula tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
 		"change_events",

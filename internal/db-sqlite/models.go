@@ -65,6 +65,7 @@ type AdminContentVersions struct {
 type AdminDatatypes struct {
 	AdminDatatypeID types.AdminDatatypeID         `json:"admin_datatype_id"`
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	SortOrder       int64                         `json:"sort_order"`
 	Name            string                        `json:"name"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
@@ -223,6 +224,7 @@ type ContentVersions struct {
 type Datatypes struct {
 	DatatypeID   types.DatatypeID         `json:"datatype_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	SortOrder    int64                    `json:"sort_order"`
 	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`

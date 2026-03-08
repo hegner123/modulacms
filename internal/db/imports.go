@@ -91,6 +91,7 @@ type StringTokens struct {
 type StringDatatypes struct {
 	DatatypeID   string `json:"datatype_id"`
 	ParentID     string `json:"parent_id"`
+	SortOrder    string `json:"sort_order"`
 	Name         string `json:"name"`
 	Label        string `json:"label"`
 	Type         string `json:"type"`
@@ -207,6 +208,7 @@ type StringAdminFields struct {
 type StringAdminDatatypes struct {
 	AdminDatatypeID string `json:"admin_datatype_id"`
 	ParentID        string `json:"parent_id"`
+	SortOrder       string `json:"sort_order"`
 	Name            string `json:"name"`
 	Label           string `json:"label"`
 	Type            string `json:"type"`

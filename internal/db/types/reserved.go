@@ -25,7 +25,7 @@ const pluginTypePrefix = "_plugin_"
 // reservedTypes maps each reserved type to a description of its engine behavior.
 var reservedTypes = map[DatatypeType]string{
 	DatatypeTypeRoot:       "Tree entry point, one per route",
-	DatatypeTypeReference:  "Triggers tree composition — resolves content_tree_ref field values, attaches referenced trees as children",
+	DatatypeTypeReference:  "Triggers tree composition — resolves _id field values, attaches referenced trees as children",
 	DatatypeTypeNestedRoot: "Root of a composed subtree, assigned by the engine during tree composition",
 	DatatypeTypeSystemLog:  "Synthetic node injected when a reference cannot be resolved",
 	DatatypeTypeCollection: "Marks content as a queryable collection; signals to clients that children support filtering",

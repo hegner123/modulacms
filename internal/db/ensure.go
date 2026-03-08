@@ -16,7 +16,7 @@ import (
 // for the existence of each resource before creating it.
 //
 // Currently ensures:
-//   - The "content_tree_ref" field type exists in both field_types and admin_field_types
+//   - The "_id" field type exists in both field_types and admin_field_types
 //   - The "_reference" system datatype exists with its "Target" field linked
 func EnsureSystemData(ctx context.Context, driver DbDriver) error {
 	if err := ensureFieldType(ctx, driver); err != nil {
@@ -28,11 +28,11 @@ func EnsureSystemData(ctx context.Context, driver DbDriver) error {
 	return nil
 }
 
-// ensureFieldType checks that "content_tree_ref" exists in both field_types
+// ensureFieldType checks that "_id" exists in both field_types
 // and admin_field_types tables, creating it if missing.
 func ensureFieldType(ctx context.Context, driver DbDriver) error {
-	const ftType = "content_tree_ref"
-	const ftLabel = "Content Tree Reference"
+	const ftType = "_id"
+	const ftLabel = "ID Reference"
 
 	// Check field_types
 	_, err := driver.GetFieldTypeByType(ftType)
@@ -114,7 +114,7 @@ func ensureReferenceDatatype(ctx context.Context, driver DbDriver) error {
 		Data:         "",
 		Validation:   types.EmptyJSON,
 		UIConfig:     types.EmptyJSON,
-		Type:         types.FieldTypeContentTreeRef,
+		Type:         types.FieldTypeIDRef,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),

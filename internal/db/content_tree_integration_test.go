@@ -5,7 +5,7 @@
 // back via GetContentTreeByRoute, building the tree with core.BuildFromRows, and
 // verifying the resulting structure.
 //
-// This is what makes ModulaCMS a CMS -- the ability to store, retrieve, and
+// This is what makes Modula a CMS -- the ability to store, retrieve, and
 // re-assemble hierarchical content from the database.
 //
 // Package db_test (external) to avoid an import cycle: this file imports

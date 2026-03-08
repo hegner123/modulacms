@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
         CONSTRAINT fk_parent_id
             REFERENCES admin_datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
