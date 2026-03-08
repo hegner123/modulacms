@@ -17,7 +17,7 @@ var allFieldTypes = []pages.FieldTypeInfo{
 	{Value: "datetime", Label: "Datetime", Description: "Date and time picker"},
 	{Value: "select", Label: "Select", Description: "Dropdown selection from predefined options"},
 	{Value: "media", Label: "Media", Description: "Media file reference (image, video, document)"},
-	{Value: "relation", Label: "Relation", Description: "Reference to another content entry"},
+	{Value: "_id", Label: "ID Reference", Description: "Content data ID for references and composition"},
 	{Value: "json", Label: "JSON", Description: "Freeform JSON data"},
 	{Value: "slug", Label: "Slug", Description: "URL-friendly identifier auto-generated from text"},
 	{Value: "email", Label: "Email", Description: "Email address with format validation"},

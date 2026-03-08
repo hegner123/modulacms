@@ -206,11 +206,16 @@ func DatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		user := middleware.AuthenticatedUser(r.Context())
+		maxSort, sortErr := svc.Schema.GetMaxDatatypeSortOrder(r.Context(), types.NullableDatatypeID{})
+		if sortErr != nil {
+			maxSort = -1
+		}
 		_, err := svc.Schema.CreateDatatype(r.Context(), ac, db.CreateDatatypeParams{
-			Name:     name,
-			Label:    label,
-			Type:     dtype,
-			AuthorID: user.UserID,
+			SortOrder: maxSort + 1,
+			Name:      name,
+			Label:     label,
+			Type:      dtype,
+			AuthorID:  user.UserID,
 		})
 		if err != nil {
 			var ve *service.ValidationError

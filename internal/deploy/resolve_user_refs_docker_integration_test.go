@@ -28,8 +28,8 @@ import (
 // Run with: go test -tags=integration -v -timeout 120s ./internal/deploy/...
 //
 // Environment variables (with defaults matching docker-compose):
-//   MODULACMS_TEST_PSQL_DSN  (default: postgres://modula:modula@localhost:5432/modula_db?sslmode=disable)
-//   MODULACMS_TEST_MYSQL_DSN (default: modula:modula@tcp(localhost:3306)/modula_db?parseTime=true)
+//   MODULA_TEST_PSQL_DSN  (default: postgres://modula:modula@localhost:5432/modula_db?sslmode=disable)
+//   MODULA_TEST_MYSQL_DSN (default: modula:modula@tcp(localhost:3306)/modula_db?parseTime=true)
 // ---------------------------------------------------------------------------
 
 const (
@@ -38,14 +38,14 @@ const (
 )
 
 func psqlDSN() string {
-	if v := os.Getenv("MODULACMS_TEST_PSQL_DSN"); v != "" {
+	if v := os.Getenv("MODULA_TEST_PSQL_DSN"); v != "" {
 		return v
 	}
 	return defaultPsqlDSN
 }
 
 func mysqlDSN() string {
-	if v := os.Getenv("MODULACMS_TEST_MYSQL_DSN"); v != "" {
+	if v := os.Getenv("MODULA_TEST_MYSQL_DSN"); v != "" {
 		return v
 	}
 	return defaultMySQLDSN

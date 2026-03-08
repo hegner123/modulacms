@@ -46,11 +46,11 @@ func init() {
 	serveCmd.Flags().BoolVar(&wizard, "wizard", false, "Run interactive configuration wizard before starting")
 }
 
-// serveCmd starts the HTTP, HTTPS, and SSH servers for ModulaCMS.
+// serveCmd starts the HTTP, HTTPS, and SSH servers for Modula.
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Start the HTTP, HTTPS, and SSH servers",
-	Long: `Start all three ModulaCMS servers concurrently: HTTP, HTTPS, and SSH.
+	Long: `Start all three Modula servers concurrently: HTTP, HTTPS, and SSH.
 
 HTTP serves the REST API and admin panel. HTTPS uses autocert (Let's Encrypt)
 in production or self-signed certificates locally. SSH runs the Bubbletea TUI
@@ -106,7 +106,7 @@ Examples:
 				if err != nil {
 					return fmt.Errorf("failed to generate admin password: %w", err)
 				}
-				utility.DefaultLogger.Finfo("Generated system admin password", "email", "system@modulacms.local", "password", autoPassword)
+				utility.DefaultLogger.Finfo("Generated system admin password", "email", "system@modula.local", "password", autoPassword)
 				if err := install.RunInstall(&verbose, &yes, &autoPassword); err != nil {
 					return fmt.Errorf("auto-setup failed: %w", err)
 				}
@@ -188,7 +188,7 @@ Examples:
 			if pwErr != nil {
 				return fmt.Errorf("failed to hash admin password: %w", pwErr)
 			}
-			utility.DefaultLogger.Finfo("Generated system admin password for DB setup", "email", "system@modulacms.local", "password", fallbackPassword)
+			utility.DefaultLogger.Finfo("Generated system admin password for DB setup", "email", "system@modula.local", "password", fallbackPassword)
 			if setupErr := install.CreateDbSimple(cfgPath, cfg, fallbackHash); setupErr != nil {
 				return fmt.Errorf("database setup failed: %w", setupErr)
 			}
@@ -300,7 +300,7 @@ Examples:
 				}
 			}
 
-			mux := router.NewModulacmsMux(mgr, bridge, driver, pc, emailSvc, dispatcher, svc)
+			mux := router.NewModulaMux(mgr, bridge, driver, pc, emailSvc, dispatcher, svc)
 
 			var hookRunner audited.HookRunner
 			if pluginManager != nil {

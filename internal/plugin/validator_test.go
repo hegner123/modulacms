@@ -31,8 +31,8 @@ func TestValidatePlugin_ValidBookmarksPlugin(t *testing.T) {
 	if info.Description != "Phase 1 integration test plugin" {
 		t.Errorf("Description = %q, want %q", info.Description, "Phase 1 integration test plugin")
 	}
-	if info.Author != "ModulaCMS Test Suite" {
-		t.Errorf("Author = %q, want %q", info.Author, "ModulaCMS Test Suite")
+	if info.Author != "Modula Test Suite" {
+		t.Errorf("Author = %q, want %q", info.Author, "Modula Test Suite")
 	}
 	if !info.HasOnInit {
 		t.Error("HasOnInit = false, want true (test_bookmarks defines on_init)")

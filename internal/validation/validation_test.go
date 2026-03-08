@@ -39,10 +39,10 @@ func TestValidateType(t *testing.T) {
 		{name: "number invalid", fieldType: types.FieldTypeNumber, value: "abc", wantMsg: "must be a valid number"},
 		{name: "number empty spaces", fieldType: types.FieldTypeNumber, value: "  ", wantMsg: "must be a valid number"},
 
-		// content_tree_ref
-		{name: "content_tree_ref valid", fieldType: types.FieldTypeContentTreeRef, value: validULID, wantMsg: ""},
-		{name: "content_tree_ref invalid", fieldType: types.FieldTypeContentTreeRef, value: "not-a-ulid", wantMsg: "must be a valid content reference (ULID)"},
-		{name: "content_tree_ref too short", fieldType: types.FieldTypeContentTreeRef, value: "01ARYZ6S41", wantMsg: "must be a valid content reference (ULID)"},
+		// _id
+		{name: "_id valid", fieldType: types.FieldTypeIDRef, value: validULID, wantMsg: ""},
+		{name: "_id invalid", fieldType: types.FieldTypeIDRef, value: "not-a-ulid", wantMsg: "must be a valid content reference (ULID)"},
+		{name: "_id too short", fieldType: types.FieldTypeIDRef, value: "01ARYZ6S41", wantMsg: "must be a valid content reference (ULID)"},
 
 		// date
 		{name: "date valid", fieldType: types.FieldTypeDate, value: "2024-01-15", wantMsg: ""},
@@ -121,10 +121,6 @@ func TestValidateType(t *testing.T) {
 		// media
 		{name: "media valid", fieldType: types.FieldTypeMedia, value: validULID, wantMsg: ""},
 		{name: "media invalid", fieldType: types.FieldTypeMedia, value: "not-ulid", wantMsg: "must be a valid media reference (ULID)"},
-
-		// relation
-		{name: "relation valid", fieldType: types.FieldTypeRelation, value: validULID, wantMsg: ""},
-		{name: "relation invalid", fieldType: types.FieldTypeRelation, value: "bad", wantMsg: "must be a valid content reference (ULID)"},
 
 		// json
 		{name: "json valid object", fieldType: types.FieldTypeJSON, value: `{"key":"value"}`, wantMsg: ""},

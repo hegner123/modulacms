@@ -63,7 +63,7 @@ func RestoreFromBackup(cfg config.Config, backupPath string) error {
 	}
 
 	// Create temp directory for extraction
-	tempDir, err := os.MkdirTemp("", "modulacms-restore-*")
+	tempDir, err := os.MkdirTemp("", "modula-restore-*")
 	if err != nil {
 		return fmt.Errorf("failed to create temp directory: %w", err)
 	}

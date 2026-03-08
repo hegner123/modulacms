@@ -42,7 +42,7 @@ func GenerateSelfSignedCert(certDir string, domain string) error {
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			CommonName:   domain,
-			Organization: []string{"ModulaCMS Local Development"},
+			Organization: []string{"Modula Local Development"},
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
@@ -156,7 +156,7 @@ func trustCertLinux(certPath string) error {
 	DefaultLogger.Info("═══════════════════════════════════════════════════════")
 	DefaultLogger.Info("To trust this certificate on Linux, run:")
 	DefaultLogger.Info("")
-	DefaultLogger.Info("  sudo cp " + certPath + " /usr/local/share/ca-certificates/modulacms.crt")
+	DefaultLogger.Info("  sudo cp " + certPath + " /usr/local/share/ca-certificates/modula.crt")
 	DefaultLogger.Info("  sudo update-ca-certificates")
 	DefaultLogger.Info("")
 	DefaultLogger.Info("═══════════════════════════════════════════════════════")
@@ -171,7 +171,7 @@ func trustCertLinux(certPath string) error {
 		DefaultLogger.Info("Running certificate trust commands...")
 
 		// Copy certificate
-		copyCmd := exec.Command("sudo", "cp", certPath, "/usr/local/share/ca-certificates/modulacms.crt")
+		copyCmd := exec.Command("sudo", "cp", certPath, "/usr/local/share/ca-certificates/modula.crt")
 		copyCmd.Stdout = os.Stdout
 		copyCmd.Stderr = os.Stderr
 		copyCmd.Stdin = os.Stdin

@@ -6,8 +6,8 @@ import (
 
 func TestRegistryAllDefinitionsRegistered(t *testing.T) {
 	expected := []string{
+		"modula-default",
 		"contentful-starter",
-		"modulacms-default",
 		"sanity-starter",
 		"strapi-starter",
 		"wordpress-blog",
@@ -47,7 +47,15 @@ func TestRegistryGetNotFound(t *testing.T) {
 
 func TestRegistryNamesSorted(t *testing.T) {
 	names := Names()
-	for i := 1; i < len(names); i++ {
+	if len(names) == 0 {
+		t.Fatal("no names returned")
+	}
+	// First entry is always modula-default
+	if names[0] != "modula-default" {
+		t.Errorf("expected names[0] = %q, got %q", "modula-default", names[0])
+	}
+	// Remaining entries are alphabetically sorted
+	for i := 2; i < len(names); i++ {
 		if names[i] < names[i-1] {
 			t.Errorf("names not sorted: %q before %q", names[i-1], names[i])
 		}
@@ -86,6 +94,6 @@ func TestRegistryDuplicatePanics(t *testing.T) {
 	}()
 
 	Register(SchemaDefinition{
-		Name: "modulacms-default", // already registered
+		Name: "modula-default", // already registered
 	})
 }

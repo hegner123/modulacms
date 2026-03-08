@@ -15,7 +15,7 @@ import (
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "Export, import, snapshot, push, and pull content data",
-	Long: `Sync content data between ModulaCMS environments.
+	Long: `Sync content data between Modula environments.
 
 Export and import move data as JSON files. Push and pull transfer data between
 the local database and a remote CMS environment configured in config.json.

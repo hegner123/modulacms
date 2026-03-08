@@ -36,7 +36,7 @@ type SyncManifest struct {
 	Timestamp     string         `json:"timestamp"`      // RFC3339 UTC
 	SourceNodeID  string         `json:"source_node_id"`
 	SourceURL     string         `json:"source_url"`
-	Version       string         `json:"version"` // ModulaCMS version
+	Version       string         `json:"version"` // Modula version
 	Strategy      MergeStrategy  `json:"strategy"`
 	Tables        []string       `json:"tables"`       // table names included
 	RowCounts     map[string]int `json:"row_counts"`   // table -> count

@@ -31,7 +31,7 @@ var pluginTokenFlag string
 var pluginCmd = &cobra.Command{
 	Use:   "plugin",
 	Short: "Plugin management commands",
-	Long: `Manage Lua plugins for ModulaCMS.
+	Long: `Manage Lua plugins for Modula.
 
 Plugins extend CMS functionality with custom HTTP routes, content lifecycle
 hooks, and database tables. Some subcommands work offline (filesystem/DB only)

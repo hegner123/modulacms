@@ -1,4 +1,4 @@
-// Package utility provides logging utilities for the ModulaCMS application.
+// Package utility provides logging utilities for the Modula application.
 // It includes a structured logger with severity levels, file logging, and styled output.
 package utility
 

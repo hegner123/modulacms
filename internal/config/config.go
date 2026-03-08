@@ -1,4 +1,4 @@
-// Package config provides configuration management for ModulaCMS, including
+// Package config provides configuration management for Modula, including
 // database drivers, OAuth endpoints, S3-compatible storage buckets, CORS
 // settings, SSL/TLS configuration, plugin runtime options, and observability.
 package config
@@ -22,7 +22,7 @@ const (
 	OauthUserInfoURL Endpoint = "oauth_userinfo_url"
 )
 
-// Supported database drivers for ModulaCMS.
+// Supported database drivers for Modula.
 const (
 	Sqlite DbDriver = "sqlite"
 	Mysql  DbDriver = "mysql"
@@ -49,7 +49,7 @@ const (
 	FormatDefault    OutputFormat = "" // Empty string defaults to raw
 )
 
-// Config holds all runtime configuration for ModulaCMS including server settings,
+// Config holds all runtime configuration for Modula including server settings,
 // database credentials, OAuth providers, S3-compatible storage, CORS policies,
 // plugin runtime limits, and observability integration.
 type Config struct {
@@ -201,10 +201,14 @@ type Config struct {
 	Webhook_Allow_HTTP              bool `json:"webhook_allow_http"`
 	Webhook_Delivery_Retention_Days int  `json:"webhook_delivery_retention_days"`
 
+	// MCP server (Model Context Protocol for AI tooling)
+	MCP_Enabled bool   `json:"mcp_enabled"`
+	MCP_API_Key string `json:"mcp_api_key"` // API key for authenticating MCP clients
+
 	KeyBindings KeyMap `json:"keybindings"`
 }
 
-// DeployEnvironmentConfig describes a remote ModulaCMS instance for deploy operations.
+// DeployEnvironmentConfig describes a remote Modula instance for deploy operations.
 // APIKey supports ${VAR} expansion via the existing config system.
 type DeployEnvironmentConfig struct {
 	Name   string `json:"name"`

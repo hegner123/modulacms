@@ -29,8 +29,8 @@ import (
 
 const (
 	minioEndpoint  = "localhost:9000"
-	minioAccessKey = "modulacms"
-	minioSecretKey = "modulacms_secret"
+	minioAccessKey = "modula"
+	minioSecretKey = "modula_secret"
 	minioRegion    = "us-east-1"
 )
 

@@ -57,14 +57,14 @@ func makeNode(id types.ContentID, dtType string, label string) *Node {
 	}
 }
 
-// helper to add a content_tree_ref field to a node.
+// helper to add an _id field to a node.
 func addRefField(node *Node, refValue string) {
 	fID := types.NewFieldID()
 	now := types.TimestampNow()
 	node.Fields = append(node.Fields, db.Fields{
 		FieldID:      fID,
 		Label:        "ref",
-		Type:         types.FieldTypeContentTreeRef,
+		Type:         types.FieldTypeIDRef,
 		DateCreated:  now,
 		DateModified: now,
 	})

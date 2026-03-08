@@ -95,8 +95,8 @@ func TestGenerateSelfSignedCert_ValidCertificate(t *testing.T) {
 	}
 
 	// Verify organization
-	if len(cert.Subject.Organization) == 0 || cert.Subject.Organization[0] != "ModulaCMS Local Development" {
-		t.Errorf("subject Org = %v, want [ModulaCMS Local Development]", cert.Subject.Organization)
+	if len(cert.Subject.Organization) == 0 || cert.Subject.Organization[0] != "Modula Local Development" {
+		t.Errorf("subject Org = %v, want [Modula Local Development]", cert.Subject.Organization)
 	}
 
 	// Verify IP addresses include 127.0.0.1

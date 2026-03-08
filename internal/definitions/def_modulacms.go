@@ -4,10 +4,10 @@ import "github.com/hegner123/modulacms/internal/db/types"
 
 func init() {
 	Register(SchemaDefinition{
-		Name:        "modulacms-default",
-		Label:       "ModulaCMS Default",
-		Description: "Component-based page builder with grid layouts, content blocks, posts, case studies, and documentation",
-		Format:      "modulacms",
+		Name:        "modula-default",
+		Label:       "Modula Default",
+		Description: "The default Modula schema. Component-based page builder with grid layouts, content blocks, posts, case studies, and documentation. Fully compatible with the built-in admin panel and designed to be extended with your own datatypes and fields.",
+		Format:      "modula",
 		Datatypes: map[string]DatatypeDef{
 
 			// ──────────────────────────────────────

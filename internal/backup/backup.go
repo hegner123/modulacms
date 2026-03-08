@@ -1,4 +1,4 @@
-// Package backup provides backup and restore functionality for ModulaCMS databases.
+// Package backup provides backup and restore functionality for Modula databases.
 // It supports SQLite, MySQL, and PostgreSQL, and can include additional paths
 // in backup archives. Backups are created as zip files containing database dumps
 // and metadata.

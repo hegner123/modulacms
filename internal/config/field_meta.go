@@ -99,7 +99,7 @@ var FieldRegistry = []FieldMeta{
 	// Database
 	{JSONKey: "db_driver", Label: "DB Driver", Category: CategoryDatabase, HotReloadable: false, Required: true, Description: "Database driver (sqlite, mysql, postgres)", Example: "sqlite"},
 	{JSONKey: "db_url", Label: "DB URL", Category: CategoryDatabase, HotReloadable: false, Required: true, Description: "Database connection URL", Example: "./modula.db"},
-	{JSONKey: "db_name", Label: "DB Name", Category: CategoryDatabase, HotReloadable: false, Description: "Database name", Example: "modulacms"},
+	{JSONKey: "db_name", Label: "DB Name", Category: CategoryDatabase, HotReloadable: false, Description: "Database name", Example: "modula"},
 	{JSONKey: "db_username", Label: "DB Username", Category: CategoryDatabase, HotReloadable: false, Description: "Database username", Example: "modula"},
 	{JSONKey: "db_password", Label: "DB Password", Category: CategoryDatabase, HotReloadable: false, Sensitive: true, Description: "Database password", Example: "secret"},
 
@@ -153,7 +153,7 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "email_enabled", Label: "Email Enabled", Category: CategoryEmail, HotReloadable: true, Description: "Enable email sending", Example: "true"},
 	{JSONKey: "email_provider", Label: "Email Provider", Category: CategoryEmail, HotReloadable: true, Description: "Email provider (smtp, sendgrid, ses, postmark)", Example: "smtp"},
 	{JSONKey: "email_from_address", Label: "From Address", Category: CategoryEmail, HotReloadable: true, Description: "Sender email address", Example: "noreply@example.com"},
-	{JSONKey: "email_from_name", Label: "From Name", Category: CategoryEmail, HotReloadable: true, Description: "Sender display name", Example: "ModulaCMS"},
+	{JSONKey: "email_from_name", Label: "From Name", Category: CategoryEmail, HotReloadable: true, Description: "Sender display name", Example: "Modula"},
 	{JSONKey: "email_host", Label: "SMTP Host", Category: CategoryEmail, HotReloadable: true, Description: "SMTP server hostname", Example: "smtp.gmail.com"},
 	{JSONKey: "email_port", Label: "SMTP Port", Category: CategoryEmail, HotReloadable: true, Description: "SMTP server port", Example: "587"},
 	{JSONKey: "email_username", Label: "SMTP Username", Category: CategoryEmail, HotReloadable: true, Description: "SMTP authentication username", Example: "user@gmail.com"},

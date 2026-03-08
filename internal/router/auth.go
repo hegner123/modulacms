@@ -167,10 +167,10 @@ func RequestPasswordResetHandler(w http.ResponseWriter, r *http.Request, c confi
 		sendErr := emailSvc.Send(context.Background(), email.Message{
 			To:      []email.Address{email.NewAddress(user.Name, string(user.Email))},
 			Subject: "Password Reset Request",
-			PlainBody: "You requested a password reset for your ModulaCMS account.\n\n" +
+			PlainBody: "You requested a password reset for your Modula account.\n\n" +
 				"Click the link below to reset your password:\n" + resetLink + "\n\n" +
 				"This link expires in 1 hour. If you did not request this, ignore this email.",
-			HTMLBody: "<p>You requested a password reset for your ModulaCMS account.</p>" +
+			HTMLBody: "<p>You requested a password reset for your Modula account.</p>" +
 				"<p><a href=\"" + resetLink + "\">Click here to reset your password</a></p>" +
 				"<p>This link expires in 1 hour. If you did not request this, ignore this email.</p>",
 		})

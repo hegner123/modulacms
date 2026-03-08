@@ -17,7 +17,7 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-// ImportContentfulHandler handles importing Contentful format to ModulaCMS
+// ImportContentfulHandler handles importing Contentful format to Modula
 func ImportContentfulHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -27,7 +27,7 @@ func ImportContentfulHandler(w http.ResponseWriter, r *http.Request, c config.Co
 	apiImportContent(w, r, c, config.FormatContentful)
 }
 
-// ImportSanityHandler handles importing Sanity format to ModulaCMS
+// ImportSanityHandler handles importing Sanity format to Modula
 func ImportSanityHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -37,7 +37,7 @@ func ImportSanityHandler(w http.ResponseWriter, r *http.Request, c config.Config
 	apiImportContent(w, r, c, config.FormatSanity)
 }
 
-// ImportStrapiHandler handles importing Strapi format to ModulaCMS
+// ImportStrapiHandler handles importing Strapi format to Modula
 func ImportStrapiHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -47,7 +47,7 @@ func ImportStrapiHandler(w http.ResponseWriter, r *http.Request, c config.Config
 	apiImportContent(w, r, c, config.FormatStrapi)
 }
 
-// ImportWordPressHandler handles importing WordPress format to ModulaCMS
+// ImportWordPressHandler handles importing WordPress format to Modula
 func ImportWordPressHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -57,7 +57,7 @@ func ImportWordPressHandler(w http.ResponseWriter, r *http.Request, c config.Con
 	apiImportContent(w, r, c, config.FormatWordPress)
 }
 
-// ImportCleanHandler handles importing Clean ModulaCMS format
+// ImportCleanHandler handles importing Clean Modula format
 func ImportCleanHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -117,7 +117,7 @@ func apiImportContent(w http.ResponseWriter, r *http.Request, c config.Config, f
 		return
 	}
 
-	// Parse CMS format to ModulaCMS
+	// Parse CMS format to Modula
 	root, err := transformer.Parse(body)
 	if err != nil {
 		utility.DefaultLogger.Error("Failed to parse input", err)

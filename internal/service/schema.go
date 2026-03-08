@@ -23,6 +23,8 @@ type DatatypeStore interface {
 	DeleteDatatype(context.Context, audited.AuditContext, types.DatatypeID) error
 	ListDatatypesPaginated(db.PaginationParams) (*[]db.Datatypes, error)
 	CountDatatypes() (*int64, error)
+	UpdateDatatypeSortOrder(context.Context, audited.AuditContext, db.UpdateDatatypeSortOrderParams) error
+	GetMaxDatatypeSortOrder(types.NullableDatatypeID) (int64, error)
 }
 
 // FieldStore defines database operations for public fields.
@@ -58,6 +60,8 @@ type AdminDatatypeStore interface {
 	DeleteAdminDatatype(context.Context, audited.AuditContext, types.AdminDatatypeID) error
 	ListAdminDatatypesPaginated(db.PaginationParams) (*[]db.AdminDatatypes, error)
 	CountAdminDatatypes() (*int64, error)
+	UpdateAdminDatatypeSortOrder(context.Context, audited.AuditContext, db.UpdateAdminDatatypeSortOrderParams) error
+	GetMaxAdminDatatypeSortOrder(types.NullableAdminDatatypeID) (int64, error)
 }
 
 // AdminFieldStore defines database operations for admin fields.
@@ -227,6 +231,7 @@ func (s *SchemaService) UpdateDatatype(ctx context.Context, ac audited.AuditCont
 
 	// Preserve immutable fields.
 	params.ParentID = existing.ParentID
+	params.SortOrder = existing.SortOrder
 	params.AuthorID = existing.AuthorID
 	params.DateCreated = existing.DateCreated
 	params.DateModified = nowUTC()
@@ -243,6 +248,26 @@ func (s *SchemaService) UpdateDatatype(ctx context.Context, ac audited.AuditCont
 		return nil, &NotFoundError{Resource: "datatype", ID: params.DatatypeID.String()}
 	}
 	return updated, nil
+}
+
+// UpdateDatatypeSortOrder updates the sort order for a specific datatype.
+func (s *SchemaService) UpdateDatatypeSortOrder(ctx context.Context, ac audited.AuditContext, params db.UpdateDatatypeSortOrderParams) error {
+	if err := params.DatatypeID.Validate(); err != nil {
+		return NewValidationError("datatype_id", err.Error())
+	}
+	if err := s.store.UpdateDatatypeSortOrder(ctx, ac, params); err != nil {
+		return &InternalError{Err: fmt.Errorf("update datatype sort order: %w", err)}
+	}
+	return nil
+}
+
+// GetMaxDatatypeSortOrder returns the maximum sort order for datatypes under a parent.
+func (s *SchemaService) GetMaxDatatypeSortOrder(ctx context.Context, parentID types.NullableDatatypeID) (int64, error) {
+	max, err := s.store.GetMaxDatatypeSortOrder(parentID)
+	if err != nil {
+		return 0, &InternalError{Err: fmt.Errorf("get max datatype sort order: %w", err)}
+	}
+	return max, nil
 }
 
 // DeleteDatatype removes a public datatype by ID.
@@ -622,6 +647,7 @@ func (s *SchemaService) UpdateAdminDatatype(ctx context.Context, ac audited.Audi
 	}
 
 	params.ParentID = existing.ParentID
+	params.SortOrder = existing.SortOrder
 	params.AuthorID = existing.AuthorID
 	params.DateCreated = existing.DateCreated
 	params.DateModified = nowUTC()
@@ -638,6 +664,26 @@ func (s *SchemaService) UpdateAdminDatatype(ctx context.Context, ac audited.Audi
 		return nil, &NotFoundError{Resource: "admin_datatype", ID: params.AdminDatatypeID.String()}
 	}
 	return updated, nil
+}
+
+// UpdateAdminDatatypeSortOrder updates the sort order for a specific admin datatype.
+func (s *SchemaService) UpdateAdminDatatypeSortOrder(ctx context.Context, ac audited.AuditContext, params db.UpdateAdminDatatypeSortOrderParams) error {
+	if err := params.AdminDatatypeID.Validate(); err != nil {
+		return NewValidationError("admin_datatype_id", err.Error())
+	}
+	if err := s.store.UpdateAdminDatatypeSortOrder(ctx, ac, params); err != nil {
+		return &InternalError{Err: fmt.Errorf("update admin datatype sort order: %w", err)}
+	}
+	return nil
+}
+
+// GetMaxAdminDatatypeSortOrder returns the maximum sort order for admin datatypes under a parent.
+func (s *SchemaService) GetMaxAdminDatatypeSortOrder(ctx context.Context, parentID types.NullableAdminDatatypeID) (int64, error) {
+	max, err := s.store.GetMaxAdminDatatypeSortOrder(parentID)
+	if err != nil {
+		return 0, &InternalError{Err: fmt.Errorf("get max admin datatype sort order: %w", err)}
+	}
+	return max, nil
 }
 
 // DeleteAdminDatatype removes an admin datatype by ID.

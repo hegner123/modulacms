@@ -13,7 +13,7 @@ import (
 var configParentCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Configuration management commands",
-	Long: `View, validate, and modify the ModulaCMS configuration file (config.json).
+	Long: `View, validate, and modify the Modula configuration file (config.json).
 
 Subcommands:
   show       Print the full loaded configuration as JSON

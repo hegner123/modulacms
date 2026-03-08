@@ -1,4 +1,4 @@
-// Package install provides the interactive installation workflow for ModulaCMS,
+// Package install provides the interactive installation workflow for Modula,
 // including database setup, configuration file generation, and validation of required services.
 package install
 
@@ -99,7 +99,7 @@ func runInstallWithRetry(v *bool, adminPassword *string, retriesLeft int) error 
 		return err
 	}
 
-	s := fmt.Sprintf("Would you like to install ModulaCMS at \n %s\n", dir)
+	s := fmt.Sprintf("Would you like to install Modula at \n %s\n", dir)
 	runInstall := false
 	c := huh.NewConfirm().Title(s).Value(&runInstall)
 	err = c.Run()
@@ -254,12 +254,12 @@ func printInstallSummary(iarg *InstallArguments, bucketStatus string) {
 	}
 
 	b.WriteString("\n--- Admin Account ---\n")
-	b.WriteString("  Email:         system@modulacms.local\n")
+	b.WriteString("  Email:         system@modula.local\n")
 	b.WriteString("  Username:      system\n")
 
 	b.WriteString("\n--- Next Steps ---\n")
-	b.WriteString("  Gen certs:     ./modulacms-x86 cert generate\n")
-	b.WriteString("  Start server:  ./modulacms-x86 serve\n")
+	b.WriteString("  Gen certs:     ./modula-x86 cert generate\n")
+	b.WriteString("  Start server:  ./modula-x86 serve\n")
 	b.WriteString(fmt.Sprintf("  SSH access:    ssh localhost -p %s\n", iarg.Config.SSH_Port))
 	b.WriteString("---\n")
 

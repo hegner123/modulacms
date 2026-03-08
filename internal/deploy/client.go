@@ -14,7 +14,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-// DeployClient communicates with a remote ModulaCMS deploy API.
+// DeployClient communicates with a remote Modula deploy API.
 type DeployClient struct {
 	baseURL    string
 	apiKey     string
@@ -43,7 +43,7 @@ func (e *ClientError) Error() string {
 }
 
 // NewDeployClient creates a client for the given remote URL and Bearer token.
-// The URL should be the base URL of a ModulaCMS instance (e.g. "https://cms.example.com").
+// The URL should be the base URL of a Modula instance (e.g. "https://cms.example.com").
 func NewDeployClient(baseURL, apiKey string) *DeployClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &DeployClient{

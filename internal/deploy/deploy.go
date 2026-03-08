@@ -1,5 +1,5 @@
 // Package deploy provides the sync engine for exporting and importing
-// ModulaCMS content data between instances via JSON files or the deploy API.
+// Modula content data between instances via JSON files or the deploy API.
 package deploy
 
 import (
@@ -67,7 +67,7 @@ func ImportFromFile(ctx context.Context, cfg config.Config, driver db.DbDriver, 
 	return ImportPayload(ctx, cfg, driver, &payload, skipBackup)
 }
 
-// Pull exports data from a remote ModulaCMS instance and imports it into the local database.
+// Pull exports data from a remote Modula instance and imports it into the local database.
 // The environment name is resolved from cfg.Deploy_Environments.
 // If dryRun is true, the payload is validated locally without modifying the database.
 func Pull(ctx context.Context, cfg config.Config, driver db.DbDriver, envName string, tables []db.DBTable, skipBackup bool, dryRun bool) (*SyncResult, error) {
@@ -98,7 +98,7 @@ func Pull(ctx context.Context, cfg config.Config, driver db.DbDriver, envName st
 	return ImportPayload(ctx, cfg, driver, payload, skipBackup)
 }
 
-// Push exports data from the local database and sends it to a remote ModulaCMS instance.
+// Push exports data from the local database and sends it to a remote Modula instance.
 // The environment name is resolved from cfg.Deploy_Environments.
 // If dryRun is true, the payload is validated on the remote without modifying its database.
 func Push(ctx context.Context, cfg config.Config, driver db.DbDriver, envName string, tables []db.DBTable, dryRun bool) (*SyncResult, error) {

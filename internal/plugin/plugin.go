@@ -1,6 +1,6 @@
-// Package plugin implements the ModulaCMS Lua plugin system.
+// Package plugin implements the Modula Lua plugin system.
 //
-// The plugin system extends ModulaCMS with runtime Lua plugins that can define
+// The plugin system extends Modula with runtime Lua plugins that can define
 // database tables, execute queries, and integrate with the CMS lifecycle.
 //
 // Architecture:

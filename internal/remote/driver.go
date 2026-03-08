@@ -1,4 +1,4 @@
-// Package remote implements db.DbDriver over the ModulaCMS Go SDK.
+// Package remote implements db.DbDriver over the Modula Go SDK.
 //
 // Audited mutation methods accept audited.AuditContext to satisfy the DbDriver
 // interface but discard it -- the remote server creates audit records from the
@@ -46,7 +46,7 @@ func (s RemoteStatus) String() string {
 	}
 }
 
-// RemoteDriver implements db.DbDriver by delegating to the ModulaCMS Go SDK.
+// RemoteDriver implements db.DbDriver by delegating to the Modula Go SDK.
 // Read-only methods (List*, Get*, Count*) are backed by real SDK calls.
 // DDL, raw SQL, and infrastructure methods return ErrNotSupported or ErrRemoteMode.
 type RemoteDriver struct {
@@ -2662,6 +2662,60 @@ func (r *RemoteDriver) GetMaxSortOrderByParentID(parentID types.NullableDatatype
 		maxOrder, err := r.client.FieldsExtra.MaxSortOrder(ctx, sdkDtID)
 		if err != nil {
 			return 0, fmt.Errorf("remote: GetMaxSortOrderByParentID: %w", err)
+		}
+		return maxOrder, nil
+	})
+}
+
+// ---------------------------------------------------------------------------
+// Datatype Sort Order
+// ---------------------------------------------------------------------------
+
+func (r *RemoteDriver) UpdateDatatypeSortOrder(ctx context.Context, _ audited.AuditContext, params db.UpdateDatatypeSortOrderParams) error {
+	return doWriteErr(r, func() error {
+		if err := r.client.DatatypesExtra.UpdateSortOrder(ctx, modula.DatatypeID(string(params.DatatypeID)), params.SortOrder); err != nil {
+			return fmt.Errorf("remote: UpdateDatatypeSortOrder: %w", err)
+		}
+		return nil
+	})
+}
+
+func (r *RemoteDriver) GetMaxDatatypeSortOrder(parentID types.NullableDatatypeID) (int64, error) {
+	return doRead(r, func() (int64, error) {
+		ctx := context.Background()
+		var sdkParent *modula.DatatypeID
+		if parentID.Valid {
+			id := modula.DatatypeID(string(parentID.ID))
+			sdkParent = &id
+		}
+		maxOrder, err := r.client.DatatypesExtra.MaxSortOrder(ctx, sdkParent)
+		if err != nil {
+			return 0, fmt.Errorf("remote: GetMaxDatatypeSortOrder: %w", err)
+		}
+		return maxOrder, nil
+	})
+}
+
+func (r *RemoteDriver) UpdateAdminDatatypeSortOrder(ctx context.Context, _ audited.AuditContext, params db.UpdateAdminDatatypeSortOrderParams) error {
+	return doWriteErr(r, func() error {
+		if err := r.client.AdminDatatypesExtra.UpdateSortOrder(ctx, modula.AdminDatatypeID(string(params.AdminDatatypeID)), params.SortOrder); err != nil {
+			return fmt.Errorf("remote: UpdateAdminDatatypeSortOrder: %w", err)
+		}
+		return nil
+	})
+}
+
+func (r *RemoteDriver) GetMaxAdminDatatypeSortOrder(parentID types.NullableAdminDatatypeID) (int64, error) {
+	return doRead(r, func() (int64, error) {
+		ctx := context.Background()
+		var sdkParent *modula.AdminDatatypeID
+		if parentID.Valid {
+			id := modula.AdminDatatypeID(string(parentID.ID))
+			sdkParent = &id
+		}
+		maxOrder, err := r.client.AdminDatatypesExtra.MaxSortOrder(ctx, sdkParent)
+		if err != nil {
+			return 0, fmt.Errorf("remote: GetMaxAdminDatatypeSortOrder: %w", err)
 		}
 		return maxOrder, nil
 	})

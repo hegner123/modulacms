@@ -195,7 +195,7 @@ func Reinstall(ctx context.Context, cleaner Cleaner, installer Installer, def Sc
 	}
 
 	// Look up system user to identify bootstrapped records.
-	systemUser, err := cleaner.GetUserByEmail(types.Email("system@modulacms.local"))
+	systemUser, err := cleaner.GetUserByEmail(types.Email("system@modula.local"))
 	if err != nil {
 		return InstallResult{}, fmt.Errorf("definitions: get system user: %w", err)
 	}

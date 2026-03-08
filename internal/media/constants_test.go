@@ -55,7 +55,7 @@ func TestConstants(t *testing.T) {
 		{
 			name:     "TempDirPrefix",
 			got:      TempDirPrefix,
-			want:     "modulacms-media",
+			want:     "modula-media",
 			describe: "temp directory prefix for media processing",
 		},
 	}

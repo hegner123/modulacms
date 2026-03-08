@@ -14,5 +14,5 @@ const (
 	DefaultS3Region = "us-southeast-1"
 
 	// Temp directory prefix
-	TempDirPrefix = "modulacms-media"
+	TempDirPrefix = "modula-media"
 )

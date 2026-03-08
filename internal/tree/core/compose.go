@@ -106,15 +106,15 @@ func findReferenceNodes(node *Node) []*Node {
 	return refs
 }
 
-// resolveReferenceNode resolves all content_tree_ref field values on a _reference node.
+// resolveReferenceNode resolves all _id field values on a _reference node.
 // Subtrees are attached as children in field order.
 func resolveReferenceNode(ctx context.Context, refNode *Node, root *Root, fetcher TreeFetcher, opts ComposeOptions, state *composeState, depth int) error {
 	parentLabel := refNode.Datatype.Label
 
-	// Collect content_tree_ref field values in order
+	// Collect _id field values in order
 	var refIDs []types.ContentID
 	for i, f := range refNode.Fields {
-		if f.Type != types.FieldTypeContentTreeRef {
+		if f.Type != types.FieldTypeIDRef {
 			continue
 		}
 		val := refNode.ContentFields[i].FieldValue
@@ -139,7 +139,7 @@ func resolveReferenceNode(ctx context.Context, refNode *Node, root *Root, fetche
 	return nil
 }
 
-// resolveOneReference resolves a single content_tree_ref value, returning either the
+// resolveOneReference resolves a single _id field value, returning either the
 // resolved subtree root or a _system_log node on failure.
 func resolveOneReference(ctx context.Context, refID types.ContentID, parentLabel string, root *Root, fetcher TreeFetcher, opts ComposeOptions, state *composeState, depth int) *Node {
 	// Cycle detection

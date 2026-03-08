@@ -29,10 +29,16 @@ func List() []SchemaDefinition {
 	return result
 }
 
-// Names returns all registered definition names in sorted order.
+// Names returns all registered definition names in sorted order,
+// with "modula-default" always first.
 func Names() []string {
 	names := make([]string, 0, len(registry))
+	hasDefault := false
 	for name := range registry {
+		if name == "modula-default" {
+			hasDefault = true
+			continue
+		}
 		names = append(names, name)
 	}
 	// Insertion sort — small N, avoids sort import
@@ -44,6 +50,9 @@ func Names() []string {
 			j--
 		}
 		names[j+1] = key
+	}
+	if hasDefault {
+		names = append([]string{"modula-default"}, names...)
 	}
 	return names
 }

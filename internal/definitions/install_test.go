@@ -67,9 +67,9 @@ func totalFieldDefs(def SchemaDefinition) int {
 }
 
 func TestInstall_DefaultSchema(t *testing.T) {
-	def, ok := Get("modulacms-default")
+	def, ok := Get("modula-default")
 	if !ok {
-		t.Fatal("modulacms-default definition not found")
+		t.Fatal("modula-default definition not found")
 	}
 
 	mock := &mockInstaller{}
@@ -79,8 +79,8 @@ func TestInstall_DefaultSchema(t *testing.T) {
 		t.Fatalf("Install failed: %v", err)
 	}
 
-	if result.DefinitionName != "modulacms-default" {
-		t.Errorf("expected definition name %q, got %q", "modulacms-default", result.DefinitionName)
+	if result.DefinitionName != "modula-default" {
+		t.Errorf("expected definition name %q, got %q", "modula-default", result.DefinitionName)
 	}
 
 	expectedFields := totalFieldDefs(def)
@@ -95,9 +95,9 @@ func TestInstall_DefaultSchema(t *testing.T) {
 }
 
 func TestInstall_FieldsHaveParentID(t *testing.T) {
-	def, ok := Get("modulacms-default")
+	def, ok := Get("modula-default")
 	if !ok {
-		t.Fatal("modulacms-default definition not found")
+		t.Fatal("modula-default definition not found")
 	}
 
 	mock := &mockInstaller{}
@@ -118,9 +118,9 @@ func TestInstall_FieldsHaveParentID(t *testing.T) {
 }
 
 func TestInstall_PhaseOrdering(t *testing.T) {
-	def, ok := Get("modulacms-default")
+	def, ok := Get("modula-default")
 	if !ok {
-		t.Fatal("modulacms-default definition not found")
+		t.Fatal("modula-default definition not found")
 	}
 
 	mock := &mockInstaller{}
@@ -143,9 +143,9 @@ func TestInstall_PhaseOrdering(t *testing.T) {
 }
 
 func TestInstall_ChildDatatypeReceivesParentID(t *testing.T) {
-	def, ok := Get("modulacms-default")
+	def, ok := Get("modula-default")
 	if !ok {
-		t.Fatal("modulacms-default definition not found")
+		t.Fatal("modula-default definition not found")
 	}
 
 	mock := &mockInstaller{}
@@ -180,9 +180,9 @@ func TestInstall_ChildDatatypeReceivesParentID(t *testing.T) {
 }
 
 func TestInstall_EmptyAuthorID(t *testing.T) {
-	def, ok := Get("modulacms-default")
+	def, ok := Get("modula-default")
 	if !ok {
-		t.Fatal("modulacms-default definition not found")
+		t.Fatal("modula-default definition not found")
 	}
 
 	mock := &mockInstaller{}
@@ -308,7 +308,7 @@ func systemUser() db.Users {
 	return db.Users{
 		UserID:   types.NewUserID(),
 		Username: "system",
-		Email:    types.Email("system@modulacms.local"),
+		Email:    types.Email("system@modula.local"),
 	}
 }
 
@@ -332,9 +332,9 @@ func TestReinstall_CleansBootstrappedRecords(t *testing.T) {
 	}
 	installer := &mockInstaller{}
 
-	def, ok := Get("modulacms-default")
+	def, ok := Get("modula-default")
 	if !ok {
-		t.Fatal("modulacms-default definition not found")
+		t.Fatal("modula-default definition not found")
 	}
 
 	_, err := Reinstall(context.Background(), cleaner, installer, def, userAuthor)
@@ -379,9 +379,9 @@ func TestReinstall_PreservesUserRecords(t *testing.T) {
 	}
 	installer := &mockInstaller{}
 
-	def, ok := Get("modulacms-default")
+	def, ok := Get("modula-default")
 	if !ok {
-		t.Fatal("modulacms-default definition not found")
+		t.Fatal("modula-default definition not found")
 	}
 
 	_, err := Reinstall(context.Background(), cleaner, installer, def, types.NewUserID())
@@ -419,9 +419,9 @@ func TestReinstall_DeletesReservedPrefixDatatypes(t *testing.T) {
 	}
 	installer := &mockInstaller{}
 
-	def, ok := Get("modulacms-default")
+	def, ok := Get("modula-default")
 	if !ok {
-		t.Fatal("modulacms-default definition not found")
+		t.Fatal("modula-default definition not found")
 	}
 
 	_, err := Reinstall(context.Background(), cleaner, installer, def, types.NewUserID())
@@ -446,9 +446,9 @@ func TestReinstall_ThenInstalls(t *testing.T) {
 	}
 	installer := &mockInstaller{}
 
-	def, ok := Get("modulacms-default")
+	def, ok := Get("modula-default")
 	if !ok {
-		t.Fatal("modulacms-default definition not found")
+		t.Fatal("modula-default definition not found")
 	}
 
 	result, err := Reinstall(context.Background(), cleaner, installer, def, authorID)
@@ -456,8 +456,8 @@ func TestReinstall_ThenInstalls(t *testing.T) {
 		t.Fatalf("Reinstall failed: %v", err)
 	}
 
-	if result.DefinitionName != "modulacms-default" {
-		t.Errorf("expected definition name %q, got %q", "modulacms-default", result.DefinitionName)
+	if result.DefinitionName != "modula-default" {
+		t.Errorf("expected definition name %q, got %q", "modula-default", result.DefinitionName)
 	}
 
 	expectedDatatypes := len(def.Datatypes)

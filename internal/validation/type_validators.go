@@ -30,7 +30,7 @@ func validateType(ft types.FieldType, value string, data string) string {
 		}
 		return ""
 
-	case types.FieldTypeContentTreeRef:
+	case types.FieldTypeIDRef:
 		id := types.ContentID(value)
 		if err := id.Validate(); err != nil {
 			return "must be a valid content reference (ULID)"
@@ -90,13 +90,6 @@ func validateType(ft types.FieldType, value string, data string) string {
 		id := types.MediaID(value)
 		if err := id.Validate(); err != nil {
 			return "must be a valid media reference (ULID)"
-		}
-		return ""
-
-	case types.FieldTypeRelation:
-		id := types.ContentID(value)
-		if err := id.Validate(); err != nil {
-			return "must be a valid content reference (ULID)"
 		}
 		return ""
 

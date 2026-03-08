@@ -1,4 +1,4 @@
-// Package model provides the hierarchical content tree representation for ModulaCMS.
+// Package model provides the hierarchical content tree representation for Modula.
 // It defines Node, Root, Datatype, and Field types that combine type definitions
 // with instance data, and offers construction/traversal methods used by tree builders
 // (BuildTree, BuildAdminTree) and transform serializers (Contentful, Sanity, etc.).

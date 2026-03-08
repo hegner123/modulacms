@@ -17,7 +17,7 @@ import (
 var dbCmd = &cobra.Command{
 	Use:   "db",
 	Short: "Database management commands",
-	Long: `Initialize, inspect, and manage the ModulaCMS database.
+	Long: `Initialize, inspect, and manage the Modula database.
 
 Supports SQLite, MySQL, and PostgreSQL as configured in config.json.
 

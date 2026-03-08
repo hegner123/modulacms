@@ -8,7 +8,7 @@ import (
 var installYes bool
 var installAdminPassword string
 
-// installCmd provides the installation wizard command for setting up ModulaCMS.
+// installCmd provides the installation wizard command for setting up Modula.
 var installCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Run the installation wizard",

@@ -9,11 +9,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// updateCmd provides the CLI command to check for and apply updates to ModulaCMS.
+// updateCmd provides the CLI command to check for and apply updates to Modula.
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Check for and apply updates",
-	Long: `Check GitHub releases for a newer version of ModulaCMS and apply it in place.
+	Long: `Check GitHub releases for a newer version of Modula and apply it in place.
 
 Compares the current binary version against the latest stable release. If an
 update is available, downloads the platform-appropriate binary and replaces
@@ -57,7 +57,7 @@ Examples:
 			return fmt.Errorf("update failed: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Update complete! Please restart ModulaCMS.")
+		utility.DefaultLogger.Info("Update complete! Please restart Modula.")
 		return nil
 	},
 }

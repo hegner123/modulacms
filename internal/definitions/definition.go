@@ -25,9 +25,9 @@ type DatatypeDef struct {
 // SchemaDefinition is the installable unit containing all datatypes and fields
 // for a particular CMS schema pattern.
 type SchemaDefinition struct {
-	Name        string                 // Unique ID: "modulacms-default", "wordpress-blog"
+	Name        string                 // Unique ID: "modula-default", "wordpress-blog"
 	Label       string                 // Display name: "ModulaCMS Default"
 	Description string                 // What this schema provides
-	Format      string                 // Source format hint: "modulacms", "wordpress", etc.
+	Format      string                 // Source format hint: "modula", "wordpress", etc.
 	Datatypes   map[string]DatatypeDef // All datatypes, keyed by local reference
 }

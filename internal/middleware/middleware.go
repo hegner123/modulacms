@@ -1,4 +1,4 @@
-// Package middleware provides HTTP middleware components for the ModulaCMS web application.
+// Package middleware provides HTTP middleware components for the Modula web application.
 //
 // It includes middleware for authentication, CORS handling, and session management,
 // which can be composed in an HTTP handler chain. The package is responsible for

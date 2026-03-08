@@ -1,10 +1,10 @@
 # cmd
 
-ModulaCMS command-line interface implementation using cobra for subcommand routing and configuration management.
+Modula command-line interface implementation using cobra for subcommand routing and configuration management.
 
 ## Overview
 
-The cmd package provides the CLI entry point for ModulaCMS. It implements commands for server management, installation, database operations, backup and restore, certificate generation, TUI access, configuration validation, and updates. All commands respect global flags for config file path and verbose logging.
+The cmd package provides the CLI entry point for Modula. It implements commands for server management, installation, database operations, backup and restore, certificate generation, TUI access, configuration validation, and updates. All commands respect global flags for config file path and verbose logging.
 
 The package uses cobra.Command structures with RunE handlers that load configuration, initialize database connections, and delegate to internal packages. Commands handle graceful shutdown via context cancellation and signal handling.
 
@@ -24,8 +24,8 @@ Persistent flags available to all commands:
 ```go
 var rootCmd = &cobra.Command{
 	Use:   "modulacms",
-	Short: "ModulaCMS - A headless CMS written in Go",
-	Long:  "ModulaCMS serves content over HTTP/HTTPS and provides SSH access for backend management.",
+	Short: "Modula - A headless CMS written in Go",
+	Long:  "Modula serves content over HTTP/HTTPS and provides SSH access for backend management.",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
@@ -63,7 +63,7 @@ Registers global flags and adds all subcommands to rootCmd. Runs automatically a
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Start the HTTP, HTTPS, and SSH servers",
-	Long:  "Start all ModulaCMS servers. Use --wizard for interactive setup.",
+	Long:  "Start all Modula servers. Use --wizard for interactive setup.",
 }
 ```
 
@@ -182,7 +182,7 @@ var updateCmd = &cobra.Command{
 }
 ```
 
-Checks for ModulaCMS updates from GitHub releases API. Compares current version against latest stable release. Downloads platform-specific binary if update is available, then replaces the running executable.
+Checks for Modula updates from GitHub releases API. Compares current version against latest stable release. Downloads platform-specific binary if update is available, then replaces the running executable.
 
 Uses runtime.GOOS and runtime.GOARCH to select correct binary asset. Requires restart after update completes.
 
@@ -201,41 +201,16 @@ var tuiCmd = &cobra.Command{
 }
 ```
 
-Launches the terminal user interface without starting HTTP/HTTPS/SSH servers. Delegates to tuiDefaultCmd by default. Two subcommands available: default (new TUI) and v1 (legacy TUI).
+Launches the Bubbletea terminal UI without starting HTTP/HTTPS/SSH servers. Connects directly to the database configured in config.json.
 
-Bare tui command runs the new TUI. Use tui v1 to access the original implementation.
-
-Loads configuration and initializes database before starting TUI. On exit, sends SIGTERM to current process for clean shutdown.
+Loads configuration and initializes database before starting TUI. Initializes model with tui.InitialModel() and runs with tui.CliRun(). On exit, sends SIGTERM to current process for clean shutdown.
 
 Returns errors from configuration loading, database initialization, or TUI execution.
 
 ```go
 modulacms tui
-modulacms tui default
-modulacms tui v1
+modulacms tui --config /path/to/config.json
 ```
-
-#### tuiDefaultCmd
-
-```go
-var tuiDefaultCmd = &cobra.Command{
-	Use:   "default",
-	Short: "Launch the new TUI (default)",
-}
-```
-
-Runs the new Bubbletea-based TUI from internal/tui package. Initializes model with tui.InitialModel() and runs with tui.Run().
-
-#### tuiV1Cmd
-
-```go
-var tuiV1Cmd = &cobra.Command{
-	Use:   "v1",
-	Short: "Launch the original v1 TUI",
-}
-```
-
-Runs the original TUI from internal/tui package. Initializes model with tui.InitialModel() and runs with tui.CliRun(). Requires DbDriver instance unlike the new TUI.
 
 ### cert Command
 

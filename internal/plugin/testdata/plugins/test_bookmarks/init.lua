@@ -1,4 +1,4 @@
--- test_bookmarks: Phase 1 integration test plugin for ModulaCMS
+-- test_bookmarks: Phase 1 integration test plugin for Modula
 --
 -- Exercises the full Phase 1 surface area inside on_init():
 --   - db.define_table (multiple tables, all 7 column types, indexes)
@@ -19,7 +19,7 @@ plugin_info = {
     name        = "test_bookmarks",
     version     = "1.0.0",
     description = "Phase 1 integration test plugin",
-    author      = "ModulaCMS Test Suite",
+    author      = "Modula Test Suite",
 }
 
 function on_init()

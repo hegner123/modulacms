@@ -295,7 +295,7 @@ func WebhookTestHandler(w http.ResponseWriter, r *http.Request, c config.Config,
 		OccurredAt: time.Now().UTC(),
 		Data: map[string]any{
 			"webhook_id": wh.WebhookID.String(),
-			"message":    "This is a test delivery from ModulaCMS.",
+			"message":    "This is a test delivery from Modula.",
 		},
 	}
 
@@ -321,9 +321,9 @@ func WebhookTestHandler(w http.ResponseWriter, r *http.Request, c config.Config,
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-ModulaCMS-Signature", signature)
-	req.Header.Set("X-ModulaCMS-Event", "webhook.test")
-	req.Header.Set("User-Agent", "ModulaCMS-Webhook/1.0")
+	req.Header.Set("X-Modula-Signature", signature)
+	req.Header.Set("X-Modula-Event", "webhook.test")
+	req.Header.Set("User-Agent", "Modula-Webhook/1.0")
 	for k, v := range wh.Headers {
 		req.Header.Set(k, v)
 	}
