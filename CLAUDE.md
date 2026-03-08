@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ModulaCMS is a headless CMS written in Go that runs as a single binary with three concurrent servers: HTTP, HTTPS (with Let's Encrypt autocert), and SSH (running a Bubbletea TUI). Content is managed via the SSH TUI, web admin panel, or REST API and served to frontend clients over HTTP/HTTPS.
 
+- **Project stage:** Greenfield, no active users. Prefer completing refactors over deferring for safety.
 - **Go 1.24+** required, CGO enabled (for SQLite via mattn/go-sqlite3)
 - Linux/macOS only
 - Uses `just` (justfile) as the build runner, not Make

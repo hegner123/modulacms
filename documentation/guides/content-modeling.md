@@ -51,9 +51,12 @@ Every datatype has a `type` field that classifies its role. Types prefixed with 
 | Type | Purpose |
 |------|---------|
 | `_root` | Tree entry point. Every route's content tree must have exactly one root node whose datatype is `_root`. |
-| `_reference` | Triggers tree composition. Resolves `content_tree_ref` field values and attaches the referenced content trees as children. See [Tree Composition](#tree-composition). |
-| `_nested_root` | Assigned by the engine during tree composition. Marks the root of a composed subtree. |
+| `_reference` | Triggers tree composition. Resolves `_id` field values and attaches the referenced content trees as children. See [Tree Composition](#tree-composition). |
+| `_nested_root` | Assigned at runtime during tree composition. When a `_reference` node's subtree is fetched, the fetcher replaces the subtree root's original type with `_nested_root` so the tree builder's root-finding logic (`IsRootType`) works recursively without modification. The `_nested_root` type persists in the delivered JSON output. |
 | `_system_log` | Synthetic node injected when a reference cannot be resolved. Contains error details. |
+| `_collection` | Marks content as a queryable collection. Signals to clients that children support filtering and pagination via the query API. |
+| `_global` | Singleton site-wide content (menus, footers, settings). Not tied to a route — delivered via the `/globals` endpoint. |
+| `_plugin` | Plugin-provided content. Actual types use the `_plugin_{name}` namespace (e.g., `_plugin_analytics`), registered by the plugin system during initialization. |
 
 ### User-Defined Types
 
@@ -137,27 +140,30 @@ The `parent_id` points to the datatype this field belongs to. The `data` field a
 
 ### Built-in Field Types
 
-The following field types are registered by default. You can add custom field types at any time by inserting rows into the `field_types` table via `POST /api/v1/fieldtypes`.
+The built-in admin panel and TUI have editor components for the following field types only. These are the default types that ship with ModulaCMS. The `field_types` table exists to support custom admin panels that implement their own editor components for additional field types.
 
-| Type | Description |
-|------|-------------|
-| `text` | Single-line text input |
-| `textarea` | Multi-line plain text |
-| `richtext` | Rich text / HTML editor |
-| `number` | Numeric value (integer or decimal) |
-| `date` | Date picker |
-| `datetime` | Date and time picker |
-| `boolean` | True/false toggle |
-| `select` | Dropdown selection |
-| `media` | Reference to a media asset |
-| `relation` | Reference to another content item |
-| `json` | Structured JSON data |
-| `slug` | URL-safe slug |
-| `email` | Email address |
-| `url` | URL |
-| `content_tree_ref` | Reference to a content data node for tree composition. Used with `_reference` datatypes. See [Tree Composition](#tree-composition). |
+Each field type determines two things: the editor component rendered in the admin UI, and (for some types) backend behavior during content delivery. The stored value is always a string -- the field type tells consumers how to interpret it.
+
+| Type | Editor Component | Stored Value |
+|------|-----------------|--------------|
+| `text` | Single-line text input | Plain text |
+| `textarea` | Multi-line plain text input | Plain text |
+| `richtext` | Rich text / HTML editor | HTML string |
+| `number` | Numeric input | Number as string |
+| `date` | Date picker | ISO 8601 date |
+| `datetime` | Date and time picker | ISO 8601 datetime |
+| `boolean` | True/false toggle | `"true"` or `"false"` |
+| `select` | Dropdown selection | Selected option value |
+| `media` | Media asset picker | Media ID (ULID) |
+| `_id` | Content node picker | Content data ID (ULID). On `_reference` datatype nodes, the composition engine resolves this value to fetch and attach referenced subtrees at delivery time. See [Tree Composition](#tree-composition). |
+| `json` | Structured JSON editor | JSON string |
+| `slug` | URL-safe slug input | Slug string |
+| `email` | Email input | Email address |
+| `url` | URL input | URL string |
 
 ### Custom Field Types
+
+The `field_types` table is an extension point for adding new field types beyond the built-in set. When a field uses a custom type and its `ui_config` column is blank, the admin panel and TUI fall back to a plain text input. The `ui_config` JSON column can specify an editor component to use for the custom type, allowing the built-in admin panel and TUI to render a specialized editor without requiring a custom frontend.
 
 Register a custom field type:
 
@@ -171,7 +177,7 @@ curl -X POST http://localhost:8080/api/v1/fieldtypes \
   }'
 ```
 
-Once registered, the new type can be used when creating fields. The backend stores the type string as-is -- frontend rendering and validation for custom types is handled by your application.
+Custom admin panels (built with the SDKs or as standalone frontends) can also use the `field_types` table to discover registered types and render their own editor components. The backend stores the type string and field value as-is -- interpretation and validation for custom types is the responsibility of the rendering layer.
 
 ### Field Column Purposes
 
@@ -202,7 +208,7 @@ Tree composition allows a content tree to include content from other content tre
 ### How It Works
 
 1. Create a datatype with `type = "_reference"` (e.g., "Menu Reference").
-2. Add one or more `content_tree_ref` fields to it. Each field holds the `content_data_id` of a content node to reference.
+2. Add one or more `_id` fields to it. Each field holds the `content_data_id` of a content node to reference.
 3. Place an instance of the `_reference` datatype in your content tree.
 4. When the content delivery endpoint assembles the tree, it detects `_reference` nodes, fetches the referenced content trees, and attaches them as children of the reference node.
 
@@ -223,7 +229,7 @@ Route: slug = "main-menu"
         └── content_field: label = "Contact"
 ```
 
-**Step 2: Create a reference datatype.** Create a datatype with `type = "_reference"` and label "Menu Reference". Add a `content_tree_ref` field to it:
+**Step 2: Create a reference datatype.** Create a datatype with `type = "_reference"` and label "Menu Reference". Add an `_id` field to it:
 
 ```bash
 # Create the _reference datatype
@@ -232,21 +238,21 @@ curl -X POST http://localhost:8080/api/v1/datatype \
   -H "Content-Type: application/json" \
   -d '{"label": "Menu Reference", "type": "_reference"}'
 
-# Create a content_tree_ref field on it
+# Create an _id field on it
 curl -X POST http://localhost:8080/api/v1/fields \
   -H "Cookie: session=YOUR_SESSION_COOKIE" \
   -H "Content-Type: application/json" \
   -d '{
     "parent_id": "MENU_REFERENCE_DATATYPE_ID",
     "label": "menu",
-    "type": "content_tree_ref",
+    "type": "_id",
     "data": "{}",
     "validation": "{}",
     "ui_config": "{}"
   }'
 ```
 
-**Step 3: Use the reference in page content trees.** In each page's content tree, add an instance of the "Menu Reference" datatype. Set its `content_tree_ref` field value to the `content_data_id` of the Main Menu's root node.
+**Step 3: Use the reference in page content trees.** In each page's content tree, add an instance of the "Menu Reference" datatype. Set its `_id` field value to the `content_data_id` of the Main Menu's root node.
 
 ```
 Route: slug = "homepage"
@@ -261,7 +267,7 @@ Route: slug = "homepage"
 **Step 4: Content delivery resolves the reference.** When a client requests `GET /api/v1/content/homepage`, the composition engine:
 
 1. Detects the `_reference` node ("Menu Reference").
-2. Reads its `content_tree_ref` field value (`01JNRW...`).
+2. Reads its `_id` field value (`01JNRW...`).
 3. Fetches and builds the referenced content tree (the Main Menu).
 4. Attaches the menu tree as a child of the reference node.
 5. Returns the fully composed tree.
@@ -410,7 +416,7 @@ curl -X POST http://localhost:8080/api/v1/contentfields \
   }'
 ```
 
-Content status values: `draft`, `published`, `archived`, `pending`.
+Content status values: `draft`, `published`.
 
 ## Modifying Schemas at Runtime
 

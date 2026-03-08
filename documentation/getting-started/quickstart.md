@@ -1,42 +1,69 @@
 # Quickstart
 
-ModulaCMS is a headless CMS that runs as a single binary with three servers: HTTP (REST API + admin panel), HTTPS, and SSH (terminal-based management TUI). This guide gets you from clone to running in under five minutes.
+ModulaCMS is a headless CMS that runs as a single binary with three servers: HTTP (REST API + admin panel), HTTPS, and SSH (terminal-based management TUI). This guide gets you from zero to running in under five minutes.
 
-## Prerequisites
+## Install
+
+Install the `modula` binary to your PATH so you can run it from any directory:
+
+```bash
+# Build from source
+git clone https://github.com/hegner123/modulacms.git
+cd modulacms
+just build
+```
+
+Then copy the binary to a directory in your PATH:
+
+```bash
+cp out/bin/modula-x86 /usr/local/bin/modula
+```
+
+Verify the installation:
+
+```bash
+modula version
+```
+
+### Prerequisites
 
 - **Go 1.24+** with CGO enabled (`CGO_ENABLED=1`)
 - **just** command runner ([installation](https://github.com/casey/just#installation))
 - **GCC or Clang** (CGO compiles the SQLite driver)
 - Linux or macOS (Windows is not supported)
 
-SQLite is the default database -- no external database server needed.
+## Create a Project
 
-## Build
-
-Clone the repository and build the development binary:
+Navigate to where you want your project to live and run init:
 
 ```bash
-git clone https://github.com/hegner123/modulacms.git
-cd modulacms
-just dev
+mkdir mysite && cd mysite
+modula init
 ```
 
-This produces a `modula-x86` binary in the project root with version info embedded via ldflags.
+`modula init` runs the install wizard, then automatically registers the project in `~/.modula/configs.json` using the directory name as the project name and `local` as the environment. If it's the first project registered, it becomes the default.
 
-## Run
+For non-interactive setup:
 
 ```bash
-./modula-x86 serve
+modula init --yes --admin-password your-password
 ```
 
-On first run with no `config.json` present, ModulaCMS automatically:
+To use a custom project name:
 
-1. Creates a `config.json` with default settings.
-2. Creates a `modula.db` SQLite database.
-3. Creates database tables and inserts bootstrap data (roles, permissions, system user).
-4. Generates and logs a system admin password.
+```bash
+modula init --name my-site --admin-password pw
+```
 
-Watch the startup logs for a line like:
+This creates `config.json` and `modula.db` in the current directory, creates all database tables, seeds bootstrap data (roles, permissions, system user), and registers the project.
+
+## Start the Server
+
+```bash
+modula serve
+```
+
+Watch the startup logs for the system admin credentials if you used the interactive installer without setting a password:
 
 ```
 Generated system admin password  email=system@modulacms.local  password=<random-string>
@@ -59,23 +86,15 @@ Save this password. You need it to log in.
 Open [http://localhost:8080/admin/](http://localhost:8080/admin/) in your browser. Log in with:
 
 - **Email:** `system@modulacms.local`
-- **Password:** the generated password from the startup logs
-
-The admin panel provides a full management interface for content, schema, media, users, roles, and settings.
+- **Password:** the password from setup
 
 ### SSH TUI
-
-Connect to the terminal-based management interface:
 
 ```bash
 ssh localhost -p 2233
 ```
 
-The TUI provides the same management capabilities as the admin panel in a terminal interface.
-
 ### REST API
-
-The API is available at `/api/v1/`. Authenticate first, then make requests:
 
 ```bash
 # Log in and capture the session cookie
@@ -92,9 +111,32 @@ curl http://localhost:8080/api/v1/datatype \
 curl http://localhost:8080/api/v1/health
 ```
 
+## Manage From Anywhere
+
+Since `modula init` registered the project, you can already manage it from any directory:
+
+```bash
+cd ~
+modula connect              # uses default project + env
+modula connect mysite       # explicit project, default env
+modula connect mysite local # explicit project + env
+```
+
+## Multiple Environments
+
+Each project supports multiple environments (local, staging, production), each pointing to a different `config.json`:
+
+```bash
+modula connect set mysite local ./config.json
+modula connect set mysite staging /srv/mysite/staging/config.json
+modula connect set mysite prod /srv/mysite/prod/config.json
+```
+
+For remote environments, the `config.json` uses `remote_url` and `remote_api_key` instead of `db_driver` -- the TUI connects over HTTPS via the Go SDK instead of a direct database connection.
+
 ## Next Steps
 
-- [Installation Guide](installation.md) -- production builds, Docker, database options
+- [Installation Guide](installation.md) -- build options, Docker, database backends, remote connections
 - [Configuration Reference](configuration.md) -- all config.json fields and options
 
 ## Stopping the Server

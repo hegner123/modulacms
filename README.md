@@ -1,10 +1,10 @@
-# ModulaCMS
+# Modula
 
 A headless CMS written in Go, built on three core values: **performance**, **flexibility**, and **transparency**.
 
 ## Performance
 
-ModulaCMS is built in Go and ships as a single compiled binary. There is no runtime to install, no interpreter overhead, and no dependency tree to manage in production. One artifact runs everything: API server, admin panel, SSH terminal UI, and background services.
+Modula is built in Go and ships as a single compiled binary. There is no runtime to install, no interpreter overhead, and no dependency tree to manage in production. One artifact runs everything: API server, admin panel, SSH terminal UI, and background services.
 
 - **Single binary** -- one compiled artifact, zero runtime dependencies
 - **Three concurrent servers** -- HTTP, HTTPS (Let's Encrypt autocert), and SSH start together and share a single database connection pool with graceful shutdown on SIGINT/SIGTERM
@@ -22,17 +22,18 @@ ModulaCMS is built in Go and ships as a single compiled binary. There is no runt
 
 ## Flexibility
 
-ModulaCMS uses a dual content schema -- admin tables for editorial work and public tables for delivery -- so editors work on drafts without affecting live content. The schema itself is defined at runtime: datatypes, fields, content data, content fields, and routes combine to let you create any content structure you need without code changes or redeployment.
+Modula uses a dual content schema -- admin tables for editorial work and public tables for delivery -- so editors work on drafts without affecting live content. The schema itself is defined at runtime: datatypes, fields, content data, content fields, and routes combine to let you create any content structure you need without code changes or redeployment.
 
 - **Runtime schema** -- define datatypes, attach fields, create content, and configure routes entirely through the API, admin panel, or TUI; no migrations, no redeploys
 - **Dual content schema** -- parallel admin and client table sets (`admin_content_data` / `content_data`, `admin_content_fields` / `content_fields`, etc.) give you a second full content layer with no prescribed purpose. Agencies use it to build custom admin panels where features toggle per client and upgrades distribute universally -- but it is just data, so use it for whatever you need
 - **Tri-database support** -- switch between SQLite, MySQL, and PostgreSQL by changing one field in `config.json`; the `DbDriver` interface (~150 methods) abstracts all differences
-- **Six output formats** -- content responses can mimic Contentful, Sanity, Strapi, WordPress, or use ModulaCMS clean/raw format; set a default or override per request with `?format=`
-- **Multi-CMS import** -- bulk import content from Contentful, Sanity, Strapi, WordPress, or ModulaCMS clean format with automatic datatype and field creation
+- **Six output formats** -- content responses can mimic Contentful, Sanity, Strapi, WordPress, or use Modula clean/raw format; set a default or override per request with `?format=`
+- **Multi-CMS import** -- bulk import content from Contentful, Sanity, Strapi, WordPress, or Modula clean format with automatic datatype and field creation
 - **Built-in backup and deploy** -- ZIP backups (SQL dump + media) stored locally or in S3; content sync between environments with export, import, push, pull, and snapshot restore with dry-run validation
 - **Full spec compliance** -- OAuth works with any provider that implements the standard (Google, GitHub, Azure, Okta, Auth0) via configurable endpoints; S3 storage works with AWS, MinIO, DigitalOcean Spaces, Wasabi, or any S3-compatible service; email works with SMTP, SendGrid, SES, or Postmark. You are never locked into a vendor
 - **Plugin system** -- Lua plugins can define custom database tables, register HTTP routes, hook into content lifecycle events, and access core CMS data through a gated API
 - **Connect system** -- manage multiple CMS instances and environments from a single CLI; the same TUI works identically whether connected to a local database or a remote server over HTTPS
+- **Self-consuming SDK** -- remote operations from a local binary use Modula's own Go SDK as the transport layer. The `RemoteDriver` implements the full `DbDriver` interface by delegating to SDK calls over HTTPS, so local and remote modes share the same code paths. The MCP server and deploy system use the same SDK
 - **Content versioning and i18n** -- publish, unpublish, schedule, version, and restore content with locale-aware delivery and fallback chains
 - **Webhooks** -- event-driven HTTP notifications with HMAC-SHA256 signing, delivery tracking, retry, and test endpoints
 - **Three SDKs** -- official TypeScript (ESM + CJS), Go, and Swift SDKs with zero external dependencies
@@ -75,7 +76,7 @@ just dev
 ./modula serve --wizard
 ```
 
-On first run without a `config.json`, ModulaCMS generates one with defaults, creates the database schema, bootstraps RBAC roles (admin, editor, viewer), and logs a random admin password. The SSH server starts immediately; HTTP/HTTPS start once the database is ready.
+On first run without a `config.json`, Modula generates one with defaults, creates the database schema, bootstraps RBAC roles (admin, editor, viewer), and logs a random admin password. The SSH server starts immediately; HTTP/HTTPS start once the database is ready.
 
 **Default Ports:**
 
@@ -379,7 +380,7 @@ POST   /api/v1/import/contentful   # Import from Contentful
 POST   /api/v1/import/sanity       # Import from Sanity
 POST   /api/v1/import/strapi       # Import from Strapi
 POST   /api/v1/import/wordpress    # Import from WordPress
-POST   /api/v1/import/clean        # Import ModulaCMS format
+POST   /api/v1/import/clean        # Import Modula format
 POST   /api/v1/import              # Bulk import
 
 GET               /api/v1/admin/config           # Get config (redacted)
@@ -463,7 +464,7 @@ A config must have either `remote_url` or `db_driver` set (not both).
 
 ## Lua Plugin System
 
-Plugins extend ModulaCMS with sandboxed Lua scripts via gopher-lua.
+Plugins extend Modula with sandboxed Lua scripts via gopher-lua.
 
 ### Plugin Structure
 
@@ -518,11 +519,14 @@ modula deploy env test                        # Test environment connectivity
 
 ## MCP Server
 
-ModulaCMS includes a Model Context Protocol server with 40+ tools for AI-assisted content management. The MCP server connects to the CMS via the Go SDK.
+Modula includes a built-in Model Context Protocol server with 40+ tools for AI-assisted content management. The MCP server connects to a running Modula instance via the Go SDK -- no separate binary to build or install.
 
 ```bash
-just mcp-build        # Build MCP server binary
-just mcp-install      # Build and install to /usr/local/bin/modula-mcp
+# Start the MCP server over stdio
+MODULA_URL=http://localhost:8080 MODULA_API_KEY=your-key modula mcp
+
+# Or use flags
+modula mcp --url http://localhost:8080 --api-key your-key
 ```
 
 Tools cover content CRUD, content fields, batch operations, schema management, media, routes, users, roles, permissions, configuration, and import.
@@ -563,7 +567,7 @@ Never edit files in these directories by hand -- they are overwritten by sqlc. A
 
 ## SDKs
 
-ModulaCMS provides official SDKs for TypeScript, Go, and Swift. All SDKs have zero external dependencies beyond their respective standard libraries.
+Modula provides official SDKs for TypeScript, Go, and Swift. All SDKs have zero external dependencies beyond their respective standard libraries.
 
 ### TypeScript
 
@@ -759,6 +763,7 @@ modula [--config=path] [--verbose] <command>
   deploy push        Upload local data to remote environment
   deploy snapshot    List, show, or restore import snapshots
   deploy env         List and test configured deploy environments
+  mcp                Start the MCP server over stdio (requires MODULA_URL + MODULA_API_KEY)
   pipeline list      Show all pipeline entries
   pipeline show      Show pipelines for a specific table
   plugin list        List plugins

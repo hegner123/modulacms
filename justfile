@@ -303,14 +303,13 @@ sdk lang action:
             echo "Unknown lang: {{lang}}"; echo "Langs: ts, go, swift"; exit 1 ;;
     esac
 
-# [MCP] Build MCP server binary
+# [MCP] The MCP server is built into the main binary. Use: modula mcp
+# Legacy standalone build (mcp/ directory) is deprecated.
 mcp-build:
-    cd mcp && go build -o modula-mcp .
-    codesign -s - mcp/modula-mcp
+    @echo "MCP server is now built into the main binary. Use: modula mcp"
 
-# [MCP] Install MCP server binary to /usr/local/bin
-mcp-install: mcp-build
-    cp mcp/modula-mcp /usr/local/bin/modula-mcp
+mcp-install:
+    @echo "MCP server is now built into the main binary. Use: modula mcp"
 
 # [Plugin] Manage plugins: just plugin <action> [name/path]
 # Actions: list, init, validate, info, reload, enable, disable
