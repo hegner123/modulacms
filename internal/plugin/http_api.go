@@ -79,17 +79,12 @@ func httpHandleFn(L *lua.LState, pluginName string, handlers *lua.LTable, routeM
 			return 0
 		}
 
-		// 3. Phase guard: reject calls inside on_init().
-		// The Manager sets "in_init" = LTrue in the LState registry before calling
-		// on_init(), and clears it after. http.handle() must only be called at
-		// module scope (during init.lua execution by the factory), not inside on_init().
-		registryTbl := L.Get(lua.RegistryIndex)
-		if regTbl, ok := registryTbl.(*lua.LTable); ok {
-			inInit := L.GetField(regTbl, "in_init")
-			if inInit == lua.LTrue {
-				L.RaiseError("http.handle() must be called at module scope, not inside on_init()")
-				return 0
-			}
+		// 3. Phase guard: http.handle() must only be called at module scope
+		// (during init.lua execution by the factory). The Manager sets __vm_phase
+		// on the LState registry to track the current lifecycle phase.
+		if phase := vmPhase(L); phase != "" && phase != "module_scope" {
+			L.RaiseError("http.handle() must be called at module scope, not inside on_init()")
+			return 0
 		}
 
 		// 4. Duplicate detection.
@@ -143,14 +138,10 @@ func httpUseFn(L *lua.LState, middleware *lua.LTable) lua.LGFunction {
 	return func(L *lua.LState) int {
 		fn := L.CheckFunction(1)
 
-		// Phase guard: reject calls inside on_init().
-		registryTbl := L.Get(lua.RegistryIndex)
-		if regTbl, ok := registryTbl.(*lua.LTable); ok {
-			inInit := L.GetField(regTbl, "in_init")
-			if inInit == lua.LTrue {
-				L.RaiseError("http.use() must be called at module scope, not inside on_init()")
-				return 0
-			}
+		// Phase guard: http.use() must only be called at module scope.
+		if phase := vmPhase(L); phase != "" && phase != "module_scope" {
+			L.RaiseError("http.use() must be called at module scope, not inside on_init()")
+			return 0
 		}
 
 		// Append to the middleware table. Lua arrays are 1-indexed, so the next

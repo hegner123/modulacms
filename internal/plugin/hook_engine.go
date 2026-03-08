@@ -376,14 +376,19 @@ func (e *HookEngine) executeBefore(eventCtx context.Context, entry hookEntry, da
 	}
 	defer inst.Pool.Put(L)
 
-	// Look up the bound DatabaseAPI and set inBeforeHook flag (M1).
+	// Look up bound DatabaseAPI and requestAPIState, set inBeforeHook flag (M1).
 	inst.mu.Lock()
 	dbAPI := inst.dbAPIs[L]
+	reqAPI := inst.requestAPIs[L]
 	inst.mu.Unlock()
 
 	if dbAPI != nil {
 		dbAPI.inBeforeHook = true
 		defer func() { dbAPI.inBeforeHook = false }()
+	}
+	if reqAPI != nil {
+		reqAPI.inBeforeHook = true
+		defer func() { reqAPI.inBeforeHook = false }()
 	}
 
 	// M11: Per-hook timeout (shorter than the event-level timeout).

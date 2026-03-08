@@ -189,9 +189,8 @@ func TestHooksOn(t *testing.T) {
 		ApplySandbox(L, SandboxConfig{})
 		RegisterHooksAPI(L, "test_plugin")
 
-		// Set phase flag.
-		regTbl := L.Get(lua.RegistryIndex).(*lua.LTable)
-		L.SetField(regTbl, "in_init", lua.LTrue)
+		// Simulate __vm_phase = "init" (during on_init).
+		setVMPhase(L, "init")
 
 		err := L.DoString(`
 			hooks.on("before_create", "content_data", function() end)

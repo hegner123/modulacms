@@ -122,14 +122,19 @@ type PluginInstance struct {
 	// Nil means no core table access (discovered-only or legacy plugins).
 	ApprovedAccess PluginCoreAccess
 
-	// mu protects dbAPIs from concurrent access. Required because the onReplace
-	// callback (called from Put on a VM-returning goroutine) deletes entries while
-	// executeBefore/executeAfter read entries on different goroutines (S5).
+	// mu protects dbAPIs and requestAPIs from concurrent access. Required because the
+	// onReplace callback (called from Put on a VM-returning goroutine) deletes entries
+	// while executeBefore/executeAfter read entries on different goroutines (S5).
 	mu sync.Mutex
 
 	// dbAPIs maps each VM (*lua.LState) to its bound DatabaseAPI for op count reset.
 	// Each DatabaseAPI is bound to exactly one LState (1:1 invariant).
 	dbAPIs map[*lua.LState]*DatabaseAPI
+
+	// requestAPIs maps each VM (*lua.LState) to its bound requestAPIState for
+	// before-hook guard wiring. Each requestAPIState is bound to exactly one
+	// LState (1:1 invariant).
+	requestAPIs map[*lua.LState]*requestAPIState
 }
 
 // ManagerConfig configures the plugin manager runtime behavior.
@@ -391,11 +396,12 @@ func (m *Manager) LoadAll(ctx context.Context) error {
 		}
 
 		discovered[info.Name] = &PluginInstance{
-			Info:     *info,
-			State:    StateDiscovered,
-			Dir:      pluginDir,
-			InitPath: initPath,
-			dbAPIs:   make(map[*lua.LState]*DatabaseAPI),
+			Info:        *info,
+			State:       StateDiscovered,
+			Dir:         pluginDir,
+			InitPath:    initPath,
+			dbAPIs:      make(map[*lua.LState]*DatabaseAPI),
+			requestAPIs: make(map[*lua.LState]*requestAPIState),
 		}
 	}
 
@@ -569,16 +575,16 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 
 		// VM factory call sequence (roadmap-specified order):
 		// 1. ApplySandbox
-		// 2. RegisterPluginRequire
-		// 3. RegisterDBAPI
-		// 4. RegisterLogAPI
-		// 5. RegisterHTTPAPI (Phase 2)
-		// 6. RegisterHooksAPI (Phase 3)
-		// 7. FreezeModule("db")
-		// 8. FreezeModule("log")
-		// 9. FreezeModule("http")
-		// 10. FreezeModule("hooks")
+		// 2. Set __vm_phase = "module_scope"
+		// 3. RegisterPluginRequire
+		// 4. RegisterDBAPI
+		// 5. RegisterLogAPI
+		// 6. RegisterHTTPAPI (Phase 2)
+		// 7. RegisterHooksAPI (Phase 3)
+		// 8. RegisterRequestAPI
+		// 9. FreezeModule (all modules)
 		ApplySandbox(L, SandboxConfig{AllowCoroutine: true, ExecTimeout: timeout})
+		setVMPhase(L, "module_scope")
 		RegisterPluginRequire(L, inst.Dir)
 
 		dbAPI := NewDatabaseAPI(m.db, pluginName, m.dialect, m.cfg.MaxOpsPerExec, m.tableReg)
@@ -588,11 +594,13 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 		RegisterHooksAPI(L, pluginName)
 		coreAPI := NewCoreTableAPI(dbAPI, pluginName, m.dialect, inst.ApprovedAccess)
 		RegisterCoreAPI(L, coreAPI)
+		reqAPI := RegisterRequestAPI(L, pluginName, nil) // engine wired in future issue
 		FreezeModule(L, "db")
 		FreezeModule(L, "log")
 		FreezeModule(L, "http")
 		FreezeModule(L, "hooks")
 		FreezeModule(L, "core")
+		FreezeModule(L, "request")
 
 		// Execute init.lua to define globals (plugin_info, on_init, on_shutdown).
 		// Use a context with timeout for the execution.
@@ -612,9 +620,10 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 		// Clear context after factory init -- the caller will set their own via Get().
 		L.SetContext(nil)
 
-		// Store the dbAPI mapping on the instance for op count reset (S5: protected by inst.mu).
+		// Store the dbAPI and requestAPI mappings on the instance (S5: protected by inst.mu).
 		inst.mu.Lock()
 		inst.dbAPIs[L] = dbAPI
+		inst.requestAPIs[L] = reqAPI
 		inst.mu.Unlock()
 
 		return L
@@ -640,6 +649,7 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 		OnReplace: func(oldL *lua.LState) {
 			inst.mu.Lock()
 			delete(inst.dbAPIs, oldL)
+			delete(inst.requestAPIs, oldL)
 			inst.mu.Unlock()
 		},
 	})
@@ -668,14 +678,11 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 	// Set context with timeout for on_init execution.
 	L.SetContext(initCtx)
 
-	// Set phase flag so http.handle() rejects calls during on_init.
-	// http.handle() must only be called at module scope (during init.lua execution
-	// by the factory), not inside on_init(). The flag is stored in the LState's
-	// registry table, which is inaccessible from Lua code.
-	registryTbl := L.Get(lua.RegistryIndex)
-	if regTbl, ok := registryTbl.(*lua.LTable); ok {
-		L.SetField(regTbl, "in_init", lua.LTrue)
-	}
+	// Set VM phase to "init" so http.handle()/hooks.on()/request.register() reject
+	// calls during on_init. These must only be called at module scope (during init.lua
+	// execution by the factory). The phase is stored in the LState's registry table,
+	// which is inaccessible from Lua code.
+	setVMPhase(L, "init")
 
 	// Call on_init() if defined.
 	onInit := L.GetGlobal("on_init")
@@ -685,20 +692,16 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 			NRet:    0,
 			Protect: true,
 		}); callErr != nil {
-			// Clear phase flag before returning VM to pool.
-			if regTbl, ok := registryTbl.(*lua.LTable); ok {
-				L.SetField(regTbl, "in_init", lua.LNil)
-			}
+			// Set phase to runtime before returning VM to pool.
+			setVMPhase(L, "runtime")
 			pool.Put(L)
 			m.failPlugin(inst, fmt.Sprintf("on_init failed: %s", callErr.Error()))
 			return
 		}
 	}
 
-	// Clear phase flag after on_init completes.
-	if regTbl, ok := registryTbl.(*lua.LTable); ok {
-		L.SetField(regTbl, "in_init", lua.LNil)
-	}
+	// Set phase to runtime after on_init completes.
+	setVMPhase(L, "runtime")
 
 	// Take global snapshot after on_init (captures any globals defined during init).
 	pool.SnapshotGlobals(L)
@@ -732,6 +735,15 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 				fmt.Sprintf("plugin %q: registered %d content hooks", pluginName, len(pendingHooks)),
 			)
 		}
+	}
+
+	// Read pending request registrations from the VM's __request_pending table.
+	// The actual UpsertRequestRegistrations call requires RequestEngine (future issue).
+	pendingRequests := ReadPendingRequests(L)
+	if len(pendingRequests) > 0 {
+		utility.DefaultLogger.Info(
+			fmt.Sprintf("plugin %q: discovered %d outbound request domain registrations", pluginName, len(pendingRequests)),
+		)
 	}
 
 	// Phase 4: Read schema drift entries from the VM (set by luaDefineTable).
@@ -844,6 +856,10 @@ func (m *Manager) shutdownPlugin(ctx context.Context, inst *PluginInstance) {
 	inst.mu.Unlock()
 
 	L.SetContext(shutdownCtx)
+
+	// Set VM phase to "shutdown" so request.send() and registration APIs
+	// (http.handle, hooks.on) are blocked during on_shutdown().
+	setVMPhase(L, "shutdown")
 
 	onShutdown := L.GetGlobal("on_shutdown")
 	if fn, ok := onShutdown.(*lua.LFunction); ok {
@@ -1137,7 +1153,7 @@ func registerManifestStubs(L *lua.LState) {
 		return 1
 	}))
 
-	for _, name := range []string{"db", "log", "http", "hooks", "core"} {
+	for _, name := range []string{"db", "log", "http", "hooks", "core", "request"} {
 		stub := L.NewTable()
 		L.SetMetatable(stub, mt)
 		L.SetGlobal(name, stub)
@@ -1270,11 +1286,12 @@ func (m *Manager) ReloadPlugin(ctx context.Context, name string) error {
 
 	// Create new plugin instance independently (shares nothing with old).
 	newInst := &PluginInstance{
-		Info:     *newInfo,
-		State:    StateDiscovered,
-		Dir:      oldInst.Dir,
-		InitPath: oldInst.InitPath,
-		dbAPIs:   make(map[*lua.LState]*DatabaseAPI),
+		Info:        *newInfo,
+		State:       StateDiscovered,
+		Dir:         oldInst.Dir,
+		InitPath:    oldInst.InitPath,
+		dbAPIs:      make(map[*lua.LState]*DatabaseAPI),
+		requestAPIs: make(map[*lua.LState]*requestAPIState),
 	}
 
 	// Load the new instance (creates pool, runs on_init, registers routes/hooks).
@@ -1695,11 +1712,12 @@ func (m *Manager) EnablePlugin(ctx context.Context, name string) error {
 	}
 
 	inst := &PluginInstance{
-		Info:     *info,
-		State:    StateDiscovered,
-		Dir:      pluginDir,
-		InitPath: initPath,
-		dbAPIs:   make(map[*lua.LState]*DatabaseAPI),
+		Info:        *info,
+		State:       StateDiscovered,
+		Dir:         pluginDir,
+		InitPath:    initPath,
+		dbAPIs:      make(map[*lua.LState]*DatabaseAPI),
+		requestAPIs: make(map[*lua.LState]*requestAPIState),
 	}
 
 	m.mu.Lock()
@@ -1845,8 +1863,9 @@ func (m *Manager) ListOrphanedTables(ctx context.Context) ([]string, error) {
 
 	// System tables that are not orphaned.
 	systemTables := map[string]bool{
-		"plugin_routes": true,
-		"plugin_hooks":  true,
+		"plugin_routes":   true,
+		"plugin_hooks":    true,
+		"plugin_requests": true,
 	}
 
 	// Build the set of known plugin prefixes from all plugins (all states).

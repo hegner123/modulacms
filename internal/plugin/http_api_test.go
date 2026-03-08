@@ -333,9 +333,8 @@ func TestHTTPHandle(t *testing.T) {
 		defer L.Close()
 		RegisterHTTPAPI(L, "test_plugin")
 
-		// Simulate the Manager setting the phase flag before on_init.
-		reg := L.Get(lua.RegistryIndex).(*lua.LTable)
-		L.SetField(reg, "in_init", lua.LTrue)
+		// Simulate the Manager setting __vm_phase to "init" before on_init.
+		setVMPhase(L, "init")
 
 		err := L.DoString(`
 			http.handle("GET", "/should-fail", function(req) return {status = 200} end)
@@ -351,20 +350,19 @@ func TestHTTPHandle(t *testing.T) {
 		}
 	})
 
-	t.Run("handle works when phase flag is false", func(t *testing.T) {
+	t.Run("handle works when phase is module_scope", func(t *testing.T) {
 		L := lua.NewState()
 		defer L.Close()
 		RegisterHTTPAPI(L, "test_plugin")
 
-		// Explicitly set in_init to false (simulates after on_init returns).
-		reg := L.Get(lua.RegistryIndex).(*lua.LTable)
-		L.SetField(reg, "in_init", lua.LFalse)
+		// Simulate module scope (the normal factory case).
+		setVMPhase(L, "module_scope")
 
 		err := L.DoString(`
 			http.handle("GET", "/should-work", function(req) return {status = 200} end)
 		`)
 		if err != nil {
-			t.Fatalf("expected no error when in_init is false, got: %v", err)
+			t.Fatalf("expected no error when __vm_phase is module_scope, got: %v", err)
 		}
 	})
 
@@ -373,12 +371,12 @@ func TestHTTPHandle(t *testing.T) {
 		defer L.Close()
 		RegisterHTTPAPI(L, "test_plugin")
 
-		// No phase flag set at all (module scope -- the normal case).
+		// No phase flag set at all (backward compat -- allows registration).
 		err := L.DoString(`
 			http.handle("GET", "/normal", function(req) return {status = 200} end)
 		`)
 		if err != nil {
-			t.Fatalf("expected no error when in_init is not set, got: %v", err)
+			t.Fatalf("expected no error when __vm_phase is not set, got: %v", err)
 		}
 	})
 
@@ -482,9 +480,8 @@ func TestHTTPUse(t *testing.T) {
 		defer L.Close()
 		RegisterHTTPAPI(L, "test_plugin")
 
-		// Simulate the Manager setting the phase flag before on_init.
-		reg := L.Get(lua.RegistryIndex).(*lua.LTable)
-		L.SetField(reg, "in_init", lua.LTrue)
+		// Simulate the Manager setting __vm_phase to "init" before on_init.
+		setVMPhase(L, "init")
 
 		err := L.DoString(`
 			http.use(function(req) return nil end)

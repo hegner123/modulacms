@@ -79,14 +79,10 @@ func hooksOnFn(L *lua.LState, pluginName string, handlers *lua.LTable, pending *
 			return 0
 		}
 
-		// 3. Phase guard: reject calls inside on_init().
-		registryTbl := L.Get(lua.RegistryIndex)
-		if regTbl, ok := registryTbl.(*lua.LTable); ok {
-			inInit := L.GetField(regTbl, "in_init")
-			if inInit == lua.LTrue {
-				L.RaiseError("hooks.on() must be called at module scope, not inside on_init()")
-				return 0
-			}
+		// 3. Phase guard: hooks.on() must only be called at module scope.
+		if phase := vmPhase(L); phase != "" && phase != "module_scope" {
+			L.RaiseError("hooks.on() must be called at module scope, not inside on_init()")
+			return 0
 		}
 
 		// 4. Hook count limit.
