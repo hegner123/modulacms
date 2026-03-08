@@ -529,7 +529,12 @@ export type ModulaCMSAdminClient = {
   /** Admin content field values. */
   adminContentFields: CrudResource<AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID>
   /** Admin datatype definitions. */
-  adminDatatypes: CrudResource<AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID>
+  adminDatatypes: CrudResource<AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID> & {
+    /** Update the sort order of an admin datatype. */
+    updateSortOrder: (id: AdminDatatypeID, sortOrder: number, opts?: RequestOptions) => Promise<void>
+    /** Get the maximum sort order among admin datatypes under a parent (or root if no parent). */
+    maxSortOrder: (parentId?: AdminDatatypeID, opts?: RequestOptions) => Promise<number>
+  }
   /** Admin field definitions. */
   adminFields: CrudResource<AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID>
   /** Public content data nodes (tree structure). */
@@ -553,6 +558,10 @@ export type ModulaCMSAdminClient = {
     getFull: (id: DatatypeID, opts?: RequestOptions) => Promise<DatatypeFullView>
     /** Delete a datatype and cascade-delete all content nodes that use it. */
     deleteCascade: (id: DatatypeID, opts?: RequestOptions) => Promise<DatatypeCascadeDeleteResponse>
+    /** Update the sort order of a datatype. */
+    updateSortOrder: (id: DatatypeID, sortOrder: number, opts?: RequestOptions) => Promise<void>
+    /** Get the maximum sort order among datatypes under a parent (or root if no parent). */
+    maxSortOrder: (parentId?: DatatypeID, opts?: RequestOptions) => Promise<number>
   }
   /** Field schema definitions. */
   fields: CrudResource<Field, CreateFieldParams, UpdateFieldParams, FieldID>
@@ -799,7 +808,18 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
       },
     },
     adminContentFields: createResource<AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID>(http, 'admincontentfields'),
-    adminDatatypes: createResource<AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID>(http, 'admindatatypes'),
+    adminDatatypes: {
+      ...createResource<AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID>(http, 'admindatatypes'),
+      async updateSortOrder(id: AdminDatatypeID, sortOrder: number, opts?: RequestOptions): Promise<void> {
+        await http.put<void>('/admindatatypes/' + encodeURIComponent(String(id)) + '/sort-order', { sort_order: sortOrder }, opts)
+      },
+      async maxSortOrder(parentId?: AdminDatatypeID, opts?: RequestOptions): Promise<number> {
+        const params: Record<string, string> = {}
+        if (parentId !== undefined) params['parent_id'] = String(parentId)
+        const result = await http.get<{ max_sort_order: number }>('/admindatatypes/max-sort-order', params, opts)
+        return result.max_sort_order
+      },
+    },
     adminFields: createResource<AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID>(http, 'adminfields'),
     contentData: {
       ...createResource<ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID>(http, 'contentdata'),
@@ -851,6 +871,15 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
           throw new Error(`datatype cascade delete failed (${response.status}): ${text}`)
         }
         return response.json() as Promise<DatatypeCascadeDeleteResponse>
+      },
+      async updateSortOrder(id: DatatypeID, sortOrder: number, opts?: RequestOptions): Promise<void> {
+        await http.put<void>('/datatype/' + encodeURIComponent(String(id)) + '/sort-order', { sort_order: sortOrder }, opts)
+      },
+      async maxSortOrder(parentId?: DatatypeID, opts?: RequestOptions): Promise<number> {
+        const params: Record<string, string> = {}
+        if (parentId !== undefined) params['parent_id'] = String(parentId)
+        const result = await http.get<{ max_sort_order: number }>('/datatype/max-sort-order', params, opts)
+        return result.max_sort_order
       },
     },
     fields: createResource<Field, CreateFieldParams, UpdateFieldParams, FieldID>(http, 'fields'),

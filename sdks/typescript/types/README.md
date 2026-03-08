@@ -77,7 +77,7 @@ import { CONTENT_FORMATS } from '@modulacms/types'
 
 **`ContentStatus`** -- `'draft' | 'published' | 'archived' | 'pending'`
 
-**`FieldType`** -- `'text' | 'textarea' | 'number' | 'date' | 'datetime' | 'boolean' | 'select' | 'media' | 'relation' | 'json' | 'richtext' | 'slug' | 'email' | 'url'`
+**`FieldType`** -- `'text' | 'textarea' | 'number' | 'date' | 'datetime' | 'boolean' | 'select' | 'media' | '_id' | 'json' | 'richtext' | 'slug' | 'email' | 'url'`
 
 **`ContentFormat`** -- `'contentful' | 'sanity' | 'strapi' | 'wordpress' | 'clean' | 'raw'`
 

@@ -23,6 +23,8 @@ export type Datatype = {
   datatype_id: DatatypeID
   /** Parent content ID for hierarchical datatypes, or `null`. */
   parent_id: ContentID | null
+  /** Display ordering position. */
+  sort_order: number
   /** Machine-readable name used as JSON key. If empty, derived from label. */
   name: string
   /** Human-readable label for this datatype. */

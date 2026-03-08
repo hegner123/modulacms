@@ -84,6 +84,8 @@ export type CreateDatatypeParams = {
   datatype_id: DatatypeID
   /** Parent content ID, or `null`. */
   parent_id: ContentID | null
+  /** Display ordering position. */
+  sort_order: number
   /** Machine-readable name used as JSON key. If empty, derived from label. */
   name: string
   /** Human-readable label. */
@@ -138,6 +140,8 @@ export type UpdateDatatypeParams = {
   datatype_id: DatatypeID
   /** Updated parent content ID, or `null`. */
   parent_id: ContentID | null
+  /** Display ordering position. */
+  sort_order: number
   /** Machine-readable name used as JSON key. If empty, derived from label. */
   name: string
   /** Updated label. */

@@ -25,7 +25,7 @@ export type FieldType =
   | 'boolean'
   | 'select'
   | 'media'
-  | 'relation'
+  | '_id'
   | 'json'
   | 'richtext'
   | 'slug'

@@ -362,7 +362,7 @@ type URL = Brand<string, 'URL'>
 | `sql.NullInt64` | `number \| null` |
 | `types.Timestamp` | `string` (RFC 3339, not branded -- RFC 3339 compliance is a server responsibility, not a client-side type constraint) |
 | `types.ContentStatus` | `'draft' \| 'published' \| 'archived' \| 'pending'` |
-| `types.FieldType` | `'text' \| 'textarea' \| 'number' \| 'date' \| 'datetime' \| 'boolean' \| 'select' \| 'media' \| 'relation' \| 'json' \| 'richtext' \| 'slug' \| 'email' \| 'url'` |
+| `types.FieldType` | `'text' \| 'textarea' \| 'number' \| 'date' \| 'datetime' \| 'boolean' \| 'select' \| 'media' \| '_id' \| 'json' \| 'richtext' \| 'slug' \| 'email' \| 'url'` |
 | `types.Slug` | `Brand<string, 'Slug'>` |
 | `types.Email` | `Brand<string, 'Email'>` |
 | `types.URL` | `Brand<string, 'URL'>` |
