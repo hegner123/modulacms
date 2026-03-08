@@ -32,33 +32,57 @@ type HomeDashboardDataMsg struct {
 // HomeDashboardFetchCmd fetches all dashboard data from the database.
 func HomeDashboardFetchCmd(driver db.DbDriver) tea.Cmd {
 	return func() tea.Msg {
+		utility.DefaultLogger.Fdebug("[home] HomeDashboardFetchCmd: start")
+		if driver == nil {
+			utility.DefaultLogger.Fdebug("[home] HomeDashboardFetchCmd: driver is nil")
+			return HomeDashboardDataMsg{Err: fmt.Errorf("db driver is nil")}
+		}
 		var data HomeDashboardData
 
 		if c, err := driver.CountContentData(); err == nil && c != nil {
 			data.ContentCount = *c
+		} else if err != nil {
+			utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] CountContentData error: %v", err))
 		}
 		if c, err := driver.CountDatatypes(); err == nil && c != nil {
 			data.DatatypeCount = *c
+		} else if err != nil {
+			utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] CountDatatypes error: %v", err))
 		}
 		if c, err := driver.CountMedia(); err == nil && c != nil {
 			data.MediaCount = *c
+		} else if err != nil {
+			utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] CountMedia error: %v", err))
 		}
 		if c, err := driver.CountUsers(); err == nil && c != nil {
 			data.UserCount = *c
+		} else if err != nil {
+			utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] CountUsers error: %v", err))
 		}
 		if c, err := driver.CountRoutes(); err == nil && c != nil {
 			data.RouteCount = *c
+		} else if err != nil {
+			utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] CountRoutes error: %v", err))
 		}
 		if plugins, err := driver.ListPlugins(); err == nil && plugins != nil {
 			data.Plugins = *plugins
+		} else if err != nil {
+			utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] ListPlugins error: %v", err))
 		}
 		if backups, err := driver.ListBackups(db.ListBackupsParams{Limit: 5, Offset: 0}); err == nil && backups != nil {
 			data.Backups = *backups
+		} else if err != nil {
+			utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] ListBackups error: %v", err))
 		}
 		if events, err := driver.ListChangeEvents(db.ListChangeEventsParams{Limit: 10, Offset: 0}); err == nil && events != nil {
 			data.RecentEvents = *events
+		} else if err != nil {
+			utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] ListChangeEvents error: %v", err))
 		}
 
+		utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] HomeDashboardFetchCmd: done (content=%d datatypes=%d media=%d users=%d routes=%d plugins=%d backups=%d events=%d)",
+			data.ContentCount, data.DatatypeCount, data.MediaCount, data.UserCount, data.RouteCount,
+			len(data.Plugins), len(data.Backups), len(data.RecentEvents)))
 		return HomeDashboardDataMsg{Data: data}
 	}
 }
@@ -96,6 +120,7 @@ var homeGrid = Grid{
 
 // NewHomeScreen creates a HomeScreen with the given menu and username.
 func NewHomeScreen(menu []Page, username string) *HomeScreen {
+	utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] NewHomeScreen: menu=%d username=%q", len(menu), username))
 	return &HomeScreen{
 		GridScreen: GridScreen{
 			Grid:      homeGrid,
@@ -111,6 +136,7 @@ func (s *HomeScreen) PageIndex() PageIndex { return HOMEPAGE }
 func (s *HomeScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case PageMenuSet:
+		utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] Update: PageMenuSet received, items=%d", len(msg.PageMenu)))
 		s.Menu = msg.PageMenu
 		s.CursorMax = len(s.Menu) - 1
 		if s.Cursor > s.CursorMax && s.CursorMax >= 0 {
@@ -119,9 +145,13 @@ func (s *HomeScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		return s, nil
 
 	case HomeDashboardDataMsg:
+		utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] Update: HomeDashboardDataMsg received, err=%v loaded_before=%v", msg.Err, s.Loaded))
 		if msg.Err == nil {
 			s.Data = msg.Data
 			s.Loaded = true
+			utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] Update: Loaded=true, plugins=%d events=%d backups=%d", len(s.Data.Plugins), len(s.Data.RecentEvents), len(s.Data.Backups)))
+		} else {
+			utility.DefaultLogger.Fdebug(fmt.Sprintf("[home] Update: HomeDashboardDataMsg had error: %v", msg.Err))
 		}
 		return s, nil
 

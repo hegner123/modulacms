@@ -16,39 +16,37 @@ type DialogAction string
 
 // Dialog action types.
 const (
-	DIALOGGENERIC                 DialogAction = "generic"
-	DIALOGDELETE                  DialogAction = "delete"
-	DIALOGACTIONCONFIRM           DialogAction = "action_confirm"
-	DIALOGINITCONTENT             DialogAction = "init_content"
-	DIALOGQUITCONFIRM             DialogAction = "quit_confirm"
-	DIALOGDELETECONTENT           DialogAction = "delete_content"
-	DIALOGDELETEDATATYPE          DialogAction = "delete_datatype"
-	DIALOGDELETEFIELD             DialogAction = "delete_field"
-	DIALOGDELETEROUTE             DialogAction = "delete_route"
-	DIALOGDELETEMEDIA             DialogAction = "delete_media"
-	DIALOGDELETEUSER              DialogAction = "delete_user"
-	DIALOGDELETECONTENTFIELD      DialogAction = "delete_content_field"
-	DIALOGDELETEADMINROUTE        DialogAction = "delete_admin_route"
-	DIALOGDELETEADMINDATATYPE     DialogAction = "delete_admin_datatype"
-	DIALOGDELETEADMINFIELD        DialogAction = "delete_admin_field"
-	DIALOGDELETEADMINCONTENT      DialogAction = "delete_admin_content"
-	DIALOGBACKUPRESTORE           DialogAction = "backup_restore"
-	DIALOGAPPROVEPLUGINROUTES     DialogAction = "approve_plugin_routes"
-	DIALOGAPPROVEPLUGINSHOOKS     DialogAction = "approve_plugin_hooks"
-	DIALOGQUICKSTART              DialogAction = "quickstart_confirm"
-	DIALOGDELETEFIELDTYPE         DialogAction = "delete_field_type"
-	DIALOGDELETEADMINFIELDTYPE    DialogAction = "delete_admin_field_type"
-	DIALOGDEPLOYPULL              DialogAction = "deploy_pull"
-	DIALOGDEPLOYPUSH              DialogAction = "deploy_push"
-	DIALOGPUBLISHCONTENT          DialogAction = "publish_content"
-	DIALOGUNPUBLISHCONTENT        DialogAction = "unpublish_content"
-	DIALOGRESTOREVERSION          DialogAction = "restore_version"
-	DIALOGLOCALESELECT            DialogAction = "locale_select"
-	DIALOGPUBLISHADMINCONTENT     DialogAction = "publish_admin_content"
-	DIALOGUNPUBLISHADMINCONTENT   DialogAction = "unpublish_admin_content"
-	DIALOGRESTOREADMINVERSION     DialogAction = "restore_admin_version"
-	DIALOGDELETEADMINCONTENTFIELD DialogAction = "delete_admin_content_field"
+	DIALOGGENERIC              DialogAction = "generic"
+	DIALOGDELETE               DialogAction = "delete"
+	DIALOGACTIONCONFIRM        DialogAction = "action_confirm"
+	DIALOGINITCONTENT          DialogAction = "init_content"
+	DIALOGQUITCONFIRM          DialogAction = "quit_confirm"
+	DIALOGDELETECONTENT        DialogAction = "delete_content"
+	DIALOGDELETEDATATYPE       DialogAction = "delete_datatype"
+	DIALOGDELETEFIELD          DialogAction = "delete_field"
+	DIALOGDELETEROUTE          DialogAction = "delete_route"
+	DIALOGDELETEMEDIA          DialogAction = "delete_media"
+	DIALOGDELETEUSER           DialogAction = "delete_user"
+	DIALOGDELETECONTENTFIELD   DialogAction = "delete_content_field"
+	DIALOGDELETEADMINROUTE     DialogAction = "delete_admin_route"
+	DIALOGDELETEADMINDATATYPE  DialogAction = "delete_admin_datatype"
+	DIALOGDELETEADMINFIELD     DialogAction = "delete_admin_field"
+	DIALOGBACKUPRESTORE        DialogAction = "backup_restore"
+	DIALOGAPPROVEPLUGINROUTES  DialogAction = "approve_plugin_routes"
+	DIALOGAPPROVEPLUGINSHOOKS  DialogAction = "approve_plugin_hooks"
+	DIALOGQUICKSTART           DialogAction = "quickstart_confirm"
+	DIALOGDELETEFIELDTYPE      DialogAction = "delete_field_type"
+	DIALOGDELETEADMINFIELDTYPE DialogAction = "delete_admin_field_type"
+	DIALOGDEPLOYPULL           DialogAction = "deploy_pull"
+	DIALOGDEPLOYPUSH           DialogAction = "deploy_push"
+	DIALOGPUBLISHCONTENT       DialogAction = "publish_content"
+	DIALOGUNPUBLISHCONTENT     DialogAction = "unpublish_content"
+	DIALOGRESTOREVERSION       DialogAction = "restore_version"
+	DIALOGLOCALESELECT         DialogAction = "locale_select"
 )
+
+// dialogBorderPadding accounts for border and padding in dialog width calculations.
+const dialogBorderPadding = 6
 
 // DialogModel represents a dialog that can be rendered on top of other content
 type DialogModel struct {
@@ -119,12 +117,10 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 	case DIALOGDELETE, DIALOGACTIONCONFIRM, DIALOGINITCONTENT, DIALOGQUITCONFIRM, DIALOGDELETECONTENT,
 		DIALOGDELETEDATATYPE, DIALOGDELETEFIELD, DIALOGDELETEROUTE, DIALOGDELETEMEDIA, DIALOGDELETEUSER,
 		DIALOGDELETECONTENTFIELD, DIALOGDELETEADMINROUTE, DIALOGDELETEADMINDATATYPE, DIALOGDELETEADMINFIELD,
-		DIALOGDELETEADMINCONTENT, DIALOGBACKUPRESTORE, DIALOGAPPROVEPLUGINROUTES, DIALOGAPPROVEPLUGINSHOOKS,
+		DIALOGBACKUPRESTORE, DIALOGAPPROVEPLUGINROUTES, DIALOGAPPROVEPLUGINSHOOKS,
 		DIALOGQUICKSTART, DIALOGDELETEFIELDTYPE, DIALOGDELETEADMINFIELDTYPE,
 		DIALOGDEPLOYPULL, DIALOGDEPLOYPUSH,
-		DIALOGPUBLISHCONTENT, DIALOGUNPUBLISHCONTENT, DIALOGRESTOREVERSION,
-		DIALOGPUBLISHADMINCONTENT, DIALOGUNPUBLISHADMINCONTENT, DIALOGRESTOREADMINVERSION,
-		DIALOGDELETEADMINCONTENTFIELD:
+		DIALOGPUBLISHCONTENT, DIALOGUNPUBLISHCONTENT, DIALOGRESTOREVERSION:
 		return d.ToggleControls(msg)
 	case DIALOGLOCALESELECT:
 		return d.LocaleSelectControls(msg)
@@ -180,7 +176,7 @@ func (d *DialogModel) ToggleControls(msg tea.Msg) (DialogModel, tea.Cmd) {
 // Uses a pointer receiver so scrollableBody can persist offset changes.
 func (d *DialogModel) Render(windowWidth, windowHeight int) string {
 	contentWidth := d.Width
-	innerW := contentWidth - 6
+	innerW := contentWidth - dialogBorderPadding
 
 	// --- Header ---
 	header := d.titleStyle.Render(d.Title)
@@ -332,8 +328,9 @@ func DeleteContentCmd(contentID, routeID string) tea.Cmd {
 
 // ContentDeletedMsg is sent after content is successfully deleted.
 type ContentDeletedMsg struct {
-	ContentID string
-	RouteID   string
+	ContentID types.ContentID
+	RouteID   types.RouteID
+	AdminMode bool
 }
 
 // filePickerChrome is the number of lines consumed by the overlay frame

@@ -51,8 +51,9 @@ type DatabaseListRowsMsg struct {
 
 // DatabaseDeleteEntry requests deletion of a database entry.
 type DatabaseDeleteEntry struct {
-	Id    int
-	Table string
+	Column string // PK column name (e.g. "datatype_id", "id")
+	Value  string // PK value (integer or ULID string)
+	Table  string
 }
 
 // DatabaseInsertEntry requests insertion of a new database entry.
@@ -98,11 +99,6 @@ type BuildTreeFromRows struct {
 // GetFullTreeResMsg returns the full tree query result rows.
 type GetFullTreeResMsg struct {
 	Rows []db.GetRouteTreeByRouteIDRow
-}
-
-// BuildTreeFromRouteMsg requests building a content tree from a route ID.
-type BuildTreeFromRouteMsg struct {
-	RouteID int64
 }
 
 // TableSet sets the currently selected database table.

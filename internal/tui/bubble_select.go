@@ -141,5 +141,6 @@ func (b *SelectBubble) Blur() { b.focused = false }
 // Focused returns whether the bubble currently has focus.
 func (b *SelectBubble) Focused() bool { return b.focused }
 
-// SetWidth is a no-op for the select list.
+// SetWidth is a no-op — select options render as a vertical list with labels
+// at their natural width. Truncation is not implemented.
 func (b *SelectBubble) SetWidth(_ int) {}

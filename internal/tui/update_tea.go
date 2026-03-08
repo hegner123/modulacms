@@ -29,12 +29,9 @@ func (m Model) UpdateTea(msg tea.Msg) (Model, tea.Cmd) {
 		// Auto-select screen mode based on terminal width when user hasn't
 		// explicitly overridden via keybinding.
 		if !m.ScreenModeManual {
-			switch {
-			case m.Width < 80:
+			if m.Width < 80 {
 				m.ScreenMode = ScreenFull
-			case m.Width < 120:
-				m.ScreenMode = ScreenWide
-			default:
+			} else {
 				m.ScreenMode = ScreenNormal
 			}
 		}

@@ -5,18 +5,39 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
+// Routes grid: 3 columns
+//
+//	Col 0 (span 3): Routes list
+//	Col 1 (span 6): Details (65%), Info (35%)
+//	Col 2 (span 3): Actions (50%), Stats (50%)
+var routesGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1, Title: "Routes"},
+		}},
+		{Span: 6, Cells: []GridCell{
+			{Height: 0.65, Title: "Details"},
+			{Height: 0.35, Title: "Info"},
+		}},
+		{Span: 3, Cells: []GridCell{
+			{Height: 0.50, Title: "Actions"},
+			{Height: 0.50, Title: "Stats"},
+		}},
+	},
+}
+
 // RoutesScreen implements Screen for both the regular routes page (ROUTES) and
 // the admin routes page (ADMINROUTES). AdminMode selects which data and
 // dialog commands are used.
 type RoutesScreen struct {
+	GridScreen
 	AdminMode   bool
-	Cursor      int
-	PanelFocus  FocusPanel
 	PageRouteId types.RouteID // active route selection (regular mode only)
 	Routes      []db.Routes
 	AdminRoutes []db.AdminRoutes
@@ -25,9 +46,10 @@ type RoutesScreen struct {
 // NewRoutesScreen creates a RoutesScreen for either regular or admin mode.
 func NewRoutesScreen(adminMode bool, routes []db.Routes, adminRoutes []db.AdminRoutes, pageRouteId types.RouteID) *RoutesScreen {
 	return &RoutesScreen{
+		GridScreen: GridScreen{
+			Grid: routesGrid,
+		},
 		AdminMode:   adminMode,
-		Cursor:      0,
-		PanelFocus:  TreePanel,
 		PageRouteId: pageRouteId,
 		Routes:      routes,
 		AdminRoutes: adminRoutes,
@@ -54,20 +76,13 @@ func (s *RoutesScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
-		// Select route
-		if km.Matches(key, config.ActionSelect) {
+		// Select route (only from routes list cell)
+		if km.Matches(key, config.ActionSelect) && s.FocusIndex == 0 {
 			if s.AdminMode {
-				// Admin mode: no active route tracking, just log
 				if len(s.AdminRoutes) > 0 && s.Cursor < len(s.AdminRoutes) {
 					route := s.AdminRoutes[s.Cursor]
 					return s, LogMessageCmd(fmt.Sprintf("Admin route selected: %s (%s)", route.Title, route.AdminRouteID))
@@ -118,7 +133,8 @@ func (s *RoutesScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		}
 
 		// Common keys LAST
-		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, s.cursorMax())
+		cMax := s.cursorMax()
+		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, cMax)
 		if handled {
 			s.Cursor = newCursor
 			return s, cmd
@@ -183,49 +199,43 @@ func (s *RoutesScreen) KeyHints(km config.KeyMap) []KeyHint {
 		{km.HintString(config.ActionEdit), "edit"},
 		{km.HintString(config.ActionDelete), "del"},
 		{km.HintString(config.ActionNextPanel), "panel"},
-		{km.HintString(config.ActionQuit), "quit"},
+		{km.HintString(config.ActionBack), "back"},
 	}
 }
 
 func (s *RoutesScreen) View(ctx AppContext) string {
-	var left, center, right string
-	var listLen int
 	if s.AdminMode {
-		left = s.renderAdminRoutesList()
-		center = s.renderAdminRouteDetail()
-		right = s.renderAdminRouteActions()
-		listLen = len(s.AdminRoutes)
-	} else {
-		left = s.renderRoutesList()
-		center = s.renderRouteDetail()
-		right = s.renderRouteActions()
-		listLen = len(s.Routes)
+		return s.viewAdmin(ctx)
 	}
+	return s.viewRegular(ctx)
+}
 
-	layout := layoutForPage(s.PageIndex())
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
+func (s *RoutesScreen) viewRegular(ctx AppContext) string {
+	listLen := len(s.Routes)
+	innerH := s.Grid.CellInnerHeight(0, ctx.Height)
 
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
+	cells := []CellContent{
+		{Content: s.renderRoutesList(), TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)},
+		{Content: s.renderRouteDetail()},
+		{Content: s.renderRouteInfo()},
+		{Content: s.renderRouteActions()},
+		{Content: s.renderRouteStats()},
 	}
+	return s.RenderGrid(ctx, cells)
+}
 
-	innerH := PanelInnerHeight(ctx.Height)
+func (s *RoutesScreen) viewAdmin(ctx AppContext) string {
+	listLen := len(s.AdminRoutes)
+	innerH := s.Grid.CellInnerHeight(0, ctx.Height)
 
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel, TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)}.Render())
+	cells := []CellContent{
+		{Content: s.renderAdminRoutesList(), TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)},
+		{Content: s.renderAdminRouteDetail()},
+		{Content: s.renderAdminRouteInfo()},
+		{Content: s.renderAdminRouteActions()},
+		{Content: s.renderAdminRouteStats()},
 	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return s.RenderGrid(ctx, cells)
 }
 
 // ---------------------------------------------------------------------------
@@ -234,41 +244,57 @@ func (s *RoutesScreen) View(ctx AppContext) string {
 
 func (s *RoutesScreen) renderRoutesList() string {
 	if len(s.Routes) == 0 {
-		return "(no routes)"
+		return " (no routes)"
 	}
 
 	lines := make([]string, 0, len(s.Routes))
 	for i, route := range s.Routes {
-		cursor := "   "
+		cursor := "  "
 		if s.Cursor == i {
-			cursor = " ->"
+			cursor = "->"
 		}
 		active := ""
 		if route.RouteID == s.PageRouteId {
 			active = " *"
 		}
-		lines = append(lines, fmt.Sprintf("%s %s %s%s", cursor, route.Title, route.Slug, active))
+		lines = append(lines, fmt.Sprintf(" %s %s %s%s", cursor, route.Title, route.Slug, active))
 	}
 	return strings.Join(lines, "\n")
 }
 
 func (s *RoutesScreen) renderRouteDetail() string {
 	if len(s.Routes) == 0 || s.Cursor >= len(s.Routes) {
-		return "No route selected"
+		return " No route selected"
+	}
+
+	route := s.Routes[s.Cursor]
+	accent := lipgloss.NewStyle().Bold(true)
+
+	lines := []string{
+		accent.Render(" " + route.Title),
+		"",
+		fmt.Sprintf(" Slug      %s", route.Slug),
+		fmt.Sprintf(" Status    %d", route.Status),
+		fmt.Sprintf(" Author    %s", route.AuthorID.String()),
+		fmt.Sprintf(" Created   %s", route.DateCreated.String()),
+		fmt.Sprintf(" Modified  %s", route.DateModified.String()),
+	}
+
+	if route.RouteID == s.PageRouteId {
+		lines = append(lines, "", " (active route)")
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+func (s *RoutesScreen) renderRouteInfo() string {
+	if len(s.Routes) == 0 || s.Cursor >= len(s.Routes) {
+		return ""
 	}
 
 	route := s.Routes[s.Cursor]
 	lines := []string{
-		fmt.Sprintf("Title:    %s", route.Title),
-		fmt.Sprintf("Slug:     %s", route.Slug),
-		fmt.Sprintf("Status:   %d", route.Status),
-		fmt.Sprintf("Author:   %s", route.AuthorID.String()),
-		fmt.Sprintf("Created:  %s", route.DateCreated.String()),
-		fmt.Sprintf("Modified: %s", route.DateModified.String()),
-	}
-
-	if route.RouteID == s.PageRouteId {
-		lines = append(lines, "", "  (active route)")
+		fmt.Sprintf(" ID  %s", route.RouteID.String()),
 	}
 
 	return strings.Join(lines, "\n")
@@ -276,17 +302,20 @@ func (s *RoutesScreen) renderRouteDetail() string {
 
 func (s *RoutesScreen) renderRouteActions() string {
 	lines := []string{
-		"Actions",
-		"",
-		"  n: New",
-		"  e: Edit",
-		"  d: Delete",
-		"",
-		fmt.Sprintf("Routes: %d", len(s.Routes)),
+		" n  New route",
+		" e  Edit selected",
+		" d  Delete selected",
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (s *RoutesScreen) renderRouteStats() string {
+	lines := []string{
+		fmt.Sprintf(" Total   %d", len(s.Routes)),
 	}
 
 	if !s.PageRouteId.IsZero() {
-		lines = append(lines, fmt.Sprintf("Active:  %s", s.PageRouteId))
+		lines = append(lines, fmt.Sprintf(" Active  %s", s.PageRouteId))
 	}
 
 	return strings.Join(lines, "\n")
@@ -298,48 +327,65 @@ func (s *RoutesScreen) renderRouteActions() string {
 
 func (s *RoutesScreen) renderAdminRoutesList() string {
 	if len(s.AdminRoutes) == 0 {
-		return "(no admin routes)"
+		return " (no admin routes)"
 	}
 
 	lines := make([]string, 0, len(s.AdminRoutes))
 	for i, route := range s.AdminRoutes {
-		cursor := "   "
+		cursor := "  "
 		if s.Cursor == i {
-			cursor = " ->"
+			cursor = "->"
 		}
-		lines = append(lines, fmt.Sprintf("%s %s %s", cursor, route.Title, route.Slug))
+		lines = append(lines, fmt.Sprintf(" %s %s %s", cursor, route.Title, route.Slug))
 	}
 	return strings.Join(lines, "\n")
 }
 
 func (s *RoutesScreen) renderAdminRouteDetail() string {
 	if len(s.AdminRoutes) == 0 || s.Cursor >= len(s.AdminRoutes) {
-		return "No admin route selected"
+		return " No admin route selected"
 	}
 
 	route := s.AdminRoutes[s.Cursor]
+	accent := lipgloss.NewStyle().Bold(true)
+
 	lines := []string{
-		fmt.Sprintf("Title:    %s", route.Title),
-		fmt.Sprintf("Slug:     %s", route.Slug),
-		fmt.Sprintf("Status:   %d", route.Status),
-		fmt.Sprintf("Author:   %s", route.AuthorID.String()),
-		fmt.Sprintf("Created:  %s", route.DateCreated.String()),
-		fmt.Sprintf("Modified: %s", route.DateModified.String()),
+		accent.Render(" " + route.Title),
+		"",
+		fmt.Sprintf(" Slug      %s", route.Slug),
+		fmt.Sprintf(" Status    %d", route.Status),
+		fmt.Sprintf(" Author    %s", route.AuthorID.String()),
+		fmt.Sprintf(" Created   %s", route.DateCreated.String()),
+		fmt.Sprintf(" Modified  %s", route.DateModified.String()),
 	}
 
 	return strings.Join(lines, "\n")
 }
 
-func (s *RoutesScreen) renderAdminRouteActions() string {
-	lines := []string{
-		"Actions",
-		"",
-		"  n: New",
-		"  e: Edit",
-		"  d: Delete",
-		"",
-		fmt.Sprintf("Routes: %d", len(s.AdminRoutes)),
+func (s *RoutesScreen) renderAdminRouteInfo() string {
+	if len(s.AdminRoutes) == 0 || s.Cursor >= len(s.AdminRoutes) {
+		return ""
 	}
 
+	route := s.AdminRoutes[s.Cursor]
+	lines := []string{
+		fmt.Sprintf(" ID  %s", route.AdminRouteID.String()),
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (s *RoutesScreen) renderAdminRouteActions() string {
+	lines := []string{
+		" n  New route",
+		" e  Edit selected",
+		" d  Delete selected",
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (s *RoutesScreen) renderAdminRouteStats() string {
+	lines := []string{
+		fmt.Sprintf(" Total  %d", len(s.AdminRoutes)),
+	}
 	return strings.Join(lines, "\n")
 }

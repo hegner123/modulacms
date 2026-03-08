@@ -250,8 +250,15 @@ func (m Model) HandleCreateAdminDatatypeFromDialog(msg CreateAdminDatatypeFromDi
 			}
 		}
 
+		// Determine next sort order
+		maxSort, sortErr := d.GetMaxAdminDatatypeSortOrder(parentID)
+		if sortErr != nil {
+			maxSort = -1
+		}
+
 		params := db.CreateAdminDatatypeParams{
 			ParentID:     parentID,
+			SortOrder:    maxSort + 1,
 			Name:         msg.Name,
 			Label:        msg.Label,
 			Type:         dtype,
@@ -318,6 +325,7 @@ func (m Model) HandleUpdateAdminDatatypeFromDialog(msg UpdateAdminDatatypeFromDi
 
 		params := db.UpdateAdminDatatypeParams{
 			ParentID:        parentID,
+			SortOrder:       existing.SortOrder,
 			Name:            msg.Name,
 			Label:           msg.Label,
 			Type:            dtype,

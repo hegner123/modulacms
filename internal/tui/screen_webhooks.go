@@ -9,18 +9,36 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
+// 3/9 grid: left = webhook list, right = detail (top) + info (bottom)
+var webhooksGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1.0, Title: "Webhooks"},
+		}},
+		{Span: 9, Cells: []GridCell{
+			{Height: 0.6, Title: "Details"},
+			{Height: 0.4, Title: "Info"},
+		}},
+	},
+}
+
 // WebhooksScreen implements Screen for the webhooks list page.
 type WebhooksScreen struct {
-	Cursor       int
-	PanelFocus   FocusPanel
+	GridScreen
 	WebhooksList []db.Webhook
 }
 
 // NewWebhooksScreen creates a WebhooksScreen with the given webhooks data.
 func NewWebhooksScreen(webhooks []db.Webhook) *WebhooksScreen {
+	cursorMax := len(webhooks) - 1
+	if cursorMax < 0 {
+		cursorMax = 0
+	}
 	return &WebhooksScreen{
-		Cursor:       0,
-		PanelFocus:   TreePanel,
+		GridScreen: GridScreen{
+			Grid:      webhooksGrid,
+			CursorMax: cursorMax,
+		},
 		WebhooksList: webhooks,
 	}
 }
@@ -33,22 +51,16 @@ func (s *WebhooksScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
-		// Common keys (quit, back, cursor)
 		cursorMax := len(s.WebhooksList) - 1
 		if cursorMax < 0 {
 			cursorMax = 0
 		}
-		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, cursorMax)
+		s.CursorMax = cursorMax
+		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, s.CursorMax)
 		if handled {
 			s.Cursor = newCursor
 			return s, cmd
@@ -76,6 +88,10 @@ func (s *WebhooksScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	case WebhooksFetchResultsMsg:
 		s.WebhooksList = msg.Data
 		s.Cursor = 0
+		s.CursorMax = len(s.WebhooksList) - 1
+		if s.CursorMax < 0 {
+			s.CursorMax = 0
+		}
 		return s, LoadingStopCmd()
 	}
 
@@ -92,35 +108,12 @@ func (s *WebhooksScreen) KeyHints(km config.KeyMap) []KeyHint {
 }
 
 func (s *WebhooksScreen) View(ctx AppContext) string {
-	left := s.renderList()
-	center := s.renderDetail()
-	right := s.renderInfo()
-
-	layout := layoutForPage(WEBHOOKSPAGE)
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
+	cells := []CellContent{
+		{Content: s.renderList(), TotalLines: len(s.WebhooksList), ScrollOffset: ClampScroll(s.Cursor, len(s.WebhooksList), ctx.Height)},
+		{Content: s.renderDetail()},
+		{Content: s.renderInfo()},
 	}
-
-	innerH := PanelInnerHeight(ctx.Height)
-	listLen := len(s.WebhooksList)
-
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel, TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)}.Render())
-	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return s.RenderGrid(ctx, cells)
 }
 
 // renderList renders the webhook list for the left panel.
@@ -144,10 +137,10 @@ func (s *WebhooksScreen) renderList() string {
 	return strings.Join(lines, "\n")
 }
 
-// renderDetail renders the selected webhook details for the center panel.
+// renderDetail renders the selected webhook details.
 func (s *WebhooksScreen) renderDetail() string {
 	if len(s.WebhooksList) == 0 || s.Cursor >= len(s.WebhooksList) {
-		return "No webhook selected"
+		return " No webhook selected"
 	}
 
 	wh := s.WebhooksList[s.Cursor]
@@ -156,18 +149,18 @@ func (s *WebhooksScreen) renderDetail() string {
 		active = "Yes"
 	}
 	lines := []string{
-		fmt.Sprintf("Name:     %s", wh.Name),
-		fmt.Sprintf("URL:      %s", wh.URL),
-		fmt.Sprintf("Active:   %s", active),
-		fmt.Sprintf("Events:   %s", strings.Join(wh.Events, ", ")),
+		fmt.Sprintf(" Name     %s", wh.Name),
+		fmt.Sprintf(" URL      %s", wh.URL),
+		fmt.Sprintf(" Active   %s", active),
+		fmt.Sprintf(" Events   %s", strings.Join(wh.Events, ", ")),
 		"",
-		fmt.Sprintf("Created:  %s", wh.DateCreated.String()),
-		fmt.Sprintf("Modified: %s", wh.DateModified.String()),
+		fmt.Sprintf(" Created  %s", wh.DateCreated.String()),
+		fmt.Sprintf(" Modified %s", wh.DateModified.String()),
 	}
 	return strings.Join(lines, "\n")
 }
 
-// renderInfo renders the webhook summary for the right panel.
+// renderInfo renders the webhook summary.
 func (s *WebhooksScreen) renderInfo() string {
 	active := 0
 	for _, wh := range s.WebhooksList {
@@ -176,10 +169,10 @@ func (s *WebhooksScreen) renderInfo() string {
 		}
 	}
 	lines := []string{
-		"Webhook Manager",
+		" Webhook Manager",
 		"",
-		fmt.Sprintf("  Total:  %d", len(s.WebhooksList)),
-		fmt.Sprintf("  Active: %d", active),
+		fmt.Sprintf("   Total:  %d", len(s.WebhooksList)),
+		fmt.Sprintf("   Active: %d", active),
 	}
 	return strings.Join(lines, "\n")
 }

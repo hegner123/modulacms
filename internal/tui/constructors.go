@@ -104,9 +104,6 @@ func SetViewportContentCmd(content string) tea.Cmd {
 // FocusSetCmd creates a command to set focus to a specific element.
 func FocusSetCmd(focus FocusKey) tea.Cmd { return func() tea.Msg { return FocusSet{Focus: focus} } }
 
-// PanelFocusResetCmd creates a command to reset panel focus.
-func PanelFocusResetCmd() tea.Cmd { return func() tea.Msg { return PanelFocusReset{} } }
-
 // FormNewCmd creates a command to create a new form of the specified type.
 func FormNewCmd(f FormIndex) tea.Cmd { return func() tea.Msg { return FormCreate{FormType: f} } }
 
@@ -243,8 +240,8 @@ func DatabaseListFilteredRowsCmd(source FetchSource, rows any, table db.DBTable)
 }
 
 // DatabaseDeleteEntryCmd creates a command to delete a database entry.
-func DatabaseDeleteEntryCmd(id int, table string) tea.Cmd {
-	return func() tea.Msg { return DatabaseDeleteEntry{Id: id, Table: table} }
+func DatabaseDeleteEntryCmd(column, value, table string) tea.Cmd {
+	return func() tea.Msg { return DatabaseDeleteEntry{Column: column, Value: value, Table: table} }
 }
 
 // DatabaseInsertCmd creates a command to insert a new database record.
@@ -462,13 +459,6 @@ func CmsDefineDatatypeReadyCmd() tea.Cmd {
 	}
 }
 
-// CmsBuildDefineDatatypeFormCmd creates a command to build the datatype definition form.
-func CmsBuildDefineDatatypeFormCmd() tea.Cmd {
-	return func() tea.Msg {
-		return CmsBuildDefineDatatypeFormMsg{}
-	}
-}
-
 // CmsEditDatatypeLoadCmd creates a command to load a datatype for editing.
 func CmsEditDatatypeLoadCmd(dt db.Datatypes) tea.Cmd {
 	return func() tea.Msg { return CmsEditDatatypeLoadMsg{Datatype: dt} }
@@ -501,24 +491,6 @@ func FormInitOptionsCmd(form, table string) tea.Cmd {
 		return FormInitOptionsMsg{
 			Form:  form,
 			Table: table,
-		}
-	}
-}
-
-// CmsAddNewContentDataCmd creates a command to add new content data.
-func CmsAddNewContentDataCmd(id types.DatatypeID) tea.Cmd {
-	return func() tea.Msg {
-		return CmsAddNewContentDataMsg{
-			Datatype: id,
-		}
-	}
-}
-
-// CmsAddNewContentFieldsCmd creates a command to add new content fields.
-func CmsAddNewContentFieldsCmd(id int64) tea.Cmd {
-	return func() tea.Msg {
-		return CmsAddNewContentFieldsMsg{
-			Datatype: id,
 		}
 	}
 }
@@ -658,15 +630,6 @@ func ReloadContentTreeCmd(config *config.Config, routeID types.RouteID) tea.Cmd 
 	return func() tea.Msg {
 		m := Model{Config: config}
 		return m.ReloadContentTree(config, routeID)()
-	}
-}
-
-// BuildTreeFromRouteCMD creates a command to build a tree from a route ID.
-func BuildTreeFromRouteCMD(id int64) tea.Cmd {
-	return func() tea.Msg {
-		return BuildTreeFromRouteMsg{
-			RouteID: id,
-		}
 	}
 }
 

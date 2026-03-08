@@ -8,20 +8,12 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 )
 
-// PageLayout declares the default panel configuration for a page.
-type PageLayout struct {
-	Panels int        // 1, 2, or 3 visible panels
-	Ratios [3]float64 // {left, center, right} proportions (must sum to 1.0)
-	Titles [3]string  // panel titles
-}
-
 // ScreenMode determines the panel layout mode.
 type ScreenMode int
 
 const (
-	ScreenNormal ScreenMode = iota // 3 panels: proportional split
-	ScreenWide                     // 2 panels: focused + gutters
-	ScreenFull                     // 1 panel: focused takes 100%
+	ScreenNormal ScreenMode = iota // grid: proportional column split
+	ScreenFull                     // 1 panel: focused cell takes 100%
 )
 
 // String returns the display name of the screen mode.
@@ -29,44 +21,11 @@ func (s ScreenMode) String() string {
 	switch s {
 	case ScreenNormal:
 		return "Normal"
-	case ScreenWide:
-		return "Wide"
 	case ScreenFull:
 		return "Full"
 	default:
 		return "Unknown"
 	}
-}
-
-// FocusPanel identifies which panel currently has focus.
-type FocusPanel int
-
-const (
-	TreePanel FocusPanel = iota
-	ContentPanel
-	RoutePanel
-)
-
-// String returns the display name of the focused panel.
-func (f FocusPanel) String() string {
-	switch f {
-	case TreePanel:
-		return "Tree"
-	case ContentPanel:
-		return "Content"
-	case RoutePanel:
-		return "Route"
-	default:
-		return "Unknown"
-	}
-}
-
-// PanelTab describes a single tab within a panel. The Render function is a
-// closure that captures the owning screen's state so it can render the tab
-// content with access to cursors, loaded data, etc.
-type PanelTab struct {
-	Label  string
-	Render func(ctx AppContext, w, h int) string
 }
 
 // Panel represents a bordered UI section with a title.
@@ -76,10 +35,10 @@ type Panel struct {
 	Height       int
 	Content      string
 	Focused      bool
-	TotalLines   int      // total content lines; 0 = no scrollbar
-	ScrollOffset int      // first visible line index
-	TabLabels    []string // tab labels for tab bar (shown when len > 1)
-	ActiveTab    int      // index of the currently active tab
+	TotalLines   int                            // total content lines; 0 = no scrollbar
+	ScrollOffset int                            // first visible line index
+	TabLabels    []string                       // tab labels for tab bar (shown when len > 1)
+	ActiveTab    int                            // index of the currently active tab
 	Accent       lipgloss.CompleteAdaptiveColor // override accent; zero value uses DefaultStyle.Accent
 }
 
@@ -237,16 +196,6 @@ func PanelInnerHeight(panelHeight int) int {
 	h := panelHeight - 3 // 2 border rows + 1 title row
 	if h < 0 {
 		return 0
-	}
-	return h
-}
-
-// PanelInnerHeightWithTabs returns the content area height inside a panel
-// that has a visible tab bar (len(tabs) > 1).
-func PanelInnerHeightWithTabs(panelHeight int) int {
-	h := PanelInnerHeight(panelHeight)
-	if h > 0 {
-		h--
 	}
 	return h
 }

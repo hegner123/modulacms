@@ -10,121 +10,72 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-// DatabaseScreen implements Screen for both DATABASEPAGE and READPAGE.
-// DATABASEPAGE: 2-panel layout — left=tables list, center=CRUD actions.
-// READPAGE: 3-panel layout — left=mode selector, center=paginated rows, right=row detail.
+// 3/9 grid: left = tables list, right = rows (top) + row detail (bottom)
+var databaseGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1.0, Title: "Tables"},
+		}},
+		{Span: 9, Cells: []GridCell{
+			{Height: 0.55, Title: "Rows"},
+			{Height: 0.45, Title: "Detail"},
+		}},
+	},
+}
+
+// DatabaseScreen implements Screen for DATABASEPAGE.
+// Single unified view: left=table list, top-right=paginated rows,
+// bottom-right=selected row detail (key-value). Actions via keys:
+// enter=focus detail, e=edit dialog, d=delete confirm, n=create dialog.
 type DatabaseScreen struct {
-	// Which sub-page is active
-	ReadMode bool // false = DATABASEPAGE, true = READPAGE
+	GridScreen
+	Tables     []string
+	TableState *TableModel
 
-	// Shared state
-	PanelFocus   FocusPanel
-	Tables       []string
-	TableState   *TableModel
-	DatabaseMode DatabaseMode
+	// Row cursor (within current page)
+	RowCursor int
 
-	// DATABASEPAGE cursors
-	Cursor      int // tables list cursor (TreePanel) or row cursor (READPAGE ContentPanel)
-	FieldCursor int // CRUD actions cursor (DATABASEPAGE ContentPanel) or mode selector (READPAGE TreePanel)
+	// Detail cursor (for scrolling column values when detail is focused)
+	DetailCursor int
 
-	// READPAGE pagination
+	// Pagination
 	PageMod int
 	MaxRows int
 
-	// Loading indicator
 	Loading bool
-
-	// PageMap reference for navigation
-	PageMap map[PageIndex]Page
 }
 
-// NewDatabaseScreen creates a DatabaseScreen in DATABASEPAGE mode.
-func NewDatabaseScreen(tables []string, tableState *TableModel, databaseMode DatabaseMode, pageMap map[PageIndex]Page) *DatabaseScreen {
+// NewDatabaseScreen creates a DatabaseScreen.
+func NewDatabaseScreen(tables []string, tableState *TableModel) *DatabaseScreen {
+	cursorMax := len(tables) - 1
+	if cursorMax < 0 {
+		cursorMax = 0
+	}
 	return &DatabaseScreen{
-		ReadMode:     false,
-		PanelFocus:   TreePanel,
-		Tables:       tables,
-		TableState:   tableState,
-		DatabaseMode: databaseMode,
-		Cursor:       0,
-		FieldCursor:  0,
-		PageMod:      0,
-		MaxRows:      10,
-		Loading:      false,
-		PageMap:      pageMap,
+		GridScreen: GridScreen{
+			Grid:      databaseGrid,
+			CursorMax: cursorMax,
+		},
+		Tables:     tables,
+		TableState: tableState,
+		MaxRows:    10,
 	}
 }
 
-// NewDatabaseReadScreen creates a DatabaseScreen in READPAGE mode.
-func NewDatabaseReadScreen(tables []string, tableState *TableModel, databaseMode DatabaseMode, pageMap map[PageIndex]Page) *DatabaseScreen {
-	return &DatabaseScreen{
-		ReadMode:     true,
-		PanelFocus:   TreePanel,
-		Tables:       tables,
-		TableState:   tableState,
-		DatabaseMode: databaseMode,
-		Cursor:       0,
-		FieldCursor:  int(databaseMode),
-		PageMod:      0,
-		MaxRows:      10,
-		Loading:      false,
-		PageMap:      pageMap,
-	}
-}
-
-func (s *DatabaseScreen) PageIndex() PageIndex {
-	if s.ReadMode {
-		return READPAGE
-	}
-	return DATABASEPAGE
-}
+func (s *DatabaseScreen) PageIndex() PageIndex { return DATABASEPAGE }
 
 func (s *DatabaseScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
-	if s.ReadMode {
-		return s.updateReadPage(ctx, msg)
-	}
-	return s.updateDatabasePage(ctx, msg)
-}
-
-// updateDatabasePage handles Update for DATABASEPAGE mode.
-func (s *DatabaseScreen) updateDatabasePage(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Quit
-		if km.Matches(key, config.ActionQuit) {
-			return s, tea.Quit
-		}
-
-		// ESC: move focus to TreePanel first, then quit
-		if km.Matches(key, config.ActionDismiss) {
-			if s.PanelFocus != TreePanel {
-				s.PanelFocus = TreePanel
-				return s, nil
-			}
-			return s, tea.Quit
-		}
-
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			if s.PanelFocus == ContentPanel {
-				s.FieldCursor = 0
-			}
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
-			if s.PanelFocus == ContentPanel {
-				s.FieldCursor = 0
-			}
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
-		switch s.PanelFocus {
-		case TreePanel:
+		switch s.FocusIndex {
+		case 0: // Tables list
 			if km.Matches(key, config.ActionUp) {
 				if s.Cursor > 0 {
 					s.Cursor--
@@ -137,60 +88,148 @@ func (s *DatabaseScreen) updateDatabasePage(ctx AppContext, msg tea.Msg) (Screen
 				}
 				return s, nil
 			}
-			if km.Matches(key, config.ActionBack) {
+			if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
 				return s, HistoryPopCmd()
 			}
 			if km.Matches(key, config.ActionSelect) {
 				if len(s.Tables) > 0 && s.Cursor < len(s.Tables) {
 					s.TableState.Table = s.Tables[s.Cursor]
-					s.PanelFocus = ContentPanel
-					s.FieldCursor = 0
-					return s, GetColumnsCmd(*ctx.Config, s.TableState.Table)
+					s.RowCursor = 0
+					s.PageMod = 0
+					s.FocusIndex = 1
+					return s, tea.Batch(
+						GetColumnsCmd(*ctx.Config, s.TableState.Table),
+						FetchTableHeadersRowsCmd(*ctx.Config, s.TableState.Table, nil),
+					)
 				}
 			}
 
-		case ContentPanel:
+		case 1: // Rows
+			pageSize := s.currentPageSize()
 			if km.Matches(key, config.ActionUp) {
-				if s.FieldCursor > 0 {
-					s.FieldCursor--
+				if s.RowCursor > 0 {
+					s.RowCursor--
 				}
 				return s, nil
 			}
 			if km.Matches(key, config.ActionDown) {
-				// 4 CRUD actions: Create(0), Read(1), Update(2), Delete(3)
-				if s.FieldCursor < 3 {
-					s.FieldCursor++
+				if s.RowCursor < pageSize-1 {
+					s.RowCursor++
 				}
 				return s, nil
 			}
-			if km.Matches(key, config.ActionBack) {
-				s.PanelFocus = TreePanel
+			if km.Matches(key, config.ActionPagePrev) {
+				if s.PageMod > 0 {
+					s.PageMod--
+					s.RowCursor = 0
+				}
 				return s, nil
 			}
+			if km.Matches(key, config.ActionPageNext) {
+				if len(s.TableState.Rows) > 0 && s.PageMod < (len(s.TableState.Rows)-1)/s.MaxRows {
+					s.PageMod++
+					s.RowCursor = 0
+				}
+				return s, nil
+			}
+			if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
+				s.FocusIndex = 0
+				return s, nil
+			}
+			// Enter: focus detail panel for scrolling
 			if km.Matches(key, config.ActionSelect) {
-				if s.TableState.Table == "" {
-					return s, nil
-				}
-				switch s.FieldCursor {
-				case 0: // Create
-					return s, ShowDatabaseInsertDialogCmd(db.DBTable(s.TableState.Table))
-				case 1: // Read
-					return s, tea.Sequence(
-						setDatabaseModeCmd(DBModeRead),
-						NavigateToPageCmd(s.PageMap[READPAGE]),
-					)
-				case 2: // Update
-					return s, tea.Sequence(
-						setDatabaseModeCmd(DBModeUpdate),
-						NavigateToPageCmd(s.PageMap[READPAGE]),
-					)
-				case 3: // Delete
-					return s, tea.Sequence(
-						setDatabaseModeCmd(DBModeDelete),
-						NavigateToPageCmd(s.PageMap[READPAGE]),
-					)
-				}
+				s.DetailCursor = 0
+				s.FocusIndex = 2
+				return s, nil
 			}
+			// e: edit dialog
+			if key == "e" {
+				rowID := s.currentRowID()
+				if rowID != "" {
+					recordIndex := (s.PageMod * s.MaxRows) + s.RowCursor
+					return s, tea.Sequence(
+						CursorSetCmd(recordIndex),
+						ShowDatabaseUpdateDialogCmd(db.DBTable(s.TableState.Table), rowID),
+					)
+				}
+				return s, nil
+			}
+			// d: delete confirm
+			if key == "d" {
+				rowID := s.currentRowID()
+				if rowID != "" {
+					recordIndex := (s.PageMod * s.MaxRows) + s.RowCursor
+					return s, tea.Sequence(
+						CursorSetCmd(recordIndex),
+						ShowDialogCmd("Confirm Delete",
+							"Are you sure you want to delete this record? This action cannot be undone.", true, DIALOGDELETE),
+					)
+				}
+				return s, nil
+			}
+			// n: create/insert dialog
+			if key == "n" {
+				if s.TableState.Table != "" {
+					return s, ShowDatabaseInsertDialogCmd(db.DBTable(s.TableState.Table))
+				}
+				return s, nil
+			}
+
+		case 2: // Detail (scrollable key-value view)
+			detailMax := s.detailLineCount() - 1
+			if detailMax < 0 {
+				detailMax = 0
+			}
+			if km.Matches(key, config.ActionUp) {
+				if s.DetailCursor > 0 {
+					s.DetailCursor--
+				}
+				return s, nil
+			}
+			if km.Matches(key, config.ActionDown) {
+				if s.DetailCursor < detailMax {
+					s.DetailCursor++
+				}
+				return s, nil
+			}
+			if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
+				s.FocusIndex = 1
+				return s, nil
+			}
+			// e/d/n work from detail panel too
+			if key == "e" {
+				rowID := s.currentRowID()
+				if rowID != "" {
+					recordIndex := (s.PageMod * s.MaxRows) + s.RowCursor
+					return s, tea.Sequence(
+						CursorSetCmd(recordIndex),
+						ShowDatabaseUpdateDialogCmd(db.DBTable(s.TableState.Table), rowID),
+					)
+				}
+				return s, nil
+			}
+			if key == "d" {
+				rowID := s.currentRowID()
+				if rowID != "" {
+					recordIndex := (s.PageMod * s.MaxRows) + s.RowCursor
+					return s, tea.Sequence(
+						CursorSetCmd(recordIndex),
+						ShowDialogCmd("Confirm Delete",
+							"Are you sure you want to delete this record? This action cannot be undone.", true, DIALOGDELETE),
+					)
+				}
+				return s, nil
+			}
+			if key == "n" {
+				if s.TableState.Table != "" {
+					return s, ShowDatabaseInsertDialogCmd(db.DBTable(s.TableState.Table))
+				}
+				return s, nil
+			}
+		}
+
+		if km.Matches(key, config.ActionQuit) {
+			return s, tea.Quit
 		}
 
 	// Fetch request messages
@@ -215,6 +254,8 @@ func (s *DatabaseScreen) updateDatabasePage(ctx AppContext, msg tea.Msg) (Screen
 	case TableHeadersRowsFetchedMsg:
 		s.TableState.Headers = msg.Headers
 		s.TableState.Rows = msg.Rows
+		s.RowCursor = 0
+		s.PageMod = 0
 		s.Loading = false
 		return s, nil
 	case GetColumns:
@@ -238,6 +279,10 @@ func (s *DatabaseScreen) updateDatabasePage(ctx AppContext, msg tea.Msg) (Screen
 	// Data refresh messages
 	case TablesSet:
 		s.Tables = msg.Tables
+		s.CursorMax = len(s.Tables) - 1
+		if s.CursorMax < 0 {
+			s.CursorMax = 0
+		}
 		s.Loading = false
 		return s, nil
 	case HeadersSet:
@@ -245,181 +290,6 @@ func (s *DatabaseScreen) updateDatabasePage(ctx AppContext, msg tea.Msg) (Screen
 		return s, nil
 	case RowsSet:
 		s.TableState.Rows = msg.Rows
-		return s, nil
-	case TableSet:
-		s.TableState.Table = msg.Table
-		return s, nil
-	case ColumnInfoSetMsg:
-		s.TableState.Columns = msg.Columns
-		s.TableState.ColumnTypes = msg.ColumnTypes
-		return s, nil
-	case SetLoadingMsg:
-		s.Loading = msg.Loading
-		return s, nil
-	}
-
-	return s, nil
-}
-
-// updateReadPage handles Update for READPAGE mode.
-func (s *DatabaseScreen) updateReadPage(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		km := ctx.Config.KeyBindings
-		key := msg.String()
-
-		// Quit
-		if km.Matches(key, config.ActionQuit) {
-			return s, tea.Quit
-		}
-
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
-			return s, nil
-		}
-
-		switch s.PanelFocus {
-		case TreePanel:
-			// Mode selector: 3 items (Read=0, Update=1, Delete=2)
-			if km.Matches(key, config.ActionUp) {
-				if s.FieldCursor > 0 {
-					s.FieldCursor--
-				}
-				return s, nil
-			}
-			if km.Matches(key, config.ActionDown) {
-				if s.FieldCursor < 2 {
-					s.FieldCursor++
-				}
-				return s, nil
-			}
-			if km.Matches(key, config.ActionSelect) {
-				s.DatabaseMode = DatabaseMode(s.FieldCursor)
-				s.PanelFocus = ContentPanel
-				return s, nil
-			}
-			if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
-				return s, HistoryPopCmd()
-			}
-
-		case ContentPanel:
-			if km.Matches(key, config.ActionUp) {
-				if s.Cursor > 0 {
-					s.Cursor--
-				}
-				return s, nil
-			}
-			if km.Matches(key, config.ActionDown) {
-				// Bound cursor by visible rows on current page
-				pageEnd := (s.PageMod + 1) * s.MaxRows
-				if pageEnd > len(s.TableState.Rows) {
-					pageEnd = len(s.TableState.Rows)
-				}
-				pageSize := pageEnd - (s.PageMod * s.MaxRows)
-				if s.Cursor < pageSize-1 {
-					s.Cursor++
-				}
-				return s, nil
-			}
-			if km.Matches(key, config.ActionPagePrev) {
-				if s.PageMod > 0 {
-					s.PageMod--
-					s.Cursor = 0
-				}
-				return s, nil
-			}
-			if km.Matches(key, config.ActionPageNext) {
-				if s.PageMod < (len(s.TableState.Rows)-1)/s.MaxRows {
-					s.PageMod++
-					s.Cursor = 0
-				}
-				return s, nil
-			}
-			if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
-				s.PanelFocus = TreePanel
-				return s, nil
-			}
-			if km.Matches(key, config.ActionSelect) {
-				recordIndex := (s.PageMod * s.MaxRows) + s.Cursor
-				if recordIndex < len(s.TableState.Rows) {
-					switch s.DatabaseMode {
-					case DBModeUpdate:
-						return s, ShowDatabaseUpdateDialogCmd(db.DBTable(s.TableState.Table), s.TableState.Rows[recordIndex][0])
-					case DBModeDelete:
-						// Sync Model cursor to the actual record index before showing dialog,
-						// because DIALOGDELETE handler uses m.GetCurrentRowId() which reads m.Cursor.
-						return s, tea.Sequence(
-							CursorSetCmd(recordIndex),
-							ShowDialogCmd("Confirm Delete",
-								"Are you sure you want to delete this record? This action cannot be undone.", true, DIALOGDELETE),
-						)
-					}
-					// DBModeRead: enter is no-op (detail already visible in right panel)
-				}
-				return s, nil
-			}
-
-		case RoutePanel:
-			if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
-				s.PanelFocus = ContentPanel
-				return s, nil
-			}
-		}
-
-	// Fetch request messages
-	case TablesFetch:
-		return s, GetTablesCMD(ctx.Config)
-	case FetchHeadersRows:
-		t := msg.Table
-		dbt := db.StringDBTable(t)
-		d := db.ConfigDB(msg.Config)
-		columns := db.GenericHeaders(dbt)
-		if columns == nil {
-			return s, ErrorSetCmd(fmt.Errorf("unknown table: %s", t))
-		}
-		listRows, err := db.GenericList(dbt, d)
-		if err != nil {
-			return s, ErrorSetCmd(err)
-		}
-		return s, tea.Batch(
-			TableHeadersRowsFetchedCmd(columns, listRows, msg.Page),
-			LogMessageCmd(fmt.Sprintf("Table %s headers fetched", s.TableState.Table)),
-		)
-	case TableHeadersRowsFetchedMsg:
-		s.TableState.Headers = msg.Headers
-		s.TableState.Rows = msg.Rows
-		s.Loading = false
-		return s, nil
-	case GetColumns:
-		dbt := db.StringDBTable(msg.Table)
-		clm := db.GenericHeaders(dbt)
-		if clm == nil {
-			return s, ErrorSetCmd(fmt.Errorf("unknown table: %s", msg.Table))
-		}
-		return s, ColumnInfoSetCmd(&clm, nil)
-	case ColumnsFetched:
-		s.TableState.Columns = msg.Columns
-		s.TableState.ColumnTypes = msg.ColumnTypes
-		s.Loading = false
-		return s, nil
-
-	// Data refresh messages
-	case TablesSet:
-		s.Tables = msg.Tables
-		s.Loading = false
-		return s, nil
-	case HeadersSet:
-		s.TableState.Headers = msg.Headers
-		s.Loading = false
-		return s, nil
-	case RowsSet:
-		s.TableState.Rows = msg.Rows
-		s.Loading = false
 		return s, nil
 	case TableSet:
 		s.TableState.Table = msg.Table
@@ -437,56 +307,31 @@ func (s *DatabaseScreen) updateReadPage(ctx AppContext, msg tea.Msg) (Screen, te
 }
 
 func (s *DatabaseScreen) KeyHints(km config.KeyMap) []KeyHint {
-	if s.ReadMode {
-		switch s.PanelFocus {
-		case ContentPanel:
-			pageHint := km.HintString(config.ActionPagePrev) + "/" + km.HintString(config.ActionPageNext)
-			switch s.DatabaseMode {
-			case DBModeUpdate:
-				return []KeyHint{
-					{km.HintString(config.ActionSelect), "edit"},
-					{pageHint, "page"},
-					{km.HintString(config.ActionNextPanel), "panel"},
-					{km.HintString(config.ActionBack), "back"},
-					{km.HintString(config.ActionQuit), "quit"},
-				}
-			case DBModeDelete:
-				return []KeyHint{
-					{km.HintString(config.ActionSelect), "delete"},
-					{pageHint, "page"},
-					{km.HintString(config.ActionNextPanel), "panel"},
-					{km.HintString(config.ActionBack), "back"},
-					{km.HintString(config.ActionQuit), "quit"},
-				}
-			default:
-				return []KeyHint{
-					{pageHint, "page"},
-					{km.HintString(config.ActionNextPanel), "panel"},
-					{km.HintString(config.ActionBack), "back"},
-					{km.HintString(config.ActionQuit), "quit"},
-				}
-			}
-		default:
-			return []KeyHint{
-				{km.HintString(config.ActionSelect), "select"},
-				{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
-				{km.HintString(config.ActionNextPanel), "panel"},
-				{km.HintString(config.ActionBack), "back"},
-				{km.HintString(config.ActionQuit), "quit"},
-			}
+	switch s.FocusIndex {
+	case 1: // Rows
+		hints := []KeyHint{
+			{km.HintString(config.ActionSelect), "detail"},
+			{"e", "edit"},
+			{"d", "delete"},
+			{"n", "new"},
 		}
-	}
-	// DATABASEPAGE
-	switch s.PanelFocus {
-	case ContentPanel:
+		if len(s.TableState.Rows) > s.MaxRows {
+			hints = append(hints, KeyHint{km.HintString(config.ActionPagePrev) + "/" + km.HintString(config.ActionPageNext), "page"})
+		}
+		hints = append(hints,
+			KeyHint{km.HintString(config.ActionNextPanel), "panel"},
+			KeyHint{km.HintString(config.ActionBack), "back"},
+		)
+		return hints
+	case 2: // Detail
 		return []KeyHint{
-			{km.HintString(config.ActionSelect), "run"},
-			{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
+			{"e", "edit"},
+			{"d", "delete"},
+			{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "scroll"},
 			{km.HintString(config.ActionNextPanel), "panel"},
-			{km.HintString(config.ActionBack), "back"},
-			{km.HintString(config.ActionQuit), "quit"},
+			{km.HintString(config.ActionBack), "rows"},
 		}
-	default:
+	default: // Tables
 		return []KeyHint{
 			{km.HintString(config.ActionSelect), "select"},
 			{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
@@ -498,102 +343,71 @@ func (s *DatabaseScreen) KeyHints(km config.KeyMap) []KeyHint {
 }
 
 func (s *DatabaseScreen) View(ctx AppContext) string {
-	if s.ReadMode {
-		return s.viewReadPage(ctx)
+	tablesInnerH := s.Grid.CellInnerHeight(0, ctx.Height)
+	rowsInnerH := s.Grid.CellInnerHeight(1, ctx.Height)
+	detailInnerH := s.Grid.CellInnerHeight(2, ctx.Height)
+
+	rowsContent := s.renderRows()
+	rowsTotalLines := strings.Count(rowsContent, "\n") + 1
+
+	detailContent := s.renderDetail()
+	detailTotalLines := strings.Count(detailContent, "\n") + 1
+
+	cells := []CellContent{
+		{Content: s.renderTables(), TotalLines: len(s.Tables), ScrollOffset: ClampScroll(s.Cursor, len(s.Tables), tablesInnerH)},
+		{Content: rowsContent, TotalLines: rowsTotalLines, ScrollOffset: ClampScroll(s.rowScrollLine(), rowsTotalLines, rowsInnerH)},
+		{Content: detailContent, TotalLines: detailTotalLines, ScrollOffset: ClampScroll(s.detailScrollLine(), detailTotalLines, detailInnerH)},
 	}
-	return s.viewDatabasePage(ctx)
+	return s.RenderGrid(ctx, cells)
 }
 
-// viewDatabasePage renders the DATABASEPAGE 2-panel layout.
-func (s *DatabaseScreen) viewDatabasePage(ctx AppContext) string {
-	left := s.renderDatabaseTables()
-	center := s.renderDatabaseActions()
-	right := s.renderDatabaseInfo()
+// --- Helpers ---
 
-	layout := layoutForPage(DATABASEPAGE)
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
+// currentPageSize returns the number of rows visible on the current page.
+func (s *DatabaseScreen) currentPageSize() int {
+	if len(s.TableState.Rows) == 0 {
+		return 0
 	}
-
-	innerH := PanelInnerHeight(ctx.Height)
-	listLen := len(s.Tables)
-
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel, TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)}.Render())
+	start := s.PageMod * s.MaxRows
+	end := start + s.MaxRows
+	if end > len(s.TableState.Rows) {
+		end = len(s.TableState.Rows)
 	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return end - start
 }
 
-// viewReadPage renders the READPAGE 3-panel layout.
-func (s *DatabaseScreen) viewReadPage(ctx AppContext) string {
-	left := s.renderReadMode()
-	center := s.renderReadTable()
-	right := s.renderReadRowDetail()
-
-	layout := layoutForPage(READPAGE)
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
+// currentRowID returns the first column (ID) of the currently selected row.
+func (s *DatabaseScreen) currentRowID() string {
+	recordIndex := (s.PageMod * s.MaxRows) + s.RowCursor
+	if recordIndex >= len(s.TableState.Rows) || len(s.TableState.Rows[recordIndex]) == 0 {
+		return ""
 	}
-
-	// Dynamic center title: show mode and table name
-	modeNames := []string{"Read", "Update", "Delete"}
-	mode := "Read"
-	if int(s.DatabaseMode) < len(modeNames) {
-		mode = modeNames[s.DatabaseMode]
-	}
-	centerTitle := fmt.Sprintf("%s: %s", mode, s.TableState.Table)
-
-	innerH := PanelInnerHeight(ctx.Height)
-	rowCount := 0
-	if s.TableState != nil {
-		rowCount = len(s.TableState.Rows)
-	}
-
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel}.Render())
-	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: centerTitle, Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel, TotalLines: rowCount, ScrollOffset: ClampScroll(s.Cursor, rowCount, innerH)}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return s.TableState.Rows[recordIndex][0]
 }
 
-// setDatabaseModeCmd creates a command that sets the database mode on the Model.
-func setDatabaseModeCmd(mode DatabaseMode) tea.Cmd {
-	return func() tea.Msg {
-		return SetDatabaseModeMsg{Mode: mode}
-	}
+// detailLineCount returns the number of header columns (one line per column in detail).
+func (s *DatabaseScreen) detailLineCount() int {
+	return len(s.TableState.Headers)
 }
 
-// --- DATABASEPAGE render methods ---
+// rowScrollLine converts RowCursor to a line offset for scroll.
+// 2-line header + 1 line per row.
+func (s *DatabaseScreen) rowScrollLine() int {
+	return 2 + s.RowCursor
+}
 
-// renderDatabaseTables renders the table list for the left panel.
-func (s *DatabaseScreen) renderDatabaseTables() string {
+// detailScrollLine converts DetailCursor to a line offset for scroll.
+// 2-line header + 2 lines per column (label + value).
+func (s *DatabaseScreen) detailScrollLine() int {
+	return 2 + s.DetailCursor*2
+}
+
+// --- Render methods ---
+
+// renderTables renders the table list for the left panel.
+func (s *DatabaseScreen) renderTables() string {
 	if len(s.Tables) == 0 {
-		return "(no tables)"
+		return " (no tables)"
 	}
 	lines := make([]string, 0, len(s.Tables))
 	for i, tbl := range s.Tables {
@@ -601,113 +415,41 @@ func (s *DatabaseScreen) renderDatabaseTables() string {
 		if s.Cursor == i {
 			cursor = " ->"
 		}
-		lines = append(lines, fmt.Sprintf("%s %s", cursor, tbl))
-	}
-	return strings.Join(lines, "\n")
-}
-
-// renderDatabaseActions renders the CRUD action menu for the center panel.
-func (s *DatabaseScreen) renderDatabaseActions() string {
-	if s.TableState.Table == "" {
-		return "Select a table"
-	}
-	actions := []string{"Create", "Read", "Update", "Delete"}
-	lines := []string{
-		fmt.Sprintf("Table: %s", s.TableState.Table),
-		"",
-	}
-	for i, action := range actions {
-		cursor := "   "
-		if s.PanelFocus == ContentPanel && s.FieldCursor == i {
-			cursor = " ->"
-		}
-		lines = append(lines, fmt.Sprintf("%s %s", cursor, action))
-	}
-	return strings.Join(lines, "\n")
-}
-
-// renderDatabaseInfo renders column metadata for the right panel.
-func (s *DatabaseScreen) renderDatabaseInfo() string {
-	if s.TableState.Table == "" {
-		return "Database\n\n  Select a table to\n  view its columns."
-	}
-	lines := []string{
-		fmt.Sprintf("Table: %s", s.TableState.Table),
-		"",
-	}
-	if len(s.TableState.Headers) > 0 {
-		lines = append(lines, "Columns:")
-		lines = append(lines, "")
-		for i, h := range s.TableState.Headers {
-			lines = append(lines, fmt.Sprintf("  %d. %s", i+1, h))
-		}
-	} else {
-		lines = append(lines, "  (no column info)")
-	}
-	return strings.Join(lines, "\n")
-}
-
-// --- READPAGE render methods ---
-
-// renderReadMode renders the mode selector for the left panel.
-func (s *DatabaseScreen) renderReadMode() string {
-	modes := []struct {
-		label string
-		mode  DatabaseMode
-	}{
-		{"Read", DBModeRead},
-		{"Update", DBModeUpdate},
-		{"Delete", DBModeDelete},
-	}
-
-	lines := make([]string, 0, len(modes)+2)
-	for i, mode := range modes {
-		cursor := "   "
-		if s.PanelFocus == TreePanel && s.FieldCursor == i {
-			cursor = " ->"
-		}
 		active := ""
-		if s.DatabaseMode == mode.mode {
+		if s.TableState.Table == tbl {
 			active = " *"
 		}
-		lines = append(lines, fmt.Sprintf("%s %s%s", cursor, mode.label, active))
+		lines = append(lines, fmt.Sprintf("%s %s%s", cursor, tbl, active))
 	}
-
-	lines = append(lines, "")
-	lines = append(lines, fmt.Sprintf("  Rows: %d", len(s.TableState.Rows)))
-	if len(s.TableState.Rows) > s.MaxRows {
-		totalPages := (len(s.TableState.Rows)-1)/s.MaxRows + 1
-		lines = append(lines, fmt.Sprintf("  Page: %d/%d", s.PageMod+1, totalPages))
-	}
-
 	return strings.Join(lines, "\n")
 }
 
-// renderReadTable renders paginated table rows for the center panel.
-func (s *DatabaseScreen) renderReadTable() string {
+// renderRows renders paginated table rows for the top-right cell.
+func (s *DatabaseScreen) renderRows() string {
+	if s.TableState.Table == "" {
+		return " Select a table"
+	}
 	if s.Loading {
-		return "\n   Loading..."
+		return " Loading..."
 	}
 	if len(s.TableState.Headers) == 0 {
-		return "No data loaded"
+		return " No data loaded"
 	}
 
-	// Calculate page bounds
 	start := s.PageMod * s.MaxRows
 	end := start + s.MaxRows
 	if end > len(s.TableState.Rows) {
 		end = len(s.TableState.Rows)
 	}
 	if start >= len(s.TableState.Rows) {
-		return "No rows on this page"
+		return " (no rows)"
 	}
 
 	currentView := s.TableState.Rows[start:end]
 
-	// Build simple text table with cursor
-	lines := make([]string, 0, len(currentView)+2)
+	lines := make([]string, 0, len(currentView)+4)
 
-	// Header row (truncate each header to fit)
+	// Header row
 	headerLine := "   "
 	for _, h := range s.TableState.Headers {
 		if len(h) > 15 {
@@ -720,7 +462,7 @@ func (s *DatabaseScreen) renderReadTable() string {
 
 	for i, row := range currentView {
 		cursor := "   "
-		if s.PanelFocus == ContentPanel && s.Cursor == i {
+		if s.RowCursor == i {
 			cursor = " ->"
 		}
 		rowLine := cursor
@@ -737,27 +479,29 @@ func (s *DatabaseScreen) renderReadTable() string {
 	if len(s.TableState.Rows) > s.MaxRows {
 		totalPages := (len(s.TableState.Rows)-1)/s.MaxRows + 1
 		lines = append(lines, "")
-		lines = append(lines, fmt.Sprintf("  Page %d of %d", s.PageMod+1, totalPages))
+		lines = append(lines, fmt.Sprintf("  Page %d/%d  (%d rows)", s.PageMod+1, totalPages, len(s.TableState.Rows)))
 	}
 
 	return strings.Join(lines, "\n")
 }
 
-// renderReadRowDetail renders key-value detail of the selected row for the right panel.
-func (s *DatabaseScreen) renderReadRowDetail() string {
+// renderDetail renders the selected row as key-value pairs for the bottom-right cell.
+func (s *DatabaseScreen) renderDetail() string {
+	if s.TableState.Table == "" {
+		return " Database\n\n  Select a table to browse rows."
+	}
 	if len(s.TableState.Rows) == 0 || len(s.TableState.Headers) == 0 {
-		return "No row selected"
+		return " No row selected"
 	}
 
-	// Calculate actual row index from page offset + cursor
-	rowIndex := (s.PageMod * s.MaxRows) + s.Cursor
-	if rowIndex >= len(s.TableState.Rows) {
-		return "No row selected"
+	recordIndex := (s.PageMod * s.MaxRows) + s.RowCursor
+	if recordIndex >= len(s.TableState.Rows) {
+		return " No row selected"
 	}
 
-	row := s.TableState.Rows[rowIndex]
-	lines := make([]string, 0, len(s.TableState.Headers)+4)
-	lines = append(lines, fmt.Sprintf("Row %d", rowIndex))
+	row := s.TableState.Rows[recordIndex]
+	lines := make([]string, 0, len(s.TableState.Headers)*2+4)
+	lines = append(lines, fmt.Sprintf(" Row %d", recordIndex+1))
 	lines = append(lines, "")
 
 	for i, header := range s.TableState.Headers {
@@ -765,30 +509,21 @@ func (s *DatabaseScreen) renderReadRowDetail() string {
 		if i < len(row) {
 			value = row[i]
 		}
-		lines = append(lines, fmt.Sprintf("%s:", header))
-		if len(value) > 40 {
-			// Wrap long values
-			for len(value) > 40 {
-				lines = append(lines, fmt.Sprintf("  %s", value[:40]))
-				value = value[40:]
-			}
-			if len(value) > 0 {
-				lines = append(lines, fmt.Sprintf("  %s", value))
-			}
-		} else {
-			lines = append(lines, fmt.Sprintf("  %s", value))
-		}
-	}
 
-	// Mode-specific hint
-	lines = append(lines, "")
-	switch s.DatabaseMode {
-	case DBModeUpdate:
-		lines = append(lines, "  enter: Edit this row")
-	case DBModeDelete:
-		warnStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn)
-		lines = append(lines, warnStyle.Render("  enter: Delete this row"))
+		cursor := " "
+		if s.FocusIndex == 2 && s.DetailCursor == i {
+			cursor = ">"
+		}
+		lines = append(lines, fmt.Sprintf(" %s %s", cursor, lipgloss.NewStyle().Bold(true).Render(header)))
+		lines = append(lines, fmt.Sprintf("     %s", value))
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+// setDatabaseModeCmd creates a command that sets the database mode on the Model.
+func setDatabaseModeCmd(mode DatabaseMode) tea.Cmd {
+	return func() tea.Msg {
+		return SetDatabaseModeMsg{Mode: mode}
+	}
 }

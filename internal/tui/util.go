@@ -1,9 +1,6 @@
 package tui
 
-import (
-	"fmt"
-	"strconv"
-)
+import "fmt"
 
 // Required validates that the input string is not empty.
 func Required(s string) error {
@@ -23,28 +20,23 @@ func InitTables(tables []string) map[string]string {
 	return out
 }
 
-// GetCurrentRowId returns the ID of the current row from the table state, or 0 if unavailable.
-func (m Model) GetCurrentRowId() int64 {
-	rows := m.TableState.Rows
-	if len(rows) == 0 {
-		m.Logger.Ferror("No rows available", nil)
-		return 0
+// GetCurrentRowPK returns the primary key column name and value for the current
+// row in the table state. Works with both integer and string (ULID) primary keys.
+func (m Model) GetCurrentRowPK() (column string, value string) {
+	if m.TableState == nil {
+		return "", ""
 	}
-	if m.Cursor >= len(rows) {
-		m.Logger.Ferror("Cursor out of range", nil)
-		return 0
+	rows := m.TableState.Rows
+	if len(rows) == 0 || m.Cursor >= len(rows) {
+		return "", ""
 	}
 	row := rows[m.Cursor]
 	if len(row) == 0 {
-		m.Logger.Ferror("Row has no columns", nil)
-		return 0
+		return "", ""
 	}
-	rowCol := row[0]
-	m.Logger.Finfo("rowCOl", rowCol)
-	id, err := strconv.ParseInt(rowCol, 10, 64)
-	if err != nil {
-		m.Logger.Ferror("", err)
-		return 0
+	// First header is the PK column name
+	if len(m.TableState.Headers) > 0 {
+		column = m.TableState.Headers[0]
 	}
-	return id
+	return column, row[0]
 }

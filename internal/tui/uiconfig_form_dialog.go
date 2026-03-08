@@ -257,7 +257,7 @@ func (d *UIConfigFormDialogModel) OverlayView(width, height int) string {
 // Render renders the UIConfig form dialog.
 func (d UIConfigFormDialogModel) Render(windowWidth, windowHeight int) string {
 	contentWidth := d.Width
-	innerW := contentWidth - 6
+	innerW := contentWidth - dialogBorderPadding
 
 	titleText := d.titleStyle.Render(d.Title)
 
@@ -486,15 +486,9 @@ func applyPlaceholder(b FieldBubble, placeholder string) {
 		return
 	}
 	switch v := b.(type) {
-	case *TextBubble:
-		v.input.Placeholder = placeholder
+	case *TextInputBubble:
+		v.SetPlaceholder(placeholder)
 	case *NumberBubble:
-		v.input.Placeholder = placeholder
-	case *EmailBubble:
-		v.input.Placeholder = placeholder
-	case *URLBubble:
-		v.input.Placeholder = placeholder
-	case *SlugBubble:
 		v.input.Placeholder = placeholder
 	case *TextareaBubble:
 		v.input.Placeholder = placeholder

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
 )
 
@@ -19,12 +20,31 @@ type SelectPipelineAndNavigateMsg struct {
 // PipelinesScreen — list of pipeline chains (PIPELINESPAGE)
 // ---------------------------------------------------------------------------
 
+// Pipelines grid: 3 columns
+//
+//	Col 0 (span 3): Pipeline Chains
+//	Col 1 (span 6): Chain Info (65%), Help (35%)
+//	Col 2 (span 3): Registry (55%), By Table (45%)
+var pipelinesGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1, Title: "Pipeline Chains"},
+		}},
+		{Span: 6, Cells: []GridCell{
+			{Height: 0.65, Title: "Chain Info"},
+			{Height: 0.35, Title: "Help"},
+		}},
+		{Span: 3, Cells: []GridCell{
+			{Height: 0.55, Title: "Registry"},
+			{Height: 0.45, Title: "By Table"},
+		}},
+	},
+}
+
 // PipelinesScreen implements Screen for the pipelines list page.
 type PipelinesScreen struct {
+	GridScreen
 	PipelinesList []PipelineDisplay
-	Cursor        int
-	CursorMax     int
-	PanelFocus    FocusPanel
 }
 
 // NewPipelinesScreen creates a PipelinesScreen for the pipeline chain list.
@@ -34,10 +54,11 @@ func NewPipelinesScreen(pipelines []PipelineDisplay) *PipelinesScreen {
 		max = 0
 	}
 	return &PipelinesScreen{
+		GridScreen: GridScreen{
+			Grid:      pipelinesGrid,
+			CursorMax: max,
+		},
 		PipelinesList: pipelines,
-		Cursor:        0,
-		CursorMax:     max,
-		PanelFocus:    TreePanel,
 	}
 }
 
@@ -49,19 +70,13 @@ func (s *PipelinesScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) 
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
 		// Select pipeline: emit message to set key on Model and navigate
 		if km.Matches(key, config.ActionSelect) {
-			if len(s.PipelinesList) > 0 && s.Cursor < len(s.PipelinesList) {
+			if s.FocusIndex == 0 && len(s.PipelinesList) > 0 && s.Cursor < len(s.PipelinesList) {
 				selectedKey := s.PipelinesList[s.Cursor].Key
 				return s, func() tea.Msg {
 					return SelectPipelineAndNavigateMsg{PipelineKey: selectedKey}
@@ -129,83 +144,80 @@ func (s *PipelinesScreen) KeyHints(km config.KeyMap) []KeyHint {
 		{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionBack), "back"},
-		{km.HintString(config.ActionQuit), "quit"},
 	}
 }
 
 func (s *PipelinesScreen) View(ctx AppContext) string {
-	left := s.renderList()
-	center := s.renderDetail()
-	right := s.renderInfo()
-
-	layout := layoutForPage(PIPELINESPAGE)
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
-	}
-
-	innerH := PanelInnerHeight(ctx.Height)
 	listLen := len(s.PipelinesList)
+	innerH := s.Grid.CellInnerHeight(0, ctx.Height)
 
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel, TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)}.Render())
+	cells := []CellContent{
+		{Content: s.renderChains(), TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)},
+		{Content: s.renderChainInfo()},
+		{Content: s.renderHelp()},
+		{Content: s.renderRegistry()},
+		{Content: s.renderByTable()},
 	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return s.RenderGrid(ctx, cells)
 }
 
-// renderList renders the pipeline chain list for the left panel.
-func (s *PipelinesScreen) renderList() string {
+// renderChains renders the pipeline chain list for the left panel.
+func (s *PipelinesScreen) renderChains() string {
 	if len(s.PipelinesList) == 0 {
-		return "(no pipeline chains)"
+		return " (no pipeline chains)"
 	}
 
 	lines := make([]string, 0, len(s.PipelinesList))
 	for i, p := range s.PipelinesList {
-		cursor := "   "
+		cursor := "  "
 		if s.Cursor == i {
-			cursor = " ->"
+			cursor = "->"
 		}
-		lines = append(lines, fmt.Sprintf("%s %s.%s_%s (%d)", cursor, p.Table, p.Phase, p.Operation, p.Count))
+		lines = append(lines, fmt.Sprintf(" %s %s.%s_%s (%d)", cursor, p.Table, p.Phase, p.Operation, p.Count))
 	}
 	return strings.Join(lines, "\n")
 }
 
-// renderDetail renders the entries for the selected pipeline chain (center panel).
-func (s *PipelinesScreen) renderDetail() string {
+// renderChainInfo renders detailed info about the selected pipeline chain.
+func (s *PipelinesScreen) renderChainInfo() string {
 	if len(s.PipelinesList) == 0 || s.Cursor >= len(s.PipelinesList) {
-		return "No pipeline selected"
+		return " No pipeline selected"
 	}
 
-	return "Press enter to view pipeline entries"
+	p := s.PipelinesList[s.Cursor]
+	accent := lipgloss.NewStyle().Bold(true)
+
+	lines := []string{
+		accent.Render(" " + p.Key),
+		"",
+		fmt.Sprintf(" Table      %s", p.Table),
+		fmt.Sprintf(" Operation  %s", p.Operation),
+		fmt.Sprintf(" Phase      %s", p.Phase),
+		fmt.Sprintf(" Entries    %d", p.Count),
+	}
+
+	return strings.Join(lines, "\n")
 }
 
-// renderInfo renders the pipeline summary for the right panel.
-func (s *PipelinesScreen) renderInfo() string {
+// renderHelp renders usage hints.
+func (s *PipelinesScreen) renderHelp() string {
+	lines := []string{
+		" Press Enter to view pipeline entries.",
+		" Use Tab to switch between panels.",
+		"",
+		" Pipeline chains are registered by plugins",
+		" and run before/after database operations.",
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderRegistry renders aggregate stats.
+func (s *PipelinesScreen) renderRegistry() string {
 	totalEntries := 0
 	for _, p := range s.PipelinesList {
 		totalEntries += p.Count
 	}
 
-	lines := []string{
-		"Pipeline Registry",
-		"",
-		fmt.Sprintf("  Chains: %d", len(s.PipelinesList)),
-		fmt.Sprintf("  Total entries: %d", totalEntries),
-	}
-
-	// Count by phase
 	before := 0
 	after := 0
 	for _, p := range s.PipelinesList {
@@ -216,10 +228,37 @@ func (s *PipelinesScreen) renderInfo() string {
 			after++
 		}
 	}
-	lines = append(lines, "")
-	lines = append(lines, fmt.Sprintf("  Before chains: %d", before))
-	lines = append(lines, fmt.Sprintf("  After chains:  %d", after))
 
+	lines := []string{
+		fmt.Sprintf(" Chains   %d", len(s.PipelinesList)),
+		fmt.Sprintf(" Entries  %d", totalEntries),
+		"",
+		fmt.Sprintf(" Before   %d", before),
+		fmt.Sprintf(" After    %d", after),
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderByTable groups chains by table name.
+func (s *PipelinesScreen) renderByTable() string {
+	if len(s.PipelinesList) == 0 {
+		return " (no chains)"
+	}
+
+	// Preserve insertion order
+	var tableOrder []string
+	counts := make(map[string]int)
+	for _, p := range s.PipelinesList {
+		if _, exists := counts[p.Table]; !exists {
+			tableOrder = append(tableOrder, p.Table)
+		}
+		counts[p.Table]++
+	}
+
+	lines := make([]string, 0, len(tableOrder))
+	for _, table := range tableOrder {
+		lines = append(lines, fmt.Sprintf(" %-12s %d chains", table, counts[table]))
+	}
 	return strings.Join(lines, "\n")
 }
 
@@ -227,14 +266,33 @@ func (s *PipelinesScreen) renderInfo() string {
 // PipelineDetailScreen — entries for a selected pipeline (PIPELINEDETAILPAGE)
 // ---------------------------------------------------------------------------
 
+// Pipeline detail grid: 3 columns
+//
+//	Col 0 (span 3): All Chains (read-only context)
+//	Col 1 (span 6): Entries (70%), Entry Detail (30%)
+//	Col 2 (span 3): Chain Status (50%), Execution Order (50%)
+var pipelineDetailGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1, Title: "All Chains"},
+		}},
+		{Span: 6, Cells: []GridCell{
+			{Height: 0.70, Title: "Entries"},
+			{Height: 0.30, Title: "Entry Detail"},
+		}},
+		{Span: 3, Cells: []GridCell{
+			{Height: 0.50, Title: "Chain Status"},
+			{Height: 0.50, Title: "Execution Order"},
+		}},
+	},
+}
+
 // PipelineDetailScreen implements Screen for the pipeline detail page.
 type PipelineDetailScreen struct {
+	GridScreen
 	PipelinesList       []PipelineDisplay
 	PipelineEntries     []PipelineEntryDisplay
 	SelectedPipelineKey string
-	Cursor              int
-	CursorMax           int
-	PanelFocus          FocusPanel
 }
 
 // NewPipelineDetailScreen creates a PipelineDetailScreen for a selected pipeline chain.
@@ -244,12 +302,14 @@ func NewPipelineDetailScreen(pipelines []PipelineDisplay, entries []PipelineEntr
 		max = 0
 	}
 	return &PipelineDetailScreen{
+		GridScreen: GridScreen{
+			Grid:       pipelineDetailGrid,
+			FocusIndex: 1, // start focused on entries list
+			CursorMax:  max,
+		},
 		PipelinesList:       pipelines,
 		PipelineEntries:     entries,
 		SelectedPipelineKey: selectedKey,
-		Cursor:              0,
-		CursorMax:           max,
-		PanelFocus:          ContentPanel,
 	}
 }
 
@@ -261,21 +321,25 @@ func (s *PipelineDetailScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
-		// Common keys (quit, back, cursor)
-		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, s.CursorMax)
-		if handled {
-			s.Cursor = newCursor
-			return s, cmd
+		// Common keys (quit, back, cursor) — only move cursor when focused on entries (cell 1)
+		if s.FocusIndex == 1 {
+			newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, s.CursorMax)
+			if handled {
+				s.Cursor = newCursor
+				return s, cmd
+			}
+		} else {
+			// Still handle quit/back from any cell
+			if km.Matches(key, config.ActionQuit) {
+				return s, tea.Quit
+			}
+			if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
+				return s, HistoryPopCmd()
+			}
 		}
 
 	// Fetch request messages
@@ -341,88 +405,90 @@ func (s *PipelineDetailScreen) KeyHints(km config.KeyMap) []KeyHint {
 		{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionBack), "back"},
-		{km.HintString(config.ActionQuit), "quit"},
 	}
 }
 
 func (s *PipelineDetailScreen) View(ctx AppContext) string {
-	left := s.renderPipelinesList()
-	center := s.renderEntries()
-	right := s.renderStatus()
-
-	layout := layoutForPage(PIPELINEDETAILPAGE)
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
-	}
-
-	innerH := PanelInnerHeight(ctx.Height)
 	entriesLen := len(s.PipelineEntries)
+	innerH := s.Grid.CellInnerHeight(1, ctx.Height)
 
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel}.Render())
+	cells := []CellContent{
+		{Content: s.renderAllChains()},
+		{Content: s.renderEntries(), TotalLines: entriesLen, ScrollOffset: ClampScroll(s.Cursor, entriesLen, innerH)},
+		{Content: s.renderEntryDetail()},
+		{Content: s.renderChainStatus()},
+		{Content: s.renderExecution()},
 	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel, TotalLines: entriesLen, ScrollOffset: ClampScroll(s.Cursor, entriesLen, innerH)}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return s.RenderGrid(ctx, cells)
 }
 
-// renderPipelinesList renders the pipeline chain list for the left panel on the detail page.
-func (s *PipelineDetailScreen) renderPipelinesList() string {
+// renderAllChains renders the pipeline chain list with the selected chain highlighted.
+func (s *PipelineDetailScreen) renderAllChains() string {
 	if len(s.PipelinesList) == 0 {
-		return "(no pipeline chains)"
+		return " (no pipeline chains)"
 	}
 
 	lines := make([]string, 0, len(s.PipelinesList))
 	for _, p := range s.PipelinesList {
-		marker := "   "
+		marker := "  "
 		if p.Key == s.SelectedPipelineKey {
-			marker = " ->"
+			marker = "->"
 		}
-		lines = append(lines, fmt.Sprintf("%s %s.%s_%s (%d)", marker, p.Table, p.Phase, p.Operation, p.Count))
+		lines = append(lines, fmt.Sprintf(" %s %s (%d)", marker, p.Key, p.Count))
 	}
 	return strings.Join(lines, "\n")
 }
 
-// renderEntries renders the entries for the selected pipeline chain (center panel).
+// renderEntries renders the entries list for the selected pipeline chain.
 func (s *PipelineDetailScreen) renderEntries() string {
 	if len(s.PipelineEntries) == 0 {
-		return "No entries (select a chain to view)"
+		return " No entries"
 	}
 
-	lines := make([]string, 0, len(s.PipelineEntries)+2)
-	lines = append(lines, "Pipeline entries (priority order):")
-	lines = append(lines, "")
+	lines := make([]string, 0, len(s.PipelineEntries))
 	for i, e := range s.PipelineEntries {
+		cursor := "  "
+		if s.Cursor == i {
+			cursor = "->"
+		}
 		enabled := "on"
 		if !e.Enabled {
 			enabled = "off"
 		}
-		lines = append(lines, fmt.Sprintf("  %d. %s -> %s (pri:%d, %s)", i+1, e.PluginName, e.Handler, e.Priority, enabled))
+		lines = append(lines, fmt.Sprintf(" %s %s -> %s [%s]", cursor, e.PluginName, e.Handler, enabled))
 	}
 	return strings.Join(lines, "\n")
 }
 
-// renderStatus renders the status summary for the right panel on the detail page.
-func (s *PipelineDetailScreen) renderStatus() string {
-	if s.SelectedPipelineKey == "" {
-		return ""
+// renderEntryDetail renders full details of the selected entry.
+func (s *PipelineDetailScreen) renderEntryDetail() string {
+	if len(s.PipelineEntries) == 0 || s.Cursor >= len(s.PipelineEntries) {
+		return " No entry selected"
+	}
+
+	e := s.PipelineEntries[s.Cursor]
+	accent := lipgloss.NewStyle().Bold(true)
+
+	status := "Enabled"
+	if !e.Enabled {
+		status = "Disabled"
 	}
 
 	lines := []string{
-		fmt.Sprintf("Chain: %s", s.SelectedPipelineKey),
+		accent.Render(" " + e.PluginName),
 		"",
-		fmt.Sprintf("  Entries: %d", len(s.PipelineEntries)),
+		fmt.Sprintf(" Handler   %s", e.Handler),
+		fmt.Sprintf(" Priority  %d", e.Priority),
+		fmt.Sprintf(" Status    %s", status),
+		fmt.Sprintf(" ID        %s", e.PipelineID),
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderChainStatus renders enabled/disabled/total counts.
+func (s *PipelineDetailScreen) renderChainStatus() string {
+	if s.SelectedPipelineKey == "" {
+		return ""
 	}
 
 	enabledCount := 0
@@ -431,8 +497,33 @@ func (s *PipelineDetailScreen) renderStatus() string {
 			enabledCount++
 		}
 	}
-	lines = append(lines, fmt.Sprintf("  Enabled: %d", enabledCount))
-	lines = append(lines, fmt.Sprintf("  Disabled: %d", len(s.PipelineEntries)-enabledCount))
 
+	lines := []string{
+		fmt.Sprintf(" Total     %d", len(s.PipelineEntries)),
+		fmt.Sprintf(" Enabled   %d", enabledCount),
+		fmt.Sprintf(" Disabled  %d", len(s.PipelineEntries)-enabledCount),
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderExecution renders the execution order of enabled entries.
+func (s *PipelineDetailScreen) renderExecution() string {
+	if len(s.PipelineEntries) == 0 {
+		return " (no entries)"
+	}
+
+	var lines []string
+	step := 1
+	for _, e := range s.PipelineEntries {
+		if !e.Enabled {
+			continue
+		}
+		lines = append(lines, fmt.Sprintf(" %d. %s", step, e.Handler))
+		step++
+	}
+
+	if len(lines) == 0 {
+		return " (no enabled entries)"
+	}
 	return strings.Join(lines, "\n")
 }

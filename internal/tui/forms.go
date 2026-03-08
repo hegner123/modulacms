@@ -372,7 +372,6 @@ func (m Model) BuildContentFieldsForm(datatypeID types.DatatypeID, routeID types
 		// Set submit handler to dispatch content creation
 		form.SubmitCmd = tea.Batch(
 			LogMessageCmd(fmt.Sprintf("Form submitted for content creation (Datatype: %s, Route: %s)", datatypeID, routeID)),
-			CmsAddNewContentDataCmd(datatypeID),
 			FocusSetCmd(PAGEFOCUS),
 			func() tea.Msg {
 				return tea.ResumeMsg{}

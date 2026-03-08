@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -87,9 +88,10 @@ func (m Model) HandleCreateAdminContentFromDialog(
 		}
 
 		logger.Finfo(fmt.Sprintf("Admin content created: %s with %d fields", contentData.AdminContentDataID, createdFields))
-		return AdminContentCreatedMsg{
-			AdminContentID: contentData.AdminContentDataID,
-			AdminRouteID:   routeID,
+		return ContentCreatedMsg{
+			ContentID: types.ContentID(contentData.AdminContentDataID),
+			RouteID:   types.RouteID(routeID),
+			AdminMode: true,
 		}
 	}
 }
@@ -214,81 +216,22 @@ func (m Model) HandleDeleteAdminContent(msg ConfirmedDeleteAdminContentMsg) tea.
 		ctx := context.Background()
 		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
-		content, err := d.GetAdminContentData(msg.AdminContentID)
-		if err != nil || content == nil {
+		ops := newAdminTreeOps(d)
+		node, err := ops.getNode(string(msg.AdminContentID))
+		if err != nil || node == nil {
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Admin content not found: %v", err)}
 		}
 
-		if content.FirstChildID.Valid && !content.FirstChildID.ID.IsZero() {
+		if !node.firstChildID.isEmpty() {
 			return ActionResultMsg{Title: "Cannot Delete", Message: "This content has children. Delete child nodes first."}
 		}
 
 		// Update sibling pointers before deletion
-		if content.PrevSiblingID.Valid && !content.PrevSiblingID.ID.IsZero() {
-			prevSibling, prevErr := d.GetAdminContentData(content.PrevSiblingID.ID)
-			if prevErr == nil && prevSibling != nil {
-				params := db.UpdateAdminContentDataParams{
-					AdminContentDataID: prevSibling.AdminContentDataID,
-					AdminRouteID:       prevSibling.AdminRouteID,
-					AdminDatatypeID:    prevSibling.AdminDatatypeID,
-					ParentID:           prevSibling.ParentID,
-					FirstChildID:       prevSibling.FirstChildID,
-					NextSiblingID:      content.NextSiblingID,
-					PrevSiblingID:      prevSibling.PrevSiblingID,
-					AuthorID:           prevSibling.AuthorID,
-					Status:             prevSibling.Status,
-					DateCreated:        prevSibling.DateCreated,
-					DateModified:       types.TimestampNow(),
-				}
-				if _, updateErr := d.UpdateAdminContentData(ctx, ac, params); updateErr != nil {
-					logger.Ferror("Failed to update prev sibling during admin delete", updateErr)
-				}
-			}
-		}
-
-		if content.NextSiblingID.Valid && !content.NextSiblingID.ID.IsZero() {
-			nextSibling, nextErr := d.GetAdminContentData(content.NextSiblingID.ID)
-			if nextErr == nil && nextSibling != nil {
-				params := db.UpdateAdminContentDataParams{
-					AdminContentDataID: nextSibling.AdminContentDataID,
-					AdminRouteID:       nextSibling.AdminRouteID,
-					AdminDatatypeID:    nextSibling.AdminDatatypeID,
-					ParentID:           nextSibling.ParentID,
-					FirstChildID:       nextSibling.FirstChildID,
-					NextSiblingID:      nextSibling.NextSiblingID,
-					PrevSiblingID:      content.PrevSiblingID,
-					AuthorID:           nextSibling.AuthorID,
-					Status:             nextSibling.Status,
-					DateCreated:        nextSibling.DateCreated,
-					DateModified:       types.TimestampNow(),
-				}
-				if _, updateErr := d.UpdateAdminContentData(ctx, ac, params); updateErr != nil {
-					logger.Ferror("Failed to update next sibling during admin delete", updateErr)
-				}
-			}
-		}
-
-		if content.ParentID.Valid && !content.ParentID.ID.IsZero() {
-			parent, parentErr := d.GetAdminContentData(content.ParentID.ID)
-			if parentErr == nil && parent != nil {
-				if parent.FirstChildID.Valid && parent.FirstChildID.ID == msg.AdminContentID {
-					params := db.UpdateAdminContentDataParams{
-						AdminContentDataID: parent.AdminContentDataID,
-						AdminRouteID:       parent.AdminRouteID,
-						AdminDatatypeID:    parent.AdminDatatypeID,
-						ParentID:           parent.ParentID,
-						FirstChildID:       content.NextSiblingID,
-						NextSiblingID:      parent.NextSiblingID,
-						PrevSiblingID:      parent.PrevSiblingID,
-						AuthorID:           parent.AuthorID,
-						Status:             parent.Status,
-						DateCreated:        parent.DateCreated,
-						DateModified:       types.TimestampNow(),
-					}
-					if _, updateErr := d.UpdateAdminContentData(ctx, ac, params); updateErr != nil {
-						logger.Ferror("Failed to update parent first_child during admin delete", updateErr)
-					}
-				}
+		if treeErrs := detachFromSiblings(ctx, ac, ops, node); len(treeErrs) > 0 {
+			return ActionResultMsg{
+				Title:   "Partial Failure",
+				Message: fmt.Sprintf("Tree operation incomplete: %s", errors.Join(treeErrs...)),
+				IsError: true,
 			}
 		}
 
@@ -297,7 +240,7 @@ func (m Model) HandleDeleteAdminContent(msg ConfirmedDeleteAdminContentMsg) tea.
 		}
 
 		logger.Finfo(fmt.Sprintf("Admin content deleted: %s", msg.AdminContentID))
-		return AdminContentDeletedMsg{AdminContentID: msg.AdminContentID, AdminRouteID: msg.AdminRouteID}
+		return ContentDeletedMsg{ContentID: types.ContentID(msg.AdminContentID), RouteID: types.RouteID(msg.AdminRouteID), AdminMode: true}
 	}
 }
 
@@ -325,142 +268,35 @@ func (m Model) HandleMoveAdminContent(msg AdminMoveContentRequestMsg) tea.Cmd {
 		ctx := context.Background()
 		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
-		source, err := d.GetAdminContentData(msg.SourceID)
-		if err != nil || source == nil {
+		ops := newAdminTreeOps(d)
+
+		sourceNode, err := ops.getNode(string(msg.SourceID))
+		if err != nil || sourceNode == nil {
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Source admin content not found: %v", err)}
 		}
 
-		target, err := d.GetAdminContentData(msg.TargetID)
-		if err != nil || target == nil {
+		targetNode, err := ops.getNode(string(msg.TargetID))
+		if err != nil || targetNode == nil {
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Target admin content not found: %v", err)}
 		}
 
 		// STEP 1: Detach source from old position
-		if source.PrevSiblingID.Valid && !source.PrevSiblingID.ID.IsZero() {
-			prev, prevErr := d.GetAdminContentData(source.PrevSiblingID.ID)
-			if prevErr == nil && prev != nil {
-				params := db.UpdateAdminContentDataParams{
-					AdminContentDataID: prev.AdminContentDataID,
-					AdminRouteID:       prev.AdminRouteID,
-					AdminDatatypeID:    prev.AdminDatatypeID,
-					ParentID:           prev.ParentID,
-					FirstChildID:       prev.FirstChildID,
-					NextSiblingID:      source.NextSiblingID,
-					PrevSiblingID:      prev.PrevSiblingID,
-					AuthorID:           prev.AuthorID,
-					Status:             prev.Status,
-					DateCreated:        prev.DateCreated,
-					DateModified:       types.TimestampNow(),
-				}
-				if _, updateErr := d.UpdateAdminContentData(ctx, ac, params); updateErr != nil {
-					logger.Ferror("Failed to update prev sibling during admin move", updateErr)
-				}
-			}
-		}
-
-		if source.NextSiblingID.Valid && !source.NextSiblingID.ID.IsZero() {
-			next, nextErr := d.GetAdminContentData(source.NextSiblingID.ID)
-			if nextErr == nil && next != nil {
-				params := db.UpdateAdminContentDataParams{
-					AdminContentDataID: next.AdminContentDataID,
-					AdminRouteID:       next.AdminRouteID,
-					AdminDatatypeID:    next.AdminDatatypeID,
-					ParentID:           next.ParentID,
-					FirstChildID:       next.FirstChildID,
-					NextSiblingID:      next.NextSiblingID,
-					PrevSiblingID:      source.PrevSiblingID,
-					AuthorID:           next.AuthorID,
-					Status:             next.Status,
-					DateCreated:        next.DateCreated,
-					DateModified:       types.TimestampNow(),
-				}
-				if _, updateErr := d.UpdateAdminContentData(ctx, ac, params); updateErr != nil {
-					logger.Ferror("Failed to update next sibling during admin move", updateErr)
-				}
-			}
-		}
-
-		if source.ParentID.Valid && !source.ParentID.ID.IsZero() {
-			oldParent, parentErr := d.GetAdminContentData(source.ParentID.ID)
-			if parentErr == nil && oldParent != nil {
-				if oldParent.FirstChildID.Valid && oldParent.FirstChildID.ID == source.AdminContentDataID {
-					params := db.UpdateAdminContentDataParams{
-						AdminContentDataID: oldParent.AdminContentDataID,
-						AdminRouteID:       oldParent.AdminRouteID,
-						AdminDatatypeID:    oldParent.AdminDatatypeID,
-						ParentID:           oldParent.ParentID,
-						FirstChildID:       source.NextSiblingID,
-						NextSiblingID:      oldParent.NextSiblingID,
-						PrevSiblingID:      oldParent.PrevSiblingID,
-						AuthorID:           oldParent.AuthorID,
-						Status:             oldParent.Status,
-						DateCreated:        oldParent.DateCreated,
-						DateModified:       types.TimestampNow(),
-					}
-					if _, updateErr := d.UpdateAdminContentData(ctx, ac, params); updateErr != nil {
-						logger.Ferror("Failed to update old parent during admin move", updateErr)
-					}
-				}
+		if treeErrs := detachFromSiblings(ctx, ac, ops, sourceNode); len(treeErrs) > 0 {
+			return ActionResultMsg{
+				Title:   "Partial Failure",
+				Message: fmt.Sprintf("Tree operation incomplete: %s", errors.Join(treeErrs...)),
+				IsError: true,
 			}
 		}
 
 		// STEP 2: Attach source as last child of target
-		target, err = d.GetAdminContentData(msg.TargetID)
-		if err != nil || target == nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Target not found after detach: %v", err)}
-		}
-
-		newPrevSiblingID := types.NullableAdminContentID{}
-
-		if !target.FirstChildID.Valid || target.FirstChildID.ID.IsZero() {
-			targetParams := db.UpdateAdminContentDataParams{
-				AdminContentDataID: target.AdminContentDataID,
-				AdminRouteID:       target.AdminRouteID,
-				AdminDatatypeID:    target.AdminDatatypeID,
-				ParentID:           target.ParentID,
-				FirstChildID:       types.NullableAdminContentID{ID: source.AdminContentDataID, Valid: true},
-				NextSiblingID:      target.NextSiblingID,
-				PrevSiblingID:      target.PrevSiblingID,
-				AuthorID:           target.AuthorID,
-				Status:             target.Status,
-				DateCreated:        target.DateCreated,
-				DateModified:       types.TimestampNow(),
-			}
-			if _, updateErr := d.UpdateAdminContentData(ctx, ac, targetParams); updateErr != nil {
-				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update target: %v", updateErr)}
-			}
-		} else {
-			currentID := target.FirstChildID.ID
-			for {
-				current, walkErr := d.GetAdminContentData(currentID)
-				if walkErr != nil || current == nil {
-					break
-				}
-				if !current.NextSiblingID.Valid || current.NextSiblingID.ID.IsZero() {
-					lastParams := db.UpdateAdminContentDataParams{
-						AdminContentDataID: current.AdminContentDataID,
-						AdminRouteID:       current.AdminRouteID,
-						AdminDatatypeID:    current.AdminDatatypeID,
-						ParentID:           current.ParentID,
-						FirstChildID:       current.FirstChildID,
-						NextSiblingID:      types.NullableAdminContentID{ID: source.AdminContentDataID, Valid: true},
-						PrevSiblingID:      current.PrevSiblingID,
-						AuthorID:           current.AuthorID,
-						Status:             current.Status,
-						DateCreated:        current.DateCreated,
-						DateModified:       types.TimestampNow(),
-					}
-					if _, updateErr := d.UpdateAdminContentData(ctx, ac, lastParams); updateErr != nil {
-						logger.Ferror("Failed to update last sibling during admin move", updateErr)
-					}
-					newPrevSiblingID = types.NullableAdminContentID{ID: current.AdminContentDataID, Valid: true}
-					break
-				}
-				currentID = current.NextSiblingID.ID
-			}
+		newPrevID, attachErr := attachAsLastChild(ctx, ac, ops, sourceNode.id, string(msg.TargetID))
+		if attachErr != nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to attach content: %v", attachErr)}
 		}
 
 		// STEP 3: Update source with new parent
+		source := sourceNode.source.(*db.AdminContentData)
 		sourceParams := db.UpdateAdminContentDataParams{
 			AdminContentDataID: source.AdminContentDataID,
 			AdminRouteID:       source.AdminRouteID,
@@ -468,7 +304,7 @@ func (m Model) HandleMoveAdminContent(msg AdminMoveContentRequestMsg) tea.Cmd {
 			ParentID:           types.NullableAdminContentID{ID: msg.TargetID, Valid: true},
 			FirstChildID:       source.FirstChildID,
 			NextSiblingID:      types.NullableAdminContentID{},
-			PrevSiblingID:      newPrevSiblingID,
+			PrevSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID(newPrevID.ID), Valid: newPrevID.Valid},
 			AuthorID:           source.AuthorID,
 			Status:             source.Status,
 			DateCreated:        source.DateCreated,
@@ -479,7 +315,7 @@ func (m Model) HandleMoveAdminContent(msg AdminMoveContentRequestMsg) tea.Cmd {
 		}
 
 		logger.Finfo(fmt.Sprintf("Admin content moved: %s -> %s", msg.SourceID, msg.TargetID))
-		return AdminContentMovedMsg{AdminContentID: msg.SourceID, AdminRouteID: msg.AdminRouteID}
+		return ContentMovedMsg{SourceContentID: types.ContentID(msg.SourceID), RouteID: types.RouteID(msg.AdminRouteID), AdminMode: true}
 	}
 }
 
@@ -503,186 +339,55 @@ func (m Model) HandleAdminReorderSibling(msg AdminReorderSiblingRequestMsg) tea.
 		ac := middleware.AuditContextFromCLI(*cfg, userID)
 		logger := utility.DefaultLogger
 
-		a, err := d.GetAdminContentData(msg.AdminContentID)
+		ops := newAdminTreeOps(d)
+
+		a, err := ops.getNode(string(msg.AdminContentID))
 		if err != nil || a == nil {
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Admin content not found: %v", err)}
 		}
 
 		if msg.Direction == "up" {
-			if !a.PrevSiblingID.Valid || a.PrevSiblingID.ID.IsZero() {
+			if a.prevSiblingID.isEmpty() {
 				return ActionResultMsg{Title: "Info", Message: "Already at top"}
 			}
-			b, bErr := d.GetAdminContentData(a.PrevSiblingID.ID)
+			b, bErr := ops.getNode(a.prevSiblingID.ID)
 			if bErr != nil || b == nil {
 				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Previous sibling not found: %v", bErr)}
 			}
 
-			// If B has a prev (C), update C.Next -> A
-			if b.PrevSiblingID.Valid && !b.PrevSiblingID.ID.IsZero() {
-				c, cErr := d.GetAdminContentData(b.PrevSiblingID.ID)
-				if cErr == nil && c != nil {
-					_, updateErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-						AdminContentDataID: c.AdminContentDataID, AdminRouteID: c.AdminRouteID, AdminDatatypeID: c.AdminDatatypeID,
-						ParentID: c.ParentID, FirstChildID: c.FirstChildID,
-						NextSiblingID: types.NullableAdminContentID{ID: a.AdminContentDataID, Valid: true},
-						PrevSiblingID: c.PrevSiblingID,
-						AuthorID:      c.AuthorID, Status: c.Status, DateCreated: c.DateCreated, DateModified: types.TimestampNow(),
-					})
-					if updateErr != nil {
-						logger.Ferror("Failed to update C during admin reorder up", updateErr)
-					}
+			if treeErrs := swapSiblings(ctx, ac, ops, a, b, "up"); len(treeErrs) > 0 {
+				return ActionResultMsg{
+					Title:   "Partial Failure",
+					Message: fmt.Sprintf("Tree operation incomplete: %s", errors.Join(treeErrs...)),
+					IsError: true,
 				}
-			}
-
-			// If A has a next (D), update D.Prev -> B
-			if a.NextSiblingID.Valid && !a.NextSiblingID.ID.IsZero() {
-				dNode, dErr := d.GetAdminContentData(a.NextSiblingID.ID)
-				if dErr == nil && dNode != nil {
-					_, updateErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-						AdminContentDataID: dNode.AdminContentDataID, AdminRouteID: dNode.AdminRouteID, AdminDatatypeID: dNode.AdminDatatypeID,
-						ParentID: dNode.ParentID, FirstChildID: dNode.FirstChildID,
-						NextSiblingID: dNode.NextSiblingID,
-						PrevSiblingID: types.NullableAdminContentID{ID: b.AdminContentDataID, Valid: true},
-						AuthorID:      dNode.AuthorID, Status: dNode.Status, DateCreated: dNode.DateCreated, DateModified: types.TimestampNow(),
-					})
-					if updateErr != nil {
-						logger.Ferror("Failed to update D during admin reorder up", updateErr)
-					}
-				}
-			}
-
-			// If parent.FirstChildID == B, update to A
-			if a.ParentID.Valid && !a.ParentID.ID.IsZero() {
-				parent, pErr := d.GetAdminContentData(a.ParentID.ID)
-				if pErr == nil && parent != nil && parent.FirstChildID.Valid && parent.FirstChildID.ID == b.AdminContentDataID {
-					_, updateErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-						AdminContentDataID: parent.AdminContentDataID, AdminRouteID: parent.AdminRouteID, AdminDatatypeID: parent.AdminDatatypeID,
-						ParentID:      parent.ParentID,
-						FirstChildID:  types.NullableAdminContentID{ID: a.AdminContentDataID, Valid: true},
-						NextSiblingID: parent.NextSiblingID, PrevSiblingID: parent.PrevSiblingID,
-						AuthorID: parent.AuthorID, Status: parent.Status, DateCreated: parent.DateCreated, DateModified: types.TimestampNow(),
-					})
-					if updateErr != nil {
-						logger.Ferror("Failed to update parent during admin reorder up", updateErr)
-					}
-				}
-			}
-
-			// Update A: prev = B.prev, next = B
-			_, aErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-				AdminContentDataID: a.AdminContentDataID, AdminRouteID: a.AdminRouteID, AdminDatatypeID: a.AdminDatatypeID,
-				ParentID: a.ParentID, FirstChildID: a.FirstChildID,
-				NextSiblingID: types.NullableAdminContentID{ID: b.AdminContentDataID, Valid: true},
-				PrevSiblingID: b.PrevSiblingID,
-				AuthorID:      a.AuthorID, Status: a.Status, DateCreated: a.DateCreated, DateModified: types.TimestampNow(),
-			})
-			if aErr != nil {
-				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update node: %v", aErr)}
-			}
-
-			// Update B: prev = A, next = A's original next
-			_, bUpdateErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-				AdminContentDataID: b.AdminContentDataID, AdminRouteID: b.AdminRouteID, AdminDatatypeID: b.AdminDatatypeID,
-				ParentID: b.ParentID, FirstChildID: b.FirstChildID,
-				NextSiblingID: a.NextSiblingID,
-				PrevSiblingID: types.NullableAdminContentID{ID: a.AdminContentDataID, Valid: true},
-				AuthorID:      b.AuthorID, Status: b.Status, DateCreated: b.DateCreated, DateModified: types.TimestampNow(),
-			})
-			if bUpdateErr != nil {
-				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update sibling: %v", bUpdateErr)}
 			}
 
 		} else {
 			// Move down: swap A with its next sibling B
-			if !a.NextSiblingID.Valid || a.NextSiblingID.ID.IsZero() {
+			if a.nextSiblingID.isEmpty() {
 				return ActionResultMsg{Title: "Info", Message: "Already at bottom"}
 			}
-			b, bErr := d.GetAdminContentData(a.NextSiblingID.ID)
+			b, bErr := ops.getNode(a.nextSiblingID.ID)
 			if bErr != nil || b == nil {
 				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Next sibling not found: %v", bErr)}
 			}
 
-			// If A has a prev (C), update C.Next -> B
-			if a.PrevSiblingID.Valid && !a.PrevSiblingID.ID.IsZero() {
-				c, cErr := d.GetAdminContentData(a.PrevSiblingID.ID)
-				if cErr == nil && c != nil {
-					_, updateErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-						AdminContentDataID: c.AdminContentDataID, AdminRouteID: c.AdminRouteID, AdminDatatypeID: c.AdminDatatypeID,
-						ParentID: c.ParentID, FirstChildID: c.FirstChildID,
-						NextSiblingID: types.NullableAdminContentID{ID: b.AdminContentDataID, Valid: true},
-						PrevSiblingID: c.PrevSiblingID,
-						AuthorID:      c.AuthorID, Status: c.Status, DateCreated: c.DateCreated, DateModified: types.TimestampNow(),
-					})
-					if updateErr != nil {
-						logger.Ferror("Failed to update C during admin reorder down", updateErr)
-					}
+			if treeErrs := swapSiblings(ctx, ac, ops, a, b, "down"); len(treeErrs) > 0 {
+				return ActionResultMsg{
+					Title:   "Partial Failure",
+					Message: fmt.Sprintf("Tree operation incomplete: %s", errors.Join(treeErrs...)),
+					IsError: true,
 				}
-			}
-
-			// If B has a next (D), update D.Prev -> A
-			if b.NextSiblingID.Valid && !b.NextSiblingID.ID.IsZero() {
-				dNode, dErr := d.GetAdminContentData(b.NextSiblingID.ID)
-				if dErr == nil && dNode != nil {
-					_, updateErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-						AdminContentDataID: dNode.AdminContentDataID, AdminRouteID: dNode.AdminRouteID, AdminDatatypeID: dNode.AdminDatatypeID,
-						ParentID: dNode.ParentID, FirstChildID: dNode.FirstChildID,
-						NextSiblingID: dNode.NextSiblingID,
-						PrevSiblingID: types.NullableAdminContentID{ID: a.AdminContentDataID, Valid: true},
-						AuthorID:      dNode.AuthorID, Status: dNode.Status, DateCreated: dNode.DateCreated, DateModified: types.TimestampNow(),
-					})
-					if updateErr != nil {
-						logger.Ferror("Failed to update D during admin reorder down", updateErr)
-					}
-				}
-			}
-
-			// If parent.FirstChildID == A, update to B
-			if a.ParentID.Valid && !a.ParentID.ID.IsZero() {
-				parent, pErr := d.GetAdminContentData(a.ParentID.ID)
-				if pErr == nil && parent != nil && parent.FirstChildID.Valid && parent.FirstChildID.ID == a.AdminContentDataID {
-					_, updateErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-						AdminContentDataID: parent.AdminContentDataID, AdminRouteID: parent.AdminRouteID, AdminDatatypeID: parent.AdminDatatypeID,
-						ParentID:      parent.ParentID,
-						FirstChildID:  types.NullableAdminContentID{ID: b.AdminContentDataID, Valid: true},
-						NextSiblingID: parent.NextSiblingID, PrevSiblingID: parent.PrevSiblingID,
-						AuthorID: parent.AuthorID, Status: parent.Status, DateCreated: parent.DateCreated, DateModified: types.TimestampNow(),
-					})
-					if updateErr != nil {
-						logger.Ferror("Failed to update parent during admin reorder down", updateErr)
-					}
-				}
-			}
-
-			// Update B: prev = A.prev, next = A
-			_, bUpdateErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-				AdminContentDataID: b.AdminContentDataID, AdminRouteID: b.AdminRouteID, AdminDatatypeID: b.AdminDatatypeID,
-				ParentID: b.ParentID, FirstChildID: b.FirstChildID,
-				NextSiblingID: types.NullableAdminContentID{ID: a.AdminContentDataID, Valid: true},
-				PrevSiblingID: a.PrevSiblingID,
-				AuthorID:      b.AuthorID, Status: b.Status, DateCreated: b.DateCreated, DateModified: types.TimestampNow(),
-			})
-			if bUpdateErr != nil {
-				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update sibling: %v", bUpdateErr)}
-			}
-
-			// Update A: prev = B, next = B's original next
-			_, aErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-				AdminContentDataID: a.AdminContentDataID, AdminRouteID: a.AdminRouteID, AdminDatatypeID: a.AdminDatatypeID,
-				ParentID: a.ParentID, FirstChildID: a.FirstChildID,
-				NextSiblingID: b.NextSiblingID,
-				PrevSiblingID: types.NullableAdminContentID{ID: b.AdminContentDataID, Valid: true},
-				AuthorID:      a.AuthorID, Status: a.Status, DateCreated: a.DateCreated, DateModified: types.TimestampNow(),
-			})
-			if aErr != nil {
-				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update node: %v", aErr)}
 			}
 		}
 
 		logger.Finfo(fmt.Sprintf("Admin content reordered %s: %s", msg.Direction, msg.AdminContentID))
-		return AdminContentReorderedMsg{
-			AdminContentID: msg.AdminContentID,
-			AdminRouteID:   msg.AdminRouteID,
-			Direction:      msg.Direction,
+		return ContentReorderedMsg{
+			ContentID: types.ContentID(msg.AdminContentID),
+			RouteID:   types.RouteID(msg.AdminRouteID),
+			Direction: msg.Direction,
+			AdminMode: true,
 		}
 	}
 }
@@ -737,45 +442,11 @@ func (m Model) HandleCopyAdminContent(msg AdminCopyContentRequestMsg) tea.Cmd {
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to create admin content copy: %v", createErr)}
 		}
 
-		// Update source.Next -> new node
-		_, sErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-			AdminContentDataID: source.AdminContentDataID,
-			AdminRouteID:       source.AdminRouteID,
-			AdminDatatypeID:    source.AdminDatatypeID,
-			ParentID:           source.ParentID,
-			FirstChildID:       source.FirstChildID,
-			NextSiblingID:      types.NullableAdminContentID{ID: newContent.AdminContentDataID, Valid: true},
-			PrevSiblingID:      source.PrevSiblingID,
-			AuthorID:           source.AuthorID,
-			Status:             source.Status,
-			DateCreated:        source.DateCreated,
-			DateModified:       types.TimestampNow(),
-		})
-		if sErr != nil {
-			logger.Ferror("Failed to update source next pointer after admin copy", sErr)
-		}
-
-		// If source had a next sibling (D), update D.Prev -> new node
-		if source.NextSiblingID.Valid && !source.NextSiblingID.ID.IsZero() {
-			dNode, dErr := d.GetAdminContentData(source.NextSiblingID.ID)
-			if dErr == nil && dNode != nil {
-				_, updateErr := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-					AdminContentDataID: dNode.AdminContentDataID,
-					AdminRouteID:       dNode.AdminRouteID,
-					AdminDatatypeID:    dNode.AdminDatatypeID,
-					ParentID:           dNode.ParentID,
-					FirstChildID:       dNode.FirstChildID,
-					NextSiblingID:      dNode.NextSiblingID,
-					PrevSiblingID:      types.NullableAdminContentID{ID: newContent.AdminContentDataID, Valid: true},
-					AuthorID:           dNode.AuthorID,
-					Status:             dNode.Status,
-					DateCreated:        dNode.DateCreated,
-					DateModified:       types.TimestampNow(),
-				})
-				if updateErr != nil {
-					logger.Ferror("Failed to update next sibling prev after admin copy", updateErr)
-				}
-			}
+		// Update sibling pointers: source.next -> new, old-next.prev -> new
+		ops := newAdminTreeOps(d)
+		sourceNode := adminContentToTreeNode(source)
+		if spliceErr := spliceAfter(ctx, ac, ops, sourceNode, string(newContent.AdminContentDataID)); spliceErr != nil {
+			logger.Ferror("Failed to update sibling pointers after admin copy", spliceErr)
 		}
 
 		// Copy fields
@@ -801,7 +472,7 @@ func (m Model) HandleCopyAdminContent(msg AdminCopyContentRequestMsg) tea.Cmd {
 		}
 
 		logger.Finfo(fmt.Sprintf("Admin content copied: %s -> %s with %d fields", msg.SourceID, newContent.AdminContentDataID, fieldCount))
-		return AdminContentCopiedMsg{NewID: newContent.AdminContentDataID, AdminRouteID: msg.AdminRouteID}
+		return ContentCopiedMsg{NewContentID: types.ContentID(newContent.AdminContentDataID), RouteID: types.RouteID(msg.AdminRouteID), AdminMode: true}
 	}
 }
 
@@ -835,7 +506,7 @@ func (m Model) HandleAdminConfirmedPublish(msg ConfirmedPublishAdminContentMsg) 
 		}
 
 		logger.Finfo(fmt.Sprintf("Admin content %s published", msg.AdminContentID))
-		return AdminPublishCompletedMsg{AdminContentID: msg.AdminContentID, AdminRouteID: msg.AdminRouteID}
+		return PublishCompletedMsg{ContentID: types.ContentID(msg.AdminContentID), RouteID: types.RouteID(msg.AdminRouteID), AdminMode: true}
 	}
 }
 
@@ -864,7 +535,7 @@ func (m Model) HandleAdminConfirmedUnpublish(msg ConfirmedUnpublishAdminContentM
 		}
 
 		logger.Finfo(fmt.Sprintf("Admin content %s unpublished", msg.AdminContentID))
-		return AdminUnpublishCompletedMsg{AdminContentID: msg.AdminContentID, AdminRouteID: msg.AdminRouteID}
+		return UnpublishCompletedMsg{ContentID: types.ContentID(msg.AdminContentID), RouteID: types.RouteID(msg.AdminRouteID), AdminMode: true}
 	}
 }
 
@@ -922,10 +593,11 @@ func (m Model) HandleAdminConfirmedRestoreVersion(msg ConfirmedRestoreAdminVersi
 		}
 
 		logger.Finfo(fmt.Sprintf("Admin content %s restored from version %s (%d fields)", msg.AdminContentID, msg.VersionID, result.FieldsRestored))
-		return AdminVersionRestoredMsg{
-			AdminContentID: msg.AdminContentID,
-			AdminRouteID:   msg.AdminRouteID,
+		return VersionRestoredMsg{
+			ContentID:      types.ContentID(msg.AdminContentID),
+			RouteID:        types.RouteID(msg.AdminRouteID),
 			FieldsRestored: result.FieldsRestored,
+			AdminMode:      true,
 		}
 	}
 }
@@ -955,9 +627,10 @@ func (m Model) HandleDeleteAdminContentField(msg ConfirmedDeleteAdminContentFiel
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to delete admin field: %v", err)}
 		}
 
-		return AdminContentFieldDeletedMsg{
-			AdminContentID: msg.AdminContentID,
-			AdminRouteID:   msg.AdminRouteID,
+		return ContentFieldDeletedMsg{
+			ContentID: types.ContentID(msg.AdminContentID),
+			RouteID:   types.RouteID(msg.AdminRouteID),
+			AdminMode: true,
 		}
 	}
 }
@@ -997,9 +670,10 @@ func (m Model) HandleAddAdminContentField(
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to add admin content field: %v", err)}
 		}
 
-		return AdminContentFieldAddedMsg{
-			AdminContentID: adminContentID,
-			AdminRouteID:   adminRouteID,
+		return ContentFieldAddedMsg{
+			ContentID: types.ContentID(adminContentID),
+			RouteID:   types.RouteID(adminRouteID),
+			AdminMode: true,
 		}
 	}
 }
@@ -1047,9 +721,10 @@ func (m Model) HandleEditAdminSingleField(
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update admin field: %v", err)}
 		}
 
-		return AdminContentFieldUpdatedMsg{
-			AdminContentID: adminContentID,
-			AdminRouteID:   adminRouteID,
+		return ContentFieldUpdatedMsg{
+			ContentID: types.ContentID(adminContentID),
+			RouteID:   types.RouteID(adminRouteID),
+			AdminMode: true,
 		}
 	}
 }

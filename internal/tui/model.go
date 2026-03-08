@@ -1,14 +1,12 @@
-// Package cli implements the terminal user interface for ModulaCMS using Charmbracelet Bubbletea.
+// Package cli implements the terminal user interface for Modula using Charmbracelet Bubbletea.
 // It provides an SSH-accessible TUI for managing content, datatypes, media, routes, and users
 // through a Model-Update-View architecture with typed message flows and database abstraction.
 package tui
 
 import (
-	"database/sql"
 	"fmt"
 	"io/fs"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/filepicker"
 	"github.com/charmbracelet/bubbles/paginator"
@@ -82,7 +80,7 @@ type RemoteStatusProvider interface {
 	RemoteConnectionStatus() string // "connected", "disconnected", "unknown"
 }
 
-// Model is the root Bubbletea model for the ModulaCMS TUI, containing all application state, UI components, and database connections.
+// Model is the root Bubbletea model for the Modula TUI, containing all application state, UI components, and database connections.
 type Model struct {
 	DB                db.DbDriver
 	Config            *config.Config
@@ -100,10 +98,8 @@ type Model struct {
 	QuitStyle         lipgloss.Style
 	Loading           bool
 	Cursor            int
-	FocusIndex        int
 	Paginator         paginator.Model
 	PageMod           int
-	MaxRows           int
 	Page              Page
 	PageMenu          []Page
 	Pages             []Page
@@ -121,10 +117,7 @@ type Model struct {
 	Spinner           spinner.Model
 	Viewport          viewport.Model
 	History           []PageHistory
-	QueryResults      []sql.Row
-	Time              time.Time
 	ActiveOverlay     ModalOverlay // nil = no dialog active
-	PanelFocus        FocusPanel
 	FilePicker        filepicker.Model
 	FilePickerActive  bool
 	FilePickerPurpose FilePickerPurpose
@@ -227,44 +220,13 @@ type ContentFieldDisplay struct {
 // DialogContext holds per-session dialog/operation context that was previously stored
 // in package-level variables. Moving these into Model ensures concurrent SSH sessions
 // cannot overwrite each other's dialog state.
+//
+// Active uses a sum-type pattern: it is nil when no dialog context is set, and
+// holds a pointer to one of the concrete context types (e.g. *DeleteContentContext,
+// *PublishContentContext). Consumers type-switch or type-assert to extract the value.
 type DialogContext struct {
-	// from update_dialog.go
-	InitRouteContent    *InitializeRouteContentContext
-	RestoreBackup       *RestoreBackupContext
-	RestoreRequiresQuit bool
-	DeleteContent       *DeleteContentContext
-	PublishContent      *PublishContentContext
-	RestoreVersion      *RestoreVersionContext
-	ApprovePluginRoutes *ApprovePluginContext
-	ApprovePluginHooks  *ApprovePluginContext
-	DeleteContentField  *DeleteContentFieldContext
-	EditSingleField     *editSingleFieldCtx
-	AddContentField     *addContentFieldCtx
-	DeleteDatatype      *DeleteDatatypeContext
-	DeleteField         *DeleteFieldContext
-	DeleteRoute         *DeleteRouteContext
-	DeleteMedia         *DeleteMediaContext
-	DeleteUser          *DeleteUserContext
-
-	// from admin_update_dialog.go
-	DeleteAdminRoute     *DeleteAdminRouteContext
-	DeleteAdminDatatype  *DeleteAdminDatatypeContext
-	DeleteAdminField     *DeleteAdminFieldContext
-	DeleteFieldType      *DeleteFieldTypeContext
-	DeleteAdminFieldType *DeleteAdminFieldTypeContext
-
-	// from deploy_update.go
-	DeployPull *DeployPullContext
-	DeployPush *DeployPushContext
-
-	// from admin content operations (Plan 3)
-	DeleteAdminContent      *DeleteAdminContentContext
-	PublishAdminContent     *PublishAdminContentContext
-	RestoreAdminVersion     *RestoreAdminVersionContext
-	MoveAdminContent        *MoveAdminContentContext
-	DeleteAdminContentField *DeleteAdminContentFieldContext
-	EditAdminSingleField    *editAdminSingleFieldCtx
-	AddAdminContentField    *addAdminContentFieldCtx
+	Active              any  // nil = no dialog context; type-switch to extract
+	RestoreRequiresQuit bool // quit on next dialog dismiss after backup restore
 }
 
 // CliContinue controls whether the CLI should continue running after processing a command.
@@ -346,19 +308,16 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, 
 		Status:        OK,
 		TitleFont:     0,
 		Titles:        LoadTitles(fonts),
-		FocusIndex:    0,
 		Page:          NewPage(HOMEPAGE, "Home"),
 		Paginator:     p,
 		Loading:       false,
 		Spinner:       s,
 		PageMod:       0,
-		MaxRows:       10,
 		Viewport:      viewport.Model{},
 		PageMap:       *InitPages(),
 		FormState:     NewFormModel(),
 		TableState:    NewTableModel(),
 		Focus:         PAGEFOCUS,
-		PanelFocus:    TreePanel,
 		History:       []PageHistory{},
 		Verbose:       verbose,
 		PageRouteId:   types.RouteID(""), // TODO: Implement route selection UI
@@ -371,10 +330,9 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, 
 	}
 	m.PageMenu = m.HomepageMenuInit()
 	m.ActiveScreen = m.screenForPage(m.Page)
-	return m, tea.Batch(
-		GetTablesCMD(m.Config),
-		HomeDashboardFetchCmd(driver),
-	)
+	// Init commands (GetTablesCMD, HomeDashboardFetchCmd) are fired by Init()
+	// so they run regardless of whether the caller uses the returned cmd.
+	return m, nil
 }
 
 // ModelPostInit performs post-initialization setup for the model, initializing menus and logging.

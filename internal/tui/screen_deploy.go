@@ -8,10 +8,22 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 )
 
+// 3/9 grid: left = environments list, right = detail (top) + actions (bottom)
+var deployGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1.0, Title: "Environments"},
+		}},
+		{Span: 9, Cells: []GridCell{
+			{Height: 0.6, Title: "Details"},
+			{Height: 0.4, Title: "Actions"},
+		}},
+	},
+}
+
 // DeployScreen implements Screen for the deploy page.
 type DeployScreen struct {
-	Cursor          int
-	PanelFocus      FocusPanel
+	GridScreen
 	Environments    []config.DeployEnvironmentConfig
 	LastResult      *DeploySyncResult
 	LastHealth      *DeployHealthResult
@@ -21,9 +33,15 @@ type DeployScreen struct {
 
 // NewDeployScreen creates a DeployScreen with the given environments.
 func NewDeployScreen(envs []config.DeployEnvironmentConfig) *DeployScreen {
+	cursorMax := len(envs) - 1
+	if cursorMax < 0 {
+		cursorMax = 0
+	}
 	return &DeployScreen{
-		Cursor:       0,
-		PanelFocus:   TreePanel,
+		GridScreen: GridScreen{
+			Grid:      deployGrid,
+			CursorMax: cursorMax,
+		},
 		Environments: envs,
 	}
 }
@@ -36,13 +54,7 @@ func (s *DeployScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
@@ -68,7 +80,6 @@ func (s *DeployScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 
 		// Block all action keys while an operation is running
 		if s.OperationActive {
-			// Still allow quit/back via common keys
 			_, cmd, handled := HandleCommonKeys(key, km, s.Cursor, len(s.Environments)-1)
 			if handled {
 				return s, cmd
@@ -101,9 +112,6 @@ func (s *DeployScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			return s, DeployPushCmd(env.Name, true)
 		}
 
-		// Common keys LAST (quit, back)
-		// Note: cursor is handled above with status clearing, so HandleCommonKeys
-		// will not re-handle up/down since we already returned above.
 		_, cmd, handled := HandleCommonKeys(key, km, s.Cursor, len(s.Environments)-1)
 		if handled {
 			return s, cmd
@@ -112,6 +120,10 @@ func (s *DeployScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	// Data refresh messages
 	case DeployEnvsSet:
 		s.Environments = msg.Envs
+		s.CursorMax = len(s.Environments) - 1
+		if s.CursorMax < 0 {
+			s.CursorMax = 0
+		}
 		if s.Cursor >= len(s.Environments) && len(s.Environments) > 0 {
 			s.Cursor = len(s.Environments) - 1
 		}
@@ -194,38 +206,15 @@ func (s *DeployScreen) KeyHints(km config.KeyMap) []KeyHint {
 }
 
 func (s *DeployScreen) View(ctx AppContext) string {
-	left := s.renderEnvsList()
-	center := s.renderDetail()
-	right := s.renderActions()
-
-	layout := layoutForPage(DEPLOYPAGE)
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
+	cells := []CellContent{
+		{Content: s.renderEnvsList(), TotalLines: len(s.Environments), ScrollOffset: ClampScroll(s.Cursor, len(s.Environments), ctx.Height)},
+		{Content: s.renderDetail()},
+		{Content: s.renderActions()},
 	}
-
-	innerH := PanelInnerHeight(ctx.Height)
-	listLen := len(s.Environments)
-
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel, TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)}.Render())
-	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return s.RenderGrid(ctx, cells)
 }
 
-// renderEnvsList renders the deploy environments list for the left panel.
+// renderEnvsList renders the deploy environments list.
 func (s *DeployScreen) renderEnvsList() string {
 	if len(s.Environments) == 0 {
 		return "(no environments configured)\n\nAdd deploy_environments\nto config.json"
@@ -242,11 +231,10 @@ func (s *DeployScreen) renderEnvsList() string {
 	return strings.Join(lines, "\n")
 }
 
-// renderDetail renders the selected environment details and last operation
-// result for the center panel.
+// renderDetail renders the selected environment details and last operation result.
 func (s *DeployScreen) renderDetail() string {
 	if len(s.Environments) == 0 || s.Cursor >= len(s.Environments) {
-		return "No environment selected"
+		return " No environment selected"
 	}
 
 	env := s.Environments[s.Cursor]
@@ -257,31 +245,27 @@ func (s *DeployScreen) renderDetail() string {
 	}
 
 	lines := []string{
-		fmt.Sprintf("Name:    %s", env.Name),
-		fmt.Sprintf("URL:     %s", env.URL),
-		fmt.Sprintf("API Key: %s", apiKeyDisplay),
+		fmt.Sprintf(" Name     %s", env.Name),
+		fmt.Sprintf(" URL      %s", env.URL),
+		fmt.Sprintf(" API Key  %s", apiKeyDisplay),
 	}
 
-	// Show health check result if available and matches this env
 	if s.LastHealth != nil && s.LastHealth.EnvName == env.Name {
 		h := s.LastHealth
 		lines = append(lines, "")
 		if h.Err != "" {
-			lines = append(lines, "Health: FAILED")
-			lines = append(lines, fmt.Sprintf("  Error: %s", h.Err))
+			lines = append(lines, " Health: FAILED")
+			lines = append(lines, fmt.Sprintf("   Error: %s", h.Err))
 		} else {
-			lines = append(lines, fmt.Sprintf("Health:  %s", h.Status))
-			lines = append(lines, fmt.Sprintf("Version: %s", h.Version))
-			lines = append(lines, fmt.Sprintf("Node:    %s", h.NodeID))
+			lines = append(lines, fmt.Sprintf(" Health   %s", h.Status))
+			lines = append(lines, fmt.Sprintf(" Version  %s", h.Version))
+			lines = append(lines, fmt.Sprintf(" Node     %s", h.NodeID))
 		}
 	}
 
-	// Show last operation result if available and matches this env
 	if s.LastResult != nil && s.LastResult.EnvName == env.Name {
 		r := s.LastResult
 		lines = append(lines, "")
-		lines = append(lines, "--- Last Operation ---")
-
 		status := "SUCCESS"
 		if !r.Success {
 			status = "FAILED"
@@ -289,60 +273,55 @@ func (s *DeployScreen) renderDetail() string {
 		if r.DryRun {
 			status += " (dry run)"
 		}
-
-		lines = append(lines, fmt.Sprintf("  %s: %s", r.Operation, status))
+		lines = append(lines, fmt.Sprintf(" %s: %s", r.Operation, status))
 		if r.Duration != "" {
-			lines = append(lines, fmt.Sprintf("  Duration: %s", r.Duration))
+			lines = append(lines, fmt.Sprintf("   Duration: %s", r.Duration))
 		}
-		lines = append(lines, fmt.Sprintf("  Tables:   %d", len(r.TablesAffected)))
+		lines = append(lines, fmt.Sprintf("   Tables:   %d", len(r.TablesAffected)))
 
 		totalRows := 0
 		for _, count := range r.RowCounts {
 			totalRows += count
 		}
-		lines = append(lines, fmt.Sprintf("  Rows:     %d", totalRows))
+		lines = append(lines, fmt.Sprintf("   Rows:     %d", totalRows))
 
 		for _, w := range r.Warnings {
-			lines = append(lines, fmt.Sprintf("  WARN: %s", w))
+			lines = append(lines, fmt.Sprintf("   WARN: %s", w))
 		}
 		for _, e := range r.Errors {
-			lines = append(lines, fmt.Sprintf("  ERR:  %s", e))
+			lines = append(lines, fmt.Sprintf("   ERR:  %s", e))
 		}
 	}
 
-	// Show status message (errors, progress)
 	if s.StatusMessage != "" {
-		lines = append(lines, "")
-		lines = append(lines, s.StatusMessage)
+		lines = append(lines, "", " "+s.StatusMessage)
 	}
 
 	if s.OperationActive {
-		lines = append(lines, "")
-		lines = append(lines, "  Operation in progress...")
+		lines = append(lines, "", "   Operation in progress...")
 	}
 
 	return strings.Join(lines, "\n")
 }
 
-// renderActions renders available actions for the right panel.
+// renderActions renders available actions.
 func (s *DeployScreen) renderActions() string {
 	lines := []string{
-		"Actions",
+		" Actions",
 		"",
-		"  t: Test Connection",
-		"  p: Pull (remote -> local)",
-		"  s: Push (local -> remote)",
+		"   t  Test Connection",
+		"   p  Pull (remote -> local)",
+		"   s  Push (local -> remote)",
 		"",
-		"  Dry Run:",
-		"  P: Dry Run Pull",
-		"  S: Dry Run Push",
+		"   Dry Run:",
+		"   P  Dry Run Pull",
+		"   S  Dry Run Push",
 		"",
-		fmt.Sprintf("Environments: %d", len(s.Environments)),
+		fmt.Sprintf(" Environments: %d", len(s.Environments)),
 	}
 
 	if s.OperationActive {
-		lines = append(lines, "")
-		lines = append(lines, "  (operation running)")
+		lines = append(lines, "", "   (operation running)")
 	}
 
 	return strings.Join(lines, "\n")

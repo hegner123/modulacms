@@ -18,7 +18,6 @@ type AppContext struct {
 	Width            int
 	Height           int
 	ScreenMode       ScreenMode
-	PanelFocus       FocusPanel
 	PluginManager    *plugin.Manager
 	ConfigManager    *config.Manager
 	IsRemote         bool
@@ -42,7 +41,6 @@ func (m Model) AppCtx() AppContext {
 		Width:            m.Width,
 		Height:           m.Height,
 		ScreenMode:       m.ScreenMode,
-		PanelFocus:       m.PanelFocus,
 		PluginManager:    m.PluginManager,
 		ConfigManager:    m.ConfigManager,
 		IsRemote:         m.IsRemote,

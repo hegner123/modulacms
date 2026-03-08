@@ -297,6 +297,20 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 				RouteID:        string(routeID),
 			}
 		}
+	case ChildDatatypeSelectedMsg:
+		// User selected a child datatype — fetch its fields to build the content form.
+		// The parent content ID comes from the currently selected tree node.
+		var parentID types.NullableContentID
+		node := s.Root.NodeAtIndex(s.Cursor)
+		if node != nil && node.Instance != nil {
+			parentID = types.NullableContentID{ID: node.Instance.ContentDataID, Valid: true}
+		}
+		return s, FetchContentFieldsCmd(
+			msg.DatatypeID,
+			msg.RouteID,
+			parentID,
+			"New Content",
+		)
 	case FetchContentFieldsMsg:
 		d := ctx.DB
 		if d == nil {
@@ -407,10 +421,10 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	// Content CRUD completion messages → reload tree + refresh select list
 	case ContentCreatedMsg:
 		s.clearError()
+		if msg.AdminMode {
+			return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, types.AdminRouteID(msg.RouteID)), s.refreshSelectCmd())
+		}
 		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
-	case AdminContentCreatedMsg:
-		s.clearError()
-		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 	case ContentCreatedWithErrorsMsg:
 		s.clearError()
 		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
@@ -419,45 +433,49 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		s.clearError()
 		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 
-	case AdminContentDeletedMsg:
+	case ContentDeletedMsg:
 		s.clearError()
-		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
+		if msg.AdminMode {
+			return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, types.AdminRouteID(msg.RouteID)), s.refreshSelectCmd())
+		}
+		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
 
 	case ContentReorderedMsg:
 		s.clearError()
 		s.PendingCursorContentID = msg.ContentID
+		if msg.AdminMode {
+			return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, types.AdminRouteID(msg.RouteID)), s.refreshSelectCmd())
+		}
 		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
-	case AdminContentReorderedMsg:
-		s.clearError()
-		s.PendingCursorContentID = types.ContentID(msg.AdminContentID)
-		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 
 	case ContentCopiedMsg:
 		s.clearError()
 		s.PendingCursorContentID = msg.NewContentID
+		if msg.AdminMode {
+			return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, types.AdminRouteID(msg.RouteID)), s.refreshSelectCmd())
+		}
 		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
-	case AdminContentCopiedMsg:
-		s.clearError()
-		s.PendingCursorContentID = types.ContentID(msg.NewID)
-		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 
-	case AdminContentMovedMsg:
+	case ContentMovedMsg:
 		s.clearError()
-		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
+		if msg.AdminMode {
+			return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, types.AdminRouteID(msg.RouteID)), s.refreshSelectCmd())
+		}
+		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
 
 	// Publish/Unpublish completion
 	case PublishCompletedMsg:
 		s.clearError()
+		if msg.AdminMode {
+			return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, types.AdminRouteID(msg.RouteID)), s.refreshSelectCmd())
+		}
 		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
-	case AdminPublishCompletedMsg:
-		s.clearError()
-		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 	case UnpublishCompletedMsg:
 		s.clearError()
+		if msg.AdminMode {
+			return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, types.AdminRouteID(msg.RouteID)), s.refreshSelectCmd())
+		}
 		return s, tea.Batch(ReloadContentTreeCmd(ctx.Config, msg.RouteID), s.refreshSelectCmd())
-	case AdminUnpublishCompletedMsg:
-		s.clearError()
-		return s, tea.Batch(ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID), s.refreshSelectCmd())
 
 	// Version list results
 	case VersionsListedMsg:
@@ -481,22 +499,30 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	case VersionRestoredMsg:
 		s.clearError()
 		s.ShowVersionList = false
+		if msg.AdminMode {
+			return s, ReloadAdminContentTreeCmd(ctx.Config, types.AdminRouteID(msg.RouteID))
+		}
 		return s, ReloadContentTreeCmd(ctx.Config, msg.RouteID)
-	case AdminVersionRestoredMsg:
-		s.clearError()
-		s.ShowVersionList = false
-		return s, ReloadAdminContentTreeCmd(ctx.Config, msg.AdminRouteID)
 
 	// Content field operation results → reload batch fields
-	case AdminContentFieldUpdatedMsg:
+	case ContentFieldUpdatedMsg:
 		s.clearError()
-		return s, BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale)
-	case AdminContentFieldAddedMsg:
+		if msg.AdminMode {
+			return s, BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale)
+		}
+		return s, BatchLoadContentFieldsCmd(ctx.Config, s.PageRouteId, s.collectDatatypeIDs(), ctx.ActiveLocale)
+	case ContentFieldAddedMsg:
 		s.clearError()
-		return s, BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale)
-	case AdminContentFieldDeletedMsg:
+		if msg.AdminMode {
+			return s, BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale)
+		}
+		return s, BatchLoadContentFieldsCmd(ctx.Config, s.PageRouteId, s.collectDatatypeIDs(), ctx.ActiveLocale)
+	case ContentFieldDeletedMsg:
 		s.clearError()
-		return s, BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale)
+		if msg.AdminMode {
+			return s, BatchLoadAdminContentFieldsCmd(ctx.Config, s.AdminPageRouteId, s.collectAdminDatatypeIDs(), ctx.ActiveLocale)
+		}
+		return s, BatchLoadContentFieldsCmd(ctx.Config, s.PageRouteId, s.collectDatatypeIDs(), ctx.ActiveLocale)
 
 	// Content publish toggled (legacy compat)
 	case ContentPublishToggledMsg:

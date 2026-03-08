@@ -2,21 +2,46 @@ package tui
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
+
+// Users grid: 2 columns
+//
+//	Col 0 (span 3): User list
+//	Col 1 (span 9): Details (top), Permissions (bottom)
+var usersGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1.0, Title: "Users"},
+		}},
+		{Span: 9, Cells: []GridCell{
+			{Height: 0.45, Title: "Details"},
+			{Height: 0.55, Title: "Permissions"},
+		}},
+	},
+}
+
+// UserPermissionsFetchedMsg delivers permission labels for a role.
+type UserPermissionsFetchedMsg struct {
+	RoleID types.RoleID
+	Labels []string
+	Err    error
+}
 
 // UsersScreen implements Screen for the USERSADMIN page.
 type UsersScreen struct {
-	Cursor     int
-	CursorMax  int
-	PanelFocus FocusPanel
-	UsersList  []db.UserWithRoleLabelRow
-	RolesList  []db.Roles
+	GridScreen
+	UsersList       []db.UserWithRoleLabelRow
+	RolesList       []db.Roles
+	PermissionCache map[types.RoleID][]string // role ID -> permission labels
+	LastPermRoleID  types.RoleID              // role ID of last permission fetch
 }
 
 // NewUsersScreen creates a UsersScreen with the given users and roles data.
@@ -26,15 +51,62 @@ func NewUsersScreen(users []db.UserWithRoleLabelRow, roles []db.Roles) *UsersScr
 		cursorMax = 0
 	}
 	return &UsersScreen{
-		Cursor:     0,
-		CursorMax:  cursorMax,
-		PanelFocus: TreePanel,
-		UsersList:  users,
-		RolesList:  roles,
+		GridScreen: GridScreen{
+			Grid:      usersGrid,
+			CursorMax: cursorMax,
+		},
+		UsersList:       users,
+		RolesList:       roles,
+		PermissionCache: make(map[types.RoleID][]string),
 	}
 }
 
 func (s *UsersScreen) PageIndex() PageIndex { return USERSADMIN }
+
+func (s *UsersScreen) updateCursorMax() {
+	s.CursorMax = len(s.UsersList) - 1
+	if s.CursorMax < 0 {
+		s.CursorMax = 0
+	}
+	if s.Cursor > s.CursorMax && s.CursorMax >= 0 {
+		s.Cursor = s.CursorMax
+	}
+}
+
+// selectedUser returns the user at the current cursor, or nil.
+func (s *UsersScreen) selectedUser() *db.UserWithRoleLabelRow {
+	if len(s.UsersList) == 0 || s.Cursor >= len(s.UsersList) {
+		return nil
+	}
+	return &s.UsersList[s.Cursor]
+}
+
+// fetchPermissionsIfNeeded returns a command to fetch permissions for the
+// selected user's role, or nil if already cached.
+func (s *UsersScreen) fetchPermissionsIfNeeded(driver db.DbDriver) tea.Cmd {
+	user := s.selectedUser()
+	if user == nil || driver == nil {
+		return nil
+	}
+	roleID := types.RoleID(user.Role)
+	if roleID == s.LastPermRoleID {
+		return nil
+	}
+	s.LastPermRoleID = roleID
+	if _, ok := s.PermissionCache[roleID]; ok {
+		return nil
+	}
+	return func() tea.Msg {
+		labels, err := driver.ListPermissionLabelsByRoleID(roleID)
+		if err != nil {
+			return UserPermissionsFetchedMsg{RoleID: roleID, Err: err}
+		}
+		if labels == nil {
+			return UserPermissionsFetchedMsg{RoleID: roleID, Labels: []string{}}
+		}
+		return UserPermissionsFetchedMsg{RoleID: roleID, Labels: *labels}
+	}
+}
 
 func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -42,13 +114,7 @@ func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
@@ -72,12 +138,25 @@ func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			}
 		}
 
-		// Common keys (quit, back, cursor) - LAST
+		// Common keys (quit, back, cursor)
+		prevCursor := s.Cursor
 		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, s.CursorMax)
 		if handled {
 			s.Cursor = newCursor
+			if s.Cursor != prevCursor {
+				if permCmd := s.fetchPermissionsIfNeeded(ctx.DB); permCmd != nil {
+					return s, tea.Batch(cmd, permCmd)
+				}
+			}
 			return s, cmd
 		}
+
+	// Permission labels fetched
+	case UserPermissionsFetchedMsg:
+		if msg.Err == nil {
+			s.PermissionCache[msg.RoleID] = msg.Labels
+		}
+		return s, nil
 
 	// Fetch request messages
 	case UsersFetchMsg:
@@ -97,12 +176,14 @@ func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		}
 	case UsersFetchResultsMsg:
 		s.UsersList = msg.Data
-		s.CursorMax = len(s.UsersList) - 1
-		if s.CursorMax < 0 {
-			s.CursorMax = 0
-		}
 		s.Cursor = 0
-		return s, LoadingStopCmd()
+		s.updateCursorMax()
+		s.LastPermRoleID = ""
+		cmds := []tea.Cmd{LoadingStopCmd()}
+		if permCmd := s.fetchPermissionsIfNeeded(ctx.DB); permCmd != nil {
+			cmds = append(cmds, permCmd)
+		}
+		return s, tea.Batch(cmds...)
 	case RolesFetchMsg:
 		d := ctx.DB
 		if d == nil {
@@ -125,18 +206,15 @@ func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	// Data refresh messages (from CMS operations)
 	case UsersListSet:
 		s.UsersList = msg.UsersList
-		s.CursorMax = len(s.UsersList) - 1
-		if s.CursorMax < 0 {
-			s.CursorMax = 0
-		}
-		if s.Cursor > s.CursorMax {
-			s.Cursor = s.CursorMax
-		}
-		return s, nil
-
+		s.updateCursorMax()
+		s.LastPermRoleID = ""
+		return s, s.fetchPermissionsIfNeeded(ctx.DB)
 	case RolesListSet:
 		s.RolesList = msg.RolesList
-		return s, nil
+		// Invalidate permission cache since roles may have changed
+		s.PermissionCache = make(map[types.RoleID][]string)
+		s.LastPermRoleID = ""
+		return s, s.fetchPermissionsIfNeeded(ctx.DB)
 	}
 
 	return s, nil
@@ -154,101 +232,113 @@ func (s *UsersScreen) KeyHints(km config.KeyMap) []KeyHint {
 }
 
 func (s *UsersScreen) View(ctx AppContext) string {
-	left := s.renderUsersList()
-	center := s.renderUserDetail()
-	right := s.renderUserPermissions()
-
-	layout := layoutForPage(USERSADMIN)
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
+	cells := []CellContent{
+		{Content: s.renderUsersList()},
+		{Content: s.renderUserDetail()},
+		{Content: s.renderPermissions()},
 	}
-
-	innerH := PanelInnerHeight(ctx.Height)
-	listLen := len(s.UsersList)
-
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel, TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)}.Render())
-	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return s.RenderGrid(ctx, cells)
 }
+
+// ---------------------------------------------------------------------------
+// Render helpers
+// ---------------------------------------------------------------------------
 
 func (s *UsersScreen) renderUsersList() string {
 	if len(s.UsersList) == 0 {
-		return "No users found"
+		return " No users found"
 	}
 
-	selectedStyle := lipgloss.NewStyle().
-		Foreground(config.DefaultStyle.Accent).
-		Bold(true)
-	normalStyle := lipgloss.NewStyle().
-		Foreground(config.DefaultStyle.Secondary)
-
-	var lines []string
+	lines := make([]string, 0, len(s.UsersList))
 	for i, user := range s.UsersList {
-		prefix := "  "
-		style := normalStyle
-		if i == s.Cursor {
-			prefix = "> "
-			style = selectedStyle
+		cursor := "  "
+		if s.Cursor == i {
+			cursor = "->"
 		}
-		lines = append(lines, style.Render(fmt.Sprintf("%s%s (%s)", prefix, user.Username, user.RoleLabel)))
+		lines = append(lines, fmt.Sprintf(" %s %s (%s)", cursor, user.Username, user.RoleLabel))
 	}
-
 	return strings.Join(lines, "\n")
 }
 
 func (s *UsersScreen) renderUserDetail() string {
-	if len(s.UsersList) == 0 || s.Cursor >= len(s.UsersList) {
-		return "Select a user"
+	user := s.selectedUser()
+	if user == nil {
+		return " Select a user"
 	}
 
-	user := s.UsersList[s.Cursor]
-	labelStyle := lipgloss.NewStyle().
-		Foreground(config.DefaultStyle.Accent).
-		Bold(true)
+	faint := lipgloss.NewStyle().Faint(true)
 
 	lines := []string{
-		labelStyle.Render("User Details"),
+		fmt.Sprintf(" Username  %s", user.Username),
+		fmt.Sprintf(" Name      %s", user.Name),
+		fmt.Sprintf(" Email     %s", string(user.Email)),
+		fmt.Sprintf(" Role      %s", user.RoleLabel),
 		"",
-		fmt.Sprintf("  Username:  %s", user.Username),
-		fmt.Sprintf("  Name:      %s", user.Name),
-		fmt.Sprintf("  Email:     %s", user.Email),
-		fmt.Sprintf("  Role:      %s", user.RoleLabel),
+		faint.Render(fmt.Sprintf(" ID        %s", user.UserID)),
+		faint.Render(fmt.Sprintf(" Created   %s", user.DateCreated)),
+		faint.Render(fmt.Sprintf(" Modified  %s", user.DateModified)),
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (s *UsersScreen) renderPermissions() string {
+	user := s.selectedUser()
+	if user == nil {
+		return " No user selected"
+	}
+
+	roleID := types.RoleID(user.Role)
+	labels, ok := s.PermissionCache[roleID]
+
+	accent := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent)
+	faint := lipgloss.NewStyle().Faint(true)
+
+	lines := []string{
+		accent.Render(fmt.Sprintf(" Role: %s", user.RoleLabel)),
+		fmt.Sprintf(" Users: %d", len(s.UsersList)),
 		"",
-		fmt.Sprintf("  ID:        %s", user.UserID),
-		fmt.Sprintf("  Created:   %s", user.DateCreated),
-		fmt.Sprintf("  Modified:  %s", user.DateModified),
+	}
+
+	if !ok {
+		lines = append(lines, faint.Render(" Loading permissions..."))
+		return strings.Join(lines, "\n")
+	}
+
+	if len(labels) == 0 {
+		lines = append(lines, faint.Render(" No permissions assigned"))
+		return strings.Join(lines, "\n")
+	}
+
+	// Group permissions by resource (prefix before ':')
+	grouped := groupPermissionsByResource(labels)
+
+	// Sort resource names for stable output
+	resources := make([]string, 0, len(grouped))
+	for r := range grouped {
+		resources = append(resources, r)
+	}
+	sort.Strings(resources)
+
+	for _, resource := range resources {
+		ops := grouped[resource]
+		sort.Strings(ops)
+		lines = append(lines, accent.Render(fmt.Sprintf(" %s", resource)))
+		lines = append(lines, fmt.Sprintf("   %s", strings.Join(ops, ", ")))
 	}
 
 	return strings.Join(lines, "\n")
 }
 
-func (s *UsersScreen) renderUserPermissions() string {
-	if len(s.UsersList) == 0 || s.Cursor >= len(s.UsersList) {
-		return "Permissions\n\n  (none)"
+// groupPermissionsByResource groups "resource:operation" labels by resource.
+func groupPermissionsByResource(labels []string) map[string][]string {
+	grouped := make(map[string][]string)
+	for _, label := range labels {
+		parts := strings.SplitN(label, ":", 2)
+		if len(parts) == 2 {
+			grouped[parts[0]] = append(grouped[parts[0]], parts[1])
+		} else {
+			grouped["other"] = append(grouped["other"], label)
+		}
 	}
-
-	user := s.UsersList[s.Cursor]
-	lines := []string{
-		"Permissions",
-		"",
-		fmt.Sprintf("  Role: %s", user.RoleLabel),
-		"",
-		fmt.Sprintf("  Users: %d", len(s.UsersList)),
-	}
-
-	return strings.Join(lines, "\n")
+	return grouped
 }

@@ -15,9 +15,14 @@ func CliRun(m *Model) (*tea.Program, bool) {
 }
 
 func (m Model) Init() tea.Cmd {
-	// Only return spinner tick if we're in a loading state
-	if m.Loading {
-		return m.Spinner.Tick
+	cmds := []tea.Cmd{
+		GetTablesCMD(m.Config),
 	}
-	return nil
+	if m.Page.Index == HOMEPAGE {
+		cmds = append(cmds, HomeDashboardFetchCmd(m.DB))
+	}
+	if m.Loading {
+		cmds = append(cmds, m.Spinner.Tick)
+	}
+	return tea.Batch(cmds...)
 }

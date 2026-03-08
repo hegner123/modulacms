@@ -33,9 +33,6 @@ type CmsDefineDatatypeLoadMsg struct{}
 // CmsDefineDatatypeReadyMsg signals that datatype definition is ready.
 type CmsDefineDatatypeReadyMsg struct{}
 
-// CmsBuildDefineDatatypeFormMsg requests building the datatype definition form.
-type CmsBuildDefineDatatypeFormMsg struct{}
-
 // CmsDefineDatatypeFormMsg signals that the datatype definition form is ready.
 type CmsDefineDatatypeFormMsg struct{}
 
@@ -54,21 +51,13 @@ type CmsGetDatatypeParentOptionsMsg struct {
 	Admin bool
 }
 
-// CmsAddNewContentDataMsg requests adding new content data for a datatype.
-type CmsAddNewContentDataMsg struct {
-	Datatype types.DatatypeID
-}
-
-// CmsAddNewContentFieldsMsg requests adding new content fields.
-type CmsAddNewContentFieldsMsg struct {
-	Datatype int64
-}
-
 // ContentCreatedMsg signals successful content creation.
+// AdminMode selects admin vs regular reload/display paths.
 type ContentCreatedMsg struct {
-	ContentDataID types.ContentID
-	RouteID       types.RouteID
-	FieldCount    int
+	ContentID  types.ContentID
+	RouteID    types.RouteID
+	FieldCount int
+	AdminMode  bool
 }
 
 // ContentCreatedWithErrorsMsg signals content creation with partial field failures.
@@ -97,6 +86,7 @@ type ContentReorderedMsg struct {
 	ContentID types.ContentID
 	RouteID   types.RouteID
 	Direction string
+	AdminMode bool
 }
 
 // CopyContentRequestMsg requests copying content to a new instance.
@@ -111,6 +101,7 @@ type ContentCopiedMsg struct {
 	NewContentID    types.ContentID
 	RouteID         types.RouteID
 	FieldCount      int
+	AdminMode       bool
 }
 
 // TogglePublishRequestMsg requests toggling content publish status.
@@ -136,12 +127,14 @@ type ConfirmedUnpublishMsg struct {
 type PublishCompletedMsg struct {
 	ContentID types.ContentID
 	RouteID   types.RouteID
+	AdminMode bool
 }
 
 // UnpublishCompletedMsg signals successful unpublish.
 type UnpublishCompletedMsg struct {
 	ContentID types.ContentID
 	RouteID   types.RouteID
+	AdminMode bool
 }
 
 // ContentPublishToggledMsg signals successful publish status toggle.
@@ -184,6 +177,7 @@ type VersionRestoredMsg struct {
 	ContentID      types.ContentID
 	RouteID        types.RouteID
 	FieldsRestored int
+	AdminMode      bool
 }
 
 // TreeLoadedMsg signals successful content tree loading.
@@ -338,22 +332,6 @@ type AdminFieldUpdatedFromDialogMsg struct {
 type AdminFieldDeletedMsg struct {
 	AdminFieldID    types.AdminFieldID
 	AdminDatatypeID types.AdminDatatypeID
-}
-
-// =============================================================================
-// ADMIN CONTENT CRUD MESSAGES
-// =============================================================================
-
-// AdminContentCreatedMsg signals successful admin content creation.
-type AdminContentCreatedMsg struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
-}
-
-// AdminContentDeletedMsg signals successful admin content deletion.
-type AdminContentDeletedMsg struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
 }
 
 // DeleteAdminContentRequestMsg requests deleting admin content.

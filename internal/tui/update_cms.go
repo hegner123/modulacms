@@ -23,14 +23,14 @@ func NewCmsUpdate() tea.Cmd {
 // UpdateCms handles CMS-specific operations including content tree, datatypes, routes, media, and users.
 func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case BuildTreeFromRouteMsg:
-		return m, nil
 	case CreateDatatypeFromDialogRequestMsg:
 		return m, m.HandleCreateDatatypeFromDialog(msg)
 	case CreateFieldFromDialogRequestMsg:
 		return m, m.HandleCreateFieldFromDialog(msg)
 	case CreateRouteFromDialogRequestMsg:
 		return m, m.HandleCreateRouteFromDialog(msg)
+	case ReorderDatatypeRequestMsg:
+		return m, m.HandleReorderDatatype(msg)
 	case UpdateDatatypeFromDialogRequestMsg:
 		return m, m.HandleUpdateDatatypeFromDialog(msg)
 	case UpdateFieldFromDialogRequestMsg:
@@ -79,6 +79,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 			params := db.UpdateDatatypeParams{
 				DatatypeID:   datatypeID,
 				ParentID:     parentID,
+				SortOrder:    existing.SortOrder,
 				Name:         updatedName,
 				Label:        label,
 				Type:         dtType,
@@ -119,6 +120,13 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case MoveContentRequestMsg:
 		return m, m.HandleMoveContent(msg)
 	case ContentMovedMsg:
+		if msg.AdminMode {
+			return m, tea.Batch(
+				LoadingStopCmd(),
+				LogMessageCmd(fmt.Sprintf("Admin content moved: %s", msg.SourceContentID)),
+				ReloadAdminContentTreeCmd(m.Config, types.AdminRouteID(msg.RouteID)),
+			)
+		}
 		return m, tea.Batch(
 			LoadingStopCmd(),
 			ShowDialog("Success", "Content moved successfully", false),
@@ -130,6 +138,13 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case CopyContentRequestMsg:
 		return m, m.HandleCopyContent(msg)
 	case ContentCopiedMsg:
+		if msg.AdminMode {
+			return m, tea.Batch(
+				LoadingStopCmd(),
+				LogMessageCmd(fmt.Sprintf("Admin content copied: %s", msg.NewContentID)),
+				ReloadAdminContentTreeCmd(m.Config, types.AdminRouteID(msg.RouteID)),
+			)
+		}
 		return m, tea.Batch(
 			LoadingStopCmd(),
 			ShowDialog("Success", fmt.Sprintf("Content copied with %d fields", msg.FieldCount), false),
@@ -142,12 +157,26 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case ConfirmedUnpublishMsg:
 		return m, m.HandleConfirmedUnpublish(msg)
 	case PublishCompletedMsg:
+		if msg.AdminMode {
+			return m, tea.Batch(
+				LoadingStopCmd(),
+				LogMessageCmd(fmt.Sprintf("Admin content published: %s", msg.ContentID)),
+				ReloadAdminContentTreeCmd(m.Config, types.AdminRouteID(msg.RouteID)),
+			)
+		}
 		return m, tea.Batch(
 			LoadingStopCmd(),
 			ShowDialog("Published", "Content published via snapshot.", false),
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
 		)
 	case UnpublishCompletedMsg:
+		if msg.AdminMode {
+			return m, tea.Batch(
+				LoadingStopCmd(),
+				LogMessageCmd(fmt.Sprintf("Admin content unpublished: %s", msg.ContentID)),
+				ReloadAdminContentTreeCmd(m.Config, types.AdminRouteID(msg.RouteID)),
+			)
+		}
 		return m, tea.Batch(
 			LoadingStopCmd(),
 			ShowDialog("Unpublished", "Content is now draft.", false),
@@ -172,11 +201,20 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		return m, m.HandleDeleteContent(msg)
 	case ContentDeletedMsg:
 		// Content deleted successfully - reload tree and show success
+		if msg.AdminMode {
+			newModel := m
+			newModel.Cursor = 0
+			return newModel, tea.Batch(
+				LoadingStopCmd(),
+				LogMessageCmd(fmt.Sprintf("Admin content deleted: %s", msg.ContentID)),
+				ReloadAdminContentTreeCmd(m.Config, types.AdminRouteID(msg.RouteID)),
+			)
+		}
 		return m, tea.Batch(
 			LoadingStopCmd(),
 			ShowDialog("Success", "Content deleted successfully", false),
 			LogMessageCmd(fmt.Sprintf("Content deleted: ID=%s", msg.ContentID)),
-			ReloadContentTreeCmd(m.Config, types.RouteID(msg.RouteID)),
+			ReloadContentTreeCmd(m.Config, msg.RouteID),
 		)
 	case DeleteDatatypeRequestMsg:
 		// Delete datatype and its junction records
@@ -211,6 +249,13 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		// Delete user
 		return m, m.HandleDeleteUser(msg)
 	case ContentCreatedMsg:
+		if msg.AdminMode {
+			return m, tea.Batch(
+				LoadingStopCmd(),
+				LogMessageCmd(fmt.Sprintf("Admin content created: %s", msg.ContentID)),
+				ReloadAdminContentTreeCmd(m.Config, types.AdminRouteID(msg.RouteID)),
+			)
+		}
 		// Success path - reload tree and navigate back to content browser
 		contentPage := m.PageMap[CONTENT]
 		return m, tea.Batch(
@@ -219,7 +264,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 				fmt.Sprintf("Created content with %d fields", msg.FieldCount),
 				false,
 			),
-			LogMessageCmd(fmt.Sprintf("ContentData created: ID=%s, RouteID=%s", msg.ContentDataID, msg.RouteID)),
+			LogMessageCmd(fmt.Sprintf("ContentData created: ID=%s, RouteID=%s", msg.ContentID, msg.RouteID)),
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
 			FormCompletedCmd(&contentPage), // Navigate back to content browser
 		)
@@ -256,6 +301,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		return m, tea.Batch(
 			PluginsFetchCmd(),
+			HomeDashboardFetchCmd(m.DB),
 			func() tea.Msg {
 				return ActionResultMsg{
 					Title:   title,
@@ -266,6 +312,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case PluginRoutesApprovedMsg:
 		return m, tea.Batch(
 			PluginsFetchCmd(),
+			HomeDashboardFetchCmd(m.DB),
 			func() tea.Msg {
 				return ActionResultMsg{
 					Title:   "Routes Approved",
@@ -276,6 +323,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case PluginHooksApprovedMsg:
 		return m, tea.Batch(
 			PluginsFetchCmd(),
+			HomeDashboardFetchCmd(m.DB),
 			func() tea.Msg {
 				return ActionResultMsg{
 					Title:   "Hooks Approved",

@@ -75,57 +75,6 @@ func renderBreadcrumbLine(info BreadcrumbInfo) string {
 	return line
 }
 
-// renderGutterStrip renders a minimal collapsed panel showing only the
-// first character of the title vertically.
-func renderGutterStrip(title string, height int, focused bool) string {
-	borderColor := config.DefaultStyle.Tertiary
-	if focused {
-		borderColor = config.DefaultStyle.Accent
-	}
-
-	// Use the first character of the title as the gutter label.
-	ch := " "
-	if len(title) > 0 {
-		ch = string([]rune(title)[0])
-	}
-
-	charStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(config.DefaultStyle.Accent)
-
-	// Build vertical content: single character centered, rest empty.
-	innerHeight := height - 3 // border top/bottom + title row
-	if innerHeight < 1 {
-		innerHeight = 1
-	}
-	lines := make([]string, innerHeight)
-	mid := innerHeight / 2
-	for i := range lines {
-		if i == mid {
-			lines[i] = charStyle.Render(ch)
-		} else {
-			lines[i] = " "
-		}
-	}
-
-	// innerWidth is gutter width (4) minus border (2 chars)
-	innerWidth := 2
-	if innerWidth < 1 {
-		innerWidth = 1
-	}
-
-	body := strings.Join(lines, "\n")
-
-	box := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(borderColor).
-		Width(innerWidth).
-		Height(innerHeight).
-		Render(body)
-
-	return box
-}
-
 // renderCMSPanelLayout renders the full panel layout: header, screen content, status bar.
 func renderCMSPanelLayout(m Model) string {
 	header := renderCMSHeader(m)
@@ -174,7 +123,7 @@ func renderCMSHeader(m Model) string {
 			Bold(true).
 			Foreground(config.DefaultStyle.Primary)
 
-		parts := []string{"ModulaCMS v" + utility.Version}
+		parts := []string{"Modula v" + utility.Version}
 		if info.PageName != "" {
 			parts = append(parts, info.PageName)
 		}
@@ -268,10 +217,8 @@ func padStatusLine(content string, width int, barStyle lipgloss.Style) string {
 
 // collectKeyHints returns the key hints for the current page/screen.
 func collectKeyHints(m Model) []KeyHint {
-	if m.ActiveScreen != nil {
-		if hinter, ok := m.ActiveScreen.(KeyHinter); ok {
-			return hinter.KeyHints(m.Config.KeyBindings)
-		}
+	if hinter, ok := m.ActiveScreen.(KeyHinter); ok {
+		return hinter.KeyHints(m.Config.KeyBindings)
 	}
 	return nil
 }

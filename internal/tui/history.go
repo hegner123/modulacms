@@ -5,6 +5,7 @@ type PageHistory struct {
 	Cursor int
 	Page   Page
 	Menu   []Page
+	Screen Screen // saved screen instance (preserves cursor, focus, data)
 }
 
 // PushHistory adds an entry to the navigation history stack.

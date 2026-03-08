@@ -24,9 +24,8 @@ func (m Model) HandleAdminContentFormDialogAccept(msg AdminContentFormDialogAcce
 		)
 	case FORMDIALOGEDITADMINSINGLEFIELD:
 		// Single-field edit: use stored context for AdminContentFieldID
-		if m.DCtx.EditAdminSingleField != nil {
-			ctx := m.DCtx.EditAdminSingleField
-			m.DCtx.EditAdminSingleField = nil
+		if ctx, ok := m.DCtx.Active.(*editAdminSingleFieldCtx); ok {
+			m.DCtx.Active = nil
 			var newValue string
 			for _, val := range msg.FieldValues {
 				newValue = val

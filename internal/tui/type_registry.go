@@ -1,5 +1,11 @@
 package tui
 
+import (
+	"fmt"
+
+	"github.com/hegner123/modulacms/internal/utility"
+)
+
 // FieldInputEntry describes a registered field input type.
 type FieldInputEntry struct {
 	Key         string             // Type identifier stored in DB (e.g., "text", "textarea")
@@ -15,6 +21,12 @@ var fieldInputRegistry []FieldInputEntry
 // RegisterFieldInput adds a field input type to the registry.
 // Call during init() or startup -- not goroutine-safe.
 func RegisterFieldInput(entry FieldInputEntry) {
+	for _, e := range fieldInputRegistry {
+		if e.Key == entry.Key {
+			utility.DefaultLogger.Fdebug(fmt.Sprintf("duplicate field input registration: key=%q", entry.Key))
+			return
+		}
+	}
 	fieldInputRegistry = append(fieldInputRegistry, entry)
 }
 

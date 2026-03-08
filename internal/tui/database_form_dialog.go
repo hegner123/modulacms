@@ -321,7 +321,7 @@ func (d *DatabaseFormDialogModel) OverlayView(width, height int) string {
 // Uses a pointer receiver so scrollableBody can persist offset changes.
 func (d *DatabaseFormDialogModel) Render(windowWidth, windowHeight int) string {
 	contentWidth := d.Width
-	innerW := contentWidth - 6
+	innerW := contentWidth - dialogBorderPadding
 
 	// --- Header ---
 	header := d.titleStyle.Render(d.Title)

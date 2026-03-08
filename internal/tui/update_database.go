@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -63,9 +64,30 @@ func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 			LogMessageCmd(fmt.Sprintln(res)),
 		)
 	case DatabaseDeleteEntry:
+		if msg.Column == "" || msg.Value == "" {
+			return m, LogMessageCmd("Delete failed: no primary key selected")
+		}
+		d := db.ConfigDB(*m.Config)
+		con, _, err := d.GetConnection()
+		if err != nil {
+			return m, tea.Batch(
+				LoadingStopCmd(),
+				LogMessageCmd(fmt.Sprintf("Delete failed: %s", err.Error())),
+			)
+		}
+		dialect := db.DialectFromString(string(m.Config.Db_Driver))
 		return m, tea.Batch(
-			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("Database delete requested: ID %d from table %s", msg.Id, msg.Table)),
+			LoadingStartCmd(),
+			func() tea.Msg {
+				res, err := db.QDelete(context.Background(), con, dialect, db.DeleteParams{
+					Table: msg.Table,
+					Where: map[string]any{msg.Column: msg.Value},
+				})
+				if err != nil {
+					return LogMsg{Message: fmt.Sprintf("Delete failed: %s", err.Error())}
+				}
+				return DbResMsg{Result: res, Table: msg.Table}
+			},
 		)
 	case DatabaseInsertEntry:
 		return m, tea.Batch(
@@ -91,6 +113,19 @@ func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 			LoadingStartCmd(),
 			m.DatabaseUpdate(m.Config, msg.Table, rowID, valuesMap),
 			LogMessageCmd(fmt.Sprintf("Database update initiated: table %s row %s", msg.Table, msg.RowID)),
+		)
+	case DbResMsg:
+		// Operation completed — re-fetch the table rows so the screen refreshes.
+		table := msg.Table
+		if table == "" {
+			table = m.TableState.Table
+		}
+		if table == "" {
+			return m, LoadingStopCmd()
+		}
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			FetchTableHeadersRowsCmd(*m.Config, table, nil),
 		)
 	default:
 		return m, nil

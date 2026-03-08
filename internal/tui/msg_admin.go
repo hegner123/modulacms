@@ -233,22 +233,9 @@ type AdminReorderSiblingRequestMsg struct {
 	Direction      string
 }
 
-// AdminContentReorderedMsg signals successful admin content reordering.
-type AdminContentReorderedMsg struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
-	Direction      string
-}
-
 // AdminCopyContentRequestMsg requests copying admin content.
 type AdminCopyContentRequestMsg struct {
 	SourceID     types.AdminContentID
-	AdminRouteID types.AdminRouteID
-}
-
-// AdminContentCopiedMsg signals successful admin content copying.
-type AdminContentCopiedMsg struct {
-	NewID        types.AdminContentID
 	AdminRouteID types.AdminRouteID
 }
 
@@ -259,30 +246,12 @@ type AdminMoveContentRequestMsg struct {
 	AdminRouteID types.AdminRouteID
 }
 
-// AdminContentMovedMsg signals successful admin content move.
-type AdminContentMovedMsg struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
-}
-
 // =============================================================================
 // ADMIN PUBLISHING MESSAGES
 // =============================================================================
 
 // AdminTogglePublishRequestMsg requests toggling admin content publish status.
 type AdminTogglePublishRequestMsg struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
-}
-
-// AdminPublishCompletedMsg signals successful admin content publishing.
-type AdminPublishCompletedMsg struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
-}
-
-// AdminUnpublishCompletedMsg signals successful admin content unpublishing.
-type AdminUnpublishCompletedMsg struct {
 	AdminContentID types.AdminContentID
 	AdminRouteID   types.AdminRouteID
 }
@@ -311,34 +280,11 @@ type AdminRestoreVersionRequestMsg struct {
 	AdminRouteID   types.AdminRouteID
 }
 
-// AdminVersionRestoredMsg signals successful admin version restore.
-type AdminVersionRestoredMsg struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
-	FieldsRestored int
-}
-
 // =============================================================================
-// ADMIN CONTENT FIELD OPERATION MESSAGES
+// ADMIN CONTENT FIELD OPERATION MESSAGES (consolidated into unified types)
 // =============================================================================
-
-// AdminContentFieldUpdatedMsg signals an admin content field was updated.
-type AdminContentFieldUpdatedMsg struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
-}
-
-// AdminContentFieldAddedMsg signals an admin content field was added.
-type AdminContentFieldAddedMsg struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
-}
-
-// AdminContentFieldDeletedMsg signals an admin content field was deleted.
-type AdminContentFieldDeletedMsg struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
-}
+// ContentFieldUpdatedMsg, ContentFieldAddedMsg, ContentFieldDeletedMsg
+// in commands_content.go now carry AdminMode bool.
 
 // =============================================================================
 // ADMIN CONTENT DIALOG SHOW MESSAGES
@@ -424,44 +370,15 @@ type ConfirmedDeleteAdminContentFieldMsg struct {
 // =============================================================================
 // ADMIN DIALOG CONTEXT STRUCTS
 // =============================================================================
-
-// DeleteAdminContentContext stores context for the delete admin content dialog.
-type DeleteAdminContentContext struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
-	Name           string
-	HasChildren    bool
-}
-
-// PublishAdminContentContext stores context for the publish admin content dialog.
-type PublishAdminContentContext struct {
-	AdminContentID types.AdminContentID
-	AdminRouteID   types.AdminRouteID
-	Name           string
-	IsPublished    bool
-}
-
-// RestoreAdminVersionContext stores context for the restore version dialog.
-type RestoreAdminVersionContext struct {
-	AdminContentID types.AdminContentID
-	VersionID      types.AdminContentVersionID
-	AdminRouteID   types.AdminRouteID
-	VersionNumber  int64
-}
+// DeleteAdminContentContext, PublishAdminContentContext, RestoreAdminVersionContext,
+// and DeleteAdminContentFieldContext are now consolidated into their regular
+// counterparts with AdminMode bool (see update_dialog_helpers.go and
+// form_dialog_constructors.go).
 
 // MoveAdminContentContext stores context for the move admin content dialog.
 type MoveAdminContentContext struct {
 	SourceNode   *tree.Node
 	AdminRouteID types.AdminRouteID
-}
-
-// DeleteAdminContentFieldContext stores context for the delete admin content field dialog.
-type DeleteAdminContentFieldContext struct {
-	AdminContentFieldID types.AdminContentFieldID
-	AdminContentID      types.AdminContentID
-	AdminRouteID        types.AdminRouteID
-	AdminDatatypeID     types.NullableAdminDatatypeID
-	Label               string
 }
 
 // editAdminSingleFieldCtx stores context for editing a single admin content field.
@@ -502,9 +419,9 @@ type AdminContentFormDialogCancelMsg struct{}
 
 // CreateAdminRouteWithContentRequestMsg requests creating an admin route with initial content.
 type CreateAdminRouteWithContentRequestMsg struct {
-	Title            string
-	Slug             string
-	AdminDatatypeID  string
+	Title           string
+	Slug            string
+	AdminDatatypeID string
 }
 
 // AdminRouteWithContentCreatedMsg signals that an admin route and content were created.

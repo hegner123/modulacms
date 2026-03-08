@@ -113,6 +113,22 @@ func (g Grid) columnWidths(width int) []int {
 	return widths
 }
 
+// CellInnerHeight returns the usable content height for the cell at the
+// given flat index (column-major order), accounting for panel borders and title.
+func (g Grid) CellInnerHeight(cellIdx, totalHeight int) int {
+	n := 0
+	for ci, col := range g.Columns {
+		heights := g.cellHeights(ci, totalHeight)
+		for ri := range col.Cells {
+			if n == cellIdx {
+				return PanelInnerHeight(heights[ri])
+			}
+			n++
+		}
+	}
+	return PanelInnerHeight(totalHeight)
+}
+
 // cellHeights converts height ratios to pixel heights within a column.
 // Remainder goes to the last cell. Minimum cell height is 3 (border + title).
 func (g Grid) cellHeights(colIdx, height int) []int {

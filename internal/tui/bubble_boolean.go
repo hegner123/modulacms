@@ -84,5 +84,6 @@ func (b *BooleanBubble) Blur() { b.focused = false }
 // Focused returns whether the bubble currently has focus.
 func (b *BooleanBubble) Focused() bool { return b.focused }
 
-// SetWidth is a no-op for boolean toggles.
+// SetWidth is a no-op — boolean toggles render at a fixed width determined by
+// the "true"/"false" labels and their styling padding.
 func (b *BooleanBubble) SetWidth(_ int) {}

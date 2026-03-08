@@ -41,12 +41,6 @@ type KeyHinter interface {
 	KeyHints(km config.KeyMap) []KeyHint
 }
 
-// SetPanelFocusMsg is emitted by Screen implementations to change the panel
-// focus on the root Model. Handled in the ActiveScreen dispatch block.
-type SetPanelFocusMsg struct {
-	Panel FocusPanel
-}
-
 // OpenFilePickerMsg is emitted by Screen implementations to activate the
 // shared file picker on the root Model.
 type OpenFilePickerMsg struct {
@@ -119,15 +113,16 @@ func (m Model) screenForPage(page Page) Screen {
 	case PIPELINEDETAILPAGE:
 		return NewPipelineDetailScreen(nil, nil, "")
 	case DATABASEPAGE:
-		return NewDatabaseScreen(m.Tables, m.TableState, m.DatabaseMode, m.PageMap)
+		return NewDatabaseScreen(m.Tables, m.TableState)
 	case READPAGE:
-		return NewDatabaseReadScreen(m.Tables, m.TableState, m.DatabaseMode, m.PageMap)
+		// READPAGE is deprecated; redirect to unified DATABASEPAGE
+		return NewDatabaseScreen(m.Tables, m.TableState)
 	case CONFIGPAGE:
 		return NewConfigScreen("", nil, 0)
 	case DATATYPES:
-		return NewDatatypesScreen(false, nil, nil, nil, nil, "")
+		return NewDatatypesScreen(false)
 	case ADMINDATATYPES:
-		return NewDatatypesScreen(true, nil, nil, nil, nil, "")
+		return NewDatatypesScreen(true)
 	case CONTENT:
 		return NewContentScreen(false, nil, nil, nil, nil, m.PageRouteId)
 	case ADMINCONTENT:

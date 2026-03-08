@@ -1,3 +1,5 @@
+//go:build debug
+
 package tui
 
 import (
@@ -72,10 +74,6 @@ func (m Model) Stringify() string {
 	crs := fmt.Sprintf("Cursor: %d", m.Cursor)
 	out = append(out, crs)
 
-	//FocusIndex   int
-	fi := fmt.Sprintf("FocusIndex: %d", m.FocusIndex)
-	out = append(out, fi)
-
 	//Page         Page
 	pg := fmt.Sprintf("Page: %v", m.Page.DebugString())
 	out = append(out, pg)
@@ -88,23 +86,9 @@ func (m Model) Stringify() string {
 	pm := fmt.Sprintf("PageMode: %d", m.PageMod)
 	out = append(out, pm)
 
-	//MaxRows      int
-	mr := fmt.Sprintf("MaxRows: %d", m.MaxRows)
-	out = append(out, mr)
-
 	//Table        string
 	table := fmt.Sprintf("Table: %s", m.TableState.Table)
 	out = append(out, table)
-
-	/*
-		//PageMenu     []*Page
-		pageMenuDebug := fmt.Sprint("PageMenu:\n")
-		out = append(out, pageMenuDebug)
-
-		//Pages        []Page
-		pagesDebug := fmt.Sprintf("Page Slices\n %s", PageValueSliceDebugString(m.Pages))
-		out = append(out, pagesDebug)
-	*/
 
 	//DatatypeMenu []string
 	datatypeMenu := fmt.Sprintf("DatatypeMenu(length): %d", len(m.DatatypeMenu))
@@ -208,10 +192,6 @@ func (m Model) Stringify() string {
 	err := fmt.Sprintf("Err: %s", errStr)
 	out = append(out, err)
 
-	//Time         time.Time
-	timeStr := fmt.Sprintf("Time: %s", m.Time.Format("2006-01-02 15:04:05"))
-	out = append(out, timeStr)
-
 	//ActiveOverlay
 	dialogActive := fmt.Sprintf("ActiveOverlay: %v", m.ActiveOverlay != nil)
 	out = append(out, dialogActive)
@@ -233,11 +213,6 @@ func (m Model) Stringify() string {
 	hst := fmt.Sprintf("History:%s", historyDebug)
 	out = append(out, hst)
 
-	//QueryResults []sql.Row
-	queryResultsDebug := SqlRowSliceDebugString(m.QueryResults)
-	qrd := fmt.Sprintf("QueryResults:%s", queryResultsDebug)
-	out = append(out, qrd)
-
 	//ActiveOverlay
 	var dialogStr string
 	if m.ActiveOverlay != nil {
@@ -255,9 +230,8 @@ func (m Model) Stringify() string {
 func ValidString(s string) string {
 	if len(s) < 1 {
 		return "(empty)"
-	} else {
-		return s
 	}
+	return s
 }
 
 // DebugString returns a formatted debug string representation of the Page.
@@ -327,169 +301,6 @@ func SqlRowDebugString(row sql.Row) string {
 	return lipgloss.JoinVertical(lipgloss.Left, out...)
 }
 
-/*
-func DbContentFieldsDebugString(cf db.ContentFields) string {
-	out := make([]string, 0)
-
-	id := fmt.Sprintf("ID: %d", cf.ContentFieldID)
-	out = append(out, id)
-
-	contentID := fmt.Sprintf("ContentID: %d", cf.ContentDataID)
-	out = append(out, contentID)
-
-	fieldID := fmt.Sprintf("FieldID: %d", cf.FieldID)
-	out = append(out, fieldID)
-
-	value := fmt.Sprintf("Value: %s", ValidString(cf.FieldValue))
-	out = append(out, value)
-
-	return lipgloss.JoinVertical(lipgloss.Left, out...)
-}
-
-func DbFieldsDebugString(f db.Fields) string {
-	out := make([]string, 0)
-
-	id := fmt.Sprintf("ID: %d", f.FieldID)
-	out = append(out, id)
-
-	ParentID := fmt.Sprintf("ParentID: %d", f.ParentID.Int64)
-	out = append(out, ParentID)
-
-	name := fmt.Sprintf("Name: %s", ValidString(f.Label))
-	out = append(out, name)
-
-	fieldType := fmt.Sprintf("Type: %s", ValidString(f.Type))
-	out = append(out, fieldType)
-
-	return lipgloss.JoinVertical(lipgloss.Left, out...)
-}*/
-
-/*func TreeNodeDebugString(tn TreeNode) string {
-	out := make([]string, 0)
-
-	var nodeStr string
-	if tn.Node != nil {
-		nodeStr = fmt.Sprintf("ID: %d", tn.Node.ContentDataID)
-	} else {
-		nodeStr = "(nil)"
-	}
-	node := fmt.Sprintf("Node: %s", nodeStr)
-	out = append(out, node)
-
-	nodeFields := fmt.Sprintf("NodeFields(length): %d", len(tn.NodeFields))
-	out = append(out, nodeFields)
-
-	datatype := fmt.Sprintf("NodeDatatype: %s", ValidString(tn.NodeDatatype.Label))
-	out = append(out, datatype)
-
-	nodeFieldTypes := fmt.Sprintf("NodeFieldTypes(length): %d", len(tn.NodeFieldTypes))
-	out = append(out, nodeFieldTypes)
-
-	var nodesStr string
-	if tn.Nodes != nil {
-		nodesStr = fmt.Sprintf("%d", len(*tn.Nodes))
-	} else {
-		nodesStr = "(nil)"
-	}
-	nodes := fmt.Sprintf("Nodes(length): %s", nodesStr)
-	out = append(out, nodes)
-
-	return lipgloss.JoinVertical(lipgloss.Left, out...)
-}*/
-
-/*func DbDatatypesDebugString(dt db.Datatypes) string {
-	out := make([]string, 0)
-
-	datatypeID := fmt.Sprintf("DatatypeID: %d", dt.DatatypeID)
-	out = append(out, datatypeID)
-
-	var parentIDStr string
-	if dt.ParentID.Valid {
-		parentIDStr = fmt.Sprintf("%d", dt.ParentID.Int64)
-	} else {
-		parentIDStr = "(null)"
-	}
-	parentID := fmt.Sprintf("ParentID: %s", parentIDStr)
-	out = append(out, parentID)
-
-	label := fmt.Sprintf("Label: %s", ValidString(dt.Label))
-	out = append(out, label)
-
-	typeStr := fmt.Sprintf("Type: %s", ValidString(dt.Type))
-	out = append(out, typeStr)
-
-	authorID := fmt.Sprintf("AuthorID: %d", dt.AuthorID)
-	out = append(out, authorID)
-
-	return lipgloss.JoinVertical(lipgloss.Left, out...)
-}*/
-
-/*func DbContentDataDebugString(cd db.ContentData) string {
-	out := make([]string, 0)
-
-	contentDataID := fmt.Sprintf("ContentDataID: %d", cd.ContentDataID)
-	out = append(out, contentDataID)
-
-	var parentIDStr string
-	if cd.ParentID.Valid {
-		parentIDStr = fmt.Sprintf("%d", cd.ParentID.Int64)
-	} else {
-		parentIDStr = "(null)"
-	}
-	parentID := fmt.Sprintf("ParentID: %s", parentIDStr)
-	out = append(out, parentID)
-
-	routeID := fmt.Sprintf("RouteID: %d", cd.RouteID)
-	out = append(out, routeID)
-
-	datatypeID := fmt.Sprintf("DatatypeID: %d", cd.DatatypeID)
-	out = append(out, datatypeID)
-
-	authorID := fmt.Sprintf("AuthorID: %d", cd.AuthorID)
-	out = append(out, authorID)
-
-	return lipgloss.JoinVertical(lipgloss.Left, out...)
-}*/
-
-/*func PageSliceDebugString(pages []*Page) string {
-	if len(pages) == 0 {
-		return "(empty slice)"
-	}
-
-	columns := make([]string, 0)
-	for i, page := range pages {
-		header := fmt.Sprintf("--- Page %d ---", i)
-		var content string
-		if page != nil {
-			content = page.DebugString()
-		} else {
-			content = "(nil)"
-		}
-		column := lipgloss.JoinVertical(lipgloss.Top, header, content)
-		columns = append(columns, column)
-	}
-	// join horizontal by three
-	//join verticle by end
-
-	return lipgloss.JoinHorizontal(lipgloss.Top)
-}*/
-
-/*func PageValueSliceDebugString(pages []Page) string {
-	if len(pages) == 0 {
-		return "(empty slice)"
-	}
-
-	columns := make([]string, 0)
-	for i, page := range pages {
-		header := fmt.Sprintf("--- Page %d ---", i)
-		content := page.DebugString()
-		column := lipgloss.JoinVertical(lipgloss.Top, header, content)
-		columns = append(columns, column)
-	}
-
-	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}*/
-
 // HuhGroupSliceDebugString returns a formatted debug string representation of a huh.Group slice.
 func HuhGroupSliceDebugString(groups []huh.Group) string {
 	if len(groups) == 0 {
@@ -557,98 +368,3 @@ func SqlRowSliceDebugString(rows []sql.Row) string {
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
 }
-
-/*func DbContentFieldsSliceDebugString(fields []db.ContentFields) string {
-	if len(fields) == 0 {
-		return "(empty slice)"
-	}
-
-	columns := make([]string, 0)
-	for i, field := range fields {
-		header := fmt.Sprintf("--- ContentField %d ---", i)
-		content := DbContentFieldsDebugString(field)
-		column := lipgloss.JoinVertical(lipgloss.Top, header, content)
-		columns = append(columns, column)
-	}
-
-	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}*/
-
-/*func DbFieldsSliceDebugString(fields []db.Fields) string {
-	if len(fields) == 0 {
-		return "(empty slice)"
-	}
-
-	columns := make([]string, 0)
-	for i, field := range fields {
-		header := fmt.Sprintf("--- Field %d ---", i)
-		content := DbFieldsDebugString(field)
-		column := lipgloss.JoinVertical(lipgloss.Top, header, content)
-		columns = append(columns, column)
-	}
-
-	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}*/
-
-/*func TreeNodeSliceDebugString(nodes []*TreeNode) string {
-	if len(nodes) == 0 {
-		return "(empty slice)"
-	}
-
-	columns := make([]string, 0)
-	for i, node := range nodes {
-		header := fmt.Sprintf("--- TreeNode %d ---", i)
-		var content string
-		if node != nil {
-			content = TreeNodeDebugString(*node)
-		} else {
-			content = "(nil)"
-		}
-		column := lipgloss.JoinVertical(lipgloss.Top, header, content)
-		columns = append(columns, column)
-	}
-
-	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}*/
-
-/*func DbDatatypesSliceDebugString(datatypes []db.Datatypes) string {
-	if len(datatypes) == 0 {
-		return "(empty slice)"
-	}
-
-	columns := make([]string, 0)
-	for i, datatype := range datatypes {
-		header := fmt.Sprintf("--- Datatype %d ---", i)
-		content := DbDatatypesDebugString(datatype)
-		column := lipgloss.JoinVertical(lipgloss.Top, header, content)
-		columns = append(columns, column)
-	}
-
-	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}*/
-
-/*func DbContentDataSliceDebugString(contentData []db.ContentData) string {
-	if len(contentData) == 0 {
-		return "(empty slice)"
-	}
-
-	columns := make([]string, 0)
-	for i, data := range contentData {
-		header := fmt.Sprintf("--- ContentData %d ---", i)
-		content := DbContentDataDebugString(data)
-		column := lipgloss.JoinVertical(lipgloss.Top, header, content)
-		columns = append(columns, column)
-	}
-
-	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}*/
-
-/*func DebugViewPortString(v viewport.Model) string {
-	src := make([]string, 0)
-	src = append(src, fmt.Sprintf("Height: %d", v.Height))
-	src = append(src, fmt.Sprintf("Width: %d", v.Width))
-	src = append(src, fmt.Sprintf("Mouse Wheel Enabled: %v", v.MouseWheelEnabled))
-	src = append(src, fmt.Sprintf("Mouse Wheel Delta: %d", v.MouseWheelDelta))
-
-	return lipgloss.JoinVertical(lipgloss.Top, src...)
-}*/

@@ -18,7 +18,7 @@ The home screen Site panel displays the current mode. Media upload (`n`) shows a
 
 ## Grid Layout System
 
-Screens use a 12-column grid (`grid.go`, `grid_screen.go`) with proportional cell heights. `GridScreen` base struct provides focus cycling and rendering. Migrated screens: Home, Actions, Content, Admin Content, Media.
+Screens use a 12-column grid (`grid.go`, `grid_screen.go`) with proportional cell heights. `GridScreen` base struct provides focus cycling and rendering. Migrated screens: Home, Actions, Content, Admin Content, Media, Field Types, Users, Quickstart, CMS Menu, Deploy, Plugins, Plugin Detail, Webhooks, Config, Database, Datatypes.
 
 ## Media Tree
 

@@ -2,6 +2,7 @@ package tui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // NavigationUpdated signals that page navigation has been processed.
@@ -19,7 +20,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case NavigateToPage:
 		var cmds []tea.Cmd
-		cmds = append(cmds, HistoryPushCmd(PageHistory{Page: m.Page, Cursor: m.Cursor, Menu: m.PageMenu}))
+		cmds = append(cmds, HistoryPushCmd(PageHistory{Page: m.Page, Cursor: m.Cursor, Menu: m.PageMenu, Screen: m.ActiveScreen}))
 		cmds = append(cmds, CursorResetCmd())
 
 		// Set ActiveScreen for Screen-based pages (nil = legacy path)
@@ -27,28 +28,23 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 
 		switch msg.Page.Index {
 		case HOMEPAGE:
+			utility.DefaultLogger.Fdebug("[home] NavigateToPage HOMEPAGE: dispatching PageSetCmd + HomeDashboardFetchCmd")
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, PanelFocusResetCmd())
-			cmds = append(cmds, HomeDashboardFetchCmd(m.DB))
 			return m, tea.Batch(cmds...)
 		case CMSPAGE:
 			cmds = append(cmds, LoadingStartCmd())
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, PanelFocusResetCmd())
 			return m, tea.Batch(cmds...)
 		case ADMINCMSPAGE:
 			cmds = append(cmds, LoadingStartCmd())
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, PanelFocusResetCmd())
 			return m, tea.Batch(cmds...)
 		case DATABASEPAGE:
 			cmds = append(cmds, LoadingStartCmd())
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case READPAGE:
 			f := MakeFilter("Spinner", "Pages", "History", "Pages", "Viewport", "Paginator")
@@ -57,8 +53,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, LoadingStartCmd())
 			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, &page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case DATATYPES:
 			page := m.PageMap[DATATYPES]
@@ -66,8 +60,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, AllDatatypesFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case CONTENT:
 			page := m.PageMap[CONTENT]
@@ -77,13 +69,9 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, UsersFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
-			// Load content tree if PageRouteId is set
 			if !m.PageRouteId.IsZero() {
 				cmds = append(cmds, ReloadContentTreeCmd(m.Config, m.PageRouteId))
 			}
-
 			return m, tea.Batch(cmds...)
 		case MEDIA:
 			page := m.PageMap[MEDIA]
@@ -91,8 +79,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, MediaFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case USERSADMIN:
 			page := m.PageMap[USERSADMIN]
@@ -101,13 +87,10 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, RolesFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case CONFIGPAGE:
 			cmds = append(cmds, ReadyTrueCmd())
 			cmds = append(cmds, PageSetCmd(m.PageMap[CONFIGPAGE]))
-			cmds = append(cmds, PanelFocusResetCmd())
 			return m, tea.Batch(cmds...)
 		case ROUTES:
 			page := m.PageMap[ROUTES]
@@ -115,19 +98,13 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, RoutesFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case ACTIONSPAGE:
 			cmds = append(cmds, PageSetCmd(m.PageMap[ACTIONSPAGE]))
-			cmds = append(cmds, PanelFocusResetCmd())
 			cmds = append(cmds, UpdateCheckCmd())
-
 			return m, tea.Batch(cmds...)
 		case QUICKSTARTPAGE:
 			cmds = append(cmds, PageSetCmd(m.PageMap[QUICKSTARTPAGE]))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case ADMINROUTES:
 			page := m.PageMap[ADMINROUTES]
@@ -135,8 +112,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, AdminRoutesFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case ADMINDATATYPES:
 			page := m.PageMap[ADMINDATATYPES]
@@ -144,8 +119,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, AdminAllDatatypesFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case ADMINCONTENT:
 			page := m.PageMap[ADMINCONTENT]
@@ -153,8 +126,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, AdminContentDataFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case FIELDTYPES:
 			page := m.PageMap[FIELDTYPES]
@@ -162,8 +133,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, FieldTypesFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case ADMINFIELDTYPES:
 			page := m.PageMap[ADMINFIELDTYPES]
@@ -171,8 +140,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, AdminFieldTypesFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case PLUGINSPAGE:
 			page := m.PageMap[PLUGINSPAGE]
@@ -180,8 +147,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PluginsFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case PLUGINDETAILPAGE:
 			page := m.PageMap[PLUGINDETAILPAGE]
@@ -189,17 +154,13 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 			cmds = append(cmds, CursorResetCmd())
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case DEPLOYPAGE:
 			page := m.PageMap[DEPLOYPAGE]
 			cmds = append(cmds, DeployEnvsFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
 			cmds = append(cmds, CursorResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case PIPELINESPAGE:
 			page := m.PageMap[PIPELINESPAGE]
@@ -207,15 +168,12 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PipelinesFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case PIPELINEDETAILPAGE:
 			page := m.PageMap[PIPELINEDETAILPAGE]
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 			cmds = append(cmds, CursorResetCmd())
-
 			return m, tea.Batch(cmds...)
 		case WEBHOOKSPAGE:
 			page := m.PageMap[WEBHOOKSPAGE]
@@ -223,8 +181,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, WebhooksFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-			cmds = append(cmds, PanelFocusResetCmd())
-
 			return m, tea.Batch(cmds...)
 		}
 
@@ -242,6 +198,13 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		// Priority 2: Try to pop history
 		entry := newModel.PopHistory()
 		if entry != nil {
+			if entry.Screen != nil {
+				newModel.Page = entry.Page
+				newModel.PageMenu = entry.Menu
+				newModel.Cursor = entry.Cursor
+				newModel.ActiveScreen = entry.Screen
+				return newModel, nil
+			}
 			cmds = append(cmds, PageSetCmd(entry.Page))
 			cmds = append(cmds, PageMenuSetCmd(entry.Menu))
 			cmds = append(cmds, CursorSetCmd(entry.Cursor))
@@ -253,7 +216,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		return newModel, tea.Batch(cmds...)
 
 	case HistoryPop:
-		cmds := make([]tea.Cmd, 0)
 		newModel := m
 		entry := newModel.PopHistory()
 
@@ -262,10 +224,21 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			return newModel, nil
 		}
 
-		cmds = append(cmds, PageSetCmd(entry.Page))
-		cmds = append(cmds, PageMenuSetCmd(entry.Menu))
-		cmds = append(cmds, CursorSetCmd(entry.Cursor))
+		// Restore saved screen directly to preserve cursor/focus/data.
+		if entry.Screen != nil {
+			newModel.Page = entry.Page
+			newModel.PageMenu = entry.Menu
+			newModel.Cursor = entry.Cursor
+			newModel.ActiveScreen = entry.Screen
+			return newModel, nil
+		}
 
+		// Fallback: no saved screen, create fresh one.
+		cmds := []tea.Cmd{
+			PageSetCmd(entry.Page),
+			PageMenuSetCmd(entry.Menu),
+			CursorSetCmd(entry.Cursor),
+		}
 		return newModel, tea.Batch(cmds...)
 
 	default:

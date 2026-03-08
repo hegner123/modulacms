@@ -103,9 +103,6 @@ type SetViewportContent struct {
 	Content string
 }
 
-// PanelFocusReset resets panel focus to the default state.
-type PanelFocusReset struct{}
-
 // RootSet sets the root model state.
 type RootSet struct {
 	Root model.Root

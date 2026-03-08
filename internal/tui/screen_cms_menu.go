@@ -8,10 +8,23 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 )
 
+// 3/9 grid: left = menu list, right = detail (top) + info (bottom)
+var cmsMenuGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1.0, Title: "Navigation"},
+		}},
+		{Span: 9, Cells: []GridCell{
+			{Height: 0.6, Title: "Details"},
+			{Height: 0.4, Title: "Info"},
+		}},
+	},
+}
+
 // CMSMenuScreen implements Screen for CMSPAGE and ADMINCMSPAGE.
 // It shows a navigable menu list in the left panel.
 type CMSMenuScreen struct {
-	PanelScreen
+	GridScreen
 	Menu    []Page
 	IsAdmin bool
 	pageIdx PageIndex
@@ -23,11 +36,14 @@ func NewCMSMenuScreen(isAdmin bool, menu []Page) *CMSMenuScreen {
 	if isAdmin {
 		idx = ADMINCMSPAGE
 	}
+	cursorMax := len(menu) - 1
+	if cursorMax < 0 {
+		cursorMax = 0
+	}
 	return &CMSMenuScreen{
-		PanelScreen: PanelScreen{
-			Layout:     layoutForPage(idx),
-			PanelFocus: TreePanel,
-			CursorMax:  len(menu) - 1,
+		GridScreen: GridScreen{
+			Grid:      cmsMenuGrid,
+			CursorMax: cursorMax,
 		},
 		Menu:    menu,
 		IsAdmin: isAdmin,
@@ -51,7 +67,7 @@ func (s *CMSMenuScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		if s.HandlePanelNav(key, km) {
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
@@ -88,10 +104,12 @@ func (s *CMSMenuScreen) KeyHints(km config.KeyMap) []KeyHint {
 }
 
 func (s *CMSMenuScreen) View(ctx AppContext) string {
-	left := s.renderMenu()
-	center := "Select an item"
-	right := "Route\n\n  (none)"
-	return s.RenderPanels(ctx, left, center, right)
+	cells := []CellContent{
+		{Content: s.renderMenu(), TotalLines: len(s.Menu), ScrollOffset: ClampScroll(s.Cursor, len(s.Menu), ctx.Height)},
+		{Content: s.renderDetail()},
+		{Content: s.renderInfo()},
+	}
+	return s.RenderGrid(ctx, cells)
 }
 
 func (s *CMSMenuScreen) renderMenu() string {
@@ -105,6 +123,27 @@ func (s *CMSMenuScreen) renderMenu() string {
 			cursor = " ->"
 		}
 		lines = append(lines, fmt.Sprintf("%s %s", cursor, item.Label))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (s *CMSMenuScreen) renderDetail() string {
+	if len(s.Menu) == 0 || s.Cursor >= len(s.Menu) {
+		return " No item selected"
+	}
+	item := s.Menu[s.Cursor]
+	return fmt.Sprintf(" %s", item.Label)
+}
+
+func (s *CMSMenuScreen) renderInfo() string {
+	label := "CMS"
+	if s.IsAdmin {
+		label = "Admin CMS"
+	}
+	lines := []string{
+		fmt.Sprintf(" %s Menu", label),
+		"",
+		fmt.Sprintf(" Items: %d", len(s.Menu)),
 	}
 	return strings.Join(lines, "\n")
 }

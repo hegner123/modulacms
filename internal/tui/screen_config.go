@@ -11,24 +11,41 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 )
 
+// 3/9 grid: left = categories list, right = fields (top) + detail (bottom)
+var configGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1.0, Title: "Categories"},
+		}},
+		{Span: 9, Cells: []GridCell{
+			{Height: 0.6, Title: "Fields"},
+			{Height: 0.4, Title: "Detail"},
+		}},
+	},
+}
+
 // ConfigScreen implements Screen for the configuration page (CONFIGPAGE).
-// It displays config categories in a left panel and fields/raw JSON in a
-// center panel. The right panel ratio is 0 (2-panel layout).
 type ConfigScreen struct {
-	Cursor               int // category cursor (TreePanel)
-	ConfigFieldCursor    int // field cursor within selected category (ContentPanel)
-	PanelFocus           FocusPanel
+	GridScreen
+	ConfigFieldCursor    int // field cursor within selected category
 	ConfigCategory       config.FieldCategory
 	ConfigCategoryFields []config.FieldMeta
 	Viewport             viewport.Model
 }
 
-// NewConfigScreen creates a ConfigScreen with initial state from Model fields.
+// NewConfigScreen creates a ConfigScreen with initial state.
 func NewConfigScreen(category config.FieldCategory, categoryFields []config.FieldMeta, configFieldCursor int) *ConfigScreen {
+	menuItems := ConfigCategoryMenuInit()
+	cursorMax := len(menuItems) - 1
+	if cursorMax < 0 {
+		cursorMax = 0
+	}
 	return &ConfigScreen{
-		Cursor:               0,
+		GridScreen: GridScreen{
+			Grid:      configGrid,
+			CursorMax: cursorMax,
+		},
 		ConfigFieldCursor:    configFieldCursor,
-		PanelFocus:           TreePanel,
 		ConfigCategory:       category,
 		ConfigCategoryFields: categoryFields,
 		Viewport:             viewport.Model{},
@@ -38,9 +55,9 @@ func NewConfigScreen(category config.FieldCategory, categoryFields []config.Fiel
 func (s *ConfigScreen) PageIndex() PageIndex { return CONFIGPAGE }
 
 func (s *ConfigScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
-	// Raw JSON viewport mode: when center panel is focused and category is
+	// Raw JSON viewport mode: when fields cell is focused and category is
 	// "raw_json", delegate all non-navigation keys to the viewport for scrolling.
-	if s.ConfigCategory == "raw_json" && s.PanelFocus == ContentPanel {
+	if s.ConfigCategory == "raw_json" && s.FocusIndex == 1 {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			km := ctx.Config.KeyBindings
@@ -49,16 +66,11 @@ func (s *ConfigScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			if km.Matches(key, config.ActionQuit) {
 				return s, tea.Quit
 			}
-			if km.Matches(key, config.ActionNextPanel) {
-				s.PanelFocus = (s.PanelFocus + 1) % 3
-				return s, nil
-			}
-			if km.Matches(key, config.ActionPrevPanel) {
-				s.PanelFocus = (s.PanelFocus + 2) % 3
+			if s.HandleFocusNav(key, km) {
 				return s, nil
 			}
 			if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
-				s.PanelFocus = TreePanel
+				s.FocusIndex = 0
 				s.ConfigCategory = ""
 				s.ConfigCategoryFields = nil
 				return s, nil
@@ -77,18 +89,12 @@ func (s *ConfigScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
-		switch s.PanelFocus {
-		case TreePanel:
+		switch s.FocusIndex {
+		case 0: // Categories
 			if km.Matches(key, config.ActionUp) {
 				if s.Cursor > 0 {
 					s.Cursor--
@@ -110,7 +116,7 @@ func (s *ConfigScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 					s.ConfigCategory = categories[s.Cursor]
 					s.ConfigCategoryFields = config.FieldsByCategory(s.ConfigCategory)
 					s.ConfigFieldCursor = 0
-					s.PanelFocus = ContentPanel
+					s.FocusIndex = 1
 					return s, nil
 				}
 				// Last item: "View Raw JSON"
@@ -122,14 +128,14 @@ func (s *ConfigScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 					s.ConfigCategory = "raw_json"
 					s.ConfigCategoryFields = nil
 					s.ConfigFieldCursor = 0
-					s.PanelFocus = ContentPanel
+					s.FocusIndex = 1
 					return s, nil
 				}
 			}
 
-		case ContentPanel:
+		case 1: // Fields
 			if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
-				s.PanelFocus = TreePanel
+				s.FocusIndex = 0
 				s.ConfigCategory = ""
 				s.ConfigCategoryFields = nil
 				return s, nil
@@ -157,14 +163,13 @@ func (s *ConfigScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 				}
 			}
 
-		case RoutePanel:
+		case 2: // Detail
 			if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
-				s.PanelFocus = ContentPanel
+				s.FocusIndex = 1
 				return s, nil
 			}
 		}
 
-		// Common keys LAST (quit, back handled per-panel above; cursor handled per-panel)
 		if km.Matches(key, config.ActionQuit) {
 			return s, tea.Quit
 		}
@@ -174,8 +179,8 @@ func (s *ConfigScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 }
 
 func (s *ConfigScreen) KeyHints(km config.KeyMap) []KeyHint {
-	switch s.PanelFocus {
-	case ContentPanel:
+	switch s.FocusIndex {
+	case 1: // Fields
 		if s.ConfigCategory == "raw_json" {
 			return []KeyHint{
 				{"↑↓/pgup/pgdn", "scroll"},
@@ -203,40 +208,31 @@ func (s *ConfigScreen) KeyHints(km config.KeyMap) []KeyHint {
 }
 
 func (s *ConfigScreen) View(ctx AppContext) string {
-	left := s.renderCategories(ctx)
-	center := s.renderFields(ctx)
-	right := s.renderFieldDetail(ctx)
+	catItems := ConfigCategoryMenuInit()
+	fieldsContent := s.renderFields(ctx)
 
-	layout := layoutForPage(CONFIGPAGE)
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
+	// Actual inner heights for each cell (accounting for borders/title).
+	catInnerH := s.Grid.CellInnerHeight(0, ctx.Height)
+	fieldsInnerH := s.Grid.CellInnerHeight(1, ctx.Height)
 
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
+	// Fields render as multi-line: 2-line header + 3 lines per field.
+	// Convert field cursor to line offset for scrolling.
+	fieldsTotalLines := strings.Count(fieldsContent, "\n") + 1
+	fieldScrollLine := 0
+	if len(s.ConfigCategoryFields) > 0 {
+		fieldScrollLine = 2 + s.ConfigFieldCursor*3 // header(2) + 3 lines per field
 	}
 
-	innerH := PanelInnerHeight(ctx.Height)
-	catLen := len(config.AllCategories())
-	fieldLen := len(s.ConfigCategoryFields)
-
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel, TotalLines: catLen, ScrollOffset: ClampScroll(s.Cursor, catLen, innerH)}.Render())
+	cells := []CellContent{
+		{Content: s.renderCategories(), TotalLines: len(catItems), ScrollOffset: ClampScroll(s.Cursor, len(catItems), catInnerH)},
+		{Content: fieldsContent, TotalLines: fieldsTotalLines, ScrollOffset: ClampScroll(fieldScrollLine, fieldsTotalLines, fieldsInnerH)},
+		{Content: s.renderDetail(ctx)},
 	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel, TotalLines: fieldLen, ScrollOffset: ClampScroll(s.ConfigFieldCursor, fieldLen, innerH)}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return s.RenderGrid(ctx, cells)
 }
 
 // renderCategories renders the category list for the left panel.
-func (s *ConfigScreen) renderCategories(ctx AppContext) string {
+func (s *ConfigScreen) renderCategories() string {
 	categories := config.AllCategories()
 	items := make([]string, 0, len(categories)+1)
 	for _, cat := range categories {
@@ -247,7 +243,7 @@ func (s *ConfigScreen) renderCategories(ctx AppContext) string {
 	lines := make([]string, 0, len(items))
 	for i, label := range items {
 		cursor := "   "
-		if s.PanelFocus == TreePanel && s.Cursor == i {
+		if s.Cursor == i {
 			cursor = " ->"
 		}
 		// Highlight active category
@@ -263,10 +259,10 @@ func (s *ConfigScreen) renderCategories(ctx AppContext) string {
 	return strings.Join(lines, "\n")
 }
 
-// renderFields renders the config fields for the center panel.
+// renderFields renders the config fields for the fields cell.
 func (s *ConfigScreen) renderFields(ctx AppContext) string {
 	if s.ConfigCategory == "" {
-		return "Select a category"
+		return " Select a category"
 	}
 
 	if s.ConfigCategory == "raw_json" {
@@ -274,7 +270,7 @@ func (s *ConfigScreen) renderFields(ctx AppContext) string {
 	}
 
 	if len(s.ConfigCategoryFields) == 0 {
-		return "(no fields)"
+		return " (no fields)"
 	}
 
 	title := config.CategoryLabel(s.ConfigCategory)
@@ -294,7 +290,7 @@ func (s *ConfigScreen) renderFields(ctx AppContext) string {
 			restartMark = lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn).Render(" [restart]")
 		}
 
-		if s.PanelFocus == ContentPanel && i == s.ConfigFieldCursor {
+		if s.FocusIndex == 1 && i == s.ConfigFieldCursor {
 			lines = append(lines, cursorStyle.Render("> ")+labelStyle.Render(field.Label)+restartMark)
 			lines = append(lines, fmt.Sprintf("    %s", value))
 		} else {
@@ -307,14 +303,14 @@ func (s *ConfigScreen) renderFields(ctx AppContext) string {
 	return strings.Join(lines, "\n")
 }
 
-// renderFieldDetail renders the detail view for the right panel.
-func (s *ConfigScreen) renderFieldDetail(ctx AppContext) string {
+// renderDetail renders the field detail for the bottom-right cell.
+func (s *ConfigScreen) renderDetail(ctx AppContext) string {
 	if s.ConfigCategory == "" {
-		return "Config\n\n  Select a category to\n  view its fields."
+		return " Config\n\n  Select a category to\n  view its fields."
 	}
 
 	if s.ConfigCategory == "raw_json" {
-		return "Raw JSON\n\n  Scroll with up/down\n  or pgup/pgdn."
+		return " Raw JSON\n\n  Scroll with up/down\n  or pgup/pgdn."
 	}
 
 	if len(s.ConfigCategoryFields) == 0 || s.ConfigFieldCursor >= len(s.ConfigCategoryFields) {
@@ -328,24 +324,31 @@ func (s *ConfigScreen) renderFieldDetail(ctx AppContext) string {
 	}
 
 	lines := []string{
-		fmt.Sprintf("Field: %s", field.Label),
-		fmt.Sprintf("Key:   %s", field.JSONKey),
+		fmt.Sprintf(" Field  %s", field.Label),
+		fmt.Sprintf(" Key    %s", field.JSONKey),
 		"",
-		fmt.Sprintf("Value: %s", value),
-		"",
+		fmt.Sprintf(" Value  %s", value),
 	}
 
-	if field.Sensitive {
-		lines = append(lines, "  (sensitive)")
-	}
-	if field.HotReloadable {
-		lines = append(lines, "  Hot-reloadable")
-	} else {
-		lines = append(lines, lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn).Render("  Requires restart"))
+	if field.Description != "" {
+		lines = append(lines, "", fmt.Sprintf(" %s", field.Description))
 	}
 
 	lines = append(lines, "")
-	lines = append(lines, "  Press e to edit")
+	if field.Sensitive {
+		lines = append(lines, "   (sensitive)")
+	}
+	if field.HotReloadable {
+		lines = append(lines, "   Hot-reloadable")
+	} else {
+		lines = append(lines, lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn).Render("   Requires restart"))
+	}
+
+	if field.Example != "" {
+		lines = append(lines, fmt.Sprintf("   Example: %s", field.Example))
+	}
+
+	lines = append(lines, "", "   Press e to edit")
 
 	return strings.Join(lines, "\n")
 }

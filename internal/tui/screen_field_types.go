@@ -5,26 +5,52 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 )
 
+// Field types grid: 2 columns
+//
+//	Col 0 (span 3): Field type list
+//	Col 1 (span 9): Details (top), Info (bottom)
+var fieldTypesGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1.0, Title: "Field Types"},
+		}},
+		{Span: 9, Cells: []GridCell{
+			{Height: 0.45, Title: "Details"},
+			{Height: 0.55, Title: "Info"},
+		}},
+	},
+}
+
 // FieldTypesScreen implements Screen for both FIELDTYPES and ADMINFIELDTYPES pages.
 // When AdminMode is true, it operates on admin field types; otherwise regular field types.
 type FieldTypesScreen struct {
+	GridScreen
 	AdminMode       bool
-	Cursor          int
-	PanelFocus      FocusPanel
 	FieldTypes      []db.FieldTypes
 	AdminFieldTypes []db.AdminFieldTypes
 }
 
 // NewFieldTypesScreen creates a FieldTypesScreen for regular or admin mode.
 func NewFieldTypesScreen(adminMode bool, fieldTypes []db.FieldTypes, adminFieldTypes []db.AdminFieldTypes) *FieldTypesScreen {
+	listLen := len(fieldTypes)
+	if adminMode {
+		listLen = len(adminFieldTypes)
+	}
+	cursorMax := listLen - 1
+	if cursorMax < 0 {
+		cursorMax = 0
+	}
 	return &FieldTypesScreen{
+		GridScreen: GridScreen{
+			Grid:      fieldTypesGrid,
+			CursorMax: cursorMax,
+		},
 		AdminMode:       adminMode,
-		Cursor:          0,
-		PanelFocus:      TreePanel,
 		FieldTypes:      fieldTypes,
 		AdminFieldTypes: adminFieldTypes,
 	}
@@ -44,19 +70,23 @@ func (s *FieldTypesScreen) listLen() int {
 	return len(s.FieldTypes)
 }
 
+func (s *FieldTypesScreen) updateCursorMax() {
+	s.CursorMax = s.listLen() - 1
+	if s.CursorMax < 0 {
+		s.CursorMax = 0
+	}
+	if s.Cursor > s.CursorMax && s.CursorMax >= 0 {
+		s.Cursor = s.CursorMax
+	}
+}
+
 func (s *FieldTypesScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
@@ -99,11 +129,7 @@ func (s *FieldTypesScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd)
 		}
 
 		// Common keys (quit, back, cursor)
-		cursorMax := s.listLen() - 1
-		if cursorMax < 0 {
-			cursorMax = 0
-		}
-		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, cursorMax)
+		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, s.CursorMax)
 		if handled {
 			s.Cursor = newCursor
 			return s, cmd
@@ -128,6 +154,7 @@ func (s *FieldTypesScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd)
 	case FieldTypesFetchResultsMsg:
 		s.FieldTypes = msg.Data
 		s.Cursor = 0
+		s.updateCursorMax()
 		return s, LoadingStopCmd()
 	case AdminFieldTypesFetchMsg:
 		d := ctx.DB
@@ -147,14 +174,17 @@ func (s *FieldTypesScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd)
 	case AdminFieldTypesFetchResultsMsg:
 		s.AdminFieldTypes = msg.Data
 		s.Cursor = 0
+		s.updateCursorMax()
 		return s, LoadingStopCmd()
 
 	// Data refresh messages (from CMS operations)
 	case FieldTypesSet:
 		s.FieldTypes = msg.FieldTypes
+		s.updateCursorMax()
 		return s, nil
 	case AdminFieldTypesSet:
 		s.AdminFieldTypes = msg.AdminFieldTypes
+		s.updateCursorMax()
 		return s, nil
 	}
 
@@ -173,146 +203,112 @@ func (s *FieldTypesScreen) KeyHints(km config.KeyMap) []KeyHint {
 }
 
 func (s *FieldTypesScreen) View(ctx AppContext) string {
-	left := s.renderList()
-	center := s.renderDetail()
-	right := s.renderActions()
-
-	layout := layoutForPage(s.PageIndex())
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
+	cells := []CellContent{
+		{Content: s.renderList()},
+		{Content: s.renderDetail()},
+		{Content: s.renderInfo()},
 	}
-
-	innerH := PanelInnerHeight(ctx.Height)
-	listLen := s.listLen()
-
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel, TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)}.Render())
-	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return s.RenderGrid(ctx, cells)
 }
+
+// ---------------------------------------------------------------------------
+// Render helpers
+// ---------------------------------------------------------------------------
 
 func (s *FieldTypesScreen) renderList() string {
 	if s.AdminMode {
-		return s.renderAdminFieldTypesList()
+		return s.renderAdminList()
 	}
-	return s.renderFieldTypesList()
+	return s.renderRegularList()
 }
 
-func (s *FieldTypesScreen) renderFieldTypesList() string {
+func (s *FieldTypesScreen) renderRegularList() string {
 	if len(s.FieldTypes) == 0 {
 		return "(no field types)"
 	}
-
 	lines := make([]string, 0, len(s.FieldTypes))
 	for i, ft := range s.FieldTypes {
-		cursor := "   "
+		cursor := "  "
 		if s.Cursor == i {
-			cursor = " ->"
+			cursor = "->"
 		}
-		lines = append(lines, fmt.Sprintf("%s %s [%s]", cursor, ft.Label, ft.Type))
+		lines = append(lines, fmt.Sprintf(" %s %s [%s]", cursor, ft.Label, ft.Type))
 	}
 	return strings.Join(lines, "\n")
 }
 
-func (s *FieldTypesScreen) renderAdminFieldTypesList() string {
+func (s *FieldTypesScreen) renderAdminList() string {
 	if len(s.AdminFieldTypes) == 0 {
 		return "(no admin field types)"
 	}
-
 	lines := make([]string, 0, len(s.AdminFieldTypes))
 	for i, ft := range s.AdminFieldTypes {
-		cursor := "   "
+		cursor := "  "
 		if s.Cursor == i {
-			cursor = " ->"
+			cursor = "->"
 		}
-		lines = append(lines, fmt.Sprintf("%s %s [%s]", cursor, ft.Label, ft.Type))
+		lines = append(lines, fmt.Sprintf(" %s %s [%s]", cursor, ft.Label, ft.Type))
 	}
 	return strings.Join(lines, "\n")
 }
 
 func (s *FieldTypesScreen) renderDetail() string {
 	if s.AdminMode {
-		return s.renderAdminFieldTypeDetail()
+		return s.renderAdminDetail()
 	}
-	return s.renderFieldTypeDetail()
+	return s.renderRegularDetail()
 }
 
-func (s *FieldTypesScreen) renderFieldTypeDetail() string {
+func (s *FieldTypesScreen) renderRegularDetail() string {
 	if len(s.FieldTypes) == 0 || s.Cursor >= len(s.FieldTypes) {
-		return "No field type selected"
+		return " No field type selected"
 	}
-
 	ft := s.FieldTypes[s.Cursor]
-	lines := []string{
-		fmt.Sprintf("Type:  %s", ft.Type),
-		fmt.Sprintf("Label: %s", ft.Label),
-		"",
-		fmt.Sprintf("ID:    %s", ft.FieldTypeID),
-	}
 
+	faint := lipgloss.NewStyle().Faint(true)
+
+	lines := []string{
+		fmt.Sprintf(" Label  %s", ft.Label),
+		fmt.Sprintf(" Type   %s", ft.Type),
+		"",
+		faint.Render(fmt.Sprintf(" ID     %s", ft.FieldTypeID)),
+	}
 	return strings.Join(lines, "\n")
 }
 
-func (s *FieldTypesScreen) renderAdminFieldTypeDetail() string {
+func (s *FieldTypesScreen) renderAdminDetail() string {
 	if len(s.AdminFieldTypes) == 0 || s.Cursor >= len(s.AdminFieldTypes) {
-		return "No admin field type selected"
+		return " No admin field type selected"
 	}
-
 	ft := s.AdminFieldTypes[s.Cursor]
-	lines := []string{
-		fmt.Sprintf("Type:  %s", ft.Type),
-		fmt.Sprintf("Label: %s", ft.Label),
-		"",
-		fmt.Sprintf("ID:    %s", ft.AdminFieldTypeID),
-	}
 
+	faint := lipgloss.NewStyle().Faint(true)
+
+	lines := []string{
+		fmt.Sprintf(" Label  %s", ft.Label),
+		fmt.Sprintf(" Type   %s", ft.Type),
+		"",
+		faint.Render(fmt.Sprintf(" ID     %s", ft.AdminFieldTypeID)),
+	}
 	return strings.Join(lines, "\n")
 }
 
-func (s *FieldTypesScreen) renderActions() string {
+func (s *FieldTypesScreen) renderInfo() string {
+	accent := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent)
+
+	label := "Field Types"
 	if s.AdminMode {
-		return s.renderAdminFieldTypeActions()
+		label = "Admin Field Types"
 	}
-	return s.renderFieldTypeActions()
-}
 
-func (s *FieldTypesScreen) renderFieldTypeActions() string {
 	lines := []string{
-		"Actions",
+		accent.Render(fmt.Sprintf(" %s: %d", label, s.listLen())),
 		"",
-		"  n: New",
-		"  e: Edit",
-		"  d: Delete",
-		"",
-		fmt.Sprintf("Field Types: %d", len(s.FieldTypes)),
+		" Field types define the available input types",
+		" for datatype fields. Each field type maps to a",
+		" specific editor widget in the admin panel and",
+		" determines how content values are stored and",
+		" validated.",
 	}
-
-	return strings.Join(lines, "\n")
-}
-
-func (s *FieldTypesScreen) renderAdminFieldTypeActions() string {
-	lines := []string{
-		"Actions",
-		"",
-		"  n: New",
-		"  e: Edit",
-		"  d: Delete",
-		"",
-		fmt.Sprintf("Admin Field Types: %d", len(s.AdminFieldTypes)),
-	}
-
 	return strings.Join(lines, "\n")
 }

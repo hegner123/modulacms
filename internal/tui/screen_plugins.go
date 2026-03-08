@@ -15,19 +15,37 @@ type SelectPluginAndNavigateMsg struct {
 	PluginName string
 }
 
+// 3/9 grid: left = plugin list, right = detail (top) + info (bottom)
+var pluginsGrid = Grid{
+	Columns: []GridColumn{
+		{Span: 3, Cells: []GridCell{
+			{Height: 1.0, Title: "Plugins"},
+		}},
+		{Span: 9, Cells: []GridCell{
+			{Height: 0.6, Title: "Details"},
+			{Height: 0.4, Title: "Info"},
+		}},
+	},
+}
+
 // PluginsScreen implements Screen for the plugins list page (PLUGINSPAGE).
 type PluginsScreen struct {
-	Cursor     int
-	PanelFocus FocusPanel
-	Plugins    []PluginDisplay
+	GridScreen
+	Plugins []PluginDisplay
 }
 
 // NewPluginsScreen creates a PluginsScreen with the given plugin list.
 func NewPluginsScreen(plugins []PluginDisplay) *PluginsScreen {
+	cursorMax := len(plugins) - 1
+	if cursorMax < 0 {
+		cursorMax = 0
+	}
 	return &PluginsScreen{
-		Cursor:     0,
-		PanelFocus: TreePanel,
-		Plugins:    plugins,
+		GridScreen: GridScreen{
+			Grid:      pluginsGrid,
+			CursorMax: cursorMax,
+		},
+		Plugins: plugins,
 	}
 }
 
@@ -39,13 +57,7 @@ func (s *PluginsScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 
-		// Panel navigation
-		if km.Matches(key, config.ActionNextPanel) {
-			s.PanelFocus = (s.PanelFocus + 1) % 3
-			return s, nil
-		}
-		if km.Matches(key, config.ActionPrevPanel) {
-			s.PanelFocus = (s.PanelFocus + 2) % 3
+		if s.HandleFocusNav(key, km) {
 			return s, nil
 		}
 
@@ -64,7 +76,8 @@ func (s *PluginsScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		if cursorMax < 0 {
 			cursorMax = 0
 		}
-		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, cursorMax)
+		s.CursorMax = cursorMax
+		newCursor, cmd, handled := HandleCommonKeys(key, km, s.Cursor, s.CursorMax)
 		if handled {
 			s.Cursor = newCursor
 			return s, cmd
@@ -102,11 +115,22 @@ func (s *PluginsScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	case PluginsFetchResultsMsg:
 		s.Plugins = msg.Data
 		s.Cursor = 0
+		s.CursorMax = len(s.Plugins) - 1
+		if s.CursorMax < 0 {
+			s.CursorMax = 0
+		}
 		return s, LoadingStopCmd()
 
 	// Data refresh (from CMS operations)
 	case PluginsListSet:
 		s.Plugins = msg.PluginsList
+		s.CursorMax = len(s.Plugins) - 1
+		if s.CursorMax < 0 {
+			s.CursorMax = 0
+		}
+		if s.Cursor > s.CursorMax && s.CursorMax >= 0 {
+			s.Cursor = s.CursorMax
+		}
 		return s, nil
 	}
 
@@ -124,35 +148,12 @@ func (s *PluginsScreen) KeyHints(km config.KeyMap) []KeyHint {
 }
 
 func (s *PluginsScreen) View(ctx AppContext) string {
-	left := s.renderList()
-	center := s.renderDetail()
-	right := s.renderInfo()
-
-	layout := layoutForPage(PLUGINSPAGE)
-	leftW := int(float64(ctx.Width) * layout.Ratios[0])
-	centerW := int(float64(ctx.Width) * layout.Ratios[1])
-	rightW := ctx.Width - leftW - centerW
-
-	if layout.Panels == 1 {
-		leftW, rightW = 0, 0
-		centerW = ctx.Width
+	cells := []CellContent{
+		{Content: s.renderList(), TotalLines: len(s.Plugins), ScrollOffset: ClampScroll(s.Cursor, len(s.Plugins), ctx.Height)},
+		{Content: s.renderDetail()},
+		{Content: s.renderInfo()},
 	}
-
-	innerH := PanelInnerHeight(ctx.Height)
-	listLen := len(s.Plugins)
-
-	var panels []string
-	if leftW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[0], Width: leftW, Height: ctx.Height, Content: left, Focused: s.PanelFocus == TreePanel, TotalLines: listLen, ScrollOffset: ClampScroll(s.Cursor, listLen, innerH)}.Render())
-	}
-	if centerW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[1], Width: centerW, Height: ctx.Height, Content: center, Focused: s.PanelFocus == ContentPanel}.Render())
-	}
-	if rightW > 0 {
-		panels = append(panels, Panel{Title: layout.Titles[2], Width: rightW, Height: ctx.Height, Content: right, Focused: s.PanelFocus == RoutePanel}.Render())
-	}
-
-	return strings.Join(panels, "")
+	return s.RenderGrid(ctx, cells)
 }
 
 func (s *PluginsScreen) renderList() string {
@@ -181,32 +182,31 @@ func (s *PluginsScreen) renderList() string {
 
 func (s *PluginsScreen) renderDetail() string {
 	if len(s.Plugins) == 0 || s.Cursor >= len(s.Plugins) {
-		return "No plugin selected"
+		return " No plugin selected"
 	}
 
 	p := s.Plugins[s.Cursor]
 	lines := []string{
-		fmt.Sprintf("Name:        %s", p.Name),
-		fmt.Sprintf("Version:     %s", p.Version),
-		fmt.Sprintf("State:       %s", p.State),
-		fmt.Sprintf("Circuit:     %s", p.CBState),
-		"",
+		fmt.Sprintf(" Name        %s", p.Name),
+		fmt.Sprintf(" Version     %s", p.Version),
+		fmt.Sprintf(" State       %s", p.State),
+		fmt.Sprintf(" Circuit     %s", p.CBState),
 	}
 	if p.Description != "" {
-		lines = append(lines, fmt.Sprintf("Description: %s", p.Description))
+		lines = append(lines, "", fmt.Sprintf(" %s", p.Description))
 	}
 
 	// Drift warnings
 	if p.ManifestDrift || p.CapabilityDrifts > 0 || p.SchemaDrifts > 0 {
-		lines = append(lines, "", "--- Drift Detected ---")
+		lines = append(lines, "", " --- Drift Detected ---")
 		if p.ManifestDrift {
-			lines = append(lines, "  Manifest changed (hash differs from installed)")
+			lines = append(lines, "   Manifest changed (hash differs)")
 		}
 		if p.CapabilityDrifts > 0 {
-			lines = append(lines, fmt.Sprintf("  %d capability change(s) (run sync to update)", p.CapabilityDrifts))
+			lines = append(lines, fmt.Sprintf("   %d capability change(s)", p.CapabilityDrifts))
 		}
 		if p.SchemaDrifts > 0 {
-			lines = append(lines, fmt.Sprintf("  %d schema drift entr(ies)", p.SchemaDrifts))
+			lines = append(lines, fmt.Sprintf("   %d schema drift(s)", p.SchemaDrifts))
 		}
 	}
 
@@ -215,12 +215,11 @@ func (s *PluginsScreen) renderDetail() string {
 
 func (s *PluginsScreen) renderInfo() string {
 	lines := []string{
-		"Plugin Manager",
+		" Plugin Manager",
 		"",
-		fmt.Sprintf("  Total: %d", len(s.Plugins)),
+		fmt.Sprintf("   Total: %d", len(s.Plugins)),
 	}
 
-	// Count by state
 	running := 0
 	failed := 0
 	stopped := 0
@@ -236,12 +235,12 @@ func (s *PluginsScreen) renderInfo() string {
 	}
 
 	lines = append(lines, "")
-	lines = append(lines, fmt.Sprintf("  Running: %d", running))
+	lines = append(lines, fmt.Sprintf("   Running: %d", running))
 	if failed > 0 {
-		lines = append(lines, fmt.Sprintf("  Failed:  %d", failed))
+		lines = append(lines, fmt.Sprintf("   Failed:  %d", failed))
 	}
 	if stopped > 0 {
-		lines = append(lines, fmt.Sprintf("  Stopped: %d", stopped))
+		lines = append(lines, fmt.Sprintf("   Stopped: %d", stopped))
 	}
 
 	return strings.Join(lines, "\n")

@@ -44,7 +44,6 @@ func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver, logger Logger,
 		m.Term = pty.Term
 		m.Width = pty.Window.Width
 		m.Height = pty.Window.Height
-		m.Time = time.Now()
 		m.IsSSH = true
 
 		// Always store SSH key info from the session

@@ -131,10 +131,6 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.DatatypeMenu = msg.DatatypeMenu
 		return newModel, NewStateUpdate()
-	case PanelFocusReset:
-		newModel := m
-		newModel.PanelFocus = TreePanel
-		return newModel, NewStateUpdate()
 	case PageMenuSet:
 		newModel := m
 		newModel.PageMenu = msg.PageMenu
