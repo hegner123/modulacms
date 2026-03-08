@@ -5,46 +5,77 @@ import (
 	"encoding/json"
 )
 
-// DeployHealthResponse is returned by GET /api/v1/deploy/health.
+// DeployHealthResponse is returned by [DeployResource.Health] and reports the
+// deploy subsystem's readiness.
 type DeployHealthResponse struct {
-	Status  string `json:"status"`
+	// Status indicates the deploy subsystem state (e.g., "ok", "degraded").
+	Status string `json:"status"`
+	// Version is the ModulaCMS server version running on this node.
 	Version string `json:"version"`
-	NodeID  string `json:"node_id"`
+	// NodeID is the unique identifier of this CMS instance, used for
+	// distinguishing nodes in multi-instance deployments.
+	NodeID string `json:"node_id"`
 }
 
-// DeployExportRequest is the optional body for POST /api/v1/deploy/export.
+// DeployExportRequest configures which tables to include in a deploy export.
+// When Tables is empty or nil, all tables are exported.
 type DeployExportRequest struct {
+	// Tables is an optional list of table names to include in the export.
+	// When empty, all tables are exported.
 	Tables []string `json:"tables,omitempty"`
 }
 
-// DeploySyncResult is returned by POST /api/v1/deploy/import.
+// DeploySyncResult is returned by [DeployResource.Import] and [DeployResource.DryRunImport].
+// It summarizes the outcome of a content sync operation.
 type DeploySyncResult struct {
-	Success        bool              `json:"success"`
-	DryRun         bool              `json:"dry_run"`
-	Strategy       string            `json:"strategy"`
-	TablesAffected []string          `json:"tables_affected"`
-	RowCounts      map[string]int    `json:"row_counts"`
-	BackupPath     string            `json:"backup_path"`
-	SnapshotID     string            `json:"snapshot_id"`
-	Duration       string            `json:"duration"`
-	Errors         []DeploySyncError `json:"errors,omitempty"`
-	Warnings       []string          `json:"warnings,omitempty"`
+	// Success is true if the import completed without errors.
+	Success bool `json:"success"`
+	// DryRun is true if the operation was a preview that did not write changes.
+	DryRun bool `json:"dry_run"`
+	// Strategy describes the merge strategy used (e.g., "upsert", "replace").
+	Strategy string `json:"strategy"`
+	// TablesAffected lists the database tables that were modified.
+	TablesAffected []string `json:"tables_affected"`
+	// RowCounts maps each affected table name to the number of rows written.
+	RowCounts map[string]int `json:"row_counts"`
+	// BackupPath is the filesystem path of the pre-import backup, if created.
+	BackupPath string `json:"backup_path"`
+	// SnapshotID identifies this sync snapshot for auditing and rollback.
+	SnapshotID string `json:"snapshot_id"`
+	// Duration is the human-readable elapsed time for the operation.
+	Duration string `json:"duration"`
+	// Errors lists any per-table or per-row failures encountered during sync.
+	Errors []DeploySyncError `json:"errors,omitempty"`
+	// Warnings lists non-fatal issues discovered during sync.
+	Warnings []string `json:"warnings,omitempty"`
 }
 
-// DeploySyncError describes a specific failure during a sync operation.
+// DeploySyncError describes a specific failure during a sync operation,
+// pinpointing the table, phase, and optionally the exact row that failed.
 type DeploySyncError struct {
-	Table   string `json:"table"`
-	Phase   string `json:"phase"`
+	// Table is the database table where the error occurred.
+	Table string `json:"table"`
+	// Phase indicates which stage of sync failed (e.g., "validate", "insert", "update").
+	Phase string `json:"phase"`
+	// Message is a human-readable description of the error.
 	Message string `json:"message"`
-	RowID   string `json:"row_id,omitempty"`
+	// RowID is the ULID of the specific row that failed, if applicable.
+	RowID string `json:"row_id,omitempty"`
 }
 
-// DeployResource provides deploy sync operations.
+// DeployResource provides content synchronization operations between CMS environments.
+// The typical workflow is: export from a source environment, then import into a target
+// environment (optionally with a dry-run first to preview changes).
+//
+// Deploy operations create automatic backups before writing, and each sync is
+// tracked with a snapshot ID for auditing and potential rollback.
+// It is accessed via [Client].Deploy.
 type DeployResource struct {
 	http *httpClient
 }
 
-// Health returns the deploy health status of the server.
+// Health returns the deploy subsystem's health status, including the server version
+// and node ID. Use this to verify connectivity and compatibility before syncing.
 func (d *DeployResource) Health(ctx context.Context) (*DeployHealthResponse, error) {
 	var result DeployHealthResponse
 	if err := d.http.get(ctx, "/api/v1/deploy/health", nil, &result); err != nil {

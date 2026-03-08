@@ -1,3 +1,56 @@
+// Package modula provides a Go client for the ModulaCMS REST API.
+//
+// The SDK offers typed access to all CMS resources through a single [Client]
+// instance. Most resources use the generic [Resource] type, which provides
+// List, Get, Create, Update, Delete, ListPaginated, Count, and RawList methods
+// with compile-time type safety.
+//
+// All entity IDs are branded string types (e.g. [ContentID], [UserID],
+// [DatatypeID]) so you cannot accidentally pass a UserID where a ContentID
+// is expected.
+//
+// # Quick start
+//
+//	client, err := modula.NewClient(modula.ClientConfig{
+//	    BaseURL: "https://cms.example.com",
+//	    APIKey:  "your-api-key",
+//	})
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+//	// List all datatypes
+//	datatypes, err := client.Datatypes.List(ctx)
+//
+//	// Get a single content item by ID
+//	item, err := client.ContentData.Get(ctx, contentID)
+//
+//	// Paginated listing
+//	page, err := client.Users.ListPaginated(ctx, modula.PaginationParams{
+//	    Limit: 25, Offset: 0,
+//	})
+//
+// # Error handling
+//
+// All API errors are returned as [*ApiError] and can be classified with
+// helper functions like [IsNotFound] and [IsUnauthorized]:
+//
+//	item, err := client.ContentData.Get(ctx, id)
+//	if modula.IsNotFound(err) {
+//	    // handle 404
+//	}
+//
+// # Resource categories
+//
+// The Client exposes resources in several groups:
+//   - Standard CRUD resources (ContentData, Datatypes, Fields, etc.) for the
+//     public-facing content API.
+//   - Admin CRUD resources (AdminContentData, AdminDatatypes, etc.) for the
+//     administrative API which operates on draft/working content.
+//   - Specialized resources (Auth, MediaUpload, Content delivery, Deploy, etc.)
+//     with domain-specific methods beyond simple CRUD.
+//   - Composite resources (ContentComposite, UserComposite, etc.) for cascade
+//     operations that span multiple tables atomically.
 package modula
 
 import (
@@ -7,113 +60,259 @@ import (
 	"time"
 )
 
-// ClientConfig configures a new Modula client.
+// ClientConfig holds the configuration needed to create a new [Client].
+//
+// Only BaseURL is required. If HTTPClient is nil, a default client with a
+// 30-second timeout is used. If APIKey is empty, requests are sent without
+// authentication (suitable for public read-only endpoints).
 type ClientConfig struct {
-	// BaseURL is the root URL of the Modula server (e.g. "https://cms.example.com").
-	// Required.
+	// BaseURL is the root URL of the ModulaCMS server, including scheme
+	// (e.g. "https://cms.example.com"). A trailing slash is stripped
+	// automatically. Required.
 	BaseURL string
 
-	// APIKey is the Bearer token for authentication. Optional.
+	// APIKey is the Bearer token sent in the Authorization header on every
+	// request. Leave empty for unauthenticated access to public endpoints.
 	APIKey string
 
-	// HTTPClient is the underlying HTTP client to use. Optional.
-	// Defaults to a client with a 30-second timeout.
+	// HTTPClient is the underlying [http.Client] used for all requests.
+	// When nil, a default client with a 30-second timeout is created.
+	// Supply a custom client to configure TLS settings, proxies, or
+	// transport-level middleware.
 	HTTPClient *http.Client
 }
 
-// Client is the Modula API client. It provides typed access to all API resources.
+// Client is the top-level ModulaCMS API client. Create one with [NewClient]
+// and use the exported resource fields to interact with the API.
+//
+// Resources are grouped into four categories:
+//
+//   - Standard CRUD: public-facing content resources (ContentData, Datatypes,
+//     Fields, Media, Routes, Users, etc.). These use the generic [Resource] type.
+//   - Admin CRUD: administrative resources that operate on draft/working content
+//     before publishing (AdminContentData, AdminDatatypes, etc.).
+//   - Specialized: domain-specific resources with custom methods (Auth,
+//     MediaUpload, Content delivery, Deploy, ContentTree, etc.).
+//   - Composite: cascade operations that atomically span multiple related
+//     tables (ContentComposite, UserComposite, etc.).
+//
+// A Client is safe to use from multiple goroutines if the underlying
+// [http.Client] is safe for concurrent use (the default client is).
 type Client struct {
-	// Standard CRUD resources
-	ContentData      *Resource[ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID]
-	ContentFields    *Resource[ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID]
+	// --- Standard CRUD resources ---
+
+	// ContentData provides CRUD for published content items.
+	ContentData *Resource[ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID]
+
+	// ContentFields provides CRUD for content field values.
+	ContentFields *Resource[ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID]
+
+	// ContentRelations provides CRUD for content-to-content relations.
 	ContentRelations *Resource[ContentRelation, CreateContentRelationParams, UpdateContentRelationParams, ContentRelationID]
-	Datatypes        *Resource[Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID]
-	Fields           *Resource[Field, CreateFieldParams, UpdateFieldParams, FieldID]
-	FieldTypes       *Resource[FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID]
-	DatatypeFields   *Resource[DatatypeField, CreateDatatypeFieldParams, UpdateDatatypeFieldParams, DatatypeFieldID]
-	Media            *Resource[Media, any, UpdateMediaParams, MediaID]
-	MediaDimensions  *Resource[MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams, MediaDimensionID]
-	Routes           *Resource[Route, CreateRouteParams, UpdateRouteParams, RouteID]
-	Roles            *Resource[Role, CreateRoleParams, UpdateRoleParams, RoleID]
-	Permissions      *Resource[Permission, CreatePermissionParams, UpdatePermissionParams, PermissionID]
-	Users            *Resource[User, CreateUserParams, UpdateUserParams, UserID]
-	Tokens           *Resource[Token, CreateTokenParams, UpdateTokenParams, TokenID]
-	UsersOauth       *Resource[UserOauth, CreateUserOauthParams, UpdateUserOauthParams, UserOauthID]
-	Tables           *Resource[Table, CreateTableParams, UpdateTableParams, TableID]
 
-	// Admin CRUD resources
-	AdminContentData    *Resource[AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID]
-	AdminContentFields  *Resource[AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID]
-	AdminDatatypes      *Resource[AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID]
-	AdminFields         *Resource[AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID]
-	AdminFieldTypes     *Resource[AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID]
+	// Datatypes provides CRUD for content type definitions (schemas).
+	Datatypes *Resource[Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID]
+
+	// Fields provides CRUD for field definitions within datatypes.
+	Fields *Resource[Field, CreateFieldParams, UpdateFieldParams, FieldID]
+
+	// FieldTypes provides CRUD for field type metadata (text, number, etc.).
+	FieldTypes *Resource[FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID]
+
+	// DatatypeFields provides CRUD for the junction linking fields to datatypes.
+	DatatypeFields *Resource[DatatypeField, CreateDatatypeFieldParams, UpdateDatatypeFieldParams, DatatypeFieldID]
+
+	// Media provides read and update access to media items. For uploads, use MediaUpload.
+	Media *Resource[Media, any, UpdateMediaParams, MediaID]
+
+	// MediaDimensions provides CRUD for image dimension presets (thumbnail, medium, etc.).
+	MediaDimensions *Resource[MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams, MediaDimensionID]
+
+	// Routes provides CRUD for URL routing rules.
+	Routes *Resource[Route, CreateRouteParams, UpdateRouteParams, RouteID]
+
+	// Roles provides CRUD for RBAC roles.
+	Roles *Resource[Role, CreateRoleParams, UpdateRoleParams, RoleID]
+
+	// Permissions provides CRUD for RBAC permission definitions.
+	Permissions *Resource[Permission, CreatePermissionParams, UpdatePermissionParams, PermissionID]
+
+	// Users provides CRUD for user accounts.
+	Users *Resource[User, CreateUserParams, UpdateUserParams, UserID]
+
+	// Tokens provides CRUD for API tokens.
+	Tokens *Resource[Token, CreateTokenParams, UpdateTokenParams, TokenID]
+
+	// UsersOauth provides CRUD for OAuth provider connections on user accounts.
+	UsersOauth *Resource[UserOauth, CreateUserOauthParams, UpdateUserOauthParams, UserOauthID]
+
+	// Tables provides CRUD for custom database tables.
+	Tables *Resource[Table, CreateTableParams, UpdateTableParams, TableID]
+
+	// --- Admin CRUD resources ---
+
+	// AdminContentData provides CRUD for draft/working content in the admin context.
+	AdminContentData *Resource[AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID]
+
+	// AdminContentFields provides CRUD for admin content field values.
+	AdminContentFields *Resource[AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID]
+
+	// AdminDatatypes provides CRUD for admin datatype definitions.
+	AdminDatatypes *Resource[AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID]
+
+	// AdminFields provides CRUD for admin field definitions.
+	AdminFields *Resource[AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID]
+
+	// AdminFieldTypes provides CRUD for admin field type metadata.
+	AdminFieldTypes *Resource[AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID]
+
+	// AdminDatatypeFields provides CRUD for admin datatype-field junctions.
 	AdminDatatypeFields *Resource[AdminDatatypeField, CreateAdminDatatypeFieldParams, UpdateAdminDatatypeFieldParams, AdminDatatypeFieldID]
-	AdminRoutes         *Resource[AdminRoute, CreateAdminRouteParams, UpdateAdminRouteParams, AdminRouteID]
 
-	// Specialized resources
-	Auth         *AuthResource
-	MediaUpload  *MediaUploadResource
-	AdminTree    *AdminTreeResource
-	Content      *ContentDeliveryResource
-	SSHKeys      *SSHKeysResource
-	Sessions     *SessionsResource
-	Import       *ImportResource
+	// AdminRoutes provides CRUD for admin routing rules.
+	AdminRoutes *Resource[AdminRoute, CreateAdminRouteParams, UpdateAdminRouteParams, AdminRouteID]
+
+	// --- Specialized resources ---
+
+	// Auth provides authentication operations (login, logout, register, password reset).
+	Auth *AuthResource
+
+	// MediaUpload provides multipart file upload for media items.
+	MediaUpload *MediaUploadResource
+
+	// AdminTree provides admin content tree traversal and manipulation.
+	AdminTree *AdminTreeResource
+
+	// Content provides public slug-based content delivery (read-only).
+	Content *ContentDeliveryResource
+
+	// SSHKeys provides SSH public key management for user accounts.
+	SSHKeys *SSHKeysResource
+
+	// Sessions provides session listing and revocation.
+	Sessions *SessionsResource
+
+	// Import provides CMS data import from various formats.
+	Import *ImportResource
+
+	// ContentBatch provides batch content update operations.
 	ContentBatch *ContentBatchResource
-	ContentTree  *ContentTreeResource
-	ContentHeal  *ContentHealResource
-	Deploy       *DeployResource
 
-	// RBAC resources
+	// ContentTree provides content tree traversal operations.
+	ContentTree *ContentTreeResource
+
+	// ContentHeal provides content tree integrity repair operations.
+	ContentHeal *ContentHealResource
+
+	// Deploy provides content synchronization between environments (push/pull).
+	Deploy *DeployResource
+
+	// --- RBAC resources ---
+
+	// RolePermissions provides role-to-permission assignment management.
 	RolePermissions *RolePermissionsResource
 
-	// Plugin resources
-	Plugins      *PluginsResource
-	PluginRoutes *PluginRoutesResource
-	PluginHooks  *PluginHooksResource
+	// --- Plugin resources ---
 
-	// Config resource
+	// Plugins provides plugin listing, enable/disable, and lifecycle management.
+	Plugins *PluginsResource
+
+	// PluginRoutes provides custom routes registered by plugins.
+	PluginRoutes *PluginRoutesResource
+
+	// PluginHooks provides hook registration for plugin event handling.
+	PluginHooks *PluginHooksResource
+
+	// --- Config ---
+
+	// Config provides CMS configuration reading and updating.
 	Config *ConfigResource
 
-	// Health
+	// --- Health ---
+
+	// Health provides server health check endpoints.
 	Health *HealthResource
 
-	// Users full
+	// --- Users full ---
+
+	// UsersFull provides extended user operations including role details.
 	UsersFull *UsersFullResource
 
-	// Media admin
+	// --- Media admin ---
+
+	// MediaAdmin provides administrative media operations (listing with filters, bulk actions).
 	MediaAdmin *MediaAdminResource
 
-	// Content reorder
-	ContentReorder      *ContentReorderResource
+	// --- Content reorder ---
+
+	// ContentReorder provides sibling reordering for published content tree nodes.
+	ContentReorder *ContentReorderResource
+
+	// AdminContentReorder provides sibling reordering for admin content tree nodes.
 	AdminContentReorder *AdminContentReorderResource
 
-	// Publishing
-	Publishing      *PublishingResource
+	// --- Publishing ---
+
+	// Publishing provides publish/unpublish operations for public content.
+	Publishing *PublishingResource
+
+	// AdminPublishing provides publish/unpublish operations for admin content.
 	AdminPublishing *PublishingResource
 
-	// Locales
+	// --- Locales ---
+
+	// Locales provides locale (language/region) management.
 	Locales *LocaleResource
 
-	// Webhooks
+	// --- Webhooks ---
+
+	// Webhooks provides webhook registration, listing, and delivery history.
 	Webhooks *WebhookResource
 
-	// Content Query
+	// --- Content Query ---
+
+	// Query provides advanced content querying with filters and projections.
 	Query *QueryResource
 
-	// Content Versions
+	// --- Content Versions ---
+
+	// ContentVersions provides version history browsing and restoration for content items.
 	ContentVersions *ContentVersionsResource
 
-	// Fields extra (sort order, max sort order)
+	// --- Fields extra ---
+
+	// FieldsExtra provides sort order and max sort order operations for fields.
 	FieldsExtra *FieldsExtraResource
 
-	// Composite / cascade operations
-	ContentComposite  *ContentCompositeResource
-	UserComposite     *UserCompositeResource
+	// --- Datatypes extra ---
+
+	// DatatypesExtra provides sort order and max sort order operations for datatypes.
+	DatatypesExtra *DatatypesExtraResource
+
+	// AdminDatatypesExtra provides sort order and max sort order operations for admin datatypes.
+	AdminDatatypesExtra *AdminDatatypesExtraResource
+
+	// --- Composite / cascade operations ---
+
+	// ContentComposite provides atomic cascade operations across content and its related data.
+	ContentComposite *ContentCompositeResource
+
+	// UserComposite provides atomic cascade operations for users and their associated resources.
+	UserComposite *UserCompositeResource
+
+	// DatatypeComposite provides atomic cascade operations for datatypes, their fields, and content.
 	DatatypeComposite *DatatypeCompositeResource
-	MediaComposite    *MediaCompositeResource
+
+	// MediaComposite provides atomic cascade operations for media and its dimensions/references.
+	MediaComposite *MediaCompositeResource
 }
 
-// NewClient creates a new Modula API client.
+// NewClient creates a new [Client] configured with the given [ClientConfig].
+//
+// It returns an error if BaseURL is empty. The returned Client is ready to use
+// immediately. All resource fields are initialized and bound to the same
+// underlying HTTP transport, so authentication and timeout settings apply
+// uniformly across all API calls.
 func NewClient(cfg ClientConfig) (*Client, error) {
 	if cfg.BaseURL == "" {
 		return nil, errors.New("modula: BaseURL is required")
@@ -215,6 +414,10 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 		// Fields extra
 		FieldsExtra: &FieldsExtraResource{http: h},
+
+		// Datatypes extra
+		DatatypesExtra:      &DatatypesExtraResource{http: h},
+		AdminDatatypesExtra: &AdminDatatypesExtraResource{http: h},
 
 		// Composite / cascade
 		ContentComposite:  &ContentCompositeResource{http: h},

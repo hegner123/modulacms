@@ -162,7 +162,13 @@ func (t *ContentTreeResource) Save(ctx context.Context, req TreeSaveRequest) (*T
 	return &resp, nil
 }
 
-// GetByRoute returns the content tree for a given route ID.
+// GetByRoute returns all content tree nodes belonging to the given route as a
+// flat slice of [ContentTreeNode] values. The caller reconstructs the tree
+// hierarchy using the pointer fields (ParentID, FirstChildID, NextSiblingID,
+// PrevSiblingID).
+//
+// Returns an empty slice if the route exists but has no content nodes. Returns
+// an [*ApiError] with status 404 if the route does not exist.
 func (t *ContentTreeResource) GetByRoute(ctx context.Context, routeID RouteID) ([]ContentTreeNode, error) {
 	var result []ContentTreeNode
 	if err := t.http.get(ctx, "/api/v1/content/tree/"+string(routeID), nil, &result); err != nil {
@@ -171,20 +177,55 @@ func (t *ContentTreeResource) GetByRoute(ctx context.Context, routeID RouteID) (
 	return result, nil
 }
 
-// ContentTreeNode represents a node in the content tree for a route.
+// ContentTreeNode represents a node in the content tree for a route. The tree
+// structure is encoded as a doubly-linked sibling list with parent and
+// first-child pointers, allowing O(1) insertion, deletion, and reordering.
+//
+// To reconstruct the tree from a flat list of nodes:
+//  1. Index all nodes by ContentID.
+//  2. Find root nodes (ParentID == nil).
+//  3. For each node with children, follow FirstChildID, then walk NextSiblingID
+//     to enumerate siblings in display order.
 type ContentTreeNode struct {
-	ContentID     ContentID `json:"content_id"`
-	DatatypeID    *string   `json:"datatype_id"`
-	ParentID      *string   `json:"parent_id"`
-	FirstChildID  *string   `json:"first_child_id"`
-	NextSiblingID *string   `json:"next_sibling_id"`
-	PrevSiblingID *string   `json:"prev_sibling_id"`
-	RouteID       *string   `json:"route_id"`
-	Title         string    `json:"title"`
-	Slug          string    `json:"slug"`
-	Status        string    `json:"status"`
-	DateCreated   string    `json:"date_created"`
-	DateModified  string    `json:"date_modified"`
+	// ContentID is the unique ULID identifying this content node.
+	ContentID ContentID `json:"content_id"`
+
+	// DatatypeID is the datatype assigned to this node, or nil if untyped.
+	DatatypeID *string `json:"datatype_id"`
+
+	// ParentID is the parent node in the tree, or nil for root-level nodes.
+	ParentID *string `json:"parent_id"`
+
+	// FirstChildID points to the leftmost child of this node, or nil if the
+	// node has no children. Walk NextSiblingID from this child to enumerate
+	// all children in order.
+	FirstChildID *string `json:"first_child_id"`
+
+	// NextSiblingID points to the next sibling in display order, or nil if
+	// this is the last sibling.
+	NextSiblingID *string `json:"next_sibling_id"`
+
+	// PrevSiblingID points to the previous sibling in display order, or nil
+	// if this is the first sibling.
+	PrevSiblingID *string `json:"prev_sibling_id"`
+
+	// RouteID is the route this content node belongs to.
+	RouteID *string `json:"route_id"`
+
+	// Title is the human-readable title of this content node.
+	Title string `json:"title"`
+
+	// Slug is the URL-safe identifier used for public content delivery.
+	Slug string `json:"slug"`
+
+	// Status is the publishing status (e.g. "draft", "published").
+	Status string `json:"status"`
+
+	// DateCreated is the ISO 8601 timestamp when the node was created.
+	DateCreated string `json:"date_created"`
+
+	// DateModified is the ISO 8601 timestamp when the node was last modified.
+	DateModified string `json:"date_modified"`
 }
 
 // StringPtr returns a pointer to s. Convenience helper for building

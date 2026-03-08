@@ -6,12 +6,17 @@ import (
 	"net/url"
 )
 
-// FieldsExtraResource provides specialized field operations beyond standard CRUD.
+// FieldsExtraResource provides specialized field operations beyond standard CRUD,
+// specifically sort order management. Fields within a datatype are displayed in
+// sort order, and these methods allow reordering without a full field update.
+// It is accessed via [Client].FieldsExtra.
 type FieldsExtraResource struct {
 	http *httpClient
 }
 
-// UpdateSortOrder updates the sort order for a field.
+// UpdateSortOrder sets the sort order position for a field within its parent datatype.
+// Lower values appear first in the field list. Use [FieldsExtraResource.MaxSortOrder]
+// to determine the next available position when appending a new field.
 func (r *FieldsExtraResource) UpdateSortOrder(ctx context.Context, fieldID FieldID, sortOrder int64) error {
 	body := struct {
 		SortOrder int64 `json:"sort_order"`
@@ -22,7 +27,9 @@ func (r *FieldsExtraResource) UpdateSortOrder(ctx context.Context, fieldID Field
 	return nil
 }
 
-// MaxSortOrder returns the maximum sort order value for fields under a parent datatype.
+// MaxSortOrder returns the highest sort order value currently assigned to fields
+// under the given parent datatype. To append a new field at the end of the list,
+// use the returned value + 1 as the sort order. Returns 0 if the datatype has no fields.
 func (r *FieldsExtraResource) MaxSortOrder(ctx context.Context, parentID DatatypeID) (int64, error) {
 	params := url.Values{}
 	params.Set("parent_id", string(parentID))

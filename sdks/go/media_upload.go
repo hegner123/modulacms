@@ -10,7 +10,10 @@ import (
 	"net/http"
 )
 
-// MediaUploadResource provides media file upload operations.
+// MediaUploadResource provides media file upload operations via multipart form POST.
+// Files are uploaded to the CMS's configured storage backend (local filesystem or S3).
+// After upload, the server generates optimized variants at configured dimensions.
+// It is accessed via [Client].MediaUpload.
 type MediaUploadResource struct {
 	http *httpClient
 }
@@ -60,8 +63,10 @@ func (pr *progressReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
-// Upload uploads a file and returns the created media entity.
-// An optional MediaUploadOptions can control the storage path.
+// Upload uploads a file and returns the created [Media] entity.
+// The filename is used as the stored file name and for content-type detection.
+// Pass nil for opts to use the server's default date-based path organization.
+// Returns an [*ApiError] on failure (e.g., unsupported file type, storage full).
 func (m *MediaUploadResource) Upload(ctx context.Context, r io.Reader, filename string, opts *MediaUploadOptions) (*Media, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)

@@ -7,7 +7,14 @@ import (
 	"net/url"
 )
 
-// LocaleResource provides CRUD operations for locales, plus translation creation.
+// LocaleResource provides CRUD operations for locales and translation management.
+// Locales represent supported languages/regions in the CMS (e.g., "en-US", "fr-FR").
+// Content can be translated into any enabled locale, with each translation stored
+// as locale-specific content field values.
+//
+// LocaleResource embeds [Resource] for standard List, Get, Create, Update, Delete
+// operations, and adds locale-specific methods for filtering and translation creation.
+// It is accessed via [Client].Locales.
 type LocaleResource struct {
 	*Resource[Locale, CreateLocaleRequest, UpdateLocaleRequest, LocaleID]
 	http *httpClient
@@ -20,7 +27,9 @@ func newLocaleResource(h *httpClient) *LocaleResource {
 	}
 }
 
-// ListEnabled returns only enabled locales.
+// ListEnabled returns only locales that are currently enabled for content translation.
+// Disabled locales are excluded from the result. Use this to populate locale pickers
+// or determine which translations are available for content.
 func (r *LocaleResource) ListEnabled(ctx context.Context) ([]Locale, error) {
 	params := url.Values{}
 	params.Set("enabled", "true")
@@ -35,7 +44,10 @@ func (r *LocaleResource) ListEnabled(ctx context.Context) ([]Locale, error) {
 	return result, nil
 }
 
-// CreateTranslation creates translated content fields for a content data node in the given locale.
+// CreateTranslation creates locale-specific content field values for a content node.
+// The contentDataID identifies the content node to translate, and the request specifies
+// the target locale and translated field values. If translations already exist for the
+// given locale, they are updated rather than duplicated.
 func (r *LocaleResource) CreateTranslation(ctx context.Context, contentDataID string, req CreateTranslationRequest) (*CreateTranslationResponse, error) {
 	var resp CreateTranslationResponse
 	if err := r.http.post(ctx, "/api/v1/admin/contentdata/"+contentDataID+"/translations", req, &resp); err != nil {
