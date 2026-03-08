@@ -23,6 +23,8 @@ const (
 	PluginMetricCircuitBreakerTrip = "plugin.circuit_breaker.trip"
 	PluginMetricReload             = "plugin.reload"
 	PluginMetricVMAvailable        = "plugin.vm.available"
+	PluginMetricOutboundRequests   = "plugin.outbound.requests"
+	PluginMetricOutboundDuration   = "plugin.outbound.duration_ms"
 )
 
 // RecordHTTPRequest records a single HTTP request handled by a plugin.
@@ -77,6 +79,19 @@ func RecordError(pluginName, errorType string) {
 		"error_type": errorType,
 	}
 	utility.GlobalMetrics.Increment(PluginMetricErrors, labels)
+}
+
+// RecordOutboundRequest records a single outbound HTTP request made by a plugin.
+// Called once per Execute -- negligible cost relative to network I/O.
+func RecordOutboundRequest(pluginName, method, domain string, status int, durationMs float64) {
+	labels := utility.Labels{
+		"plugin": pluginName,
+		"method": method,
+		"domain": domain,
+		"status": fmt.Sprintf("%d", status),
+	}
+	utility.GlobalMetrics.Increment(PluginMetricOutboundRequests, labels)
+	utility.GlobalMetrics.Histogram(PluginMetricOutboundDuration, durationMs, labels)
 }
 
 // SnapshotVMAvailability records the current VM availability for all plugins.
