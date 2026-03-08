@@ -53,32 +53,32 @@ const (
 // database credentials, OAuth providers, S3-compatible storage, CORS policies,
 // plugin runtime limits, and observability integration.
 type Config struct {
-	Environment             string              `json:"environment"`
-	OS                      string              `json:"os"`
-	Environment_Hosts       map[string]string   `json:"environment_hosts"`
-	Port                    string              `json:"port"`
-	SSL_Port                string              `json:"ssl_port"`
-	Cert_Dir                string              `json:"cert_dir"`
-	Client_Site             string              `json:"client_site"`
-	Admin_Site              string              `json:"admin_site"`
-	SSH_Host                string              `json:"ssh_host"`
-	SSH_Port                string              `json:"ssh_port"`
-	Options                 map[string][]any    `json:"options"`
-	Log_Path                string              `json:"log_path"`
-	Auth_Salt               string              `json:"auth_salt"`
-	Cookie_Name             string              `json:"cookie_name"`
-	Cookie_Duration         string              `json:"cookie_duration"`
-	Cookie_Secure           bool                `json:"cookie_secure"`
-	Cookie_SameSite         string              `json:"cookie_samesite"`
-	Db_Driver               DbDriver            `json:"db_driver"`
-	Db_URL                  string              `json:"db_url"`
-	Db_Name                 string              `json:"db_name"`
-	Db_User                 string              `json:"db_username"`
-	Db_Password             string              `json:"db_password"`
+	Environment       string            `json:"environment"`
+	OS                string            `json:"os"`
+	Environment_Hosts map[string]string `json:"environment_hosts"`
+	Port              string            `json:"port"`
+	SSL_Port          string            `json:"ssl_port"`
+	Cert_Dir          string            `json:"cert_dir"`
+	Client_Site       string            `json:"client_site"`
+	Admin_Site        string            `json:"admin_site"`
+	SSH_Host          string            `json:"ssh_host"`
+	SSH_Port          string            `json:"ssh_port"`
+	Options           map[string][]any  `json:"options"`
+	Log_Path          string            `json:"log_path"`
+	Auth_Salt         string            `json:"auth_salt"`
+	Cookie_Name       string            `json:"cookie_name"`
+	Cookie_Duration   string            `json:"cookie_duration"`
+	Cookie_Secure     bool              `json:"cookie_secure"`
+	Cookie_SameSite   string            `json:"cookie_samesite"`
+	Db_Driver         DbDriver          `json:"db_driver"`
+	Db_URL            string            `json:"db_url"`
+	Db_Name           string            `json:"db_name"`
+	Db_User           string            `json:"db_username"`
+	Db_Password       string            `json:"db_password"`
 
 	// Remote connection (mutually exclusive with Db_Driver for connect command)
-	Remote_URL     string `json:"remote_url"`
-	Remote_API_Key string `json:"remote_api_key"`
+	Remote_URL              string              `json:"remote_url"`
+	Remote_API_Key          string              `json:"remote_api_key"`
 	Bucket_Region           string              `json:"bucket_region"`
 	Bucket_Media            string              `json:"bucket_media"`
 	Bucket_Backup           string              `json:"bucket_backup"`
@@ -168,6 +168,16 @@ type Config struct {
 	Plugin_Hook_Max_Concurrent_After   int `json:"plugin_hook_max_concurrent_after"`   // max concurrent after-hook goroutines, default 10
 	Plugin_Hook_Timeout_Ms             int `json:"plugin_hook_timeout_ms"`             // per-hook timeout in before-hooks (ms), default 2000
 	Plugin_Hook_Event_Timeout_Ms       int `json:"plugin_hook_event_timeout_ms"`       // per-event total timeout for before-hook chain (ms), default 5000
+
+	// Plugin outbound request engine configuration
+	Plugin_Request_Timeout      int   `json:"plugin_request_timeout"`      // seconds, default 10
+	Plugin_Request_Max_Response int64 `json:"plugin_request_max_response"` // bytes, default 1MB (1048576)
+	Plugin_Request_Max_Body     int64 `json:"plugin_request_max_body"`     // bytes, default 1MB (1048576)
+	Plugin_Request_Rate_Limit   int   `json:"plugin_request_rate_limit"`   // per plugin per domain per min, default 60
+	Plugin_Request_Global_Rate  int   `json:"plugin_request_global_rate"`  // aggregate per min, default 600; 0 = unlimited
+	Plugin_Request_CB_Failures  int   `json:"plugin_request_cb_failures"`  // consecutive failures to trip, default 5
+	Plugin_Request_CB_Reset     int   `json:"plugin_request_cb_reset"`     // seconds before half-open probe, default 60
+	Plugin_Request_Allow_Local  bool  `json:"plugin_request_allow_local"`  // allow HTTP to localhost (dev only), default false
 
 	// Plugin production hardening (Phase 4)
 	Plugin_Hot_Reload     bool   `json:"plugin_hot_reload"`     // default false (zero value) -- production opt-in only (S10)

@@ -158,6 +158,16 @@ type ManagerConfig struct {
 	HotReload     bool          // default false (zero value) -- production opt-in only (S10)
 	MaxFailures   int           // circuit breaker threshold; default 5
 	ResetInterval time.Duration // circuit breaker reset interval; default 60s
+
+	// Outbound request engine configuration.
+	RequestTimeoutSec       int
+	RequestMaxResponseBytes int64
+	RequestMaxRequestBody   int64
+	RequestMaxPerMin        int
+	RequestGlobalMaxPerMin  int
+	RequestCBMaxFailures    int
+	RequestCBResetInterval  int
+	RequestAllowLocalhost   bool
 }
 
 // TableRegistrar registers table names in the CMS tables registry.
@@ -197,6 +207,10 @@ type Manager struct {
 	// hookEngine is the content lifecycle hook engine (Phase 3). Created during
 	// NewManager, always non-nil when plugins are enabled. Implements audited.HookRunner.
 	hookEngine *HookEngine
+
+	// requestEngine is the outbound HTTP request engine. Created during
+	// NewManager, always non-nil when plugins are enabled.
+	requestEngine *RequestEngine
 
 	// watcher is the file-polling hot reload watcher (Phase 4). Nil when hot
 	// reload is disabled. Started via StartWatcher() after LoadAll().
@@ -259,6 +273,19 @@ func NewManager(cfg ManagerConfig, pool *sql.DB, dialect db.Dialect, driver db.D
 		ExecTimeoutMs:        cfg.ExecTimeoutSec * 1000, // reuse exec timeout for after-hooks
 	})
 
+	// Create outbound request engine unconditionally. The engine is inert
+	// when no plugins register request domains.
+	mgr.requestEngine = NewRequestEngine(pool, dialect, RequestEngineConfig{
+		DefaultTimeoutSec:       cfg.RequestTimeoutSec,
+		MaxResponseBytes:        cfg.RequestMaxResponseBytes,
+		MaxRequestBodyBytes:     cfg.RequestMaxRequestBody,
+		MaxRequestsPerMin:       cfg.RequestMaxPerMin,
+		GlobalMaxRequestsPerMin: cfg.RequestGlobalMaxPerMin,
+		CBMaxFailures:           cfg.RequestCBMaxFailures,
+		CBResetIntervalSec:      cfg.RequestCBResetInterval,
+		AllowLocalhost:          cfg.RequestAllowLocalhost,
+	})
+
 	return mgr
 }
 
@@ -277,6 +304,12 @@ func (m *Manager) Bridge() *HTTPBridge {
 // Always non-nil when the Manager is non-nil.
 func (m *Manager) HookEngine() *HookEngine {
 	return m.hookEngine
+}
+
+// RequestEngine returns the outbound request engine.
+// Always non-nil when the Manager is non-nil.
+func (m *Manager) RequestEngine() *RequestEngine {
+	return m.requestEngine
 }
 
 // Registry returns the in-memory pipeline registry.
@@ -524,6 +557,34 @@ func (m *Manager) LoadAll(ctx context.Context) error {
 		}
 	}
 
+	// Create plugin_requests table and clean up orphaned request registrations.
+	if m.requestEngine != nil {
+		if tblErr := m.requestEngine.CreatePluginRequestsTable(ctx); tblErr != nil {
+			return fmt.Errorf("creating plugin_requests table: %w", tblErr)
+		}
+
+		if m.tableReg != nil {
+			if regErr := m.tableReg.RegisterTable(ctx, "plugin_requests"); regErr != nil {
+				utility.DefaultLogger.Warn(
+					fmt.Sprintf("failed to register plugin_requests in tables registry: %s", regErr.Error()),
+					nil,
+				)
+			}
+		}
+
+		discoveredNames := make([]string, 0, len(discovered))
+		for name := range discovered {
+			discoveredNames = append(discoveredNames, name)
+		}
+		if cleanErr := m.requestEngine.CleanupOrphanedRequests(ctx, discoveredNames); cleanErr != nil {
+			return fmt.Errorf("cleaning orphaned requests: %w", cleanErr)
+		}
+
+		if loadErr := m.requestEngine.LoadApprovals(ctx); loadErr != nil {
+			return fmt.Errorf("loading request approvals: %w", loadErr)
+		}
+	}
+
 	// Step 4: Load each plugin in dependency order.
 	m.mu.Lock()
 	for _, inst := range sorted {
@@ -737,13 +798,20 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 		}
 	}
 
-	// Read pending request registrations from the VM's __request_pending table.
-	// The actual UpsertRequestRegistrations call requires RequestEngine (future issue).
+	// Read pending request registrations and upsert into the DB.
 	pendingRequests := ReadPendingRequests(L)
 	if len(pendingRequests) > 0 {
 		utility.DefaultLogger.Info(
 			fmt.Sprintf("plugin %q: discovered %d outbound request domain registrations", pluginName, len(pendingRequests)),
 		)
+		if m.requestEngine != nil {
+			if upsertErr := m.requestEngine.UpsertRequestRegistrations(ctx, pluginName, inst.Info.Version, pendingRequests); upsertErr != nil {
+				utility.DefaultLogger.Error(
+					fmt.Sprintf("plugin %q: failed to upsert request registrations: %s", pluginName, upsertErr.Error()),
+					nil,
+				)
+			}
+		}
 	}
 
 	// Phase 4: Read schema drift entries from the VM (set by luaDefineTable).
@@ -1324,6 +1392,9 @@ func (m *Manager) ReloadPlugin(ctx context.Context, name string) error {
 	}
 	if m.hookEngine != nil {
 		m.hookEngine.UnregisterPlugin(name)
+	}
+	if m.requestEngine != nil {
+		m.requestEngine.UnregisterPlugin(name)
 	}
 
 	// The swap already happened in the loadPlugin block above.

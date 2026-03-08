@@ -1015,6 +1015,13 @@ func (b *HTTPBridge) MountAdminEndpoints(
 	mux.Handle("POST /api/v1/admin/plugins/hooks/revoke",
 		authChain(adminPerm(PluginHooksRevokeHandler(mgr))))
 
+	mux.Handle("GET /api/v1/admin/plugins/requests",
+		authChain(readPerm(PluginRequestsListHandler(mgr))))
+	mux.Handle("POST /api/v1/admin/plugins/requests/approve",
+		authChain(adminPerm(PluginRequestsApproveHandler(mgr))))
+	mux.Handle("POST /api/v1/admin/plugins/requests/revoke",
+		authChain(adminPerm(PluginRequestsRevokeHandler(mgr))))
+
 	// Pipeline endpoints (literal paths before wildcard):
 	mux.Handle("GET /api/v1/admin/pipelines",
 		authChain(readPerm(PipelineListHandler(mgr))))

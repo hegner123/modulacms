@@ -497,6 +497,11 @@ Examples:
 			if hookEngine := pluginManager.HookEngine(); hookEngine != nil {
 				hookEngine.Close(shutdownCtx)
 			}
+			// Close request engine AFTER hook engine — after-hook goroutines
+			// may still call request.send() during drain.
+			if requestEngine := pluginManager.RequestEngine(); requestEngine != nil {
+				requestEngine.Close()
+			}
 			pluginManager.Shutdown(shutdownCtx)
 		}
 

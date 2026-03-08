@@ -294,6 +294,16 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB, dr
 		HotReload:     cfg.Plugin_Hot_Reload,
 		MaxFailures:   maxFailures,
 		ResetInterval: resetInterval,
+
+		// Outbound request engine configuration.
+		RequestTimeoutSec:       cfg.Plugin_Request_Timeout,
+		RequestMaxResponseBytes: cfg.Plugin_Request_Max_Response,
+		RequestMaxRequestBody:   cfg.Plugin_Request_Max_Body,
+		RequestMaxPerMin:        cfg.Plugin_Request_Rate_Limit,
+		RequestGlobalMaxPerMin:  cfg.Plugin_Request_Global_Rate,
+		RequestCBMaxFailures:    cfg.Plugin_Request_CB_Failures,
+		RequestCBResetInterval:  cfg.Plugin_Request_CB_Reset,
+		RequestAllowLocalhost:   cfg.Plugin_Request_Allow_Local,
 	}, pool, dialect, driver, tableReg)
 
 	// Create HTTP bridge and wire it before LoadAll so that LoadAll can
