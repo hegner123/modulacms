@@ -159,6 +159,7 @@ func getBlockedColumns(table string) []string {
 type parsedCoreOpts struct {
 	columns []string
 	where   map[string]any
+	filter  db.Condition // non-nil when new-style condition syntax is used
 	whereOr []map[string]any
 	orderBy string
 	desc    bool
@@ -172,11 +173,12 @@ type parsedCoreOpts struct {
 func parseCoreSelectOpts(L *lua.LState, optsTbl *lua.LTable) (parsedCoreOpts, error) {
 	var opts parsedCoreOpts
 
-	where, err := parseWhereWithConditions(L, optsTbl)
+	whereMap, filter, err := parseWhereExtended(L, optsTbl)
 	if err != nil {
 		return opts, err
 	}
-	opts.where = where
+	opts.where = whereMap
+	opts.filter = filter
 
 	whereOr, err := parseWhereOrFromLua(L, optsTbl)
 	if err != nil {
@@ -499,12 +501,13 @@ func (api *CoreTableAPI) luaCoreCount(L *lua.LState) int {
 		return 2
 	}
 
-	var where map[string]any
+	var whereMap map[string]any
+	var filter db.Condition
 	var err error
 	if L.GetTop() >= 2 {
 		optsVal := L.Get(2)
 		if optsTbl, ok := optsVal.(*lua.LTable); ok {
-			where, err = parseWhereWithConditions(L, optsTbl)
+			whereMap, filter, err = parseWhereExtended(L, optsTbl)
 			if err != nil {
 				L.Push(lua.LNil)
 				L.Push(lua.LString(err.Error()))
@@ -519,7 +522,12 @@ func (api *CoreTableAPI) luaCoreCount(L *lua.LState) int {
 		return 0
 	}
 
-	count, err := db.QCount(ctx, api.dbAPI.currentExec, api.dialect, tableName, where)
+	var count int64
+	if filter != nil {
+		count, err = db.QCountFiltered(ctx, api.dbAPI.currentExec, api.dialect, tableName, filter)
+	} else {
+		count, err = db.QCount(ctx, api.dbAPI.currentExec, api.dialect, tableName, whereMap)
+	}
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
@@ -551,12 +559,13 @@ func (api *CoreTableAPI) luaCoreExists(L *lua.LState) int {
 		return 2
 	}
 
-	var where map[string]any
+	var whereMap map[string]any
+	var filter db.Condition
 	var err error
 	if L.GetTop() >= 2 {
 		optsVal := L.Get(2)
 		if optsTbl, ok := optsVal.(*lua.LTable); ok {
-			where, err = parseWhereWithConditions(L, optsTbl)
+			whereMap, filter, err = parseWhereExtended(L, optsTbl)
 			if err != nil {
 				L.Push(lua.LNil)
 				L.Push(lua.LString(err.Error()))
@@ -571,7 +580,12 @@ func (api *CoreTableAPI) luaCoreExists(L *lua.LState) int {
 		return 0
 	}
 
-	exists, err := db.QExists(ctx, api.dbAPI.currentExec, api.dialect, tableName, where)
+	var exists bool
+	if filter != nil {
+		exists, err = db.QExistsFiltered(ctx, api.dbAPI.currentExec, api.dialect, tableName, filter)
+	} else {
+		exists, err = db.QExists(ctx, api.dbAPI.currentExec, api.dialect, tableName, whereMap)
+	}
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
@@ -666,26 +680,12 @@ func (api *CoreTableAPI) luaCoreUpdate(L *lua.LState) int {
 		return 0
 	}
 
-	// Parse where with conditions.
-	where, err := parseWhereWithConditions(L, optsTbl)
+	// Parse where with extended detection.
+	whereMap, filter, err := parseWhereExtended(L, optsTbl)
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
 		return 2
-	}
-
-	// Parse where_or.
-	whereOr, err := parseWhereOrFromLua(L, optsTbl)
-	if err != nil {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(err.Error()))
-		return 2
-	}
-
-	// Safety: require at least one of where or where_or to be non-empty.
-	if len(where) == 0 && len(whereOr) == 0 {
-		L.RaiseError("core.update requires non-empty where or where_or (safety: prevents full-table update)")
-		return 0
 	}
 
 	ctx := L.Context()
@@ -694,25 +694,54 @@ func (api *CoreTableAPI) luaCoreUpdate(L *lua.LState) int {
 		return 0
 	}
 
-	// Write safety limit: check row count before executing.
-	count, err := db.QCount(ctx, api.dbAPI.currentExec, api.dialect, tableName, where)
-	if err != nil {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(fmt.Sprintf("core.update: row count check failed: %s", err.Error())))
-		return 2
+	if filter != nil {
+		// New condition path — write safety via count check.
+		count, cErr := db.QCountFiltered(ctx, api.dbAPI.currentExec, api.dialect, tableName, filter)
+		if cErr != nil {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(fmt.Sprintf("core.update: row count check failed: %s", cErr.Error())))
+			return 2
+		}
+		if count > int64(api.maxWriteRows) {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(fmt.Sprintf("core.update: would affect %d rows, exceeding safety limit of %d", count, api.maxWriteRows)))
+			return 2
+		}
+		_, err = db.QUpdateFiltered(ctx, api.dbAPI.currentExec, api.dialect, db.FilteredUpdateParams{
+			Table:  tableName,
+			Set:    setMap,
+			Filter: filter,
+		})
+	} else {
+		// Old map path.
+		whereOr, woErr := parseWhereOrFromLua(L, optsTbl)
+		if woErr != nil {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(woErr.Error()))
+			return 2
+		}
+		if len(whereMap) == 0 && len(whereOr) == 0 {
+			L.RaiseError("core.update requires non-empty where or where_or (safety: prevents full-table update)")
+			return 0
+		}
+		count, cErr := db.QCount(ctx, api.dbAPI.currentExec, api.dialect, tableName, whereMap)
+		if cErr != nil {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(fmt.Sprintf("core.update: row count check failed: %s", cErr.Error())))
+			return 2
+		}
+		if count > int64(api.maxWriteRows) {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(fmt.Sprintf("core.update: would affect %d rows, exceeding safety limit of %d", count, api.maxWriteRows)))
+			return 2
+		}
+		_, err = db.QUpdate(ctx, api.dbAPI.currentExec, api.dialect, db.UpdateParams{
+			Table:   tableName,
+			Set:     setMap,
+			Where:   whereMap,
+			WhereOr: whereOr,
+		})
 	}
-	if count > int64(api.maxWriteRows) {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(fmt.Sprintf("core.update: would affect %d rows, exceeding safety limit of %d", count, api.maxWriteRows)))
-		return 2
-	}
-
-	_, err = db.QUpdate(ctx, api.dbAPI.currentExec, api.dialect, db.UpdateParams{
-		Table:   tableName,
-		Set:     setMap,
-		Where:   where,
-		WhereOr: whereOr,
-	})
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
@@ -747,26 +776,12 @@ func (api *CoreTableAPI) luaCoreDelete(L *lua.LState) int {
 		return 2
 	}
 
-	// Parse where with conditions.
-	where, err := parseWhereWithConditions(L, optsTbl)
+	// Parse where with extended detection.
+	whereMap, filter, err := parseWhereExtended(L, optsTbl)
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
 		return 2
-	}
-
-	// Parse where_or.
-	whereOr, err := parseWhereOrFromLua(L, optsTbl)
-	if err != nil {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(err.Error()))
-		return 2
-	}
-
-	// Safety: require at least one of where or where_or to be non-empty.
-	if len(where) == 0 && len(whereOr) == 0 {
-		L.RaiseError("core.delete requires non-empty where or where_or (safety: prevents full-table delete)")
-		return 0
 	}
 
 	ctx := L.Context()
@@ -775,24 +790,52 @@ func (api *CoreTableAPI) luaCoreDelete(L *lua.LState) int {
 		return 0
 	}
 
-	// Write safety limit: check row count before executing.
-	count, err := db.QCount(ctx, api.dbAPI.currentExec, api.dialect, tableName, where)
-	if err != nil {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(fmt.Sprintf("core.delete: row count check failed: %s", err.Error())))
-		return 2
+	if filter != nil {
+		// New condition path — write safety via count check.
+		count, cErr := db.QCountFiltered(ctx, api.dbAPI.currentExec, api.dialect, tableName, filter)
+		if cErr != nil {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(fmt.Sprintf("core.delete: row count check failed: %s", cErr.Error())))
+			return 2
+		}
+		if count > int64(api.maxWriteRows) {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(fmt.Sprintf("core.delete: would affect %d rows, exceeding safety limit of %d", count, api.maxWriteRows)))
+			return 2
+		}
+		_, err = db.QDeleteFiltered(ctx, api.dbAPI.currentExec, api.dialect, db.FilteredDeleteParams{
+			Table:  tableName,
+			Filter: filter,
+		})
+	} else {
+		// Old map path.
+		whereOr, woErr := parseWhereOrFromLua(L, optsTbl)
+		if woErr != nil {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(woErr.Error()))
+			return 2
+		}
+		if len(whereMap) == 0 && len(whereOr) == 0 {
+			L.RaiseError("core.delete requires non-empty where or where_or (safety: prevents full-table delete)")
+			return 0
+		}
+		count, cErr := db.QCount(ctx, api.dbAPI.currentExec, api.dialect, tableName, whereMap)
+		if cErr != nil {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(fmt.Sprintf("core.delete: row count check failed: %s", cErr.Error())))
+			return 2
+		}
+		if count > int64(api.maxWriteRows) {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(fmt.Sprintf("core.delete: would affect %d rows, exceeding safety limit of %d", count, api.maxWriteRows)))
+			return 2
+		}
+		_, err = db.QDelete(ctx, api.dbAPI.currentExec, api.dialect, db.DeleteParams{
+			Table:   tableName,
+			Where:   whereMap,
+			WhereOr: whereOr,
+		})
 	}
-	if count > int64(api.maxWriteRows) {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(fmt.Sprintf("core.delete: would affect %d rows, exceeding safety limit of %d", count, api.maxWriteRows)))
-		return 2
-	}
-
-	_, err = db.QDelete(ctx, api.dbAPI.currentExec, api.dialect, db.DeleteParams{
-		Table:   tableName,
-		Where:   where,
-		WhereOr: whereOr,
-	})
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))

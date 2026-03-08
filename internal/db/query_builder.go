@@ -417,14 +417,14 @@ type Row map[string]any
 type SelectParams struct {
 	Table    string
 	Columns  []string         // nil = SELECT *
-	Where    map[string]any   // AND conditions; nil values produce IS NULL; Condition values use operators
+	Where    map[string]any   // AND conditions; nil values produce IS NULL; ColumnOp values use operators
 	WhereOr  []map[string]any // OR groups; each inner map is AND-joined, groups are OR-joined
 	Joins    []JoinClause     // JOIN clauses (INNER, LEFT, RIGHT)
 	OrderBy  string           // empty = no ORDER BY (legacy; use Orders for multi-column)
 	Desc     bool             // only used when OrderBy is set (legacy; use Orders for multi-column)
 	Orders   []OrderByClause  // multi-column ORDER BY; takes precedence over OrderBy/Desc when non-empty
 	GroupBy  []string         // GROUP BY column names
-	Having   map[string]any   // HAVING conditions (same Condition system as Where); requires GroupBy
+	Having   map[string]any   // HAVING conditions (same ColumnOp system as Where); requires GroupBy
 	Distinct bool             // SELECT DISTINCT
 	Limit    int64            // 0 = default (maxLimit); negative = no limit; positive = capped at maxLimit
 	Offset   int64            // 0 = no offset
@@ -451,53 +451,53 @@ type DeleteParams struct {
 	WhereOr []map[string]any // OR groups; each inner map is AND-joined, groups are OR-joined
 }
 
-// ===== CONDITION TYPE =====
+// ===== COLUMN OP TYPE =====
 
-// Condition represents a comparison operator with a value for WHERE clauses.
-// Use the constructor functions (Eq, Gt, Like, In, etc.) to create conditions.
-type Condition struct {
+// ColumnOp represents a per-column comparison operator with a value for map-based WHERE clauses.
+// Use the constructor functions (Eq, Gt, Like, In, etc.) to create column ops.
+type ColumnOp struct {
 	op    string
 	value any
 }
 
 // Eq creates an explicit equality condition (=).
-func Eq(v any) Condition { return Condition{op: "=", value: v} }
+func Eq(v any) ColumnOp { return ColumnOp{op: "=", value: v} }
 
 // Neq creates a not-equal condition (!=).
-func Neq(v any) Condition { return Condition{op: "!=", value: v} }
+func Neq(v any) ColumnOp { return ColumnOp{op: "!=", value: v} }
 
 // Gt creates a greater-than condition (>).
-func Gt(v any) Condition { return Condition{op: ">", value: v} }
+func Gt(v any) ColumnOp { return ColumnOp{op: ">", value: v} }
 
 // Gte creates a greater-than-or-equal condition (>=).
-func Gte(v any) Condition { return Condition{op: ">=", value: v} }
+func Gte(v any) ColumnOp { return ColumnOp{op: ">=", value: v} }
 
 // Lt creates a less-than condition (<).
-func Lt(v any) Condition { return Condition{op: "<", value: v} }
+func Lt(v any) ColumnOp { return ColumnOp{op: "<", value: v} }
 
 // Lte creates a less-than-or-equal condition (<=).
-func Lte(v any) Condition { return Condition{op: "<=", value: v} }
+func Lte(v any) ColumnOp { return ColumnOp{op: "<=", value: v} }
 
 // Like creates a LIKE pattern condition.
-func Like(v string) Condition { return Condition{op: "LIKE", value: v} }
+func Like(v string) ColumnOp { return ColumnOp{op: "LIKE", value: v} }
 
 // NotLike creates a NOT LIKE pattern condition.
-func NotLike(v string) Condition { return Condition{op: "NOT LIKE", value: v} }
+func NotLike(v string) ColumnOp { return ColumnOp{op: "NOT LIKE", value: v} }
 
 // In creates an IN condition. Panics if no values provided.
-func In(vals ...any) Condition { return Condition{op: "IN", value: vals} }
+func In(vals ...any) ColumnOp { return ColumnOp{op: "IN", value: vals} }
 
 // NotIn creates a NOT IN condition. Panics if no values provided.
-func NotIn(vals ...any) Condition { return Condition{op: "NOT IN", value: vals} }
+func NotIn(vals ...any) ColumnOp { return ColumnOp{op: "NOT IN", value: vals} }
 
 // Between creates a BETWEEN low AND high condition.
-func Between(low, high any) Condition { return Condition{op: "BETWEEN", value: [2]any{low, high}} }
+func Between(low, high any) ColumnOp { return ColumnOp{op: "BETWEEN", value: [2]any{low, high}} }
 
 // IsNull creates an IS NULL condition.
-func IsNull() Condition { return Condition{op: "IS NULL"} }
+func IsNull() ColumnOp { return ColumnOp{op: "IS NULL"} }
 
 // IsNotNull creates an IS NOT NULL condition.
-func IsNotNull() Condition { return Condition{op: "IS NOT NULL"} }
+func IsNotNull() ColumnOp { return ColumnOp{op: "IS NOT NULL"} }
 
 // ===== JOIN TYPES =====
 
@@ -916,7 +916,7 @@ func buildSelectQuery(d Dialect, p SelectParams) (query string, args []any, err 
 }
 
 // buildWhere constructs a WHERE clause from a map of column=value conditions joined by AND.
-// nil values produce "column" IS NULL. Condition values use their operator.
+// nil values produce "column" IS NULL. ColumnOp values use their operator.
 // Keys are sorted for deterministic output.
 // argOffset is the 1-based starting index for placeholders (relevant for PostgreSQL).
 // This is the thin wrapper used by QCount and QExists (which don't support WhereOr).
@@ -996,7 +996,7 @@ func buildWhereClause(d Dialect, where map[string]any, whereOr []map[string]any,
 }
 
 // buildConditionMap processes a map[string]any of conditions, returning SQL fragments,
-// args, and the next arg index. Handles plain values, nil, and Condition types.
+// args, and the next arg index. Handles plain values, nil, and ColumnOp types.
 func buildConditionMap(d Dialect, m map[string]any, argOffset int) (conditions []string, args []any, nextIdx int, err error) {
 	keys := sortedKeys(m)
 	conditions = make([]string, 0, len(keys))
@@ -1009,7 +1009,7 @@ func buildConditionMap(d Dialect, m map[string]any, argOffset int) (conditions [
 		}
 
 		switch v := m[k].(type) {
-		case Condition:
+		case ColumnOp:
 			frag, condArgs, nextArg, cerr := buildCondition(d, quotedCol, v, argIdx)
 			if cerr != nil {
 				return nil, nil, 0, fmt.Errorf("column %q: %w", k, cerr)
@@ -1029,8 +1029,8 @@ func buildConditionMap(d Dialect, m map[string]any, argOffset int) (conditions [
 	return conditions, args, argIdx, nil
 }
 
-// buildCondition generates a SQL fragment for a single Condition.
-func buildCondition(d Dialect, quotedCol string, cond Condition, argIdx int) (frag string, args []any, nextIdx int, err error) {
+// buildCondition generates a SQL fragment for a single ColumnOp.
+func buildCondition(d Dialect, quotedCol string, cond ColumnOp, argIdx int) (frag string, args []any, nextIdx int, err error) {
 	switch cond.op {
 	case "=", "!=", ">", ">=", "<", "<=", "LIKE", "NOT LIKE":
 		return fmt.Sprintf("%s %s %s", quotedCol, cond.op, placeholder(d, argIdx)),

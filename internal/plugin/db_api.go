@@ -163,8 +163,10 @@ func RegisterDBAPI(L *lua.LState, api *DatabaseAPI) {
 	dbTable.RawSetString("count", L.NewFunction(api.luaCount))
 	dbTable.RawSetString("exists", L.NewFunction(api.luaExists))
 	dbTable.RawSetString("insert", L.NewFunction(api.luaInsert))
+	dbTable.RawSetString("insert_many", L.NewFunction(api.luaInsertMany))
 	dbTable.RawSetString("update", L.NewFunction(api.luaUpdate))
 	dbTable.RawSetString("delete", L.NewFunction(api.luaDelete))
+	dbTable.RawSetString("create_index", L.NewFunction(api.luaCreateIndex))
 	dbTable.RawSetString("transaction", L.NewFunction(api.luaTransaction))
 	dbTable.RawSetString("ulid", L.NewFunction(luaULID))
 	dbTable.RawSetString("timestamp", L.NewFunction(luaTimestamp))
@@ -181,7 +183,7 @@ func RegisterDBAPI(L *lua.LState, api *DatabaseAPI) {
 
 // registerConditionConstructors adds db.eq, db.neq, db.gt, etc. to the db Lua table.
 // Each returns a sentinel table {__op = "<op>", __val = <value>} that the Go-side
-// condition resolver recognizes and converts to db.Condition.
+// condition resolver recognizes and converts to db.ColumnOp.
 func registerConditionConstructors(L *lua.LState, dbTable *lua.LTable) {
 	// Unary constructors: db.eq(v), db.neq(v), etc.
 	for _, entry := range []struct {
@@ -276,7 +278,7 @@ func registerConditionConstructors(L *lua.LState, dbTable *lua.LTable) {
 // ===== CONDITION RESOLUTION =====
 
 // resolveConditions walks a where map and converts any sentinel tables
-// (from Lua condition constructors) into db.Condition values.
+// (from Lua condition constructors) into db.ColumnOp values.
 // Plain values and nil pass through unchanged.
 func resolveConditions(where map[string]any) (map[string]any, error) {
 	if where == nil {
@@ -314,8 +316,8 @@ func resolveOneValue(v any) (any, error) {
 	return luaOpToCondition(opStr, val)
 }
 
-// luaOpToCondition converts a Lua operator name and value into a db.Condition.
-func luaOpToCondition(op string, val any) (db.Condition, error) {
+// luaOpToCondition converts a Lua operator name and value into a db.ColumnOp.
+func luaOpToCondition(op string, val any) (db.ColumnOp, error) {
 	switch op {
 	case "eq":
 		return db.Eq(val), nil
@@ -332,40 +334,40 @@ func luaOpToCondition(op string, val any) (db.Condition, error) {
 	case "like":
 		s, ok := val.(string)
 		if !ok {
-			return db.Condition{}, fmt.Errorf("like requires a string value")
+			return db.ColumnOp{}, fmt.Errorf("like requires a string value")
 		}
 		return db.Like(s), nil
 	case "not_like":
 		s, ok := val.(string)
 		if !ok {
-			return db.Condition{}, fmt.Errorf("not_like requires a string value")
+			return db.ColumnOp{}, fmt.Errorf("not_like requires a string value")
 		}
 		return db.NotLike(s), nil
 	case "in":
 		vals, err := toAnySlice(val)
 		if err != nil {
-			return db.Condition{}, fmt.Errorf("in: %w", err)
+			return db.ColumnOp{}, fmt.Errorf("in: %w", err)
 		}
 		if len(vals) == 0 {
-			return db.Condition{}, fmt.Errorf("in requires at least one value")
+			return db.ColumnOp{}, fmt.Errorf("in requires at least one value")
 		}
 		return db.In(vals...), nil
 	case "not_in":
 		vals, err := toAnySlice(val)
 		if err != nil {
-			return db.Condition{}, fmt.Errorf("not_in: %w", err)
+			return db.ColumnOp{}, fmt.Errorf("not_in: %w", err)
 		}
 		if len(vals) == 0 {
-			return db.Condition{}, fmt.Errorf("not_in requires at least one value")
+			return db.ColumnOp{}, fmt.Errorf("not_in requires at least one value")
 		}
 		return db.NotIn(vals...), nil
 	case "between":
 		vals, err := toAnySlice(val)
 		if err != nil {
-			return db.Condition{}, fmt.Errorf("between: %w", err)
+			return db.ColumnOp{}, fmt.Errorf("between: %w", err)
 		}
 		if len(vals) != 2 {
-			return db.Condition{}, fmt.Errorf("between requires exactly 2 values, got %d", len(vals))
+			return db.ColumnOp{}, fmt.Errorf("between requires exactly 2 values, got %d", len(vals))
 		}
 		return db.Between(vals[0], vals[1]), nil
 	case "is_null":
@@ -373,7 +375,7 @@ func luaOpToCondition(op string, val any) (db.Condition, error) {
 	case "is_not_null":
 		return db.IsNotNull(), nil
 	default:
-		return db.Condition{}, fmt.Errorf("unsupported operator %q", op)
+		return db.ColumnOp{}, fmt.Errorf("unsupported operator %q", op)
 	}
 }
 
@@ -395,6 +397,7 @@ func toAnySlice(val any) ([]any, error) {
 type parsedSelectOpts struct {
 	columns  []string
 	where    map[string]any
+	filter   db.Condition // non-nil when new-style condition syntax is used
 	whereOr  []map[string]any
 	joins    []db.JoinClause
 	orderBy  string
@@ -412,11 +415,12 @@ type parsedSelectOpts struct {
 func parseSelectOpts(L *lua.LState, optsTbl *lua.LTable, pluginName string) (parsedSelectOpts, error) {
 	var opts parsedSelectOpts
 
-	where, err := parseWhereWithConditions(L, optsTbl)
+	whereMap, filter, err := parseWhereExtended(L, optsTbl)
 	if err != nil {
 		return opts, err
 	}
-	opts.where = where
+	opts.where = whereMap
+	opts.filter = filter
 
 	whereOr, err := parseWhereOrFromLua(L, optsTbl)
 	if err != nil {
@@ -472,14 +476,6 @@ func parseSelectOpts(L *lua.LState, optsTbl *lua.LTable, pluginName string) (par
 	return opts, nil
 }
 
-// parseWhereWithConditions extracts the "where" field and resolves any condition sentinels.
-func parseWhereWithConditions(L *lua.LState, optsTbl *lua.LTable) (map[string]any, error) {
-	raw := parseWhereFromLua(L, optsTbl)
-	if raw == nil {
-		return nil, nil
-	}
-	return resolveConditions(raw)
-}
 
 // parseWhereOrFromLua extracts the "where_or" field: a Lua sequence of where-maps.
 // Each map is resolved for condition sentinels.
@@ -815,21 +811,43 @@ func (api *DatabaseAPI) luaQuery(L *lua.LState) int {
 		return 0
 	}
 
-	rows, err := db.QSelect(ctx, api.currentExec, api.dialect, db.SelectParams{
-		Table:    prefixed,
-		Columns:  opts.columns,
-		Where:    opts.where,
-		WhereOr:  opts.whereOr,
-		Joins:    opts.joins,
-		OrderBy:  opts.orderBy,
-		Desc:     opts.desc,
-		Orders:   opts.orders,
-		GroupBy:  opts.groupBy,
-		Having:   opts.having,
-		Distinct: opts.distinct,
-		Limit:    opts.limit,
-		Offset:   opts.offset,
-	})
+	var rows []db.Row
+	if opts.filter != nil {
+		// New condition-based path.
+		var orderByCols []db.OrderByColumn
+		for _, o := range opts.orders {
+			orderByCols = append(orderByCols, db.OrderByColumn{Column: o.Column, Desc: o.Desc})
+		}
+		if opts.orderBy != "" && len(orderByCols) == 0 {
+			orderByCols = []db.OrderByColumn{{Column: opts.orderBy, Desc: opts.desc}}
+		}
+		rows, err = db.QSelectFiltered(ctx, api.currentExec, api.dialect, db.FilteredSelectParams{
+			Table:       prefixed,
+			Columns:     opts.columns,
+			Filter:      opts.filter,
+			OrderByCols: orderByCols,
+			Distinct:    opts.distinct,
+			Limit:       opts.limit,
+			Offset:      opts.offset,
+		})
+	} else {
+		// Old map-based path.
+		rows, err = db.QSelect(ctx, api.currentExec, api.dialect, db.SelectParams{
+			Table:    prefixed,
+			Columns:  opts.columns,
+			Where:    opts.where,
+			WhereOr:  opts.whereOr,
+			Joins:    opts.joins,
+			OrderBy:  opts.orderBy,
+			Desc:     opts.desc,
+			Orders:   opts.orders,
+			GroupBy:  opts.groupBy,
+			Having:   opts.having,
+			Distinct: opts.distinct,
+			Limit:    opts.limit,
+			Offset:   opts.offset,
+		})
+	}
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
@@ -883,19 +901,29 @@ func (api *DatabaseAPI) luaQueryOne(L *lua.LState) int {
 		return 0
 	}
 
-	row, err := db.QSelectOne(ctx, api.currentExec, api.dialect, db.SelectParams{
-		Table:    prefixed,
-		Columns:  opts.columns,
-		Where:    opts.where,
-		WhereOr:  opts.whereOr,
-		Joins:    opts.joins,
-		OrderBy:  opts.orderBy,
-		Desc:     opts.desc,
-		Orders:   opts.orders,
-		GroupBy:  opts.groupBy,
-		Having:   opts.having,
-		Distinct: opts.distinct,
-	})
+	var row db.Row
+	if opts.filter != nil {
+		row, err = db.QSelectOneFiltered(ctx, api.currentExec, api.dialect, db.FilteredSelectParams{
+			Table:    prefixed,
+			Columns:  opts.columns,
+			Filter:   opts.filter,
+			Distinct: opts.distinct,
+		})
+	} else {
+		row, err = db.QSelectOne(ctx, api.currentExec, api.dialect, db.SelectParams{
+			Table:    prefixed,
+			Columns:  opts.columns,
+			Where:    opts.where,
+			WhereOr:  opts.whereOr,
+			Joins:    opts.joins,
+			OrderBy:  opts.orderBy,
+			Desc:     opts.desc,
+			Orders:   opts.orders,
+			GroupBy:  opts.groupBy,
+			Having:   opts.having,
+			Distinct: opts.distinct,
+		})
+	}
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
@@ -928,11 +956,12 @@ func (api *DatabaseAPI) luaCount(L *lua.LState) int {
 		return 2
 	}
 
-	var where map[string]any
+	var whereMap map[string]any
+	var filter db.Condition
 	if L.GetTop() >= 2 {
 		optsVal := L.Get(2)
 		if optsTbl, ok := optsVal.(*lua.LTable); ok {
-			where, err = parseWhereWithConditions(L, optsTbl)
+			whereMap, filter, err = parseWhereExtended(L, optsTbl)
 			if err != nil {
 				L.Push(lua.LNil)
 				L.Push(lua.LString(err.Error()))
@@ -947,7 +976,12 @@ func (api *DatabaseAPI) luaCount(L *lua.LState) int {
 		return 0
 	}
 
-	count, err := db.QCount(ctx, api.currentExec, api.dialect, prefixed, where)
+	var count int64
+	if filter != nil {
+		count, err = db.QCountFiltered(ctx, api.currentExec, api.dialect, prefixed, filter)
+	} else {
+		count, err = db.QCount(ctx, api.currentExec, api.dialect, prefixed, whereMap)
+	}
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
@@ -975,11 +1009,12 @@ func (api *DatabaseAPI) luaExists(L *lua.LState) int {
 		return 2
 	}
 
-	var where map[string]any
+	var whereMap map[string]any
+	var filter db.Condition
 	if L.GetTop() >= 2 {
 		optsVal := L.Get(2)
 		if optsTbl, ok := optsVal.(*lua.LTable); ok {
-			where, err = parseWhereWithConditions(L, optsTbl)
+			whereMap, filter, err = parseWhereExtended(L, optsTbl)
 			if err != nil {
 				L.Push(lua.LNil)
 				L.Push(lua.LString(err.Error()))
@@ -994,7 +1029,12 @@ func (api *DatabaseAPI) luaExists(L *lua.LState) int {
 		return 0
 	}
 
-	exists, err := db.QExists(ctx, api.currentExec, api.dialect, prefixed, where)
+	var exists bool
+	if filter != nil {
+		exists, err = db.QExistsFiltered(ctx, api.currentExec, api.dialect, prefixed, filter)
+	} else {
+		exists, err = db.QExists(ctx, api.currentExec, api.dialect, prefixed, whereMap)
+	}
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
@@ -1093,26 +1133,12 @@ func (api *DatabaseAPI) luaUpdate(L *lua.LState) int {
 		return 0
 	}
 
-	// Parse where with conditions.
-	where, err := parseWhereWithConditions(L, optsTbl)
+	// Parse where with extended detection (old map or new condition).
+	whereMap, filter, err := parseWhereExtended(L, optsTbl)
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
 		return 2
-	}
-
-	// Parse where_or.
-	whereOr, err := parseWhereOrFromLua(L, optsTbl)
-	if err != nil {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(err.Error()))
-		return 2
-	}
-
-	// Safety: require at least one of where or where_or to be non-empty.
-	if len(where) == 0 && len(whereOr) == 0 {
-		L.RaiseError("db.update requires non-empty where or where_or (safety: prevents full-table update)")
-		return 0
 	}
 
 	// Auto-set updated_at if not explicitly provided.
@@ -1126,12 +1152,32 @@ func (api *DatabaseAPI) luaUpdate(L *lua.LState) int {
 		return 0
 	}
 
-	_, err = db.QUpdate(ctx, api.currentExec, api.dialect, db.UpdateParams{
-		Table:   prefixed,
-		Set:     setMap,
-		Where:   where,
-		WhereOr: whereOr,
-	})
+	if filter != nil {
+		// New condition path.
+		_, err = db.QUpdateFiltered(ctx, api.currentExec, api.dialect, db.FilteredUpdateParams{
+			Table:  prefixed,
+			Set:    setMap,
+			Filter: filter,
+		})
+	} else {
+		// Old map path — parse where_or and enforce safety.
+		whereOr, woErr := parseWhereOrFromLua(L, optsTbl)
+		if woErr != nil {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(woErr.Error()))
+			return 2
+		}
+		if len(whereMap) == 0 && len(whereOr) == 0 {
+			L.RaiseError("db.update requires non-empty where or where_or (safety: prevents full-table update)")
+			return 0
+		}
+		_, err = db.QUpdate(ctx, api.currentExec, api.dialect, db.UpdateParams{
+			Table:   prefixed,
+			Set:     setMap,
+			Where:   whereMap,
+			WhereOr: whereOr,
+		})
+	}
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
@@ -1160,26 +1206,12 @@ func (api *DatabaseAPI) luaDelete(L *lua.LState) int {
 		return 2
 	}
 
-	// Parse where with conditions.
-	where, err := parseWhereWithConditions(L, optsTbl)
+	// Parse where with extended detection (old map or new condition).
+	whereMap, filter, err := parseWhereExtended(L, optsTbl)
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
 		return 2
-	}
-
-	// Parse where_or.
-	whereOr, err := parseWhereOrFromLua(L, optsTbl)
-	if err != nil {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(err.Error()))
-		return 2
-	}
-
-	// Safety: require at least one of where or where_or to be non-empty.
-	if len(where) == 0 && len(whereOr) == 0 {
-		L.RaiseError("db.delete requires non-empty where or where_or (safety: prevents full-table delete)")
-		return 0
 	}
 
 	ctx := L.Context()
@@ -1188,11 +1220,30 @@ func (api *DatabaseAPI) luaDelete(L *lua.LState) int {
 		return 0
 	}
 
-	_, err = db.QDelete(ctx, api.currentExec, api.dialect, db.DeleteParams{
-		Table:   prefixed,
-		Where:   where,
-		WhereOr: whereOr,
-	})
+	if filter != nil {
+		// New condition path.
+		_, err = db.QDeleteFiltered(ctx, api.currentExec, api.dialect, db.FilteredDeleteParams{
+			Table:  prefixed,
+			Filter: filter,
+		})
+	} else {
+		// Old map path — parse where_or and enforce safety.
+		whereOr, woErr := parseWhereOrFromLua(L, optsTbl)
+		if woErr != nil {
+			L.Push(lua.LNil)
+			L.Push(lua.LString(woErr.Error()))
+			return 2
+		}
+		if len(whereMap) == 0 && len(whereOr) == 0 {
+			L.RaiseError("db.delete requires non-empty where or where_or (safety: prevents full-table delete)")
+			return 0
+		}
+		_, err = db.QDelete(ctx, api.currentExec, api.dialect, db.DeleteParams{
+			Table:   prefixed,
+			Where:   whereMap,
+			WhereOr: whereOr,
+		})
+	}
 	if err != nil {
 		L.Push(lua.LNil)
 		L.Push(lua.LString(err.Error()))
@@ -1266,20 +1317,6 @@ func luaTimestamp(L *lua.LState) int {
 	return 1
 }
 
-// parseWhereFromLua extracts the "where" field from a Lua opts table and
-// converts it to a Go map[string]any. Returns nil if the field is absent,
-// nil, or not a table.
-func parseWhereFromLua(L *lua.LState, optsTbl *lua.LTable) map[string]any {
-	whereVal := L.GetField(optsTbl, "where")
-	if whereVal == lua.LNil {
-		return nil
-	}
-	whereTbl, ok := whereVal.(*lua.LTable)
-	if !ok {
-		return nil
-	}
-	return LuaTableToMap(L, whereTbl)
-}
 
 // luaStringField reads an optional string field from a Lua table.
 // Returns empty string if the field is absent, nil, or not a string.

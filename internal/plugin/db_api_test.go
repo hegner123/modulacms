@@ -1450,33 +1450,36 @@ func TestDBAPI_CheckOpLimit_ExceedsBudget(t *testing.T) {
 
 // -- Tests: Nil where conversions --
 
-func TestDBAPI_ParseWhereFromLua_NilWhereField(t *testing.T) {
+func TestDBAPI_ParseWhereExtended_NilWhereField(t *testing.T) {
 	L := newTestState()
 	defer L.Close()
 	ApplySandbox(L, SandboxConfig{})
 
 	tbl := L.NewTable()
 	// No "where" field set.
-	result := parseWhereFromLua(L, tbl)
-	if result != nil {
-		t.Errorf("expected nil for missing where field, got %v", result)
+	whereMap, cond, err := parseWhereExtended(L, tbl)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if whereMap != nil || cond != nil {
+		t.Errorf("expected both nil for missing where field")
 	}
 }
 
-func TestDBAPI_ParseWhereFromLua_EmptyWhereTable(t *testing.T) {
+func TestDBAPI_ParseWhereExtended_EmptyWhereTable(t *testing.T) {
 	L := newTestState()
 	defer L.Close()
 	ApplySandbox(L, SandboxConfig{})
 
 	tbl := L.NewTable()
 	L.SetField(tbl, "where", L.NewTable())
-	result := parseWhereFromLua(L, tbl)
-	// Empty table produces empty map.
-	if result == nil {
-		t.Fatal("expected empty map for empty where table, got nil")
+	whereMap, cond, err := parseWhereExtended(L, tbl)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(result) != 0 {
-		t.Errorf("expected empty map, got %v", result)
+	// Empty table → both nil (no filter).
+	if whereMap != nil || cond != nil {
+		t.Errorf("expected both nil for empty where table")
 	}
 }
 
@@ -2858,8 +2861,8 @@ func TestResolveConditions_WithSentinel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if _, ok := result["priority"].(db.Condition); !ok {
-		t.Errorf("expected db.Condition, got %T", result["priority"])
+	if _, ok := result["priority"].(db.ColumnOp); !ok {
+		t.Errorf("expected db.ColumnOp, got %T", result["priority"])
 	}
 }
 
