@@ -16,7 +16,7 @@ AdminDatatypes follow the same pattern with `NullableAdminDatatypeID`.
 
 # Part A: Public Datatypes
 
-## Phase 1: Schema (6 files in `sql/schema/7_datatypes/`)
+## Phase 1: Schema (6 files in `sql/schema/7_datatypes/`) ✅
 
 Add `sort_order` column after `parent_id` in all schema and query files.
 
@@ -53,33 +53,22 @@ SELECT COALESCE(MAX(sort_order), -1) FROM datatypes WHERE parent_id = ?;
 
 PostgreSQL uses `$1`/`$2` placeholders; SQLite and MySQL use `?`.
 
-## Phase 2: Combined Schema Files
+## Phase 2: Combined Schema Files ✅
 
 Add `sort_order` column to the datatypes block in:
 - `sql/all_schema.sql`
 - `sql/all_schema_mysql.sql`
 - `sql/all_schema_psql.sql`
 
-## Phase 3: Regenerate sqlc
+## Phase 3: Regenerate sqlc ✅
 
 ```bash
 just sqlc
 ```
 
-## Phase 4: Update dbgen Definition + Regenerate
+## Phase 4: Update dbgen Definition + Regenerate ✅
 
-**File: `tools/dbgen/definitions.go`**
-
-Add `SortOrder` field to the Datatypes entity (after `ParentID`):
-
-```go
-{AppName: "SortOrder", Type: "int64", JSONTag: "sort_order", InCreate: true, InUpdate: true, NarrowInt: true, StringConvert: "sprintf"},
-```
-
-Then regenerate:
-```bash
-just dbgen
-```
+**File: `tools/dbgen/definitions.go`** — SortOrder added, `just dbgen` run.
 
 This updates `internal/db/datatype_gen.go` automatically — adding `SortOrder` to:
 - `Datatypes` struct
@@ -88,9 +77,9 @@ This updates `internal/db/datatype_gen.go` automatically — adding `SortOrder` 
 - All `MapDatatype`, `MapCreateDatatypeParams`, `MapUpdateDatatypeParams` (3 backends each)
 - All `NewDatatypeCmd.Execute`, `UpdateDatatypeCmd.Execute` (3 backends each)
 
-## Phase 5: Manual Wrapper Updates
+## Phase 5: Manual Wrapper Updates ✅
 
-### 5a. `internal/db/imports.go`
+### 5a. `internal/db/imports.go` ✅
 Add `SortOrder string` to `StringDatatypes` after `ParentID`.
 
 ### 5b. `internal/db/datatype_custom.go`
@@ -110,7 +99,7 @@ Following the exact pattern in `internal/db/field_custom.go`:
   - `parentID.Valid == true` → calls `GetMaxDatatypeSortOrderByParentID`
 - Reuse existing `coalesceToInt64` from `field_custom.go` (same package)
 
-## Phase 6: DbDriver Interface
+## Phase 6: DbDriver Interface ✅
 
 **File: `internal/db/db.go`**
 
@@ -120,13 +109,13 @@ UpdateDatatypeSortOrder(context.Context, audited.AuditContext, UpdateDatatypeSor
 GetMaxDatatypeSortOrder(types.NullableDatatypeID) (int64, error)
 ```
 
-## Phase 7: Bootstrap Data
+## Phase 7: Bootstrap Data ✅
 
 **File: `internal/db/db.go`** — 6 `CreateDatatypeParams` literals (2 per backend, 3 backends):
 - Page datatype: add `SortOrder: 0`
 - Reference datatype: add `SortOrder: 1`
 
-## Phase 8: Preserve SortOrder in UpdateDatatype Call Sites
+## Phase 8: Preserve SortOrder in UpdateDatatype Call Sites ✅
 
 Adding `SortOrder` to `UpdateDatatypeParams` means every caller must set it or it defaults to zero, silently resetting the sort order. All 4 call sites need fixing:
 
@@ -156,7 +145,7 @@ Decodes JSON directly into `UpdateDatatypeParams`. Since `SortOrder` is now a fi
 
 **No change needed** — the `json:"sort_order"` tag on the struct handles it. API callers who want to preserve sort_order should include it in the request body.
 
-## Phase 9: Router — Sort Order Endpoints
+## Phase 9: Router — Sort Order Endpoints ✅
 
 ### 9a. New file: `internal/router/datatypeSortOrder.go`
 
@@ -173,7 +162,7 @@ mux.Handle("PUT /api/v1/datatype/{id}/sort-order", ...)  // datatypes:update
 mux.Handle("GET /api/v1/datatype/max-sort-order", ...)    // datatypes:read
 ```
 
-## Phase 10: TUI — Creation with Sort Order
+## Phase 10: TUI — Creation with Sort Order ✅
 
 **File: `internal/tui/update_dialog.go` — `HandleCreateDatatypeFromDialog`**
 
@@ -186,7 +175,7 @@ if sortErr != nil {
 ```
 Add `SortOrder: maxSort + 1` to the `CreateDatatypeParams`.
 
-## Phase 11: TUI — Reorder Handler
+## Phase 11: TUI — Reorder Handler ✅
 
 **File: `internal/tui/commands.go`**
 
@@ -194,7 +183,7 @@ Add after `HandleReorderField` block:
 - `DatatypeReorderedMsg` struct
 - `HandleReorderDatatype` method — swaps sort_order between two datatypes (two `UpdateDatatypeSortOrder` calls)
 
-## Phase 12: TUI — Reorder Controls
+## Phase 12: TUI — Reorder Controls ✅
 
 **File: `internal/tui/update_controls.go` — `DatatypesControls`**
 
@@ -221,7 +210,7 @@ Add `SortOrder: maxSort + 1` to `CreateDatatypeParams`.
 
 # Part B: AdminDatatypes (mirror of Part A)
 
-## Phase 14: AdminDatatypes Schema (6 files in `sql/schema/9_admin_datatypes/`)
+## Phase 14: AdminDatatypes Schema (6 files in `sql/schema/9_admin_datatypes/`) ✅
 
 Identical pattern to Phase 1 but for `admin_datatypes` table.
 
@@ -253,39 +242,26 @@ SELECT COALESCE(MAX(sort_order), -1) FROM admin_datatypes WHERE parent_id IS NUL
 SELECT COALESCE(MAX(sort_order), -1) FROM admin_datatypes WHERE parent_id = ?;
 ```
 
-## Phase 15: AdminDatatypes Combined Schema Files
+## Phase 15: AdminDatatypes Combined Schema Files ✅
 
 Add `sort_order` column to the `admin_datatypes` block in:
 - `sql/all_schema.sql`
 - `sql/all_schema_mysql.sql`
 - `sql/all_schema_psql.sql`
 
-## Phase 16: Regenerate sqlc (covers both tables)
+## Phase 16: Regenerate sqlc (covers both tables) ✅
 
 ```bash
 just sqlc
 ```
 
-## Phase 17: Update dbgen Definition for AdminDatatypes
+## Phase 17: Update dbgen Definition for AdminDatatypes ✅
 
-**File: `tools/dbgen/definitions.go`**
+**File: `tools/dbgen/definitions.go`** — SortOrder added, `just dbgen` run.
 
-Add `SortOrder` field to the AdminDatatypes entity (after `ParentID`):
+## Phase 18: AdminDatatypes Manual Wrapper Updates ✅
 
-```go
-{AppName: "SortOrder", Type: "int64", JSONTag: "sort_order", InCreate: true, InUpdate: true, NarrowInt: true, StringConvert: "sprintf"},
-```
-
-Then regenerate:
-```bash
-just dbgen
-```
-
-This updates `internal/db/admin_datatype_gen.go` automatically.
-
-## Phase 18: AdminDatatypes Manual Wrapper Updates
-
-### 18a. `internal/db/imports.go`
+### 18a. `internal/db/imports.go` ✅
 Add `SortOrder string` to `StringAdminDatatypes` after `ParentID`.
 
 ### 18b. `internal/db/admin_datatype_custom.go`
@@ -299,7 +275,7 @@ Same pattern as `datatype_sort_order.go` but with `AdminDatatypeID`, `NullableAd
 - 3 audited command structs + 3 factory methods + 3 public methods
 - `GetMaxAdminDatatypeSortOrder(parentID types.NullableAdminDatatypeID) (int64, error)` — branches on `Valid`
 
-## Phase 19: AdminDatatypes DbDriver Interface
+## Phase 19: AdminDatatypes DbDriver Interface ✅
 
 **File: `internal/db/db.go`**
 
@@ -309,12 +285,12 @@ UpdateAdminDatatypeSortOrder(context.Context, audited.AuditContext, UpdateAdminD
 GetMaxAdminDatatypeSortOrder(types.NullableAdminDatatypeID) (int64, error)
 ```
 
-## Phase 20: AdminDatatypes Bootstrap Data
+## Phase 20: AdminDatatypes Bootstrap Data ✅
 
 **File: `internal/db/db.go`** — 3 `CreateAdminDatatypeParams` literals (1 per backend, 3 backends):
 - Admin Page datatype: add `SortOrder: 0`
 
-## Phase 21: Preserve SortOrder in UpdateAdminDatatype Call Sites
+## Phase 21: Preserve SortOrder in UpdateAdminDatatype Call Sites ✅
 
 ### 21a. `internal/tui/admin_update_dialog.go:278` (TUI dialog submit)
 Already fetches `existing`. Add:
@@ -326,7 +302,7 @@ to the `UpdateAdminDatatypeParams` literal.
 ### 21b. `internal/router/adminDatatypes.go:114` (API PUT)
 Decodes JSON directly into `UpdateAdminDatatypeParams`. Same treatment as Phase 8d — the `json:"sort_order"` tag handles it. No change needed.
 
-## Phase 22: AdminDatatypes Router — Sort Order Endpoints
+## Phase 22: AdminDatatypes Router — Sort Order Endpoints ✅
 
 ### 22a. New file: `internal/router/adminDatatypeSortOrder.go`
 
@@ -341,20 +317,20 @@ mux.Handle("PUT /api/v1/admindatatypes/{id}/sort-order", ...)  // admin_datatype
 mux.Handle("GET /api/v1/admindatatypes/max-sort-order", ...)    // admin_datatypes:read
 ```
 
-## Phase 23: AdminDatatypes TUI — Creation with Sort Order
+## Phase 23: AdminDatatypes TUI — Creation with Sort Order ✅
 
 **File: `internal/tui/admin_update_dialog.go`** — find `HandleCreateAdminDatatypeFromDialog`
 
 Before `d.CreateAdminDatatype`, add max sort order lookup and `SortOrder: maxSort + 1`.
 
-## Phase 24: AdminDatatypes TUI — Reorder Handler
+## Phase 24: AdminDatatypes TUI — Reorder Handler ✅
 
 **File: `internal/tui/commands.go`** (or `admin_constructors.go` if admin commands are separate)
 
 - `AdminDatatypeReorderedMsg` struct
 - `HandleReorderAdminDatatype` method
 
-## Phase 25: AdminDatatypes TUI — Reorder Controls
+## Phase 25: AdminDatatypes TUI — Reorder Controls ✅
 
 **File: `internal/tui/admin_controls.go` — `AdminDatatypesControls`**
 
@@ -368,7 +344,7 @@ Handle `AdminDatatypeReorderedMsg`: adjust cursor, reload.
 
 # Part C: Remote Driver
 
-## Phase 26: Remote Driver Conversion Functions
+## Phase 26: Remote Driver Conversion Functions ✅
 
 ### 26a. `internal/remote/convert_core.go`
 
@@ -404,7 +380,7 @@ Add 4 new methods that call the SDK sort order endpoints:
 
 # Part D: Go SDK
 
-## Phase 28: Go SDK Entity Types
+## Phase 28: Go SDK Entity Types ✅
 
 **File: `sdks/go/types.go`**
 
@@ -538,7 +514,7 @@ Add `sort_order: number`.
 ### 33c. UpdateAdminDatatypeParams (line 356)
 Add `sort_order: number`.
 
-## Phase 34: TypeScript Admin SDK — Sort Order Methods
+## Phase 34: TypeScript Admin SDK — Sort Order Methods ✅
 
 **File: `sdks/typescript/modulacms-admin-sdk/src/index.ts`**
 
@@ -582,7 +558,7 @@ Update the `datatypes` and `adminDatatypes` type declarations in the client inte
 
 # Part F: Swift SDK
 
-## Phase 35: Swift SDK Entity Types
+## Phase 35: Swift SDK Entity Types ✅
 
 **File: `sdks/swift/Sources/Modula/Types.swift`**
 
@@ -615,7 +591,7 @@ Add `public let sortOrder: Int64` + init parameter + CodingKey.
 
 # Part G: Verification
 
-## Phase 36: Build and Test
+## Phase 36: Build and Test ✅
 
 1. `just sqlc` — regenerate sqlc (covers both datatypes and admin_datatypes)
 2. `just dbgen` — regenerate db wrappers (covers both entities)
