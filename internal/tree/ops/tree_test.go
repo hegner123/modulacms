@@ -753,3 +753,457 @@ func TestSave(t *testing.T) {
 		}
 	})
 }
+
+// ---------------------------------------------------------------------------
+// Edge case: Insert errors
+// ---------------------------------------------------------------------------
+
+func TestInsertAt_ParentNotFound(t *testing.T) {
+	mb := newMockBackend()
+	mb.addNode("X", empty(), empty(), empty(), empty())
+
+	err := ops.InsertAt(ctx, ac, mb, "MISSING", "X", 0)
+	if err == nil {
+		t.Fatal("expected error for missing parent")
+	}
+}
+
+func TestInsertAt_ChildNotFound(t *testing.T) {
+	mb := newMockBackend()
+	mb.addNode("P", empty(), empty(), empty(), empty())
+
+	err := ops.InsertAt(ctx, ac, mb, "P", "MISSING", 0)
+	if err == nil {
+		t.Fatal("expected error for missing child")
+	}
+}
+
+func TestAppendChild_ParentNotFound(t *testing.T) {
+	mb := newMockBackend()
+	mb.addNode("X", empty(), empty(), empty(), empty())
+
+	err := ops.AppendChild(ctx, ac, mb, "MISSING", "X")
+	if err == nil {
+		t.Fatal("expected error for missing parent")
+	}
+}
+
+func TestAppendChild_ChildNotFound(t *testing.T) {
+	mb := newMockBackend()
+	mb.addNode("P", empty(), empty(), empty(), empty())
+
+	err := ops.AppendChild(ctx, ac, mb, "P", "MISSING")
+	if err == nil {
+		t.Fatal("expected error for missing child")
+	}
+}
+
+func TestInsertAt_ExactEndPosition(t *testing.T) {
+	// P -> A -> B, insert X at position 2 (exactly at end, not beyond)
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), empty(), null("B"), empty())
+	mb.addNode("B", null("P"), empty(), empty(), null("A"))
+	mb.addNode("X", empty(), empty(), empty(), empty())
+
+	if err := ops.InsertAt(ctx, ac, mb, "P", "X", 2); err != nil {
+		t.Fatalf("InsertAt() error: %v", err)
+	}
+
+	// Should be P -> A -> B -> X
+	b := mb.nodes["B"]
+	if !b.NextSiblingID.Valid || b.NextSiblingID.Value != "X" {
+		t.Errorf("B next = %v, want X", b.NextSiblingID)
+	}
+	x := mb.nodes["X"]
+	if !x.PrevSiblingID.Valid || x.PrevSiblingID.Value != "B" {
+		t.Errorf("X prev = %v, want B", x.PrevSiblingID)
+	}
+	if x.NextSiblingID.Valid {
+		t.Errorf("X next = %v, want empty", x.NextSiblingID)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Edge case: Move errors and no-ops
+// ---------------------------------------------------------------------------
+
+func TestMove_NodeNotFound(t *testing.T) {
+	mb := newMockBackend()
+
+	_, err := ops.Move(ctx, ac, mb, ops.MoveParams[testID]{
+		NodeID:      "MISSING",
+		NewParentID: empty(),
+	})
+	if err == nil {
+		t.Fatal("expected error for missing node")
+	}
+}
+
+func TestMove_SameParentAndPosition(t *testing.T) {
+	// P -> A -> B, move A to P at position 0 (same place)
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), empty(), null("B"), empty())
+	mb.addNode("B", null("P"), empty(), empty(), null("A"))
+
+	result, err := ops.Move(ctx, ac, mb, ops.MoveParams[testID]{
+		NodeID:      "A",
+		NewParentID: null("P"),
+		Position:    0,
+	})
+	if err != nil {
+		t.Fatalf("Move() error: %v", err)
+	}
+
+	// Should still be P -> A -> B (or A re-inserted at position 0)
+	p := mb.nodes["P"]
+	if !p.FirstChildID.Valid || p.FirstChildID.Value != "A" {
+		t.Errorf("P first_child = %v, want A", p.FirstChildID)
+	}
+	if result.OldPosition != 0 {
+		t.Errorf("OldPosition = %d, want 0", result.OldPosition)
+	}
+	if result.NewPosition != 0 {
+		t.Errorf("NewPosition = %d, want 0", result.NewPosition)
+	}
+}
+
+func TestMove_DescendantToAncestor(t *testing.T) {
+	// P -> A -> B -> C, try to move A under C (cycle)
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), null("B"), empty(), empty())
+	mb.addNode("B", null("A"), null("C"), empty(), empty())
+	mb.addNode("C", null("B"), empty(), empty(), empty())
+
+	_, err := ops.Move(ctx, ac, mb, ops.MoveParams[testID]{
+		NodeID:      "A",
+		NewParentID: null("C"),
+		Position:    0,
+	})
+	if err == nil {
+		t.Fatal("expected cycle detection error")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Edge case: Reorder edge cases
+// ---------------------------------------------------------------------------
+
+func TestReorder_SingleItem(t *testing.T) {
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), empty(), empty(), empty())
+
+	n, err := ops.Reorder(ctx, ac, mb, null("P"), []testID{"A"})
+	if err != nil {
+		t.Fatalf("Reorder() error: %v", err)
+	}
+	if n != 1 {
+		t.Errorf("updated = %d, want 1", n)
+	}
+
+	// A should have no siblings
+	a := mb.nodes["A"]
+	if a.PrevSiblingID.Valid {
+		t.Errorf("A prev = %v, want empty", a.PrevSiblingID)
+	}
+	if a.NextSiblingID.Valid {
+		t.Errorf("A next = %v, want empty", a.NextSiblingID)
+	}
+	// Parent first child should be A
+	p := mb.nodes["P"]
+	if !p.FirstChildID.Valid || p.FirstChildID.Value != "A" {
+		t.Errorf("P first_child = %v, want A", p.FirstChildID)
+	}
+}
+
+func TestReorder_NodeNotFound(t *testing.T) {
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), empty(), empty(), empty())
+
+	_, err := ops.Reorder(ctx, ac, mb, null("P"), []testID{"A", "MISSING"})
+	if err == nil {
+		t.Fatal("expected error for missing node")
+	}
+}
+
+func TestReorder_DuplicateIDs(t *testing.T) {
+	// P -> A -> B, reorder with ["A", "A"] — should fail because second
+	// GetNode("A") sees ParentID already updated and may mismatch, or
+	// the sibling chain ends up self-referential.
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), empty(), null("B"), empty())
+	mb.addNode("B", null("P"), empty(), empty(), null("A"))
+
+	n, err := ops.Reorder(ctx, ac, mb, null("P"), []testID{"A", "A"})
+	// The code doesn't validate duplicates — it will link A -> A.
+	// This documents the current behavior so we can decide if it needs a fix.
+	if err != nil {
+		t.Logf("Reorder with duplicates returned error (good): %v", err)
+		return
+	}
+	t.Logf("Reorder with duplicates succeeded (n=%d) — A.NextSiblingID=%v A.PrevSiblingID=%v",
+		n, mb.nodes["A"].NextSiblingID, mb.nodes["A"].PrevSiblingID)
+
+	// If it succeeded, A's next would point to itself — document this as a known gap
+	a := mb.nodes["A"]
+	if a.NextSiblingID.Valid && a.NextSiblingID.Value == "A" {
+		t.Error("KNOWN GAP: duplicate IDs in orderedIDs creates self-referential sibling chain")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Edge case: Unlink edge cases
+// ---------------------------------------------------------------------------
+
+func TestUnlink_RootNode(t *testing.T) {
+	// Node with no parent — Unlink should clear pointers without error
+	mb := newMockBackend()
+	mb.addNode("R", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("R"), empty(), empty(), empty())
+
+	node, err := mb.GetNode(ctx, "R")
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+
+	if err := ops.Unlink(ctx, ac, mb, node); err != nil {
+		t.Fatalf("Unlink() error: %v", err)
+	}
+
+	r := mb.nodes["R"]
+	if r.ParentID.Valid {
+		t.Errorf("R parent = %v, want empty", r.ParentID)
+	}
+	if r.NextSiblingID.Valid {
+		t.Errorf("R next = %v, want empty", r.NextSiblingID)
+	}
+	if r.PrevSiblingID.Valid {
+		t.Errorf("R prev = %v, want empty", r.PrevSiblingID)
+	}
+	// FirstChildID should be preserved
+	if !r.FirstChildID.Valid || r.FirstChildID.Value != "A" {
+		t.Errorf("R first_child = %v, want A (preserved)", r.FirstChildID)
+	}
+}
+
+func TestUnlink_NodeWithChildren(t *testing.T) {
+	// P -> A (A has children B, C)
+	// After unlinking A: A's FirstChildID preserved, B and C still under A
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), null("B"), empty(), empty())
+	mb.addNode("B", null("A"), empty(), null("C"), empty())
+	mb.addNode("C", null("A"), empty(), empty(), null("B"))
+
+	node, err := mb.GetNode(ctx, "A")
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+
+	if err := ops.Unlink(ctx, ac, mb, node); err != nil {
+		t.Fatalf("Unlink() error: %v", err)
+	}
+
+	a := mb.nodes["A"]
+	if a.ParentID.Valid {
+		t.Errorf("A parent = %v, want empty", a.ParentID)
+	}
+	// FirstChildID preserved — children stay attached
+	if !a.FirstChildID.Valid || a.FirstChildID.Value != "B" {
+		t.Errorf("A first_child = %v, want B (preserved)", a.FirstChildID)
+	}
+	// Parent no longer has A
+	p := mb.nodes["P"]
+	if p.FirstChildID.Valid {
+		t.Errorf("P first_child = %v, want empty (A was only child)", p.FirstChildID)
+	}
+}
+
+func TestUnlink_AlreadyUnlinked(t *testing.T) {
+	// Node with no parent, no siblings — Unlink is idempotent
+	mb := newMockBackend()
+	mb.addNode("X", empty(), empty(), empty(), empty())
+
+	node, err := mb.GetNode(ctx, "X")
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+
+	if err := ops.Unlink(ctx, ac, mb, node); err != nil {
+		t.Fatalf("Unlink() error: %v", err)
+	}
+
+	x := mb.nodes["X"]
+	if x.ParentID.Valid || x.NextSiblingID.Valid || x.PrevSiblingID.Valid {
+		t.Errorf("X should remain detached: parent=%v next=%v prev=%v",
+			x.ParentID, x.NextSiblingID, x.PrevSiblingID)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Edge case: Save errors and edge cases
+// ---------------------------------------------------------------------------
+
+func TestSave_CreateFailure(t *testing.T) {
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), empty(), empty(), empty())
+
+	params := ops.SaveParams[testID]{
+		ParentID: null("P"),
+		Creates: []ops.SaveCreate[testID]{
+			{
+				TempID: "temp-fail",
+				CreateFn: func(_ context.Context, _ audited.AuditContext) (testID, error) {
+					return "", fmt.Errorf("db connection lost")
+				},
+			},
+			{
+				TempID: "temp-ok",
+				CreateFn: func(_ context.Context, _ audited.AuditContext) (testID, error) {
+					mb.addNode("B", null("P"), empty(), empty(), empty())
+					return "B", nil
+				},
+			},
+		},
+		Order: []testID{"A", "temp-ok"},
+	}
+
+	result, err := ops.Save(ctx, ac, mb, params)
+	if err == nil {
+		t.Fatal("expected error from failed create")
+	}
+	// The successful create should still have been processed
+	if result.Created != 1 {
+		t.Errorf("Created = %d, want 1 (one succeeded)", result.Created)
+	}
+	if result.IDMap["temp-ok"] != "B" {
+		t.Errorf("IDMap[temp-ok] = %v, want B", result.IDMap["temp-ok"])
+	}
+}
+
+func TestSave_UpdateFailure(t *testing.T) {
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), empty(), null("B"), empty())
+	mb.addNode("B", null("P"), empty(), empty(), null("A"))
+
+	updateACalled := false
+	params := ops.SaveParams[testID]{
+		ParentID: null("P"),
+		Updates: []ops.SaveUpdate[testID]{
+			{
+				ID: "A",
+				UpdateFn: func(_ context.Context, _ audited.AuditContext) error {
+					updateACalled = true
+					return fmt.Errorf("validation failed")
+				},
+			},
+			{
+				ID: "B",
+				UpdateFn: func(_ context.Context, _ audited.AuditContext) error {
+					return nil
+				},
+			},
+		},
+		Order: []testID{"A", "B"},
+	}
+
+	result, err := ops.Save(ctx, ac, mb, params)
+	if err == nil {
+		t.Fatal("expected error from failed update")
+	}
+	if !updateACalled {
+		t.Error("UpdateFn for A was not called")
+	}
+	// B's update should still succeed
+	if result.Updated != 1 {
+		t.Errorf("Updated = %d, want 1 (one succeeded)", result.Updated)
+	}
+}
+
+func TestSave_DeleteNonexistent(t *testing.T) {
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), empty(), empty(), empty())
+
+	params := ops.SaveParams[testID]{
+		ParentID: null("P"),
+		Deletes:  []testID{"MISSING"},
+		Order:    []testID{"A"},
+	}
+
+	result, err := ops.Save(ctx, ac, mb, params)
+	if err == nil {
+		t.Fatal("expected error from deleting non-existent node")
+	}
+	if result.Deleted != 0 {
+		t.Errorf("Deleted = %d, want 0", result.Deleted)
+	}
+}
+
+func TestSave_AllDeletedLeavesEmptyOrder(t *testing.T) {
+	// Delete all children — order becomes empty after filtering, skip reorder
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), empty(), empty(), empty())
+
+	params := ops.SaveParams[testID]{
+		ParentID: null("P"),
+		Deletes:  []testID{"A"},
+		Order:    []testID{"A"}, // filtered to empty after delete
+	}
+
+	result, err := ops.Save(ctx, ac, mb, params)
+	if err != nil {
+		t.Fatalf("Save() error: %v", err)
+	}
+	if result.Deleted != 1 {
+		t.Errorf("Deleted = %d, want 1", result.Deleted)
+	}
+
+	// A should be unlinked, P should have no children
+	p := mb.nodes["P"]
+	if p.FirstChildID.Valid {
+		t.Errorf("P first_child = %v, want empty", p.FirstChildID)
+	}
+}
+
+func TestSave_EmptyParams(t *testing.T) {
+	mb := newMockBackend()
+	mb.addNode("P", empty(), null("A"), empty(), empty())
+	mb.addNode("A", null("P"), empty(), empty(), empty())
+
+	// No creates, updates, deletes, or order — should be a no-op
+	params := ops.SaveParams[testID]{
+		ParentID: null("P"),
+	}
+
+	result, err := ops.Save(ctx, ac, mb, params)
+	if err != nil {
+		t.Fatalf("Save() error: %v", err)
+	}
+	if result.Created != 0 || result.Updated != 0 || result.Deleted != 0 {
+		t.Errorf("expected all zeros, got created=%d updated=%d deleted=%d",
+			result.Created, result.Updated, result.Deleted)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Edge case: DetectCycle with missing node
+// ---------------------------------------------------------------------------
+
+func TestDetectCycle_ProposedParentNotFound(t *testing.T) {
+	mb := newMockBackend()
+	mb.addNode("A", empty(), empty(), empty(), empty())
+
+	err := ops.DetectCycle(ctx, mb, "A", null("MISSING"))
+	if err == nil {
+		t.Fatal("expected error when proposed parent doesn't exist")
+	}
+}
