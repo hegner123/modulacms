@@ -50,4 +50,12 @@ public final class LocaleResource: Sendable {
             body: req
         )
     }
+
+    /// Create translated content fields for an admin content data node in the given locale.
+    public func createAdminTranslation(adminContentDataID: String, req: CreateTranslationRequest) async throws -> CreateTranslationResponse {
+        try await http.post(
+            path: "/api/v1/admin/admincontentdata/\(adminContentDataID)/translations",
+            body: req
+        )
+    }
 }
