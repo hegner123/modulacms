@@ -4,21 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"crypto/subtle"
-	"strings"
-
 	htmxadmin "github.com/hegner123/modulacms/internal/admin"
 	adminhandlers "github.com/hegner123/modulacms/internal/admin/handlers"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/deploy"
 	"github.com/hegner123/modulacms/internal/email"
-	mcpserver "github.com/hegner123/modulacms/internal/mcp"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/service"
-	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/time/rate"
 )
 
@@ -558,17 +553,6 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	// HTMX admin panel
 	registerAdminRoutes(mux, mgr, driver, pc, emailSvc, dispatcher, svc)
 
-	// MCP server (Model Context Protocol for AI tooling)
-	if c.MCP_Enabled && c.MCP_API_Key != "" {
-		baseURL := "http://localhost:" + c.Port
-		mcpHandler, mcpErr := mcpserver.Handler(baseURL, c.MCP_API_Key)
-		if mcpErr != nil {
-			utility.DefaultLogger.Ferror("Failed to create MCP handler", mcpErr)
-		} else {
-			mux.Handle("/mcp", mcpAPIKeyAuth(c.MCP_API_Key, mcpHandler))
-		}
-	}
-
 	// Root redirects to admin panel
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin/", http.StatusFound)
@@ -847,24 +831,5 @@ func pluginRoutesRevokeHandler(bridge *plugin.HTTPBridge) http.Handler {
 		// Encode error is non-recoverable (client disconnected or similar);
 		// the response is already partially written so no recovery is possible.
 		json.NewEncoder(w).Encode(map[string]any{"ok": true})
-	})
-}
-
-// mcpAPIKeyAuth wraps an http.Handler with Bearer token authentication for the
-// MCP endpoint. It extracts the token from the Authorization header and performs
-// a constant-time comparison against the configured API key.
-func mcpAPIKeyAuth(apiKey string, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		auth := r.Header.Get("Authorization")
-		if !strings.HasPrefix(auth, "Bearer ") {
-			http.Error(w, "missing or invalid Authorization header", http.StatusUnauthorized)
-			return
-		}
-		token := auth[len("Bearer "):]
-		if subtle.ConstantTimeCompare([]byte(token), []byte(apiKey)) != 1 {
-			http.Error(w, "invalid API key", http.StatusForbidden)
-			return
-		}
-		next.ServeHTTP(w, r)
 	})
 }

@@ -27,6 +27,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/install"
+	mcpserver "github.com/hegner123/modulacms/internal/mcp"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/publishing"
@@ -315,9 +316,24 @@ Examples:
 			if pluginManager != nil {
 				hookRunner = pluginManager.HookEngine()
 			}
-			return middleware.Chain(
+			fullHandler := middleware.Chain(
 				middleware.HookRunnerMiddleware(hookRunner),
 			)(middleware.DefaultMiddlewareChain(mgr, pc)(mux))
+
+			// MCP server (Model Context Protocol for AI tooling).
+			// Registered after middleware wrapping so DirectHandler's SDK
+			// calls route through the full auth/permission/audit stack
+			// in-process, eliminating the HTTP loopback.
+			if cfg.MCP_Enabled && cfg.MCP_API_Key != "" {
+				mcpHandler, mcpErr := mcpserver.DirectHandler(fullHandler, cfg.MCP_API_Key)
+				if mcpErr != nil {
+					utility.DefaultLogger.Ferror("Failed to create MCP handler", mcpErr)
+				} else {
+					mux.Handle("/mcp", mcpserver.APIKeyAuth(cfg.MCP_API_Key, mcpHandler))
+				}
+			}
+
+			return fullHandler
 		}
 
 		// Swappable handler: starts as placeholder when DB is missing,
