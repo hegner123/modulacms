@@ -368,6 +368,51 @@ func (id BackupID) String() string { return string(id) }
 // IsZero reports whether the backup ID is empty (unset).
 func (id BackupID) IsZero() bool { return id == "" }
 
+// BackupSetID identifies a backup set (collection of related backups).
+type BackupSetID string
+
+// String returns the raw ULID string for this backup set ID.
+func (id BackupSetID) String() string { return string(id) }
+
+// IsZero reports whether the backup set ID is empty (unset).
+func (id BackupSetID) IsZero() bool { return id == "" }
+
+// NodeID identifies a node in the content tree.
+type NodeID string
+
+// String returns the raw ULID string for this node ID.
+func (id NodeID) String() string { return string(id) }
+
+// IsZero reports whether the node ID is empty (unset).
+func (id NodeID) IsZero() bool { return id == "" }
+
+// PipelineID identifies a deployment pipeline.
+type PipelineID string
+
+// String returns the raw ULID string for this pipeline ID.
+func (id PipelineID) String() string { return string(id) }
+
+// IsZero reports whether the pipeline ID is empty (unset).
+func (id PipelineID) IsZero() bool { return id == "" }
+
+// PluginID identifies a registered plugin.
+type PluginID string
+
+// String returns the raw ULID string for this plugin ID.
+func (id PluginID) String() string { return string(id) }
+
+// IsZero reports whether the plugin ID is empty (unset).
+func (id PluginID) IsZero() bool { return id == "" }
+
+// VerificationID identifies a backup verification record.
+type VerificationID string
+
+// String returns the raw ULID string for this verification ID.
+func (id VerificationID) String() string { return string(id) }
+
+// IsZero reports whether the verification ID is empty (unset).
+func (id VerificationID) IsZero() bool { return id == "" }
+
 // --- Locale IDs ---
 
 // LocaleID identifies a locale for internationalized content.
