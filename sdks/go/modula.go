@@ -186,6 +186,9 @@ type Client struct {
 	// Content provides public slug-based content delivery (read-only).
 	Content *ContentDeliveryResource
 
+	// Globals provides access to published global content trees.
+	Globals *GlobalsResource
+
 	// SSHKeys provides SSH public key management for user accounts.
 	SSHKeys *SSHKeysResource
 
@@ -364,6 +367,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		MediaUpload:  &MediaUploadResource{http: h},
 		AdminTree:    &AdminTreeResource{http: h},
 		Content:      &ContentDeliveryResource{http: h},
+		Globals:      &GlobalsResource{http: h},
 		SSHKeys:      &SSHKeysResource{http: h},
 		Sessions:     &SessionsResource{http: h},
 		Import:       &ImportResource{http: h},
