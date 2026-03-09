@@ -33,6 +33,16 @@ export type FieldType =
   | 'url'
 
 /**
+ * Classifies how a route maps incoming URL patterns to content or behavior.
+ *
+ * - `'static'` - Fixed URL path mapped to a single content item.
+ * - `'dynamic'` - URL pattern with parameters resolved at request time.
+ * - `'api'` - Custom API endpoint, typically registered by a plugin.
+ * - `'redirect'` - Redirect to another URL (returns metadata, not a 301).
+ */
+export type RouteType = 'static' | 'dynamic' | 'api' | 'redirect'
+
+/**
  * All supported content output format identifiers.
  * Use this array for runtime validation of format values.
  *

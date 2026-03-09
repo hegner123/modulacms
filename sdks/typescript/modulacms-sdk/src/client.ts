@@ -376,6 +376,19 @@ export class ModulaClient {
    *   limit: 10,
    * });
    */
+  /**
+   * Fetch all published global content trees.
+   *
+   * Global content items are root nodes typed as `_global` whose published trees
+   * are available site-wide (e.g. navigation, footer, site settings).
+   *
+   * @returns The raw globals response. Shape depends on datatype schema configuration.
+   * @throws {@link ModulaError} On non-2xx response.
+   */
+  async getGlobals(): Promise<unknown> {
+    return this.request<unknown>("/api/v1/globals");
+  }
+
   async queryContent(datatype: string, params?: QueryParams): Promise<QueryResult> {
     const p: Record<string, string> = {};
     if (params?.sort) p.sort = params.sort;

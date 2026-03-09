@@ -115,7 +115,7 @@ export type AdminContentData = {
    * Every content node belongs to exactly one admin route. The route determines
    * which admin content tree this node is part of.
    */
-  admin_route_id: string
+  admin_route_id: AdminRouteID
   /** The datatype that defines this content's schema, or `null` if untyped. */
   admin_datatype_id: AdminDatatypeID | null
   /** ID of the user who created this content, or `null`. */
@@ -136,7 +136,7 @@ export type AdminContentField = {
   /** Unique identifier for this field value. */
   admin_content_field_id: AdminContentFieldID
   /** The admin route this field belongs to, or `null`. */
-  admin_route_id: string | null
+  admin_route_id: AdminRouteID | null
   /** The content data node this field value belongs to. */
   admin_content_data_id: string
   /** The field definition this value corresponds to, or `null`. */
@@ -277,7 +277,7 @@ export type CreateAdminContentDataParams = {
   /** Previous sibling node ID, or `null` (typically `null` for new nodes). */
   prev_sibling_id: string | null
   /** Admin route this content belongs to. Required -- determines the tree namespace. */
-  admin_route_id: string
+  admin_route_id: AdminRouteID
   /** Datatype ID defining this content's schema, or `null` for untyped nodes. */
   admin_datatype_id: AdminDatatypeID | null
   /** Author user ID, or `null` for system-generated nodes. */
@@ -299,7 +299,7 @@ export type CreateAdminContentDataParams = {
  */
 export type CreateAdminContentFieldParams = {
   /** Admin route this field belongs to, or `null`. Should match the content node's route. */
-  admin_route_id: string | null
+  admin_route_id: AdminRouteID | null
   /** Content data node this field value belongs to. Required. */
   admin_content_data_id: string
   /** Field definition this value corresponds to, or `null` for freeform fields. */
@@ -432,7 +432,7 @@ export type UpdateAdminContentDataParams = {
   /** Updated previous sibling ID, or `null`. Prefer the `reorder` endpoint over manual changes. */
   prev_sibling_id: string | null
   /** Admin route this content belongs to. Cannot be changed after creation. */
-  admin_route_id: string
+  admin_route_id: AdminRouteID
   /** Updated datatype ID, or `null`. */
   admin_datatype_id: AdminDatatypeID | null
   /** Author user ID, or `null`. */
@@ -450,7 +450,7 @@ export type UpdateAdminContentFieldParams = {
   /** ID of the field value to update. */
   admin_content_field_id: AdminContentFieldID
   /** Admin route, or `null`. */
-  admin_route_id: string | null
+  admin_route_id: AdminRouteID | null
   /** Content data node this field belongs to. */
   admin_content_data_id: string
   /** Field definition, or `null`. */

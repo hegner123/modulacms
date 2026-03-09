@@ -84,6 +84,12 @@ export type WebhookID = Brand<string, 'WebhookID'>
 /** Unique identifier for a webhook delivery. */
 export type WebhookDeliveryID = Brand<string, 'WebhookDeliveryID'>
 
+/** Unique identifier for an API token. */
+export type TokenID = Brand<string, 'TokenID'>
+
+/** Unique identifier for a user SSH key. */
+export type UserSshKeyID = Brand<string, 'UserSshKeyID'>
+
 /** URL-safe slug string used to identify routes. */
 export type Slug = Brand<string, 'Slug'>
 
