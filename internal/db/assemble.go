@@ -164,6 +164,127 @@ func AssembleFieldViews(rows []ContentFieldWithFieldRow) []FieldView {
 	return result
 }
 
+// AssembleMediaFullView converts a Media entity into a MediaFullView with author.
+func AssembleMediaFullView(d DbDriver, m Media) MediaFullView {
+	view := MapMediaFullView(m)
+	if m.AuthorID.Valid {
+		user, err := d.GetUser(m.AuthorID.ID)
+		if err == nil {
+			av := MapAuthorView(*user)
+			view.Author = &av
+		}
+	}
+	return view
+}
+
+// AssembleMediaFullListView converts a slice of Media into MediaFullViews
+// with authors resolved via a single-pass cache.
+func AssembleMediaFullListView(d DbDriver, items []Media) []MediaFullView {
+	authorCache := make(map[types.UserID]*AuthorView)
+	views := make([]MediaFullView, 0, len(items))
+	for _, m := range items {
+		view := MapMediaFullView(m)
+		if m.AuthorID.Valid {
+			av, ok := authorCache[m.AuthorID.ID]
+			if !ok {
+				user, err := d.GetUser(m.AuthorID.ID)
+				if err == nil {
+					mapped := MapAuthorView(*user)
+					av = &mapped
+					authorCache[m.AuthorID.ID] = av
+				}
+			}
+			if av != nil {
+				copied := *av
+				view.Author = &copied
+			}
+		}
+		views = append(views, view)
+	}
+	return views
+}
+
+// AssembleRouteFullView fetches a route and its content tree, returning a composed view.
+// Uses bounded sequential queries: 1 route + 0-1 author + 1 tree query.
+func AssembleRouteFullView(d DbDriver, routeID types.RouteID) (*RouteFullView, error) {
+	route, err := d.GetRoute(routeID)
+	if err != nil {
+		return nil, fmt.Errorf("get route: %w", err)
+	}
+
+	view := RouteFullView{
+		RouteID:      route.RouteID,
+		Slug:         route.Slug,
+		Title:        route.Title,
+		Status:       route.Status,
+		ContentTree:  []RouteContentNodeView{},
+		DateCreated:  route.DateCreated,
+		DateModified: route.DateModified,
+	}
+
+	if route.AuthorID.Valid {
+		user, userErr := d.GetUser(route.AuthorID.ID)
+		if userErr == nil {
+			av := MapAuthorView(*user)
+			view.Author = &av
+		}
+	}
+
+	nullRouteID := types.NullableRouteID{ID: routeID, Valid: true}
+	rows, err := d.GetContentTreeByRoute(nullRouteID)
+	if err != nil {
+		return nil, fmt.Errorf("get content tree: %w", err)
+	}
+
+	for _, row := range *rows {
+		view.ContentTree = append(view.ContentTree, RouteContentNodeView{
+			ContentDataID: row.ContentDataID,
+			ParentID:      row.ParentID,
+			DatatypeLabel: row.DatatypeLabel,
+			DatatypeType:  row.DatatypeType,
+			Status:        row.Status,
+			DateCreated:   row.DateCreated,
+			DateModified:  row.DateModified,
+		})
+	}
+
+	return &view, nil
+}
+
+// AssembleRecentActivity converts change events into activity views with actor info.
+// Uses a single-pass author cache to avoid N+1 user lookups.
+func AssembleRecentActivity(d DbDriver, events []ChangeEvent) []ActivityEventView {
+	authorCache := make(map[types.UserID]*AuthorView)
+	views := make([]ActivityEventView, 0, len(events))
+	for _, ev := range events {
+		view := ActivityEventView{
+			EventID:       ev.EventID,
+			TableName:     ev.TableName,
+			RecordID:      ev.RecordID,
+			Operation:     ev.Operation,
+			Action:        ev.Action,
+			WallTimestamp: ev.WallTimestamp,
+		}
+		if ev.UserID.Valid {
+			av, ok := authorCache[ev.UserID.ID]
+			if !ok {
+				user, err := d.GetUser(ev.UserID.ID)
+				if err == nil {
+					mapped := MapAuthorView(*user)
+					av = &mapped
+					authorCache[ev.UserID.ID] = av
+				}
+			}
+			if av != nil {
+				copied := *av
+				view.Actor = &copied
+			}
+		}
+		views = append(views, view)
+	}
+	return views
+}
+
 // GroupBy groups a slice by a key function, preserving insertion order of keys.
 func GroupBy[T any, K comparable](items []T, key func(T) K) map[K][]T {
 	result := make(map[K][]T)

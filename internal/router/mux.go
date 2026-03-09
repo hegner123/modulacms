@@ -319,6 +319,9 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	mux.Handle("/api/v1/media", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediasHandler(w, r, svc)
 	})))
+	mux.Handle("GET /api/v1/media/full", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		MediaFullHandler(w, r, svc)
+	})))
 	mux.Handle("GET /api/v1/media/references", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediaReferencesHandler(w, r, svc)
 	})))
@@ -346,6 +349,9 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	})))
 	mux.Handle("/api/v1/routes/", middleware.RequireResourcePermission("routes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		RouteHandler(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/routes/full", middleware.RequirePermission("routes:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		RouteFullHandler(w, r, svc)
 	})))
 
 	// Roles
@@ -424,6 +430,11 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	})))
 	mux.Handle("DELETE /api/v1/ssh-keys/", middleware.RequirePermission("ssh_keys:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DeleteSSHKeyHandler(w, r, svc)
+	})))
+
+	// Activity feed
+	mux.Handle("GET /api/v1/activity/recent", middleware.RequirePermission("audit:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ActivityRecentHandler(w, r, svc)
 	})))
 
 	// Import endpoints

@@ -40,6 +40,35 @@ func RouteHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry)
 	}
 }
 
+// RouteFullHandler handles requests for the composed route+tree view.
+func RouteFullHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiGetRouteFull(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func apiGetRouteFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	q := r.URL.Query().Get("q")
+	id := types.RouteID(q)
+	if err := id.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	view, err := svc.Routes.GetRouteFull(r.Context(), id)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(view)
+}
+
 func apiGetRoute(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	id := types.RouteID(q)

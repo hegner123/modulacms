@@ -176,6 +176,15 @@ func (m *MediaService) ListMedia(ctx context.Context) (*[]db.Media, error) {
 	return m.driver.ListMedia()
 }
 
+// ListMediaFull returns all media records with embedded author views.
+func (m *MediaService) ListMediaFull(ctx context.Context) ([]db.MediaFullView, error) {
+	items, err := m.driver.ListMedia()
+	if err != nil {
+		return nil, fmt.Errorf("list media: %w", err)
+	}
+	return db.AssembleMediaFullListView(m.driver, *items), nil
+}
+
 // ListMediaPaginated returns media records with pagination.
 func (m *MediaService) ListMediaPaginated(ctx context.Context, limit, offset int64) (*[]db.Media, *int64, error) {
 	items, err := m.driver.ListMediaPaginated(db.PaginationParams{Limit: limit, Offset: offset})

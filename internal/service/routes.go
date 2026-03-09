@@ -150,6 +150,15 @@ func (s *RouteService) GetRoute(ctx context.Context, id types.RouteID) (*db.Rout
 	return route, nil
 }
 
+// GetRouteFull retrieves a composed route view with author and content tree.
+func (s *RouteService) GetRouteFull(ctx context.Context, id types.RouteID) (*db.RouteFullView, error) {
+	view, err := db.AssembleRouteFullView(s.driver, id)
+	if err != nil {
+		return nil, &NotFoundError{Resource: "route", ID: string(id)}
+	}
+	return view, nil
+}
+
 // ListRoutes returns all routes.
 func (s *RouteService) ListRoutes(ctx context.Context) (*[]db.Routes, error) {
 	return s.driver.ListRoutes()

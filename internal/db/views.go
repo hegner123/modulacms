@@ -185,6 +185,79 @@ func nullStringValue(ns NullString) string {
 	return ""
 }
 
+// MediaFullView is a composed response for a media item with embedded author.
+type MediaFullView struct {
+	MediaID      types.MediaID         `json:"media_id"`
+	Name         NullString            `json:"name"`
+	DisplayName  NullString            `json:"display_name"`
+	Alt          NullString            `json:"alt"`
+	Caption      NullString            `json:"caption"`
+	Description  NullString            `json:"description"`
+	Mimetype     NullString            `json:"mimetype"`
+	Dimensions   NullString            `json:"dimensions"`
+	URL          types.URL             `json:"url"`
+	Srcset       NullString            `json:"srcset"`
+	FocalX       types.NullableFloat64 `json:"focal_x"`
+	FocalY       types.NullableFloat64 `json:"focal_y"`
+	Author       *AuthorView           `json:"author,omitempty"`
+	DateCreated  types.Timestamp       `json:"date_created"`
+	DateModified types.Timestamp       `json:"date_modified"`
+}
+
+// RouteContentNodeView is a flattened content tree node for the route full view.
+type RouteContentNodeView struct {
+	ContentDataID types.ContentID         `json:"content_data_id"`
+	ParentID      types.NullableContentID `json:"parent_id"`
+	DatatypeLabel string                  `json:"datatype_label"`
+	DatatypeType  string                  `json:"datatype_type"`
+	Status        types.ContentStatus     `json:"status"`
+	DateCreated   types.Timestamp         `json:"date_created"`
+	DateModified  types.Timestamp         `json:"date_modified"`
+}
+
+// RouteFullView is a composed response for a route with its content tree.
+type RouteFullView struct {
+	RouteID      types.RouteID          `json:"route_id"`
+	Slug         types.Slug             `json:"slug"`
+	Title        string                 `json:"title"`
+	Status       int64                  `json:"status"`
+	Author       *AuthorView            `json:"author,omitempty"`
+	ContentTree  []RouteContentNodeView `json:"content_tree"`
+	DateCreated  types.Timestamp        `json:"date_created"`
+	DateModified types.Timestamp        `json:"date_modified"`
+}
+
+// ActivityEventView is a composed change event with actor info for dashboards.
+type ActivityEventView struct {
+	EventID       types.EventID   `json:"event_id"`
+	TableName     string          `json:"table_name"`
+	RecordID      string          `json:"record_id"`
+	Operation     types.Operation `json:"operation"`
+	Action        types.Action    `json:"action"`
+	Actor         *AuthorView     `json:"actor,omitempty"`
+	WallTimestamp types.Timestamp `json:"timestamp"`
+}
+
+// MapMediaFullView converts a Media entity to a MediaFullView.
+func MapMediaFullView(m Media) MediaFullView {
+	return MediaFullView{
+		MediaID:      m.MediaID,
+		Name:         m.Name,
+		DisplayName:  m.DisplayName,
+		Alt:          m.Alt,
+		Caption:      m.Caption,
+		Description:  m.Description,
+		Mimetype:     m.Mimetype,
+		Dimensions:   m.Dimensions,
+		URL:          m.URL,
+		Srcset:       m.Srcset,
+		FocalX:       m.FocalX,
+		FocalY:       m.FocalY,
+		DateCreated:  m.DateCreated,
+		DateModified: m.DateModified,
+	}
+}
+
 // MapAuthorView converts a Users entity to an AuthorView, excluding the hash.
 func MapAuthorView(u Users) AuthorView {
 	return AuthorView{

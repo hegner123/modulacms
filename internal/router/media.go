@@ -44,6 +44,28 @@ func MediaHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry)
 	}
 }
 
+// MediaFullHandler handles requests for the media list with author names.
+func MediaFullHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiListMediaFull(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func apiListMediaFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	views, err := svc.Media.ListMediaFull(r.Context())
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(views)
+}
+
 func apiGetMedia(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	mID := types.MediaID(q)
