@@ -47,30 +47,30 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 
 	// Auth endpoints with CORS and rate limiting (PUBLIC - no auth/permission required)
 	mux.Handle("POST /api/v1/auth/login", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		LoginHandler(w, r, *c)
+		LoginHandler(w, r, svc)
 	}))))
 	mux.Handle("POST /api/v1/auth/logout", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		LogoutHandler(w, r, *c)
+		LogoutHandler(w, r, svc)
 	}))))
 	mux.Handle("GET /api/v1/auth/me", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		MeHandler(w, r, *c)
+		MeHandler(w, r, svc)
 	}))))
 	mux.Handle("POST /api/v1/auth/register", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		RegisterHandler(w, r, *c)
+		RegisterHandler(w, r, svc)
 	}))))
 	mux.Handle("POST /api/v1/auth/reset", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ResetPasswordHandler(w, r, svc)
 	}))))
 	mux.Handle("POST /api/v1/auth/request-password-reset", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		RequestPasswordResetHandler(w, r, *c, emailSvc, driver)
+		RequestPasswordResetHandler(w, r, svc)
 	}))))
 	mux.Handle("POST /api/v1/auth/confirm-password-reset", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ConfirmPasswordResetHandler(w, r, *c, driver)
+		ConfirmPasswordResetHandler(w, r, svc)
 	}))))
 
 	// OAuth endpoints with CORS and rate limiting (PUBLIC - no auth required)
-	mux.Handle("GET /api/v1/auth/oauth/login", corsMiddleware(authLimiter.Middleware(OauthInitiateHandler(*c))))
-	mux.Handle("GET /api/v1/auth/oauth/callback", corsMiddleware(authLimiter.Middleware(OauthCallbackHandler(*c))))
+	mux.Handle("GET /api/v1/auth/oauth/login", corsMiddleware(authLimiter.Middleware(OauthInitiateHandler(svc))))
+	mux.Handle("GET /api/v1/auth/oauth/callback", corsMiddleware(authLimiter.Middleware(OauthCallbackHandler(svc))))
 
 	// Health check (PUBLIC - no auth required)
 	var pluginHealthFn PluginHealthChecker
@@ -85,12 +85,12 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 		}
 	}
 	mux.Handle("GET /api/v1/health", corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		HealthHandler(w, r, *c, pluginHealthFn)
+		HealthHandler(w, r, svc, pluginHealthFn)
 	})))
 
 	// Admin tree
 	mux.Handle("/api/v1/admin/tree/", middleware.RequireResourcePermission("admin_tree")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminTreeHandler(w, r, *c)
+		AdminTreeHandler(w, r, svc)
 	})))
 
 	// Admin content data
@@ -111,7 +111,7 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 
 	// Admin datatypes
 	mux.Handle("/api/v1/admindatatypes", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminDatatypesHandler(w, r, *c, svc)
+		AdminDatatypesHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/admindatatypes/max-sort-order", middleware.RequirePermission("datatypes:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminDatatypeMaxSortOrderHandler(w, r, svc)
@@ -120,15 +120,15 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 		AdminDatatypeSortOrderHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/admindatatypes/", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminDatatypeHandler(w, r, *c, svc)
+		AdminDatatypeHandler(w, r, svc)
 	})))
 
 	// Admin fields
 	mux.Handle("/api/v1/adminfields", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminFieldsHandler(w, r, *c, svc)
+		AdminFieldsHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/adminfields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminFieldHandler(w, r, *c, svc)
+		AdminFieldHandler(w, r, svc)
 	})))
 
 	// Admin routes
@@ -157,7 +157,7 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 
 	// Content create with fields (composite)
 	mux.Handle("POST /api/v1/content/create", middleware.RequirePermission("content:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentCreateHandler(w, r, *c)
+		ContentCreateHandler(w, r, svc)
 	})))
 
 	// Content batch
@@ -267,10 +267,10 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 
 	// Datatypes
 	mux.Handle("/api/v1/datatype", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		DatatypesHandler(w, r, *c, svc)
+		DatatypesHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/datatype/full", middleware.RequirePermission("datatypes:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		DatatypeFullHandler(w, r, *c, svc)
+		DatatypeFullHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/datatype/max-sort-order", middleware.RequirePermission("datatypes:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DatatypeMaxSortOrderHandler(w, r, svc)
@@ -279,12 +279,12 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 		DatatypeSortOrderHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/datatype/", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		DatatypeHandler(w, r, *c, svc)
+		DatatypeHandler(w, r, svc)
 	})))
 
 	// Fields
 	mux.Handle("/api/v1/fields", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FieldsHandler(w, r, *c, svc)
+		FieldsHandler(w, r, svc)
 	})))
 
 	// Field sort order update
@@ -298,23 +298,23 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	})))
 
 	mux.Handle("/api/v1/fields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FieldHandler(w, r, *c, svc)
+		FieldHandler(w, r, svc)
 	})))
 
 	// Field types
 	mux.Handle("/api/v1/fieldtypes", middleware.RequireResourcePermission("field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FieldTypesHandler(w, r, *c, svc)
+		FieldTypesHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/fieldtypes/", middleware.RequireResourcePermission("field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FieldTypeHandler(w, r, *c, svc)
+		FieldTypeHandler(w, r, svc)
 	})))
 
 	// Admin field types
 	mux.Handle("/api/v1/adminfieldtypes", middleware.RequireResourcePermission("admin_field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminFieldTypesHandler(w, r, *c, svc)
+		AdminFieldTypesHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/adminfieldtypes/", middleware.RequireResourcePermission("admin_field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminFieldTypeHandler(w, r, *c, svc)
+		AdminFieldTypeHandler(w, r, svc)
 	})))
 
 	// Media
@@ -542,12 +542,12 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 
 	// Content query by datatype (PUBLIC - no auth required)
 	mux.Handle("GET /api/v1/query/{datatype}", corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		QueryHandler(w, r, *c)
+		QueryHandler(w, r, svc)
 	})))
 
 	// Global content delivery (PUBLIC - no auth required)
 	mux.Handle("GET /api/v1/globals", corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		GlobalsHandler(w, r, *c)
+		GlobalsHandler(w, r, svc)
 	})))
 
 	// Content delivery via slug

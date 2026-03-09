@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
@@ -13,7 +12,7 @@ import (
 )
 
 // FieldsHandler handles CRUD operations that do not require a specific field ID.
-func FieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func FieldsHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		if HasPaginationParams(r) {
@@ -29,7 +28,7 @@ func FieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc 
 }
 
 // FieldHandler handles CRUD operations for specific field items.
-func FieldHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func FieldHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		apiGetField(w, r, svc)

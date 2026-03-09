@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
@@ -13,7 +12,7 @@ import (
 )
 
 // DatatypesHandler handles CRUD operations that do not require a specific datatype ID.
-func DatatypesHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func DatatypesHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		if HasPaginationParams(r) {
@@ -31,7 +30,7 @@ func DatatypesHandler(w http.ResponseWriter, r *http.Request, c config.Config, s
 }
 
 // DatatypeHandler handles CRUD operations for specific datatype items.
-func DatatypeHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func DatatypeHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		apiGetDatatype(w, r, svc)
@@ -45,7 +44,7 @@ func DatatypeHandler(w http.ResponseWriter, r *http.Request, c config.Config, sv
 }
 
 // DatatypeFullHandler handles requests for the composed datatype+fields view.
-func DatatypeFullHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func DatatypeFullHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		apiGetDatatypeFull(w, r, svc)

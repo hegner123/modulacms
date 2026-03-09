@@ -10,22 +10,23 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/transform"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // AdminTreeHandler handles GET requests for admin content trees by slug.
-func AdminTreeHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func AdminTreeHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetAdminTreeContent(w, r, c)
+		apiGetAdminTreeContent(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func apiGetAdminTreeContent(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+func apiGetAdminTreeContent(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	d := svc.Driver()
 
 	slug := strings.TrimPrefix(r.URL.Path, "/api/v1/admin/tree/")
 	if slug == "" {
@@ -125,8 +126,14 @@ func apiGetAdminTreeContent(w http.ResponseWriter, r *http.Request, c config.Con
 		return err
 	}
 
+	cfg, err := svc.Config()
+	if err != nil {
+		http.Error(w, "configuration unavailable", http.StatusInternalServerError)
+		return err
+	}
+
 	// Allow format override via query parameter
-	format := c.Output_Format
+	format := cfg.Output_Format
 	if queryFormat := r.URL.Query().Get("format"); queryFormat != "" {
 		if config.IsValidOutputFormat(queryFormat) {
 			format = config.OutputFormat(queryFormat)
@@ -139,8 +146,8 @@ func apiGetAdminTreeContent(w http.ResponseWriter, r *http.Request, c config.Con
 	// Create transform config and write response
 	transformCfg := transform.NewTransformConfig(
 		format,
-		c.Client_Site,
-		c.Space_ID,
+		cfg.Client_Site,
+		cfg.Space_ID,
 		d,
 	)
 

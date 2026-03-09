@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -23,20 +23,20 @@ type GlobalEntry struct {
 }
 
 // GlobalsHandler serves all _global content trees for public delivery.
-func GlobalsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func GlobalsHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if err := apiGetGlobals(w, r, c); err != nil {
+	if err := apiGetGlobals(w, r, svc); err != nil {
 		utility.DefaultLogger.Error("globals handler error", err)
 	}
 }
 
 // apiGetGlobals fetches all _global root content data, builds a tree for each,
 // and returns them as an array.
-func apiGetGlobals(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+func apiGetGlobals(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	d := svc.Driver()
 
 	globals, err := d.ListContentDataGlobal()
 	if err != nil {

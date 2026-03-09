@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
@@ -12,7 +11,7 @@ import (
 )
 
 // AdminDatatypesHandler handles CRUD operations that do not require a specific datatype ID.
-func AdminDatatypesHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func AdminDatatypesHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		if HasPaginationParams(r) {
@@ -28,7 +27,7 @@ func AdminDatatypesHandler(w http.ResponseWriter, r *http.Request, c config.Conf
 }
 
 // AdminDatatypeHandler handles CRUD operations for specific datatype items.
-func AdminDatatypeHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func AdminDatatypeHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		apiGetAdminDatatype(w, r, svc)

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
@@ -12,7 +11,7 @@ import (
 )
 
 // AdminFieldTypesHandler handles CRUD operations that do not require a specific admin field type ID.
-func AdminFieldTypesHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func AdminFieldTypesHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		apiListAdminFieldTypes(w, r, svc)
@@ -24,7 +23,7 @@ func AdminFieldTypesHandler(w http.ResponseWriter, r *http.Request, c config.Con
 }
 
 // AdminFieldTypeHandler handles CRUD operations for specific admin field type items.
-func AdminFieldTypeHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func AdminFieldTypeHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		apiGetAdminFieldType(w, r, svc)

@@ -4,15 +4,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/hegner123/modulacms/internal/config"
-	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/query"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // QueryHandler handles content query requests by datatype name.
-func QueryHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	d := db.ConfigDB(c)
+func QueryHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	d := svc.Driver()
 
 	datatypeName := r.PathValue("datatype")
 	if datatypeName == "" {

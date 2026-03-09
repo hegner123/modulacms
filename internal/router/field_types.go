@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
@@ -12,7 +11,7 @@ import (
 )
 
 // FieldTypesHandler handles CRUD operations that do not require a specific field type ID.
-func FieldTypesHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func FieldTypesHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		apiListFieldTypes(w, r, svc)
@@ -24,7 +23,7 @@ func FieldTypesHandler(w http.ResponseWriter, r *http.Request, c config.Config, 
 }
 
 // FieldTypeHandler handles CRUD operations for specific field type items.
-func FieldTypeHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func FieldTypeHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		apiGetFieldType(w, r, svc)

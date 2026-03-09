@@ -52,6 +52,13 @@ func HandleServiceError(w http.ResponseWriter, r *http.Request, err error) {
 		}
 		writeJSONError(w, http.StatusForbidden, err.Error())
 
+	case IsUnauthorized(err):
+		if isHTMX {
+			writeHTMXError(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+		writeJSONError(w, http.StatusUnauthorized, err.Error())
+
 	default:
 		utility.DefaultLogger.Error("internal service error", err,
 			"path", r.URL.Path,

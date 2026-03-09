@@ -10,8 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/hegner123/modulacms/internal/bucket"
-	"github.com/hegner123/modulacms/internal/config"
-	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 type healthResponse struct {
@@ -34,9 +33,15 @@ type PluginHealthResult struct {
 
 // HealthHandler reports the health of critical dependencies (database, S3 storage, plugins).
 // Returns 200 when all checks pass, 503 when any critical check fails.
-func HealthHandler(w http.ResponseWriter, r *http.Request, c config.Config, pluginHealthFn PluginHealthChecker) {
+func HealthHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry, pluginHealthFn PluginHealthChecker) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
+
+	cfg, err := svc.Config()
+	if err != nil {
+		http.Error(w, "configuration unavailable", http.StatusInternalServerError)
+		return
+	}
 
 	resp := healthResponse{
 		Status:  "ok",
@@ -45,11 +50,11 @@ func HealthHandler(w http.ResponseWriter, r *http.Request, c config.Config, plug
 	}
 
 	// Database check
-	resp.Checks["database"] = checkDatabase(ctx, c, resp.Details)
+	resp.Checks["database"] = checkDatabase(ctx, svc, resp.Details)
 
 	// S3 storage check (skip if not configured)
-	if c.Bucket_Endpoint != "" {
-		resp.Checks["storage"] = checkStorage(ctx, c, resp.Details)
+	if cfg.Bucket_Endpoint != "" {
+		resp.Checks["storage"] = checkStorage(ctx, svc, resp.Details)
 	}
 
 	// Plugin health check (skip if plugin system is disabled)
@@ -79,8 +84,8 @@ func HealthHandler(w http.ResponseWriter, r *http.Request, c config.Config, plug
 }
 
 // checkDatabase pings the database and records the result.
-func checkDatabase(_ context.Context, c config.Config, details map[string]string) bool {
-	driver := db.ConfigDB(c)
+func checkDatabase(_ context.Context, svc *service.Registry, details map[string]string) bool {
+	driver := svc.Driver()
 	if driver == nil {
 		details["database"] = "driver not initialized"
 		return false
@@ -93,23 +98,29 @@ func checkDatabase(_ context.Context, c config.Config, details map[string]string
 }
 
 // checkStorage verifies the S3 media bucket is reachable via HeadBucket.
-func checkStorage(_ context.Context, c config.Config, details map[string]string) bool {
-	creds := bucket.S3Credentials{
-		AccessKey:      c.Bucket_Access_Key,
-		SecretKey:      c.Bucket_Secret_Key,
-		URL:            c.BucketEndpointURL(),
-		Region:         c.Bucket_Region,
-		ForcePathStyle: c.Bucket_Force_Path_Style,
+func checkStorage(_ context.Context, svc *service.Registry, details map[string]string) bool {
+	cfg, err := svc.Config()
+	if err != nil {
+		details["storage"] = "configuration unavailable"
+		return false
 	}
 
-	svc, err := creds.GetBucket()
+	creds := bucket.S3Credentials{
+		AccessKey:      cfg.Bucket_Access_Key,
+		SecretKey:      cfg.Bucket_Secret_Key,
+		URL:            cfg.BucketEndpointURL(),
+		Region:         cfg.Bucket_Region,
+		ForcePathStyle: cfg.Bucket_Force_Path_Style,
+	}
+
+	s3svc, err := creds.GetBucket()
 	if err != nil {
 		details["storage"] = err.Error()
 		return false
 	}
 
-	_, err = svc.HeadBucket(&s3.HeadBucketInput{
-		Bucket: aws.String(c.Bucket_Media),
+	_, err = s3svc.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(cfg.Bucket_Media),
 	})
 	if err != nil {
 		details["storage"] = err.Error()

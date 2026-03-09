@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -31,12 +31,12 @@ type ContentCreateResponse struct {
 }
 
 // ContentCreateHandler handles POST /api/v1/content/create.
-func ContentCreateHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	apiContentCreate(w, r, c)
+func ContentCreateHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	apiContentCreate(w, r, svc)
 }
 
 // apiContentCreate creates a content node and all its datatype fields atomically.
-func apiContentCreate(w http.ResponseWriter, r *http.Request, c config.Config) {
+func apiContentCreate(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req ContentCreateRequest
@@ -50,7 +50,7 @@ func apiContentCreate(w http.ResponseWriter, r *http.Request, c config.Config) {
 		return
 	}
 
-	d := db.ConfigDB(c)
+	d := svc.Driver()
 
 	// Validate datatype exists.
 	_, err := d.GetDatatype(req.DatatypeID)
@@ -73,7 +73,12 @@ func apiContentCreate(w http.ResponseWriter, r *http.Request, c config.Config) {
 	}
 
 	ctx := r.Context()
-	ac := middleware.AuditContextFromRequest(r, c)
+	cfg, err := svc.Config()
+	if err != nil {
+		http.Error(w, "configuration unavailable", http.StatusInternalServerError)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *cfg)
 
 	// Create the content node.
 	createParams := db.CreateContentDataParams{

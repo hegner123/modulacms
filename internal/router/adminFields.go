@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
@@ -12,7 +11,7 @@ import (
 )
 
 // AdminFieldsHandler handles CRUD operations that do not require a specific field ID.
-func AdminFieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func AdminFieldsHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		if HasPaginationParams(r) {
@@ -28,7 +27,7 @@ func AdminFieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config,
 }
 
 // AdminFieldHandler handles CRUD operations for specific field items.
-func AdminFieldHandler(w http.ResponseWriter, r *http.Request, c config.Config, svc *service.Registry) {
+func AdminFieldHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		apiGetAdminField(w, r, svc)

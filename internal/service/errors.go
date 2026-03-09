@@ -88,6 +88,18 @@ func (e *ForbiddenError) Error() string {
 	return "forbidden"
 }
 
+// UnauthorizedError indicates missing or invalid authentication credentials.
+type UnauthorizedError struct {
+	Message string
+}
+
+func (e *UnauthorizedError) Error() string {
+	if e.Message != "" {
+		return fmt.Sprintf("unauthorized: %s", e.Message)
+	}
+	return "unauthorized"
+}
+
 // InternalError wraps an unexpected error from a lower layer.
 type InternalError struct {
 	Err error
@@ -122,5 +134,11 @@ func IsConflict(err error) bool {
 // IsForbidden reports whether err is a *ForbiddenError.
 func IsForbidden(err error) bool {
 	var target *ForbiddenError
+	return errors.As(err, &target)
+}
+
+// IsUnauthorized reports whether err is an *UnauthorizedError.
+func IsUnauthorized(err error) bool {
+	var target *UnauthorizedError
 	return errors.As(err, &target)
 }
