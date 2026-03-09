@@ -25,6 +25,9 @@ func TestTrimStringEnd(t *testing.T) {
 		{name: "empty string returns empty", str: "", l: 0, want: ""},
 		{name: "empty string with nonzero l returns empty", str: "", l: 3, want: ""},
 		{name: "single char trim one", str: "x", l: 1, want: ""},
+		{name: "l exceeds length", str: "hi", l: 5, want: ""},
+		{name: "l equals length", str: "hi", l: 2, want: ""},
+		{name: "negative l returns unchanged", str: "hello", l: -3, want: "hello"},
 		// "cafe\u0301" is 6 bytes: c(1) a(1) f(1) e(1) \u0301(2). Trimming 2 bytes removes the combining accent.
 		{name: "unicode string trims bytes not runes", str: "cafe\u0301", l: 2, want: "cafe"},
 	}

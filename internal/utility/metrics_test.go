@@ -447,6 +447,51 @@ func TestMetrics_SameNameDifferentLabels(t *testing.T) {
 	}
 }
 
+// ============================================================
+// keyWithLabels determinism
+// ============================================================
+
+func TestMetrics_KeyWithLabels_Deterministic(t *testing.T) {
+	t.Parallel()
+	m := NewMetrics()
+
+	labels := Labels{"z": "last", "a": "first", "m": "middle"}
+	want := "metric,a=first,m=middle,z=last"
+
+	// Run many times to catch nondeterminism from map iteration order
+	for range 100 {
+		got := m.keyWithLabels("metric", labels)
+		if got != want {
+			t.Fatalf("keyWithLabels produced %q, want %q", got, want)
+		}
+	}
+}
+
+func TestMetrics_KeyWithLabels_SameLabelsShareKey(t *testing.T) {
+	t.Parallel()
+	m := NewMetrics()
+
+	labels := Labels{"b": "2", "a": "1"}
+	m.Counter("req", 1, labels)
+	m.Counter("req", 1, labels)
+
+	snap := m.GetSnapshot()
+	// Two increments with identical labels should accumulate under one key
+	found := false
+	for _, metric := range snap {
+		if metric.Value == 2 {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected single metric with value 2 for same labels, got separate entries")
+		for k, v := range snap {
+			t.Logf("  %q: %+v", k, v)
+		}
+	}
+}
+
 // testError is a minimal error implementation for tests
 type testError struct {
 	msg string

@@ -2,6 +2,7 @@ package utility
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 )
@@ -152,15 +153,20 @@ func (m *Metrics) Reset() {
 	m.labels = make(map[string]Labels)
 }
 
-// keyWithLabels creates a unique key combining name and labels
+// keyWithLabels creates a unique key combining name and labels.
+// Label keys are sorted to ensure deterministic output.
 func (m *Metrics) keyWithLabels(name string, labels Labels) string {
 	if labels == nil || len(labels) == 0 {
 		return name
 	}
-	// Simple key generation - in production, use stable sorting
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 	key := name
-	for k, v := range labels {
-		key += fmt.Sprintf(",%s=%s", k, v)
+	for _, k := range keys {
+		key += fmt.Sprintf(",%s=%s", k, labels[k])
 	}
 	return key
 }

@@ -12,12 +12,13 @@ import (
 
 // TrimStringEnd removes the last l characters from str.
 func TrimStringEnd(str string, l int) string {
-	if len(str) > 0 {
-		newStr := str[:len(str)-l]
-		return newStr
-	} else {
+	if l <= 0 || len(str) == 0 {
 		return str
 	}
+	if l >= len(str) {
+		return ""
+	}
+	return str[:len(str)-l]
 }
 
 // IsInt reports whether s represents a valid integer.
