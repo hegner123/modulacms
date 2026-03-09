@@ -95,3 +95,86 @@ const (
 	// issuing an HTTP redirect directly.
 	RouteTypeRedirect RouteType = "redirect"
 )
+
+// PluginStatus represents the lifecycle status of a plugin in the
+// persistent registry. The API returns and accepts these as lowercase
+// JSON strings.
+type PluginStatus string
+
+const (
+	// PluginStatusInstalled indicates the plugin is registered but not active.
+	PluginStatusInstalled PluginStatus = "installed"
+
+	// PluginStatusEnabled indicates the plugin is active and running.
+	PluginStatusEnabled PluginStatus = "enabled"
+)
+
+// Operation represents a database-level mutation type recorded in
+// change_events for audit trail and replication.
+type Operation string
+
+const (
+	OpInsert Operation = "INSERT"
+	OpUpdate Operation = "UPDATE"
+	OpDelete Operation = "DELETE"
+)
+
+// Action represents a business-level action, more specific than
+// [Operation], used in audit log entries.
+type Action string
+
+const (
+	ActionCreate  Action = "create"
+	ActionUpdate  Action = "update"
+	ActionDelete  Action = "delete"
+	ActionPublish Action = "publish"
+)
+
+// ConflictPolicy defines how conflicts are resolved for a datatype
+// in distributed or concurrent editing scenarios.
+type ConflictPolicy string
+
+const (
+	// ConflictLWW uses last-write-wins resolution (simple, possible data loss).
+	ConflictLWW ConflictPolicy = "lww"
+
+	// ConflictManual flags conflicts for human resolution.
+	ConflictManual ConflictPolicy = "manual"
+)
+
+// BackupType represents the type of backup.
+type BackupType string
+
+const (
+	BackupTypeFull         BackupType = "full"
+	BackupTypeIncremental  BackupType = "incremental"
+	BackupTypeDifferential BackupType = "differential"
+)
+
+// BackupStatus represents the status of a backup operation.
+type BackupStatus string
+
+const (
+	BackupStatusPending    BackupStatus = "pending"
+	BackupStatusInProgress BackupStatus = "in_progress"
+	BackupStatusCompleted  BackupStatus = "completed"
+	BackupStatusFailed     BackupStatus = "failed"
+)
+
+// VerificationStatus represents the status of a backup verification.
+type VerificationStatus string
+
+const (
+	VerificationStatusPending  VerificationStatus = "pending"
+	VerificationStatusVerified VerificationStatus = "verified"
+	VerificationStatusFailed   VerificationStatus = "failed"
+)
+
+// BackupSetStatus represents the status of a backup set (collection of backups).
+type BackupSetStatus string
+
+const (
+	BackupSetStatusPending  BackupSetStatus = "pending"
+	BackupSetStatusComplete BackupSetStatus = "complete"
+	BackupSetStatusPartial  BackupSetStatus = "partial"
+)

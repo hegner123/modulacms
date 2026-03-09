@@ -15,6 +15,10 @@ final class TypesCodableTests: XCTestCase {
             "datatype_id": "dt1",
             "author_id": "u1",
             "status": "published",
+            "published_at": null,
+            "published_by": null,
+            "publish_at": null,
+            "revision": 1,
             "date_created": "2024-01-01T00:00:00Z",
             "date_modified": "2024-01-02T00:00:00Z"
         }

@@ -46,7 +46,7 @@ export type {
 export type { ULID, Timestamp, NullableString, NullableNumber } from './common.js'
 
 // Enums and runtime constants
-export type { ContentStatus, FieldType, RouteType, ContentFormat } from './enums.js'
+export type { ContentStatus, FieldType, RouteType, PluginStatus, Operation, Action, ConflictPolicy, BackupType, BackupStatus, VerificationStatus, BackupSetStatus, ContentFormat } from './enums.js'
 export { CONTENT_FORMATS } from './enums.js'
 
 // Pagination
