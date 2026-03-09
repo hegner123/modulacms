@@ -80,6 +80,11 @@ public final class ModulaClient: Sendable {
     public let mediaComposite: MediaCompositeResource
     public let datatypeComposite: DatatypeCompositeResource
 
+    // Sort order resources
+    public let datatypeSortOrder: DatatypeSortOrderResource
+    public let fieldSortOrder: FieldSortOrderResource
+    public let adminDatatypeSortOrder: AdminDatatypeSortOrderResource
+
     // Config resource
     public let config: ConfigResource
 
@@ -174,6 +179,11 @@ public final class ModulaClient: Sendable {
         userComposite = UserCompositeResource(http: http)
         mediaComposite = MediaCompositeResource(http: http)
         datatypeComposite = DatatypeCompositeResource(http: http)
+
+        // Sort order
+        datatypeSortOrder = DatatypeSortOrderResource(http: http)
+        fieldSortOrder = FieldSortOrderResource(http: http)
+        adminDatatypeSortOrder = AdminDatatypeSortOrderResource(http: http)
 
         // Config
         self.config = ConfigResource(http: http)

@@ -564,7 +564,12 @@ export type ModulaCMSAdminClient = {
     maxSortOrder: (parentId?: DatatypeID, opts?: RequestOptions) => Promise<number>
   }
   /** Field schema definitions. */
-  fields: CrudResource<Field, CreateFieldParams, UpdateFieldParams, FieldID>
+  fields: CrudResource<Field, CreateFieldParams, UpdateFieldParams, FieldID> & {
+    /** Update the sort order of a field within its parent datatype. */
+    updateSortOrder: (id: FieldID, sortOrder: number, opts?: RequestOptions) => Promise<void>
+    /** Get the maximum sort order among fields under a parent datatype. */
+    maxSortOrder: (parentId: DatatypeID, opts?: RequestOptions) => Promise<number>
+  }
   /** Field type lookup entries (public content fields). */
   fieldTypes: CrudResource<FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID>
   /** Admin field type lookup entries (admin content fields). */
@@ -882,7 +887,17 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
         return result.max_sort_order
       },
     },
-    fields: createResource<Field, CreateFieldParams, UpdateFieldParams, FieldID>(http, 'fields'),
+    fields: {
+      ...createResource<Field, CreateFieldParams, UpdateFieldParams, FieldID>(http, 'fields'),
+      async updateSortOrder(id: FieldID, sortOrder: number, opts?: RequestOptions): Promise<void> {
+        await http.put<void>('/fields/' + encodeURIComponent(String(id)) + '/sort-order', { sort_order: sortOrder }, opts)
+      },
+      async maxSortOrder(parentId: DatatypeID, opts?: RequestOptions): Promise<number> {
+        const params: Record<string, string> = { parent_id: String(parentId) }
+        const result = await http.get<{ max_sort_order: number }>('/fields/max-sort-order', params, opts)
+        return result.max_sort_order
+      },
+    },
     fieldTypes: createResource<FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID>(http, 'fieldtypes'),
     adminFieldTypes: createResource<AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID>(http, 'adminfieldtypes'),
     routes: createResource<Route, CreateRouteParams, UpdateRouteParams, RouteID>(http, 'routes'),
