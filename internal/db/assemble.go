@@ -285,6 +285,150 @@ func AssembleRecentActivity(d DbDriver, events []ChangeEvent) []ActivityEventVie
 	return views
 }
 
+// AssembleDatatypeListView builds a list of datatypes with field counts and parent labels.
+// Uses bounded queries: 1 list datatypes + N field-count queries (cached by datatype).
+func AssembleDatatypeListView(d DbDriver, datatypes []Datatypes) []DatatypeListItemView {
+	// Build parent label lookup
+	parentLabels := make(map[types.DatatypeID]string, len(datatypes))
+	for _, dt := range datatypes {
+		parentLabels[dt.DatatypeID] = dt.Label
+	}
+
+	authorCache := make(map[types.UserID]*AuthorView)
+	views := make([]DatatypeListItemView, 0, len(datatypes))
+	for _, dt := range datatypes {
+		view := DatatypeListItemView{
+			DatatypeID:   dt.DatatypeID,
+			Label:        dt.Label,
+			Type:         dt.Type,
+			ParentID:     dt.ParentID,
+			DateCreated:  dt.DateCreated,
+			DateModified: dt.DateModified,
+		}
+
+		if dt.ParentID.Valid {
+			view.ParentLabel = parentLabels[dt.ParentID.ID]
+		}
+
+		fields, err := d.ListFieldsWithSortOrderByDatatypeID(types.NullableDatatypeID{ID: dt.DatatypeID, Valid: true})
+		if err == nil && fields != nil {
+			view.FieldCount = len(*fields)
+		}
+
+		av, ok := authorCache[dt.AuthorID]
+		if !ok {
+			user, err := d.GetUser(dt.AuthorID)
+			if err == nil {
+				mapped := MapAuthorView(*user)
+				av = &mapped
+				authorCache[dt.AuthorID] = av
+			}
+		}
+		if av != nil {
+			copied := *av
+			view.Author = &copied
+		}
+
+		views = append(views, view)
+	}
+	return views
+}
+
+// AssembleAdminDatatypeFullView fetches an admin datatype and its field definitions.
+// Uses bounded sequential queries: 1 datatype + 0-1 author + 1 fields list.
+func AssembleAdminDatatypeFullView(d DbDriver, id types.AdminDatatypeID) (*AdminDatatypeFullView, error) {
+	dt, err := d.GetAdminDatatypeById(id)
+	if err != nil {
+		return nil, fmt.Errorf("get admin datatype: %w", err)
+	}
+
+	view := AdminDatatypeFullView{
+		AdminDatatypeID: dt.AdminDatatypeID,
+		Label:           dt.Label,
+		Type:            dt.Type,
+		ParentID:        dt.ParentID,
+		SortOrder:       dt.SortOrder,
+		DateCreated:     dt.DateCreated,
+		DateModified:    dt.DateModified,
+		Fields:          []AdminFieldView{},
+	}
+
+	user, userErr := d.GetUser(dt.AuthorID)
+	if userErr == nil {
+		av := MapAuthorView(*user)
+		view.Author = &av
+	}
+
+	fields, err := d.ListAdminFieldsByDatatypeID(types.NullableAdminDatatypeID{ID: id, Valid: true})
+	if err != nil {
+		return nil, fmt.Errorf("list admin fields: %w", err)
+	}
+	for _, f := range *fields {
+		view.Fields = append(view.Fields, AdminFieldView{
+			AdminFieldID: f.AdminFieldID,
+			Label:        f.Label,
+			Type:         f.Type,
+			Data:         f.Data,
+			Validation:   f.Validation,
+			UIConfig:     f.UIConfig,
+			SortOrder:    f.SortOrder,
+		})
+	}
+
+	return &view, nil
+}
+
+// AssembleAdminContentDataView fetches an admin content data item and its relations.
+// Uses bounded sequential queries: 1 content + 1 author + 0-1 datatype + 1 fields JOIN.
+func AssembleAdminContentDataView(d DbDriver, contentID types.AdminContentID) (*AdminContentDataView, error) {
+	cd, err := d.GetAdminContentData(contentID)
+	if err != nil {
+		return nil, fmt.Errorf("get admin content data: %w", err)
+	}
+
+	view := AdminContentDataView{
+		AdminContentDataID: cd.AdminContentDataID,
+		Status:             cd.Status,
+		Revision:           cd.Revision,
+		DateCreated:        cd.DateCreated,
+		DateModified:       cd.DateModified,
+		Fields:             []AdminContentFieldView{},
+	}
+
+	user, err := d.GetUser(cd.AuthorID)
+	if err == nil {
+		av := MapAuthorView(*user)
+		view.Author = &av
+	}
+
+	if cd.AdminDatatypeID.Valid {
+		dt, dtErr := d.GetAdminDatatypeById(cd.AdminDatatypeID.ID)
+		if dtErr == nil {
+			view.Datatype = &AdminDatatypeView{
+				AdminDatatypeID: dt.AdminDatatypeID,
+				Label:           dt.Label,
+				Type:            dt.Type,
+			}
+		}
+	}
+
+	nullID := types.NullableAdminContentID{ID: cd.AdminContentDataID, Valid: true}
+	rows, err := d.ListAdminContentFieldsWithFieldByContentData(nullID)
+	if err != nil {
+		return nil, fmt.Errorf("list admin content fields: %w", err)
+	}
+	for _, row := range *rows {
+		view.Fields = append(view.Fields, AdminContentFieldView{
+			AdminFieldID: row.FAdminFieldID,
+			Label:        row.FLabel,
+			Type:         row.FType,
+			Value:        row.AdminFieldValue,
+		})
+	}
+
+	return &view, nil
+}
+
 // GroupBy groups a slice by a key function, preserving insertion order of keys.
 func GroupBy[T any, K comparable](items []T, key func(T) K) map[K][]T {
 	result := make(map[K][]T)

@@ -95,6 +95,9 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	mux.Handle("/api/v1/admincontentdatas/", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminContentDataHandler(w, r, svc)
 	})))
+	mux.Handle("GET /api/v1/admincontentdatas/full", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminContentDataFullHandler(w, r, svc)
+	})))
 
 	// Admin content fields
 	mux.Handle("/api/v1/admincontentfields", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -116,6 +119,9 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	})))
 	mux.Handle("/api/v1/admindatatypes/", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminDatatypeHandler(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/admindatatypes/full", middleware.RequirePermission("datatypes:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminDatatypeFullHandler(w, r, svc)
 	})))
 
 	// Admin fields
@@ -143,6 +149,9 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	})))
 	mux.Handle("GET /api/v1/contentdata/full", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ContentDataFullHandler(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/contentdata/by-route", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ContentDataByRouteHandler(w, r, svc)
 	})))
 
 	// Content fields
@@ -275,6 +284,9 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	})))
 	mux.Handle("PUT /api/v1/datatype/{id}/sort-order", middleware.RequirePermission("datatypes:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DatatypeSortOrderHandler(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/datatype/full/list", middleware.RequirePermission("datatypes:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		DatatypesFullListHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/datatype/", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DatatypeHandler(w, r, svc)
@@ -419,6 +431,9 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	})))
 	mux.Handle("/api/v1/users/", middleware.RequireResourcePermission("users")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		UserHandler(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/users/sessions", middleware.RequirePermission("sessions:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		UserSessionHandler(w, r, svc)
 	})))
 
 	// SSH Key management endpoints

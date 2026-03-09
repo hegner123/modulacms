@@ -53,6 +53,28 @@ func DatatypeFullHandler(w http.ResponseWriter, r *http.Request, svc *service.Re
 	}
 }
 
+// DatatypesFullListHandler handles requests for the datatype list with field counts.
+func DatatypesFullListHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiListDatatypesFull(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func apiListDatatypesFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	views, err := svc.Schema.ListDatatypesFull(r.Context())
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(views)
+}
+
 // apiGetDatatypeFull handles GET requests for a datatype with all field definitions.
 func apiGetDatatypeFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")

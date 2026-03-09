@@ -41,6 +41,35 @@ func AdminContentDataHandler(w http.ResponseWriter, r *http.Request, svc *servic
 	}
 }
 
+// AdminContentDataFullHandler handles requests for the composed admin content data view.
+func AdminContentDataFullHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiGetAdminContentDataFull(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func apiGetAdminContentDataFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	q := r.URL.Query().Get("q")
+	cdID := types.AdminContentID(q)
+	if err := cdID.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	view, err := svc.AdminContent.GetFull(r.Context(), cdID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(view)
+}
+
 // apiListAdminContentData handles GET requests for listing admin content data
 func apiListAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	list, err := svc.AdminContent.List(r.Context())

@@ -103,6 +103,28 @@ func (s *ContentService) GetFull(ctx context.Context, id types.ContentID) (*db.C
 	return view, nil
 }
 
+// ListByRoute returns content tree nodes for a specific route.
+func (s *ContentService) ListByRoute(ctx context.Context, routeID types.RouteID) ([]db.RouteContentNodeView, error) {
+	nullRouteID := types.NullableRouteID{ID: routeID, Valid: true}
+	rows, err := s.driver.GetContentTreeByRoute(nullRouteID)
+	if err != nil {
+		return nil, fmt.Errorf("get content tree by route: %w", err)
+	}
+	views := make([]db.RouteContentNodeView, 0, len(*rows))
+	for _, row := range *rows {
+		views = append(views, db.RouteContentNodeView{
+			ContentDataID: row.ContentDataID,
+			ParentID:      row.ParentID,
+			DatatypeLabel: row.DatatypeLabel,
+			DatatypeType:  row.DatatypeType,
+			Status:        row.Status,
+			DateCreated:   row.DateCreated,
+			DateModified:  row.DateModified,
+		})
+	}
+	return views, nil
+}
+
 // List returns all content data rows.
 func (s *ContentService) List(ctx context.Context) (*[]db.ContentData, error) {
 	return s.driver.ListContentData()

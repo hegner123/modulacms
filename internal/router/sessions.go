@@ -36,6 +36,35 @@ func SessionHandler(w http.ResponseWriter, r *http.Request, svc *service.Registr
 	}
 }
 
+// UserSessionHandler handles requests for a user's active session.
+func UserSessionHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiGetUserSession(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func apiGetUserSession(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	q := r.URL.Query().Get("q")
+	userID, err := types.ParseUserID(q)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	view, err := svc.Sessions.GetSessionByUser(r.Context(), userID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(view)
+}
+
 // apiUpdateSession handles PUT requests to update an existing session
 func apiUpdateSession(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	var params db.UpdateSessionParams

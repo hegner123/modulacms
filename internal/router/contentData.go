@@ -73,6 +73,35 @@ func apiGetContentDataFull(w http.ResponseWriter, r *http.Request, svc *service.
 	json.NewEncoder(w).Encode(view)
 }
 
+// ContentDataByRouteHandler handles requests for content under a specific route.
+func ContentDataByRouteHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiListContentDataByRoute(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func apiListContentDataByRoute(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	q := r.URL.Query().Get("q")
+	routeID := types.RouteID(q)
+	if err := routeID.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	views, err := svc.Content.ListByRoute(r.Context(), routeID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(views)
+}
+
 // apiGetContentData handles GET requests for a single content data
 func apiGetContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")

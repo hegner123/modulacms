@@ -94,6 +94,15 @@ func (s *AdminContentService) Get(ctx context.Context, id types.AdminContentID) 
 	return cd, nil
 }
 
+// GetFull retrieves a composed admin content data view with author, datatype, and fields.
+func (s *AdminContentService) GetFull(ctx context.Context, id types.AdminContentID) (*db.AdminContentDataView, error) {
+	view, err := db.AssembleAdminContentDataView(s.driver, id)
+	if err != nil {
+		return nil, &NotFoundError{Resource: "admin_content_data", ID: string(id)}
+	}
+	return view, nil
+}
+
 // List returns all admin content data rows.
 func (s *AdminContentService) List(ctx context.Context) (*[]db.AdminContentData, error) {
 	return s.driver.ListAdminContentData()

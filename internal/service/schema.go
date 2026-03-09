@@ -179,6 +179,24 @@ func (s *SchemaService) GetDatatypeFull(ctx context.Context, id types.DatatypeID
 	return view, nil
 }
 
+// ListDatatypesFull returns all datatypes with field counts and parent labels.
+func (s *SchemaService) ListDatatypesFull(ctx context.Context) ([]db.DatatypeListItemView, error) {
+	datatypes, err := s.store.ListDatatypes()
+	if err != nil {
+		return nil, fmt.Errorf("list datatypes: %w", err)
+	}
+	return db.AssembleDatatypeListView(s.fullDriver, *datatypes), nil
+}
+
+// GetAdminDatatypeFull returns an admin datatype with all field definitions.
+func (s *SchemaService) GetAdminDatatypeFull(ctx context.Context, id types.AdminDatatypeID) (*db.AdminDatatypeFullView, error) {
+	view, err := db.AssembleAdminDatatypeFullView(s.fullDriver, id)
+	if err != nil {
+		return nil, &NotFoundError{Resource: "admin_datatype", ID: string(id)}
+	}
+	return view, nil
+}
+
 // CreateDatatype validates, sets defaults, and creates a public datatype.
 func (s *SchemaService) CreateDatatype(ctx context.Context, ac audited.AuditContext, params db.CreateDatatypeParams) (*db.Datatypes, error) {
 	var ve ValidationError

@@ -238,6 +238,70 @@ type ActivityEventView struct {
 	WallTimestamp types.Timestamp `json:"timestamp"`
 }
 
+// DatatypeListItemView is a datatype with field count and parent label for list views.
+type DatatypeListItemView struct {
+	DatatypeID   types.DatatypeID         `json:"datatype_id"`
+	Label        string                   `json:"label"`
+	Type         string                   `json:"type"`
+	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	ParentLabel  string                   `json:"parent_label,omitempty"`
+	FieldCount   int                      `json:"field_count"`
+	Author       *AuthorView              `json:"author,omitempty"`
+	DateCreated  types.Timestamp          `json:"date_created"`
+	DateModified types.Timestamp          `json:"date_modified"`
+}
+
+// AdminDatatypeFullView is a composed response for an admin datatype with field definitions.
+type AdminDatatypeFullView struct {
+	AdminDatatypeID types.AdminDatatypeID         `json:"admin_datatype_id"`
+	Label           string                        `json:"label"`
+	Type            string                        `json:"type"`
+	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	SortOrder       int64                         `json:"sort_order"`
+	Author          *AuthorView                   `json:"author,omitempty"`
+	Fields          []AdminFieldView              `json:"fields"`
+	DateCreated     types.Timestamp               `json:"date_created"`
+	DateModified    types.Timestamp               `json:"date_modified"`
+}
+
+// AdminFieldView is a field definition in the admin namespace.
+type AdminFieldView struct {
+	AdminFieldID types.AdminFieldID `json:"admin_field_id"`
+	Label        string            `json:"label"`
+	Type         types.FieldType   `json:"type"`
+	Data         string            `json:"data"`
+	Validation   string            `json:"validation"`
+	UIConfig     string            `json:"ui_config"`
+	SortOrder    int64             `json:"sort_order"`
+}
+
+// AdminContentDataView is a composed response for admin content with embedded relations.
+type AdminContentDataView struct {
+	AdminContentDataID types.AdminContentID     `json:"admin_content_data_id"`
+	Status             types.ContentStatus      `json:"status"`
+	Revision           int64                    `json:"revision"`
+	DateCreated        types.Timestamp          `json:"date_created"`
+	DateModified       types.Timestamp          `json:"date_modified"`
+	Datatype           *AdminDatatypeView       `json:"datatype,omitempty"`
+	Author             *AuthorView              `json:"author,omitempty"`
+	Fields             []AdminContentFieldView  `json:"fields"`
+}
+
+// AdminDatatypeView is an embedded admin datatype within a composed response.
+type AdminDatatypeView struct {
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+	Label           string               `json:"label"`
+	Type            string               `json:"type"`
+}
+
+// AdminContentFieldView pairs an admin field definition with its content value.
+type AdminContentFieldView struct {
+	AdminFieldID types.AdminFieldID `json:"admin_field_id"`
+	Label        string            `json:"label"`
+	Type         types.FieldType   `json:"type"`
+	Value        string            `json:"value"`
+}
+
 // MapMediaFullView converts a Media entity to a MediaFullView.
 func MapMediaFullView(m Media) MediaFullView {
 	return MediaFullView{

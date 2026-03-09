@@ -40,6 +40,35 @@ func AdminDatatypeHandler(w http.ResponseWriter, r *http.Request, svc *service.R
 	}
 }
 
+// AdminDatatypeFullHandler handles requests for the composed admin datatype+fields view.
+func AdminDatatypeFullHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiGetAdminDatatypeFull(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func apiGetAdminDatatypeFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	q := r.URL.Query().Get("q")
+	adtID := types.AdminDatatypeID(q)
+	if err := adtID.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	view, err := svc.Schema.GetAdminDatatypeFull(r.Context(), adtID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(view)
+}
+
 // apiGetAdminDatatype handles GET requests for a single admin datatype
 func apiGetAdminDatatype(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")

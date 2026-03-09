@@ -37,6 +37,17 @@ func (s *SessionService) GetSession(ctx context.Context, sessionID types.Session
 	return session, nil
 }
 
+// GetSessionByUser retrieves the active session for a user.
+func (s *SessionService) GetSessionByUser(ctx context.Context, userID types.UserID) (*db.SessionView, error) {
+	nullUserID := types.NullableUserID{ID: userID, Valid: true}
+	session, err := s.driver.GetSessionByUserId(nullUserID)
+	if err != nil {
+		return nil, &NotFoundError{Resource: "session", ID: string(userID)}
+	}
+	view := db.MapSessionView(*session)
+	return &view, nil
+}
+
 // ListSessions returns all sessions.
 func (s *SessionService) ListSessions(ctx context.Context) (*[]db.Sessions, error) {
 	return s.driver.ListSessions()
