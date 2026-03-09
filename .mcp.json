@@ -1,10 +1,11 @@
 {
         "mcpServers": {
                 "modula": {
-                        "command": "./mcp/modula-mcp",
+                        "command": "./modula-x86",
+                        "args": ["mcp"],
                         "env": {
-                                "MODULACMS_URL": "${MODULACMS_URL:-https://api.modulacms.com}",
-                                "MODULACMS_API_KEY": "123123123"
+                                "MODULA_URL": "${MODULA_URL:-http://localhost:8080}",
+                                "MODULA_API_KEY": "123123123"
                         }
                 }
         }
