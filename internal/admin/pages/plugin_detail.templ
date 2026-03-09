@@ -1,13 +1,17 @@
 package pages
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/hegner123/modulacms/internal/admin/layouts"
 	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
-templ PluginDetailContent(name string) {
+templ PluginDetailContent(detail *service.PluginDetail) {
 	<div class="page-header">
-		<h1>Plugin: { name }</h1>
+		<h1>Plugin: { detail.Name }</h1>
 		<a href="/admin/plugins" class="btn btn-ghost"
 		   hx-get="/admin/plugins"
 		   hx-target="#main-content"
@@ -15,11 +19,58 @@ templ PluginDetailContent(name string) {
 			Back to Plugins
 		</a>
 	</div>
-	@partials.EmptyState("Plugin detail view is not yet available. The plugin system is under development.")
+	if detail == nil {
+		@partials.EmptyState("Plugin not found.")
+	} else {
+		<div class="detail-grid">
+			<div class="detail-section">
+				<h2>Overview</h2>
+				<dl class="detail-list">
+					<dt>Version</dt>
+					<dd>{ detail.Version }</dd>
+					<dt>Description</dt>
+					<dd>{ detail.Description }</dd>
+					<dt>Author</dt>
+					<dd>{ detail.Author }</dd>
+					<dt>License</dt>
+					<dd>{ detail.License }</dd>
+					<dt>State</dt>
+					<dd>{ detail.State }</dd>
+					<dt>Circuit Breaker</dt>
+					<dd>{ detail.CircuitBreakerState }</dd>
+				</dl>
+			</div>
+			<div class="detail-section">
+				<h2>Runtime</h2>
+				<dl class="detail-list">
+					<dt>VMs Available</dt>
+					<dd>{ fmt.Sprintf("%d / %d", detail.VMsAvailable, detail.VMsTotal) }</dd>
+					<dt>Dependencies</dt>
+					<dd>
+						if len(detail.Dependencies) == 0 {
+							None
+						} else {
+							{ strings.Join(detail.Dependencies, ", ") }
+						}
+					</dd>
+				</dl>
+				if detail.SchemaDrift {
+					<div class="alert alert-warning">
+						Schema drift detected. Plugin tables may not match the expected schema.
+					</div>
+				}
+				if detail.FailedReason != "" {
+					<div class="alert alert-error">
+						<strong>Failed:</strong> { detail.FailedReason }
+					</div>
+				}
+			</div>
+		</div>
+	}
 }
 
-templ PluginDetail(layout layouts.AdminData, name string) {
+templ PluginDetail(layout layouts.AdminData, detail *service.PluginDetail) {
 	@layouts.Admin(layout) {
-		@PluginDetailContent(name)
+		@PluginDetailContent(detail)
 	}
 }

@@ -10,8 +10,8 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "modula",
-	Short:         "Modula - A headless CMS written in Go",
+	Use:   "modula",
+	Short: "Modula - A headless CMS written in Go",
 	Long: `Modula is a headless content management system that runs as a single binary.
 
 It serves content over HTTP/HTTPS and provides an SSH-accessible terminal UI for

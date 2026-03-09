@@ -5,12 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
-	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/publishing"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 ///////////////////////////////
@@ -30,57 +27,45 @@ type CreateAdminVersionRequest struct {
 
 // AdminListVersionsHandler handles GET requests to list all versions for an admin content data item.
 // Reads admin_content_data_id from the "q" query parameter.
-func AdminListVersionsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	d := db.ConfigDB(c)
-
+func AdminListVersionsHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	acdID := types.AdminContentID(q)
 	if err := acdID.Validate(); err != nil {
-		utility.DefaultLogger.Error("invalid admin_content_data_id", err)
 		http.Error(w, fmt.Sprintf("invalid admin_content_data_id: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	versions, err := d.ListAdminContentVersionsByContent(acdID)
+	versions, err := svc.AdminContent.ListVersions(r.Context(), acdID)
 	if err != nil {
-		utility.DefaultLogger.Error("list admin content versions failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(versions)
+	writeJSON(w, versions)
 }
 
 // AdminGetVersionHandler handles GET requests to retrieve a specific admin content version.
 // Reads admin_content_version_id from the "q" query parameter.
-func AdminGetVersionHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	d := db.ConfigDB(c)
-
+func AdminGetVersionHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	avID := types.AdminContentVersionID(q)
 	if err := avID.Validate(); err != nil {
-		utility.DefaultLogger.Error("invalid admin_content_version_id", err)
 		http.Error(w, fmt.Sprintf("invalid admin_content_version_id: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	version, err := d.GetAdminContentVersion(avID)
+	version, err := svc.AdminContent.GetVersion(r.Context(), avID)
 	if err != nil {
-		utility.DefaultLogger.Error("get admin content version failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(version)
+	writeJSON(w, version)
 }
 
 // AdminCreateManualVersionHandler handles POST requests to create a manual admin snapshot version.
 // Reads admin_content_data_id and optional label from the JSON body.
-func AdminCreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func AdminCreateManualVersionHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req CreateAdminVersionRequest
@@ -100,56 +85,18 @@ func AdminCreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c c
 		return
 	}
 
-	d := db.ConfigDB(c)
-	ctx := r.Context()
-
-	// Build snapshot from live admin tables.
-	snapshot, err := publishing.BuildAdminSnapshot(d, ctx, req.AdminContentDataID, req.Locale)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("build admin snapshot for manual version failed", err)
-		http.Error(w, fmt.Sprintf("failed to build snapshot: %v", err), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	snapshotBytes, err := json.Marshal(snapshot)
+	version, err := svc.AdminContent.CreateVersion(r.Context(), ac, req.AdminContentDataID, req.Locale, req.Label, user.UserID)
 	if err != nil {
-		utility.DefaultLogger.Error("marshal admin snapshot failed", err)
-		http.Error(w, fmt.Sprintf("failed to marshal snapshot: %v", err), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return
 	}
-
-	// Get next version number.
-	maxVersion, err := d.GetAdminMaxVersionNumber(req.AdminContentDataID, req.Locale)
-	if err != nil {
-		utility.DefaultLogger.Error("get admin max version number failed", err)
-		http.Error(w, fmt.Sprintf("failed to get version number: %v", err), http.StatusInternalServerError)
-		return
-	}
-	nextVersion := maxVersion + 1
-
-	ac := middleware.AuditContextFromRequest(r, c)
-	now := types.TimestampNow()
-
-	version, err := d.CreateAdminContentVersion(ctx, ac, db.CreateAdminContentVersionParams{
-		AdminContentDataID: req.AdminContentDataID,
-		VersionNumber:      nextVersion,
-		Locale:             req.Locale,
-		Snapshot:           string(snapshotBytes),
-		Trigger:            "manual",
-		Label:              req.Label,
-		Published:          false,
-		PublishedBy:        types.NullableUserID{ID: user.UserID, Valid: true},
-		DateCreated:        now,
-	})
-	if err != nil {
-		utility.DefaultLogger.Error("create manual admin content version failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Async: prune old admin versions if retention cap exceeded.
-	retentionCap := c.VersionMaxPerContent()
-	go publishing.PruneExcessAdminVersions(d, req.AdminContentDataID, "", retentionCap)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -159,36 +106,23 @@ func AdminCreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c c
 // AdminDeleteVersionHandler handles DELETE requests to remove an admin content version.
 // Reads admin_content_version_id from the "q" query parameter.
 // Rejects deletion of published versions with 409 Conflict.
-func AdminDeleteVersionHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	d := db.ConfigDB(c)
-
+func AdminDeleteVersionHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	avID := types.AdminContentVersionID(q)
 	if err := avID.Validate(); err != nil {
-		utility.DefaultLogger.Error("invalid admin_content_version_id", err)
 		http.Error(w, fmt.Sprintf("invalid admin_content_version_id: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	// Fetch version to check published status before deleting.
-	version, err := d.GetAdminContentVersion(avID)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("get admin content version for delete failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	if version.Published {
-		http.Error(w, "cannot delete a published version", http.StatusConflict)
-		return
-	}
-
-	ctx := r.Context()
-	ac := middleware.AuditContextFromRequest(r, c)
-
-	if err := d.DeleteAdminContentVersion(ctx, ac, avID); err != nil {
-		utility.DefaultLogger.Error("delete admin content version failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := svc.AdminContent.DeleteVersion(r.Context(), ac, avID); err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 

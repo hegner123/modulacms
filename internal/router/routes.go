@@ -3,187 +3,159 @@ package router
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 // RoutesHandler handles CRUD operations that do not require a specific route ID.
-func RoutesHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func RoutesHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		if HasPaginationParams(r) {
-			apiListRoutesPaginated(w, r, c)
+			apiListRoutesPaginated(w, r, svc)
 		} else {
-			apiListRoutes(w, c)
+			apiListRoutes(w, r, svc)
 		}
 	case http.MethodPost:
-		apiCreateRoute(w, r, c)
+		apiCreateRoute(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // RouteHandler handles CRUD operations for specific route items.
-func RouteHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func RouteHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetRoute(w, r, c)
+		apiGetRoute(w, r, svc)
 	case http.MethodPut:
-		apiUpdateRoute(w, r, c)
+		apiUpdateRoute(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteRoute(w, r, c)
+		apiDeleteRoute(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-// apiGetRoute handles GET requests for a single route
-func apiGetRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiGetRoute(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	id := types.RouteID(q)
 	if err := id.Validate(); err != nil {
-		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
-	route, err := d.GetRoute(id)
+
+	route, err := svc.Routes.GetRoute(r.Context(), id)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(route)
-	return nil
 }
 
-// apiListRoutes handles GET requests for listing routes
-func apiListRoutes(w http.ResponseWriter, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	routes, err := d.ListRoutes()
+func apiListRoutes(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	routes, err := svc.Routes.ListRoutes(r.Context())
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(routes)
-	return nil
 }
 
-// apiCreateRoute handles POST requests to create a new route
-func apiCreateRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	var newRoute db.CreateRouteParams
-	err := json.NewDecoder(r.Body).Decode(&newRoute)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+func apiCreateRoute(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var req service.CreateRouteInput
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	now := types.NewTimestamp(time.Now().UTC())
-	if !newRoute.DateCreated.Valid {
-		newRoute.DateCreated = now
-	}
-	if !newRoute.DateModified.Valid {
-		newRoute.DateModified = now
-	}
-
-	ac := middleware.AuditContextFromRequest(r, c)
-	createdRoute, err := d.CreateRoute(r.Context(), ac, newRoute)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	if user := middleware.AuthenticatedUser(r.Context()); user != nil {
+		req.AuthorID = types.NullableUserID{ID: user.UserID, Valid: true}
+	}
+
+	created, err := svc.Routes.CreateRoute(r.Context(), ac, req)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdRoute)
-	return nil
+	json.NewEncoder(w).Encode(created)
 }
 
-// apiUpdateRoute handles PUT requests to update an existing route
-func apiUpdateRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	var updateRoute db.UpdateRouteParams
-	err := json.NewDecoder(r.Body).Decode(&updateRoute)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+func apiUpdateRoute(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var req service.UpdateRouteInput
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	updatedRoute, err := d.UpdateRoute(r.Context(), ac, updateRoute)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	updated, err := svc.Routes.UpdateRoute(r.Context(), ac, req)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedRoute)
-	return nil
+	json.NewEncoder(w).Encode(updated)
 }
 
-// apiDeleteRoute handles DELETE requests for routes
-func apiDeleteRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiDeleteRoute(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	id := types.RouteID(q)
 	if err := id.Validate(); err != nil {
-		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
-	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.DeleteRoute(r.Context(), ac, id)
+
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	if err := svc.Routes.DeleteRoute(r.Context(), ac, id); err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	return nil
 }
 
-// apiListRoutesPaginated handles GET requests for listing routes with pagination.
-func apiListRoutesPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+func apiListRoutesPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	params := ParsePaginationParams(r)
 
-	items, err := d.ListRoutesPaginated(params)
+	items, total, err := svc.Routes.ListRoutesPaginated(r.Context(), params.Limit, params.Offset)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
-	total, err := d.CountRoutes()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	response := db.PaginatedResponse[db.Routes]{
@@ -196,5 +168,4 @@ func apiListRoutesPaginated(w http.ResponseWriter, r *http.Request, c config.Con
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
-	return nil
 }

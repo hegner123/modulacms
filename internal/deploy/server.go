@@ -11,6 +11,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -19,7 +20,9 @@ const maxImportBodySize = 100 << 20
 
 // DeployHealthHandler returns deploy endpoint health status and version info.
 // Requires deploy:read permission.
-func DeployHealthHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func DeployHealthHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	cfg, _ := svc.Config()
+	c := *cfg
 	w.Header().Set("Content-Type", "application/json")
 	// Encode error is non-recoverable (client disconnected or similar);
 	// the response is already partially written so no recovery is possible.
@@ -37,13 +40,13 @@ type exportRequest struct {
 
 // DeployExportHandler exports CMS data as a SyncPayload JSON response.
 // Requires deploy:read permission.
-func DeployExportHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func DeployExportHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	driver := db.ConfigDB(c)
+	driver := svc.Driver()
 
 	// Parse optional table list from request body.
 	var tables []db.DBTable
@@ -101,7 +104,9 @@ func DeployExportHandler(w http.ResponseWriter, r *http.Request, c config.Config
 
 // DeployImportHandler applies a SyncPayload to the local database.
 // Requires deploy:create permission.
-func DeployImportHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func DeployImportHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	cfg, _ := svc.Config()
+	c := *cfg
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -132,7 +137,7 @@ func DeployImportHandler(w http.ResponseWriter, r *http.Request, c config.Config
 	// Check for dry-run query parameter.
 	dryRun := r.URL.Query().Get("dry_run") == "true"
 
-	driver := db.ConfigDB(c)
+	driver := svc.Driver()
 	ctx := r.Context()
 
 	if dryRun {

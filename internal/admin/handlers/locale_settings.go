@@ -1,28 +1,25 @@
 package handlers
 
 import (
-	"net"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // LocaleSettingsHandler renders the locale management page.
 // Always accessible so users can discover and configure i18n settings.
 // CRUD mutations remain gated behind i18n being enabled.
-func LocaleSettingsHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func LocaleSettingsHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := mgr.Config()
+		cfg, err := svc.Config()
 		if err != nil {
 			utility.DefaultLogger.Error("failed to load config", err)
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
@@ -31,16 +28,11 @@ func LocaleSettingsHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 
 		i18nEnabled := cfg.I18nEnabled()
 
-		locales, localesErr := driver.ListLocales()
+		localeList, localesErr := svc.Locales.ListLocales(r.Context())
 		if localesErr != nil {
 			utility.DefaultLogger.Error("failed to list locales", localesErr)
 			http.Error(w, "Failed to load locales", http.StatusInternalServerError)
 			return
-		}
-
-		localeList := make([]db.Locale, 0)
-		if locales != nil {
-			localeList = *locales
 		}
 
 		csrfToken := CSRFTokenFromContext(r.Context())
@@ -58,9 +50,9 @@ func LocaleSettingsHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 }
 
 // LocaleEditDialogHandler returns the edit dialog partial for a locale.
-func LocaleEditDialogHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func LocaleEditDialogHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := mgr.Config()
+		cfg, err := svc.Config()
 		if err != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
@@ -77,29 +69,29 @@ func LocaleEditDialogHandler(driver db.DbDriver, mgr *config.Manager) http.Handl
 			return
 		}
 
-		locale, localeErr := driver.GetLocale(types.LocaleID(id))
+		locale, localeErr := svc.Locales.GetLocale(r.Context(), types.LocaleID(id))
 		if localeErr != nil {
 			utility.DefaultLogger.Error("failed to get locale", localeErr)
 			http.Error(w, "Locale not found", http.StatusNotFound)
 			return
 		}
 
-		allLocales, listErr := driver.ListLocales()
+		allLocales, listErr := svc.Locales.ListLocales(r.Context())
 		if listErr != nil {
 			utility.DefaultLogger.Error("failed to list locales", listErr)
-			allLocales = &[]db.Locale{}
+			allLocales = []db.Locale{}
 		}
 
 		csrfToken := CSRFTokenFromContext(r.Context())
-		Render(w, r, pages.LocaleEditDialog(*locale, *allLocales, csrfToken))
+		Render(w, r, pages.LocaleEditDialog(*locale, allLocales, csrfToken))
 	}
 }
 
 // LocaleCreateHandler creates a new locale from a form submission.
 // Returns the updated locale table rows as an HTMX partial.
-func LocaleCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func LocaleCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := mgr.Config()
+		cfg, err := svc.Config()
 		if err != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
@@ -129,52 +121,33 @@ func LocaleCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFu
 			}
 		}
 
-		if code == "" || label == "" {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Code and Label are required", "type": "error"}}`)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			return
-		}
+		ac := middleware.AuditContextFromRequest(r, *cfg)
 
-		user := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
-		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
-
-		// If setting as default, clear existing default first
-		if isDefault {
-			if clearErr := driver.ClearDefaultLocale(r.Context()); clearErr != nil {
-				utility.DefaultLogger.Error("failed to clear default locale", clearErr)
-			}
-		}
-
-		_, createErr := driver.CreateLocale(r.Context(), ac, db.CreateLocaleParams{
+		input := service.CreateLocaleInput{
 			Code:         code,
 			Label:        label,
 			IsDefault:    isDefault,
 			IsEnabled:    isEnabled,
 			FallbackCode: fallbackCode,
 			SortOrder:    sortOrder,
-			DateCreated:  types.NewTimestamp(time.Now()),
-		})
+		}
+
+		_, createErr := svc.Locales.CreateLocale(r.Context(), ac, input)
 		if createErr != nil {
-			utility.DefaultLogger.Error("failed to create locale", createErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create locale", "type": "error"}}`)
-			w.WriteHeader(http.StatusInternalServerError)
+			service.HandleServiceError(w, r, createErr)
 			return
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Locale created", "type": "success"}}`)
-		renderLocaleTableRows(w, r, driver)
+		renderLocaleTableRows(w, r, svc)
 	}
 }
 
 // LocaleUpdateHandler updates an existing locale.
 // Returns the updated locale table rows as an HTMX partial.
-func LocaleUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func LocaleUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := mgr.Config()
+		cfg, err := svc.Config()
 		if err != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
@@ -196,18 +169,19 @@ func LocaleUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFu
 			return
 		}
 
-		existing, getErr := driver.GetLocale(types.LocaleID(id))
-		if getErr != nil {
-			http.Error(w, "Locale not found", http.StatusNotFound)
-			return
-		}
-
 		code := strings.TrimSpace(r.FormValue("code"))
 		label := strings.TrimSpace(r.FormValue("label"))
 		isDefault := r.FormValue("is_default") == "true"
 		isEnabled := r.FormValue("is_enabled") == "true"
 		fallbackCode := strings.TrimSpace(r.FormValue("fallback_code"))
 		sortOrderStr := strings.TrimSpace(r.FormValue("sort_order"))
+
+		// Get existing locale to preserve sort_order if not provided.
+		existing, getErr := svc.Locales.GetLocale(r.Context(), types.LocaleID(id))
+		if getErr != nil {
+			service.HandleServiceError(w, r, getErr)
+			return
+		}
 
 		sortOrder := existing.SortOrder
 		if sortOrderStr != "" {
@@ -216,27 +190,9 @@ func LocaleUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFu
 			}
 		}
 
-		if code == "" || label == "" {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Code and Label are required", "type": "error"}}`)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			return
-		}
+		ac := middleware.AuditContextFromRequest(r, *cfg)
 
-		user := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
-		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
-
-		// If setting as default, clear existing default first
-		if isDefault && !existing.IsDefault {
-			if clearErr := driver.ClearDefaultLocale(r.Context()); clearErr != nil {
-				utility.DefaultLogger.Error("failed to clear default locale", clearErr)
-			}
-		}
-
-		updateErr := driver.UpdateLocale(r.Context(), ac, db.UpdateLocaleParams{
+		input := service.UpdateLocaleInput{
 			LocaleID:     types.LocaleID(id),
 			Code:         code,
 			Label:        label,
@@ -244,25 +200,24 @@ func LocaleUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFu
 			IsEnabled:    isEnabled,
 			FallbackCode: fallbackCode,
 			SortOrder:    sortOrder,
-			DateCreated:  existing.DateCreated,
-		})
+		}
+
+		_, updateErr := svc.Locales.UpdateLocale(r.Context(), ac, input)
 		if updateErr != nil {
-			utility.DefaultLogger.Error("failed to update locale", updateErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to update locale", "type": "error"}}`)
-			w.WriteHeader(http.StatusInternalServerError)
+			service.HandleServiceError(w, r, updateErr)
 			return
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Locale updated", "type": "success"}}`)
-		renderLocaleTableRows(w, r, driver)
+		renderLocaleTableRows(w, r, svc)
 	}
 }
 
 // LocaleDeleteHandler deletes a locale by ID.
 // Returns the updated locale table rows as an HTMX partial.
-func LocaleDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func LocaleDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := mgr.Config()
+		cfg, err := svc.Config()
 		if err != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
@@ -284,51 +239,26 @@ func LocaleDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFu
 			return
 		}
 
-		// Prevent deleting the default locale
-		locale, getErr := driver.GetLocale(types.LocaleID(id))
-		if getErr != nil {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Locale not found", "type": "error"}}`)
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if locale.IsDefault {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Cannot delete the default locale", "type": "error"}}`)
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
+		ac := middleware.AuditContextFromRequest(r, *cfg)
 
-		user := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
-		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
-
-		deleteErr := driver.DeleteLocale(r.Context(), ac, types.LocaleID(id))
+		deleteErr := svc.Locales.DeleteLocale(r.Context(), ac, types.LocaleID(id))
 		if deleteErr != nil {
-			utility.DefaultLogger.Error("failed to delete locale", deleteErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete locale", "type": "error"}}`)
-			w.WriteHeader(http.StatusInternalServerError)
+			service.HandleServiceError(w, r, deleteErr)
 			return
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Locale deleted", "type": "success"}}`)
-		renderLocaleTableRows(w, r, driver)
+		renderLocaleTableRows(w, r, svc)
 	}
 }
 
 // renderLocaleTableRows loads all locales and renders the table body partial.
-func renderLocaleTableRows(w http.ResponseWriter, r *http.Request, driver db.DbDriver) {
-	locales, listErr := driver.ListLocales()
+func renderLocaleTableRows(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	localeList, listErr := svc.Locales.ListLocales(r.Context())
 	if listErr != nil {
 		utility.DefaultLogger.Error("failed to list locales after mutation", listErr)
 		http.Error(w, "Failed to reload locales", http.StatusInternalServerError)
 		return
-	}
-
-	localeList := make([]db.Locale, 0)
-	if locales != nil {
-		localeList = *locales
 	}
 
 	csrfToken := CSRFTokenFromContext(r.Context())

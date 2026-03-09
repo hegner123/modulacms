@@ -5,19 +5,18 @@ import (
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // SessionsListHandler lists all active sessions.
 // HTMX requests return partial table rows; full requests include the complete page layout.
-func SessionsListHandler(driver db.DbDriver) http.HandlerFunc {
+func SessionsListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		items, err := driver.ListSessions()
+		items, err := svc.Sessions.ListSessions(r.Context())
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list sessions", err)
 			http.Error(w, "Failed to load sessions", http.StatusInternalServerError)
@@ -47,9 +46,9 @@ func SessionsListHandler(driver db.DbDriver) http.HandlerFunc {
 
 // SessionDeleteHandler revokes a session by ID.
 // Only HTMX DELETE requests are supported.
-func SessionDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func SessionDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
+		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
@@ -72,14 +71,9 @@ func SessionDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 			return
 		}
 
-		ac := audited.Ctx(
-			types.NodeID(cfg.Node_ID),
-			user.UserID,
-			middleware.RequestIDFromContext(r.Context()),
-			clientIP(r),
-		)
+		ac := middleware.AuditContextFromRequest(r, *cfg)
 
-		if err := driver.DeleteSession(r.Context(), ac, types.SessionID(sessionID)); err != nil {
+		if err := svc.Sessions.DeleteSession(r.Context(), ac, types.SessionID(sessionID)); err != nil {
 			utility.DefaultLogger.Error("failed to delete session", err)
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to revoke session", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)

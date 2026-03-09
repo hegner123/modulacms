@@ -2,20 +2,18 @@ package router
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 // TablesHandler handles CRUD operations that do not require a specific user ID.
-func TablesHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func TablesHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiListTables(w, c)
+		apiListTables(w, r, svc)
 	case http.MethodPost:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	default:
@@ -24,57 +22,49 @@ func TablesHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 }
 
 // TableHandler handles CRUD operations for specific user items.
-func TableHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func TableHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetTable(w, r, c)
+		apiGetTable(w, r, svc)
 	case http.MethodPut:
-		apiUpdateTables(w, r, c)
+		apiUpdateTables(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteTable(w, r, c)
+		apiDeleteTable(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // apiGetTable handles GET requests for a single table
-func apiGetTable(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	tId := r.URL.Query().Get("q")
-	if tId == "" {
-		err := fmt.Errorf("missing table ID")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+func apiGetTable(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	tID := r.URL.Query().Get("q")
+	if tID == "" {
+		http.Error(w, "missing table ID", http.StatusBadRequest)
+		return
 	}
-	table, err := d.GetTable(tId)
+
+	table, err := svc.Tables.GetTable(r.Context(), tID)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(table)
-	return nil
 }
 
 // apiListTables handles GET requests for listing tables
-func apiListTables(w http.ResponseWriter, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	tables, err := d.ListTables()
+func apiListTables(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	tables, err := svc.Tables.ListTables(r.Context())
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(tables)
-	return nil
 }
 
 /*
@@ -112,57 +102,51 @@ func apiCreateTable(w http.ResponseWriter, r *http.Request, c config.Config) err
 */
 
 // apiUpdateTables handles PUT requests to update an existing table
-func apiUpdateTables(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	var updateTable db.UpdateTableParams
-	err := json.NewDecoder(r.Body).Decode(&updateTable)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+func apiUpdateTables(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var params db.UpdateTableParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	_, err = d.UpdateTable(r.Context(), ac, updateTable)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	updated, err := d.GetTable(updateTable.ID)
+	updated, err := svc.Tables.UpdateTable(r.Context(), ac, params)
 	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated table", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(updated)
-	return nil
 }
 
 // apiDeleteTable handles DELETE requests for tables
-func apiDeleteTable(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	tId := r.URL.Query().Get("q")
-	if tId == "" {
-		err := fmt.Errorf("missing table ID")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+func apiDeleteTable(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	tID := r.URL.Query().Get("q")
+	if tID == "" {
+		http.Error(w, "missing table ID", http.StatusBadRequest)
+		return
 	}
-	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.DeleteTable(r.Context(), ac, tId)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+
+	c, cfgErr := svc.Config()
+	if cfgErr != nil {
+		service.HandleServiceError(w, r, cfgErr)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	if err := svc.Tables.DeleteTable(r.Context(), ac, tID); err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	return nil
 }

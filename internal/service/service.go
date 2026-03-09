@@ -27,7 +27,30 @@ type Registry struct {
 	dispatcher publishing.WebhookDispatcher
 
 	// Domain services — populated in NewRegistry.
-	Schema *SchemaService
+	Schema       *SchemaService
+	Content      *ContentService
+	AdminContent *AdminContentService
+	Media        *MediaService
+	Routes       *RouteService
+	Users        *UserService
+	RBAC         *RBACService
+
+	// Phase 5 — constructed post-NewRegistry and assigned externally.
+	Plugins  *PluginService
+	Webhooks *WebhookService
+	Locales  *LocaleService
+
+	// Phase 6 — thin CRUD services.
+	Sessions  *SessionService
+	Tokens    *TokenService
+	SSHKeys   *SSHKeyService
+	OAuth     *OAuthService
+	Tables    *TableService
+	ConfigSvc *ConfigService
+	Import    *ImportService
+	Deploy    *DeployService
+	AuditLog  *AuditLogService
+	Backup    *BackupService
 }
 
 // NewRegistry creates a Registry with the given infrastructure dependencies.
@@ -46,6 +69,22 @@ func NewRegistry(
 		dispatcher: dispatcher,
 	}
 	reg.Schema = NewSchemaService(driver, driver)
+	reg.Content = NewContentService(driver, mgr, dispatcher)
+	reg.AdminContent = NewAdminContentService(driver, mgr, dispatcher)
+	reg.Media = NewMediaService(driver, mgr)
+	reg.Routes = NewRouteService(driver, mgr)
+	reg.Users = NewUserService(driver, mgr)
+	reg.RBAC = NewRBACService(driver, mgr, pc)
+	reg.Sessions = NewSessionService(driver)
+	reg.Tokens = NewTokenService(driver)
+	reg.SSHKeys = NewSSHKeyService(driver)
+	reg.OAuth = NewOAuthService(driver)
+	reg.Tables = NewTableService(driver)
+	reg.ConfigSvc = NewConfigService(mgr)
+	reg.Import = NewImportService(driver, mgr)
+	reg.Deploy = NewDeployService(driver, mgr)
+	reg.AuditLog = NewAuditLogService(driver)
+	reg.Backup = NewBackupService(mgr)
 	return reg
 }
 

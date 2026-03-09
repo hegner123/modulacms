@@ -70,7 +70,7 @@ func NewPermissionCache() *PermissionCache {
 
 // Load populates the cache from the database using build-then-swap.
 // Readers are never blocked during the DB queries.
-func (pc *PermissionCache) Load(driver db.DbDriver) error {
+func (pc *PermissionCache) Load(driver db.RBACRepository) error {
 	// Build new cache (no lock held)
 	newCache := make(map[types.RoleID]PermissionSet)
 	var newAdminRoleID types.RoleID
@@ -131,7 +131,7 @@ func (pc *PermissionCache) IsAdmin(roleID types.RoleID) bool {
 
 // StartPeriodicRefresh starts a background goroutine that refreshes
 // the cache at the given interval. Stops when ctx is cancelled.
-func (pc *PermissionCache) StartPeriodicRefresh(ctx context.Context, driver db.DbDriver, interval time.Duration) {
+func (pc *PermissionCache) StartPeriodicRefresh(ctx context.Context, driver db.RBACRepository, interval time.Duration) {
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()

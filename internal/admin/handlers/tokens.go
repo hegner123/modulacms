@@ -1,27 +1,24 @@
 package handlers
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // TokensListHandler lists API tokens.
 // HTMX requests return partial table rows; full requests include the complete page layout.
-func TokensListHandler(driver db.DbDriver) http.HandlerFunc {
+func TokensListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		items, err := driver.ListTokens()
+		items, err := svc.Tokens.ListTokens(r.Context())
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list tokens", err)
 			http.Error(w, "Failed to load tokens", http.StatusInternalServerError)
@@ -52,9 +49,9 @@ func TokensListHandler(driver db.DbDriver) http.HandlerFunc {
 
 // TokenCreateHandler generates a random API token and stores it.
 // Returns an HTMX response with the new token table rows.
-func TokenCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func TokenCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
+		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
@@ -76,36 +73,16 @@ func TokenCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			tokenType = "api"
 		}
 
-		// Generate random token: 32 bytes = 64 hex chars
-		tokenBytes := make([]byte, 32)
-		if _, randErr := rand.Read(tokenBytes); randErr != nil {
-			utility.DefaultLogger.Error("failed to generate token bytes", randErr)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-		rawToken := "mcms_" + hex.EncodeToString(tokenBytes)
-		hashedToken := utility.HashToken(rawToken)
+		expiresAt := types.NewTimestamp(time.Now().Add(365 * 24 * time.Hour))
 
-		now := time.Now()
-		expiresAt := types.NewTimestamp(now.Add(365 * 24 * time.Hour))
-
-		ac := audited.Ctx(
-			types.NodeID(cfg.Node_ID),
-			user.UserID,
-			middleware.RequestIDFromContext(r.Context()),
-			clientIP(r),
-		)
-
-		params := db.CreateTokenParams{
+		input := service.CreateTokenInput{
 			UserID:    types.NullableUserID{ID: user.UserID, Valid: true},
 			TokenType: tokenType,
-			Token:     hashedToken,
-			IssuedAt:  types.TimestampNow(),
-			ExpiresAt: expiresAt,
-			Revoked:   false,
+			Expiry:    expiresAt,
 		}
 
-		_, createErr := driver.CreateToken(r.Context(), ac, params)
+		ac := middleware.AuditContextFromRequest(r, *cfg)
+		result, createErr := svc.Tokens.CreateToken(r.Context(), ac, input)
 		if createErr != nil {
 			utility.DefaultLogger.Error("failed to create token", createErr)
 			if IsHTMX(r) {
@@ -119,7 +96,7 @@ func TokenCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 
 		if IsHTMX(r) {
 			// Reload the full token list
-			items, listErr := driver.ListTokens()
+			items, listErr := svc.Tokens.ListTokens(r.Context())
 			if listErr != nil {
 				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Token created but failed to reload list", "type": "warning"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
@@ -129,7 +106,7 @@ func TokenCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			if items != nil {
 				tokens = *items
 			}
-			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Copy your token now — it will not be shown again: %s", "type": "success", "persist": true}}`, rawToken)
+			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Copy your token now — it will not be shown again: %s", "type": "success", "persist": true}}`, result.RawToken)
 			w.Header().Set("HX-Trigger", toastMsg)
 			Render(w, r, partials.TokensTableRows(tokens))
 			return
@@ -140,9 +117,9 @@ func TokenCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 
 // TokenDeleteHandler deletes (revokes) an API token by ID.
 // Only HTMX DELETE requests are supported.
-func TokenDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func TokenDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
+		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
@@ -165,14 +142,9 @@ func TokenDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			return
 		}
 
-		ac := audited.Ctx(
-			types.NodeID(cfg.Node_ID),
-			user.UserID,
-			middleware.RequestIDFromContext(r.Context()),
-			clientIP(r),
-		)
+		ac := middleware.AuditContextFromRequest(r, *cfg)
 
-		if err := driver.DeleteToken(r.Context(), ac, tokenID); err != nil {
+		if err := svc.Tokens.DeleteToken(r.Context(), ac, tokenID); err != nil {
 			utility.DefaultLogger.Error("failed to delete token", err)
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete token", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)

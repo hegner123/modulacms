@@ -10,6 +10,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/publishing"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -25,12 +26,14 @@ const pruneInterval = 1 * time.Hour
 // publish_at time passed while the server was down.
 //
 // It respects ctx.Done() for graceful shutdown.
-func StartPublishScheduler(ctx context.Context, driver db.DbDriver, cfg config.Config, interval time.Duration, dispatcher publishing.WebhookDispatcher) {
+func StartPublishScheduler(ctx context.Context, svc *service.Registry, interval time.Duration) {
 	utility.DefaultLogger.Info("publish scheduler started", "interval", interval)
 
+	driver := svc.Driver()
+
 	// Catch-up pass: publish anything overdue from before server started.
-	publishDueContent(ctx, driver, cfg, dispatcher)
-	publishDueAdminContent(ctx, driver, cfg, dispatcher)
+	publishDueContent(ctx, svc)
+	publishDueAdminContent(ctx, svc)
 
 	publishTicker := time.NewTicker(interval)
 	defer publishTicker.Stop()
@@ -44,19 +47,25 @@ func StartPublishScheduler(ctx context.Context, driver db.DbDriver, cfg config.C
 			utility.DefaultLogger.Info("publish scheduler stopped")
 			return
 		case <-publishTicker.C:
-			publishDueContent(ctx, driver, cfg, dispatcher)
-			publishDueAdminContent(ctx, driver, cfg, dispatcher)
+			publishDueContent(ctx, svc)
+			publishDueAdminContent(ctx, svc)
 		case <-pruneTicker.C:
-			pruneAllContentVersions(driver, cfg)
-			pruneAllAdminContentVersions(driver, cfg)
-			pruneOldDeliveries(ctx, driver, cfg)
+			cfg, err := svc.Config()
+			if err != nil {
+				utility.DefaultLogger.Error("scheduler: get config for prune failed", err)
+				continue
+			}
+			pruneAllContentVersions(driver, *cfg)
+			pruneAllAdminContentVersions(driver, *cfg)
+			pruneOldDeliveries(ctx, driver, *cfg)
 		}
 	}
 }
 
 // publishDueContent finds all content_data rows where publish_at <= now and
-// status is 'draft', then publishes each one.
-func publishDueContent(ctx context.Context, driver db.DbDriver, cfg config.Config, dispatcher publishing.WebhookDispatcher) {
+// status is 'draft', then publishes each one via the service layer.
+func publishDueContent(ctx context.Context, svc *service.Registry) {
+	driver := svc.Driver()
 	now := types.TimestampNow()
 	items, err := driver.ListContentDataDueForPublish(now)
 	if err != nil {
@@ -67,11 +76,10 @@ func publishDueContent(ctx context.Context, driver db.DbDriver, cfg config.Confi
 		return
 	}
 
-	retentionCap := cfg.VersionMaxPerContent()
 	for _, item := range *items {
 		ac := audited.Ctx(types.NewNodeID(), item.AuthorID, "scheduled-publish", "system")
 
-		_, pubErr := publishing.PublishContent(ctx, driver, item.ContentDataID, "", item.AuthorID, ac, retentionCap, dispatcher)
+		_, pubErr := svc.Content.Publish(ctx, ac, item.ContentDataID, "", item.AuthorID)
 		if pubErr != nil {
 			utility.DefaultLogger.Error(fmt.Sprintf("scheduler: publish content %s failed", item.ContentDataID), pubErr)
 			continue
@@ -91,8 +99,9 @@ func publishDueContent(ctx context.Context, driver db.DbDriver, cfg config.Confi
 }
 
 // publishDueAdminContent finds all admin_content_data rows where publish_at <= now
-// and status is 'draft', then publishes each one.
-func publishDueAdminContent(ctx context.Context, driver db.DbDriver, cfg config.Config, dispatcher publishing.WebhookDispatcher) {
+// and status is 'draft', then publishes each one via the service layer.
+func publishDueAdminContent(ctx context.Context, svc *service.Registry) {
+	driver := svc.Driver()
 	now := types.TimestampNow()
 	items, err := driver.ListAdminContentDataDueForPublish(now)
 	if err != nil {
@@ -103,11 +112,10 @@ func publishDueAdminContent(ctx context.Context, driver db.DbDriver, cfg config.
 		return
 	}
 
-	retentionCap := cfg.VersionMaxPerContent()
 	for _, item := range *items {
 		ac := audited.Ctx(types.NewNodeID(), item.AuthorID, "scheduled-publish", "system")
 
-		pubErr := publishing.PublishAdminContent(ctx, driver, item.AdminContentDataID, "", item.AuthorID, ac, retentionCap, dispatcher)
+		pubErr := svc.AdminContent.Publish(ctx, ac, item.AdminContentDataID, "", item.AuthorID)
 		if pubErr != nil {
 			utility.DefaultLogger.Error(fmt.Sprintf("scheduler: publish admin content %s failed", item.AdminContentDataID), pubErr)
 			continue

@@ -17,6 +17,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/email"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/oauth2"
 )
@@ -78,13 +79,8 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	json.NewEncoder(w).Encode(createdUser)
 }
 
-func ResetPasswordHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	err := ApiUpdateUser(w, r, c)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+func ResetPasswordHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	apiUpdateUser(w, r, svc)
 }
 
 // RequestPasswordResetHandler initiates a token-based password reset flow.

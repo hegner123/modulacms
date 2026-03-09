@@ -2,154 +2,100 @@ package router
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
+	"github.com/hegner123/modulacms/internal/tree/ops"
 )
 
 // ContentDatasHandler handles CRUD operations that do not require a specific data ID.
-func ContentDatasHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func ContentDatasHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		if HasPaginationParams(r) {
-			apiListContentDataPaginated(w, r, c)
+			apiListContentDataPaginated(w, r, svc)
 		} else {
-			apiListContentData(w, c)
+			apiListContentData(w, r, svc)
 		}
 	case http.MethodPost:
-		apiCreateContentData(w, r, c)
+		apiCreateContentData(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // ContentDataHandler handles CRUD operations for specific content data items.
-func ContentDataHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func ContentDataHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetContentData(w, r, c)
+		apiGetContentData(w, r, svc)
 	case http.MethodPost:
-		apiCreateContentData(w, r, c)
+		apiCreateContentData(w, r, svc)
 	case http.MethodPut:
-		apiUpdateContentData(w, r, c)
+		apiUpdateContentData(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteContentData(w, r, c)
+		apiDeleteContentData(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // apiGetContentData handles GET requests for a single content data
-func apiGetContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiGetContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	cdID := types.ContentID(q)
 	if err := cdID.Validate(); err != nil {
-		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
-	}
-	contentData, err := d.GetContentData(cdID)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contentData)
-	return nil
+	cd, err := svc.Content.Get(r.Context(), cdID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	writeJSON(w, cd)
 }
 
 // apiListContentData handles GET requests for listing content data
-func apiListContentData(w http.ResponseWriter, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	contentDataList, err := d.ListContentData()
+func apiListContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	contentDataList, err := svc.Content.List(r.Context())
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contentDataList)
-	return nil
+	writeJSON(w, contentDataList)
 }
 
 // apiCreateContentData handles POST requests to create new content data
-func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiCreateContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	var newContentData db.CreateContentDataParams
-	err := json.NewDecoder(r.Body).Decode(&newContentData)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+	if err := json.NewDecoder(r.Body).Decode(&newContentData); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	createdContentData, err := d.CreateContentData(r.Context(), ac, newContentData)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	// Insert new node into the parent's sibling chain.
-	if createdContentData.ParentID.Valid {
-		updated, chainErr := appendToSiblingChain(
-			r.Context(), ac, d, createdContentData,
-			newContentData.PrevSiblingID, newContentData.NextSiblingID,
-		)
-		if chainErr != nil {
-			utility.DefaultLogger.Error("create: sibling chain error", chainErr)
-			http.Error(w, chainErr.Error(), http.StatusInternalServerError)
-			return chainErr
-		}
-		createdContentData = updated
-	}
-
-	// Auto-create empty content fields for every field belonging to the datatype
-	if createdContentData.DatatypeID.Valid {
-		fieldList, dtErr := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: createdContentData.DatatypeID.ID, Valid: true})
-		if dtErr != nil {
-			utility.DefaultLogger.Error("create: failed to list fields for auto-creation", dtErr)
-		} else if fieldList != nil {
-			ctx := r.Context()
-			ac := middleware.AuditContextFromRequest(r, c)
-			now := types.TimestampNow()
-			for _, field := range *fieldList {
-				_, cfErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
-					RouteID:       createdContentData.RouteID,
-					ContentDataID: types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
-					FieldID:       types.NullableFieldID{ID: field.FieldID, Valid: true},
-					FieldValue:    "",
-					AuthorID:      createdContentData.AuthorID,
-					DateCreated:   now,
-					DateModified:  now,
-				})
-				if cfErr != nil {
-					utility.DefaultLogger.Error(fmt.Sprintf("create: failed to auto-create content field for field %s", field.FieldID), cfErr)
-				}
-			}
-		}
+	created, err := svc.Content.Create(r.Context(), ac, newContentData)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdContentData)
-	return nil
+	json.NewEncoder(w).Encode(created)
 }
 
 // updateContentDataRequest wraps UpdateContentDataParams with an optional
@@ -162,65 +108,27 @@ type updateContentDataRequest struct {
 }
 
 // apiUpdateContentData handles PUT requests to update existing content data
-func apiUpdateContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiUpdateContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	var req updateContentDataRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	if req.Revision > 0 {
-		// Optimistic locking: reject if the row's revision no longer matches.
-		revisionParams := db.UpdateContentDataWithRevisionParams{
-			RouteID:       req.RouteID,
-			ParentID:      req.ParentID,
-			FirstChildID:  req.FirstChildID,
-			NextSiblingID: req.NextSiblingID,
-			PrevSiblingID: req.PrevSiblingID,
-			DatatypeID:    req.DatatypeID,
-			AuthorID:      req.AuthorID,
-			Status:        req.Status,
-			DateCreated:   req.DateCreated,
-			DateModified:  req.DateModified,
-			ContentDataID: req.ContentDataID,
-			Revision:      req.Revision,
-		}
-		err = d.UpdateContentDataWithRevision(r.Context(), revisionParams)
-		if errors.Is(err, db.ErrRevisionConflict) {
-			http.Error(w, "Content was modified by another user. Please refresh and try again.", http.StatusConflict)
-			return err
-		}
-		if err != nil {
-			utility.DefaultLogger.Error("", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
-		}
-	} else {
-		// No revision supplied -- backward-compatible non-locking update.
-		ac := middleware.AuditContextFromRequest(r, c)
-		_, err = d.UpdateContentData(r.Context(), ac, req.UpdateContentDataParams)
-		if err != nil {
-			utility.DefaultLogger.Error("", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
-		}
-	}
-
-	updated, err := d.GetContentData(req.ContentDataID)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated content data", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	updated, err := svc.Content.Update(r.Context(), ac, req.UpdateContentDataParams, req.Revision)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updated)
-	return nil
+	writeJSON(w, updated)
 }
 
 // RecursiveDeleteResponse is the JSON response for DELETE with recursive=true.
@@ -232,127 +140,53 @@ type RecursiveDeleteResponse struct {
 
 // apiDeleteContentData handles DELETE requests for content data.
 // When recursive=true, collects and deletes all descendants first (leaves first).
-func apiDeleteContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiDeleteContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	cdID := types.ContentID(q)
 	if err := cdID.Validate(); err != nil {
-		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
 	recursive := r.URL.Query().Get("recursive") == "true"
-	ac := middleware.AuditContextFromRequest(r, c)
-	ctx := r.Context()
+
+	c, err := svc.Config()
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	deletedIDs, err := svc.Content.Delete(r.Context(), ac, cdID, recursive)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
 
 	if recursive {
-		descendants, err := collectDescendants(d, cdID, 100, 1000)
-		if err != nil {
-			utility.DefaultLogger.Error("recursive delete: collect failed", err)
-			http.Error(w, fmt.Sprintf("recursive delete failed: %v", err), http.StatusBadRequest)
-			return err
-		}
-
-		// Build a set of IDs being deleted for parent-membership checks.
-		deleteSet := make(map[types.ContentID]struct{}, len(descendants)+1)
-		deleteSet[cdID] = struct{}{}
-		for _, id := range descendants {
-			deleteSet[id] = struct{}{}
-		}
-
-		deletedIDs := make([]types.ContentID, 0, len(descendants)+1)
-
-		// Delete descendants (leaves first). Skip sibling repair when the
-		// parent is also being deleted (the entire level is removed).
-		for _, descID := range descendants {
-			node, gErr := d.GetContentData(descID)
-			if gErr != nil {
-				utility.DefaultLogger.Error(fmt.Sprintf("recursive delete: failed to fetch %s", descID), gErr)
-				http.Error(w, gErr.Error(), http.StatusInternalServerError)
-				return gErr
-			}
-
-			parentInSet := node.ParentID.Valid && func() bool {
-				_, ok := deleteSet[node.ParentID.ID]
-				return ok
-			}()
-
-			if parentInSet {
-				// Parent is also being deleted; skip sibling repair, just delete.
-				if err := d.DeleteContentData(ctx, ac, descID); err != nil {
-					utility.DefaultLogger.Error(fmt.Sprintf("recursive delete: failed to delete %s", descID), err)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return err
-				}
-			} else {
-				if err := deleteContentWithSiblingRepair(ctx, ac, d, descID); err != nil {
-					utility.DefaultLogger.Error(fmt.Sprintf("recursive delete: failed to delete %s", descID), err)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return err
-				}
-			}
-			deletedIDs = append(deletedIDs, descID)
-		}
-
-		// Delete the root node itself with sibling repair.
-		if err := deleteContentWithSiblingRepair(ctx, ac, d, cdID); err != nil {
-			utility.DefaultLogger.Error("recursive delete: failed to delete root", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
-		}
-		deletedIDs = append(deletedIDs, cdID)
-
 		writeJSON(w, RecursiveDeleteResponse{
 			DeletedRoot:  cdID,
 			TotalDeleted: len(deletedIDs),
 			DeletedIDs:   deletedIDs,
 		})
-		return nil
-	}
-
-	if err := deleteContentWithSiblingRepair(ctx, ac, d, cdID); err != nil {
-		utility.DefaultLogger.Error("delete: failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	return nil
 }
 
 // apiListContentDataPaginated handles GET requests for listing content data with pagination.
-func apiListContentDataPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+func apiListContentDataPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	params := ParsePaginationParams(r)
 
-	items, err := d.ListContentDataTopLevelPaginated(params)
+	result, err := svc.Content.ListPaginated(r.Context(), params)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
-	total, err := d.CountContentDataTopLevel()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
-	response := db.PaginatedResponse[db.ContentDataTopLevel]{
-		Data:   *items,
-		Total:  *total,
-		Limit:  params.Limit,
-		Offset: params.Offset,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
-	return nil
+	writeJSON(w, result)
 }
 
 // MoveContentDataRequest is the JSON body for POST /api/v1/contentdata/move.
@@ -371,27 +205,27 @@ type MoveContentDataResponse struct {
 }
 
 // ContentDataMoveHandler handles POST requests to move content data to a new parent.
-func ContentDataMoveHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	apiMoveContentData(w, r, c)
+func ContentDataMoveHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	apiMoveContentData(w, r, svc)
 }
 
 // apiMoveContentData moves a content data node to a new parent at a given position.
-func apiMoveContentData(w http.ResponseWriter, r *http.Request, c config.Config) {
+func apiMoveContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req MoveContentDataRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("invalid JSON body: %v", err), http.StatusBadRequest)
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
 	if err := req.NodeID.Validate(); err != nil {
-		http.Error(w, fmt.Sprintf("invalid node_id: %v", err), http.StatusBadRequest)
+		http.Error(w, "invalid node_id", http.StatusBadRequest)
 		return
 	}
 	if req.NewParentID.Valid {
 		if err := req.NewParentID.ID.Validate(); err != nil {
-			http.Error(w, fmt.Sprintf("invalid new_parent_id: %v", err), http.StatusBadRequest)
+			http.Error(w, "invalid new_parent_id", http.StatusBadRequest)
 			return
 		}
 	}
@@ -400,291 +234,28 @@ func apiMoveContentData(w http.ResponseWriter, r *http.Request, c config.Config)
 		return
 	}
 
-	d := db.ConfigDB(c)
-
-	// Fetch the node being moved
-	node, err := d.GetContentData(req.NodeID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("node not found: %v", err), http.StatusBadRequest)
+	c, cfgErr := svc.Config()
+	if cfgErr != nil {
+		service.HandleServiceError(w, r, cfgErr)
 		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	// Cycle detection: walk from new_parent_id up the parent chain
-	if req.NewParentID.Valid {
-		cursor := req.NewParentID.ID
-		for {
-			if cursor == req.NodeID {
-				http.Error(w, "cannot move a node under its own descendant", http.StatusBadRequest)
-				return
-			}
-			ancestor, aErr := d.GetContentData(cursor)
-			if aErr != nil {
-				http.Error(w, fmt.Sprintf("failed to verify ancestry: %v", aErr), http.StatusInternalServerError)
-				return
-			}
-			if !ancestor.ParentID.Valid {
-				break
-			}
-			cursor = ancestor.ParentID.ID
-		}
+	moveParams := ops.MoveParams[types.ContentID]{
+		NodeID:      req.NodeID,
+		NewParentID: contentIDToOpsNullable(req.NewParentID),
+		Position:    req.Position,
 	}
 
-	oldParentID := node.ParentID
-	ctx := r.Context()
-	ac := middleware.AuditContextFromRequest(r, c)
-	now := types.TimestampNow()
-
-	// --- Unlink from old parent ---
-
-	// Repair prev sibling's next pointer
-	if node.PrevSiblingID.Valid {
-		prev, pErr := d.GetContentData(node.PrevSiblingID.ID)
-		if pErr != nil {
-			http.Error(w, fmt.Sprintf("failed to fetch prev sibling: %v", pErr), http.StatusInternalServerError)
-			return
-		}
-		_, pErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-			ContentDataID: prev.ContentDataID,
-			ParentID:      prev.ParentID,
-			FirstChildID:  prev.FirstChildID,
-			NextSiblingID: node.NextSiblingID,
-			PrevSiblingID: prev.PrevSiblingID,
-			RouteID:       prev.RouteID,
-			DatatypeID:    prev.DatatypeID,
-			AuthorID:      prev.AuthorID,
-			Status:        prev.Status,
-			DateCreated:   prev.DateCreated,
-			DateModified:  now,
-		})
-		if pErr != nil {
-			http.Error(w, fmt.Sprintf("failed to update prev sibling: %v", pErr), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	// Repair next sibling's prev pointer
-	if node.NextSiblingID.Valid {
-		next, nErr := d.GetContentData(node.NextSiblingID.ID)
-		if nErr != nil {
-			http.Error(w, fmt.Sprintf("failed to fetch next sibling: %v", nErr), http.StatusInternalServerError)
-			return
-		}
-		_, nErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-			ContentDataID: next.ContentDataID,
-			ParentID:      next.ParentID,
-			FirstChildID:  next.FirstChildID,
-			NextSiblingID: next.NextSiblingID,
-			PrevSiblingID: node.PrevSiblingID,
-			RouteID:       next.RouteID,
-			DatatypeID:    next.DatatypeID,
-			AuthorID:      next.AuthorID,
-			Status:        next.Status,
-			DateCreated:   next.DateCreated,
-			DateModified:  now,
-		})
-		if nErr != nil {
-			http.Error(w, fmt.Sprintf("failed to update next sibling: %v", nErr), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	// Update old parent's first_child_id if this node was the first child
-	if node.ParentID.Valid {
-		parent, pErr := d.GetContentData(node.ParentID.ID)
-		if pErr != nil {
-			http.Error(w, fmt.Sprintf("failed to fetch old parent: %v", pErr), http.StatusInternalServerError)
-			return
-		}
-		if parent.FirstChildID.Valid && parent.FirstChildID.ID == req.NodeID {
-			_, pErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-				ContentDataID: parent.ContentDataID,
-				ParentID:      parent.ParentID,
-				FirstChildID:  node.NextSiblingID,
-				NextSiblingID: parent.NextSiblingID,
-				PrevSiblingID: parent.PrevSiblingID,
-				RouteID:       parent.RouteID,
-				DatatypeID:    parent.DatatypeID,
-				AuthorID:      parent.AuthorID,
-				Status:        parent.Status,
-				DateCreated:   parent.DateCreated,
-				DateModified:  now,
-			})
-			if pErr != nil {
-				http.Error(w, fmt.Sprintf("failed to update old parent: %v", pErr), http.StatusInternalServerError)
-				return
-			}
-		}
-	}
-
-	// --- Insert at position in new parent ---
-
-	// Clear node's sibling pointers before reinsertion
-	var newPrev types.NullableContentID
-	var newNext types.NullableContentID
-
-	if !req.NewParentID.Valid {
-		// Moving to root level — just clear pointers and parent
-		_, err = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-			ContentDataID: node.ContentDataID,
-			ParentID:      req.NewParentID,
-			FirstChildID:  node.FirstChildID,
-			NextSiblingID: newNext,
-			PrevSiblingID: newPrev,
-			RouteID:       node.RouteID,
-			DatatypeID:    node.DatatypeID,
-			AuthorID:      node.AuthorID,
-			Status:        node.Status,
-			DateCreated:   node.DateCreated,
-			DateModified:  now,
-		})
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to update moved node: %v", err), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		newParent, npErr := d.GetContentData(req.NewParentID.ID)
-		if npErr != nil {
-			http.Error(w, fmt.Sprintf("new parent not found: %v", npErr), http.StatusBadRequest)
-			return
-		}
-
-		if !newParent.FirstChildID.Valid || req.Position == 0 {
-			// Insert as first child
-			oldFirstChildID := newParent.FirstChildID
-			newNext = oldFirstChildID
-
-			// Update new parent's first_child_id
-			_, npErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-				ContentDataID: newParent.ContentDataID,
-				ParentID:      newParent.ParentID,
-				FirstChildID:  types.NullableContentID{ID: req.NodeID, Valid: true},
-				NextSiblingID: newParent.NextSiblingID,
-				PrevSiblingID: newParent.PrevSiblingID,
-				RouteID:       newParent.RouteID,
-				DatatypeID:    newParent.DatatypeID,
-				AuthorID:      newParent.AuthorID,
-				Status:        newParent.Status,
-				DateCreated:   newParent.DateCreated,
-				DateModified:  now,
-			})
-			if npErr != nil {
-				http.Error(w, fmt.Sprintf("failed to update new parent: %v", npErr), http.StatusInternalServerError)
-				return
-			}
-
-			// Update old first child's prev pointer
-			if oldFirstChildID.Valid {
-				oldFirst, ofErr := d.GetContentData(oldFirstChildID.ID)
-				if ofErr != nil {
-					http.Error(w, fmt.Sprintf("failed to fetch old first child: %v", ofErr), http.StatusInternalServerError)
-					return
-				}
-				_, ofErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-					ContentDataID: oldFirst.ContentDataID,
-					ParentID:      oldFirst.ParentID,
-					FirstChildID:  oldFirst.FirstChildID,
-					NextSiblingID: oldFirst.NextSiblingID,
-					PrevSiblingID: types.NullableContentID{ID: req.NodeID, Valid: true},
-					RouteID:       oldFirst.RouteID,
-					DatatypeID:    oldFirst.DatatypeID,
-					AuthorID:      oldFirst.AuthorID,
-					Status:        oldFirst.Status,
-					DateCreated:   oldFirst.DateCreated,
-					DateModified:  now,
-				})
-				if ofErr != nil {
-					http.Error(w, fmt.Sprintf("failed to update old first child prev: %v", ofErr), http.StatusInternalServerError)
-					return
-				}
-			}
-		} else {
-			// Walk to position-1 to find the node to insert after
-			current, wErr := d.GetContentData(newParent.FirstChildID.ID)
-			if wErr != nil {
-				http.Error(w, fmt.Sprintf("failed to walk new parent children: %v", wErr), http.StatusInternalServerError)
-				return
-			}
-			for i := 0; i < req.Position-1 && current.NextSiblingID.Valid; i++ {
-				current, wErr = d.GetContentData(current.NextSiblingID.ID)
-				if wErr != nil {
-					http.Error(w, fmt.Sprintf("failed to walk sibling chain: %v", wErr), http.StatusInternalServerError)
-					return
-				}
-			}
-
-			// Insert after current
-			newPrev = types.NullableContentID{ID: current.ContentDataID, Valid: true}
-			newNext = current.NextSiblingID
-
-			// Update current's next pointer to the moved node
-			_, wErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-				ContentDataID: current.ContentDataID,
-				ParentID:      current.ParentID,
-				FirstChildID:  current.FirstChildID,
-				NextSiblingID: types.NullableContentID{ID: req.NodeID, Valid: true},
-				PrevSiblingID: current.PrevSiblingID,
-				RouteID:       current.RouteID,
-				DatatypeID:    current.DatatypeID,
-				AuthorID:      current.AuthorID,
-				Status:        current.Status,
-				DateCreated:   current.DateCreated,
-				DateModified:  now,
-			})
-			if wErr != nil {
-				http.Error(w, fmt.Sprintf("failed to update insert-after node: %v", wErr), http.StatusInternalServerError)
-				return
-			}
-
-			// Update the node after current's prev pointer
-			if newNext.Valid {
-				afterNode, anErr := d.GetContentData(newNext.ID)
-				if anErr != nil {
-					http.Error(w, fmt.Sprintf("failed to fetch node after insertion point: %v", anErr), http.StatusInternalServerError)
-					return
-				}
-				_, anErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-					ContentDataID: afterNode.ContentDataID,
-					ParentID:      afterNode.ParentID,
-					FirstChildID:  afterNode.FirstChildID,
-					NextSiblingID: afterNode.NextSiblingID,
-					PrevSiblingID: types.NullableContentID{ID: req.NodeID, Valid: true},
-					RouteID:       afterNode.RouteID,
-					DatatypeID:    afterNode.DatatypeID,
-					AuthorID:      afterNode.AuthorID,
-					Status:        afterNode.Status,
-					DateCreated:   afterNode.DateCreated,
-					DateModified:  now,
-				})
-				if anErr != nil {
-					http.Error(w, fmt.Sprintf("failed to update after-insertion node: %v", anErr), http.StatusInternalServerError)
-					return
-				}
-			}
-		}
-
-		// Update the moved node itself
-		_, err = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-			ContentDataID: node.ContentDataID,
-			ParentID:      req.NewParentID,
-			FirstChildID:  node.FirstChildID,
-			NextSiblingID: newNext,
-			PrevSiblingID: newPrev,
-			RouteID:       node.RouteID,
-			DatatypeID:    node.DatatypeID,
-			AuthorID:      node.AuthorID,
-			Status:        node.Status,
-			DateCreated:   node.DateCreated,
-			DateModified:  now,
-		})
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to update moved node: %v", err), http.StatusInternalServerError)
-			return
-		}
+	result, err := svc.Content.Move(r.Context(), ac, moveParams)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	writeJSON(w, MoveContentDataResponse{
 		NodeID:      req.NodeID,
-		OldParentID: oldParentID,
+		OldParentID: opsNullableToContentID(result.OldParentID),
 		NewParentID: req.NewParentID,
 		Position:    req.Position,
 	})
@@ -703,17 +274,17 @@ type ReorderContentDataResponse struct {
 }
 
 // ContentDataReorderHandler handles POST requests to reorder content data siblings.
-func ContentDataReorderHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	apiReorderContentData(w, r, c)
+func ContentDataReorderHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	apiReorderContentData(w, r, svc)
 }
 
 // apiReorderContentData atomically reorders sibling content data nodes under a parent.
-func apiReorderContentData(w http.ResponseWriter, r *http.Request, c config.Config) {
+func apiReorderContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req ReorderContentDataRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("invalid JSON body: %v", err), http.StatusBadRequest)
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
@@ -722,105 +293,51 @@ func apiReorderContentData(w http.ResponseWriter, r *http.Request, c config.Conf
 		return
 	}
 
-	// Validate each ID and reject duplicates
 	seen := make(map[string]struct{}, len(req.OrderedIDs))
 	for _, id := range req.OrderedIDs {
 		if err := id.Validate(); err != nil {
-			http.Error(w, fmt.Sprintf("invalid content_data_id %s: %v", id, err), http.StatusBadRequest)
+			http.Error(w, "invalid content_data_id", http.StatusBadRequest)
 			return
 		}
 		s := string(id)
 		if _, exists := seen[s]; exists {
-			http.Error(w, fmt.Sprintf("duplicate id: %s", id), http.StatusBadRequest)
+			http.Error(w, "duplicate id", http.StatusBadRequest)
 			return
 		}
 		seen[s] = struct{}{}
 	}
 
-	d := db.ConfigDB(c)
-
-	// Fetch all nodes and verify parent ownership
-	nodes := make([]db.ContentData, 0, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		node, err := d.GetContentData(id)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("node not found: %s", id), http.StatusBadRequest)
-			return
-		}
-		if node.ParentID != req.ParentID {
-			http.Error(w, fmt.Sprintf("node %s does not belong to parent %s", id, req.ParentID), http.StatusBadRequest)
-			return
-		}
-		nodes = append(nodes, *node)
+	c, cfgErr := svc.Config()
+	if cfgErr != nil {
+		service.HandleServiceError(w, r, cfgErr)
+		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	ctx := r.Context()
-	ac := middleware.AuditContextFromRequest(r, c)
-	now := types.TimestampNow()
-
-	// Update parent's first_child_id if parent is non-null
-	if req.ParentID.Valid {
-		parent, err := d.GetContentData(types.ContentID(req.ParentID.ID))
-		if err != nil {
-			utility.DefaultLogger.Error("reorder: failed to fetch parent", err)
-			http.Error(w, fmt.Sprintf("failed to fetch parent: %v", err), http.StatusInternalServerError)
-			return
-		}
-		_, err = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-			ContentDataID: parent.ContentDataID,
-			ParentID:      parent.ParentID,
-			FirstChildID:  types.NullableContentID{ID: req.OrderedIDs[0], Valid: true},
-			NextSiblingID: parent.NextSiblingID,
-			PrevSiblingID: parent.PrevSiblingID,
-			RouteID:       parent.RouteID,
-			DatatypeID:    parent.DatatypeID,
-			AuthorID:      parent.AuthorID,
-			Status:        parent.Status,
-			DateCreated:   parent.DateCreated,
-			DateModified:  now,
-		})
-		if err != nil {
-			utility.DefaultLogger.Error("reorder: failed to update parent first_child_id", err)
-			http.Error(w, fmt.Sprintf("failed to update parent: %v", err), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	// Update sibling pointers for each node
-	lastIdx := len(req.OrderedIDs) - 1
-	for i, node := range nodes {
-		var prevSibling types.NullableContentID
-		var nextSibling types.NullableContentID
-
-		if i > 0 {
-			prevSibling = types.NullableContentID{ID: req.OrderedIDs[i-1], Valid: true}
-		}
-		if i < lastIdx {
-			nextSibling = types.NullableContentID{ID: req.OrderedIDs[i+1], Valid: true}
-		}
-
-		_, err := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-			ContentDataID: node.ContentDataID,
-			ParentID:      node.ParentID,
-			FirstChildID:  node.FirstChildID,
-			NextSiblingID: nextSibling,
-			PrevSiblingID: prevSibling,
-			RouteID:       node.RouteID,
-			DatatypeID:    node.DatatypeID,
-			AuthorID:      node.AuthorID,
-			Status:        node.Status,
-			DateCreated:   node.DateCreated,
-			DateModified:  now,
-		})
-		if err != nil {
-			utility.DefaultLogger.Error(fmt.Sprintf("reorder: failed to update node %s", node.ContentDataID), err)
-			http.Error(w, fmt.Sprintf("failed to update node %s: %v", node.ContentDataID, err), http.StatusInternalServerError)
-			return
-		}
+	updated, err := svc.Content.Reorder(r.Context(), ac, contentIDToOpsNullable(req.ParentID), req.OrderedIDs)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	writeJSON(w, ReorderContentDataResponse{
-		Updated:  len(req.OrderedIDs),
+		Updated:  updated,
 		ParentID: req.ParentID,
 	})
+}
+
+// contentIDToOpsNullable converts types.NullableContentID to ops.NullableID for router use.
+func contentIDToOpsNullable(n types.NullableContentID) ops.NullableID[types.ContentID] {
+	if !n.Valid {
+		return ops.EmptyID[types.ContentID]()
+	}
+	return ops.NullID(n.ID)
+}
+
+// opsNullableToContentID converts ops.NullableID to types.NullableContentID for router use.
+func opsNullableToContentID(n ops.NullableID[types.ContentID]) types.NullableContentID {
+	if !n.Valid {
+		return types.NullableContentID{}
+	}
+	return types.NullableContentID{ID: n.Value, Valid: true}
 }

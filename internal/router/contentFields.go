@@ -4,73 +4,63 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/utility"
-	"github.com/hegner123/modulacms/internal/validation"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 // ContentFieldsHandler handles CRUD operations that do not require a specific field ID.
-func ContentFieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func ContentFieldsHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		if HasPaginationParams(r) {
-			apiListContentFieldsPaginated(w, r, c)
+			apiListContentFieldsPaginated(w, r, svc)
 		} else {
-			apiListContentFields(w, r, c)
+			apiListContentFields(w, r, svc)
 		}
 	case http.MethodPost:
-		apiCreateContentField(w, r, c)
+		apiCreateContentField(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // ContentFieldHandler handles CRUD operations for specific field items.
-func ContentFieldHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func ContentFieldHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetContentField(w, r, c)
+		apiGetContentField(w, r, svc)
 	case http.MethodPut:
-		apiUpdateContentField(w, r, c)
+		apiUpdateContentField(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteContentField(w, r, c)
+		apiDeleteContentField(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // apiGetContentField handles GET requests for a single content field
-func apiGetContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiGetContentField(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	cfID := types.ContentFieldID(q)
 	if err := cfID.Validate(); err != nil {
-		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
-	}
-	contentField, err := d.GetContentField(cfID)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contentField)
-	return nil
+	cf, err := svc.Content.GetField(r.Context(), cfID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	writeJSON(w, cf)
 }
 
 // apiListContentFields handles GET requests for listing content fields.
 // Supports optional locale query parameter to filter by locale code.
-func apiListContentFields(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiListContentFields(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	locale := r.URL.Query().Get("locale")
 	contentDataIDStr := r.URL.Query().Get("content_data_id")
 
@@ -79,201 +69,108 @@ func apiListContentFields(w http.ResponseWriter, r *http.Request, c config.Confi
 			ID:    types.ContentID(contentDataIDStr),
 			Valid: true,
 		}
-		contentFields, err := d.ListContentFieldsByContentDataAndLocale(contentDataID, locale)
+		fields, err := svc.Content.ListFieldsByContentDataAndLocale(r.Context(), contentDataID, locale)
 		if err != nil {
-			utility.DefaultLogger.Error("", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
+			service.HandleServiceError(w, r, err)
+			return
 		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(contentFields)
-		return nil
+		writeJSON(w, fields)
+		return
 	}
 
-	contentFields, err := d.ListContentFields()
+	fields, err := svc.Content.ListFields(r.Context())
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contentFields)
-	return nil
+	writeJSON(w, fields)
 }
 
 // apiCreateContentField handles POST requests to create a new content field
-func apiCreateContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	var newContentField db.CreateContentFieldParams
-	err := json.NewDecoder(r.Body).Decode(&newContentField)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+func apiCreateContentField(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var params db.CreateContentFieldParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	// Guard: FieldID must be present and valid.
-	if !newContentField.FieldID.Valid || newContentField.FieldID.ID.IsZero() {
-		http.Error(w, "field_id is required", http.StatusBadRequest)
-		return nil
-	}
-
-	// Look up field definition for validation.
-	fieldDef, fieldDefErr := d.GetField(newContentField.FieldID.ID)
-	if fieldDefErr != nil {
-		utility.DefaultLogger.Error("field not found for validation", fieldDefErr)
-		http.Error(w, "field not found", http.StatusNotFound)
-		return fieldDefErr
-	}
-
-	// Validate the submitted value.
-	fe := validation.ValidateField(validation.FieldInput{
-		FieldID:    fieldDef.FieldID,
-		Label:      fieldDef.Label,
-		FieldType:  fieldDef.Type,
-		Value:      newContentField.FieldValue,
-		Validation: fieldDef.Validation,
-		Data:       fieldDef.Data,
-	})
-	if fe != nil {
-		ve := validation.ValidationErrors{Fields: []validation.FieldError{*fe}}
-		writeValidationError(w, ve)
-		return fe
-	}
-
-	ac := middleware.AuditContextFromRequest(r, c)
-	createdContentField, err := d.CreateContentField(r.Context(), ac, newContentField)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	created, err := svc.Content.CreateField(r.Context(), ac, params)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdContentField)
-	return nil
+	json.NewEncoder(w).Encode(created)
 }
 
 // apiUpdateContentField handles PUT requests to update an existing content field
-func apiUpdateContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	var updateContentField db.UpdateContentFieldParams
-	err := json.NewDecoder(r.Body).Decode(&updateContentField)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+func apiUpdateContentField(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var params db.UpdateContentFieldParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	// Guard: FieldID must be present and valid.
-	if !updateContentField.FieldID.Valid || updateContentField.FieldID.ID.IsZero() {
-		http.Error(w, "field_id is required", http.StatusBadRequest)
-		return nil
-	}
-
-	// Look up field definition for validation.
-	fieldDef, fieldDefErr := d.GetField(updateContentField.FieldID.ID)
-	if fieldDefErr != nil {
-		utility.DefaultLogger.Error("field not found for validation", fieldDefErr)
-		http.Error(w, "field not found", http.StatusNotFound)
-		return fieldDefErr
-	}
-
-	// Validate the submitted value.
-	fe := validation.ValidateField(validation.FieldInput{
-		FieldID:    fieldDef.FieldID,
-		Label:      fieldDef.Label,
-		FieldType:  fieldDef.Type,
-		Value:      updateContentField.FieldValue,
-		Validation: fieldDef.Validation,
-		Data:       fieldDef.Data,
-	})
-	if fe != nil {
-		ve := validation.ValidationErrors{Fields: []validation.FieldError{*fe}}
-		writeValidationError(w, ve)
-		return fe
-	}
-
-	ac := middleware.AuditContextFromRequest(r, c)
-	_, err = d.UpdateContentField(r.Context(), ac, updateContentField)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	updated, err := d.GetContentField(updateContentField.ContentFieldID)
+	updated, err := svc.Content.UpdateField(r.Context(), ac, params)
 	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated content field", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updated)
-	return nil
+	writeJSON(w, updated)
 }
 
 // apiDeleteContentField handles DELETE requests for content fields
-func apiDeleteContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiDeleteContentField(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	cfID := types.ContentFieldID(q)
 	if err := cfID.Validate(); err != nil {
-		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
-	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.DeleteContentField(r.Context(), ac, cfID)
+
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	if err := svc.Content.DeleteField(r.Context(), ac, cfID); err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	return nil
 }
 
 // apiListContentFieldsPaginated handles GET requests for listing content fields with pagination
-func apiListContentFieldsPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+func apiListContentFieldsPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	params := ParsePaginationParams(r)
 
-	items, err := d.ListContentFieldsPaginated(params)
+	result, err := svc.Content.ListFieldsPaginated(r.Context(), params)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
-	total, err := d.CountContentFields()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
-	response := db.PaginatedResponse[db.ContentFields]{
-		Data:   *items,
-		Total:  *total,
-		Limit:  params.Limit,
-		Offset: params.Offset,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
-	return nil
+	writeJSON(w, result)
 }

@@ -3,17 +3,35 @@ package pages
 import (
 	"github.com/hegner123/modulacms/internal/admin/layouts"
 	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
-templ PluginsListContent() {
+templ PluginsListContent(plugins []service.PluginSummary) {
 	<div class="page-header">
 		<h1>Plugins</h1>
 	</div>
-	@partials.EmptyState("Plugin system coming soon. Lua-based plugins will be manageable from this page once the runtime is enabled.")
+	if len(plugins) == 0 {
+		@partials.EmptyState("No plugins installed. Place plugin directories in the configured plugins path and restart the server.")
+	} else {
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Version</th>
+					<th>Description</th>
+					<th>State</th>
+					<th>Circuit Breaker</th>
+				</tr>
+			</thead>
+			<tbody id="plugins-table-body">
+				@partials.PluginsTableRowsInner(plugins)
+			</tbody>
+		</table>
+	}
 }
 
-templ PluginsList(layout layouts.AdminData) {
+templ PluginsList(layout layouts.AdminData, plugins []service.PluginSummary) {
 	@layouts.Admin(layout) {
-		@PluginsListContent()
+		@PluginsListContent(plugins)
 	}
 }

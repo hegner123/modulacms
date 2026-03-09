@@ -1,38 +1,29 @@
 package handlers
 
 import (
-	"net"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // RoutesListHandler handles GET /admin/routes.
 // Lists all routes with pagination. HTMX requests receive partial table rows only.
-func RoutesListHandler(driver db.DbDriver) http.HandlerFunc {
+func RoutesListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limit, offset := ParsePagination(r)
 
-		items, err := driver.ListRoutesPaginated(db.PaginationParams{Limit: limit, Offset: offset})
+		items, total, err := svc.Routes.ListRoutesPaginated(r.Context(), limit, offset)
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list routes", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-
-		total, err := driver.CountRoutes()
-		if err != nil {
-			utility.DefaultLogger.Error("failed to count routes", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -71,15 +62,9 @@ func RoutesListHandler(driver db.DbDriver) http.HandlerFunc {
 }
 
 // RouteCreateHandler handles POST /admin/routes.
-// Validates slug (must start with /) and title are required, creates via audited context.
-func RouteCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+// Validates slug (must start with /) and title are required, creates via service layer.
+func RouteCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
-		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
@@ -89,25 +74,6 @@ func RouteCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		title := strings.TrimSpace(r.FormValue("title"))
 		statusStr := strings.TrimSpace(r.FormValue("status"))
 
-		errs := make(map[string]string)
-		if slug == "" {
-			errs["slug"] = "Slug is required"
-		} else {
-			if validateErr := types.Slug(slug).Validate(); validateErr != nil {
-				errs["slug"] = validateErr.Error()
-			}
-		}
-		if title == "" {
-			errs["title"] = "Title is required"
-		}
-
-		if len(errs) > 0 {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.RouteForm(slug, title, statusStr, errs, csrfToken))
-			return
-		}
-
 		var status int64
 		if statusStr != "" {
 			parsed, parseErr := strconv.ParseInt(statusStr, 10, 64)
@@ -116,23 +82,36 @@ func RouteCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			}
 		}
 
-		user := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
+		c, cfgErr := svc.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
 		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := middleware.AuditContextFromRequest(r, *c)
 
-		now := types.NewTimestamp(time.Now())
-		_, err := driver.CreateRoute(r.Context(), ac, db.CreateRouteParams{
-			Slug:         types.Slug(slug),
-			Title:        title,
-			Status:       status,
-			AuthorID:     types.NullableUserID{ID: user.UserID, Valid: true},
-			DateCreated:  now,
-			DateModified: now,
-		})
+		user := middleware.AuthenticatedUser(r.Context())
+		input := service.CreateRouteInput{
+			Slug:     slug,
+			Title:    title,
+			Status:   status,
+			AuthorID: types.NullableUserID{ID: user.UserID, Valid: true},
+		}
+
+		_, err := svc.Routes.CreateRoute(r.Context(), ac, input)
 		if err != nil {
+			if service.IsValidation(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				csrfToken := CSRFTokenFromContext(r.Context())
+				errs := serviceValidationToMap(err)
+				Render(w, r, partials.RouteForm(slug, title, statusStr, errs, csrfToken))
+				return
+			}
+			if service.IsConflict(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				csrfToken := CSRFTokenFromContext(r.Context())
+				Render(w, r, partials.RouteForm(slug, title, statusStr, map[string]string{"slug": "Slug already exists"}, csrfToken))
+				return
+			}
 			utility.DefaultLogger.Error("failed to create route", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
@@ -151,15 +130,9 @@ func RouteCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 }
 
 // RouteUpdateHandler handles POST /admin/routes/{id}.
-// Updates an existing route via audited context.
-func RouteUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+// Updates an existing route via service layer.
+func RouteUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
-		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
 		id := r.PathValue("id")
 		if id == "" {
 			http.Error(w, "Missing route ID", http.StatusBadRequest)
@@ -175,31 +148,6 @@ func RouteUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		title := strings.TrimSpace(r.FormValue("title"))
 		statusStr := strings.TrimSpace(r.FormValue("status"))
 
-		errs := make(map[string]string)
-		if slug == "" {
-			errs["slug"] = "Slug is required"
-		} else {
-			if validateErr := types.Slug(slug).Validate(); validateErr != nil {
-				errs["slug"] = validateErr.Error()
-			}
-		}
-		if title == "" {
-			errs["title"] = "Title is required"
-		}
-
-		if len(errs) > 0 {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.RouteEditForm(id, slug, title, statusStr, errs, csrfToken))
-			return
-		}
-
-		existing, err := driver.GetRoute(types.RouteID(id))
-		if err != nil {
-			http.Error(w, "Route not found", http.StatusNotFound)
-			return
-		}
-
 		var status int64
 		if statusStr != "" {
 			parsed, parseErr := strconv.ParseInt(statusStr, 10, 64)
@@ -208,23 +156,41 @@ func RouteUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			}
 		}
 
-		user := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
+		c, cfgErr := svc.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
 		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := middleware.AuditContextFromRequest(r, *c)
 
-		_, err = driver.UpdateRoute(r.Context(), ac, db.UpdateRouteParams{
-			Slug:         types.Slug(slug),
-			Title:        title,
-			Status:       status,
-			AuthorID:     existing.AuthorID,
-			DateCreated:  existing.DateCreated,
-			DateModified: types.NewTimestamp(time.Now()),
-			Slug_2:       existing.Slug,
-		})
+		user := middleware.AuthenticatedUser(r.Context())
+		input := service.UpdateRouteInput{
+			RouteID:  types.RouteID(id),
+			Slug:     slug,
+			Title:    title,
+			Status:   status,
+			AuthorID: types.NullableUserID{ID: user.UserID, Valid: true},
+		}
+
+		_, err := svc.Routes.UpdateRoute(r.Context(), ac, input)
 		if err != nil {
+			if service.IsValidation(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				csrfToken := CSRFTokenFromContext(r.Context())
+				errs := serviceValidationToMap(err)
+				Render(w, r, partials.RouteEditForm(id, slug, title, statusStr, errs, csrfToken))
+				return
+			}
+			if service.IsConflict(err) {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				csrfToken := CSRFTokenFromContext(r.Context())
+				Render(w, r, partials.RouteEditForm(id, slug, title, statusStr, map[string]string{"slug": "Slug already exists"}, csrfToken))
+				return
+			}
+			if service.IsNotFound(err) {
+				http.Error(w, "Route not found", http.StatusNotFound)
+				return
+			}
 			utility.DefaultLogger.Error("failed to update route", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
@@ -244,14 +210,8 @@ func RouteUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 
 // RouteDeleteHandler handles DELETE /admin/routes/{id}.
 // HTMX-only endpoint. Non-HTMX requests receive 405.
-func RouteDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func RouteDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
-		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -263,15 +223,20 @@ func RouteDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			return
 		}
 
-		user := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
+		c, cfgErr := svc.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
 		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := middleware.AuditContextFromRequest(r, *c)
 
-		err := driver.DeleteRoute(r.Context(), ac, types.RouteID(id))
+		err := svc.Routes.DeleteRoute(r.Context(), ac, types.RouteID(id))
 		if err != nil {
+			if service.IsConflict(err) {
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Route has content attached and cannot be deleted", "type": "error"}}`)
+				w.WriteHeader(http.StatusConflict)
+				return
+			}
 			utility.DefaultLogger.Error("failed to delete route", err)
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete route", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -285,20 +250,13 @@ func RouteDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 
 // AdminRoutesListHandler handles GET /admin/routes/admin.
 // Lists admin-specific routes (internal CMS routes). Read-only view.
-func AdminRoutesListHandler(driver db.DbDriver) http.HandlerFunc {
+func AdminRoutesListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limit, offset := ParsePagination(r)
 
-		items, err := driver.ListAdminRoutesPaginated(db.PaginationParams{Limit: limit, Offset: offset})
+		items, total, err := svc.Routes.ListAdminRoutesPaginated(r.Context(), limit, offset)
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list admin routes", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-
-		total, err := driver.CountAdminRoutes()
-		if err != nil {
-			utility.DefaultLogger.Error("failed to count admin routes", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -331,4 +289,20 @@ func AdminRoutesListHandler(driver db.DbDriver) http.HandlerFunc {
 		layout := NewAdminData(r, "Admin Routes")
 		Render(w, r, pages.AdminRoutesList(layout, list, pg2))
 	}
+}
+
+// serviceValidationToMap converts a service.ValidationError to map[string]string
+// for template rendering (first error per field wins).
+func serviceValidationToMap(err error) map[string]string {
+	var ve *service.ValidationError
+	if !errors.As(err, &ve) {
+		return nil
+	}
+	result := make(map[string]string, len(ve.Errors))
+	for _, fe := range ve.Errors {
+		if _, exists := result[fe.Field]; !exists {
+			result[fe.Field] = fe.Message
+		}
+	}
+	return result
 }

@@ -6,12 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hegner123/modulacms/internal/config"
-	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/publishing"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 ///////////////////////////////
@@ -52,7 +49,7 @@ type ScheduleResponse struct {
 // PublishHandler handles POST requests to publish content.
 // It builds a snapshot of the content tree, stores it as a versioned snapshot,
 // and marks the content as published.
-func PublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, dispatcher publishing.WebhookDispatcher) {
+func PublishHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req PublishRequest
@@ -72,25 +69,21 @@ func PublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, dis
 		return
 	}
 
-	d := db.ConfigDB(c)
-	ac := middleware.AuditContextFromRequest(r, c)
-
-	version, err := publishing.PublishContent(r.Context(), d, req.ContentDataID, req.Locale, user.UserID, ac, c.VersionMaxPerContent(), dispatcher)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("publish content failed", err)
-		// Return 409 Conflict for TOCTOU revision mismatch.
-		if publishing.IsRevisionConflict(err) {
-			http.Error(w, err.Error(), http.StatusConflict)
-			return
-		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	version, err := svc.Content.Publish(r.Context(), ac, req.ContentDataID, req.Locale, user.UserID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	// Encode error is non-recoverable (client disconnected or similar);
-	// the response is already partially written so no recovery is possible.
 	json.NewEncoder(w).Encode(PublishResponse{
 		Status:           "published",
 		VersionNumber:    version.VersionNumber,
@@ -101,7 +94,7 @@ func PublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, dis
 
 // UnpublishHandler handles POST requests to unpublish content.
 // It clears the published flag and resets publish metadata to draft.
-func UnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, dispatcher publishing.WebhookDispatcher) {
+func UnpublishHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req PublishRequest
@@ -121,19 +114,20 @@ func UnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, d
 		return
 	}
 
-	d := db.ConfigDB(c)
-	ac := middleware.AuditContextFromRequest(r, c)
+	c, err := svc.Config()
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	if err := publishing.UnpublishContent(r.Context(), d, req.ContentDataID, req.Locale, user.UserID, ac, dispatcher); err != nil {
-		utility.DefaultLogger.Error("unpublish content failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := svc.Content.Unpublish(r.Context(), ac, req.ContentDataID, req.Locale, user.UserID); err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	// Encode error is non-recoverable (client disconnected or similar);
-	// the response is already partially written so no recovery is possible.
 	json.NewEncoder(w).Encode(PublishResponse{
 		Status:        "draft",
 		ContentDataID: req.ContentDataID.String(),
@@ -142,7 +136,7 @@ func UnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, d
 
 // ScheduleHandler handles POST requests to schedule content for future publication.
 // It sets the publish_at field on the content data for the scheduler to pick up.
-func ScheduleHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func ScheduleHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req ScheduleRequest
@@ -156,43 +150,20 @@ func ScheduleHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 		return
 	}
 
-	// Validate publish_at is a valid RFC3339 timestamp in the future.
+	// Validate publish_at is a valid RFC3339 timestamp.
 	publishAt, err := time.Parse(time.RFC3339, req.PublishAt)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("invalid publish_at: must be RFC3339 format (e.g. 2026-03-01T00:00:00Z): %v", err), http.StatusBadRequest)
 		return
 	}
-	if publishAt.Before(time.Now()) {
-		http.Error(w, "publish_at must be in the future", http.StatusBadRequest)
-		return
-	}
 
-	user := middleware.AuthenticatedUser(r.Context())
-	if user == nil {
-		http.Error(w, "authentication required", http.StatusUnauthorized)
-		return
-	}
-
-	d := db.ConfigDB(c)
-	now := types.TimestampNow()
-
-	// Set publish_at on the content data. The scheduler will pick this up
-	// and call PublishContent when the time arrives.
-	pubErr := d.UpdateContentDataSchedule(r.Context(), db.UpdateContentDataScheduleParams{
-		PublishAt:     types.NewTimestamp(publishAt),
-		DateModified:  now,
-		ContentDataID: req.ContentDataID,
-	})
-	if pubErr != nil {
-		utility.DefaultLogger.Error("schedule content failed", pubErr)
-		http.Error(w, pubErr.Error(), http.StatusInternalServerError)
+	if err := svc.Content.Schedule(r.Context(), req.ContentDataID, publishAt); err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	// Encode error is non-recoverable (client disconnected or similar);
-	// the response is already partially written so no recovery is possible.
 	json.NewEncoder(w).Encode(ScheduleResponse{
 		Status:        "scheduled",
 		ContentDataID: req.ContentDataID.String(),

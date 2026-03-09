@@ -121,7 +121,7 @@ Examples:
   modula config set environment "production"
   modula config set db_driver "postgres"
   modula config set ssh_port "2223"`,
-	Args:  cobra.ExactArgs(2),
+	Args: cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 

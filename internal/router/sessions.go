@@ -4,15 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 // SessionsHandler handles CRUD operations that do not require a specific user ID.
-func SessionsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func SessionsHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -24,43 +23,37 @@ func SessionsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 }
 
 // SessionHandler handles CRUD operations for specific user items.
-func SessionHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func SessionHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	case http.MethodPut:
-		apiUpdateSession(w, r, c)
+		apiUpdateSession(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteSession(w, r, c)
+		apiDeleteSession(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // apiUpdateSession handles PUT requests to update an existing session
-func apiUpdateSession(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	var updateSession db.UpdateSessionParams
-	err := json.NewDecoder(r.Body).Decode(&updateSession)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+func apiUpdateSession(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	var params db.UpdateSessionParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	_, err = d.UpdateSession(r.Context(), ac, updateSession)
+	cfg, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return err
 	}
+	ac := middleware.AuditContextFromRequest(r, *cfg)
 
-	updated, err := d.GetSession(updateSession.SessionID)
+	updated, err := svc.Sessions.UpdateSession(r.Context(), ac, params)
 	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated session", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return err
 	}
 
@@ -71,21 +64,23 @@ func apiUpdateSession(w http.ResponseWriter, r *http.Request, c config.Config) e
 }
 
 // apiDeleteSession handles DELETE requests for sessions
-func apiDeleteSession(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiDeleteSession(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
 	sID := types.SessionID(q)
 	if err := sID.Validate(); err != nil {
-		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.DeleteSession(r.Context(), ac, sID)
+
+	cfg, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
+		return err
+	}
+	ac := middleware.AuditContextFromRequest(r, *cfg)
+
+	if err := svc.Sessions.DeleteSession(r.Context(), ac, sID); err != nil {
+		service.HandleServiceError(w, r, err)
 		return err
 	}
 

@@ -476,7 +476,6 @@ func parseSelectOpts(L *lua.LState, optsTbl *lua.LTable, pluginName string) (par
 	return opts, nil
 }
 
-
 // parseWhereOrFromLua extracts the "where_or" field: a Lua sequence of where-maps.
 // Each map is resolved for condition sentinels.
 func parseWhereOrFromLua(L *lua.LState, optsTbl *lua.LTable) ([]map[string]any, error) {
@@ -1316,7 +1315,6 @@ func luaTimestamp(L *lua.LState) int {
 	L.Push(lua.LString(time.Now().UTC().Format(time.RFC3339)))
 	return 1
 }
-
 
 // luaStringField reads an optional string field from a Lua table.
 // Returns empty string if the field is absent, nil, or not a string.

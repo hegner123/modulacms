@@ -3,38 +3,26 @@ package handlers
 import (
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // MediaListHandler renders the media grid with pagination.
 // When ?picker=true is set, returns a minimal grid without the full page layout
 // for use in the media picker modal.
-func MediaListHandler(driver db.DbDriver) http.HandlerFunc {
+func MediaListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limit, offset := ParsePagination(r)
 
-		items, err := driver.ListMediaPaginated(db.PaginationParams{
-			Limit:  limit,
-			Offset: offset,
-		})
+		items, total, err := svc.Media.ListMediaPaginated(r.Context(), limit, offset)
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list media", err)
-			http.Error(w, "Failed to load media", http.StatusInternalServerError)
-			return
-		}
-
-		total, err := driver.CountMedia()
-		if err != nil {
-			utility.DefaultLogger.Error("failed to count media", err)
 			http.Error(w, "Failed to load media", http.StatusInternalServerError)
 			return
 		}
@@ -78,7 +66,7 @@ func MediaListHandler(driver db.DbDriver) http.HandlerFunc {
 }
 
 // MediaDetailHandler renders the detail/edit view for a single media item.
-func MediaDetailHandler(driver db.DbDriver) http.HandlerFunc {
+func MediaDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -86,7 +74,7 @@ func MediaDetailHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
-		media, err := driver.GetMedia(types.MediaID(id))
+		record, err := svc.Media.GetMedia(r.Context(), types.MediaID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to get media", err)
 			http.NotFound(w, r)
@@ -95,16 +83,21 @@ func MediaDetailHandler(driver db.DbDriver) http.HandlerFunc {
 
 		layout := NewAdminData(r, "Media Detail")
 		csrfToken := CSRFTokenFromContext(r.Context())
-		RenderNav(w, r, "Media Detail", pages.MediaDetailContent(*media, csrfToken), pages.MediaDetail(layout, *media, csrfToken))
+		RenderNav(w, r, "Media Detail", pages.MediaDetailContent(*record, csrfToken), pages.MediaDetail(layout, *record, csrfToken))
 	}
 }
 
-// MediaUploadHandler handles multipart file uploads.
-// Parses the uploaded file and creates a media record with metadata.
-func MediaUploadHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+// MediaUploadHandler handles multipart file uploads via the service layer.
+// S3 storage must be configured — placeholder DB-only records are no longer created.
+func MediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 32 MB max upload size
-		if parseErr := r.ParseMultipartForm(32 << 20); parseErr != nil {
+		c, cfgErr := svc.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
+		if parseErr := r.ParseMultipartForm(c.MaxUploadSize()); parseErr != nil {
 			utility.DefaultLogger.Error("failed to parse multipart form", parseErr)
 			if IsHTMX(r) {
 				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Upload failed: file too large", "type": "error"}}`)
@@ -112,12 +105,6 @@ func MediaUploadHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 				return
 			}
 			http.Error(w, "Failed to parse upload", http.StatusBadRequest)
-			return
-		}
-
-		cfg, err := mgr.Config()
-		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -140,49 +127,34 @@ func MediaUploadHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		}
 		defer file.Close()
 
-		filename := header.Filename
-		contentType := header.Header.Get("Content-Type")
-		if contentType == "" {
-			contentType = "application/octet-stream"
-		}
+		ac := middleware.AuditContextFromRequest(r, *c)
 
 		// Extract display name from filename (without extension)
+		filename := header.Filename
 		displayName := filename
 		if dotIdx := strings.LastIndex(filename, "."); dotIdx > 0 {
 			displayName = filename[:dotIdx]
 		}
 
-		now := types.NewTimestamp(time.Now())
-		ac := audited.Ctx(
-			types.NodeID(cfg.Node_ID),
-			user.UserID,
-			middleware.RequestIDFromContext(r.Context()),
-			clientIP(r),
-		)
-
-		// Create media record. URL will be set by the media upload pipeline
-		// when S3/local storage is configured; for now store the filename as a placeholder.
-		params := db.CreateMediaParams{
-			Name:         db.NewNullString(filename),
-			DisplayName:  db.NewNullString(displayName),
-			Alt:          db.NewNullString(r.FormValue("alt")),
-			Caption:      db.NullString{},
-			Description:  db.NewNullString(r.FormValue("description")),
-			Class:        db.NullString{},
-			Mimetype:     db.NewNullString(contentType),
-			Dimensions:   db.NullString{},
-			URL:          types.URL("/uploads/" + filename),
-			Srcset:       db.NullString{},
-			FocalX:       types.NullableFloat64{},
-			FocalY:       types.NullableFloat64{},
-			AuthorID:     types.NullableUserID{ID: user.UserID, Valid: true},
-			DateCreated:  now,
-			DateModified: now,
-		}
-
-		created, createErr := driver.CreateMedia(r.Context(), ac, params)
-		if createErr != nil {
-			utility.DefaultLogger.Error("failed to create media record", createErr)
+		created, err := svc.Media.Upload(r.Context(), ac, service.UploadMediaParams{
+			File:        file,
+			Header:      header,
+			Path:        r.FormValue("path"),
+			Alt:         r.FormValue("alt"),
+			Description: r.FormValue("description"),
+			DisplayName: displayName,
+		})
+		if err != nil {
+			if service.IsValidation(err) || service.IsConflict(err) {
+				if IsHTMX(r) {
+					w.Header().Set("HX-Trigger", `{"showToast": {"message": "Upload failed: `+err.Error()+`", "type": "error"}}`)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			utility.DefaultLogger.Error("failed to upload media", err)
 			if IsHTMX(r) {
 				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Upload failed", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
@@ -204,7 +176,7 @@ func MediaUploadHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 }
 
 // MediaUpdateHandler updates media metadata (alt, caption, description).
-func MediaUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func MediaUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -217,8 +189,8 @@ func MediaUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			return
 		}
 
-		cfg, err := mgr.Config()
-		if err != nil {
+		c, cfgErr := svc.Config()
+		if cfgErr != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
 		}
@@ -229,41 +201,22 @@ func MediaUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			return
 		}
 
-		existing, getErr := driver.GetMedia(types.MediaID(id))
-		if getErr != nil {
-			utility.DefaultLogger.Error("media not found for update", getErr)
-			http.NotFound(w, r)
-			return
+		ac := middleware.AuditContextFromRequest(r, *c)
+
+		params := service.UpdateMediaMetadataParams{
+			MediaID:     types.MediaID(id),
+			DisplayName: r.FormValue("display_name"),
+			Alt:         r.FormValue("alt"),
+			Caption:     r.FormValue("caption"),
+			Description: r.FormValue("description"),
 		}
 
-		ac := audited.Ctx(
-			types.NodeID(cfg.Node_ID),
-			user.UserID,
-			middleware.RequestIDFromContext(r.Context()),
-			clientIP(r),
-		)
-
-		params := db.UpdateMediaParams{
-			MediaID:      existing.MediaID,
-			Name:         existing.Name,
-			DisplayName:  updateNullString(r.FormValue("display_name"), existing.DisplayName),
-			Alt:          updateNullString(r.FormValue("alt"), existing.Alt),
-			Caption:      updateNullString(r.FormValue("caption"), existing.Caption),
-			Description:  updateNullString(r.FormValue("description"), existing.Description),
-			Class:        existing.Class,
-			Mimetype:     existing.Mimetype,
-			Dimensions:   existing.Dimensions,
-			URL:          existing.URL,
-			Srcset:       existing.Srcset,
-			FocalX:       existing.FocalX,
-			FocalY:       existing.FocalY,
-			AuthorID:     existing.AuthorID,
-			DateCreated:  existing.DateCreated,
-			DateModified: types.NewTimestamp(time.Now()),
-		}
-
-		if _, updateErr := driver.UpdateMedia(r.Context(), ac, params); updateErr != nil {
-			utility.DefaultLogger.Error("failed to update media", updateErr)
+		if _, err := svc.Media.UpdateMediaMetadata(r.Context(), ac, params); err != nil {
+			if service.IsNotFound(err) {
+				http.NotFound(w, r)
+				return
+			}
+			utility.DefaultLogger.Error("failed to update media", err)
 			if IsHTMX(r) {
 				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to update media", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
@@ -282,9 +235,9 @@ func MediaUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 	}
 }
 
-// MediaDeleteHandler deletes a media item.
+// MediaDeleteHandler deletes a media item including S3 cleanup.
 // Only HTMX DELETE requests are supported; non-HTMX requests receive 405.
-func MediaDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func MediaDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -297,8 +250,8 @@ func MediaDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			return
 		}
 
-		cfg, err := mgr.Config()
-		if err != nil {
+		c, cfgErr := svc.Config()
+		if cfgErr != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
 		}
@@ -309,15 +262,10 @@ func MediaDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			return
 		}
 
-		ac := audited.Ctx(
-			types.NodeID(cfg.Node_ID),
-			user.UserID,
-			middleware.RequestIDFromContext(r.Context()),
-			clientIP(r),
-		)
+		ac := middleware.AuditContextFromRequest(r, *c)
 
-		if deleteErr := driver.DeleteMedia(r.Context(), ac, types.MediaID(id)); deleteErr != nil {
-			utility.DefaultLogger.Error("failed to delete media", deleteErr)
+		if err := svc.Media.DeleteMedia(r.Context(), ac, types.MediaID(id)); err != nil {
+			utility.DefaultLogger.Error("failed to delete media", err)
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete media", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -326,14 +274,4 @@ func MediaDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Media deleted", "type": "success"}}`)
 		w.WriteHeader(http.StatusOK)
 	}
-}
-
-// updateNullString returns a NullString from the form value if non-empty,
-// otherwise falls back to the existing value.
-func updateNullString(formVal string, existing db.NullString) db.NullString {
-	trimmed := strings.TrimSpace(formVal)
-	if trimmed != "" {
-		return db.NewNullString(trimmed)
-	}
-	return existing
 }

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -82,7 +82,7 @@ func remapPointer(ptr *string, idMap map[string]string) *string {
 // ULID internally. Phase 1a inserts rows with NULL pointers and collects the
 // server-generated IDs. Phase 1b updates those rows with the correct remapped
 // pointers. This ensures all new nodes exist before any cross-references are set.
-func ContentTreeSaveHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func ContentTreeSaveHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req TreeSaveRequest
@@ -102,8 +102,13 @@ func ContentTreeSaveHandler(w http.ResponseWriter, r *http.Request, c config.Con
 	}
 
 	ctx := r.Context()
-	ac := middleware.AuditContextFromRequest(r, c)
-	d := db.ConfigDB(c)
+	c, cfgErr := svc.Config()
+	if cfgErr != nil {
+		service.HandleServiceError(w, r, cfgErr)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+	d := svc.Driver()
 	now := types.TimestampNow()
 	nullPointer := types.NullableContentID{Valid: false}
 

@@ -2,39 +2,24 @@ package router
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 // ConfigGetHandler returns the current configuration (redacted).
 // Supports optional ?category= query parameter to filter by category.
-func ConfigGetHandler(mgr *config.Manager) http.Handler {
+func ConfigGetHandler(svc *service.Registry) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := mgr.Config()
-		if err != nil {
-			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
-		redacted := config.RedactedConfig(*cfg)
-
 		category := r.URL.Query().Get("category")
 		if category != "" {
-			fields := config.FieldsByCategory(config.FieldCategory(category))
-			if len(fields) == 0 {
-				http.Error(w, "unknown category", http.StatusBadRequest)
+			result, err := svc.ConfigSvc.GetConfigByCategory(category)
+			if err != nil {
+				service.HandleServiceError(w, r, err)
 				return
 			}
-
-			result := make(map[string]any)
-			result["category"] = category
-			fieldValues := make(map[string]string)
-			for _, f := range fields {
-				fieldValues[f.JSONKey] = config.ConfigFieldString(redacted, f.JSONKey)
-			}
-			result["fields"] = fieldValues
-
 			w.Header().Set("Content-Type", "application/json")
 			// Encode error is non-recoverable (client disconnected);
 			// response is already partially written so no recovery is possible.
@@ -42,12 +27,11 @@ func ConfigGetHandler(mgr *config.Manager) http.Handler {
 			return
 		}
 
-		data, err := config.RedactedJSON(*cfg)
+		data, err := svc.ConfigSvc.GetConfig()
 		if err != nil {
-			http.Error(w, "failed to marshal config", http.StatusInternalServerError)
+			http.Error(w, "failed to load config", http.StatusInternalServerError)
 			return
 		}
-
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
 	})
@@ -55,7 +39,7 @@ func ConfigGetHandler(mgr *config.Manager) http.Handler {
 
 // ConfigUpdateHandler applies a partial update to the configuration.
 // Expects a JSON object body with fields to change.
-func ConfigUpdateHandler(mgr *config.Manager) http.Handler {
+func ConfigUpdateHandler(svc *service.Registry) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Limit request body to 1 MB.
 		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
@@ -66,36 +50,25 @@ func ConfigUpdateHandler(mgr *config.Manager) http.Handler {
 			return
 		}
 
-		if len(updates) == 0 {
-			http.Error(w, "no updates provided", http.StatusBadRequest)
-			return
-		}
-
-		result, err := mgr.Update(updates)
-		if err != nil && !result.Valid {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			// Encode error is non-recoverable (client disconnected);
-			// response is already partially written so no recovery is possible.
-			json.NewEncoder(w).Encode(map[string]any{
-				"ok":     false,
-				"errors": result.Errors,
-			})
-			return
-		}
+		result, err := svc.ConfigSvc.UpdateConfig(updates)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			var cve *service.ConfigValidationError
+			if errors.As(err, &cve) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				// Encode error is non-recoverable (client disconnected);
+				// response is already partially written so no recovery is possible.
+				json.NewEncoder(w).Encode(map[string]any{
+					"ok":     false,
+					"errors": cve.Errors,
+				})
+				return
+			}
+			service.HandleServiceError(w, r, err)
 			return
 		}
 
-		cfg, err := mgr.Config()
-		if err != nil {
-			http.Error(w, "failed to read updated config", http.StatusInternalServerError)
-			return
-		}
-
-		redacted := config.RedactedConfig(*cfg)
-		redactedBytes, marshalErr := json.Marshal(redacted)
+		redactedBytes, marshalErr := json.Marshal(result.Config)
 		if marshalErr != nil {
 			http.Error(w, "failed to marshal config", http.StatusInternalServerError)
 			return

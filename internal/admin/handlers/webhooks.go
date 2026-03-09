@@ -1,32 +1,25 @@
 package handlers
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
-	"net"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
-	"github.com/hegner123/modulacms/internal/webhooks"
 )
 
 // WebhookSettingsHandler renders the webhook management page.
-func WebhookSettingsHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func WebhookSettingsHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		list, err := driver.ListWebhooks()
+		list, err := svc.Webhooks.ListWebhooks(r.Context())
 		if err != nil {
-			utility.DefaultLogger.Error("failed to list webhooks", err)
-			http.Error(w, "Failed to load webhooks", http.StatusInternalServerError)
+			service.HandleServiceError(w, r, err)
 			return
 		}
 
@@ -50,7 +43,7 @@ func WebhookSettingsHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 }
 
 // WebhookDetailHandler renders a webhook detail/edit page with delivery log.
-func WebhookDetailHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func WebhookDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -58,14 +51,13 @@ func WebhookDetailHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 			return
 		}
 
-		wh, err := driver.GetWebhook(types.WebhookID(id))
+		wh, err := svc.Webhooks.GetWebhook(r.Context(), types.WebhookID(id))
 		if err != nil {
-			utility.DefaultLogger.Error("failed to get webhook", err)
-			http.Error(w, "Webhook not found", http.StatusNotFound)
+			service.HandleServiceError(w, r, err)
 			return
 		}
 
-		deliveries, delErr := driver.ListWebhookDeliveriesByWebhook(wh.WebhookID)
+		deliveries, delErr := svc.Webhooks.ListDeliveries(r.Context(), wh.WebhookID)
 		if delErr != nil {
 			utility.DefaultLogger.Error("failed to list deliveries", delErr)
 			deliveries = &[]db.WebhookDelivery{}
@@ -90,14 +82,8 @@ func WebhookDetailHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 }
 
 // WebhookCreateHandler creates a new webhook from a form submission.
-func WebhookCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func WebhookCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := mgr.Config()
-		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
@@ -109,66 +95,45 @@ func WebhookCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 		eventsRaw := strings.TrimSpace(r.FormValue("events"))
 		isActive := r.FormValue("is_active") == "true"
 
-		if name == "" || url == "" {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Name and URL are required", "type": "error"}}`)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			return
-		}
-
-		if urlErr := webhooks.ValidateWebhookURL(url, cfg.WebhookAllowHTTP()); urlErr != nil {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Invalid webhook URL", "type": "error"}}`)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			return
-		}
-
-		// Parse comma-separated events.
 		events := parseCommaSeparated(eventsRaw)
-
-		// Generate secret if empty.
-		if secret == "" {
-			secret = types.NewWebhookID().String() // Good enough random string
+		if len(events) == 0 {
+			events = []string{"*"}
 		}
 
 		user := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
+		if user == nil {
+			http.Error(w, "authentication required", http.StatusUnauthorized)
+			return
 		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
 
-		now := types.TimestampNow()
-		_, createErr := driver.CreateWebhook(r.Context(), ac, db.CreateWebhookParams{
-			Name:         name,
-			URL:          url,
-			Secret:       secret,
-			Events:       events,
-			IsActive:     isActive,
-			Headers:      map[string]string{},
-			AuthorID:     user.UserID,
-			DateCreated:  now,
-			DateModified: now,
-		})
+		cfg, cfgErr := svc.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+		ac := middleware.AuditContextFromRequest(r, *cfg)
+
+		_, createErr := svc.Webhooks.CreateWebhook(r.Context(), ac, service.CreateWebhookInput{
+			Name:     name,
+			URL:      url,
+			Secret:   secret,
+			Events:   events,
+			IsActive: isActive,
+			Headers:  map[string]string{},
+		}, user.UserID)
 		if createErr != nil {
-			utility.DefaultLogger.Error("failed to create webhook", createErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create webhook", "type": "error"}}`)
-			w.WriteHeader(http.StatusInternalServerError)
+			service.HandleServiceError(w, r, createErr)
 			return
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Webhook created", "type": "success"}}`)
-		renderWebhookTableRows(w, r, driver)
+		renderWebhookTableRows(w, r, svc)
 	}
 }
 
 // WebhookUpdateHandler updates an existing webhook from a form submission.
-func WebhookUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func WebhookUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := mgr.Config()
-		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
 		id := r.PathValue("id")
 		if id == "" {
 			http.Error(w, "Missing webhook ID", http.StatusBadRequest)
@@ -186,58 +151,37 @@ func WebhookUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 		eventsRaw := strings.TrimSpace(r.FormValue("events"))
 		isActive := r.FormValue("is_active") == "true"
 
-		if name == "" || url == "" {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Name and URL are required", "type": "error"}}`)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			return
-		}
-
-		if urlErr := webhooks.ValidateWebhookURL(url, cfg.WebhookAllowHTTP()); urlErr != nil {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Invalid webhook URL", "type": "error"}}`)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			return
-		}
-
 		events := parseCommaSeparated(eventsRaw)
 
-		user := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
+		cfg, cfgErr := svc.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
 		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := middleware.AuditContextFromRequest(r, *cfg)
 
-		updateErr := driver.UpdateWebhook(r.Context(), ac, db.UpdateWebhookParams{
-			WebhookID:    types.WebhookID(id),
-			Name:         name,
-			URL:          url,
-			Secret:       secret,
-			Events:       events,
-			IsActive:     isActive,
-			Headers:      map[string]string{},
-			DateModified: types.TimestampNow(),
+		_, updateErr := svc.Webhooks.UpdateWebhook(r.Context(), ac, service.UpdateWebhookInput{
+			WebhookID: types.WebhookID(id),
+			Name:      name,
+			URL:       url,
+			Secret:    secret,
+			Events:    events,
+			IsActive:  isActive,
+			Headers:   map[string]string{},
 		})
 		if updateErr != nil {
-			utility.DefaultLogger.Error("failed to update webhook", updateErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to update webhook", "type": "error"}}`)
-			w.WriteHeader(http.StatusInternalServerError)
+			service.HandleServiceError(w, r, updateErr)
 			return
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Webhook updated", "type": "success"}}`)
-		renderWebhookTableRows(w, r, driver)
+		renderWebhookTableRows(w, r, svc)
 	}
 }
 
 // WebhookDeleteHandler deletes a webhook by ID.
-func WebhookDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func WebhookDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := mgr.Config()
-		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -249,49 +193,38 @@ func WebhookDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 			return
 		}
 
-		user := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
+		cfg, cfgErr := svc.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
 		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := middleware.AuditContextFromRequest(r, *cfg)
 
-		deleteErr := driver.DeleteWebhook(r.Context(), ac, types.WebhookID(id))
+		deleteErr := svc.Webhooks.DeleteWebhook(r.Context(), ac, types.WebhookID(id))
 		if deleteErr != nil {
-			utility.DefaultLogger.Error("failed to delete webhook", deleteErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete webhook", "type": "error"}}`)
-			w.WriteHeader(http.StatusInternalServerError)
+			service.HandleServiceError(w, r, deleteErr)
 			return
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Webhook deleted", "type": "success"}}`)
-		renderWebhookTableRows(w, r, driver)
+		renderWebhookTableRows(w, r, svc)
 	}
 }
 
 // WebhookTestHandler sends a test delivery to a webhook and returns the result as JSON.
-func WebhookTestHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func WebhookTestHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, err := mgr.Config()
-		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
-			return
-		}
-
 		id := r.PathValue("id")
 		if id == "" {
 			http.Error(w, "Missing webhook ID", http.StatusBadRequest)
 			return
 		}
 
-		wh, getErr := driver.GetWebhook(types.WebhookID(id))
-		if getErr != nil {
-			http.Error(w, "Webhook not found", http.StatusNotFound)
+		result, err := svc.Webhooks.TestWebhook(r.Context(), types.WebhookID(id))
+		if err != nil {
+			service.HandleServiceError(w, r, err)
 			return
 		}
-
-		// Perform a synchronous test using the REST API test handler logic.
-		result := testWebhookSync(r.Context(), *wh, *cfg)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -300,8 +233,8 @@ func WebhookTestHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 }
 
 // renderWebhookTableRows loads all webhooks and renders the table body partial.
-func renderWebhookTableRows(w http.ResponseWriter, r *http.Request, driver db.DbDriver) {
-	list, listErr := driver.ListWebhooks()
+func renderWebhookTableRows(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	list, listErr := svc.Webhooks.ListWebhooks(r.Context())
 	if listErr != nil {
 		utility.DefaultLogger.Error("failed to list webhooks after mutation", listErr)
 		http.Error(w, "Failed to reload webhooks", http.StatusInternalServerError)
@@ -315,66 +248,6 @@ func renderWebhookTableRows(w http.ResponseWriter, r *http.Request, driver db.Db
 
 	csrfToken := CSRFTokenFromContext(r.Context())
 	Render(w, r, partials.WebhookTableRows(webhookList, csrfToken))
-}
-
-// testWebhookSync performs a synchronous test POST to a webhook URL.
-func testWebhookSync(ctx context.Context, wh db.Webhook, cfg config.Config) map[string]any {
-	if urlErr := webhooks.ValidateWebhookURL(wh.URL, cfg.WebhookAllowHTTP()); urlErr != nil {
-		return map[string]any{"status": "failed", "error": urlErr.Error(), "duration": "0s"}
-	}
-
-	testPayload := webhooks.Payload{
-		ID:         types.NewWebhookDeliveryID().String(),
-		Event:      "webhook.test",
-		OccurredAt: time.Now().UTC(),
-		Data: map[string]any{
-			"webhook_id": wh.WebhookID.String(),
-			"message":    "This is a test delivery from ModulaCMS.",
-		},
-	}
-
-	payloadBytes, marshalErr := json.Marshal(testPayload)
-	if marshalErr != nil {
-		return map[string]any{"status": "failed", "error": marshalErr.Error(), "duration": "0s"}
-	}
-
-	signature := webhooks.Sign(wh.Secret, payloadBytes)
-
-	req, reqErr := http.NewRequestWithContext(ctx, http.MethodPost, wh.URL, bytes.NewReader(payloadBytes))
-	if reqErr != nil {
-		return map[string]any{"status": "failed", "error": reqErr.Error(), "duration": "0s"}
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-ModulaCMS-Signature", signature)
-	req.Header.Set("X-ModulaCMS-Event", "webhook.test")
-	req.Header.Set("User-Agent", "ModulaCMS-Webhook/1.0")
-	for k, v := range wh.Headers {
-		req.Header.Set(k, v)
-	}
-
-	client := &http.Client{
-		Timeout: time.Duration(cfg.WebhookTimeout()) * time.Second,
-		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-
-	start := time.Now()
-	resp, doErr := client.Do(req)
-	duration := time.Since(start)
-
-	if doErr != nil {
-		return map[string]any{"status": "failed", "error": doErr.Error(), "duration": duration.String()}
-	}
-	resp.Body.Close()
-
-	status := "success"
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		status = "failed"
-	}
-
-	return map[string]any{"status": status, "status_code": resp.StatusCode, "duration": duration.String()}
 }
 
 // parseCommaSeparated splits a comma-separated string into a trimmed slice.

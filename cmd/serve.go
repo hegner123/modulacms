@@ -270,6 +270,15 @@ Examples:
 
 		svc := service.NewRegistry(driver, mgr, pc, emailSvc, dispatcher)
 
+		// Phase 5 services — constructed post-NewRegistry, assigned to exported fields.
+		var pluginMgr service.PluginManager
+		if pluginManager != nil {
+			pluginMgr = pluginManager
+		}
+		svc.Plugins = service.NewPluginService(pluginMgr)
+		svc.Webhooks = service.NewWebhookService(driver, mgr, dispatcher)
+		svc.Locales = service.NewLocaleService(driver, mgr)
+
 		// buildRealHandler creates the full router + middleware stack.
 		buildRealHandler := func() http.Handler {
 			// Ensure S3 buckets exist (media + backup)
@@ -331,7 +340,7 @@ Examples:
 		} else {
 			handler.set(buildRealHandler())
 			publishInterval := time.Duration(cfg.PublishScheduleInterval()) * time.Second
-			go router.StartPublishScheduler(rootCtx, driver, *cfg, publishInterval, dispatcher)
+			go router.StartPublishScheduler(rootCtx, svc, publishInterval)
 		}
 
 		manager := autocert.Manager{
@@ -425,7 +434,7 @@ Examples:
 					pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
 					handler.set(buildRealHandler())
 					publishInterval := time.Duration(cfg.PublishScheduleInterval()) * time.Second
-					go router.StartPublishScheduler(rootCtx, driver, *cfg, publishInterval, dispatcher)
+					go router.StartPublishScheduler(rootCtx, svc, publishInterval)
 
 					if cfg.Plugin_Enabled {
 						tokenID, tokenPath, tokenErr := generatePluginAPIToken(rootCtx, driver, cfg.Node_ID)

@@ -5,156 +5,136 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 // MediaDimensionsHandler handles CRUD operations that do not require a specific dimension ID.
-func MediaDimensionsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func MediaDimensionsHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiListMediaDimensions(w, c)
+		apiListMediaDimensions(w, r, svc)
 	case http.MethodPost:
-		apiCreateMediaDimension(w, r, c)
+		apiCreateMediaDimension(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // MediaDimensionHandler handles CRUD operations for specific dimension items.
-func MediaDimensionHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func MediaDimensionHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetMediaDimension(w, r, c)
+		apiGetMediaDimension(w, r, svc)
 	case http.MethodPut:
-		apiUpdateMediaDimension(w, r, c)
+		apiUpdateMediaDimension(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteMediaDimension(w, r, c)
+		apiDeleteMediaDimension(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-// apiGetMediaDimension handles GET requests for a single media dimension
-func apiGetMediaDimension(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiGetMediaDimension(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	mdID := r.URL.Query().Get("q")
 	if mdID == "" {
-		err := fmt.Errorf("missing media dimension ID")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
-	}
-	mediaDimension, err := d.GetMediaDimension(mdID)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		http.Error(w, "missing media dimension ID", http.StatusBadRequest)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(mediaDimension)
-	return nil
-}
-
-// apiListMediaDimensions handles GET requests for listing media dimensions
-func apiListMediaDimensions(w http.ResponseWriter, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	mediaDimensionsList, err := d.ListMediaDimensions()
+	dim, err := svc.Media.GetMediaDimension(r.Context(), mdID)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(mediaDimensionsList)
-	return nil
+	json.NewEncoder(w).Encode(dim)
 }
 
-// apiCreateMediaDimension handles POST requests to create a new media dimension
-func apiCreateMediaDimension(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	var newMediaDimension db.CreateMediaDimensionParams
-	err := json.NewDecoder(r.Body).Decode(&newMediaDimension)
+func apiListMediaDimensions(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	dims, err := svc.Media.ListMediaDimensions(r.Context())
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	createdMediaDimension, err := d.CreateMediaDimension(r.Context(), ac, newMediaDimension)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(dims)
+}
+
+func apiCreateMediaDimension(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var params db.CreateMediaDimensionParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	created, err := svc.Media.CreateMediaDimension(r.Context(), ac, params)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdMediaDimension)
-	return nil
+	json.NewEncoder(w).Encode(created)
 }
 
-// apiUpdateMediaDimension handles PUT requests to update an existing media dimension
-func apiUpdateMediaDimension(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	var updateMediaDimension db.UpdateMediaDimensionParams
-	err := json.NewDecoder(r.Body).Decode(&updateMediaDimension)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+func apiUpdateMediaDimension(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var params db.UpdateMediaDimensionParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	_, err = d.UpdateMediaDimension(r.Context(), ac, updateMediaDimension)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	updated, err := d.GetMediaDimension(updateMediaDimension.MdID)
+	updated, err := svc.Media.UpdateMediaDimension(r.Context(), ac, params)
 	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated media dimension", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(updated)
-	return nil
 }
 
-// apiDeleteMediaDimension handles DELETE requests for media dimensions
-func apiDeleteMediaDimension(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiDeleteMediaDimension(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	mdID := r.URL.Query().Get("q")
 	if mdID == "" {
-		err := fmt.Errorf("missing media dimension ID")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		http.Error(w, fmt.Sprintf("missing media dimension ID"), http.StatusBadRequest)
+		return
 	}
-	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.DeleteMediaDimension(r.Context(), ac, mdID)
+
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	if err := svc.Media.DeleteMediaDimension(r.Context(), ac, mdID); err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	return nil
 }

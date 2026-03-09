@@ -5,112 +5,69 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hegner123/modulacms/internal/config"
-	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
 )
-
-// authcontext is used to retrieve user from context (must match middleware type)
-type authcontext string
 
 // AddSSHKeyHandler handles POST /api/v1/ssh-keys
 // Allows authenticated users to add an SSH public key to their account.
-func AddSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	// Get authenticated user from context
-	var authCtx authcontext = "authenticated"
-	userVal := r.Context().Value(authCtx)
-	if userVal == nil {
+func AddSSHKeyHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	authUser := middleware.AuthenticatedUser(r.Context())
+	if authUser == nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	authUser, ok := userVal.(*db.Users)
-	if !ok {
-		http.Error(w, "Invalid user context", http.StatusInternalServerError)
-		return
-	}
-
-	// Parse request body
 	var req struct {
 		PublicKey string `json:"public_key"`
 		Label     string `json:"label"`
 	}
-
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// Validate and parse SSH public key
-	keyType, fingerprint, err := middleware.ParseSSHPublicKey(req.PublicKey)
+	cfg, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("Invalid SSH public key", err)
-		http.Error(w, "Invalid SSH public key format", http.StatusBadRequest)
+		service.HandleServiceError(w, r, err)
 		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *cfg)
 
-	// Check if key already exists
-	dbc := db.ConfigDB(c)
-	existing, _ := dbc.GetUserSshKeyByFingerprint(fingerprint)
-	if existing != nil {
-		http.Error(w, "SSH key already registered", http.StatusConflict)
-		return
+	input := service.AddSSHKeyInput{
+		UserID:    authUser.UserID,
+		PublicKey: req.PublicKey,
+		Label:     req.Label,
 	}
 
-	// Create SSH key record
-	ac := middleware.AuditContextFromRequest(r, c)
-	sshKey, err := dbc.CreateUserSshKey(r.Context(), ac, db.CreateUserSshKeyParams{
-		UserID:      types.NullableUserID{ID: authUser.UserID, Valid: true},
-		PublicKey:   req.PublicKey,
-		KeyType:     keyType,
-		Fingerprint: fingerprint,
-		Label:       req.Label,
-		DateCreated: types.TimestampNow(),
-	})
-
+	created, err := svc.SSHKeys.AddKey(r.Context(), ac, input)
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to create SSH key", err)
-		http.Error(w, "Failed to add SSH key", http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
-	utility.DefaultLogger.Info("SSH key added for user", authUser.UserID, "fingerprint:", fingerprint)
-
-	// Return created SSH key
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(sshKey)
+	json.NewEncoder(w).Encode(created)
 }
 
 // ListSSHKeysHandler handles GET /api/v1/ssh-keys
 // Returns all SSH keys for the authenticated user.
 // Supports optional fingerprint query parameter to return a single key matching the fingerprint.
-func ListSSHKeysHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	// Get authenticated user from context
-	var authCtx authcontext = "authenticated"
-	userVal := r.Context().Value(authCtx)
-	if userVal == nil {
+func ListSSHKeysHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	authUser := middleware.AuthenticatedUser(r.Context())
+	if authUser == nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	authUser, ok := userVal.(*db.Users)
-	if !ok {
-		http.Error(w, "Invalid user context", http.StatusInternalServerError)
-		return
-	}
-
-	dbc := db.ConfigDB(c)
-
 	// If fingerprint query param is provided, return the matching key.
 	fingerprintParam := r.URL.Query().Get("fingerprint")
 	if fingerprintParam != "" {
-		sshKey, err := dbc.GetUserSshKeyByFingerprint(fingerprintParam)
+		sshKey, err := svc.SSHKeys.GetKeyByFingerprint(r.Context(), fingerprintParam)
 		if err != nil {
-			utility.DefaultLogger.Error("Failed to get SSH key by fingerprint", err)
-			http.Error(w, "SSH key not found", http.StatusNotFound)
+			service.HandleServiceError(w, r, err)
 			return
 		}
 
@@ -120,17 +77,13 @@ func ListSSHKeysHandler(w http.ResponseWriter, r *http.Request, c config.Config)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(sshKey)
+		writeJSON(w, sshKey)
 		return
 	}
 
-	// Get user's SSH keys
-	keys, err := dbc.ListUserSshKeys(types.NullableUserID{ID: authUser.UserID, Valid: true})
+	keys, err := svc.SSHKeys.ListKeys(r.Context(), types.NullableUserID{ID: authUser.UserID, Valid: true})
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to list SSH keys", err)
-		http.Error(w, "Failed to retrieve SSH keys", http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
@@ -156,24 +109,15 @@ func ListSSHKeysHandler(w http.ResponseWriter, r *http.Request, c config.Config)
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	writeJSON(w, response)
 }
 
 // DeleteSSHKeyHandler handles DELETE /api/v1/ssh-keys/:id
 // Allows authenticated users to delete their own SSH keys.
-func DeleteSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	// Get authenticated user from context
-	var authCtx authcontext = "authenticated"
-	userVal := r.Context().Value(authCtx)
-	if userVal == nil {
+func DeleteSSHKeyHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	authUser := middleware.AuthenticatedUser(r.Context())
+	if authUser == nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	authUser, ok := userVal.(*db.Users)
-	if !ok {
-		http.Error(w, "Invalid user context", http.StatusInternalServerError)
 		return
 	}
 
@@ -190,29 +134,17 @@ func DeleteSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config
 		return
 	}
 
-	// Verify the key belongs to the authenticated user
-	dbc := db.ConfigDB(c)
-	sshKey, err := dbc.GetUserSshKey(keyID)
+	cfg, err := svc.Config()
 	if err != nil {
-		http.Error(w, "SSH key not found", http.StatusNotFound)
+		service.HandleServiceError(w, r, err)
 		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *cfg)
 
-	if !sshKey.UserID.Valid || sshKey.UserID.ID != authUser.UserID {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+	if err := svc.SSHKeys.DeleteKey(r.Context(), ac, authUser.UserID, keyID); err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
-
-	// Delete the SSH key
-	ac := middleware.AuditContextFromRequest(r, c)
-	err = dbc.DeleteUserSshKey(r.Context(), ac, keyID)
-	if err != nil {
-		utility.DefaultLogger.Error("Failed to delete SSH key", err)
-		http.Error(w, "Failed to delete SSH key", http.StatusInternalServerError)
-		return
-	}
-
-	utility.DefaultLogger.Info("SSH key deleted for user", authUser.UserID, "key:", keyID)
 
 	w.WriteHeader(http.StatusNoContent)
 }

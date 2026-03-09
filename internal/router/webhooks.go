@@ -1,22 +1,14 @@
 package router
 
 import (
-	"bytes"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
-	"github.com/hegner123/modulacms/internal/config"
-	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/publishing"
-	"github.com/hegner123/modulacms/internal/utility"
-	"github.com/hegner123/modulacms/internal/webhooks"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 ///////////////////////////////
@@ -43,26 +35,15 @@ type WebhookUpdateRequest struct {
 	Headers  map[string]string `json:"headers"`
 }
 
-// WebhookTestResponse is returned from POST /api/v1/admin/webhooks/{id}/test.
-type WebhookTestResponse struct {
-	Status     string `json:"status"`
-	StatusCode int    `json:"status_code,omitempty"`
-	Error      string `json:"error,omitempty"`
-	Duration   string `json:"duration"`
-}
-
 ///////////////////////////////
 // HTTP HANDLERS
 ///////////////////////////////
 
 // WebhookListHandler handles GET /api/v1/admin/webhooks.
-func WebhookListHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	d := db.ConfigDB(c)
-
-	list, err := d.ListWebhooks()
+func WebhookListHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	list, err := svc.Webhooks.ListWebhooks(r.Context())
 	if err != nil {
-		utility.DefaultLogger.Error("list webhooks failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
@@ -72,27 +53,12 @@ func WebhookListHandler(w http.ResponseWriter, r *http.Request, c config.Config)
 }
 
 // WebhookCreateHandler handles POST /api/v1/admin/webhooks.
-func WebhookCreateHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func WebhookCreateHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req WebhookCreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, fmt.Sprintf("invalid JSON body: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	if req.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
-		return
-	}
-	if req.URL == "" {
-		http.Error(w, "url is required", http.StatusBadRequest)
-		return
-	}
-
-	// Validate URL against SSRF rules.
-	if err := webhooks.ValidateWebhookURL(req.URL, c.WebhookAllowHTTP()); err != nil {
-		http.Error(w, fmt.Sprintf("invalid webhook URL: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -102,43 +68,23 @@ func WebhookCreateHandler(w http.ResponseWriter, r *http.Request, c config.Confi
 		return
 	}
 
-	// Generate a secret if none provided.
-	secret := req.Secret
-	if secret == "" {
-		secretBytes := make([]byte, 32)
-		if _, err := rand.Read(secretBytes); err != nil {
-			utility.DefaultLogger.Error("failed to generate webhook secret", err)
-			http.Error(w, "failed to generate secret", http.StatusInternalServerError)
-			return
-		}
-		secret = hex.EncodeToString(secretBytes)
+	cfg, cfgErr := svc.Config()
+	if cfgErr != nil {
+		http.Error(w, "configuration unavailable", http.StatusInternalServerError)
+		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *cfg)
 
-	if req.Events == nil {
-		req.Events = []string{}
-	}
-	if req.Headers == nil {
-		req.Headers = map[string]string{}
-	}
-
-	d := db.ConfigDB(c)
-	ac := middleware.AuditContextFromRequest(r, c)
-	now := types.TimestampNow()
-
-	created, err := d.CreateWebhook(r.Context(), ac, db.CreateWebhookParams{
-		Name:         req.Name,
-		URL:          req.URL,
-		Secret:       secret,
-		Events:       req.Events,
-		IsActive:     req.IsActive,
-		Headers:      req.Headers,
-		AuthorID:     user.UserID,
-		DateCreated:  now,
-		DateModified: now,
-	})
+	created, err := svc.Webhooks.CreateWebhook(r.Context(), ac, service.CreateWebhookInput{
+		Name:     req.Name,
+		URL:      req.URL,
+		Secret:   req.Secret,
+		Events:   req.Events,
+		IsActive: req.IsActive,
+		Headers:  req.Headers,
+	}, user.UserID)
 	if err != nil {
-		utility.DefaultLogger.Error("create webhook failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
@@ -148,18 +94,16 @@ func WebhookCreateHandler(w http.ResponseWriter, r *http.Request, c config.Confi
 }
 
 // WebhookGetHandler handles GET /api/v1/admin/webhooks/{id}.
-func WebhookGetHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func WebhookGetHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	id, err := extractWebhookID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	d := db.ConfigDB(c)
-	wh, err := d.GetWebhook(id)
-	if err != nil {
-		utility.DefaultLogger.Error("get webhook failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	wh, getErr := svc.Webhooks.GetWebhook(r.Context(), id)
+	if getErr != nil {
+		service.HandleServiceError(w, r, getErr)
 		return
 	}
 
@@ -169,7 +113,7 @@ func WebhookGetHandler(w http.ResponseWriter, r *http.Request, c config.Config) 
 }
 
 // WebhookUpdateHandler handles PUT /api/v1/admin/webhooks/{id}.
-func WebhookUpdateHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func WebhookUpdateHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	id, err := extractWebhookID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -184,51 +128,24 @@ func WebhookUpdateHandler(w http.ResponseWriter, r *http.Request, c config.Confi
 		return
 	}
 
-	if req.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
+	cfg, cfgErr := svc.Config()
+	if cfgErr != nil {
+		http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 		return
 	}
-	if req.URL == "" {
-		http.Error(w, "url is required", http.StatusBadRequest)
-		return
-	}
+	ac := middleware.AuditContextFromRequest(r, *cfg)
 
-	// Validate URL against SSRF rules.
-	if err := webhooks.ValidateWebhookURL(req.URL, c.WebhookAllowHTTP()); err != nil {
-		http.Error(w, fmt.Sprintf("invalid webhook URL: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	if req.Events == nil {
-		req.Events = []string{}
-	}
-	if req.Headers == nil {
-		req.Headers = map[string]string{}
-	}
-
-	d := db.ConfigDB(c)
-	ac := middleware.AuditContextFromRequest(r, c)
-
-	updateErr := d.UpdateWebhook(r.Context(), ac, db.UpdateWebhookParams{
-		WebhookID:    id,
-		Name:         req.Name,
-		URL:          req.URL,
-		Secret:       req.Secret,
-		Events:       req.Events,
-		IsActive:     req.IsActive,
-		Headers:      req.Headers,
-		DateModified: types.TimestampNow(),
+	updated, updateErr := svc.Webhooks.UpdateWebhook(r.Context(), ac, service.UpdateWebhookInput{
+		WebhookID: id,
+		Name:      req.Name,
+		URL:       req.URL,
+		Secret:    req.Secret,
+		Events:    req.Events,
+		IsActive:  req.IsActive,
+		Headers:   req.Headers,
 	})
 	if updateErr != nil {
-		utility.DefaultLogger.Error("update webhook failed", updateErr)
-		http.Error(w, updateErr.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	updated, err := d.GetWebhook(id)
-	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated webhook", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, updateErr)
 		return
 	}
 
@@ -238,19 +155,22 @@ func WebhookUpdateHandler(w http.ResponseWriter, r *http.Request, c config.Confi
 }
 
 // WebhookDeleteHandler handles DELETE /api/v1/admin/webhooks/{id}.
-func WebhookDeleteHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func WebhookDeleteHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	id, err := extractWebhookID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	d := db.ConfigDB(c)
-	ac := middleware.AuditContextFromRequest(r, c)
+	cfg, cfgErr := svc.Config()
+	if cfgErr != nil {
+		http.Error(w, "configuration unavailable", http.StatusInternalServerError)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *cfg)
 
-	if err := d.DeleteWebhook(r.Context(), ac, id); err != nil {
-		utility.DefaultLogger.Error("delete webhook failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if deleteErr := svc.Webhooks.DeleteWebhook(r.Context(), ac, id); deleteErr != nil {
+		service.HandleServiceError(w, r, deleteErr)
 		return
 	}
 
@@ -261,123 +181,35 @@ func WebhookDeleteHandler(w http.ResponseWriter, r *http.Request, c config.Confi
 
 // WebhookTestHandler handles POST /api/v1/admin/webhooks/{id}/test.
 // Performs a synchronous HTTP POST to the webhook URL and returns the result.
-func WebhookTestHandler(w http.ResponseWriter, r *http.Request, c config.Config, dispatcher publishing.WebhookDispatcher) {
+func WebhookTestHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	id, err := extractWebhookID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	d := db.ConfigDB(c)
-	wh, err := d.GetWebhook(id)
-	if err != nil {
-		utility.DefaultLogger.Error("get webhook for test failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	result, testErr := svc.Webhooks.TestWebhook(r.Context(), id)
+	if testErr != nil {
+		service.HandleServiceError(w, r, testErr)
 		return
-	}
-
-	// Validate URL at test time too.
-	if urlErr := webhooks.ValidateWebhookURL(wh.URL, c.WebhookAllowHTTP()); urlErr != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(WebhookTestResponse{
-			Status:   "failed",
-			Error:    fmt.Sprintf("URL validation failed: %v", urlErr),
-			Duration: "0s",
-		})
-		return
-	}
-
-	// Build a test payload.
-	testPayload := webhooks.Payload{
-		ID:         types.NewWebhookDeliveryID().String(),
-		Event:      "webhook.test",
-		OccurredAt: time.Now().UTC(),
-		Data: map[string]any{
-			"webhook_id": wh.WebhookID.String(),
-			"message":    "This is a test delivery from Modula.",
-		},
-	}
-
-	payloadBytes, marshalErr := json.Marshal(testPayload)
-	if marshalErr != nil {
-		utility.DefaultLogger.Error("failed to marshal test payload", marshalErr)
-		http.Error(w, "failed to marshal test payload", http.StatusInternalServerError)
-		return
-	}
-
-	signature := webhooks.Sign(wh.Secret, payloadBytes)
-
-	req, reqErr := http.NewRequestWithContext(r.Context(), http.MethodPost, wh.URL, bytes.NewReader(payloadBytes))
-	if reqErr != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(WebhookTestResponse{
-			Status:   "failed",
-			Error:    fmt.Sprintf("request creation failed: %v", reqErr),
-			Duration: "0s",
-		})
-		return
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Modula-Signature", signature)
-	req.Header.Set("X-Modula-Event", "webhook.test")
-	req.Header.Set("User-Agent", "Modula-Webhook/1.0")
-	for k, v := range wh.Headers {
-		req.Header.Set(k, v)
-	}
-
-	client := &http.Client{
-		Timeout: time.Duration(c.WebhookTimeout()) * time.Second,
-		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-
-	start := time.Now()
-	resp, doErr := client.Do(req)
-	duration := time.Since(start)
-
-	if doErr != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(WebhookTestResponse{
-			Status:   "failed",
-			Error:    fmt.Sprintf("HTTP request failed: %v", doErr),
-			Duration: duration.String(),
-		})
-		return
-	}
-	resp.Body.Close()
-
-	status := "success"
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		status = "failed"
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(WebhookTestResponse{
-		Status:     status,
-		StatusCode: resp.StatusCode,
-		Duration:   duration.String(),
-	})
+	json.NewEncoder(w).Encode(result)
 }
 
 // WebhookDeliveryListHandler handles GET /api/v1/admin/webhooks/{id}/deliveries.
-func WebhookDeliveryListHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func WebhookDeliveryListHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	id, err := extractWebhookID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	d := db.ConfigDB(c)
-	deliveries, err := d.ListWebhookDeliveriesByWebhook(id)
-	if err != nil {
-		utility.DefaultLogger.Error("list webhook deliveries failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	deliveries, listErr := svc.Webhooks.ListDeliveries(r.Context(), id)
+	if listErr != nil {
+		service.HandleServiceError(w, r, listErr)
 		return
 	}
 
@@ -388,7 +220,7 @@ func WebhookDeliveryListHandler(w http.ResponseWriter, r *http.Request, c config
 
 // WebhookDeliveryRetryHandler handles POST /api/v1/admin/webhooks/deliveries/{id}/retry.
 // Re-enqueues a single delivery for immediate retry via the dispatcher.
-func WebhookDeliveryRetryHandler(w http.ResponseWriter, r *http.Request, c config.Config, dispatcher publishing.WebhookDispatcher) {
+func WebhookDeliveryRetryHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	rawID := extractLastPathSegment(r.URL.Path, "retry")
 	deliveryID := types.WebhookDeliveryID(rawID)
 	if err := deliveryID.Validate(); err != nil {
@@ -396,32 +228,17 @@ func WebhookDeliveryRetryHandler(w http.ResponseWriter, r *http.Request, c confi
 		return
 	}
 
-	d := db.ConfigDB(c)
-	del, err := d.GetWebhookDelivery(deliveryID)
-	if err != nil {
-		utility.DefaultLogger.Error("get webhook delivery for retry failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Reset status to retrying so the dispatcher picks it up.
-	updateErr := d.UpdateWebhookDeliveryStatus(r.Context(), db.UpdateWebhookDeliveryStatusParams{
-		Status:      db.DeliveryStatusRetrying,
-		Attempts:    del.Attempts,
-		NextRetryAt: time.Now().UTC().Format(time.RFC3339),
-		DeliveryID:  del.DeliveryID,
-	})
-	if updateErr != nil {
-		utility.DefaultLogger.Error("update delivery status for retry failed", updateErr)
-		http.Error(w, updateErr.Error(), http.StatusInternalServerError)
+	result, retryErr := svc.Webhooks.RetryDelivery(r.Context(), deliveryID)
+	if retryErr != nil {
+		service.HandleServiceError(w, r, retryErr)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
-		"status":      "retrying",
-		"delivery_id": del.DeliveryID.String(),
+		"status":      result.Status,
+		"delivery_id": result.DeliveryID.String(),
 	})
 }
 

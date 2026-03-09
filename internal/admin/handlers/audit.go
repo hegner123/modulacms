@@ -6,16 +6,17 @@ import (
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // AuditLogHandler shows the audit log with pagination.
 // Displays change events in reverse chronological order. Read-only.
-func AuditLogHandler(driver db.DbDriver) http.HandlerFunc {
+func AuditLogHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limit, offset := ParsePagination(r)
 
-		events, err := driver.ListChangeEvents(db.ListChangeEventsParams{
+		events, err := svc.AuditLog.ListChangeEvents(r.Context(), db.ListChangeEventsParams{
 			Limit:  limit,
 			Offset: offset,
 		})
@@ -25,7 +26,7 @@ func AuditLogHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
-		total, countErr := driver.CountChangeEvents()
+		total, countErr := svc.AuditLog.CountChangeEvents(r.Context())
 		if countErr != nil {
 			utility.DefaultLogger.Error("failed to count change events", countErr)
 			http.Error(w, "Failed to load audit log", http.StatusInternalServerError)

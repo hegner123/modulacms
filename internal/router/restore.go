@@ -5,12 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
-	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/publishing"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 ///////////////////////////////
@@ -52,9 +49,7 @@ type AdminRestoreResponse struct {
 ///////////////////////////////
 
 // RestoreVersionHandler handles POST requests to restore content from a saved version snapshot.
-// It deserializes the snapshot's content fields, matches them against the current live fields
-// by field_id + content_data_id, updates the field values, and resets the content status to draft.
-func RestoreVersionHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func RestoreVersionHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req RestoreRequest
@@ -78,20 +73,21 @@ func RestoreVersionHandler(w http.ResponseWriter, r *http.Request, c config.Conf
 		return
 	}
 
-	d := db.ConfigDB(c)
-	ac := middleware.AuditContextFromRequest(r, c)
-
-	result, err := publishing.RestoreContent(r.Context(), d, req.ContentDataID, req.ContentVersionID, user.UserID, ac)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("restore content failed", err)
-		http.Error(w, fmt.Sprintf("restore failed: %v", err), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	result, err := svc.Content.RestoreVersion(r.Context(), ac, req.ContentDataID, req.ContentVersionID, user.UserID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	// Encode error is non-recoverable (client disconnected or similar);
-	// the response is already partially written so no recovery is possible.
 	json.NewEncoder(w).Encode(RestoreResponse{
 		Status:          "restored",
 		ContentDataID:   req.ContentDataID.String(),
@@ -102,7 +98,7 @@ func RestoreVersionHandler(w http.ResponseWriter, r *http.Request, c config.Conf
 }
 
 // AdminRestoreVersionHandler handles POST requests to restore admin content from a saved version snapshot.
-func AdminRestoreVersionHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func AdminRestoreVersionHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req AdminRestoreRequest
@@ -126,20 +122,21 @@ func AdminRestoreVersionHandler(w http.ResponseWriter, r *http.Request, c config
 		return
 	}
 
-	d := db.ConfigDB(c)
-	ac := middleware.AuditContextFromRequest(r, c)
-
-	result, err := publishing.RestoreAdminContent(r.Context(), d, req.AdminContentDataID, req.AdminContentVersionID, user.UserID, ac)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("admin restore content failed", err)
-		http.Error(w, fmt.Sprintf("restore failed: %v", err), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	result, err := svc.AdminContent.RestoreVersion(r.Context(), ac, req.AdminContentDataID, req.AdminContentVersionID, user.UserID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	// Encode error is non-recoverable (client disconnected or similar);
-	// the response is already partially written so no recovery is possible.
 	json.NewEncoder(w).Encode(AdminRestoreResponse{
 		Status:             "restored",
 		AdminContentDataID: req.AdminContentDataID.String(),

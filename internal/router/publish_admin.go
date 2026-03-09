@@ -6,12 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hegner123/modulacms/internal/config"
-	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/publishing"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 ///////////////////////////////
@@ -50,7 +47,7 @@ type AdminScheduleResponse struct {
 ///////////////////////////////
 
 // AdminPublishHandler handles POST requests to publish admin content.
-func AdminPublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, dispatcher publishing.WebhookDispatcher) {
+func AdminPublishHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req AdminPublishRequest
@@ -70,17 +67,16 @@ func AdminPublishHandler(w http.ResponseWriter, r *http.Request, c config.Config
 		return
 	}
 
-	d := db.ConfigDB(c)
-	ac := middleware.AuditContextFromRequest(r, c)
-
-	err := publishing.PublishAdminContent(r.Context(), d, req.AdminContentDataID, req.Locale, user.UserID, ac, c.VersionMaxPerContent(), dispatcher)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("admin publish content failed", err)
-		if publishing.IsRevisionConflict(err) {
-			http.Error(w, err.Error(), http.StatusConflict)
-			return
-		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	err = svc.AdminContent.Publish(r.Context(), ac, req.AdminContentDataID, req.Locale, user.UserID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
@@ -93,7 +89,7 @@ func AdminPublishHandler(w http.ResponseWriter, r *http.Request, c config.Config
 }
 
 // AdminUnpublishHandler handles POST requests to unpublish admin content.
-func AdminUnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, dispatcher publishing.WebhookDispatcher) {
+func AdminUnpublishHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req AdminPublishRequest
@@ -113,12 +109,15 @@ func AdminUnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Conf
 		return
 	}
 
-	d := db.ConfigDB(c)
-	ac := middleware.AuditContextFromRequest(r, c)
+	c, err := svc.Config()
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	if err := publishing.UnpublishAdminContent(r.Context(), d, req.AdminContentDataID, req.Locale, user.UserID, ac, dispatcher); err != nil {
-		utility.DefaultLogger.Error("admin unpublish content failed", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := svc.AdminContent.Unpublish(r.Context(), ac, req.AdminContentDataID, req.Locale, user.UserID); err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 
@@ -131,7 +130,7 @@ func AdminUnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Conf
 }
 
 // AdminScheduleHandler handles POST requests to schedule admin content for publication.
-func AdminScheduleHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func AdminScheduleHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req AdminScheduleRequest
@@ -150,28 +149,9 @@ func AdminScheduleHandler(w http.ResponseWriter, r *http.Request, c config.Confi
 		http.Error(w, fmt.Sprintf("invalid publish_at: must be RFC3339 format: %v", err), http.StatusBadRequest)
 		return
 	}
-	if publishAt.Before(time.Now()) {
-		http.Error(w, "publish_at must be in the future", http.StatusBadRequest)
-		return
-	}
 
-	user := middleware.AuthenticatedUser(r.Context())
-	if user == nil {
-		http.Error(w, "authentication required", http.StatusUnauthorized)
-		return
-	}
-
-	d := db.ConfigDB(c)
-	now := types.TimestampNow()
-
-	pubErr := d.UpdateAdminContentDataSchedule(r.Context(), db.UpdateAdminContentDataScheduleParams{
-		PublishAt:          types.NewTimestamp(publishAt),
-		DateModified:       now,
-		AdminContentDataID: req.AdminContentDataID,
-	})
-	if pubErr != nil {
-		utility.DefaultLogger.Error("admin schedule content failed", pubErr)
-		http.Error(w, pubErr.Error(), http.StatusInternalServerError)
+	if err := svc.AdminContent.Schedule(r.Context(), req.AdminContentDataID, publishAt); err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 

@@ -4,209 +4,148 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
-	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 // RolesHandler handles CRUD operations that do not require a specific role ID.
-func RolesHandler(w http.ResponseWriter, r *http.Request, c config.Config, pc *middleware.PermissionCache) {
+func RolesHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiListRoles(w, c)
+		apiListRoles(w, r, svc)
 	case http.MethodPost:
-		apiCreateRole(w, r, c, pc)
+		apiCreateRole(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // RoleHandler handles CRUD operations for specific role items.
-func RoleHandler(w http.ResponseWriter, r *http.Request, c config.Config, pc *middleware.PermissionCache) {
+func RoleHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetRole(w, r, c)
+		apiGetRole(w, r, svc)
 	case http.MethodPut:
-		apiUpdateRole(w, r, c, pc)
+		apiUpdateRole(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteRole(w, r, c, pc)
+		apiDeleteRole(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-// apiGetRole handles GET requests for a single role
-func apiGetRole(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiGetRole(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	rID := types.RoleID(q)
 	if err := rID.Validate(); err != nil {
-		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
-	role, err := d.GetRole(rID)
+
+	role, err := svc.RBAC.GetRole(r.Context(), rID)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(role)
-	return nil
 }
 
-// apiListRoles handles GET requests for listing roles
-func apiListRoles(w http.ResponseWriter, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	roles, err := d.ListRoles()
+func apiListRoles(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	roles, err := svc.RBAC.ListRoles(r.Context())
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(roles)
-	return nil
 }
 
-// apiCreateRole handles POST requests to create a new role
-func apiCreateRole(w http.ResponseWriter, r *http.Request, c config.Config, pc *middleware.PermissionCache) error {
-	d := db.ConfigDB(c)
-
-	var newRole db.CreateRoleParams
-	err := json.NewDecoder(r.Body).Decode(&newRole)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+func apiCreateRole(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var req struct {
+		Label string `json:"label"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	createdRole, err := d.CreateRole(r.Context(), ac, newRole)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	ac := middleware.AuditContextFromRequest(r, *c)
+
+	created, err := svc.RBAC.CreateRole(r.Context(), ac, service.CreateRoleInput{
+		Label: req.Label,
+	})
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdRole)
-
-	go func() {
-		if loadErr := pc.Load(db.ConfigDB(c)); loadErr != nil {
-			utility.DefaultLogger.Error("permission cache refresh failed after role create", loadErr)
-		}
-	}()
-
-	return nil
+	json.NewEncoder(w).Encode(created)
 }
 
-// apiUpdateRole handles PUT requests to update an existing role
-func apiUpdateRole(w http.ResponseWriter, r *http.Request, c config.Config, pc *middleware.PermissionCache) error {
-	d := db.ConfigDB(c)
-
-	var updateRole db.UpdateRoleParams
-	err := json.NewDecoder(r.Body).Decode(&updateRole)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+func apiUpdateRole(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var req struct {
+		RoleID types.RoleID `json:"role_id"`
+		Label  string       `json:"label"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	// System-protected label mutation guard
-	existing, err := d.GetRole(updateRole.RoleID)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
-	if existing.SystemProtected && updateRole.Label != existing.Label {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]string{"error": "forbidden", "detail": "cannot rename system-protected record"})
-		return nil
-	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	_, err = d.UpdateRole(r.Context(), ac, updateRole)
+	updated, err := svc.RBAC.UpdateRole(r.Context(), ac, service.UpdateRoleInput{
+		RoleID: req.RoleID,
+		Label:  req.Label,
+	})
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
-	updated, err := d.GetRole(updateRole.RoleID)
-	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated role", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(updated)
-
-	go func() {
-		if loadErr := pc.Load(db.ConfigDB(c)); loadErr != nil {
-			utility.DefaultLogger.Error("permission cache refresh failed after role update", loadErr)
-		}
-	}()
-
-	return nil
 }
 
-// apiDeleteRole handles DELETE requests for roles
-func apiDeleteRole(w http.ResponseWriter, r *http.Request, c config.Config, pc *middleware.PermissionCache) error {
-	d := db.ConfigDB(c)
-
+func apiDeleteRole(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	rID := types.RoleID(q)
 	if err := rID.Validate(); err != nil {
-		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	// System-protected guard
-	existing, err := d.GetRole(rID)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+	c, cfgErr := svc.Config()
+	if cfgErr != nil {
+		service.HandleServiceError(w, r, cfgErr)
+		return
 	}
-	if existing.SystemProtected {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]string{"error": "forbidden", "detail": "cannot delete system-protected record"})
-		return nil
-	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	err = d.DeleteRole(r.Context(), ac, rID)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+	if err := svc.RBAC.DeleteRole(r.Context(), ac, rID); err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-
-	go func() {
-		if loadErr := pc.Load(db.ConfigDB(c)); loadErr != nil {
-			utility.DefaultLogger.Error("permission cache refresh failed after role delete", loadErr)
-		}
-	}()
-
-	return nil
 }

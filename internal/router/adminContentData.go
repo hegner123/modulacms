@@ -2,459 +2,162 @@ package router
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
+	"github.com/hegner123/modulacms/internal/tree/ops"
 )
 
-// AdminContentDatas handles CRUD operations that do not require a specific user ID.
-func AdminContentDatasHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+// AdminContentDatasHandler handles CRUD operations that do not require a specific data ID.
+func AdminContentDatasHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		if HasPaginationParams(r) {
-			err := apiListAdminContentDataPaginated(w, r, c)
-			if err != nil {
-				return
-			}
+			apiListAdminContentDataPaginated(w, r, svc)
 		} else {
-			err := apiListAdminContentData(w, r, c)
-			if err != nil {
-				return
-			}
+			apiListAdminContentData(w, r, svc)
 		}
 	case http.MethodPost:
-		err := apiCreateAdminContentData(w, r, c)
-		if err != nil {
-			return
-		}
+		apiCreateAdminContentData(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func AdminContentDataHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+// AdminContentDataHandler handles CRUD operations for specific admin content data items.
+func AdminContentDataHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodPost:
-		err := apiCreateAdminContentData(w, r, c)
-		if err != nil {
-			return
-		}
+		apiCreateAdminContentData(w, r, svc)
 	case http.MethodPut:
-		err := apiUpdateAdminContentData(w, r, c)
-		if err != nil {
-			return
-		}
+		apiUpdateAdminContentData(w, r, svc)
 	case http.MethodDelete:
-		err := apiDeleteAdminContentData(w, r, c)
-		if err != nil {
-			return
-		}
+		apiDeleteAdminContentData(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // apiListAdminContentData handles GET requests for listing admin content data
-func apiListAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	if r == nil {
-		err := fmt.Errorf("request error")
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-
-	}
-
-	adminContentDataList, err := d.ListAdminContentData()
+func apiListAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	list, err := svc.AdminContent.List(r.Context())
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(adminContentDataList)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	return nil
+	writeJSON(w, list)
 }
 
 // apiCreateAdminContentData handles POST requests to create new admin content data
-func apiCreateAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	var newAdminContentData db.CreateAdminContentDataParams
-	err := json.NewDecoder(r.Body).Decode(&newAdminContentData)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+func apiCreateAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var params db.CreateAdminContentDataParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	createdAdminContentData, err := d.CreateAdminContentData(r.Context(), ac, newAdminContentData)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	// Append new node to parent's sibling chain
-	if createdAdminContentData.ParentID.Valid {
-		ctx := r.Context()
-		now := types.TimestampNow()
-		parent, pErr := d.GetAdminContentData(createdAdminContentData.ParentID.ID)
-		if pErr != nil {
-			utility.DefaultLogger.Error("create: failed to fetch parent", pErr)
-			http.Error(w, fmt.Sprintf("failed to fetch parent: %v", pErr), http.StatusInternalServerError)
-			return pErr
-		}
-
-		if !parent.FirstChildID.Valid {
-			// Parent has no children yet — set first_child_id to new node
-			_, pErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-				AdminContentDataID: parent.AdminContentDataID,
-				ParentID:           parent.ParentID,
-				FirstChildID:       types.NullableAdminContentID{ID: createdAdminContentData.AdminContentDataID, Valid: true},
-				NextSiblingID:      parent.NextSiblingID,
-				PrevSiblingID:      parent.PrevSiblingID,
-				AdminRouteID:       parent.AdminRouteID,
-				AdminDatatypeID:    parent.AdminDatatypeID,
-				AuthorID:           parent.AuthorID,
-				Status:             parent.Status,
-				DateCreated:        parent.DateCreated,
-				DateModified:       now,
-			})
-			if pErr != nil {
-				utility.DefaultLogger.Error("create: failed to set parent first_child_id", pErr)
-				http.Error(w, fmt.Sprintf("failed to update parent: %v", pErr), http.StatusInternalServerError)
-				return pErr
-			}
-		} else {
-			// Walk the sibling chain to find the last sibling
-			last, wErr := d.GetAdminContentData(parent.FirstChildID.ID)
-			if wErr != nil {
-				utility.DefaultLogger.Error("create: failed to fetch first child", wErr)
-				http.Error(w, fmt.Sprintf("failed to fetch first child: %v", wErr), http.StatusInternalServerError)
-				return wErr
-			}
-			for last.NextSiblingID.Valid {
-				last, wErr = d.GetAdminContentData(last.NextSiblingID.ID)
-				if wErr != nil {
-					utility.DefaultLogger.Error("create: failed to walk sibling chain", wErr)
-					http.Error(w, fmt.Sprintf("failed to walk sibling chain: %v", wErr), http.StatusInternalServerError)
-					return wErr
-				}
-			}
-			// Link last sibling to new node
-			_, wErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-				AdminContentDataID: last.AdminContentDataID,
-				ParentID:           last.ParentID,
-				FirstChildID:       last.FirstChildID,
-				NextSiblingID:      types.NullableAdminContentID{ID: createdAdminContentData.AdminContentDataID, Valid: true},
-				PrevSiblingID:      last.PrevSiblingID,
-				AdminRouteID:       last.AdminRouteID,
-				AdminDatatypeID:    last.AdminDatatypeID,
-				AuthorID:           last.AuthorID,
-				Status:             last.Status,
-				DateCreated:        last.DateCreated,
-				DateModified:       now,
-			})
-			if wErr != nil {
-				utility.DefaultLogger.Error("create: failed to link last sibling", wErr)
-				http.Error(w, fmt.Sprintf("failed to link last sibling: %v", wErr), http.StatusInternalServerError)
-				return wErr
-			}
-			// Set new node's prev_sibling_id to last sibling
-			_, wErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-				AdminContentDataID: createdAdminContentData.AdminContentDataID,
-				ParentID:           createdAdminContentData.ParentID,
-				FirstChildID:       createdAdminContentData.FirstChildID,
-				NextSiblingID:      createdAdminContentData.NextSiblingID,
-				PrevSiblingID:      types.NullableAdminContentID{ID: last.AdminContentDataID, Valid: true},
-				AdminRouteID:       createdAdminContentData.AdminRouteID,
-				AdminDatatypeID:    createdAdminContentData.AdminDatatypeID,
-				AuthorID:           createdAdminContentData.AuthorID,
-				Status:             createdAdminContentData.Status,
-				DateCreated:        createdAdminContentData.DateCreated,
-				DateModified:       now,
-			})
-			if wErr != nil {
-				utility.DefaultLogger.Error("create: failed to set new node prev_sibling_id", wErr)
-				http.Error(w, fmt.Sprintf("failed to update new node: %v", wErr), http.StatusInternalServerError)
-				return wErr
-			}
-			// Re-fetch to return updated state
-			createdAdminContentData, wErr = d.GetAdminContentData(createdAdminContentData.AdminContentDataID)
-			if wErr != nil {
-				utility.DefaultLogger.Error("create: failed to re-fetch created node", wErr)
-				http.Error(w, fmt.Sprintf("failed to re-fetch created node: %v", wErr), http.StatusInternalServerError)
-				return wErr
-			}
-		}
+	created, err := svc.AdminContent.Create(r.Context(), ac, params)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(createdAdminContentData)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	return nil
+	json.NewEncoder(w).Encode(created)
 }
 
 // updateAdminContentDataRequest wraps UpdateAdminContentDataParams with an
-// optional revision field for optimistic locking. If Revision is zero (omitted
-// by the client), the update falls through to the non-revision path for
-// backward compatibility.
+// optional revision field for optimistic locking.
 type updateAdminContentDataRequest struct {
 	db.UpdateAdminContentDataParams
 	Revision int64 `json:"revision"`
 }
 
 // apiUpdateAdminContentData handles PUT requests to update existing admin content data
-func apiUpdateAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiUpdateAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	var req updateAdminContentDataRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
 	req.DateModified = types.TimestampNow()
 
-	oldData, err := d.GetAdminContentData(req.AdminContentDataID)
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	_, err = json.Marshal(oldData)
+	updated, err := svc.AdminContent.Update(r.Context(), ac, req.UpdateAdminContentDataParams, req.Revision)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
-	if req.Revision > 0 {
-		// Optimistic locking: reject if the row's revision no longer matches.
-		revisionParams := db.UpdateAdminContentDataWithRevisionParams{
-			AdminRouteID:       req.AdminRouteID,
-			ParentID:           req.ParentID,
-			FirstChildID:       req.FirstChildID,
-			NextSiblingID:      req.NextSiblingID,
-			PrevSiblingID:      req.PrevSiblingID,
-			AdminDatatypeID:    req.AdminDatatypeID,
-			AuthorID:           req.AuthorID,
-			Status:             req.Status,
-			DateCreated:        req.DateCreated,
-			DateModified:       req.DateModified,
-			AdminContentDataID: req.AdminContentDataID,
-			Revision:           req.Revision,
-		}
-		err = d.UpdateAdminContentDataWithRevision(r.Context(), revisionParams)
-		if errors.Is(err, db.ErrRevisionConflict) {
-			http.Error(w, "Content was modified by another user. Please refresh and try again.", http.StatusConflict)
-			return err
-		}
-		if err != nil {
-			utility.DefaultLogger.Error("", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
-		}
-	} else {
-		// No revision supplied -- backward-compatible non-locking update.
-		ac := middleware.AuditContextFromRequest(r, c)
-		_, err = d.UpdateAdminContentData(r.Context(), ac, req.UpdateAdminContentDataParams)
-		if err != nil {
-			utility.DefaultLogger.Error("", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
-		}
-	}
-
-	updated, err := d.GetAdminContentData(req.AdminContentDataID)
-	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated admin content data", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updated)
-	return nil
+	writeJSON(w, updated)
 }
 
 // apiDeleteAdminContentData handles DELETE requests for admin content data
-func apiDeleteAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+func apiDeleteAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")
 	acdID := types.AdminContentID(q)
 	if err := acdID.Validate(); err != nil {
-		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
 	}
 
-	// Fetch the node to repair sibling pointers before deleting
-	node, err := d.GetAdminContentData(acdID)
+	recursive := r.URL.Query().Get("recursive") == "true"
+
+	c, err := svc.Config()
 	if err != nil {
-		utility.DefaultLogger.Error("delete: failed to fetch node", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	ctx := r.Context()
-	now := types.TimestampNow()
-
-	// Repair prev sibling's next pointer
-	if node.PrevSiblingID.Valid {
-		prev, pErr := d.GetAdminContentData(node.PrevSiblingID.ID)
-		if pErr != nil {
-			utility.DefaultLogger.Error("delete: failed to fetch prev sibling", pErr)
-			http.Error(w, fmt.Sprintf("failed to fetch prev sibling: %v", pErr), http.StatusInternalServerError)
-			return pErr
-		}
-		_, pErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-			AdminContentDataID: prev.AdminContentDataID,
-			ParentID:           prev.ParentID,
-			FirstChildID:       prev.FirstChildID,
-			NextSiblingID:      node.NextSiblingID,
-			PrevSiblingID:      prev.PrevSiblingID,
-			AdminRouteID:       prev.AdminRouteID,
-			AdminDatatypeID:    prev.AdminDatatypeID,
-			AuthorID:           prev.AuthorID,
-			Status:             prev.Status,
-			DateCreated:        prev.DateCreated,
-			DateModified:       now,
-		})
-		if pErr != nil {
-			utility.DefaultLogger.Error("delete: failed to update prev sibling", pErr)
-			http.Error(w, fmt.Sprintf("failed to update prev sibling: %v", pErr), http.StatusInternalServerError)
-			return pErr
-		}
-	}
-
-	// Repair next sibling's prev pointer
-	if node.NextSiblingID.Valid {
-		next, nErr := d.GetAdminContentData(node.NextSiblingID.ID)
-		if nErr != nil {
-			utility.DefaultLogger.Error("delete: failed to fetch next sibling", nErr)
-			http.Error(w, fmt.Sprintf("failed to fetch next sibling: %v", nErr), http.StatusInternalServerError)
-			return nErr
-		}
-		_, nErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-			AdminContentDataID: next.AdminContentDataID,
-			ParentID:           next.ParentID,
-			FirstChildID:       next.FirstChildID,
-			NextSiblingID:      next.NextSiblingID,
-			PrevSiblingID:      node.PrevSiblingID,
-			AdminRouteID:       next.AdminRouteID,
-			AdminDatatypeID:    next.AdminDatatypeID,
-			AuthorID:           next.AuthorID,
-			Status:             next.Status,
-			DateCreated:        next.DateCreated,
-			DateModified:       now,
-		})
-		if nErr != nil {
-			utility.DefaultLogger.Error("delete: failed to update next sibling", nErr)
-			http.Error(w, fmt.Sprintf("failed to update next sibling: %v", nErr), http.StatusInternalServerError)
-			return nErr
-		}
-	}
-
-	// If this node is the parent's first child, update parent
-	if node.ParentID.Valid {
-		parent, pErr := d.GetAdminContentData(node.ParentID.ID)
-		if pErr != nil {
-			utility.DefaultLogger.Error("delete: failed to fetch parent", pErr)
-			http.Error(w, fmt.Sprintf("failed to fetch parent: %v", pErr), http.StatusInternalServerError)
-			return pErr
-		}
-		if parent.FirstChildID.Valid && parent.FirstChildID.ID == acdID {
-			_, pErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-				AdminContentDataID: parent.AdminContentDataID,
-				ParentID:           parent.ParentID,
-				FirstChildID:       node.NextSiblingID,
-				NextSiblingID:      parent.NextSiblingID,
-				PrevSiblingID:      parent.PrevSiblingID,
-				AdminRouteID:       parent.AdminRouteID,
-				AdminDatatypeID:    parent.AdminDatatypeID,
-				AuthorID:           parent.AuthorID,
-				Status:             parent.Status,
-				DateCreated:        parent.DateCreated,
-				DateModified:       now,
-			})
-			if pErr != nil {
-				utility.DefaultLogger.Error("delete: failed to update parent first_child_id", pErr)
-				http.Error(w, fmt.Sprintf("failed to update parent: %v", pErr), http.StatusInternalServerError)
-				return pErr
-			}
-		}
-	}
-
-	err = d.DeleteAdminContentData(ctx, ac, acdID)
+	deletedIDs, err := svc.AdminContent.Delete(r.Context(), ac, acdID, recursive)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	if recursive {
+		writeJSON(w, map[string]any{
+			"deleted_root":  acdID,
+			"total_deleted": len(deletedIDs),
+			"deleted_ids":   deletedIDs,
+		})
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	return nil
 }
 
 // apiListAdminContentDataPaginated handles GET requests for listing admin content data with pagination
-func apiListAdminContentDataPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+func apiListAdminContentDataPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	params := ParsePaginationParams(r)
 
-	items, err := d.ListAdminContentDataTopLevelPaginated(params)
+	result, err := svc.AdminContent.ListPaginated(r.Context(), params)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
-	total, err := d.CountAdminContentDataTopLevel()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
-	response := db.PaginatedResponse[db.AdminContentDataTopLevel]{
-		Data:   *items,
-		Total:  *total,
-		Limit:  params.Limit,
-		Offset: params.Offset,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
-	return nil
+	writeJSON(w, result)
 }
 
 // MoveAdminContentDataRequest is the JSON body for POST /api/v1/admincontentdatas/move.
@@ -473,27 +176,27 @@ type MoveAdminContentDataResponse struct {
 }
 
 // AdminContentDataMoveHandler handles POST requests to move admin content data to a new parent.
-func AdminContentDataMoveHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	apiMoveAdminContentData(w, r, c)
+func AdminContentDataMoveHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	apiMoveAdminContentData(w, r, svc)
 }
 
 // apiMoveAdminContentData moves an admin content data node to a new parent at a given position.
-func apiMoveAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) {
+func apiMoveAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req MoveAdminContentDataRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("invalid JSON body: %v", err), http.StatusBadRequest)
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
 	if err := req.NodeID.Validate(); err != nil {
-		http.Error(w, fmt.Sprintf("invalid node_id: %v", err), http.StatusBadRequest)
+		http.Error(w, "invalid node_id", http.StatusBadRequest)
 		return
 	}
 	if req.NewParentID.Valid {
 		if err := req.NewParentID.ID.Validate(); err != nil {
-			http.Error(w, fmt.Sprintf("invalid new_parent_id: %v", err), http.StatusBadRequest)
+			http.Error(w, "invalid new_parent_id", http.StatusBadRequest)
 			return
 		}
 	}
@@ -502,290 +205,28 @@ func apiMoveAdminContentData(w http.ResponseWriter, r *http.Request, c config.Co
 		return
 	}
 
-	d := db.ConfigDB(c)
-
-	// Fetch the node being moved
-	node, err := d.GetAdminContentData(req.NodeID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("node not found: %v", err), http.StatusBadRequest)
+	c, cfgErr := svc.Config()
+	if cfgErr != nil {
+		service.HandleServiceError(w, r, cfgErr)
 		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	// Cycle detection: walk from new_parent_id up the parent chain
-	if req.NewParentID.Valid {
-		cursor := req.NewParentID.ID
-		for {
-			if cursor == req.NodeID {
-				http.Error(w, "cannot move a node under its own descendant", http.StatusBadRequest)
-				return
-			}
-			ancestor, aErr := d.GetAdminContentData(cursor)
-			if aErr != nil {
-				http.Error(w, fmt.Sprintf("failed to verify ancestry: %v", aErr), http.StatusInternalServerError)
-				return
-			}
-			if !ancestor.ParentID.Valid {
-				break
-			}
-			cursor = ancestor.ParentID.ID
-		}
+	moveParams := ops.MoveParams[types.AdminContentID]{
+		NodeID:      req.NodeID,
+		NewParentID: adminContentIDToOpsNullable(req.NewParentID),
+		Position:    req.Position,
 	}
 
-	oldParentID := node.ParentID
-	ctx := r.Context()
-	ac := middleware.AuditContextFromRequest(r, c)
-	now := types.TimestampNow()
-
-	// --- Unlink from old parent ---
-
-	// Repair prev sibling's next pointer
-	if node.PrevSiblingID.Valid {
-		prev, pErr := d.GetAdminContentData(node.PrevSiblingID.ID)
-		if pErr != nil {
-			http.Error(w, fmt.Sprintf("failed to fetch prev sibling: %v", pErr), http.StatusInternalServerError)
-			return
-		}
-		_, pErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-			AdminContentDataID: prev.AdminContentDataID,
-			ParentID:           prev.ParentID,
-			FirstChildID:       prev.FirstChildID,
-			NextSiblingID:      node.NextSiblingID,
-			PrevSiblingID:      prev.PrevSiblingID,
-			AdminRouteID:       prev.AdminRouteID,
-			AdminDatatypeID:    prev.AdminDatatypeID,
-			AuthorID:           prev.AuthorID,
-			Status:             prev.Status,
-			DateCreated:        prev.DateCreated,
-			DateModified:       now,
-		})
-		if pErr != nil {
-			http.Error(w, fmt.Sprintf("failed to update prev sibling: %v", pErr), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	// Repair next sibling's prev pointer
-	if node.NextSiblingID.Valid {
-		next, nErr := d.GetAdminContentData(node.NextSiblingID.ID)
-		if nErr != nil {
-			http.Error(w, fmt.Sprintf("failed to fetch next sibling: %v", nErr), http.StatusInternalServerError)
-			return
-		}
-		_, nErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-			AdminContentDataID: next.AdminContentDataID,
-			ParentID:           next.ParentID,
-			FirstChildID:       next.FirstChildID,
-			NextSiblingID:      next.NextSiblingID,
-			PrevSiblingID:      node.PrevSiblingID,
-			AdminRouteID:       next.AdminRouteID,
-			AdminDatatypeID:    next.AdminDatatypeID,
-			AuthorID:           next.AuthorID,
-			Status:             next.Status,
-			DateCreated:        next.DateCreated,
-			DateModified:       now,
-		})
-		if nErr != nil {
-			http.Error(w, fmt.Sprintf("failed to update next sibling: %v", nErr), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	// Update old parent's first_child_id if this node was the first child
-	if node.ParentID.Valid {
-		parent, pErr := d.GetAdminContentData(node.ParentID.ID)
-		if pErr != nil {
-			http.Error(w, fmt.Sprintf("failed to fetch old parent: %v", pErr), http.StatusInternalServerError)
-			return
-		}
-		if parent.FirstChildID.Valid && parent.FirstChildID.ID == req.NodeID {
-			_, pErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-				AdminContentDataID: parent.AdminContentDataID,
-				ParentID:           parent.ParentID,
-				FirstChildID:       node.NextSiblingID,
-				NextSiblingID:      parent.NextSiblingID,
-				PrevSiblingID:      parent.PrevSiblingID,
-				AdminRouteID:       parent.AdminRouteID,
-				AdminDatatypeID:    parent.AdminDatatypeID,
-				AuthorID:           parent.AuthorID,
-				Status:             parent.Status,
-				DateCreated:        parent.DateCreated,
-				DateModified:       now,
-			})
-			if pErr != nil {
-				http.Error(w, fmt.Sprintf("failed to update old parent: %v", pErr), http.StatusInternalServerError)
-				return
-			}
-		}
-	}
-
-	// --- Insert at position in new parent ---
-
-	var newPrev types.NullableAdminContentID
-	var newNext types.NullableAdminContentID
-
-	if !req.NewParentID.Valid {
-		// Moving to root level — just clear pointers and parent
-		_, err = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-			AdminContentDataID: node.AdminContentDataID,
-			ParentID:           req.NewParentID,
-			FirstChildID:       node.FirstChildID,
-			NextSiblingID:      newNext,
-			PrevSiblingID:      newPrev,
-			AdminRouteID:       node.AdminRouteID,
-			AdminDatatypeID:    node.AdminDatatypeID,
-			AuthorID:           node.AuthorID,
-			Status:             node.Status,
-			DateCreated:        node.DateCreated,
-			DateModified:       now,
-		})
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to update moved node: %v", err), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		newParent, npErr := d.GetAdminContentData(req.NewParentID.ID)
-		if npErr != nil {
-			http.Error(w, fmt.Sprintf("new parent not found: %v", npErr), http.StatusBadRequest)
-			return
-		}
-
-		if !newParent.FirstChildID.Valid || req.Position == 0 {
-			// Insert as first child
-			oldFirstChildID := newParent.FirstChildID
-			newNext = oldFirstChildID
-
-			// Update new parent's first_child_id
-			_, npErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-				AdminContentDataID: newParent.AdminContentDataID,
-				ParentID:           newParent.ParentID,
-				FirstChildID:       types.NullableAdminContentID{ID: req.NodeID, Valid: true},
-				NextSiblingID:      newParent.NextSiblingID,
-				PrevSiblingID:      newParent.PrevSiblingID,
-				AdminRouteID:       newParent.AdminRouteID,
-				AdminDatatypeID:    newParent.AdminDatatypeID,
-				AuthorID:           newParent.AuthorID,
-				Status:             newParent.Status,
-				DateCreated:        newParent.DateCreated,
-				DateModified:       now,
-			})
-			if npErr != nil {
-				http.Error(w, fmt.Sprintf("failed to update new parent: %v", npErr), http.StatusInternalServerError)
-				return
-			}
-
-			// Update old first child's prev pointer
-			if oldFirstChildID.Valid {
-				oldFirst, ofErr := d.GetAdminContentData(oldFirstChildID.ID)
-				if ofErr != nil {
-					http.Error(w, fmt.Sprintf("failed to fetch old first child: %v", ofErr), http.StatusInternalServerError)
-					return
-				}
-				_, ofErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-					AdminContentDataID: oldFirst.AdminContentDataID,
-					ParentID:           oldFirst.ParentID,
-					FirstChildID:       oldFirst.FirstChildID,
-					NextSiblingID:      oldFirst.NextSiblingID,
-					PrevSiblingID:      types.NullableAdminContentID{ID: req.NodeID, Valid: true},
-					AdminRouteID:       oldFirst.AdminRouteID,
-					AdminDatatypeID:    oldFirst.AdminDatatypeID,
-					AuthorID:           oldFirst.AuthorID,
-					Status:             oldFirst.Status,
-					DateCreated:        oldFirst.DateCreated,
-					DateModified:       now,
-				})
-				if ofErr != nil {
-					http.Error(w, fmt.Sprintf("failed to update old first child prev: %v", ofErr), http.StatusInternalServerError)
-					return
-				}
-			}
-		} else {
-			// Walk to position-1 to find the node to insert after
-			current, wErr := d.GetAdminContentData(newParent.FirstChildID.ID)
-			if wErr != nil {
-				http.Error(w, fmt.Sprintf("failed to walk new parent children: %v", wErr), http.StatusInternalServerError)
-				return
-			}
-			for i := 0; i < req.Position-1 && current.NextSiblingID.Valid; i++ {
-				current, wErr = d.GetAdminContentData(current.NextSiblingID.ID)
-				if wErr != nil {
-					http.Error(w, fmt.Sprintf("failed to walk sibling chain: %v", wErr), http.StatusInternalServerError)
-					return
-				}
-			}
-
-			// Insert after current
-			newPrev = types.NullableAdminContentID{ID: current.AdminContentDataID, Valid: true}
-			newNext = current.NextSiblingID
-
-			// Update current's next pointer to the moved node
-			_, wErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-				AdminContentDataID: current.AdminContentDataID,
-				ParentID:           current.ParentID,
-				FirstChildID:       current.FirstChildID,
-				NextSiblingID:      types.NullableAdminContentID{ID: req.NodeID, Valid: true},
-				PrevSiblingID:      current.PrevSiblingID,
-				AdminRouteID:       current.AdminRouteID,
-				AdminDatatypeID:    current.AdminDatatypeID,
-				AuthorID:           current.AuthorID,
-				Status:             current.Status,
-				DateCreated:        current.DateCreated,
-				DateModified:       now,
-			})
-			if wErr != nil {
-				http.Error(w, fmt.Sprintf("failed to update insert-after node: %v", wErr), http.StatusInternalServerError)
-				return
-			}
-
-			// Update the node after current's prev pointer
-			if newNext.Valid {
-				afterNode, anErr := d.GetAdminContentData(newNext.ID)
-				if anErr != nil {
-					http.Error(w, fmt.Sprintf("failed to fetch node after insertion point: %v", anErr), http.StatusInternalServerError)
-					return
-				}
-				_, anErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-					AdminContentDataID: afterNode.AdminContentDataID,
-					ParentID:           afterNode.ParentID,
-					FirstChildID:       afterNode.FirstChildID,
-					NextSiblingID:      afterNode.NextSiblingID,
-					PrevSiblingID:      types.NullableAdminContentID{ID: req.NodeID, Valid: true},
-					AdminRouteID:       afterNode.AdminRouteID,
-					AdminDatatypeID:    afterNode.AdminDatatypeID,
-					AuthorID:           afterNode.AuthorID,
-					Status:             afterNode.Status,
-					DateCreated:        afterNode.DateCreated,
-					DateModified:       now,
-				})
-				if anErr != nil {
-					http.Error(w, fmt.Sprintf("failed to update after-insertion node: %v", anErr), http.StatusInternalServerError)
-					return
-				}
-			}
-		}
-
-		// Update the moved node itself
-		_, err = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-			AdminContentDataID: node.AdminContentDataID,
-			ParentID:           req.NewParentID,
-			FirstChildID:       node.FirstChildID,
-			NextSiblingID:      newNext,
-			PrevSiblingID:      newPrev,
-			AdminRouteID:       node.AdminRouteID,
-			AdminDatatypeID:    node.AdminDatatypeID,
-			AuthorID:           node.AuthorID,
-			Status:             node.Status,
-			DateCreated:        node.DateCreated,
-			DateModified:       now,
-		})
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to update moved node: %v", err), http.StatusInternalServerError)
-			return
-		}
+	result, err := svc.AdminContent.Move(r.Context(), ac, moveParams)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	writeJSON(w, MoveAdminContentDataResponse{
 		NodeID:      req.NodeID,
-		OldParentID: oldParentID,
+		OldParentID: opsNullableToAdminContentID(result.OldParentID),
 		NewParentID: req.NewParentID,
 		Position:    req.Position,
 	})
@@ -804,17 +245,17 @@ type ReorderAdminContentDataResponse struct {
 }
 
 // AdminContentDataReorderHandler handles POST requests to reorder admin content data siblings.
-func AdminContentDataReorderHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	apiReorderAdminContentData(w, r, c)
+func AdminContentDataReorderHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	apiReorderAdminContentData(w, r, svc)
 }
 
 // apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) {
+func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req ReorderAdminContentDataRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("invalid JSON body: %v", err), http.StatusBadRequest)
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
@@ -823,105 +264,51 @@ func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, c config
 		return
 	}
 
-	// Validate each ID and reject duplicates
 	seen := make(map[string]struct{}, len(req.OrderedIDs))
 	for _, id := range req.OrderedIDs {
 		if err := id.Validate(); err != nil {
-			http.Error(w, fmt.Sprintf("invalid admin_content_data_id %s: %v", id, err), http.StatusBadRequest)
+			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
 			return
 		}
 		s := string(id)
 		if _, exists := seen[s]; exists {
-			http.Error(w, fmt.Sprintf("duplicate id: %s", id), http.StatusBadRequest)
+			http.Error(w, "duplicate id", http.StatusBadRequest)
 			return
 		}
 		seen[s] = struct{}{}
 	}
 
-	d := db.ConfigDB(c)
-
-	// Fetch all nodes and verify parent ownership
-	nodes := make([]db.AdminContentData, 0, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		node, err := d.GetAdminContentData(id)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("node not found: %s", id), http.StatusBadRequest)
-			return
-		}
-		if node.ParentID != req.ParentID {
-			http.Error(w, fmt.Sprintf("node %s does not belong to parent %s", id, req.ParentID), http.StatusBadRequest)
-			return
-		}
-		nodes = append(nodes, *node)
+	c, cfgErr := svc.Config()
+	if cfgErr != nil {
+		service.HandleServiceError(w, r, cfgErr)
+		return
 	}
+	ac := middleware.AuditContextFromRequest(r, *c)
 
-	ctx := r.Context()
-	ac := middleware.AuditContextFromRequest(r, c)
-	now := types.TimestampNow()
-
-	// Update parent's first_child_id if parent is non-null
-	if req.ParentID.Valid {
-		parent, err := d.GetAdminContentData(types.AdminContentID(req.ParentID.ID))
-		if err != nil {
-			utility.DefaultLogger.Error("reorder: failed to fetch parent", err)
-			http.Error(w, fmt.Sprintf("failed to fetch parent: %v", err), http.StatusInternalServerError)
-			return
-		}
-		_, err = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-			AdminContentDataID: parent.AdminContentDataID,
-			ParentID:           parent.ParentID,
-			FirstChildID:       types.NullableAdminContentID{ID: req.OrderedIDs[0], Valid: true},
-			NextSiblingID:      parent.NextSiblingID,
-			PrevSiblingID:      parent.PrevSiblingID,
-			AdminRouteID:       parent.AdminRouteID,
-			AdminDatatypeID:    parent.AdminDatatypeID,
-			AuthorID:           parent.AuthorID,
-			Status:             parent.Status,
-			DateCreated:        parent.DateCreated,
-			DateModified:       now,
-		})
-		if err != nil {
-			utility.DefaultLogger.Error("reorder: failed to update parent first_child_id", err)
-			http.Error(w, fmt.Sprintf("failed to update parent: %v", err), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	// Update sibling pointers for each node
-	lastIdx := len(req.OrderedIDs) - 1
-	for i, node := range nodes {
-		var prevSibling types.NullableAdminContentID
-		var nextSibling types.NullableAdminContentID
-
-		if i > 0 {
-			prevSibling = types.NullableAdminContentID{ID: req.OrderedIDs[i-1], Valid: true}
-		}
-		if i < lastIdx {
-			nextSibling = types.NullableAdminContentID{ID: req.OrderedIDs[i+1], Valid: true}
-		}
-
-		_, err := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
-			AdminContentDataID: node.AdminContentDataID,
-			ParentID:           node.ParentID,
-			FirstChildID:       node.FirstChildID,
-			NextSiblingID:      nextSibling,
-			PrevSiblingID:      prevSibling,
-			AdminRouteID:       node.AdminRouteID,
-			AdminDatatypeID:    node.AdminDatatypeID,
-			AuthorID:           node.AuthorID,
-			Status:             node.Status,
-			DateCreated:        node.DateCreated,
-			DateModified:       now,
-		})
-		if err != nil {
-			utility.DefaultLogger.Error(fmt.Sprintf("reorder: failed to update node %s", node.AdminContentDataID), err)
-			http.Error(w, fmt.Sprintf("failed to update node %s: %v", node.AdminContentDataID, err), http.StatusInternalServerError)
-			return
-		}
+	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
 	}
 
 	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  len(req.OrderedIDs),
+		Updated:  updated,
 		ParentID: req.ParentID,
 	})
+}
+
+// adminContentIDToOpsNullable converts types.NullableAdminContentID to ops.NullableID for router use.
+func adminContentIDToOpsNullable(n types.NullableAdminContentID) ops.NullableID[types.AdminContentID] {
+	if !n.Valid {
+		return ops.EmptyID[types.AdminContentID]()
+	}
+	return ops.NullID(n.ID)
+}
+
+// opsNullableToAdminContentID converts ops.NullableID to types.NullableAdminContentID for router use.
+func opsNullableToAdminContentID(n ops.NullableID[types.AdminContentID]) types.NullableAdminContentID {
+	if !n.Valid {
+		return types.NullableAdminContentID{}
+	}
+	return types.NullableAdminContentID{ID: n.Value, Valid: true}
 }

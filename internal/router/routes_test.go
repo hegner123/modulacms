@@ -1,14 +1,7 @@
 // Black-box integration tests for RoutesHandler and RouteHandler.
 //
-// These handlers call db.ConfigDB(c) internally, which falls back to creating
-// a one-off SQLite connection when the global singleton is uninitialized. Each
-// test creates a fresh SQLite database with the full schema bootstrapped, then
-// passes a config pointing to that database. This gives us real database
-// integration without mocking.
-//
-// IMPORTANT: These tests must NOT call db.InitDB, because that sets the
-// package-level singleton via sync.Once and would contaminate other tests.
-// The ConfigDB fallback path handles this cleanly.
+// These tests create a fresh SQLite database, build a service.Registry from it,
+// and pass the registry to handlers. This mirrors the production wiring.
 package router_test
 
 import (
@@ -25,25 +18,42 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/router"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
 
-// testEnv bundles a config and database driver for handler tests. The authorID
-// field provides a valid NullableUserID for seeding routes (satisfies the
-// NOT NULL constraint on routes.author_id).
+// staticProvider implements config.Provider for tests.
+type staticProvider struct {
+	cfg *config.Config
+}
+
+func (p *staticProvider) Get() (*config.Config, error) {
+	return p.cfg, nil
+}
+
+// noopDispatcher implements publishing.WebhookDispatcher as a no-op.
+type noopDispatcher struct{}
+
+func (d *noopDispatcher) Dispatch(_ context.Context, _ string, _ map[string]any) {}
+
+var _ publishing.WebhookDispatcher = (*noopDispatcher)(nil)
+
+// testEnv bundles a service registry and database driver for handler tests.
 type testEnv struct {
-	cfg      config.Config
+	svc      *service.Registry
 	d        db.Database
+	cfg      config.Config
 	authorID types.NullableUserID
 }
 
 // newTestEnv creates a fresh SQLite database with all tables, seeds the
 // minimum FK chain (role -> user), and returns everything needed to test
-// route handlers.
+// route handlers via the service layer.
 func newTestEnv(t *testing.T) testEnv {
 	t.Helper()
 
@@ -109,9 +119,19 @@ func newTestEnv(t *testing.T) testEnv {
 
 	authorID := types.NullableUserID{ID: user.UserID, Valid: true}
 
+	// Build service registry
+	provider := &staticProvider{cfg: &cfg}
+	mgr := config.NewManager(provider)
+	if err := mgr.Load(); err != nil {
+		t.Fatalf("mgr.Load: %v", err)
+	}
+
+	svc := service.NewRegistry(d, mgr, nil, nil, &noopDispatcher{})
+
 	return testEnv{
-		cfg:      cfg,
+		svc:      svc,
 		d:        d,
+		cfg:      cfg,
 		authorID: authorID,
 	}
 }
@@ -151,7 +171,7 @@ func TestRoutesHandler_GET_ListRoutes(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/routes", nil)
 	w := httptest.NewRecorder()
 
-	router.RoutesHandler(w, req, env.cfg)
+	router.RoutesHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusOK {
@@ -179,7 +199,7 @@ func TestRoutesHandler_GET_EmptyList(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/routes", nil)
 	w := httptest.NewRecorder()
 
-	router.RoutesHandler(w, req, env.cfg)
+	router.RoutesHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusOK {
@@ -209,7 +229,7 @@ func TestRoutesHandler_GET_Paginated(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/routes?limit=2&offset=0", nil)
 	w := httptest.NewRecorder()
 
-	router.RoutesHandler(w, req, env.cfg)
+	router.RoutesHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusOK {
@@ -248,7 +268,7 @@ func TestRoutesHandler_GET_PaginatedWithOffset(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/routes?limit=2&offset=3", nil)
 	w := httptest.NewRecorder()
 
-	router.RoutesHandler(w, req, env.cfg)
+	router.RoutesHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusOK {
@@ -287,7 +307,7 @@ func TestRoutesHandler_POST_CreateRoute(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	router.RoutesHandler(w, req, env.cfg)
+	router.RoutesHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusCreated {
@@ -322,7 +342,7 @@ func TestRoutesHandler_POST_InvalidJSON(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	router.RoutesHandler(w, req, env.cfg)
+	router.RoutesHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusBadRequest {
@@ -337,7 +357,7 @@ func TestRoutesHandler_POST_EmptyBody(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	router.RoutesHandler(w, req, env.cfg)
+	router.RoutesHandler(w, req, env.svc)
 
 	resp := w.Result()
 	// Empty body causes json.Decode to fail with EOF
@@ -355,7 +375,7 @@ func TestRoutesHandler_MethodNotAllowed(t *testing.T) {
 			req := httptest.NewRequest(method, "/api/v1/routes", nil)
 			w := httptest.NewRecorder()
 
-			router.RoutesHandler(w, req, env.cfg)
+			router.RoutesHandler(w, req, env.svc)
 
 			resp := w.Result()
 			if resp.StatusCode != http.StatusMethodNotAllowed {
@@ -366,8 +386,6 @@ func TestRoutesHandler_MethodNotAllowed(t *testing.T) {
 }
 
 func TestRoutesHandler_POST_SetsDatesWhenMissing(t *testing.T) {
-	// When DateCreated and DateModified are not provided (zero value),
-	// apiCreateRoute should set them to the current time.
 	env := newTestEnv(t)
 
 	body := map[string]any{
@@ -385,7 +403,7 @@ func TestRoutesHandler_POST_SetsDatesWhenMissing(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	router.RoutesHandler(w, req, env.cfg)
+	router.RoutesHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusCreated {
@@ -397,7 +415,6 @@ func TestRoutesHandler_POST_SetsDatesWhenMissing(t *testing.T) {
 		t.Fatalf("decode response: %v", err)
 	}
 
-	// Both timestamps should have been set (Valid == true)
 	if !created.DateCreated.Valid {
 		t.Error("DateCreated was not auto-set")
 	}
@@ -417,7 +434,7 @@ func TestRouteHandler_GET_ExistingRoute(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/routes/?q="+string(seeded.RouteID), nil)
 	w := httptest.NewRecorder()
 
-	router.RouteHandler(w, req, env.cfg)
+	router.RouteHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusOK {
@@ -440,11 +457,10 @@ func TestRouteHandler_GET_ExistingRoute(t *testing.T) {
 func TestRouteHandler_GET_InvalidID(t *testing.T) {
 	env := newTestEnv(t)
 
-	// "not-a-ulid" is not a valid ULID, so Validate() should fail
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/routes/?q=not-a-ulid", nil)
 	w := httptest.NewRecorder()
 
-	router.RouteHandler(w, req, env.cfg)
+	router.RouteHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusBadRequest {
@@ -455,11 +471,10 @@ func TestRouteHandler_GET_InvalidID(t *testing.T) {
 func TestRouteHandler_GET_EmptyID(t *testing.T) {
 	env := newTestEnv(t)
 
-	// Empty "q" parameter means empty RouteID, which should fail validation
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/routes/?q=", nil)
 	w := httptest.NewRecorder()
 
-	router.RouteHandler(w, req, env.cfg)
+	router.RouteHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusBadRequest {
@@ -470,11 +485,10 @@ func TestRouteHandler_GET_EmptyID(t *testing.T) {
 func TestRouteHandler_GET_MissingQParam(t *testing.T) {
 	env := newTestEnv(t)
 
-	// No "q" parameter at all -- produces empty string, fails validation
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/routes/", nil)
 	w := httptest.NewRecorder()
 
-	router.RouteHandler(w, req, env.cfg)
+	router.RouteHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusBadRequest {
@@ -485,39 +499,31 @@ func TestRouteHandler_GET_MissingQParam(t *testing.T) {
 func TestRouteHandler_GET_NonexistentRoute(t *testing.T) {
 	env := newTestEnv(t)
 
-	// Valid ULID format but does not exist in the database
 	fakeID := types.NewRouteID()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/routes/?q="+string(fakeID), nil)
 	w := httptest.NewRecorder()
 
-	router.RouteHandler(w, req, env.cfg)
+	router.RouteHandler(w, req, env.svc)
 
 	resp := w.Result()
-	// Database returns sql.ErrNoRows, handler returns 500
-	if resp.StatusCode != http.StatusInternalServerError {
-		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusInternalServerError)
+	// Service returns NotFoundError -> 404
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusNotFound)
 	}
 }
 
 func TestRouteHandler_PUT_UpdateRoute(t *testing.T) {
 	// KNOWN BUG: UpdateRouteCmd.GetID() returns the slug string (not a ULID),
-	// which violates the change_events table CHECK constraint:
-	// length(record_id) = 26. This causes the audited update to fail with a
-	// CHECK constraint error. See route_crud_test.go in internal/db for the
-	// same skip reason.
-	//
-	// This test documents the current (broken) behavior: a well-formed update
-	// request returns 500 instead of 200. When the bug is fixed, change the
-	// expected status to http.StatusOK.
+	// which violates the change_events table CHECK constraint.
+	// See route_crud_test.go in internal/db for the same skip reason.
 	env := newTestEnv(t)
-	seedRoute(t, env, "/before-update", "Before Update")
+	seeded := seedRoute(t, env, "/before-update", "Before Update")
 
 	body := map[string]any{
-		"slug":      "/after-update",
-		"title":     "After Update",
-		"status":    2,
-		"author_id": string(env.authorID.ID),
-		"slug_2":    "/before-update",
+		"route_id": string(seeded.RouteID),
+		"slug":     "/after-update",
+		"title":    "After Update",
+		"status":   2,
 	}
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
@@ -528,7 +534,7 @@ func TestRouteHandler_PUT_UpdateRoute(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	router.RouteHandler(w, req, env.cfg)
+	router.RouteHandler(w, req, env.svc)
 
 	resp := w.Result()
 	// BUG: expect 500 due to audit record_id length constraint violation.
@@ -545,7 +551,7 @@ func TestRouteHandler_PUT_InvalidJSON(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	router.RouteHandler(w, req, env.cfg)
+	router.RouteHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusBadRequest {
@@ -560,7 +566,7 @@ func TestRouteHandler_DELETE_ExistingRoute(t *testing.T) {
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/routes/?q="+string(seeded.RouteID), nil)
 	w := httptest.NewRecorder()
 
-	router.RouteHandler(w, req, env.cfg)
+	router.RouteHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusOK {
@@ -571,12 +577,12 @@ func TestRouteHandler_DELETE_ExistingRoute(t *testing.T) {
 	getReq := httptest.NewRequest(http.MethodGet, "/api/v1/routes/?q="+string(seeded.RouteID), nil)
 	getW := httptest.NewRecorder()
 
-	router.RouteHandler(getW, getReq, env.cfg)
+	router.RouteHandler(getW, getReq, env.svc)
 
 	getResp := getW.Result()
-	// Should fail because the route no longer exists
-	if getResp.StatusCode != http.StatusInternalServerError {
-		t.Errorf("GET after DELETE: status = %d, want %d", getResp.StatusCode, http.StatusInternalServerError)
+	// Service returns NotFoundError -> 404
+	if getResp.StatusCode != http.StatusNotFound {
+		t.Errorf("GET after DELETE: status = %d, want %d", getResp.StatusCode, http.StatusNotFound)
 	}
 }
 
@@ -586,7 +592,7 @@ func TestRouteHandler_DELETE_InvalidID(t *testing.T) {
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/routes/?q=bad-id", nil)
 	w := httptest.NewRecorder()
 
-	router.RouteHandler(w, req, env.cfg)
+	router.RouteHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusBadRequest {
@@ -600,7 +606,7 @@ func TestRouteHandler_DELETE_EmptyID(t *testing.T) {
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/routes/?q=", nil)
 	w := httptest.NewRecorder()
 
-	router.RouteHandler(w, req, env.cfg)
+	router.RouteHandler(w, req, env.svc)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusBadRequest {
@@ -617,7 +623,7 @@ func TestRouteHandler_MethodNotAllowed(t *testing.T) {
 			req := httptest.NewRequest(method, "/api/v1/routes/", nil)
 			w := httptest.NewRecorder()
 
-			router.RouteHandler(w, req, env.cfg)
+			router.RouteHandler(w, req, env.svc)
 
 			resp := w.Result()
 			if resp.StatusCode != http.StatusMethodNotAllowed {
@@ -632,10 +638,8 @@ func TestRouteHandler_MethodNotAllowed(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestRoutesHandler_CreateThenGet(t *testing.T) {
-	// Verifies the full round-trip: POST to create, GET to retrieve by ID
 	env := newTestEnv(t)
 
-	// Create
 	body := map[string]any{
 		"slug":      "/roundtrip",
 		"title":     "Roundtrip Test",
@@ -651,7 +655,7 @@ func TestRoutesHandler_CreateThenGet(t *testing.T) {
 	createReq.Header.Set("Content-Type", "application/json")
 	createW := httptest.NewRecorder()
 
-	router.RoutesHandler(createW, createReq, env.cfg)
+	router.RoutesHandler(createW, createReq, env.svc)
 
 	createResp := createW.Result()
 	if createResp.StatusCode != http.StatusCreated {
@@ -667,7 +671,7 @@ func TestRoutesHandler_CreateThenGet(t *testing.T) {
 	getReq := httptest.NewRequest(http.MethodGet, "/api/v1/routes/?q="+string(created.RouteID), nil)
 	getW := httptest.NewRecorder()
 
-	router.RouteHandler(getW, getReq, env.cfg)
+	router.RouteHandler(getW, getReq, env.svc)
 
 	getResp := getW.Result()
 	if getResp.StatusCode != http.StatusOK {
@@ -700,7 +704,7 @@ func TestRoutesHandler_GET_ResponseContentType(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/routes", nil)
 	w := httptest.NewRecorder()
 
-	router.RoutesHandler(w, req, env.cfg)
+	router.RoutesHandler(w, req, env.svc)
 
 	resp := w.Result()
 	ct := resp.Header.Get("Content-Type")

@@ -1,27 +1,24 @@
 package handlers
 
 import (
-	"net"
+	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/auth"
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // UsersListHandler handles GET /admin/users.
 // HTMX requests receive the page content partial; full requests get the complete layout.
-func UsersListHandler(driver db.DbDriver) http.HandlerFunc {
+func UsersListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		items, err := driver.ListUsersWithRoleLabel()
+		items, err := svc.Users.ListUsersWithRoleLabel(r.Context())
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list users", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -34,7 +31,7 @@ func UsersListHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 
 		// Load roles for the create form dropdown
-		roles, rolesErr := driver.ListRoles()
+		roles, rolesErr := svc.RBAC.ListRoles(r.Context())
 		if rolesErr != nil {
 			utility.DefaultLogger.Error("failed to list roles", rolesErr)
 			roles = &[]db.Roles{}
@@ -60,7 +57,7 @@ func UsersListHandler(driver db.DbDriver) http.HandlerFunc {
 
 // UserDetailHandler handles GET /admin/users/{id}.
 // HTMX requests receive the detail content partial; full requests get the complete layout.
-func UserDetailHandler(driver db.DbDriver) http.HandlerFunc {
+func UserDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -68,7 +65,7 @@ func UserDetailHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
-		user, err := driver.GetUser(types.UserID(id))
+		user, err := svc.Users.GetUser(r.Context(), types.UserID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to get user", err)
 			http.Error(w, "User not found", http.StatusNotFound)
@@ -76,7 +73,7 @@ func UserDetailHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 
 		// Load roles for the role dropdown
-		roles, rolesErr := driver.ListRoles()
+		roles, rolesErr := svc.RBAC.ListRoles(r.Context())
 		if rolesErr != nil {
 			utility.DefaultLogger.Error("failed to list roles", rolesErr)
 			roles = &[]db.Roles{}
@@ -101,11 +98,10 @@ func UserDetailHandler(driver db.DbDriver) http.HandlerFunc {
 }
 
 // UserCreateHandler handles POST /admin/users.
-// Validates username, name, email (required + unique), password (min 8 chars).
-// Hashes password with auth.HashPassword before storing.
-func UserCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+// Delegates validation, uniqueness, password hashing, and role resolution to UserService.
+func UserCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
+		c, cfgErr := svc.Config()
 		if cfgErr != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
@@ -122,96 +118,25 @@ func UserCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc
 		password := r.FormValue("password")
 		role := strings.TrimSpace(r.FormValue("role"))
 
-		errs := make(map[string]string)
-		if username == "" {
-			errs["username"] = "Username is required"
-		}
-		if name == "" {
-			errs["name"] = "Name is required"
-		}
-		if email == "" {
-			errs["email"] = "Email is required"
-		}
-		if password == "" {
-			errs["password"] = "Password is required"
-		} else if len(password) < 8 {
-			errs["password"] = "Password must be at least 8 characters"
-		}
-		if role == "" {
-			role = "viewer"
-		}
+		ac := middleware.AuditContextFromRequest(r, *c)
 
-		// Check username uniqueness
-		if username != "" {
-			users, _ := driver.ListUsers()
-			if users != nil {
-				for _, u := range *users {
-					if u.Username == username {
-						errs["username"] = "A user with this username already exists"
-						break
-					}
-				}
-			}
-		}
-
-		// Check email uniqueness
-		if email != "" {
-			existing, _ := driver.GetUserByEmail(types.Email(email))
-			if existing != nil {
-				errs["email"] = "A user with this email already exists"
-			}
-		}
-
-		if len(errs) > 0 {
+		_, err := svc.Users.CreateUser(r.Context(), ac, service.CreateUserInput{
+			Username: username,
+			Name:     name,
+			Email:    types.Email(email),
+			Password: password,
+			Role:     types.RoleID(role),
+			IsAdmin:  middleware.ContextIsAdmin(r.Context()),
+		})
+		if err != nil {
+			errs := userServiceErrorToMap(err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			roles, rolesErr := driver.ListRoles()
+			roles, rolesErr := svc.RBAC.ListRoles(r.Context())
 			if rolesErr != nil {
 				roles = &[]db.Roles{}
 			}
 			Render(w, r, partials.UserForm(username, name, email, role, *roles, errs, csrfToken))
-			return
-		}
-
-		hash, hashErr := auth.HashPassword(password)
-		if hashErr != nil {
-			utility.DefaultLogger.Error("failed to hash password", hashErr)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			csrfToken := CSRFTokenFromContext(r.Context())
-			roles, rolesErr := driver.ListRoles()
-			if rolesErr != nil {
-				roles = &[]db.Roles{}
-			}
-			Render(w, r, partials.UserForm(username, name, email, role, *roles, map[string]string{"_": "Failed to process password"}, csrfToken))
-			return
-		}
-
-		currentUser := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
-		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), currentUser.UserID, middleware.RequestIDFromContext(r.Context()), ip)
-
-		now := types.NewTimestamp(time.Now())
-		_, err := driver.CreateUser(r.Context(), ac, db.CreateUserParams{
-			Username:     username,
-			Name:         name,
-			Email:        types.Email(email),
-			Hash:         hash,
-			Role:         role,
-			DateCreated:  now,
-			DateModified: now,
-		})
-		if err != nil {
-			utility.DefaultLogger.Error("failed to create user", err)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			csrfToken := CSRFTokenFromContext(r.Context())
-			roles, rolesErr := driver.ListRoles()
-			if rolesErr != nil {
-				roles = &[]db.Roles{}
-			}
-			Render(w, r, partials.UserForm(username, name, email, role, *roles, map[string]string{"_": "Failed to create user"}, csrfToken))
 			return
 		}
 
@@ -226,10 +151,10 @@ func UserCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc
 }
 
 // UserUpdateHandler handles POST /admin/users/{id}.
-// Can update name, email, role. Password is updated only if provided (not required).
-func UserUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+// Delegates validation, uniqueness, password hashing, and role gating to UserService.
+func UserUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
+		c, cfgErr := svc.Config()
 		if cfgErr != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
@@ -246,98 +171,36 @@ func UserUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc
 			return
 		}
 
-		existing, err := driver.GetUser(types.UserID(id))
-		if err != nil {
-			http.Error(w, "User not found", http.StatusNotFound)
-			return
-		}
-
 		username := strings.TrimSpace(r.FormValue("username"))
 		name := strings.TrimSpace(r.FormValue("name"))
 		email := strings.TrimSpace(r.FormValue("email"))
 		password := r.FormValue("password")
 		role := strings.TrimSpace(r.FormValue("role"))
 
-		errs := make(map[string]string)
-		if username == "" {
-			errs["username"] = "Username is required"
-		}
-		if name == "" {
-			errs["name"] = "Name is required"
-		}
-		if email == "" {
-			errs["email"] = "Email is required"
-		}
-		if password != "" && len(password) < 8 {
-			errs["password"] = "Password must be at least 8 characters"
-		}
-		if role == "" {
-			role = existing.Role
-		}
+		ac := middleware.AuditContextFromRequest(r, *c)
 
-		// Check email uniqueness (only if changed)
-		if email != "" && types.Email(email) != existing.Email {
-			other, _ := driver.GetUserByEmail(types.Email(email))
-			if other != nil {
-				errs["email"] = "A user with this email already exists"
+		_, err := svc.Users.UpdateUser(r.Context(), ac, service.UpdateUserInput{
+			UserID:   types.UserID(id),
+			Username: username,
+			Name:     name,
+			Email:    types.Email(email),
+			Password: password,
+			Role:     types.RoleID(role),
+			IsAdmin:  middleware.ContextIsAdmin(r.Context()),
+		})
+		if err != nil {
+			if service.IsNotFound(err) {
+				http.Error(w, "User not found", http.StatusNotFound)
+				return
 			}
-		}
-
-		if len(errs) > 0 {
+			errs := userServiceErrorToMap(err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			roles, rolesErr := driver.ListRoles()
+			roles, rolesErr := svc.RBAC.ListRoles(r.Context())
 			if rolesErr != nil {
 				roles = &[]db.Roles{}
 			}
 			Render(w, r, partials.UserEditForm(id, username, name, email, role, *roles, errs, csrfToken))
-			return
-		}
-
-		// Use existing hash unless a new password is provided
-		hash := existing.Hash
-		if password != "" {
-			newHash, hashErr := auth.HashPassword(password)
-			if hashErr != nil {
-				utility.DefaultLogger.Error("failed to hash password", hashErr)
-				w.WriteHeader(http.StatusUnprocessableEntity)
-				csrfToken := CSRFTokenFromContext(r.Context())
-				roles, rolesErr := driver.ListRoles()
-				if rolesErr != nil {
-					roles = &[]db.Roles{}
-				}
-				Render(w, r, partials.UserEditForm(id, username, name, email, role, *roles, map[string]string{"_": "Failed to process password"}, csrfToken))
-				return
-			}
-			hash = newHash
-		}
-
-		currentUser := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
-		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), currentUser.UserID, middleware.RequestIDFromContext(r.Context()), ip)
-
-		_, err = driver.UpdateUser(r.Context(), ac, db.UpdateUserParams{
-			UserID:       types.UserID(id),
-			Username:     username,
-			Name:         name,
-			Email:        types.Email(email),
-			Hash:         hash,
-			Role:         role,
-			DateCreated:  existing.DateCreated,
-			DateModified: types.NewTimestamp(time.Now()),
-		})
-		if err != nil {
-			utility.DefaultLogger.Error("failed to update user", err)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			csrfToken := CSRFTokenFromContext(r.Context())
-			roles, rolesErr := driver.ListRoles()
-			if rolesErr != nil {
-				roles = &[]db.Roles{}
-			}
-			Render(w, r, partials.UserEditForm(id, username, name, email, role, *roles, map[string]string{"_": "Failed to update user"}, csrfToken))
 			return
 		}
 
@@ -353,9 +216,9 @@ func UserUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc
 
 // UserDeleteHandler handles DELETE /admin/users/{id}.
 // HTMX-only endpoint. Non-HTMX requests receive 405.
-func UserDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func UserDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cfg, cfgErr := mgr.Config()
+		c, cfgErr := svc.Config()
 		if cfgErr != nil {
 			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
 			return
@@ -372,22 +235,40 @@ func UserDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc
 			return
 		}
 
-		currentUser := middleware.AuthenticatedUser(r.Context())
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
-		}
-		ac := audited.Ctx(types.NodeID(cfg.Node_ID), currentUser.UserID, middleware.RequestIDFromContext(r.Context()), ip)
-
-		err := driver.DeleteUser(r.Context(), ac, types.UserID(id))
+		ac := middleware.AuditContextFromRequest(r, *c)
+		err := svc.Users.DeleteUser(r.Context(), ac, types.UserID(id))
 		if err != nil {
-			utility.DefaultLogger.Error("failed to delete user", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete user", "type": "error"}}`)
-			w.WriteHeader(http.StatusInternalServerError)
+			service.HandleServiceError(w, r, err)
 			return
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "User deleted", "type": "success"}}`)
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+// userServiceErrorToMap converts a user service error into a map[string]string
+// suitable for form re-rendering with field-level error messages.
+func userServiceErrorToMap(err error) map[string]string {
+	if service.IsValidation(err) {
+		return serviceValidationToMap(err)
+	}
+
+	var ce *service.ConflictError
+	if errors.As(err, &ce) {
+		if strings.Contains(ce.Detail, "email") {
+			return map[string]string{"email": "A user with this email already exists"}
+		}
+		if strings.Contains(ce.Detail, "username") {
+			return map[string]string{"username": "A user with this username already exists"}
+		}
+		return map[string]string{"_": ce.Detail}
+	}
+
+	if service.IsForbidden(err) {
+		return map[string]string{"role": "Only administrators can assign roles"}
+	}
+
+	utility.DefaultLogger.Error("user service error", err)
+	return map[string]string{"_": "An unexpected error occurred"}
 }

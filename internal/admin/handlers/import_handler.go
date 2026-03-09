@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
-	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -19,7 +19,7 @@ func ImportPageHandler() http.HandlerFunc {
 
 // ImportSubmitHandler processes an import file upload.
 // Reads the uploaded file and format selection, then delegates to the import logic.
-func ImportSubmitHandler(driver db.DbDriver) http.HandlerFunc {
+func ImportSubmitHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Limit upload to 32MB
 		r.Body = http.MaxBytesReader(w, r.Body, 32<<20)
@@ -63,7 +63,6 @@ func ImportSubmitHandler(driver db.DbDriver) http.HandlerFunc {
 
 		// TODO: Implement actual import processing based on format.
 		// For now, acknowledge the upload and return success.
-		_ = driver
 
 		if IsHTMX(r) {
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Import received. Processing is not yet implemented.", "type": "info"}}`)

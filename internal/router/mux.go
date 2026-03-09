@@ -59,7 +59,7 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 		RegisterHandler(w, r, *c)
 	}))))
 	mux.Handle("POST /api/v1/auth/reset", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ResetPasswordHandler(w, r, *c)
+		ResetPasswordHandler(w, r, svc)
 	}))))
 	mux.Handle("POST /api/v1/auth/request-password-reset", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		RequestPasswordResetHandler(w, r, *c, emailSvc, driver)
@@ -95,18 +95,18 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 
 	// Admin content data
 	mux.Handle("/api/v1/admincontentdatas", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminContentDatasHandler(w, r, *c)
+		AdminContentDatasHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/admincontentdatas/", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminContentDataHandler(w, r, *c)
+		AdminContentDataHandler(w, r, svc)
 	})))
 
 	// Admin content fields
 	mux.Handle("/api/v1/admincontentfields", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminContentFieldsHandler(w, r, *c)
+		AdminContentFieldsHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/admincontentfields/", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminContentFieldHandler(w, r, *c)
+		AdminContentFieldHandler(w, r, svc)
 	})))
 
 	// Admin datatypes
@@ -133,26 +133,26 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 
 	// Admin routes
 	mux.Handle("/api/v1/adminroutes", middleware.RequireResourcePermission("routes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminRoutesHandler(w, r, *c)
+		AdminRoutesHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/adminroutes/", middleware.RequireResourcePermission("routes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminRouteHandler(w, r, *c)
+		AdminRouteHandler(w, r, svc)
 	})))
 
 	// Content data
 	mux.Handle("/api/v1/contentdata", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentDatasHandler(w, r, *c)
+		ContentDatasHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/contentdata/", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentDataHandler(w, r, *c)
+		ContentDataHandler(w, r, svc)
 	})))
 
 	// Content fields
 	mux.Handle("/api/v1/contentfields", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentFieldsHandler(w, r, *c)
+		ContentFieldsHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/contentfields/", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentFieldHandler(w, r, *c)
+		ContentFieldHandler(w, r, svc)
 	})))
 
 	// Content create with fields (composite)
@@ -162,107 +162,107 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 
 	// Content batch
 	mux.Handle("POST /api/v1/content/batch", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentBatchHandler(w, r, *c)
+		ContentBatchHandler(w, r, svc)
 	})))
 
 	// Content tree save (bulk pointer updates + deletes)
 	mux.Handle("POST /api/v1/content/tree", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentTreeSaveHandler(w, r, *c)
+		ContentTreeSaveHandler(w, r, svc)
 	})))
 
 	// Content tree get (read tree by route ID)
 	mux.Handle("GET /api/v1/content/tree/{routeID}", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentTreeGetHandler(w, r, driver)
+		ContentTreeGetHandler(w, r, svc)
 	})))
 
 	// Content publish / unpublish / schedule
 	mux.Handle("POST /api/v1/content/publish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		PublishHandler(w, r, *c, dispatcher)
+		PublishHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/content/unpublish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		UnpublishHandler(w, r, *c, dispatcher)
+		UnpublishHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/content/schedule", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ScheduleHandler(w, r, *c)
+		ScheduleHandler(w, r, svc)
 	})))
 
 	// Content versions list (filtered by content_id)
 	mux.Handle("GET /api/v1/contentversions", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentVersionsListHandler(w, r, driver)
+		ContentVersionsListHandler(w, r, svc)
 	})))
 
 	// Content version management
 	mux.Handle("GET /api/v1/content/versions", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ListVersionsHandler(w, r, *c)
+		ListVersionsHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/content/versions/", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		GetVersionHandler(w, r, *c)
+		GetVersionHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/content/versions", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		CreateManualVersionHandler(w, r, *c)
+		CreateManualVersionHandler(w, r, svc)
 	})))
 	mux.Handle("DELETE /api/v1/content/versions/", middleware.RequirePermission("content:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		DeleteVersionHandler(w, r, *c)
+		DeleteVersionHandler(w, r, svc)
 	})))
 
 	// Content restore from version
 	mux.Handle("POST /api/v1/content/restore", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		RestoreVersionHandler(w, r, *c)
+		RestoreVersionHandler(w, r, svc)
 	})))
 
 	// Admin content publish / unpublish / schedule
 	mux.Handle("POST /api/v1/admin/content/publish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminPublishHandler(w, r, *c, dispatcher)
+		AdminPublishHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/admin/content/unpublish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminUnpublishHandler(w, r, *c, dispatcher)
+		AdminUnpublishHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/admin/content/schedule", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminScheduleHandler(w, r, *c)
+		AdminScheduleHandler(w, r, svc)
 	})))
 
 	// Admin content version management
 	mux.Handle("GET /api/v1/admin/content/versions", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminListVersionsHandler(w, r, *c)
+		AdminListVersionsHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/admin/content/versions/", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminGetVersionHandler(w, r, *c)
+		AdminGetVersionHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/admin/content/versions", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminCreateManualVersionHandler(w, r, *c)
+		AdminCreateManualVersionHandler(w, r, svc)
 	})))
 	mux.Handle("DELETE /api/v1/admin/content/versions/", middleware.RequirePermission("content:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminDeleteVersionHandler(w, r, *c)
+		AdminDeleteVersionHandler(w, r, svc)
 	})))
 
 	// Admin content restore from version
 	mux.Handle("POST /api/v1/admin/content/restore", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminRestoreVersionHandler(w, r, *c)
+		AdminRestoreVersionHandler(w, r, svc)
 	})))
 
 	// Content data reorder
 	mux.Handle("POST /api/v1/contentdata/reorder", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentDataReorderHandler(w, r, *c)
+		ContentDataReorderHandler(w, r, svc)
 	})))
 
 	// Admin content data reorder
 	mux.Handle("POST /api/v1/admincontentdatas/reorder", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminContentDataReorderHandler(w, r, *c)
+		AdminContentDataReorderHandler(w, r, svc)
 	})))
 
 	// Content tree heal (admin repair of malformed IDs)
 	mux.Handle("POST /api/v1/admin/content/heal", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentHealHandler(w, r, *c)
+		ContentHealHandler(w, r, svc)
 	})))
 
 	// Content data move (cross-parent)
 	mux.Handle("POST /api/v1/contentdata/move", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ContentDataMoveHandler(w, r, *c)
+		ContentDataMoveHandler(w, r, svc)
 	})))
 
 	// Admin content data move (cross-parent)
 	mux.Handle("POST /api/v1/admincontentdatas/move", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminContentDataMoveHandler(w, r, *c)
+		AdminContentDataMoveHandler(w, r, svc)
 	})))
 
 	// Datatypes
@@ -319,161 +319,161 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 
 	// Media
 	mux.Handle("/api/v1/media", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		MediasHandler(w, r, *c)
+		MediasHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/media/references", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		MediaReferencesHandler(w, r, *c)
+		MediaReferencesHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/media/health", middleware.RequirePermission("media:admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		MediaHealthHandler(w, r, *c)
+		MediaHealthHandler(w, r, svc)
 	})))
 	mux.Handle("DELETE /api/v1/media/cleanup", middleware.RequirePermission("media:admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		MediaCleanupHandler(w, r, *c)
+		MediaCleanupHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/media/", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		MediaHandler(w, r, *c)
+		MediaHandler(w, r, svc)
 	})))
 
 	// Media dimensions
 	mux.Handle("/api/v1/mediadimensions", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		MediaDimensionsHandler(w, r, *c)
+		MediaDimensionsHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/mediadimensions/", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		MediaDimensionHandler(w, r, *c)
+		MediaDimensionHandler(w, r, svc)
 	})))
 
 	// Routes
 	mux.Handle("/api/v1/routes", middleware.RequireResourcePermission("routes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		RoutesHandler(w, r, *c)
+		RoutesHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/routes/", middleware.RequireResourcePermission("routes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		RouteHandler(w, r, *c)
+		RouteHandler(w, r, svc)
 	})))
 
-	// Roles (handlers receive pc for cache refresh)
+	// Roles
 	mux.Handle("/api/v1/roles", middleware.RequireResourcePermission("roles")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		RolesHandler(w, r, *c, pc)
+		RolesHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/roles/", middleware.RequireResourcePermission("roles")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		RoleHandler(w, r, *c, pc)
+		RoleHandler(w, r, svc)
 	})))
 
-	// Permissions (handlers receive pc for cache refresh)
+	// Permissions
 	mux.Handle("/api/v1/permissions", middleware.RequireResourcePermission("permissions")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		PermissionsHandler(w, r, *c, pc)
+		PermissionsHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/permissions/", middleware.RequireResourcePermission("permissions")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		PermissionHandler(w, r, *c, pc)
+		PermissionHandler(w, r, svc)
 	})))
 
 	// Sessions
 	mux.Handle("/api/v1/sessions", middleware.RequirePermission("sessions:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		SessionsHandler(w, r, *c)
+		SessionsHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/sessions/", middleware.RequireResourcePermission("sessions")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		SessionHandler(w, r, *c)
+		SessionHandler(w, r, svc)
 	})))
 
 	// Tables
 	mux.Handle("/api/v1/tables", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		TablesHandler(w, r, *c)
+		TablesHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/tables/", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		TableHandler(w, r, *c)
+		TableHandler(w, r, svc)
 	})))
 
 	// Tokens
 	mux.Handle("/api/v1/tokens", middleware.RequireResourcePermission("tokens")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		TokensHandler(w, r, *c)
+		TokensHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/tokens/", middleware.RequireResourcePermission("tokens")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		TokenHandler(w, r, *c)
+		TokenHandler(w, r, svc)
 	})))
 
 	// Users OAuth
 	mux.Handle("/api/v1/usersoauth", middleware.RequireResourcePermission("users")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		UserOauthsHandler(w, r, *c)
+		UserOauthsHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/usersoauth/", middleware.RequireResourcePermission("users")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		UserOauthHandler(w, r, *c)
+		UserOauthHandler(w, r, svc)
 	})))
 
 	// User reassign-delete (composite)
 	mux.Handle("POST /api/v1/users/reassign-delete", middleware.RequirePermission("users:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		UserReassignDeleteHandler(w, r, *c)
+		UserReassignDeleteHandler(w, r, svc)
 	})))
 
 	// Users
 	mux.Handle("/api/v1/users", middleware.RequireResourcePermission("users")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		UsersHandler(w, r, *c)
+		UsersHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/users/full", middleware.RequirePermission("users:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		UsersFullHandler(w, r, *c)
+		UsersFullHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/users/full/", middleware.RequirePermission("users:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		UserFullHandler(w, r, *c)
+		UserFullHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/users/", middleware.RequireResourcePermission("users")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		UserHandler(w, r, *c)
+		UserHandler(w, r, svc)
 	})))
 
 	// SSH Key management endpoints
 	mux.Handle("POST /api/v1/ssh-keys", middleware.RequirePermission("ssh_keys:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AddSSHKeyHandler(w, r, *c)
+		AddSSHKeyHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/ssh-keys", middleware.RequirePermission("ssh_keys:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ListSSHKeysHandler(w, r, *c)
+		ListSSHKeysHandler(w, r, svc)
 	})))
 	mux.Handle("DELETE /api/v1/ssh-keys/", middleware.RequirePermission("ssh_keys:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		DeleteSSHKeyHandler(w, r, *c)
+		DeleteSSHKeyHandler(w, r, svc)
 	})))
 
 	// Import endpoints
 	mux.Handle("/api/v1/import/contentful", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ImportContentfulHandler(w, r, *c)
+		ImportContentfulHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/import/sanity", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ImportSanityHandler(w, r, *c)
+		ImportSanityHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/import/strapi", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ImportStrapiHandler(w, r, *c)
+		ImportStrapiHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/import/wordpress", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ImportWordPressHandler(w, r, *c)
+		ImportWordPressHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/import/clean", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ImportCleanHandler(w, r, *c)
+		ImportCleanHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/import", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ImportBulkHandler(w, r, *c)
+		ImportBulkHandler(w, r, svc)
 	})))
 
 	// Role-permissions junction table CRUD
 	mux.Handle("/api/v1/role-permissions", middleware.RequireResourcePermission("roles")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		RolePermissionsHandler(w, r, *c, pc)
+		RolePermissionsHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/role-permissions/", middleware.RequireResourcePermission("roles")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		RolePermissionHandler(w, r, *c, pc)
+		RolePermissionHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/role-permissions/role/", middleware.RequirePermission("roles:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		RolePermissionsByRoleHandler(w, r, *c)
+		RolePermissionsByRoleHandler(w, r, svc)
 	})))
 
 	// Deploy sync endpoints
 	mux.Handle("GET /api/v1/deploy/health", middleware.RequirePermission("deploy:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		deploy.DeployHealthHandler(w, r, *c)
+		deploy.DeployHealthHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/deploy/export", middleware.RequirePermission("deploy:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		deploy.DeployExportHandler(w, r, *c)
+		deploy.DeployExportHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/deploy/import", middleware.RequirePermission("deploy:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		deploy.DeployImportHandler(w, r, *c)
+		deploy.DeployImportHandler(w, r, svc)
 	})))
 
 	// Config management endpoints (permission-gated)
 	configAuthChain := middleware.AuthenticatedChain(mgr)
-	mux.Handle("GET /api/v1/admin/config", configAuthChain(middleware.RequirePermission("config:read")(ConfigGetHandler(mgr))))
-	mux.Handle("PATCH /api/v1/admin/config", configAuthChain(middleware.RequirePermission("config:update")(ConfigUpdateHandler(mgr))))
+	mux.Handle("GET /api/v1/admin/config", configAuthChain(middleware.RequirePermission("config:read")(ConfigGetHandler(svc))))
+	mux.Handle("PATCH /api/v1/admin/config", configAuthChain(middleware.RequirePermission("config:update")(ConfigUpdateHandler(svc))))
 	mux.Handle("GET /api/v1/admin/config/meta", configAuthChain(middleware.RequirePermission("config:read")(ConfigMetaHandler())))
 
 	// Plugin HTTP bridge routes and admin endpoints
@@ -495,49 +495,49 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 
 	// Locales — public endpoint (enabled locales only, no auth)
 	mux.Handle("GET /api/v1/locales", corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		LocalesPublicHandler(w, r, *c)
+		LocalesPublicHandler(w, r, svc)
 	})))
 
 	// Locales — admin CRUD (requires locale:* permissions)
 	mux.Handle("/api/v1/admin/locales", middleware.RequireResourcePermission("locale")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		LocalesHandler(w, r, *c)
+		LocalesHandler(w, r, svc)
 	})))
 	mux.Handle("/api/v1/admin/locales/", middleware.RequireResourcePermission("locale")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		LocaleHandler(w, r, *c)
+		LocaleHandler(w, r, svc)
 	})))
 
 	// Webhooks — admin CRUD (requires webhook:* permissions)
 	mux.Handle("GET /api/v1/admin/webhooks", middleware.RequirePermission("webhook:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		WebhookListHandler(w, r, *c)
+		WebhookListHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/admin/webhooks", middleware.RequirePermission("webhook:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		WebhookCreateHandler(w, r, *c)
+		WebhookCreateHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/admin/webhooks/{id}", middleware.RequirePermission("webhook:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		WebhookGetHandler(w, r, *c)
+		WebhookGetHandler(w, r, svc)
 	})))
 	mux.Handle("PUT /api/v1/admin/webhooks/{id}", middleware.RequirePermission("webhook:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		WebhookUpdateHandler(w, r, *c)
+		WebhookUpdateHandler(w, r, svc)
 	})))
 	mux.Handle("DELETE /api/v1/admin/webhooks/{id}", middleware.RequirePermission("webhook:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		WebhookDeleteHandler(w, r, *c)
+		WebhookDeleteHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/admin/webhooks/{id}/test", middleware.RequirePermission("webhook:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		WebhookTestHandler(w, r, *c, dispatcher)
+		WebhookTestHandler(w, r, svc)
 	})))
 	mux.Handle("GET /api/v1/admin/webhooks/{id}/deliveries", middleware.RequirePermission("webhook:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		WebhookDeliveryListHandler(w, r, *c)
+		WebhookDeliveryListHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/admin/webhooks/deliveries/{id}/retry", middleware.RequirePermission("webhook:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		WebhookDeliveryRetryHandler(w, r, *c, dispatcher)
+		WebhookDeliveryRetryHandler(w, r, svc)
 	})))
 
 	// Translations — create locale translations for content data
 	mux.Handle("POST /api/v1/admin/contentdata/{id}/translations", middleware.RequirePermission("content:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		TranslationHandler(w, r, *c)
+		TranslationHandler(w, r, svc)
 	})))
 	mux.Handle("POST /api/v1/admin/admincontentdata/{id}/translations", middleware.RequirePermission("content:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminTranslationHandler(w, r, *c)
+		AdminTranslationHandler(w, r, svc)
 	})))
 
 	// Content query by datatype (PUBLIC - no auth required)
@@ -552,7 +552,7 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 
 	// Content delivery via slug
 	mux.HandleFunc("/api/v1/content/", func(w http.ResponseWriter, r *http.Request) {
-		SlugHandler(w, r, *c)
+		SlugHandler(w, r, svc)
 	})
 
 	// HTMX admin panel
@@ -737,75 +737,75 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/schema/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeCreateFieldHandler(svc)))
 
 	// Media
-	mux.Handle("GET /admin/media", viewing("media", adminhandlers.MediaListHandler(driver)))
-	mux.Handle("GET /admin/media/{id}", viewing("media", adminhandlers.MediaDetailHandler(driver)))
-	mux.Handle("POST /admin/media", mutating("media:create", adminhandlers.MediaUploadHandler(driver, mgr)))
-	mux.Handle("POST /admin/media/{id}", mutating("media:update", adminhandlers.MediaUpdateHandler(driver, mgr)))
-	mux.Handle("DELETE /admin/media/{id}", mutating("media:delete", adminhandlers.MediaDeleteHandler(driver, mgr)))
+	mux.Handle("GET /admin/media", viewing("media", adminhandlers.MediaListHandler(svc)))
+	mux.Handle("GET /admin/media/{id}", viewing("media", adminhandlers.MediaDetailHandler(svc)))
+	mux.Handle("POST /admin/media", mutating("media:create", adminhandlers.MediaUploadHandler(svc)))
+	mux.Handle("POST /admin/media/{id}", mutating("media:update", adminhandlers.MediaUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/media/{id}", mutating("media:delete", adminhandlers.MediaDeleteHandler(svc)))
 
 	// Routes
-	mux.Handle("GET /admin/routes", viewing("routes", adminhandlers.RoutesListHandler(driver)))
-	mux.Handle("GET /admin/routes/admin", viewing("routes", adminhandlers.AdminRoutesListHandler(driver)))
-	mux.Handle("POST /admin/routes", mutating("routes:create", adminhandlers.RouteCreateHandler(driver, mgr)))
-	mux.Handle("POST /admin/routes/{id}", mutating("routes:update", adminhandlers.RouteUpdateHandler(driver, mgr)))
-	mux.Handle("DELETE /admin/routes/{id}", mutating("routes:delete", adminhandlers.RouteDeleteHandler(driver, mgr)))
+	mux.Handle("GET /admin/routes", viewing("routes", adminhandlers.RoutesListHandler(svc)))
+	mux.Handle("GET /admin/routes/admin", viewing("routes", adminhandlers.AdminRoutesListHandler(svc)))
+	mux.Handle("POST /admin/routes", mutating("routes:create", adminhandlers.RouteCreateHandler(svc)))
+	mux.Handle("POST /admin/routes/{id}", mutating("routes:update", adminhandlers.RouteUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/routes/{id}", mutating("routes:delete", adminhandlers.RouteDeleteHandler(svc)))
 
 	// Users
-	mux.Handle("GET /admin/users", viewing("users", adminhandlers.UsersListHandler(driver)))
-	mux.Handle("GET /admin/users/{id}", viewing("users", adminhandlers.UserDetailHandler(driver)))
-	mux.Handle("POST /admin/users", mutating("users:create", adminhandlers.UserCreateHandler(driver, mgr)))
-	mux.Handle("POST /admin/users/{id}", mutating("users:update", adminhandlers.UserUpdateHandler(driver, mgr)))
-	mux.Handle("DELETE /admin/users/{id}", mutating("users:delete", adminhandlers.UserDeleteHandler(driver, mgr)))
+	mux.Handle("GET /admin/users", viewing("users", adminhandlers.UsersListHandler(svc)))
+	mux.Handle("GET /admin/users/{id}", viewing("users", adminhandlers.UserDetailHandler(svc)))
+	mux.Handle("POST /admin/users", mutating("users:create", adminhandlers.UserCreateHandler(svc)))
+	mux.Handle("POST /admin/users/{id}", mutating("users:update", adminhandlers.UserUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/users/{id}", mutating("users:delete", adminhandlers.UserDeleteHandler(svc)))
 
 	// Roles
-	mux.Handle("GET /admin/users/roles", viewing("roles", adminhandlers.RolesListHandler(driver, pc)))
-	mux.Handle("GET /admin/users/roles/new", viewing("roles", adminhandlers.RoleNewFormHandler(driver, pc)))
-	mux.Handle("GET /admin/users/roles/{id}", viewing("roles", adminhandlers.RoleDetailHandler(driver, pc)))
-	mux.Handle("POST /admin/users/roles", mutating("roles:create", adminhandlers.RoleCreateHandler(driver, pc, mgr)))
-	mux.Handle("POST /admin/users/roles/{id}", mutating("roles:update", adminhandlers.RoleUpdateHandler(driver, pc, mgr)))
-	mux.Handle("DELETE /admin/users/roles/{id}", mutating("roles:delete", adminhandlers.RoleDeleteHandler(driver, pc, mgr)))
+	mux.Handle("GET /admin/users/roles", viewing("roles", adminhandlers.RolesListHandler(svc)))
+	mux.Handle("GET /admin/users/roles/new", viewing("roles", adminhandlers.RoleNewFormHandler(svc)))
+	mux.Handle("GET /admin/users/roles/{id}", viewing("roles", adminhandlers.RoleDetailHandler(svc)))
+	mux.Handle("POST /admin/users/roles", mutating("roles:create", adminhandlers.RoleCreateHandler(svc)))
+	mux.Handle("POST /admin/users/roles/{id}", mutating("roles:update", adminhandlers.RoleUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/users/roles/{id}", mutating("roles:delete", adminhandlers.RoleDeleteHandler(svc)))
 
 	// Tokens
-	mux.Handle("GET /admin/users/tokens", viewing("tokens", adminhandlers.TokensListHandler(driver)))
-	mux.Handle("POST /admin/users/tokens", mutating("tokens:create", adminhandlers.TokenCreateHandler(driver, mgr)))
-	mux.Handle("DELETE /admin/users/tokens/{id}", mutating("tokens:delete", adminhandlers.TokenDeleteHandler(driver, mgr)))
+	mux.Handle("GET /admin/users/tokens", viewing("tokens", adminhandlers.TokensListHandler(svc)))
+	mux.Handle("POST /admin/users/tokens", mutating("tokens:create", adminhandlers.TokenCreateHandler(svc)))
+	mux.Handle("DELETE /admin/users/tokens/{id}", mutating("tokens:delete", adminhandlers.TokenDeleteHandler(svc)))
 
 	// Sessions
-	mux.Handle("GET /admin/sessions", viewing("sessions", adminhandlers.SessionsListHandler(driver)))
-	mux.Handle("DELETE /admin/sessions/{id}", mutating("sessions:delete", adminhandlers.SessionDeleteHandler(driver, mgr)))
+	mux.Handle("GET /admin/sessions", viewing("sessions", adminhandlers.SessionsListHandler(svc)))
+	mux.Handle("DELETE /admin/sessions/{id}", mutating("sessions:delete", adminhandlers.SessionDeleteHandler(svc)))
 
 	// Plugins
-	mux.Handle("GET /admin/plugins", viewing("plugins", adminhandlers.PluginsListHandler(driver)))
-	mux.Handle("GET /admin/plugins/{name}", viewing("plugins", adminhandlers.PluginDetailHandler(driver)))
+	mux.Handle("GET /admin/plugins", viewing("plugins", adminhandlers.PluginsListHandler(svc)))
+	mux.Handle("GET /admin/plugins/{name}", viewing("plugins", adminhandlers.PluginDetailHandler(svc)))
 
 	// Import
 	mux.Handle("GET /admin/import", viewing("import", adminhandlers.ImportPageHandler()))
-	mux.Handle("POST /admin/import", mutating("import:create", adminhandlers.ImportSubmitHandler(driver)))
+	mux.Handle("POST /admin/import", mutating("import:create", adminhandlers.ImportSubmitHandler(svc)))
 
 	// Demo
 	mux.Handle("GET /admin/demo", viewing("settings", adminhandlers.DemoHandler()))
 
 	// Audit
-	mux.Handle("GET /admin/audit", adminAuth(csrf(http.HandlerFunc(adminhandlers.AuditLogHandler(driver)))))
+	mux.Handle("GET /admin/audit", adminAuth(csrf(http.HandlerFunc(adminhandlers.AuditLogHandler(svc)))))
 
 	// Settings
 	mux.Handle("GET /admin/settings", viewing("config", adminhandlers.SettingsHandler(mgr)))
 	mux.Handle("POST /admin/settings", mutating("config:update", adminhandlers.SettingsUpdateHandler(mgr)))
 
 	// Locale settings (i18n)
-	mux.Handle("GET /admin/settings/locales", viewing("locale", adminhandlers.LocaleSettingsHandler(driver, mgr)))
-	mux.Handle("GET /admin/settings/locales/{id}/edit", viewing("locale", adminhandlers.LocaleEditDialogHandler(driver, mgr)))
-	mux.Handle("POST /admin/settings/locales", mutating("locale:create", adminhandlers.LocaleCreateHandler(driver, mgr)))
-	mux.Handle("PUT /admin/settings/locales/{id}", mutating("locale:update", adminhandlers.LocaleUpdateHandler(driver, mgr)))
-	mux.Handle("DELETE /admin/settings/locales/{id}", mutating("locale:delete", adminhandlers.LocaleDeleteHandler(driver, mgr)))
+	mux.Handle("GET /admin/settings/locales", viewing("locale", adminhandlers.LocaleSettingsHandler(svc)))
+	mux.Handle("GET /admin/settings/locales/{id}/edit", viewing("locale", adminhandlers.LocaleEditDialogHandler(svc)))
+	mux.Handle("POST /admin/settings/locales", mutating("locale:create", adminhandlers.LocaleCreateHandler(svc)))
+	mux.Handle("PUT /admin/settings/locales/{id}", mutating("locale:update", adminhandlers.LocaleUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/settings/locales/{id}", mutating("locale:delete", adminhandlers.LocaleDeleteHandler(svc)))
 
 	// Webhook settings
-	mux.Handle("GET /admin/settings/webhooks", viewing("webhook", adminhandlers.WebhookSettingsHandler(driver, mgr)))
-	mux.Handle("GET /admin/settings/webhooks/{id}", viewing("webhook", adminhandlers.WebhookDetailHandler(driver, mgr)))
-	mux.Handle("POST /admin/settings/webhooks", mutating("webhook:create", adminhandlers.WebhookCreateHandler(driver, mgr)))
-	mux.Handle("POST /admin/settings/webhooks/{id}", mutating("webhook:update", adminhandlers.WebhookUpdateHandler(driver, mgr)))
-	mux.Handle("DELETE /admin/settings/webhooks/{id}", mutating("webhook:delete", adminhandlers.WebhookDeleteHandler(driver, mgr)))
-	mux.Handle("POST /admin/settings/webhooks/{id}/test", mutating("webhook:update", adminhandlers.WebhookTestHandler(driver, mgr)))
+	mux.Handle("GET /admin/settings/webhooks", viewing("webhook", adminhandlers.WebhookSettingsHandler(svc)))
+	mux.Handle("GET /admin/settings/webhooks/{id}", viewing("webhook", adminhandlers.WebhookDetailHandler(svc)))
+	mux.Handle("POST /admin/settings/webhooks", mutating("webhook:create", adminhandlers.WebhookCreateHandler(svc)))
+	mux.Handle("POST /admin/settings/webhooks/{id}", mutating("webhook:update", adminhandlers.WebhookUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/settings/webhooks/{id}", mutating("webhook:delete", adminhandlers.WebhookDeleteHandler(svc)))
+	mux.Handle("POST /admin/settings/webhooks/{id}/test", mutating("webhook:update", adminhandlers.WebhookTestHandler(svc)))
 }
 
 // pluginRoutesRevokeHandler revokes approval for one or more plugin routes.

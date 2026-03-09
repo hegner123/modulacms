@@ -1,9 +1,43 @@
 package partials
 
-templ PluginsTableRows() {
-	<tr>
-		<td colspan="4">
-			@EmptyState("Plugin system coming soon")
-		</td>
-	</tr>
+import "github.com/hegner123/modulacms/internal/service"
+
+templ PluginsTableRowsInner(plugins []service.PluginSummary) {
+	for _, p := range plugins {
+		<tr>
+			<td>
+				<a href={ templ.SafeURL("/admin/plugins/" + p.Name) }
+				   hx-get={ "/admin/plugins/" + p.Name }
+				   hx-target="#main-content"
+				   hx-push-url="true">
+					{ p.Name }
+				</a>
+			</td>
+			<td>{ p.Version }</td>
+			<td>{ p.Description }</td>
+			<td>
+				<span class={ "badge", "badge-" + pluginStateClass(p.State) }>{ p.State }</span>
+			</td>
+			<td>{ p.CircuitBreakerState }</td>
+		</tr>
+	}
+}
+
+templ PluginsTableRows(plugins []service.PluginSummary) {
+	@PluginsTableRowsInner(plugins)
+}
+
+func pluginStateClass(state string) string {
+	switch state {
+	case "running":
+		return "success"
+	case "failed":
+		return "error"
+	case "stopped", "discovered":
+		return "warning"
+	case "loading":
+		return "info"
+	default:
+		return "default"
+	}
 }

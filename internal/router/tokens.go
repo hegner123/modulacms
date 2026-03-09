@@ -5,11 +5,20 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/service"
 )
+
+// tokenCreateRequest is the API request body for creating a token.
+// The raw token value is generated server-side and returned in the response.
+type tokenCreateRequest struct {
+	UserID    types.NullableUserID `json:"user_id"`
+	TokenType string               `json:"token_type"`
+	Label     string               `json:"label"`
+	ExpiresAt types.Timestamp      `json:"expires_at"`
+}
 
 // tokenCreateResponse wraps a created token with the raw value shown once.
 type tokenCreateResponse struct {
@@ -18,45 +27,43 @@ type tokenCreateResponse struct {
 }
 
 // TokensHandler handles CRUD operations that do not require a specific user ID.
-func TokensHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func TokensHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	case http.MethodPost:
-		apiCreateToken(w, r, c)
+		apiCreateToken(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // TokenHandler handles CRUD operations for specific user items.
-func TokenHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func TokenHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	switch r.Method {
 	case http.MethodGet:
-		apiGetToken(w, r, c)
+		apiGetToken(w, r, svc)
 	case http.MethodPut:
-		apiUpdateToken(w, r, c)
+		apiUpdateToken(w, r, svc)
 	case http.MethodDelete:
-		apiDeleteToken(w, r, c)
+		apiDeleteToken(w, r, svc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-// apiGetToken handles GET requests for a single token
-func apiGetToken(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
+// apiGetToken handles GET requests for a single token.
+func apiGetToken(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	tID := r.URL.Query().Get("q")
 	if tID == "" {
 		err := fmt.Errorf("missing token ID")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	token, err := d.GetToken(tID)
+
+	token, err := svc.Tokens.GetToken(r.Context(), tID)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return err
 	}
 
@@ -67,63 +74,62 @@ func apiGetToken(w http.ResponseWriter, r *http.Request, c config.Config) error 
 }
 
 // apiCreateToken handles POST requests to create a new token.
-// The raw token value is returned once in the response as "raw_token".
-// Only the SHA-256 hash is stored in the database.
-func apiCreateToken(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+// The raw token value is generated server-side and returned once in the
+// response as "raw_token". Only the SHA-256 hash is stored in the database.
+func apiCreateToken(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	cfg, cfgErr := svc.Config()
+	if cfgErr != nil {
+		http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+		return cfgErr
+	}
 
-	var newToken db.CreateTokenParams
-	err := json.NewDecoder(r.Body).Decode(&newToken)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+	var req tokenCreateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 
-	rawToken := newToken.Token
-	newToken.Token = utility.HashToken(rawToken)
+	input := service.CreateTokenInput{
+		UserID:    req.UserID,
+		TokenType: req.TokenType,
+		Label:     req.Label,
+		Expiry:    req.ExpiresAt,
+	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	createdToken, err := d.CreateToken(r.Context(), ac, newToken)
+	ac := middleware.AuditContextFromRequest(r, *cfg)
+	result, err := svc.Tokens.CreateToken(r.Context(), ac, input)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return err
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(tokenCreateResponse{
-		Tokens:   *createdToken,
-		RawToken: rawToken,
+		Tokens:   *result.Token,
+		RawToken: result.RawToken,
 	})
 	return nil
 }
 
-// apiUpdateToken handles PUT requests to update an existing token
-func apiUpdateToken(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+// apiUpdateToken handles PUT requests to update an existing token.
+func apiUpdateToken(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	cfg, cfgErr := svc.Config()
+	if cfgErr != nil {
+		http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+		return cfgErr
+	}
 
 	var updateToken db.UpdateTokenParams
-	err := json.NewDecoder(r.Body).Decode(&updateToken)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+	if err := json.NewDecoder(r.Body).Decode(&updateToken); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	_, err = d.UpdateToken(r.Context(), ac, updateToken)
+	ac := middleware.AuditContextFromRequest(r, *cfg)
+	updated, err := svc.Tokens.UpdateToken(r.Context(), ac, updateToken)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-
-	updated, err := d.GetToken(updateToken.ID)
-	if err != nil {
-		utility.DefaultLogger.Error("failed to fetch updated token", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HandleServiceError(w, r, err)
 		return err
 	}
 
@@ -133,9 +139,13 @@ func apiUpdateToken(w http.ResponseWriter, r *http.Request, c config.Config) err
 	return nil
 }
 
-// apiDeleteToken handles DELETE requests for tokens
-func apiDeleteToken(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
+// apiDeleteToken handles DELETE requests for tokens.
+func apiDeleteToken(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	cfg, cfgErr := svc.Config()
+	if cfgErr != nil {
+		http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+		return cfgErr
+	}
 
 	tId := r.URL.Query().Get("q")
 	if tId == "" {
@@ -143,11 +153,10 @@ func apiDeleteToken(w http.ResponseWriter, r *http.Request, c config.Config) err
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.DeleteToken(r.Context(), ac, tId)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+	ac := middleware.AuditContextFromRequest(r, *cfg)
+	if err := svc.Tokens.DeleteToken(r.Context(), ac, tId); err != nil {
+		service.HandleServiceError(w, r, err)
 		return err
 	}
 

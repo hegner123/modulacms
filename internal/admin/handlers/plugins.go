@@ -4,21 +4,33 @@ import (
 	"net/http"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
-	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/service"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
-// PluginsListHandler lists installed plugins.
-// Currently a placeholder since the plugin system is in development.
-func PluginsListHandler(driver db.DbDriver) http.HandlerFunc {
+// PluginsListHandler lists installed plugins with real data from the plugin system.
+func PluginsListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		plugins, err := svc.Plugins.List(r.Context())
+		if err != nil {
+			utility.DefaultLogger.Error("failed to list plugins", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		if IsNavHTMX(r) {
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Plugins"}`)
+			Render(w, r, pages.PluginsListContent(plugins))
+			return
+		}
+
 		layout := NewAdminData(r, "Plugins")
-		RenderNav(w, r, "Plugins", pages.PluginsListContent(), pages.PluginsList(layout))
+		Render(w, r, pages.PluginsList(layout, plugins))
 	}
 }
 
-// PluginDetailHandler shows plugin detail.
-// Currently a placeholder since the plugin system is in development.
-func PluginDetailHandler(driver db.DbDriver) http.HandlerFunc {
+// PluginDetailHandler shows plugin detail with real data from the plugin system.
+func PluginDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := r.PathValue("name")
 		if name == "" {
@@ -26,7 +38,24 @@ func PluginDetailHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
+		detail, err := svc.Plugins.Get(r.Context(), name)
+		if err != nil {
+			if service.IsNotFound(err) {
+				http.NotFound(w, r)
+				return
+			}
+			utility.DefaultLogger.Error("failed to get plugin", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		if IsNavHTMX(r) {
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Plugin: `+name+`"}`)
+			Render(w, r, pages.PluginDetailContent(detail))
+			return
+		}
+
 		layout := NewAdminData(r, "Plugin: "+name)
-		RenderNav(w, r, "Plugin: "+name, pages.PluginDetailContent(name), pages.PluginDetail(layout, name))
+		Render(w, r, pages.PluginDetail(layout, detail))
 	}
 }
