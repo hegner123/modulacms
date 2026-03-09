@@ -18,6 +18,7 @@ import (
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/service"
+	"github.com/hegner123/modulacms/internal/tree/core"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/hegner123/modulacms/internal/validation"
 )
@@ -210,32 +211,32 @@ func nullableIDStr(n types.NullableContentID) string {
 // emptyEditorState is the JSON for an empty block editor (no children).
 const emptyEditorState = `{"blocks":{},"rootId":null}`
 
-// buildTreeJSON loads the descendants of a content node and their datatype labels,
-// then returns the block editor state as a JSON string. Always returns valid JSON
-// so the editor can render even with zero children (allowing users to add blocks).
+// buildTreeJSON loads the descendants of a content node via core.BuildFromRows,
+// then returns the block editor state as a JSON string. Uses the core tree package
+// for proper sibling ordering, orphan handling, and circular reference detection.
+// Always returns valid JSON so the editor can render even with zero children.
 func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.ContentID, roleID string, isAdmin bool) string {
 	log := utility.DefaultLogger
 
-	// Look up the content node to get its route_id, then load all
-	// content_data rows sharing that route. This is simpler and more
-	// reliable than walking parent_id with a recursive CTE.
+	// Look up the content node to get its route_id.
 	content, contentErr := driver.GetContentData(contentID)
 	if contentErr != nil {
 		log.Debug("buildTreeJSON: failed to get content node", "contentID", contentID, "err", contentErr)
 		return emptyEditorState
 	}
 
-	// Load child blocks: use route_id query for routed content,
-	// fall back to recursive parent_id walk for globals/unrouted content.
-	var nodes []db.ContentData
+	// Load tree rows via the joined query (content_data + datatypes in one query).
+	// For routed content use GetContentTreeByRoute; for unrouted content convert
+	// descendants to tree rows with datatype lookups.
+	var rows []db.GetContentTreeByRouteRow
 	if content.RouteID.Valid {
-		all, listErr := driver.ListContentDataByRoute(content.RouteID)
-		if listErr != nil {
-			log.Debug("buildTreeJSON: ListContentDataByRoute failed", "routeID", content.RouteID.ID, "err", listErr)
+		treeRows, treeErr := driver.GetContentTreeByRoute(content.RouteID)
+		if treeErr != nil {
+			log.Debug("buildTreeJSON: GetContentTreeByRoute failed", "routeID", content.RouteID.ID, "err", treeErr)
 			return emptyEditorState
 		}
-		if all != nil {
-			nodes = *all
+		if treeRows != nil {
+			rows = *treeRows
 		}
 	} else {
 		desc, descErr := driver.GetContentDataDescendants(ctx, contentID)
@@ -244,47 +245,44 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 			return emptyEditorState
 		}
 		if desc != nil {
-			nodes = *desc
+			rows = contentDataToTreeRows(driver, *desc)
 		}
 	}
 
-	if len(nodes) <= 1 {
-		log.Info("buildTreeJSON: no child blocks found", "contentID", contentID, "totalRows", len(nodes))
+	if len(rows) <= 1 {
+		log.Info("buildTreeJSON: no child blocks found", "contentID", contentID, "totalRows", len(rows))
 		return emptyEditorState
 	}
 
-	log.Info("buildTreeJSON: found content_data rows", "contentID", contentID, "totalRows", len(nodes))
-
-	// Build datatype label cache
-	dtLabels := make(map[string]string)
-	for _, node := range nodes {
-		if !node.DatatypeID.Valid {
-			continue
-		}
-		dtKey := node.DatatypeID.ID.String()
-		if _, ok := dtLabels[dtKey]; ok {
-			continue
-		}
-		dt, dtErr := driver.GetDatatype(node.DatatypeID.ID)
-		if dtErr == nil && dt != nil {
-			dtLabels[dtKey] = dt.Label
-		}
+	// Build the tree using core.BuildFromRows — handles sibling ordering,
+	// orphan resolution, and circular reference detection.
+	root, stats, buildErr := core.BuildFromRows(rows)
+	if buildErr != nil {
+		log.Debug("buildTreeJSON: core.BuildFromRows warning", "err", buildErr,
+			"orphans", len(stats.FinalOrphans), "circular", len(stats.CircularRefs))
+		// Non-fatal: continue with partial tree (orphans are excluded, circular refs broken)
+	}
+	if root == nil || root.Node == nil {
+		log.Info("buildTreeJSON: no root node after tree build")
+		return emptyEditorState
 	}
 
-	// Batch-load content fields per descendant for the side panel
+	log.Info("buildTreeJSON: tree built", "contentID", contentID,
+		"nodes", stats.NodesCount, "orphans", len(stats.FinalOrphans))
+
+	// Load content fields per descendant for the side panel.
 	blockFields := make(map[string][]blockFieldData)
-	for _, node := range nodes {
-		if node.ContentDataID == contentID {
+	for id, node := range root.NodeIndex {
+		if id == contentID {
 			continue
 		}
-		cid := types.NullableContentID{ID: node.ContentDataID, Valid: true}
+		cid := types.NullableContentID{ID: node.ContentData.ContentDataID, Valid: true}
 		cfRows, cfErr := driver.ListContentFieldsWithFieldByContentData(cid)
 		if cfErr != nil || cfRows == nil {
 			continue
 		}
 		fds := make([]blockFieldData, 0, len(*cfRows))
 		for _, row := range *cfRows {
-			// Check field-level role access before including in block editor data.
 			if !isAdmin && row.FieldID.Valid {
 				fieldDef, fieldErr := driver.GetField(row.FieldID.ID)
 				if fieldErr != nil {
@@ -302,30 +300,34 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 				Value:          row.FieldValue,
 			})
 		}
-		blockFields[node.ContentDataID.String()] = fds
+		blockFields[id.String()] = fds
 	}
 
-	// Build block nodes — skip the root node itself (first in descendants is the queried node)
-	blocks := make([]blockNode, 0, len(nodes)-1)
-	for _, node := range nodes {
-		if node.ContentDataID == contentID {
+	// Walk tree nodes to build block editor state. Skip the content node itself.
+	type editorState struct {
+		Blocks map[string]blockNode `json:"blocks"`
+		RootID string               `json:"rootId"`
+	}
+	state := editorState{Blocks: make(map[string]blockNode)}
+
+	for id, node := range root.NodeIndex {
+		if id == contentID {
 			continue
 		}
-		label := "Untitled"
-		if node.DatatypeID.Valid {
-			if l, ok := dtLabels[node.DatatypeID.ID.String()]; ok {
-				label = l
-			}
+		cd := node.ContentData
+		label := node.Datatype.Label
+		if label == "" {
+			label = "Untitled"
 		}
 		routeID := ""
-		if node.RouteID.Valid {
-			routeID = node.RouteID.ID.String()
+		if cd.RouteID.Valid {
+			routeID = cd.RouteID.ID.String()
 		}
 		datatypeID := ""
-		if node.DatatypeID.Valid {
-			datatypeID = node.DatatypeID.ID.String()
+		if cd.DatatypeID.Valid {
+			datatypeID = cd.DatatypeID.ID.String()
 		}
-		nodeIDStr := node.ContentDataID.String()
+		nodeIDStr := id.String()
 		fields := blockFields[nodeIDStr]
 		if fields == nil {
 			fields = []blockFieldData{}
@@ -333,61 +335,43 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 		// Root-level blocks have parentId pointing to the content node in the DB,
 		// but the content node isn't in the editor's blocks map. Clear parentId
 		// for root-level blocks so the JS validator doesn't reject them.
-		parentID := nullableIDStr(node.ParentID)
+		parentID := nullableIDStr(cd.ParentID)
 		if parentID == contentID.String() {
 			parentID = ""
 		}
 
-		blocks = append(blocks, blockNode{
+		state.Blocks[nodeIDStr] = blockNode{
 			ID:            nodeIDStr,
 			ParentID:      parentID,
-			FirstChildID:  nullableIDStr(node.FirstChildID),
-			NextSiblingID: nullableIDStr(node.NextSiblingID),
-			PrevSiblingID: nullableIDStr(node.PrevSiblingID),
+			FirstChildID:  nullableIDStr(cd.FirstChildID),
+			NextSiblingID: nullableIDStr(cd.NextSiblingID),
+			PrevSiblingID: nullableIDStr(cd.PrevSiblingID),
 			RouteID:       routeID,
 			DatatypeID:    datatypeID,
-			AuthorID:      string(node.AuthorID),
-			Status:        string(node.Status),
-			DateCreated:   node.DateCreated.Time.UTC().Format(time.RFC3339),
-			DateModified:  node.DateModified.Time.UTC().Format(time.RFC3339),
+			AuthorID:      string(cd.AuthorID),
+			Status:        string(cd.Status),
+			DateCreated:   cd.DateCreated.Time.UTC().Format(time.RFC3339),
+			DateModified:  cd.DateModified.Time.UTC().Format(time.RFC3339),
 			Type:          "container",
 			Label:         label,
 			Fields:        fields,
-		})
+		}
+
+		// Root block = direct child of content node with no previous sibling
+		if parentID == "" && nullableIDStr(cd.PrevSiblingID) == "" {
+			state.RootID = nodeIDStr
+		}
 	}
 
-	if len(blocks) == 0 {
-		log.Info("buildTreeJSON: all rows were the content node itself, no child blocks")
+	if len(state.Blocks) == 0 {
+		log.Info("buildTreeJSON: no child blocks after tree walk")
 		return emptyEditorState
 	}
 
-	log.Info("buildTreeJSON: built block nodes", "blockCount", len(blocks))
-
-	// Build editor state: blocks map + rootId (first child of current node)
-	type editorState struct {
-		Blocks map[string]blockNode `json:"blocks"`
-		RootID string               `json:"rootId"`
-	}
-
-	state := editorState{
-		Blocks: make(map[string]blockNode, len(blocks)),
-	}
-	for _, b := range blocks {
-		state.Blocks[b.ID] = b
-		// Root block = no parent (cleared above) and no previous sibling
-		if b.ParentID == "" && b.PrevSiblingID == "" {
-			state.RootID = b.ID
-		}
-	}
-
 	if state.RootID == "" {
-		log.Debug("buildTreeJSON: no root block found (no block with parentId=contentID and prevSiblingId=empty)",
-			"contentID", contentID, "blockCount", len(blocks))
-		for _, b := range blocks {
-			log.Info("buildTreeJSON: block", "id", b.ID, "parentId", b.ParentID, "prevSiblingId", b.PrevSiblingID)
-		}
+		log.Debug("buildTreeJSON: no root block found", "contentID", contentID, "blockCount", len(state.Blocks))
 	} else {
-		log.Info("buildTreeJSON: tree assembled", "rootId", state.RootID, "blockCount", len(blocks))
+		log.Info("buildTreeJSON: tree assembled", "rootId", state.RootID, "blockCount", len(state.Blocks))
 	}
 
 	data, marshalErr := json.Marshal(state)
@@ -396,6 +380,43 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 		return emptyEditorState
 	}
 	return string(data)
+}
+
+// contentDataToTreeRows converts flat ContentData rows (from GetContentDataDescendants)
+// into GetContentTreeByRouteRow with datatype labels resolved. Used as a fallback
+// for unrouted content that can't use the joined GetContentTreeByRoute query.
+func contentDataToTreeRows(driver db.DbDriver, nodes []db.ContentData) []db.GetContentTreeByRouteRow {
+	dtCache := make(map[types.DatatypeID]db.Datatypes)
+	rows := make([]db.GetContentTreeByRouteRow, 0, len(nodes))
+	for _, cd := range nodes {
+		row := db.GetContentTreeByRouteRow{
+			ContentDataID: cd.ContentDataID,
+			ParentID:      cd.ParentID,
+			FirstChildID:  cd.FirstChildID,
+			NextSiblingID: cd.NextSiblingID,
+			PrevSiblingID: cd.PrevSiblingID,
+			DatatypeID:    cd.DatatypeID,
+			RouteID:       cd.RouteID,
+			AuthorID:      cd.AuthorID,
+			Status:        cd.Status,
+			DateCreated:   cd.DateCreated,
+			DateModified:  cd.DateModified,
+		}
+		if cd.DatatypeID.Valid {
+			dt, ok := dtCache[cd.DatatypeID.ID]
+			if !ok {
+				fetched, fetchErr := driver.GetDatatype(cd.DatatypeID.ID)
+				if fetchErr == nil && fetched != nil {
+					dt = *fetched
+					dtCache[cd.DatatypeID.ID] = dt
+				}
+			}
+			row.DatatypeLabel = dt.Label
+			row.DatatypeType = dt.Type
+		}
+		rows = append(rows, row)
+	}
+	return rows
 }
 
 // ContentEditHandler renders the content editor page.
