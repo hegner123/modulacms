@@ -47,10 +47,10 @@ const (
 	// FieldTypeMedia stores a reference to a media item ([MediaID]).
 	FieldTypeMedia FieldType = "media"
 
-	// FieldTypeID stores a content data ID (ULID). On _reference datatype
+	// FieldTypeRefID stores a content data ID (ULID). On _reference datatype
 	// nodes, the composition engine resolves this value to fetch and attach
 	// referenced subtrees at delivery time.
-	FieldTypeID FieldType = "_id"
+	FieldTypeRefID FieldType = "_id"
 
 	// FieldTypeJSON stores arbitrary JSON data. The value is preserved as-is
 	// without schema validation.
