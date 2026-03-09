@@ -48,6 +48,8 @@ public final class ModulaClient: Sendable {
     public let importResource: ImportResource
     public let contentBatch: ContentBatchResource
     public let contentTree: ContentTreeResource
+    public let contentReorder: ContentReorderResource
+    public let adminContentReorder: AdminContentReorderResource
     public let contentHeal: ContentHealResource
     public let deploy: DeployResource
 
@@ -141,6 +143,8 @@ public final class ModulaClient: Sendable {
         importResource = ImportResource(http: http)
         contentBatch = ContentBatchResource(http: http)
         contentTree = ContentTreeResource(http: http)
+        contentReorder = ContentReorderResource(http: http)
+        adminContentReorder = AdminContentReorderResource(http: http)
         contentHeal = ContentHealResource(http: http)
         deploy = DeployResource(http: http)
 
