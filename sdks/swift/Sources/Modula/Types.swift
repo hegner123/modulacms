@@ -2923,3 +2923,41 @@ public struct MediaReferenceScanResponse: Codable, Sendable {
         case referenceCount = "reference_count"
     }
 }
+
+/// Result of a media storage health scan showing orphaned files.
+public struct MediaHealthResponse: Codable, Sendable {
+    /// Total number of objects in the storage bucket.
+    public let totalObjects: Int
+    /// Number of storage keys tracked in the database.
+    public let trackedKeys: Int
+    /// Storage keys that exist in the bucket but have no database record.
+    public let orphanedKeys: [String]
+    /// Count of orphaned keys.
+    public let orphanCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case totalObjects = "total_objects"
+        case trackedKeys = "tracked_keys"
+        case orphanedKeys = "orphaned_keys"
+        case orphanCount = "orphan_count"
+    }
+}
+
+/// Result of a media cleanup operation that removed orphaned files.
+public struct MediaCleanupResponse: Codable, Sendable {
+    /// Storage keys that were successfully deleted.
+    public let deleted: [String]
+    /// Count of successfully deleted keys.
+    public let deletedCount: Int
+    /// Storage keys that failed to delete.
+    public let failed: [String]
+    /// Count of keys that failed to delete.
+    public let failedCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case deleted
+        case deletedCount = "deleted_count"
+        case failed
+        case failedCount = "failed_count"
+    }
+}
