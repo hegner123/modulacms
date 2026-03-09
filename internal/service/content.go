@@ -94,6 +94,15 @@ func (s *ContentService) Get(ctx context.Context, id types.ContentID) (*db.Conte
 	return cd, nil
 }
 
+// GetFull retrieves a composed content data view with author, datatype, and fields.
+func (s *ContentService) GetFull(ctx context.Context, id types.ContentID) (*db.ContentDataView, error) {
+	view, err := db.AssembleContentDataView(s.driver, id)
+	if err != nil {
+		return nil, &NotFoundError{Resource: "content_data", ID: string(id)}
+	}
+	return view, nil
+}
+
 // List returns all content data rows.
 func (s *ContentService) List(ctx context.Context) (*[]db.ContentData, error) {
 	return s.driver.ListContentData()

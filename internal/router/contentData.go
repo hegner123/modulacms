@@ -43,6 +43,36 @@ func ContentDataHandler(w http.ResponseWriter, r *http.Request, svc *service.Reg
 	}
 }
 
+// ContentDataFullHandler handles requests for the composed content data view.
+func ContentDataFullHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiGetContentDataFull(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// apiGetContentDataFull handles GET requests for a content data item with author, datatype, and fields.
+func apiGetContentDataFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	q := r.URL.Query().Get("q")
+	cdID := types.ContentID(q)
+	if err := cdID.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	view, err := svc.Content.GetFull(r.Context(), cdID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(view)
+}
+
 // apiGetContentData handles GET requests for a single content data
 func apiGetContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	q := r.URL.Query().Get("q")

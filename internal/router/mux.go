@@ -141,6 +141,9 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	mux.Handle("/api/v1/contentdata/", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ContentDataHandler(w, r, svc)
 	})))
+	mux.Handle("GET /api/v1/contentdata/full", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ContentDataFullHandler(w, r, svc)
+	})))
 
 	// Content fields
 	mux.Handle("/api/v1/contentfields", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
