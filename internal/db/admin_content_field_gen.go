@@ -21,6 +21,7 @@ import (
 type AdminContentFields struct {
 	AdminContentFieldID types.AdminContentFieldID    `json:"admin_content_field_id"`
 	AdminRouteID        types.NullableAdminRouteID   `json:"admin_route_id"`
+	RootID              types.NullableAdminContentID `json:"root_id"`
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
@@ -33,6 +34,7 @@ type AdminContentFields struct {
 // CreateAdminContentFieldParams contains parameters for creating a new adminContentField.
 type CreateAdminContentFieldParams struct {
 	AdminRouteID       types.NullableAdminRouteID   `json:"admin_route_id"`
+	RootID             types.NullableAdminContentID `json:"root_id"`
 	AdminContentDataID types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID       types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue    string                       `json:"admin_field_value"`
@@ -45,6 +47,7 @@ type CreateAdminContentFieldParams struct {
 // UpdateAdminContentFieldParams contains parameters for updating an existing adminContentField.
 type UpdateAdminContentFieldParams struct {
 	AdminRouteID        types.NullableAdminRouteID   `json:"admin_route_id"`
+	RootID              types.NullableAdminContentID `json:"root_id"`
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
@@ -67,6 +70,7 @@ func MapStringAdminContentField(a AdminContentFields) StringAdminContentFields {
 	return StringAdminContentFields{
 		AdminContentFieldID: a.AdminContentFieldID.String(),
 		AdminRouteID:        a.AdminRouteID.String(),
+		RootID:              a.RootID.String(),
 		AdminContentDataID:  a.AdminContentDataID.String(),
 		AdminFieldID:        a.AdminFieldID.String(),
 		AdminFieldValue:     a.AdminFieldValue,
@@ -89,6 +93,7 @@ func (d Database) MapAdminContentField(a mdb.AdminContentFields) AdminContentFie
 	return AdminContentFields{
 		AdminContentFieldID: a.AdminContentFieldID,
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -104,6 +109,7 @@ func (d Database) MapCreateAdminContentFieldParams(a CreateAdminContentFieldPara
 	return mdb.CreateAdminContentFieldParams{
 		AdminContentFieldID: types.NewAdminContentFieldID(),
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -118,6 +124,7 @@ func (d Database) MapCreateAdminContentFieldParams(a CreateAdminContentFieldPara
 func (d Database) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdb.UpdateAdminContentFieldParams {
 	return mdb.UpdateAdminContentFieldParams{
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -246,6 +253,7 @@ func (d MysqlDatabase) MapAdminContentField(a mdbm.AdminContentFields) AdminCont
 	return AdminContentFields{
 		AdminContentFieldID: a.AdminContentFieldID,
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -261,6 +269,7 @@ func (d MysqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFiel
 	return mdbm.CreateAdminContentFieldParams{
 		AdminContentFieldID: types.NewAdminContentFieldID(),
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -275,6 +284,7 @@ func (d MysqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFiel
 func (d MysqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdbm.UpdateAdminContentFieldParams {
 	return mdbm.UpdateAdminContentFieldParams{
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -403,6 +413,7 @@ func (d PsqlDatabase) MapAdminContentField(a mdbp.AdminContentFields) AdminConte
 	return AdminContentFields{
 		AdminContentFieldID: a.AdminContentFieldID,
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -418,6 +429,7 @@ func (d PsqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentField
 	return mdbp.CreateAdminContentFieldParams{
 		AdminContentFieldID: types.NewAdminContentFieldID(),
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -432,6 +444,7 @@ func (d PsqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentField
 func (d PsqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdbp.UpdateAdminContentFieldParams {
 	return mdbp.UpdateAdminContentFieldParams{
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -591,6 +604,7 @@ func (c NewAdminContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (
 	return queries.CreateAdminContentField(ctx, mdb.CreateAdminContentFieldParams{
 		AdminContentFieldID: types.NewAdminContentFieldID(),
 		AdminRouteID:        c.params.AdminRouteID,
+		RootID:              c.params.RootID,
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,
@@ -649,6 +663,7 @@ func (c UpdateAdminContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX
 	queries := mdb.New(tx)
 	return queries.UpdateAdminContentField(ctx, mdb.UpdateAdminContentFieldParams{
 		AdminRouteID:        c.params.AdminRouteID,
+		RootID:              c.params.RootID,
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,
@@ -751,6 +766,7 @@ func (c NewAdminContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DB
 	params := mdbm.CreateAdminContentFieldParams{
 		AdminContentFieldID: types.NewAdminContentFieldID(),
 		AdminRouteID:        c.params.AdminRouteID,
+		RootID:              c.params.RootID,
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,
@@ -813,6 +829,7 @@ func (c UpdateAdminContentFieldCmdMysql) Execute(ctx context.Context, tx audited
 	queries := mdbm.New(tx)
 	return queries.UpdateAdminContentField(ctx, mdbm.UpdateAdminContentFieldParams{
 		AdminRouteID:        c.params.AdminRouteID,
+		RootID:              c.params.RootID,
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,
@@ -915,6 +932,7 @@ func (c NewAdminContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBT
 	return queries.CreateAdminContentField(ctx, mdbp.CreateAdminContentFieldParams{
 		AdminContentFieldID: types.NewAdminContentFieldID(),
 		AdminRouteID:        c.params.AdminRouteID,
+		RootID:              c.params.RootID,
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,
@@ -973,6 +991,7 @@ func (c UpdateAdminContentFieldCmdPsql) Execute(ctx context.Context, tx audited.
 	queries := mdbp.New(tx)
 	return queries.UpdateAdminContentField(ctx, mdbp.UpdateAdminContentFieldParams{
 		AdminRouteID:        c.params.AdminRouteID,
+		RootID:              c.params.RootID,
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,

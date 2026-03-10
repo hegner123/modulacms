@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     first_child_id VARCHAR(26) NULL,
     next_sibling_id VARCHAR(26) NULL,
     prev_sibling_id VARCHAR(26) NULL,
+    root_id VARCHAR(26) NULL,
     admin_route_id VARCHAR(26) NOT NULL,
     admin_datatype_id VARCHAR(26) NOT NULL,
     author_id VARCHAR(26) NOT NULL,
@@ -34,6 +35,9 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     CONSTRAINT fk_admin_content_data_prev_sibling_id
         FOREIGN KEY (prev_sibling_id) REFERENCES admin_content_data (admin_content_data_id)
              ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_data_root_id
+        FOREIGN KEY (root_id) REFERENCES admin_content_data (admin_content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_admin_content_data_admin_datatypes
         FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes (admin_datatype_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -70,6 +74,7 @@ INSERT INTO admin_content_data (
     first_child_id,
     next_sibling_id,
     prev_sibling_id,
+    root_id,
     admin_route_id,
     admin_datatype_id,
     author_id,
@@ -77,6 +82,7 @@ INSERT INTO admin_content_data (
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -96,6 +102,7 @@ SET parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
     prev_sibling_id = ?,
+    root_id = ?,
     admin_route_id = ?,
     admin_datatype_id = ?,
     author_id = ?,
@@ -145,6 +152,7 @@ WHERE admin_content_data_id = ?;
 -- name: UpdateAdminContentDataWithRevision :exec
 UPDATE admin_content_data
 SET admin_route_id = ?,
+    root_id = ?,
     parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
@@ -187,3 +195,8 @@ UPDATE admin_content_data SET author_id = ? WHERE author_id = ?;
 
 -- name: CountAdminContentDataByAuthor :one
 SELECT COUNT(*) FROM admin_content_data WHERE author_id = ?;
+
+-- name: ListAdminContentDataByRootID :many
+SELECT * FROM admin_content_data
+WHERE root_id = ?
+ORDER BY admin_content_data_id;

@@ -5,6 +5,7 @@ DROP TABLE admin_content_fields;
 CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_field_id TEXT NOT NULL CHECK (length(admin_content_field_id) = 26),
     admin_route_id TEXT,
+    root_id TEXT,
     admin_content_data_id TEXT NOT NULL,
     admin_field_id TEXT NOT NULL,
     admin_field_value TEXT NOT NULL,
@@ -15,6 +16,8 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
 
     PRIMARY KEY (admin_content_field_id),
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id)
+        ON DELETE SET NULL,
+    FOREIGN KEY (root_id) REFERENCES admin_content_data(admin_content_data_id)
         ON DELETE SET NULL,
     FOREIGN KEY (admin_content_data_id) REFERENCES admin_content_data(admin_content_data_id)
         ON DELETE CASCADE,
@@ -46,6 +49,7 @@ ORDER BY admin_content_field_id;
 INSERT INTO admin_content_fields (
     admin_content_field_id,
     admin_route_id,
+    root_id,
     admin_content_data_id,
     admin_field_id,
     admin_field_value,
@@ -62,12 +66,14 @@ INSERT INTO admin_content_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
 ) RETURNING *;
 
 -- name: UpdateAdminContentField :exec
 UPDATE admin_content_fields
 SET admin_route_id = ?,
+    root_id = ?,
     admin_content_data_id = ?,
     admin_field_id = ?,
     admin_field_value = ?,
@@ -105,4 +111,14 @@ ORDER BY admin_content_field_id;
 -- name: ListAdminContentFieldsByRouteAndLocale :many
 SELECT * FROM admin_content_fields
 WHERE admin_route_id = ? AND locale IN (?, '')
+ORDER BY admin_content_data_id, admin_field_id;
+
+-- name: ListAdminContentFieldsByRootID :many
+SELECT * FROM admin_content_fields
+WHERE root_id = ?
+ORDER BY admin_content_data_id, admin_field_id;
+
+-- name: ListAdminContentFieldsByRootIDAndLocale :many
+SELECT * FROM admin_content_fields
+WHERE root_id = ? AND locale IN (?, '')
 ORDER BY admin_content_data_id, admin_field_id;

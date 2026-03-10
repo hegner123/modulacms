@@ -1546,7 +1546,7 @@ func TestContentFieldsStruct_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"content_field_id", "route_id", "content_data_id",
+		"content_field_id", "route_id", "root_id", "content_data_id",
 		"field_id", "field_value", "locale", "author_id",
 		"date_created", "date_modified",
 	}
@@ -1585,7 +1585,7 @@ func TestCreateContentFieldParams_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"route_id", "content_data_id", "field_id",
+		"route_id", "root_id", "content_data_id", "field_id",
 		"field_value", "locale", "author_id",
 		"date_created", "date_modified",
 	}
@@ -1626,7 +1626,7 @@ func TestUpdateContentFieldParams_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"route_id", "content_data_id", "field_id",
+		"route_id", "root_id", "content_data_id", "field_id",
 		"field_value", "locale", "author_id",
 		"date_created", "date_modified",
 		"content_field_id",
@@ -1665,7 +1665,7 @@ func TestContentFieldsJSONStruct_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"content_field_id", "route_id", "content_data_id",
+		"content_field_id", "route_id", "root_id", "content_data_id",
 		"field_id", "field_value", "author_id",
 		"date_created", "date_modified",
 	}

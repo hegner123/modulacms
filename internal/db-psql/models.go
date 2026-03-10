@@ -17,6 +17,7 @@ type AdminContentData struct {
 	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
 	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
+	RootID             types.NullableAdminContentID  `json:"root_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.UserID                  `json:"author_id"`
@@ -32,6 +33,7 @@ type AdminContentData struct {
 type AdminContentFields struct {
 	AdminContentFieldID types.AdminContentFieldID    `json:"admin_content_field_id"`
 	AdminRouteID        types.NullableAdminRouteID   `json:"admin_route_id"`
+	RootID              types.NullableAdminContentID `json:"root_id"`
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
@@ -177,6 +179,7 @@ type ContentData struct {
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.UserID             `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
@@ -191,6 +194,7 @@ type ContentData struct {
 type ContentFields struct {
 	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
 	RouteID        types.NullableRouteID   `json:"route_id"`
+	RootID         types.NullableContentID `json:"root_id"`
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`

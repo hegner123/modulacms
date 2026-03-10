@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS content_fields (
     route_id TEXT
         REFERENCES routes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    root_id TEXT
+        REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
     content_data_id TEXT NOT NULL
         REFERENCES content_data
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -48,6 +51,7 @@ ORDER BY content_field_id;
 INSERT INTO content_fields (
     content_field_id,
     route_id,
+    root_id,
     content_data_id,
     field_id,
     field_value,
@@ -64,6 +68,7 @@ INSERT INTO content_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
 ) RETURNING *;
 
@@ -71,6 +76,7 @@ INSERT INTO content_fields (
 -- name: UpdateContentField :exec
 UPDATE content_fields
 SET route_id = ?,
+    root_id = ?,
     content_data_id = ?,
     field_id = ?,
     field_value = ?,
@@ -109,4 +115,14 @@ ORDER BY content_field_id;
 -- name: ListContentFieldsByRouteAndLocale :many
 SELECT * FROM content_fields
 WHERE route_id = ? AND locale IN (?, '')
+ORDER BY content_data_id, field_id;
+
+-- name: ListContentFieldsByRootID :many
+SELECT * FROM content_fields
+WHERE root_id = ?
+ORDER BY content_data_id, field_id;
+
+-- name: ListContentFieldsByRootIDAndLocale :many
+SELECT * FROM content_fields
+WHERE root_id = ? AND locale IN (?, '')
 ORDER BY content_data_id, field_id;

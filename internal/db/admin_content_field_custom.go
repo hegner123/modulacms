@@ -25,38 +25,6 @@ func (d Database) ListAdminContentFieldsByContentData(contentDataID types.Nullab
 	return &res, nil
 }
 
-// ListAdminContentFieldsByContentData returns all admin content fields for a content item (MySQL).
-func (d MysqlDatabase) ListAdminContentFieldsByContentData(contentDataID types.NullableAdminContentID) (*[]AdminContentFields, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByContentData(d.Context, mdbm.ListAdminContentFieldsByContentDataParams{
-		AdminContentDataID: contentDataID,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminContentFields by contentDataID: %w", err)
-	}
-	res := make([]AdminContentFields, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminContentField(v))
-	}
-	return &res, nil
-}
-
-// ListAdminContentFieldsByContentData returns all admin content fields for a content item (PostgreSQL).
-func (d PsqlDatabase) ListAdminContentFieldsByContentData(contentDataID types.NullableAdminContentID) (*[]AdminContentFields, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByContentData(d.Context, mdbp.ListAdminContentFieldsByContentDataParams{
-		AdminContentDataID: contentDataID,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminContentFields by contentDataID: %w", err)
-	}
-	res := make([]AdminContentFields, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminContentField(v))
-	}
-	return &res, nil
-}
-
 // ListAdminContentFieldsByContentDataAndLocale returns admin content fields filtered by locale (SQLite).
 // Returns fields matching the given locale plus non-translatable fields (locale = "").
 func (d Database) ListAdminContentFieldsByContentDataAndLocale(contentDataID types.NullableAdminContentID, locale string) (*[]AdminContentFields, error) {
@@ -76,15 +44,12 @@ func (d Database) ListAdminContentFieldsByContentDataAndLocale(contentDataID typ
 	return &res, nil
 }
 
-// ListAdminContentFieldsByContentDataAndLocale returns admin content fields filtered by locale (MySQL).
-func (d MysqlDatabase) ListAdminContentFieldsByContentDataAndLocale(contentDataID types.NullableAdminContentID, locale string) (*[]AdminContentFields, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByContentDataAndLocale(d.Context, mdbm.ListAdminContentFieldsByContentDataAndLocaleParams{
-		AdminContentDataID: contentDataID,
-		Locale:             locale,
-	})
+// ListAdminContentFieldsByRootID returns admin content fields for a root_id (SQLite).
+func (d Database) ListAdminContentFieldsByRootID(rootID types.NullableAdminContentID) (*[]AdminContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRootID(d.Context, mdb.ListAdminContentFieldsByRootIDParams{RootID: rootID})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminContentFields by contentDataID and locale: %w", err)
+		return nil, fmt.Errorf("failed to get AdminContentFields by root_id: %w", err)
 	}
 	res := []AdminContentFields{}
 	for _, v := range rows {
@@ -94,15 +59,16 @@ func (d MysqlDatabase) ListAdminContentFieldsByContentDataAndLocale(contentDataI
 	return &res, nil
 }
 
-// ListAdminContentFieldsByContentDataAndLocale returns admin content fields filtered by locale (PostgreSQL).
-func (d PsqlDatabase) ListAdminContentFieldsByContentDataAndLocale(contentDataID types.NullableAdminContentID, locale string) (*[]AdminContentFields, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByContentDataAndLocale(d.Context, mdbp.ListAdminContentFieldsByContentDataAndLocaleParams{
-		AdminContentDataID: contentDataID,
-		Locale:             locale,
+// ListAdminContentFieldsByRootIDAndLocale returns admin content fields for a root_id filtered by locale (SQLite).
+// Returns fields matching the given locale plus non-translatable fields (locale = "").
+func (d Database) ListAdminContentFieldsByRootIDAndLocale(rootID types.NullableAdminContentID, locale string) (*[]AdminContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRootIDAndLocale(d.Context, mdb.ListAdminContentFieldsByRootIDAndLocaleParams{
+		RootID: rootID,
+		Locale: locale,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminContentFields by contentDataID and locale: %w", err)
+		return nil, fmt.Errorf("failed to get AdminContentFields by root_id and locale: %w", err)
 	}
 	res := []AdminContentFields{}
 	for _, v := range rows {
@@ -116,42 +82,6 @@ func (d PsqlDatabase) ListAdminContentFieldsByContentDataAndLocale(contentDataID
 func (d Database) ListAdminContentFieldsByRouteAndLocale(routeID types.NullableAdminRouteID, locale string) (*[]AdminContentFields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListAdminContentFieldsByRouteAndLocale(d.Context, mdb.ListAdminContentFieldsByRouteAndLocaleParams{
-		AdminRouteID: routeID,
-		Locale:       locale,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminContentFields by routeID and locale: %w", err)
-	}
-	res := []AdminContentFields{}
-	for _, v := range rows {
-		m := d.MapAdminContentField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// ListAdminContentFieldsByRouteAndLocale returns admin content fields for a route filtered by locale (MySQL).
-func (d MysqlDatabase) ListAdminContentFieldsByRouteAndLocale(routeID types.NullableAdminRouteID, locale string) (*[]AdminContentFields, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByRouteAndLocale(d.Context, mdbm.ListAdminContentFieldsByRouteAndLocaleParams{
-		AdminRouteID: routeID,
-		Locale:       locale,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminContentFields by routeID and locale: %w", err)
-	}
-	res := []AdminContentFields{}
-	for _, v := range rows {
-		m := d.MapAdminContentField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// ListAdminContentFieldsByRouteAndLocale returns admin content fields for a route filtered by locale (PostgreSQL).
-func (d PsqlDatabase) ListAdminContentFieldsByRouteAndLocale(routeID types.NullableAdminRouteID, locale string) (*[]AdminContentFields, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByRouteAndLocale(d.Context, mdbp.ListAdminContentFieldsByRouteAndLocaleParams{
 		AdminRouteID: routeID,
 		Locale:       locale,
 	})
@@ -184,6 +114,108 @@ func (d Database) ListAdminContentFieldsPaginated(params PaginationParams) (*[]A
 	return &res, nil
 }
 
+// MapAdminContentFieldJSON converts AdminContentFields to ContentFieldsJSON for tree building.
+// Maps admin field value into the public ContentFieldsJSON shape so BuildNodes works unchanged.
+func MapAdminContentFieldJSON(a AdminContentFields) ContentFieldsJSON {
+	return ContentFieldsJSON{
+		ContentFieldID: 0,
+		RouteID:        0,
+		ContentDataID:  0,
+		FieldID:        0,
+		FieldValue:     a.AdminFieldValue,
+		AuthorID:       0,
+		DateCreated:    a.DateCreated.String(),
+		DateModified:   a.DateModified.String(),
+	}
+}
+
+// MYSQL
+
+// ListAdminContentFieldsByContentData returns all admin content fields for a content item (MySQL).
+func (d MysqlDatabase) ListAdminContentFieldsByContentData(contentDataID types.NullableAdminContentID) (*[]AdminContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByContentData(d.Context, mdbm.ListAdminContentFieldsByContentDataParams{
+		AdminContentDataID: contentDataID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by contentDataID: %w", err)
+	}
+	res := make([]AdminContentFields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentField(v))
+	}
+	return &res, nil
+}
+
+// ListAdminContentFieldsByRootID returns admin content fields for a root_id (MySQL).
+func (d MysqlDatabase) ListAdminContentFieldsByRootID(rootID types.NullableAdminContentID) (*[]AdminContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRootID(d.Context, mdbm.ListAdminContentFieldsByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by root_id: %w", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListAdminContentFieldsByRouteAndLocale returns admin content fields for a route filtered by locale (MySQL).
+func (d MysqlDatabase) ListAdminContentFieldsByRouteAndLocale(routeID types.NullableAdminRouteID, locale string) (*[]AdminContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRouteAndLocale(d.Context, mdbm.ListAdminContentFieldsByRouteAndLocaleParams{
+		AdminRouteID: routeID,
+		Locale:       locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by routeID and locale: %w", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListAdminContentFieldsByContentDataAndLocale returns admin content fields filtered by locale (MySQL).
+func (d MysqlDatabase) ListAdminContentFieldsByContentDataAndLocale(contentDataID types.NullableAdminContentID, locale string) (*[]AdminContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByContentDataAndLocale(d.Context, mdbm.ListAdminContentFieldsByContentDataAndLocaleParams{
+		AdminContentDataID: contentDataID,
+		Locale:             locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by contentDataID and locale: %w", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListAdminContentFieldsByRootIDAndLocale returns admin content fields for a root_id filtered by locale (MySQL).
+func (d MysqlDatabase) ListAdminContentFieldsByRootIDAndLocale(rootID types.NullableAdminContentID, locale string) (*[]AdminContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRootIDAndLocale(d.Context, mdbm.ListAdminContentFieldsByRootIDAndLocaleParams{
+		RootID: rootID,
+		Locale: locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by root_id and locale: %w", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 // ListAdminContentFieldsPaginated returns admin content fields with pagination (MySQL).
 func (d MysqlDatabase) ListAdminContentFieldsPaginated(params PaginationParams) (*[]AdminContentFields, error) {
 	queries := mdbm.New(d.Connection)
@@ -193,6 +225,93 @@ func (d MysqlDatabase) ListAdminContentFieldsPaginated(params PaginationParams) 
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AdminContentFields paginated: %w", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// PSQL
+
+// ListAdminContentFieldsByContentData returns all admin content fields for a content item (PostgreSQL).
+func (d PsqlDatabase) ListAdminContentFieldsByContentData(contentDataID types.NullableAdminContentID) (*[]AdminContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByContentData(d.Context, mdbp.ListAdminContentFieldsByContentDataParams{
+		AdminContentDataID: contentDataID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by contentDataID: %w", err)
+	}
+	res := make([]AdminContentFields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentField(v))
+	}
+	return &res, nil
+}
+
+// ListAdminContentFieldsByRootID returns admin content fields for a root_id (PostgreSQL).
+func (d PsqlDatabase) ListAdminContentFieldsByRootID(rootID types.NullableAdminContentID) (*[]AdminContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRootID(d.Context, mdbp.ListAdminContentFieldsByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by root_id: %w", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListAdminContentFieldsByRouteAndLocale returns admin content fields for a route filtered by locale (PostgreSQL).
+func (d PsqlDatabase) ListAdminContentFieldsByRouteAndLocale(routeID types.NullableAdminRouteID, locale string) (*[]AdminContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRouteAndLocale(d.Context, mdbp.ListAdminContentFieldsByRouteAndLocaleParams{
+		AdminRouteID: routeID,
+		Locale:       locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by routeID and locale: %w", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListAdminContentFieldsByContentDataAndLocale returns admin content fields filtered by locale (PostgreSQL).
+func (d PsqlDatabase) ListAdminContentFieldsByContentDataAndLocale(contentDataID types.NullableAdminContentID, locale string) (*[]AdminContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByContentDataAndLocale(d.Context, mdbp.ListAdminContentFieldsByContentDataAndLocaleParams{
+		AdminContentDataID: contentDataID,
+		Locale:             locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by contentDataID and locale: %w", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListAdminContentFieldsByRootIDAndLocale returns admin content fields for a root_id filtered by locale (PostgreSQL).
+func (d PsqlDatabase) ListAdminContentFieldsByRootIDAndLocale(rootID types.NullableAdminContentID, locale string) (*[]AdminContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRootIDAndLocale(d.Context, mdbp.ListAdminContentFieldsByRootIDAndLocaleParams{
+		RootID: rootID,
+		Locale: locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by root_id and locale: %w", err)
 	}
 	res := []AdminContentFields{}
 	for _, v := range rows {
@@ -218,19 +337,4 @@ func (d PsqlDatabase) ListAdminContentFieldsPaginated(params PaginationParams) (
 		res = append(res, m)
 	}
 	return &res, nil
-}
-
-// MapAdminContentFieldJSON converts AdminContentFields to ContentFieldsJSON for tree building.
-// Maps admin field value into the public ContentFieldsJSON shape so BuildNodes works unchanged.
-func MapAdminContentFieldJSON(a AdminContentFields) ContentFieldsJSON {
-	return ContentFieldsJSON{
-		ContentFieldID: 0,
-		RouteID:        0,
-		ContentDataID:  0,
-		FieldID:        0,
-		FieldValue:     a.AdminFieldValue,
-		AuthorID:       0,
-		DateCreated:    a.DateCreated.String(),
-		DateModified:   a.DateModified.String(),
-	}
 }

@@ -12,14 +12,15 @@
     ORDER BY cd.parent_id IS NULL DESC, cd.parent_id, cd.content_data_id;
 
 -- name: GetContentTreeByRoute :many
-SELECT cd.content_data_id, 
-        cd.parent_id, 
+SELECT cd.content_data_id,
+        cd.parent_id,
         cd.first_child_id,
         cd.next_sibling_id,
         cd.prev_sibling_id,
-        cd.datatype_id, 
-        cd.route_id, 
-        cd.author_id, 
+        cd.datatype_id,
+        cd.route_id,
+        cd.root_id,
+        cd.author_id,
         cd.date_created,
         cd.date_modified,
         cd.status,
@@ -27,6 +28,25 @@ SELECT cd.content_data_id,
 FROM content_data cd
 JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 WHERE cd.route_id = ?
+ORDER BY cd.parent_id IS NULL DESC, cd.parent_id, cd.content_data_id;
+
+-- name: GetContentTreeByRootID :many
+SELECT cd.content_data_id,
+        cd.parent_id,
+        cd.first_child_id,
+        cd.next_sibling_id,
+        cd.prev_sibling_id,
+        cd.datatype_id,
+        cd.route_id,
+        cd.root_id,
+        cd.author_id,
+        cd.date_created,
+        cd.date_modified,
+        cd.status,
+       dt.label as datatype_label, dt.type as datatype_type
+FROM content_data cd
+JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+WHERE cd.root_id = ?
 ORDER BY cd.parent_id IS NULL DESC, cd.parent_id, cd.content_data_id;
 
 -- name: GetFieldDefinitionsByRoute :many
@@ -91,7 +111,7 @@ ORDER BY dt.label, r.slug;
 SELECT
     acd.admin_content_data_id, acd.parent_id, acd.first_child_id,
     acd.next_sibling_id, acd.prev_sibling_id, acd.admin_route_id,
-    acd.admin_datatype_id, acd.author_id, acd.status,
+    acd.root_id, acd.admin_datatype_id, acd.author_id, acd.status,
     acd.date_created, acd.date_modified,
     adt.admin_datatype_id AS dt_admin_datatype_id,
     adt.parent_id AS dt_parent_id,
@@ -105,10 +125,28 @@ JOIN admin_datatypes adt ON acd.admin_datatype_id = adt.admin_datatype_id
 WHERE acd.admin_route_id = ?
 ORDER BY acd.parent_id IS NULL DESC, acd.parent_id, acd.admin_content_data_id;
 
+-- name: ListAdminContentDataWithDatatypeByRootID :many
+SELECT
+    acd.admin_content_data_id, acd.parent_id, acd.first_child_id,
+    acd.next_sibling_id, acd.prev_sibling_id, acd.admin_route_id,
+    acd.root_id, acd.admin_datatype_id, acd.author_id, acd.status,
+    acd.date_created, acd.date_modified,
+    adt.admin_datatype_id AS dt_admin_datatype_id,
+    adt.parent_id AS dt_parent_id,
+    adt.label AS dt_label,
+    adt.type AS dt_type,
+    adt.author_id AS dt_author_id,
+    adt.date_created AS dt_date_created,
+    adt.date_modified AS dt_date_modified
+FROM admin_content_data acd
+JOIN admin_datatypes adt ON acd.admin_datatype_id = adt.admin_datatype_id
+WHERE acd.root_id = ?
+ORDER BY acd.parent_id IS NULL DESC, acd.parent_id, acd.admin_content_data_id;
+
 -- name: ListAdminContentFieldsWithFieldByRoute :many
 SELECT
     acf.admin_content_field_id, acf.admin_route_id,
-    acf.admin_content_data_id, acf.admin_field_id,
+    acf.root_id, acf.admin_content_data_id, acf.admin_field_id,
     acf.admin_field_value, acf.author_id,
     acf.date_created, acf.date_modified,
     af.admin_field_id AS f_admin_field_id,
@@ -129,7 +167,7 @@ ORDER BY acf.admin_content_data_id, acf.admin_field_id;
 -- name: ListAdminContentFieldsWithFieldByContentData :many
 SELECT
     acf.admin_content_field_id, acf.admin_route_id,
-    acf.admin_content_data_id, acf.admin_field_id,
+    acf.root_id, acf.admin_content_data_id, acf.admin_field_id,
     acf.admin_field_value, acf.author_id,
     acf.date_created, acf.date_modified,
     af.admin_field_id AS f_admin_field_id,
@@ -150,7 +188,7 @@ ORDER BY acf.admin_field_id;
 -- name: ListContentFieldsWithFieldByContentData :many
 SELECT
     cf.content_field_id, cf.route_id,
-    cf.content_data_id, cf.field_id,
+    cf.root_id, cf.content_data_id, cf.field_id,
     cf.field_value, cf.author_id,
     cf.date_created, cf.date_modified,
     f.field_id AS f_field_id,

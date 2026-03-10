@@ -30,42 +30,6 @@ func (d Database) ListFieldsPaginated(params PaginationParams) (*[]Fields, error
 	return &res, nil
 }
 
-// ListFieldsPaginated returns fields with pagination (MySQL).
-func (d MysqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListFieldPaginated(d.Context, mdbm.ListFieldPaginatedParams{
-		Limit:  int32(params.Limit),
-		Offset: int32(params.Offset),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Fields paginated: %w", err)
-	}
-	res := []Fields{}
-	for _, v := range rows {
-		m := d.MapField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// ListFieldsPaginated returns fields with pagination (PostgreSQL).
-func (d PsqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListFieldPaginated(d.Context, mdbp.ListFieldPaginatedParams{
-		Limit:  int32(params.Limit),
-		Offset: int32(params.Offset),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Fields paginated: %w", err)
-	}
-	res := []Fields{}
-	for _, v := range rows {
-		m := d.MapField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
 // GetFieldsByIDs retrieves fields by a slice of IDs (SQLite).
 func (d Database) GetFieldsByIDs(ctx context.Context, ids []types.FieldID) ([]Fields, error) {
 	if len(ids) == 0 {
@@ -73,45 +37,6 @@ func (d Database) GetFieldsByIDs(ctx context.Context, ids []types.FieldID) ([]Fi
 	}
 	queries := mdb.New(d.Connection)
 	rows, err := queries.GetFieldsByIDs(ctx, mdb.GetFieldsByIDsParams{Ids: ids})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get fields by IDs: %w", err)
-	}
-	res := make([]Fields, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapField(v))
-	}
-	return res, nil
-}
-
-// GetFieldsByIDs retrieves fields by a slice of IDs (MySQL).
-func (d MysqlDatabase) GetFieldsByIDs(ctx context.Context, ids []types.FieldID) ([]Fields, error) {
-	if len(ids) == 0 {
-		return []Fields{}, nil
-	}
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.GetFieldsByIDs(ctx, mdbm.GetFieldsByIDsParams{Ids: ids})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get fields by IDs: %w", err)
-	}
-	res := make([]Fields, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapField(v))
-	}
-	return res, nil
-}
-
-// GetFieldsByIDs retrieves fields by a slice of IDs (PostgreSQL).
-func (d PsqlDatabase) GetFieldsByIDs(ctx context.Context, ids []types.FieldID) ([]Fields, error) {
-	if len(ids) == 0 {
-		return []Fields{}, nil
-	}
-	// PostgreSQL ANY($1::char(26)[]) generates Column1 []string, so convert typed IDs to strings.
-	strs := make([]string, len(ids))
-	for i, id := range ids {
-		strs[i] = string(id)
-	}
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.GetFieldsByIDs(ctx, mdbp.GetFieldsByIDsParams{Column1: strs})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get fields by IDs: %w", err)
 	}
@@ -243,6 +168,74 @@ func (d Database) GetMaxSortOrderByParentID(parentID types.NullableDatatypeID) (
 
 // ===== MySQL UpdateFieldSortOrder Audited Command =====
 
+// ===== PostgreSQL UpdateFieldSortOrder Audited Command =====
+
+// coalesceToInt64 converts the interface{} result from a COALESCE query to int64.
+func coalesceToInt64(v any) int64 {
+	if v == nil {
+		return 0
+	}
+	switch val := v.(type) {
+	case int64:
+		return val
+	case int32:
+		return int64(val)
+	case int:
+		return int64(val)
+	case float64:
+		return int64(val)
+	default:
+		return 0
+	}
+}
+
+// MYSQL
+
+// GetFieldsByIDs retrieves fields by a slice of IDs (MySQL).
+func (d MysqlDatabase) GetFieldsByIDs(ctx context.Context, ids []types.FieldID) ([]Fields, error) {
+	if len(ids) == 0 {
+		return []Fields{}, nil
+	}
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.GetFieldsByIDs(ctx, mdbm.GetFieldsByIDsParams{Ids: ids})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get fields by IDs: %w", err)
+	}
+	res := make([]Fields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapField(v))
+	}
+	return res, nil
+}
+
+// GetMaxSortOrderByParentID retrieves the maximum sort order for fields under a parent datatype (MySQL).
+func (d MysqlDatabase) GetMaxSortOrderByParentID(parentID types.NullableDatatypeID) (int64, error) {
+	queries := mdbm.New(d.Connection)
+	result, err := queries.GetMaxSortOrderByParentID(d.Context, mdbm.GetMaxSortOrderByParentIDParams{ParentID: parentID})
+	if err != nil {
+		return 0, fmt.Errorf("failed to get max sort order by parent id: %w", err)
+	}
+	return coalesceToInt64(result), nil
+}
+
+// ListFieldsPaginated returns fields with pagination (MySQL).
+func (d MysqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListFieldPaginated(d.Context, mdbm.ListFieldPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Fields paginated: %w", err)
+	}
+	res := []Fields{}
+	for _, v := range rows {
+		m := d.MapField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 // UpdateFieldSortOrderCmdMysql is an audited command for updating a field's sort order on MySQL.
 type UpdateFieldSortOrderCmdMysql struct {
 	ctx      context.Context
@@ -299,17 +292,57 @@ func (d MysqlDatabase) UpdateFieldSortOrder(ctx context.Context, ac audited.Audi
 	return audited.Update(cmd)
 }
 
-// GetMaxSortOrderByParentID retrieves the maximum sort order for fields under a parent datatype (MySQL).
-func (d MysqlDatabase) GetMaxSortOrderByParentID(parentID types.NullableDatatypeID) (int64, error) {
-	queries := mdbm.New(d.Connection)
-	result, err := queries.GetMaxSortOrderByParentID(d.Context, mdbm.GetMaxSortOrderByParentIDParams{ParentID: parentID})
+// PSQL
+
+// GetMaxSortOrderByParentID retrieves the maximum sort order for fields under a parent datatype (PostgreSQL).
+func (d PsqlDatabase) GetMaxSortOrderByParentID(parentID types.NullableDatatypeID) (int64, error) {
+	queries := mdbp.New(d.Connection)
+	result, err := queries.GetMaxSortOrderByParentID(d.Context, mdbp.GetMaxSortOrderByParentIDParams{ParentID: parentID})
 	if err != nil {
 		return 0, fmt.Errorf("failed to get max sort order by parent id: %w", err)
 	}
 	return coalesceToInt64(result), nil
 }
 
-// ===== PostgreSQL UpdateFieldSortOrder Audited Command =====
+// ListFieldsPaginated returns fields with pagination (PostgreSQL).
+func (d PsqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListFieldPaginated(d.Context, mdbp.ListFieldPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Fields paginated: %w", err)
+	}
+	res := []Fields{}
+	for _, v := range rows {
+		m := d.MapField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// GetFieldsByIDs retrieves fields by a slice of IDs (PostgreSQL).
+func (d PsqlDatabase) GetFieldsByIDs(ctx context.Context, ids []types.FieldID) ([]Fields, error) {
+	if len(ids) == 0 {
+		return []Fields{}, nil
+	}
+	// PostgreSQL ANY($1::char(26)[]) generates Column1 []string, so convert typed IDs to strings.
+	strs := make([]string, len(ids))
+	for i, id := range ids {
+		strs[i] = string(id)
+	}
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.GetFieldsByIDs(ctx, mdbp.GetFieldsByIDsParams{Column1: strs})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get fields by IDs: %w", err)
+	}
+	res := make([]Fields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapField(v))
+	}
+	return res, nil
+}
 
 // UpdateFieldSortOrderCmdPsql is an audited command for updating a field's sort order on PostgreSQL.
 type UpdateFieldSortOrderCmdPsql struct {
@@ -365,33 +398,4 @@ func (d PsqlDatabase) UpdateFieldSortOrderCmd(ctx context.Context, auditCtx audi
 func (d PsqlDatabase) UpdateFieldSortOrder(ctx context.Context, ac audited.AuditContext, s UpdateFieldSortOrderParams) error {
 	cmd := d.UpdateFieldSortOrderCmd(ctx, ac, s)
 	return audited.Update(cmd)
-}
-
-// GetMaxSortOrderByParentID retrieves the maximum sort order for fields under a parent datatype (PostgreSQL).
-func (d PsqlDatabase) GetMaxSortOrderByParentID(parentID types.NullableDatatypeID) (int64, error) {
-	queries := mdbp.New(d.Connection)
-	result, err := queries.GetMaxSortOrderByParentID(d.Context, mdbp.GetMaxSortOrderByParentIDParams{ParentID: parentID})
-	if err != nil {
-		return 0, fmt.Errorf("failed to get max sort order by parent id: %w", err)
-	}
-	return coalesceToInt64(result), nil
-}
-
-// coalesceToInt64 converts the interface{} result from a COALESCE query to int64.
-func coalesceToInt64(v any) int64 {
-	if v == nil {
-		return 0
-	}
-	switch val := v.(type) {
-	case int64:
-		return val
-	case int32:
-		return int64(val)
-	case int:
-		return int64(val)
-	case float64:
-		return int64(val)
-	default:
-		return 0
-	}
 }

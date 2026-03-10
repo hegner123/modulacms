@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     route_id TEXT
         REFERENCES routes
             ON DELETE SET NULL,
+    root_id TEXT,
     datatype_id TEXT NOT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     FOREIGN KEY (next_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (prev_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE SET NULL,
+    FOREIGN KEY (root_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (datatype_id) REFERENCES datatypes(datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET NULL
 );
@@ -65,6 +67,7 @@ ORDER BY content_data_id;
 INSERT INTO content_data (
     content_data_id,
     route_id,
+    root_id,
     parent_id,
     first_child_id,
     next_sibling_id,
@@ -85,12 +88,14 @@ INSERT INTO content_data (
     ?,
     ?,
     ?,
+    ?,
     ?
 ) RETURNING *;
 
 -- name: UpdateContentData :exec
 UPDATE content_data
 SET route_id = ?,
+    root_id = ?,
     parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
@@ -153,6 +158,7 @@ WHERE content_data_id = ?;
 -- name: UpdateContentDataWithRevision :exec
 UPDATE content_data
 SET route_id = ?,
+    root_id = ?,
     parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
@@ -209,3 +215,8 @@ UPDATE content_data SET author_id = ? WHERE author_id = ?;
 
 -- name: CountContentDataByAuthor :one
 SELECT COUNT(*) FROM content_data WHERE author_id = ?;
+
+-- name: ListContentDataByRootID :many
+SELECT * FROM content_data
+WHERE root_id = ?
+ORDER BY content_data_id;

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     first_child_id TEXT,
     next_sibling_id TEXT,
     prev_sibling_id TEXT,
+    root_id TEXT,
     admin_route_id TEXT NOT NULL,
     admin_datatype_id TEXT NOT NULL,
     author_id TEXT NOT NULL,
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     FOREIGN KEY (first_child_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (next_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (prev_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (root_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id) ON DELETE RESTRICT,
     FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes(admin_datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET NULL
@@ -52,6 +54,7 @@ INSERT INTO admin_content_data (
     first_child_id,
     next_sibling_id,
     prev_sibling_id,
+    root_id,
     admin_route_id,
     admin_datatype_id,
     author_id,
@@ -59,6 +62,7 @@ INSERT INTO admin_content_data (
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -78,6 +82,7 @@ SET parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
     prev_sibling_id = ?,
+    root_id = ?,
     admin_route_id = ?,
     admin_datatype_id = ?,
     author_id = ?,
@@ -127,6 +132,7 @@ WHERE admin_content_data_id = ?;
 -- name: UpdateAdminContentDataWithRevision :exec
 UPDATE admin_content_data
 SET admin_route_id = ?,
+    root_id = ?,
     parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
@@ -169,3 +175,8 @@ UPDATE admin_content_data SET author_id = ? WHERE author_id = ?;
 
 -- name: CountAdminContentDataByAuthor :one
 SELECT COUNT(*) FROM admin_content_data WHERE author_id = ?;
+
+-- name: ListAdminContentDataByRootID :many
+SELECT * FROM admin_content_data
+WHERE root_id = ?
+ORDER BY admin_content_data_id;

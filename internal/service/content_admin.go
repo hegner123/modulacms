@@ -14,7 +14,7 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-// AdminContentService manages admin content CRUD, content fields, tree operations
+// AdminContentService manages public content CRUD, content fields, tree operations
 // (reorder, move, save), publishing, versioning, batch updates, and heal.
 // Implements ops.Backend[types.AdminContentID] for sibling-pointer tree algorithms.
 type AdminContentService struct {
@@ -23,7 +23,7 @@ type AdminContentService struct {
 	dispatcher publishing.WebhookDispatcher
 }
 
-// NewAdminContentService creates an AdminContentService with the given dependencies.
+// NewAdminContentService creates a AdminContentService with the given dependencies.
 func NewAdminContentService(
 	driver db.DbDriver,
 	mgr *config.Manager,
@@ -130,9 +130,43 @@ func (s *AdminContentService) ListPaginated(ctx context.Context, params db.Pagin
 // spliced into the parent's sibling chain via AppendChild. Auto-creates empty
 // admin content fields for every field belonging to the assigned admin datatype.
 func (s *AdminContentService) Create(ctx context.Context, ac audited.AuditContext, params db.CreateAdminContentDataParams) (*db.AdminContentData, error) {
+	// Resolve root_id before creation when the caller hasn't set it.
+	// Child nodes inherit root_id from their parent.
+	if !params.RootID.Valid && params.ParentID.Valid {
+		parent, lookupErr := s.driver.GetAdminContentData(params.ParentID.ID)
+		if lookupErr != nil {
+			utility.DefaultLogger.Error("admin create: failed to look up parent for root_id", lookupErr)
+		} else if parent != nil {
+			params.RootID = parent.RootID
+		}
+	}
+
 	cd, err := s.driver.CreateAdminContentData(ctx, ac, params)
 	if err != nil {
 		return nil, fmt.Errorf("create admin content data: %w", err)
+	}
+
+	// Root nodes (no parent) set root_id to self. The ID is not available
+	// until after the INSERT, so a follow-up update is required.
+	if !cd.ParentID.Valid && !cd.RootID.Valid {
+		cd.RootID = types.NullableAdminContentID{ID: cd.AdminContentDataID, Valid: true}
+		_, rootErr := s.driver.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
+			AdminContentDataID: cd.AdminContentDataID,
+			RootID:             cd.RootID,
+			ParentID:           cd.ParentID,
+			FirstChildID:       cd.FirstChildID,
+			NextSiblingID:      cd.NextSiblingID,
+			PrevSiblingID:      cd.PrevSiblingID,
+			AdminRouteID:       cd.AdminRouteID,
+			AdminDatatypeID:    cd.AdminDatatypeID,
+			AuthorID:           cd.AuthorID,
+			Status:             cd.Status,
+			DateCreated:        cd.DateCreated,
+			DateModified:       types.TimestampNow(),
+		})
+		if rootErr != nil {
+			utility.DefaultLogger.Error("admin create: failed to set root_id on new root content", rootErr)
+		}
 	}
 
 	// Splice into parent's sibling chain
@@ -170,6 +204,7 @@ func (s *AdminContentService) autoCreateAdminFields(ctx context.Context, ac audi
 	for _, field := range *fieldList {
 		_, cfErr := s.driver.CreateAdminContentField(ctx, ac, db.CreateAdminContentFieldParams{
 			AdminRouteID:       cd.AdminRouteID,
+			RootID:             cd.RootID,
 			AdminContentDataID: types.NullableAdminContentID{ID: cd.AdminContentDataID, Valid: true},
 			AdminFieldID:       types.NullableAdminFieldID{ID: field.AdminFieldID, Valid: true},
 			AdminFieldValue:    "",

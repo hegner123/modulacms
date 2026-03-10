@@ -5,6 +5,7 @@ DROP TABLE content_fields;
 CREATE TABLE IF NOT EXISTS content_fields (
     content_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     route_id VARCHAR(26) NULL,
+    root_id VARCHAR(26) NULL,
     content_data_id VARCHAR(26) NOT NULL,
     field_id VARCHAR(26) NOT NULL,
     field_value TEXT NOT NULL,
@@ -13,6 +14,9 @@ CREATE TABLE IF NOT EXISTS content_fields (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_content_field_root_id
+        FOREIGN KEY (root_id) REFERENCES content_data (content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_content_field_content_data
         FOREIGN KEY (content_data_id) REFERENCES content_data (content_data_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -53,6 +57,7 @@ ORDER BY content_field_id;
 INSERT INTO content_fields (
     content_field_id,
     route_id,
+    root_id,
     content_data_id,
     field_id,
     field_value,
@@ -69,12 +74,14 @@ INSERT INTO content_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
 );
 
 -- name: UpdateContentField :exec
 UPDATE content_fields
 SET route_id = ?,
+    root_id = ?,
     content_data_id = ?,
     field_id = ?,
     field_value = ?,
@@ -113,4 +120,14 @@ ORDER BY content_field_id;
 -- name: ListContentFieldsByRouteAndLocale :many
 SELECT * FROM content_fields
 WHERE route_id = ? AND locale IN (?, '')
+ORDER BY content_data_id, field_id;
+
+-- name: ListContentFieldsByRootID :many
+SELECT * FROM content_fields
+WHERE root_id = ?
+ORDER BY content_data_id, field_id;
+
+-- name: ListContentFieldsByRootIDAndLocale :many
+SELECT * FROM content_fields
+WHERE root_id = ? AND locale IN (?, '')
 ORDER BY content_data_id, field_id;

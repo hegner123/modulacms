@@ -253,8 +253,24 @@ func (d Database) DeleteWebhookCmd(ctx context.Context, auditCtx audited.AuditCo
 }
 
 ///////////////////////////////
-// MYSQL
 //////////////////////////////
+
+// ----- MySQL CREATE COMMAND -----
+
+// ----- MySQL UPDATE COMMAND -----
+
+// ----- MySQL DELETE COMMAND -----
+
+///////////////////////////////
+//////////////////////////////
+
+// ----- PostgreSQL CREATE COMMAND -----
+
+// ----- PostgreSQL UPDATE COMMAND -----
+
+// ----- PostgreSQL DELETE COMMAND -----
+
+// MYSQL
 
 // MapWebhook converts a sqlc-generated MySQL webhook to the wrapper type.
 func (d MysqlDatabase) MapWebhook(a mdbm.Webhooks) Webhook {
@@ -325,8 +341,6 @@ func (d MysqlDatabase) DeleteWebhook(ctx context.Context, ac audited.AuditContex
 	return audited.Delete(cmd)
 }
 
-// ----- MySQL CREATE COMMAND -----
-
 // NewWebhookCmdMysql is an audited command for creating webhooks on MySQL.
 type NewWebhookCmdMysql struct {
 	ctx      context.Context
@@ -343,7 +357,6 @@ func (c NewWebhookCmdMysql) Recorder() audited.ChangeEventRecorder { return c.re
 func (c NewWebhookCmdMysql) TableName() string                     { return "webhooks" }
 func (c NewWebhookCmdMysql) Params() any                           { return c.params }
 func (c NewWebhookCmdMysql) GetID(u mdbm.Webhooks) string          { return string(u.WebhookID) }
-
 func (c NewWebhookCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Webhooks, error) {
 	queries := mdbm.New(tx)
 	params := mdbm.CreateWebhookParams{
@@ -363,12 +376,9 @@ func (c NewWebhookCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.
 	}
 	return queries.GetWebhook(ctx, mdbm.GetWebhookParams{WebhookID: params.WebhookID})
 }
-
 func (d MysqlDatabase) NewWebhookCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateWebhookParams) NewWebhookCmdMysql {
 	return NewWebhookCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
-
-// ----- MySQL UPDATE COMMAND -----
 
 // UpdateWebhookCmdMysql is an audited command for updating webhooks on MySQL.
 type UpdateWebhookCmdMysql struct {
@@ -386,12 +396,10 @@ func (c UpdateWebhookCmdMysql) Recorder() audited.ChangeEventRecorder { return c
 func (c UpdateWebhookCmdMysql) TableName() string                     { return "webhooks" }
 func (c UpdateWebhookCmdMysql) Params() any                           { return c.params }
 func (c UpdateWebhookCmdMysql) GetID() string                         { return string(c.params.WebhookID) }
-
 func (c UpdateWebhookCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Webhooks, error) {
 	queries := mdbm.New(tx)
 	return queries.GetWebhook(ctx, mdbm.GetWebhookParams{WebhookID: c.params.WebhookID})
 }
-
 func (c UpdateWebhookCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.UpdateWebhook(ctx, mdbm.UpdateWebhookParams{
@@ -405,12 +413,9 @@ func (c UpdateWebhookCmdMysql) Execute(ctx context.Context, tx audited.DBTX) err
 		WebhookID:    c.params.WebhookID,
 	})
 }
-
 func (d MysqlDatabase) UpdateWebhookCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateWebhookParams) UpdateWebhookCmdMysql {
 	return UpdateWebhookCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
-
-// ----- MySQL DELETE COMMAND -----
 
 // DeleteWebhookCmdMysql is an audited command for deleting webhooks on MySQL.
 type DeleteWebhookCmdMysql struct {
@@ -427,24 +432,19 @@ func (c DeleteWebhookCmdMysql) Connection() *sql.DB                   { return c
 func (c DeleteWebhookCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteWebhookCmdMysql) TableName() string                     { return "webhooks" }
 func (c DeleteWebhookCmdMysql) GetID() string                         { return string(c.id) }
-
 func (c DeleteWebhookCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Webhooks, error) {
 	queries := mdbm.New(tx)
 	return queries.GetWebhook(ctx, mdbm.GetWebhookParams{WebhookID: c.id})
 }
-
 func (c DeleteWebhookCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.DeleteWebhook(ctx, mdbm.DeleteWebhookParams{WebhookID: c.id})
 }
-
 func (d MysqlDatabase) DeleteWebhookCmd(ctx context.Context, auditCtx audited.AuditContext, id types.WebhookID) DeleteWebhookCmdMysql {
 	return DeleteWebhookCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
 }
 
-///////////////////////////////
-// POSTGRES
-//////////////////////////////
+// PSQL
 
 // MapWebhook converts a sqlc-generated PostgreSQL webhook to the wrapper type.
 func (d PsqlDatabase) MapWebhook(a mdbp.Webhooks) Webhook {
@@ -515,8 +515,6 @@ func (d PsqlDatabase) DeleteWebhook(ctx context.Context, ac audited.AuditContext
 	return audited.Delete(cmd)
 }
 
-// ----- PostgreSQL CREATE COMMAND -----
-
 // NewWebhookCmdPsql is an audited command for creating webhooks on PostgreSQL.
 type NewWebhookCmdPsql struct {
 	ctx      context.Context
@@ -533,7 +531,6 @@ func (c NewWebhookCmdPsql) Recorder() audited.ChangeEventRecorder { return c.rec
 func (c NewWebhookCmdPsql) TableName() string                     { return "webhooks" }
 func (c NewWebhookCmdPsql) Params() any                           { return c.params }
 func (c NewWebhookCmdPsql) GetID(u mdbp.Webhooks) string          { return string(u.WebhookID) }
-
 func (c NewWebhookCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Webhooks, error) {
 	queries := mdbp.New(tx)
 	return queries.CreateWebhook(ctx, mdbp.CreateWebhookParams{
@@ -549,12 +546,9 @@ func (c NewWebhookCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.W
 		DateModified: c.params.DateModified,
 	})
 }
-
 func (d PsqlDatabase) NewWebhookCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateWebhookParams) NewWebhookCmdPsql {
 	return NewWebhookCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }
-
-// ----- PostgreSQL UPDATE COMMAND -----
 
 // UpdateWebhookCmdPsql is an audited command for updating webhooks on PostgreSQL.
 type UpdateWebhookCmdPsql struct {
@@ -572,12 +566,10 @@ func (c UpdateWebhookCmdPsql) Recorder() audited.ChangeEventRecorder { return c.
 func (c UpdateWebhookCmdPsql) TableName() string                     { return "webhooks" }
 func (c UpdateWebhookCmdPsql) Params() any                           { return c.params }
 func (c UpdateWebhookCmdPsql) GetID() string                         { return string(c.params.WebhookID) }
-
 func (c UpdateWebhookCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Webhooks, error) {
 	queries := mdbp.New(tx)
 	return queries.GetWebhook(ctx, mdbp.GetWebhookParams{WebhookID: c.params.WebhookID})
 }
-
 func (c UpdateWebhookCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.UpdateWebhook(ctx, mdbp.UpdateWebhookParams{
@@ -591,12 +583,9 @@ func (c UpdateWebhookCmdPsql) Execute(ctx context.Context, tx audited.DBTX) erro
 		WebhookID:    c.params.WebhookID,
 	})
 }
-
 func (d PsqlDatabase) UpdateWebhookCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateWebhookParams) UpdateWebhookCmdPsql {
 	return UpdateWebhookCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }
-
-// ----- PostgreSQL DELETE COMMAND -----
 
 // DeleteWebhookCmdPsql is an audited command for deleting webhooks on PostgreSQL.
 type DeleteWebhookCmdPsql struct {
@@ -613,17 +602,14 @@ func (c DeleteWebhookCmdPsql) Connection() *sql.DB                   { return c.
 func (c DeleteWebhookCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteWebhookCmdPsql) TableName() string                     { return "webhooks" }
 func (c DeleteWebhookCmdPsql) GetID() string                         { return string(c.id) }
-
 func (c DeleteWebhookCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Webhooks, error) {
 	queries := mdbp.New(tx)
 	return queries.GetWebhook(ctx, mdbp.GetWebhookParams{WebhookID: c.id})
 }
-
 func (c DeleteWebhookCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.DeleteWebhook(ctx, mdbp.DeleteWebhookParams{WebhookID: c.id})
 }
-
 func (d PsqlDatabase) DeleteWebhookCmd(ctx context.Context, auditCtx audited.AuditContext, id types.WebhookID) DeleteWebhookCmdPsql {
 	return DeleteWebhookCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

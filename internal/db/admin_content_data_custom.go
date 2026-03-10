@@ -38,6 +38,20 @@ func MapAdminContentDataJSON(a AdminContentData) ContentDataJSON {
 	}
 }
 
+// ListAdminContentDataByRootID returns all admin content data for a given root_id (SQLite).
+func (d Database) ListAdminContentDataByRootID(rootID types.NullableAdminContentID) (*[]AdminContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentDataByRootID(d.Context, mdb.ListAdminContentDataByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content data by root_id: %w", err)
+	}
+	res := make([]AdminContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentData(v))
+	}
+	return &res, nil
+}
+
 ///////////////////////////////
 // TOP-LEVEL ADMIN CONTENT DATA
 //////////////////////////////
@@ -62,6 +76,7 @@ func (d Database) mapAdminContentDataTopLevel(a mdb.ListAdminContentDataTopLevel
 			FirstChildID:       a.FirstChildID,
 			NextSiblingID:      a.NextSiblingID,
 			PrevSiblingID:      a.PrevSiblingID,
+			RootID:             a.RootID,
 			AdminRouteID:       a.AdminRouteID,
 			AdminDatatypeID:    a.AdminDatatypeID,
 			AuthorID:           a.AuthorID,
@@ -108,7 +123,39 @@ func (d Database) CountAdminContentDataTopLevel() (*int64, error) {
 	return &c, nil
 }
 
+///////////////////////////////
+// ADMIN CONTENT DATA DESCENDANTS
+//////////////////////////////
+
+// GetAdminContentDataDescendants returns a node and all its descendants via recursive CTE (SQLite).
+func (d Database) GetAdminContentDataDescendants(ctx context.Context, id types.AdminContentID) (*[]AdminContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.GetAdminContentDataDescendants(ctx, mdb.GetAdminContentDataDescendantsParams{AdminContentDataID: id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin content data descendants: %w", err)
+	}
+	res := make([]AdminContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentData(v))
+	}
+	return &res, nil
+}
+
 // MYSQL
+
+// ListAdminContentDataByRootID returns all admin content data for a given root_id (MySQL).
+func (d MysqlDatabase) ListAdminContentDataByRootID(rootID types.NullableAdminContentID) (*[]AdminContentData, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentDataByRootID(d.Context, mdbm.ListAdminContentDataByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content data by root_id: %w", err)
+	}
+	res := make([]AdminContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentData(v))
+	}
+	return &res, nil
+}
 
 func (d MysqlDatabase) mapAdminContentDataTopLevel(a mdbm.ListAdminContentDataTopLevelPaginatedRow) AdminContentDataTopLevel {
 	return AdminContentDataTopLevel{
@@ -118,6 +165,7 @@ func (d MysqlDatabase) mapAdminContentDataTopLevel(a mdbm.ListAdminContentDataTo
 			FirstChildID:       a.FirstChildID,
 			NextSiblingID:      a.NextSiblingID,
 			PrevSiblingID:      a.PrevSiblingID,
+			RootID:             a.RootID,
 			AdminRouteID:       a.AdminRouteID,
 			AdminDatatypeID:    a.AdminDatatypeID,
 			AuthorID:           a.AuthorID,
@@ -135,6 +183,30 @@ func (d MysqlDatabase) mapAdminContentDataTopLevel(a mdbm.ListAdminContentDataTo
 		DatatypeLabel: a.DatatypeLabel,
 		DatatypeType:  a.DatatypeType,
 	}
+}
+
+// CountAdminContentDataTopLevel returns the count of admin content entries that have a route or _root datatype.
+func (d MysqlDatabase) CountAdminContentDataTopLevel() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountAdminContentDataTopLevel(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count top-level AdminContentData: %v", err)
+	}
+	return &c, nil
+}
+
+// GetAdminContentDataDescendants returns a node and all its descendants via recursive CTE (MySQL).
+func (d MysqlDatabase) GetAdminContentDataDescendants(ctx context.Context, id types.AdminContentID) (*[]AdminContentData, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.GetAdminContentDataDescendants(ctx, mdbm.GetAdminContentDataDescendantsParams{AdminContentDataID: id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin content data descendants: %w", err)
+	}
+	res := make([]AdminContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentData(v))
+	}
+	return &res, nil
 }
 
 // ListAdminContentDataTopLevelPaginated returns paginated admin content entries that have a route or _root datatype.
@@ -154,17 +226,21 @@ func (d MysqlDatabase) ListAdminContentDataTopLevelPaginated(params PaginationPa
 	return &res, nil
 }
 
-// CountAdminContentDataTopLevel returns the count of admin content entries that have a route or _root datatype.
-func (d MysqlDatabase) CountAdminContentDataTopLevel() (*int64, error) {
-	queries := mdbm.New(d.Connection)
-	c, err := queries.CountAdminContentDataTopLevel(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("failed to count top-level AdminContentData: %v", err)
-	}
-	return &c, nil
-}
-
 // PSQL
+
+// ListAdminContentDataByRootID returns all admin content data for a given root_id (PostgreSQL).
+func (d PsqlDatabase) ListAdminContentDataByRootID(rootID types.NullableAdminContentID) (*[]AdminContentData, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentDataByRootID(d.Context, mdbp.ListAdminContentDataByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content data by root_id: %w", err)
+	}
+	res := make([]AdminContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentData(v))
+	}
+	return &res, nil
+}
 
 func (d PsqlDatabase) mapAdminContentDataTopLevel(a mdbp.ListAdminContentDataTopLevelPaginatedRow) AdminContentDataTopLevel {
 	return AdminContentDataTopLevel{
@@ -174,6 +250,7 @@ func (d PsqlDatabase) mapAdminContentDataTopLevel(a mdbp.ListAdminContentDataTop
 			FirstChildID:       a.FirstChildID,
 			NextSiblingID:      a.NextSiblingID,
 			PrevSiblingID:      a.PrevSiblingID,
+			RootID:             a.RootID,
 			AdminRouteID:       a.AdminRouteID,
 			AdminDatatypeID:    a.AdminDatatypeID,
 			AuthorID:           a.AuthorID,
@@ -193,6 +270,30 @@ func (d PsqlDatabase) mapAdminContentDataTopLevel(a mdbp.ListAdminContentDataTop
 	}
 }
 
+// CountAdminContentDataTopLevel returns the count of admin content entries that have a route or _root datatype.
+func (d PsqlDatabase) CountAdminContentDataTopLevel() (*int64, error) {
+	queries := mdbp.New(d.Connection)
+	c, err := queries.CountAdminContentDataTopLevel(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count top-level AdminContentData: %v", err)
+	}
+	return &c, nil
+}
+
+// GetAdminContentDataDescendants returns a node and all its descendants via recursive CTE (PostgreSQL).
+func (d PsqlDatabase) GetAdminContentDataDescendants(ctx context.Context, id types.AdminContentID) (*[]AdminContentData, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.GetAdminContentDataDescendants(ctx, mdbp.GetAdminContentDataDescendantsParams{AdminContentDataID: id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin content data descendants: %w", err)
+	}
+	res := make([]AdminContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentData(v))
+	}
+	return &res, nil
+}
+
 // ListAdminContentDataTopLevelPaginated returns paginated admin content entries that have a route or _root datatype.
 func (d PsqlDatabase) ListAdminContentDataTopLevelPaginated(params PaginationParams) (*[]AdminContentDataTopLevel, error) {
 	queries := mdbp.New(d.Connection)
@@ -206,62 +307,6 @@ func (d PsqlDatabase) ListAdminContentDataTopLevelPaginated(params PaginationPar
 	res := make([]AdminContentDataTopLevel, 0, len(rows))
 	for _, v := range rows {
 		res = append(res, d.mapAdminContentDataTopLevel(v))
-	}
-	return &res, nil
-}
-
-// CountAdminContentDataTopLevel returns the count of admin content entries that have a route or _root datatype.
-func (d PsqlDatabase) CountAdminContentDataTopLevel() (*int64, error) {
-	queries := mdbp.New(d.Connection)
-	c, err := queries.CountAdminContentDataTopLevel(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("failed to count top-level AdminContentData: %v", err)
-	}
-	return &c, nil
-}
-
-///////////////////////////////
-// ADMIN CONTENT DATA DESCENDANTS
-//////////////////////////////
-
-// GetAdminContentDataDescendants returns a node and all its descendants via recursive CTE (SQLite).
-func (d Database) GetAdminContentDataDescendants(ctx context.Context, id types.AdminContentID) (*[]AdminContentData, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.GetAdminContentDataDescendants(ctx, mdb.GetAdminContentDataDescendantsParams{AdminContentDataID: id})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get admin content data descendants: %w", err)
-	}
-	res := make([]AdminContentData, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminContentData(v))
-	}
-	return &res, nil
-}
-
-// GetAdminContentDataDescendants returns a node and all its descendants via recursive CTE (MySQL).
-func (d MysqlDatabase) GetAdminContentDataDescendants(ctx context.Context, id types.AdminContentID) (*[]AdminContentData, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.GetAdminContentDataDescendants(ctx, mdbm.GetAdminContentDataDescendantsParams{AdminContentDataID: id})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get admin content data descendants: %w", err)
-	}
-	res := make([]AdminContentData, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminContentData(v))
-	}
-	return &res, nil
-}
-
-// GetAdminContentDataDescendants returns a node and all its descendants via recursive CTE (PostgreSQL).
-func (d PsqlDatabase) GetAdminContentDataDescendants(ctx context.Context, id types.AdminContentID) (*[]AdminContentData, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.GetAdminContentDataDescendants(ctx, mdbp.GetAdminContentDataDescendantsParams{AdminContentDataID: id})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get admin content data descendants: %w", err)
-	}
-	res := make([]AdminContentData, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminContentData(v))
 	}
 	return &res, nil
 }

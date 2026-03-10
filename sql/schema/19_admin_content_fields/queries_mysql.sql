@@ -5,6 +5,7 @@ DROP TABLE admin_content_fields;
 CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     admin_route_id VARCHAR(26) NULL,
+    root_id VARCHAR(26) NULL,
     admin_content_data_id VARCHAR(26) NOT NULL,
     admin_field_id VARCHAR(26) NOT NULL,
     admin_field_value TEXT NOT NULL,
@@ -13,6 +14,9 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_admin_content_field_root_id
+        FOREIGN KEY (root_id) REFERENCES admin_content_data (admin_content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_admin_content_field_admin_content_data
         FOREIGN KEY (admin_content_data_id) REFERENCES admin_content_data (admin_content_data_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -48,6 +52,7 @@ ORDER BY admin_content_field_id;
 INSERT INTO admin_content_fields (
     admin_content_field_id,
     admin_route_id,
+    root_id,
     admin_content_data_id,
     admin_field_id,
     admin_field_value,
@@ -64,12 +69,14 @@ INSERT INTO admin_content_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
 );
 
 -- name: UpdateAdminContentField :exec
 UPDATE admin_content_fields
 SET admin_route_id=?,
+    root_id=?,
     admin_content_data_id=?,
     admin_field_id=?,
     admin_field_value=?,
@@ -107,4 +114,14 @@ ORDER BY admin_content_field_id;
 -- name: ListAdminContentFieldsByRouteAndLocale :many
 SELECT * FROM admin_content_fields
 WHERE admin_route_id = ? AND locale IN (?, '')
+ORDER BY admin_content_data_id, admin_field_id;
+
+-- name: ListAdminContentFieldsByRootID :many
+SELECT * FROM admin_content_fields
+WHERE root_id = ?
+ORDER BY admin_content_data_id, admin_field_id;
+
+-- name: ListAdminContentFieldsByRootIDAndLocale :many
+SELECT * FROM admin_content_fields
+WHERE root_id = ? AND locale IN (?, '')
 ORDER BY admin_content_data_id, admin_field_id;

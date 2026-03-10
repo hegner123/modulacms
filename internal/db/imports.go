@@ -142,11 +142,12 @@ type StringAdminFieldTypes struct {
 // StringContentData represents content data as strings for TUI display.
 type StringContentData struct {
 	ContentDataID string `json:"content_data_id"`
-	RouteID       string `json:"route_id"`
 	ParentID      string `json:"parent_id"`
 	FirstChildID  string `json:"first_child_id"`
 	NextSiblingID string `json:"next_sibling_id"`
 	PrevSiblingID string `json:"prev_sibling_id"`
+	RootID        string `json:"root_id"`
+	RouteID       string `json:"route_id"`
 	DatatypeID    string `json:"datatype_id"`
 	AuthorID      string `json:"author_id"`
 	Status        string `json:"status"`
@@ -163,6 +164,7 @@ type StringContentData struct {
 type StringContentFields struct {
 	ContentFieldID string `json:"content_field_id"`
 	RouteID        string `json:"route_id"`
+	RootID         string `json:"root_id"`
 	ContentDataID  string `json:"content_data_id"`
 	FieldID        string `json:"field_id"`
 	FieldValue     string `json:"field_value"`
@@ -225,6 +227,7 @@ type StringAdminContentData struct {
 	FirstChildID       string `json:"first_child_id"`
 	NextSiblingID      string `json:"next_sibling_id"`
 	PrevSiblingID      string `json:"prev_sibling_id"`
+	RootID             string `json:"root_id"`
 	AdminRouteID       string `json:"admin_route_id"`
 	AdminDatatypeID    string `json:"admin_datatype_id"`
 	AuthorID           string `json:"author_id"`
@@ -242,6 +245,7 @@ type StringAdminContentData struct {
 type StringAdminContentFields struct {
 	AdminContentFieldID string `json:"admin_content_field_id"`
 	AdminRouteID        string `json:"admin_route_id"`
+	RootID              string `json:"root_id"`
 	AdminContentDataID  string `json:"admin_content_data_id"`
 	AdminFieldID        string `json:"admin_field_id"`
 	AdminFieldValue     string `json:"admin_field_value"`

@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS content_fields (
     content_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     route_id VARCHAR(26) NULL,
+    root_id VARCHAR(26) NULL,
     content_data_id VARCHAR(26) NOT NULL,
     field_id VARCHAR(26) NOT NULL,
     field_value TEXT NOT NULL,
@@ -9,6 +10,9 @@ CREATE TABLE IF NOT EXISTS content_fields (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_content_field_root_id
+        FOREIGN KEY (root_id) REFERENCES content_data (content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_content_field_content_data
         FOREIGN KEY (content_data_id) REFERENCES content_data (content_data_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -24,6 +28,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
 );
 
 CREATE INDEX idx_content_fields_route ON content_fields(route_id);
+CREATE INDEX idx_content_fields_root ON content_fields(root_id);
 CREATE INDEX idx_content_fields_content ON content_fields(content_data_id);
 CREATE INDEX idx_content_fields_field ON content_fields(field_id);
 CREATE INDEX idx_content_fields_author ON content_fields(author_id);

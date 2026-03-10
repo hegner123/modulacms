@@ -107,6 +107,7 @@ var Renames = []Rename{
 	{From: "prev_sibling_id", To: "PrevSiblingID", Quoted: true},
 	{From: "record_id", To: "RecordID", Quoted: true},
 	{From: "role_id", To: "RoleID", Quoted: true},
+	{From: "root_id", To: "RootID", Quoted: true},
 	{From: "route_id", To: "RouteID", Quoted: true},
 	{From: "session_id", To: "SessionID", Quoted: true},
 	{From: "source_content_id", To: "SourceContentID", Quoted: true},
@@ -227,6 +228,11 @@ var Overrides = []Override{
 	{Comment: "admin_content_data tree pointers (self-referential FKs to admin_content_data)", Column: "admin_content_data.first_child_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableAdminContentID"},
 	{Column: "admin_content_data.next_sibling_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableAdminContentID"},
 	{Column: "admin_content_data.prev_sibling_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableAdminContentID"},
+	// root_id tree pointers (denormalized root node reference)
+	{Comment: "root_id tree pointers (denormalized root node reference)", Column: "content_data.root_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableContentID"},
+	{Column: "content_fields.root_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableContentID"},
+	{Column: "admin_content_data.root_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableAdminContentID"},
+	{Column: "admin_content_fields.root_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableAdminContentID"},
 	// FIX: datatypes.parent_id references datatypes, not content_data
 	{Comment: "FIX: datatypes.parent_id references datatypes, not content_data", Column: "datatypes.parent_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableDatatypeID"},
 	// FIX: admin_datatypes.parent_id references admin_datatypes, not content_data

@@ -138,6 +138,7 @@ var Entities = []Entity{
 			{AppName: "FirstChildID", Type: "types.NullableContentID", JSONTag: "first_child_id", InCreate: true, InUpdate: true, StringConvert: "nullableIDToEmpty"},
 			{AppName: "NextSiblingID", Type: "types.NullableContentID", JSONTag: "next_sibling_id", InCreate: true, InUpdate: true, StringConvert: "nullableIDToEmpty"},
 			{AppName: "PrevSiblingID", Type: "types.NullableContentID", JSONTag: "prev_sibling_id", InCreate: true, InUpdate: true, StringConvert: "nullableIDToEmpty"},
+			{AppName: "RootID", Type: "types.NullableContentID", JSONTag: "root_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "RouteID", Type: "types.NullableRouteID", JSONTag: "route_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "DatatypeID", Type: "types.NullableDatatypeID", JSONTag: "datatype_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "AuthorID", Type: "types.UserID", JSONTag: "author_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
@@ -202,6 +203,7 @@ var Entities = []Entity{
 		Fields: []Field{
 			{AppName: "ContentFieldID", Type: "types.ContentFieldID", JSONTag: "content_field_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "toString"},
 			{AppName: "RouteID", Type: "types.NullableRouteID", JSONTag: "route_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "RootID", Type: "types.NullableContentID", JSONTag: "root_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "ContentDataID", Type: "types.NullableContentID", JSONTag: "content_data_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "FieldID", Type: "types.NullableFieldID", JSONTag: "field_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "FieldValue", Type: "string", JSONTag: "field_value", InCreate: true, InUpdate: true, StringConvert: "string"},
@@ -289,6 +291,7 @@ var Entities = []Entity{
 			{AppName: "FirstChildID", Type: "types.NullableAdminContentID", JSONTag: "first_child_id", InCreate: true, InUpdate: true, StringConvert: ""},
 			{AppName: "NextSiblingID", Type: "types.NullableAdminContentID", JSONTag: "next_sibling_id", InCreate: true, InUpdate: true, StringConvert: ""},
 			{AppName: "PrevSiblingID", Type: "types.NullableAdminContentID", JSONTag: "prev_sibling_id", InCreate: true, InUpdate: true, StringConvert: ""},
+			{AppName: "RootID", Type: "types.NullableAdminContentID", JSONTag: "root_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "AdminRouteID", Type: "types.NullableAdminRouteID", JSONTag: "admin_route_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "AdminDatatypeID", Type: "types.NullableAdminDatatypeID", JSONTag: "admin_datatype_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "AuthorID", Type: "types.UserID", JSONTag: "author_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
@@ -353,6 +356,7 @@ var Entities = []Entity{
 		Fields: []Field{
 			{AppName: "AdminContentFieldID", Type: "types.AdminContentFieldID", JSONTag: "admin_content_field_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "toString"},
 			{AppName: "AdminRouteID", Type: "types.NullableAdminRouteID", JSONTag: "admin_route_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "RootID", Type: "types.NullableAdminContentID", JSONTag: "root_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "AdminContentDataID", Type: "types.NullableAdminContentID", JSONTag: "admin_content_data_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "AdminFieldID", Type: "types.NullableAdminFieldID", JSONTag: "admin_field_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "AdminFieldValue", Type: "string", JSONTag: "admin_field_value", InCreate: true, InUpdate: true, StringConvert: "string"},

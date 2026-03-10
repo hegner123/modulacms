@@ -47,54 +47,10 @@ func (d Database) GetDatatypeByName(name string) (*Datatypes, error) {
 	return &m, nil
 }
 
-// GetDatatypeByName returns the datatype matching the given name (MySQL).
-func (d MysqlDatabase) GetDatatypeByName(name string) (*Datatypes, error) {
-	queries := mdbm.New(d.Connection)
-	row, err := queries.GetDatatypeByName(d.Context, mdbm.GetDatatypeByNameParams{Name: name})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get datatype by name %q: %w", name, err)
-	}
-	m := d.MapDatatype(row)
-	return &m, nil
-}
-
-// GetDatatypeByName returns the datatype matching the given name (PostgreSQL).
-func (d PsqlDatabase) GetDatatypeByName(name string) (*Datatypes, error) {
-	queries := mdbp.New(d.Connection)
-	row, err := queries.GetDatatypeByName(d.Context, mdbp.GetDatatypeByNameParams{Name: name})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get datatype by name %q: %w", name, err)
-	}
-	m := d.MapDatatype(row)
-	return &m, nil
-}
-
 // GetDatatypeByType returns the first datatype matching the given type string (SQLite).
 func (d Database) GetDatatypeByType(t string) (*Datatypes, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetDatatypeByType(d.Context, mdb.GetDatatypeByTypeParams{Type: t})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get datatype by type %q: %w", t, err)
-	}
-	m := d.MapDatatype(row)
-	return &m, nil
-}
-
-// GetDatatypeByType returns the first datatype matching the given type string (MySQL).
-func (d MysqlDatabase) GetDatatypeByType(t string) (*Datatypes, error) {
-	queries := mdbm.New(d.Connection)
-	row, err := queries.GetDatatypeByType(d.Context, mdbm.GetDatatypeByTypeParams{Type: t})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get datatype by type %q: %w", t, err)
-	}
-	m := d.MapDatatype(row)
-	return &m, nil
-}
-
-// GetDatatypeByType returns the first datatype matching the given type string (PostgreSQL).
-func (d PsqlDatabase) GetDatatypeByType(t string) (*Datatypes, error) {
-	queries := mdbp.New(d.Connection)
-	row, err := queries.GetDatatypeByType(d.Context, mdbp.GetDatatypeByTypeParams{Type: t})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get datatype by type %q: %w", t, err)
 	}
@@ -117,69 +73,9 @@ func (d Database) ListDatatypesRoot() (*[]Datatypes, error) {
 	return &res, nil
 }
 
-// ListDatatypesRoot returns all root-level datatypes.
-func (d MysqlDatabase) ListDatatypesRoot() (*[]Datatypes, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListDatatypeRoot(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Datatypes: %v", err)
-	}
-	res := []Datatypes{}
-	for _, v := range rows {
-		m := d.MapDatatype(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// ListDatatypesRoot returns all root-level datatypes.
-func (d PsqlDatabase) ListDatatypesRoot() (*[]Datatypes, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListDatatypeRoot(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Datatypes: %v", err)
-	}
-	res := []Datatypes{}
-	for _, v := range rows {
-		m := d.MapDatatype(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
 // ListDatatypesGlobal returns all datatypes with type _global.
 func (d Database) ListDatatypesGlobal() (*[]Datatypes, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListDatatypeGlobal(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get global Datatypes: %w", err)
-	}
-	res := []Datatypes{}
-	for _, v := range rows {
-		m := d.MapDatatype(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// ListDatatypesGlobal returns all datatypes with type _global.
-func (d MysqlDatabase) ListDatatypesGlobal() (*[]Datatypes, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListDatatypeGlobal(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get global Datatypes: %w", err)
-	}
-	res := []Datatypes{}
-	for _, v := range rows {
-		m := d.MapDatatype(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// ListDatatypesGlobal returns all datatypes with type _global.
-func (d PsqlDatabase) ListDatatypesGlobal() (*[]Datatypes, error) {
-	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListDatatypeGlobal(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get global Datatypes: %w", err)
@@ -210,6 +106,60 @@ func (d Database) ListDatatypesPaginated(params PaginationParams) (*[]Datatypes,
 	return &res, nil
 }
 
+// MYSQL
+
+// GetDatatypeByName returns the datatype matching the given name (MySQL).
+func (d MysqlDatabase) GetDatatypeByName(name string) (*Datatypes, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetDatatypeByName(d.Context, mdbm.GetDatatypeByNameParams{Name: name})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get datatype by name %q: %w", name, err)
+	}
+	m := d.MapDatatype(row)
+	return &m, nil
+}
+
+// GetDatatypeByType returns the first datatype matching the given type string (MySQL).
+func (d MysqlDatabase) GetDatatypeByType(t string) (*Datatypes, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetDatatypeByType(d.Context, mdbm.GetDatatypeByTypeParams{Type: t})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get datatype by type %q: %w", t, err)
+	}
+	m := d.MapDatatype(row)
+	return &m, nil
+}
+
+// ListDatatypesRoot returns all root-level datatypes.
+func (d MysqlDatabase) ListDatatypesRoot() (*[]Datatypes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListDatatypeRoot(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListDatatypesGlobal returns all datatypes with type _global.
+func (d MysqlDatabase) ListDatatypesGlobal() (*[]Datatypes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListDatatypeGlobal(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get global Datatypes: %w", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 // ListDatatypesPaginated returns datatypes with pagination (MySQL).
 func (d MysqlDatabase) ListDatatypesPaginated(params PaginationParams) (*[]Datatypes, error) {
 	queries := mdbm.New(d.Connection)
@@ -219,6 +169,60 @@ func (d MysqlDatabase) ListDatatypesPaginated(params PaginationParams) (*[]Datat
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Datatypes paginated: %w", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// PSQL
+
+// GetDatatypeByName returns the datatype matching the given name (PostgreSQL).
+func (d PsqlDatabase) GetDatatypeByName(name string) (*Datatypes, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetDatatypeByName(d.Context, mdbp.GetDatatypeByNameParams{Name: name})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get datatype by name %q: %w", name, err)
+	}
+	m := d.MapDatatype(row)
+	return &m, nil
+}
+
+// GetDatatypeByType returns the first datatype matching the given type string (PostgreSQL).
+func (d PsqlDatabase) GetDatatypeByType(t string) (*Datatypes, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetDatatypeByType(d.Context, mdbp.GetDatatypeByTypeParams{Type: t})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get datatype by type %q: %w", t, err)
+	}
+	m := d.MapDatatype(row)
+	return &m, nil
+}
+
+// ListDatatypesRoot returns all root-level datatypes.
+func (d PsqlDatabase) ListDatatypesRoot() (*[]Datatypes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListDatatypeRoot(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListDatatypesGlobal returns all datatypes with type _global.
+func (d PsqlDatabase) ListDatatypesGlobal() (*[]Datatypes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListDatatypeGlobal(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get global Datatypes: %w", err)
 	}
 	res := []Datatypes{}
 	for _, v := range rows {

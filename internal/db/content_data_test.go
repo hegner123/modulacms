@@ -1688,7 +1688,7 @@ func TestContentDataStruct_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"content_data_id", "parent_id", "first_child_id",
-		"next_sibling_id", "prev_sibling_id", "route_id",
+		"next_sibling_id", "prev_sibling_id", "root_id", "route_id",
 		"datatype_id", "author_id", "status",
 		"date_created", "date_modified",
 		"published_at", "published_by", "publish_at", "revision",
@@ -1725,7 +1725,7 @@ func TestCreateContentDataParams_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"route_id", "parent_id", "first_child_id",
-		"next_sibling_id", "prev_sibling_id", "datatype_id",
+		"next_sibling_id", "prev_sibling_id", "root_id", "datatype_id",
 		"author_id", "status", "date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1762,7 +1762,7 @@ func TestUpdateContentDataParams_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"route_id", "parent_id", "first_child_id",
-		"next_sibling_id", "prev_sibling_id", "datatype_id",
+		"next_sibling_id", "prev_sibling_id", "root_id", "datatype_id",
 		"author_id", "status", "date_created", "date_modified",
 		"content_data_id",
 	}
@@ -1804,7 +1804,7 @@ func TestContentDataJSONStruct_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"content_data_id", "parent_id", "first_child_id",
-		"next_sibling_id", "prev_sibling_id", "route_id",
+		"next_sibling_id", "prev_sibling_id", "root_id", "route_id",
 		"datatype_id", "author_id", "status",
 		"date_created", "date_modified",
 		"published_at", "published_by", "publish_at", "revision",

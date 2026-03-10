@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS content_fields (
         CONSTRAINT fk_route_id
             REFERENCES routes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    root_id TEXT
+        CONSTRAINT fk_root_id
+            REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
     content_data_id TEXT NOT NULL
         CONSTRAINT fk_content_data
             REFERENCES content_data
@@ -52,6 +56,7 @@ ORDER BY content_field_id;
 INSERT INTO content_fields (
     content_field_id,
     route_id,
+    root_id,
     content_data_id,
     field_id,
     field_value,
@@ -68,20 +73,22 @@ INSERT INTO content_fields (
     $6,
     $7,
     $8,
-    $9
+    $9,
+    $10
 ) RETURNING *;
 
 -- name: UpdateContentField :exec
 UPDATE content_fields
 SET route_id = $1,
-    content_data_id = $2,
-    field_id = $3,
-    field_value = $4,
-    locale = $5,
-    author_id = $6,
-    date_created = $7,
-    date_modified = $8
-WHERE content_field_id = $9;
+    root_id = $2,
+    content_data_id = $3,
+    field_id = $4,
+    field_value = $5,
+    locale = $6,
+    author_id = $7,
+    date_created = $8,
+    date_modified = $9
+WHERE content_field_id = $10;
 
 -- name: DeleteContentField :exec
 DELETE FROM content_fields
@@ -112,4 +119,14 @@ ORDER BY content_field_id;
 -- name: ListContentFieldsByRouteAndLocale :many
 SELECT * FROM content_fields
 WHERE route_id = $1 AND locale IN ($2, '')
+ORDER BY content_data_id, field_id;
+
+-- name: ListContentFieldsByRootID :many
+SELECT * FROM content_fields
+WHERE root_id = $1
+ORDER BY content_data_id, field_id;
+
+-- name: ListContentFieldsByRootIDAndLocale :many
+SELECT * FROM content_fields
+WHERE root_id = $1 AND locale IN ($2, '')
 ORDER BY content_data_id, field_id;

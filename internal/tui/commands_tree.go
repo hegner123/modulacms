@@ -224,6 +224,45 @@ func (m Model) ReloadContentTree(c *config.Config, routeID types.RouteID) tea.Cm
 	}
 }
 
+// ReloadContentTreeByRootID loads a content tree by root_id for standalone/global content.
+func (m Model) ReloadContentTreeByRootID(c *config.Config, rootID types.ContentID) tea.Cmd {
+	logger := m.Logger
+	if logger == nil {
+		logger = utility.DefaultLogger
+	}
+	return func() tea.Msg {
+		d := db.ConfigDB(*c)
+
+		nullableRootID := types.NullableContentID{ID: rootID, Valid: !rootID.IsZero()}
+		rows, err := d.GetContentTreeByRootID(nullableRootID)
+		if err != nil {
+			logger.Ferror(fmt.Sprintf("GetContentTreeByRootID error for root %s", rootID), err)
+			return FetchErrMsg{Error: fmt.Errorf("failed to fetch content tree by root_id: %w", err)}
+		}
+
+		if rows == nil || len(*rows) == 0 {
+			logger.Finfo(fmt.Sprintf("GetContentTreeByRootID returned no rows for root %s", rootID))
+			return TreeLoadedMsg{
+				Stats:    &tree.LoadStats{},
+				RootNode: nil,
+			}
+		}
+
+		logger.Finfo(fmt.Sprintf("GetContentTreeByRootID returned %d rows for root %s", len(*rows), rootID))
+
+		newRoot := tree.NewRoot()
+		stats, loadErr := newRoot.LoadFromRows(rows)
+		if loadErr != nil {
+			return FetchErrMsg{Error: fmt.Errorf("failed to load tree from rows: %w", loadErr)}
+		}
+
+		return TreeLoadedMsg{
+			Stats:    stats,
+			RootNode: newRoot,
+		}
+	}
+}
+
 // ReorderSiblingCmd creates a command to reorder content among siblings.
 func ReorderSiblingCmd(contentID types.ContentID, routeID types.RouteID, direction string) tea.Cmd {
 	return func() tea.Msg {
@@ -347,6 +386,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 		now := types.TimestampNow()
 		newContent, createErr := d.CreateContentData(ctx, ac, db.CreateContentDataParams{
 			RouteID:       source.RouteID,
+			RootID:        source.RootID,
 			ParentID:      source.ParentID,
 			FirstChildID:  types.NullableContentID{},                                      // no children (flat copy)
 			NextSiblingID: source.NextSiblingID,                                           // take source's next

@@ -49,6 +49,7 @@ type ContentDataRepository interface {
 	ListContentData() (*[]ContentData, error)
 	ListContentDataByRoute(types.NullableRouteID) (*[]ContentData, error)
 	ListContentDataByDatatypeID(types.DatatypeID) (*[]ContentData, error)
+	ListContentDataByRootID(types.NullableContentID) (*[]ContentData, error)
 	ListContentDataGlobal() (*[]ContentData, error)
 	ListContentDataPaginated(PaginationParams) (*[]ContentData, error)
 	ListContentDataTopLevelPaginated(PaginationParams) (*[]ContentDataTopLevel, error)
@@ -113,6 +114,8 @@ type ContentFieldRepository interface {
 	ListContentFieldsWithFieldByContentData(types.NullableContentID) (*[]ContentFieldWithFieldRow, error)
 	ListContentFieldsByContentDataAndLocale(types.NullableContentID, string) (*[]ContentFields, error)
 	ListContentFieldsByContentDataIDs(context.Context, []types.ContentID, string) (*[]ContentFields, error)
+	ListContentFieldsByRootID(types.NullableContentID) (*[]ContentFields, error)
+	ListContentFieldsByRootIDAndLocale(types.NullableContentID, string) (*[]ContentFields, error)
 	ListContentFieldsByRouteAndLocale(types.NullableRouteID, string) (*[]ContentFields, error)
 	UpdateContentField(context.Context, audited.AuditContext, UpdateContentFieldParams) (*string, error)
 }
@@ -128,10 +131,12 @@ type AdminContentDataRepository interface {
 	GetAdminContentData(types.AdminContentID) (*AdminContentData, error)
 	ListAdminContentData() (*[]AdminContentData, error)
 	ListAdminContentDataByRoute(types.NullableAdminRouteID) (*[]AdminContentData, error)
+	ListAdminContentDataByRootID(types.NullableAdminContentID) (*[]AdminContentData, error)
 	ListAdminContentDataPaginated(PaginationParams) (*[]AdminContentData, error)
 	ListAdminContentDataTopLevelPaginated(PaginationParams) (*[]AdminContentDataTopLevel, error)
 	ListAdminContentDataByRoutePaginated(ListAdminContentDataByRoutePaginatedParams) (*[]AdminContentData, error)
 	ListAdminContentDataWithDatatypeByRoute(types.NullableAdminRouteID) (*[]AdminContentDataWithDatatypeRow, error)
+	ListAdminContentDataWithDatatypeByRootID(types.NullableAdminContentID) (*[]AdminContentDataWithDatatypeRow, error)
 	CountAdminContentDataTopLevel() (*int64, error)
 	UpdateAdminContentData(context.Context, audited.AuditContext, UpdateAdminContentDataParams) (*string, error)
 	UpdateAdminContentDataPublishMeta(context.Context, UpdateAdminContentDataPublishMetaParams) error
@@ -186,6 +191,8 @@ type AdminContentFieldRepository interface {
 	ListAdminContentFieldsWithFieldByRoute(types.NullableAdminRouteID) (*[]AdminContentFieldsWithFieldRow, error)
 	ListAdminContentFieldsByContentData(types.NullableAdminContentID) (*[]AdminContentFields, error)
 	ListAdminContentFieldsByContentDataAndLocale(types.NullableAdminContentID, string) (*[]AdminContentFields, error)
+	ListAdminContentFieldsByRootID(types.NullableAdminContentID) (*[]AdminContentFields, error)
+	ListAdminContentFieldsByRootIDAndLocale(types.NullableAdminContentID, string) (*[]AdminContentFields, error)
 	ListAdminContentFieldsByRouteAndLocale(types.NullableAdminRouteID, string) (*[]AdminContentFields, error)
 	ListAdminContentFieldsWithFieldByContentData(types.NullableAdminContentID) (*[]AdminContentFieldsWithFieldRow, error)
 	ListAdminContentFieldsByContentDataIDs(context.Context, []types.AdminContentID, string) (*[]AdminContentFields, error)
@@ -294,6 +301,7 @@ type RouteRepository interface {
 	CreateRouteTable() error
 	DeleteRoute(context.Context, audited.AuditContext, types.RouteID) error
 	GetContentTreeByRoute(types.NullableRouteID) (*[]GetContentTreeByRouteRow, error)
+	GetContentTreeByRootID(types.NullableContentID) (*[]GetContentTreeByRouteRow, error)
 	GetRoute(types.RouteID) (*Routes, error)
 	GetRouteID(string) (*types.RouteID, error)
 	GetRouteTreeByRouteID(types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error)

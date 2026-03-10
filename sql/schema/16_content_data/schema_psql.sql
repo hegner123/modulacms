@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS content_data (
         CONSTRAINT fk_routes
             REFERENCES routes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    root_id TEXT
+        CONSTRAINT fk_root_id
+            REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
     datatype_id TEXT
         CONSTRAINT fk_datatypes
             REFERENCES datatypes
@@ -42,6 +46,7 @@ CREATE TABLE IF NOT EXISTS content_data (
 
 CREATE INDEX IF NOT EXISTS idx_content_data_parent ON content_data(parent_id);
 CREATE INDEX IF NOT EXISTS idx_content_data_route ON content_data(route_id);
+CREATE INDEX IF NOT EXISTS idx_content_data_root ON content_data(root_id);
 CREATE INDEX IF NOT EXISTS idx_content_data_datatype ON content_data(datatype_id);
 CREATE INDEX IF NOT EXISTS idx_content_data_author ON content_data(author_id);
 

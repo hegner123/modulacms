@@ -758,6 +758,7 @@ INSERT INTO admin_content_data (
     first_child_id,
     next_sibling_id,
     prev_sibling_id,
+    root_id,
     admin_route_id,
     admin_datatype_id,
     author_id,
@@ -775,8 +776,9 @@ INSERT INTO admin_content_data (
     ?,
     ?,
     ?,
+    ?,
     ?
-) RETURNING admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision
+) RETURNING admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, root_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision
 `
 
 type CreateAdminContentDataParams struct {
@@ -785,6 +787,7 @@ type CreateAdminContentDataParams struct {
 	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
 	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
+	RootID             types.NullableAdminContentID  `json:"root_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.UserID                  `json:"author_id"`
@@ -800,6 +803,7 @@ func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminCon
 		arg.FirstChildID,
 		arg.NextSiblingID,
 		arg.PrevSiblingID,
+		arg.RootID,
 		arg.AdminRouteID,
 		arg.AdminDatatypeID,
 		arg.AuthorID,
@@ -814,6 +818,7 @@ func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminCon
 		&i.FirstChildID,
 		&i.NextSiblingID,
 		&i.PrevSiblingID,
+		&i.RootID,
 		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
@@ -835,6 +840,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     first_child_id TEXT,
     next_sibling_id TEXT,
     prev_sibling_id TEXT,
+    root_id TEXT,
     admin_route_id TEXT NOT NULL,
     admin_datatype_id TEXT NOT NULL,
     author_id TEXT NOT NULL,
@@ -850,6 +856,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     FOREIGN KEY (first_child_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (next_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (prev_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (root_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id) ON DELETE RESTRICT,
     FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes(admin_datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET NULL
@@ -865,6 +872,7 @@ const createAdminContentField = `-- name: CreateAdminContentField :one
 INSERT INTO admin_content_fields (
     admin_content_field_id,
     admin_route_id,
+    root_id,
     admin_content_data_id,
     admin_field_id,
     admin_field_value,
@@ -881,13 +889,15 @@ INSERT INTO admin_content_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
-) RETURNING admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified
+) RETURNING admin_content_field_id, admin_route_id, root_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified
 `
 
 type CreateAdminContentFieldParams struct {
 	AdminContentFieldID types.AdminContentFieldID    `json:"admin_content_field_id"`
 	AdminRouteID        types.NullableAdminRouteID   `json:"admin_route_id"`
+	RootID              types.NullableAdminContentID `json:"root_id"`
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
@@ -901,6 +911,7 @@ func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminCo
 	row := q.db.QueryRowContext(ctx, createAdminContentField,
 		arg.AdminContentFieldID,
 		arg.AdminRouteID,
+		arg.RootID,
 		arg.AdminContentDataID,
 		arg.AdminFieldID,
 		arg.AdminFieldValue,
@@ -913,6 +924,7 @@ func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminCo
 	err := row.Scan(
 		&i.AdminContentFieldID,
 		&i.AdminRouteID,
+		&i.RootID,
 		&i.AdminContentDataID,
 		&i.AdminFieldID,
 		&i.AdminFieldValue,
@@ -928,6 +940,7 @@ const createAdminContentFieldTable = `-- name: CreateAdminContentFieldTable :exe
 CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_field_id TEXT NOT NULL CHECK (length(admin_content_field_id) = 26),
     admin_route_id TEXT,
+    root_id TEXT,
     admin_content_data_id TEXT NOT NULL,
     admin_field_id TEXT NOT NULL,
     admin_field_value TEXT NOT NULL,
@@ -938,6 +951,8 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
 
     PRIMARY KEY (admin_content_field_id),
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id)
+        ON DELETE SET NULL,
+    FOREIGN KEY (root_id) REFERENCES admin_content_data(admin_content_data_id)
         ON DELETE SET NULL,
     FOREIGN KEY (admin_content_data_id) REFERENCES admin_content_data(admin_content_data_id)
         ON DELETE CASCADE,
@@ -1585,6 +1600,7 @@ const createContentData = `-- name: CreateContentData :one
 INSERT INTO content_data (
     content_data_id,
     route_id,
+    root_id,
     parent_id,
     first_child_id,
     next_sibling_id,
@@ -1605,13 +1621,15 @@ INSERT INTO content_data (
     ?,
     ?,
     ?,
+    ?,
     ?
-) RETURNING content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision
+) RETURNING content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, root_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision
 `
 
 type CreateContentDataParams struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
 	FirstChildID  types.NullableContentID  `json:"first_child_id"`
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
@@ -1627,6 +1645,7 @@ func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataPa
 	row := q.db.QueryRowContext(ctx, createContentData,
 		arg.ContentDataID,
 		arg.RouteID,
+		arg.RootID,
 		arg.ParentID,
 		arg.FirstChildID,
 		arg.NextSiblingID,
@@ -1645,6 +1664,7 @@ func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataPa
 		&i.NextSiblingID,
 		&i.PrevSiblingID,
 		&i.RouteID,
+		&i.RootID,
 		&i.DatatypeID,
 		&i.AuthorID,
 		&i.Status,
@@ -1676,6 +1696,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     route_id TEXT
         REFERENCES routes
             ON DELETE SET NULL,
+    root_id TEXT,
     datatype_id TEXT NOT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
@@ -1695,6 +1716,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     FOREIGN KEY (next_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (prev_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE SET NULL,
+    FOREIGN KEY (root_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (datatype_id) REFERENCES datatypes(datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET NULL
 )
@@ -1709,6 +1731,7 @@ const createContentField = `-- name: CreateContentField :one
 INSERT INTO content_fields (
     content_field_id,
     route_id,
+    root_id,
     content_data_id,
     field_id,
     field_value,
@@ -1725,13 +1748,15 @@ INSERT INTO content_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
-) RETURNING content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified
+) RETURNING content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified
 `
 
 type CreateContentFieldParams struct {
 	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
 	RouteID        types.NullableRouteID   `json:"route_id"`
+	RootID         types.NullableContentID `json:"root_id"`
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
@@ -1745,6 +1770,7 @@ func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentField
 	row := q.db.QueryRowContext(ctx, createContentField,
 		arg.ContentFieldID,
 		arg.RouteID,
+		arg.RootID,
 		arg.ContentDataID,
 		arg.FieldID,
 		arg.FieldValue,
@@ -1757,6 +1783,7 @@ func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentField
 	err := row.Scan(
 		&i.ContentFieldID,
 		&i.RouteID,
+		&i.RootID,
 		&i.ContentDataID,
 		&i.FieldID,
 		&i.FieldValue,
@@ -1773,6 +1800,9 @@ CREATE TABLE IF NOT EXISTS content_fields (
     content_field_id TEXT PRIMARY KEY NOT NULL CHECK (length(content_field_id) = 26),
     route_id TEXT
         REFERENCES routes
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    root_id TEXT
+        REFERENCES content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
     content_data_id TEXT NOT NULL
         REFERENCES content_data
@@ -4328,7 +4358,7 @@ func (q *Queries) DropWebhookTable(ctx context.Context) error {
 }
 
 const getAdminContentData = `-- name: GetAdminContentData :one
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, root_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 WHERE admin_content_data_id = ? LIMIT 1
 `
 
@@ -4345,6 +4375,7 @@ func (q *Queries) GetAdminContentData(ctx context.Context, arg GetAdminContentDa
 		&i.FirstChildID,
 		&i.NextSiblingID,
 		&i.PrevSiblingID,
+		&i.RootID,
 		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
@@ -4366,7 +4397,7 @@ WITH RECURSIVE tree AS (
     SELECT cd2.admin_content_data_id FROM admin_content_data cd2
     INNER JOIN tree t ON cd2.parent_id = t.cid
 )
-SELECT cd.admin_content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.admin_route_id, cd.admin_datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision FROM admin_content_data cd
+SELECT cd.admin_content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.root_id, cd.admin_route_id, cd.admin_datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision FROM admin_content_data cd
 INNER JOIN tree t ON cd.admin_content_data_id = t.cid
 `
 
@@ -4389,6 +4420,7 @@ func (q *Queries) GetAdminContentDataDescendants(ctx context.Context, arg GetAdm
 			&i.FirstChildID,
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
+			&i.RootID,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
@@ -4414,7 +4446,7 @@ func (q *Queries) GetAdminContentDataDescendants(ctx context.Context, arg GetAdm
 }
 
 const getAdminContentField = `-- name: GetAdminContentField :one
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, root_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 WHERE admin_content_field_id = ? LIMIT 1
 `
 
@@ -4428,6 +4460,7 @@ func (q *Queries) GetAdminContentField(ctx context.Context, arg GetAdminContentF
 	err := row.Scan(
 		&i.AdminContentFieldID,
 		&i.AdminRouteID,
+		&i.RootID,
 		&i.AdminContentDataID,
 		&i.AdminFieldID,
 		&i.AdminFieldValue,
@@ -5073,7 +5106,7 @@ func (q *Queries) GetChangeEventsByRecordPaginated(ctx context.Context, arg GetC
 }
 
 const getContentData = `-- name: GetContentData :one
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, root_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 WHERE content_data_id = ? LIMIT 1
 `
 
@@ -5091,6 +5124,7 @@ func (q *Queries) GetContentData(ctx context.Context, arg GetContentDataParams) 
 		&i.NextSiblingID,
 		&i.PrevSiblingID,
 		&i.RouteID,
+		&i.RootID,
 		&i.DatatypeID,
 		&i.AuthorID,
 		&i.Status,
@@ -5111,7 +5145,7 @@ WITH RECURSIVE tree AS (
     SELECT cd2.content_data_id FROM content_data cd2
     INNER JOIN tree t ON cd2.parent_id = t.cid
 )
-SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision FROM content_data cd
+SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.root_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision FROM content_data cd
 INNER JOIN tree t ON cd.content_data_id = t.cid
 `
 
@@ -5135,6 +5169,7 @@ func (q *Queries) GetContentDataDescendants(ctx context.Context, arg GetContentD
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.RouteID,
+			&i.RootID,
 			&i.DatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -5159,7 +5194,7 @@ func (q *Queries) GetContentDataDescendants(ctx context.Context, arg GetContentD
 }
 
 const getContentField = `-- name: GetContentField :one
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE content_field_id = ? LIMIT 1
 `
 
@@ -5173,6 +5208,7 @@ func (q *Queries) GetContentField(ctx context.Context, arg GetContentFieldParams
 	err := row.Scan(
 		&i.ContentFieldID,
 		&i.RouteID,
+		&i.RootID,
 		&i.ContentDataID,
 		&i.FieldID,
 		&i.FieldValue,
@@ -5248,14 +5284,94 @@ func (q *Queries) GetContentRelation(ctx context.Context, arg GetContentRelation
 	return i, err
 }
 
+const getContentTreeByRootID = `-- name: GetContentTreeByRootID :many
+SELECT cd.content_data_id,
+        cd.parent_id,
+        cd.first_child_id,
+        cd.next_sibling_id,
+        cd.prev_sibling_id,
+        cd.datatype_id,
+        cd.route_id,
+        cd.root_id,
+        cd.author_id,
+        cd.date_created,
+        cd.date_modified,
+        cd.status,
+       dt.label as datatype_label, dt.type as datatype_type
+FROM content_data cd
+JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+WHERE cd.root_id = ?
+ORDER BY cd.parent_id NULLS FIRST, cd.content_data_id
+`
+
+type GetContentTreeByRootIDParams struct {
+	RootID types.NullableContentID `json:"root_id"`
+}
+
+type GetContentTreeByRootIDRow struct {
+	ContentDataID types.ContentID          `json:"content_data_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
+	AuthorID      types.UserID             `json:"author_id"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
+	Status        types.ContentStatus      `json:"status"`
+	DatatypeLabel string                   `json:"datatype_label"`
+	DatatypeType  string                   `json:"datatype_type"`
+}
+
+func (q *Queries) GetContentTreeByRootID(ctx context.Context, arg GetContentTreeByRootIDParams) ([]GetContentTreeByRootIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, getContentTreeByRootID, arg.RootID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetContentTreeByRootIDRow{}
+	for rows.Next() {
+		var i GetContentTreeByRootIDRow
+		if err := rows.Scan(
+			&i.ContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.DatatypeID,
+			&i.RouteID,
+			&i.RootID,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.Status,
+			&i.DatatypeLabel,
+			&i.DatatypeType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getContentTreeByRoute = `-- name: GetContentTreeByRoute :many
-SELECT cd.content_data_id, 
-        cd.parent_id, 
-        cd.first_child_id, 
-        cd.next_sibling_id, 
-        cd.prev_sibling_id, 
-        cd.datatype_id, 
-        cd.route_id, 
+SELECT cd.content_data_id,
+        cd.parent_id,
+        cd.first_child_id,
+        cd.next_sibling_id,
+        cd.prev_sibling_id,
+        cd.datatype_id,
+        cd.route_id,
+        cd.root_id,
         cd.author_id,
         cd.date_created,
         cd.date_modified,
@@ -5279,6 +5395,7 @@ type GetContentTreeByRouteRow struct {
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	AuthorID      types.UserID             `json:"author_id"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
@@ -5304,6 +5421,7 @@ func (q *Queries) GetContentTreeByRoute(ctx context.Context, arg GetContentTreeB
 			&i.PrevSiblingID,
 			&i.DatatypeID,
 			&i.RouteID,
+			&i.RootID,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -6388,7 +6506,7 @@ func (q *Queries) GetSessionByUserId(ctx context.Context, arg GetSessionByUserId
 }
 
 const getShallowTreeByRouteId = `-- name: GetShallowTreeByRouteId :many
-    SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, dt.label as datatype_label, dt.type as datatype_type
+    SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.root_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, dt.label as datatype_label, dt.type as datatype_type
     FROM content_data cd
     JOIN datatypes dt ON cd.datatype_id = dt.datatype_id  
     WHERE cd.route_id = ? 
@@ -6411,6 +6529,7 @@ type GetShallowTreeByRouteIdRow struct {
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.UserID             `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
@@ -6440,6 +6559,7 @@ func (q *Queries) GetShallowTreeByRouteId(ctx context.Context, arg GetShallowTre
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.RouteID,
+			&i.RootID,
 			&i.DatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -7195,7 +7315,7 @@ func (q *Queries) ListActiveWebhooks(ctx context.Context) ([]Webhooks, error) {
 }
 
 const listAdminContentData = `-- name: ListAdminContentData :many
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, root_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 ORDER BY admin_content_data_id
 `
 
@@ -7214,6 +7334,57 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 			&i.FirstChildID,
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
+			&i.RootID,
+			&i.AdminRouteID,
+			&i.AdminDatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentDataByRootID = `-- name: ListAdminContentDataByRootID :many
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, root_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
+WHERE root_id = ?
+ORDER BY admin_content_data_id
+`
+
+type ListAdminContentDataByRootIDParams struct {
+	RootID types.NullableAdminContentID `json:"root_id"`
+}
+
+func (q *Queries) ListAdminContentDataByRootID(ctx context.Context, arg ListAdminContentDataByRootIDParams) ([]AdminContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentDataByRootID, arg.RootID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentData{}
+	for rows.Next() {
+		var i AdminContentData
+		if err := rows.Scan(
+			&i.AdminContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.RootID,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
@@ -7239,7 +7410,7 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 }
 
 const listAdminContentDataByRoute = `-- name: ListAdminContentDataByRoute :many
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, root_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 WHERE admin_route_id = ?
 ORDER BY admin_content_data_id
 `
@@ -7263,6 +7434,7 @@ func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, arg ListAdmin
 			&i.FirstChildID,
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
+			&i.RootID,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
@@ -7288,7 +7460,7 @@ func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, arg ListAdmin
 }
 
 const listAdminContentDataByRoutePaginated = `-- name: ListAdminContentDataByRoutePaginated :many
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, root_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 WHERE admin_route_id = ?
 ORDER BY admin_content_data_id
 LIMIT ? OFFSET ?
@@ -7315,6 +7487,7 @@ func (q *Queries) ListAdminContentDataByRoutePaginated(ctx context.Context, arg 
 			&i.FirstChildID,
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
+			&i.RootID,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
@@ -7340,7 +7513,7 @@ func (q *Queries) ListAdminContentDataByRoutePaginated(ctx context.Context, arg 
 }
 
 const listAdminContentDataDueForPublish = `-- name: ListAdminContentDataDueForPublish :many
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, root_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 WHERE publish_at IS NOT NULL AND publish_at <= ? AND status = 'draft'
 `
 
@@ -7363,6 +7536,7 @@ func (q *Queries) ListAdminContentDataDueForPublish(ctx context.Context, arg Lis
 			&i.FirstChildID,
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
+			&i.RootID,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
@@ -7388,7 +7562,7 @@ func (q *Queries) ListAdminContentDataDueForPublish(ctx context.Context, arg Lis
 }
 
 const listAdminContentDataPaginated = `-- name: ListAdminContentDataPaginated :many
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, root_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 ORDER BY admin_content_data_id
 LIMIT ? OFFSET ?
 `
@@ -7413,6 +7587,7 @@ func (q *Queries) ListAdminContentDataPaginated(ctx context.Context, arg ListAdm
 			&i.FirstChildID,
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
+			&i.RootID,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
@@ -7438,7 +7613,7 @@ func (q *Queries) ListAdminContentDataPaginated(ctx context.Context, arg ListAdm
 }
 
 const listAdminContentDataTopLevelPaginated = `-- name: ListAdminContentDataTopLevelPaginated :many
-SELECT acd.admin_content_data_id, acd.parent_id, acd.first_child_id, acd.next_sibling_id, acd.prev_sibling_id, acd.admin_route_id, acd.admin_datatype_id, acd.author_id, acd.status, acd.date_created, acd.date_modified, acd.published_at, acd.published_by, acd.publish_at, acd.revision, u.name AS author_name, COALESCE(ar.slug, '') AS route_slug, COALESCE(ar.title, '') AS route_title, COALESCE(adt.label, '') AS datatype_label, COALESCE(adt.type, '') AS datatype_type FROM admin_content_data acd
+SELECT acd.admin_content_data_id, acd.parent_id, acd.first_child_id, acd.next_sibling_id, acd.prev_sibling_id, acd.root_id, acd.admin_route_id, acd.admin_datatype_id, acd.author_id, acd.status, acd.date_created, acd.date_modified, acd.published_at, acd.published_by, acd.publish_at, acd.revision, u.name AS author_name, COALESCE(ar.slug, '') AS route_slug, COALESCE(ar.title, '') AS route_title, COALESCE(adt.label, '') AS datatype_label, COALESCE(adt.type, '') AS datatype_type FROM admin_content_data acd
 LEFT JOIN admin_datatypes adt ON acd.admin_datatype_id = adt.admin_datatype_id
 LEFT JOIN users u ON acd.author_id = u.user_id
 LEFT JOIN admin_routes ar ON acd.admin_route_id = ar.admin_route_id
@@ -7458,6 +7633,7 @@ type ListAdminContentDataTopLevelPaginatedRow struct {
 	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
 	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
+	RootID             types.NullableAdminContentID  `json:"root_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.UserID                  `json:"author_id"`
@@ -7490,6 +7666,7 @@ func (q *Queries) ListAdminContentDataTopLevelPaginated(ctx context.Context, arg
 			&i.FirstChildID,
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
+			&i.RootID,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
@@ -7519,11 +7696,99 @@ func (q *Queries) ListAdminContentDataTopLevelPaginated(ctx context.Context, arg
 	return items, nil
 }
 
+const listAdminContentDataWithDatatypeByRootID = `-- name: ListAdminContentDataWithDatatypeByRootID :many
+SELECT
+    acd.admin_content_data_id, acd.parent_id, acd.first_child_id,
+    acd.next_sibling_id, acd.prev_sibling_id, acd.admin_route_id,
+    acd.root_id, acd.admin_datatype_id, acd.author_id, acd.status,
+    acd.date_created, acd.date_modified,
+    adt.admin_datatype_id AS dt_admin_datatype_id,
+    adt.parent_id AS dt_parent_id,
+    adt.label AS dt_label,
+    adt.type AS dt_type,
+    adt.author_id AS dt_author_id,
+    adt.date_created AS dt_date_created,
+    adt.date_modified AS dt_date_modified
+FROM admin_content_data acd
+JOIN admin_datatypes adt ON acd.admin_datatype_id = adt.admin_datatype_id
+WHERE acd.root_id = ?
+ORDER BY acd.parent_id NULLS FIRST, acd.admin_content_data_id
+`
+
+type ListAdminContentDataWithDatatypeByRootIDParams struct {
+	RootID types.NullableAdminContentID `json:"root_id"`
+}
+
+type ListAdminContentDataWithDatatypeByRootIDRow struct {
+	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
+	ParentID           types.NullableAdminContentID  `json:"parent_id"`
+	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
+	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
+	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
+	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
+	RootID             types.NullableAdminContentID  `json:"root_id"`
+	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AuthorID           types.UserID                  `json:"author_id"`
+	Status             types.ContentStatus           `json:"status"`
+	DateCreated        types.Timestamp               `json:"date_created"`
+	DateModified       types.Timestamp               `json:"date_modified"`
+	DtAdminDatatypeId  types.AdminDatatypeID         `json:"dt_admin_datatype_id"`
+	DtParentId         types.NullableAdminDatatypeID `json:"dt_parent_id"`
+	DtLabel            string                        `json:"dt_label"`
+	DtType             string                        `json:"dt_type"`
+	DtAuthorId         types.UserID                  `json:"dt_author_id"`
+	DtDateCreated      types.Timestamp               `json:"dt_date_created"`
+	DtDateModified     types.Timestamp               `json:"dt_date_modified"`
+}
+
+func (q *Queries) ListAdminContentDataWithDatatypeByRootID(ctx context.Context, arg ListAdminContentDataWithDatatypeByRootIDParams) ([]ListAdminContentDataWithDatatypeByRootIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentDataWithDatatypeByRootID, arg.RootID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAdminContentDataWithDatatypeByRootIDRow{}
+	for rows.Next() {
+		var i ListAdminContentDataWithDatatypeByRootIDRow
+		if err := rows.Scan(
+			&i.AdminContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.AdminRouteID,
+			&i.RootID,
+			&i.AdminDatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.DtAdminDatatypeId,
+			&i.DtParentId,
+			&i.DtLabel,
+			&i.DtType,
+			&i.DtAuthorId,
+			&i.DtDateCreated,
+			&i.DtDateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAdminContentDataWithDatatypeByRoute = `-- name: ListAdminContentDataWithDatatypeByRoute :many
 SELECT
     acd.admin_content_data_id, acd.parent_id, acd.first_child_id,
     acd.next_sibling_id, acd.prev_sibling_id, acd.admin_route_id,
-    acd.admin_datatype_id, acd.author_id, acd.status,
+    acd.root_id, acd.admin_datatype_id, acd.author_id, acd.status,
     acd.date_created, acd.date_modified,
     adt.admin_datatype_id AS dt_admin_datatype_id,
     adt.parent_id AS dt_parent_id,
@@ -7549,6 +7814,7 @@ type ListAdminContentDataWithDatatypeByRouteRow struct {
 	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
+	RootID             types.NullableAdminContentID  `json:"root_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.UserID                  `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
@@ -7579,6 +7845,7 @@ func (q *Queries) ListAdminContentDataWithDatatypeByRoute(ctx context.Context, a
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.AdminRouteID,
+			&i.RootID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -7606,7 +7873,7 @@ func (q *Queries) ListAdminContentDataWithDatatypeByRoute(ctx context.Context, a
 }
 
 const listAdminContentFields = `-- name: ListAdminContentFields :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, root_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 ORDER BY admin_content_field_id
 `
 
@@ -7622,6 +7889,7 @@ func (q *Queries) ListAdminContentFields(ctx context.Context) ([]AdminContentFie
 		if err := rows.Scan(
 			&i.AdminContentFieldID,
 			&i.AdminRouteID,
+			&i.RootID,
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
@@ -7644,7 +7912,7 @@ func (q *Queries) ListAdminContentFields(ctx context.Context) ([]AdminContentFie
 }
 
 const listAdminContentFieldsByContentData = `-- name: ListAdminContentFieldsByContentData :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, root_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 WHERE admin_content_data_id = ?
 ORDER BY admin_content_field_id
 `
@@ -7665,6 +7933,7 @@ func (q *Queries) ListAdminContentFieldsByContentData(ctx context.Context, arg L
 		if err := rows.Scan(
 			&i.AdminContentFieldID,
 			&i.AdminRouteID,
+			&i.RootID,
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
@@ -7687,7 +7956,7 @@ func (q *Queries) ListAdminContentFieldsByContentData(ctx context.Context, arg L
 }
 
 const listAdminContentFieldsByContentDataAndLocale = `-- name: ListAdminContentFieldsByContentDataAndLocale :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, root_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 WHERE admin_content_data_id = ? AND locale IN (?, '')
 ORDER BY admin_content_field_id
 `
@@ -7709,6 +7978,96 @@ func (q *Queries) ListAdminContentFieldsByContentDataAndLocale(ctx context.Conte
 		if err := rows.Scan(
 			&i.AdminContentFieldID,
 			&i.AdminRouteID,
+			&i.RootID,
+			&i.AdminContentDataID,
+			&i.AdminFieldID,
+			&i.AdminFieldValue,
+			&i.Locale,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentFieldsByRootID = `-- name: ListAdminContentFieldsByRootID :many
+SELECT admin_content_field_id, admin_route_id, root_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+WHERE root_id = ?
+ORDER BY admin_content_data_id, admin_field_id
+`
+
+type ListAdminContentFieldsByRootIDParams struct {
+	RootID types.NullableAdminContentID `json:"root_id"`
+}
+
+func (q *Queries) ListAdminContentFieldsByRootID(ctx context.Context, arg ListAdminContentFieldsByRootIDParams) ([]AdminContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsByRootID, arg.RootID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentFields{}
+	for rows.Next() {
+		var i AdminContentFields
+		if err := rows.Scan(
+			&i.AdminContentFieldID,
+			&i.AdminRouteID,
+			&i.RootID,
+			&i.AdminContentDataID,
+			&i.AdminFieldID,
+			&i.AdminFieldValue,
+			&i.Locale,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentFieldsByRootIDAndLocale = `-- name: ListAdminContentFieldsByRootIDAndLocale :many
+SELECT admin_content_field_id, admin_route_id, root_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+WHERE root_id = ? AND locale IN (?, '')
+ORDER BY admin_content_data_id, admin_field_id
+`
+
+type ListAdminContentFieldsByRootIDAndLocaleParams struct {
+	RootID types.NullableAdminContentID `json:"root_id"`
+	Locale string                       `json:"locale"`
+}
+
+func (q *Queries) ListAdminContentFieldsByRootIDAndLocale(ctx context.Context, arg ListAdminContentFieldsByRootIDAndLocaleParams) ([]AdminContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsByRootIDAndLocale, arg.RootID, arg.Locale)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentFields{}
+	for rows.Next() {
+		var i AdminContentFields
+		if err := rows.Scan(
+			&i.AdminContentFieldID,
+			&i.AdminRouteID,
+			&i.RootID,
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
@@ -7731,7 +8090,7 @@ func (q *Queries) ListAdminContentFieldsByContentDataAndLocale(ctx context.Conte
 }
 
 const listAdminContentFieldsByRoute = `-- name: ListAdminContentFieldsByRoute :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, root_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 WHERE admin_route_id = ?
 ORDER BY admin_content_field_id
 `
@@ -7752,6 +8111,7 @@ func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, arg ListAdm
 		if err := rows.Scan(
 			&i.AdminContentFieldID,
 			&i.AdminRouteID,
+			&i.RootID,
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
@@ -7774,7 +8134,7 @@ func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, arg ListAdm
 }
 
 const listAdminContentFieldsByRouteAndLocale = `-- name: ListAdminContentFieldsByRouteAndLocale :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, root_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 WHERE admin_route_id = ? AND locale IN (?, '')
 ORDER BY admin_content_data_id, admin_field_id
 `
@@ -7796,6 +8156,7 @@ func (q *Queries) ListAdminContentFieldsByRouteAndLocale(ctx context.Context, ar
 		if err := rows.Scan(
 			&i.AdminContentFieldID,
 			&i.AdminRouteID,
+			&i.RootID,
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
@@ -7818,7 +8179,7 @@ func (q *Queries) ListAdminContentFieldsByRouteAndLocale(ctx context.Context, ar
 }
 
 const listAdminContentFieldsByRoutePaginated = `-- name: ListAdminContentFieldsByRoutePaginated :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, root_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 WHERE admin_route_id = ?
 ORDER BY admin_content_field_id
 LIMIT ? OFFSET ?
@@ -7842,6 +8203,7 @@ func (q *Queries) ListAdminContentFieldsByRoutePaginated(ctx context.Context, ar
 		if err := rows.Scan(
 			&i.AdminContentFieldID,
 			&i.AdminRouteID,
+			&i.RootID,
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
@@ -7864,7 +8226,7 @@ func (q *Queries) ListAdminContentFieldsByRoutePaginated(ctx context.Context, ar
 }
 
 const listAdminContentFieldsPaginated = `-- name: ListAdminContentFieldsPaginated :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, root_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 ORDER BY admin_content_field_id
 LIMIT ? OFFSET ?
 `
@@ -7886,6 +8248,7 @@ func (q *Queries) ListAdminContentFieldsPaginated(ctx context.Context, arg ListA
 		if err := rows.Scan(
 			&i.AdminContentFieldID,
 			&i.AdminRouteID,
+			&i.RootID,
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
@@ -7910,7 +8273,7 @@ func (q *Queries) ListAdminContentFieldsPaginated(ctx context.Context, arg ListA
 const listAdminContentFieldsWithFieldByContentData = `-- name: ListAdminContentFieldsWithFieldByContentData :many
 SELECT
     acf.admin_content_field_id, acf.admin_route_id,
-    acf.admin_content_data_id, acf.admin_field_id,
+    acf.root_id, acf.admin_content_data_id, acf.admin_field_id,
     acf.admin_field_value, acf.author_id,
     acf.date_created, acf.date_modified,
     af.admin_field_id AS f_admin_field_id,
@@ -7936,6 +8299,7 @@ type ListAdminContentFieldsWithFieldByContentDataParams struct {
 type ListAdminContentFieldsWithFieldByContentDataRow struct {
 	AdminContentFieldID types.AdminContentFieldID     `json:"admin_content_field_id"`
 	AdminRouteID        types.NullableAdminRouteID    `json:"admin_route_id"`
+	RootID              types.NullableAdminContentID  `json:"root_id"`
 	AdminContentDataID  types.NullableAdminContentID  `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID    `json:"admin_field_id"`
 	AdminFieldValue     string                        `json:"admin_field_value"`
@@ -7966,6 +8330,7 @@ func (q *Queries) ListAdminContentFieldsWithFieldByContentData(ctx context.Conte
 		if err := rows.Scan(
 			&i.AdminContentFieldID,
 			&i.AdminRouteID,
+			&i.RootID,
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
@@ -7999,7 +8364,7 @@ func (q *Queries) ListAdminContentFieldsWithFieldByContentData(ctx context.Conte
 const listAdminContentFieldsWithFieldByRoute = `-- name: ListAdminContentFieldsWithFieldByRoute :many
 SELECT
     acf.admin_content_field_id, acf.admin_route_id,
-    acf.admin_content_data_id, acf.admin_field_id,
+    acf.root_id, acf.admin_content_data_id, acf.admin_field_id,
     acf.admin_field_value, acf.author_id,
     acf.date_created, acf.date_modified,
     af.admin_field_id AS f_admin_field_id,
@@ -8025,6 +8390,7 @@ type ListAdminContentFieldsWithFieldByRouteParams struct {
 type ListAdminContentFieldsWithFieldByRouteRow struct {
 	AdminContentFieldID types.AdminContentFieldID     `json:"admin_content_field_id"`
 	AdminRouteID        types.NullableAdminRouteID    `json:"admin_route_id"`
+	RootID              types.NullableAdminContentID  `json:"root_id"`
 	AdminContentDataID  types.NullableAdminContentID  `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID    `json:"admin_field_id"`
 	AdminFieldValue     string                        `json:"admin_field_value"`
@@ -8055,6 +8421,7 @@ func (q *Queries) ListAdminContentFieldsWithFieldByRoute(ctx context.Context, ar
 		if err := rows.Scan(
 			&i.AdminContentFieldID,
 			&i.AdminRouteID,
+			&i.RootID,
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
@@ -9129,7 +9496,7 @@ func (q *Queries) ListChangeEventsByUser(ctx context.Context, arg ListChangeEven
 }
 
 const listContentData = `-- name: ListContentData :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, root_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 ORDER BY content_data_id
 `
 
@@ -9149,6 +9516,7 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.RouteID,
+			&i.RootID,
 			&i.DatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -9173,7 +9541,7 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 }
 
 const listContentDataByDatatypeID = `-- name: ListContentDataByDatatypeID :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, root_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 WHERE datatype_id = ?
 `
 
@@ -9197,6 +9565,57 @@ func (q *Queries) ListContentDataByDatatypeID(ctx context.Context, arg ListConte
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.RouteID,
+			&i.RootID,
+			&i.DatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentDataByRootID = `-- name: ListContentDataByRootID :many
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, root_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
+WHERE root_id = ?
+ORDER BY content_data_id
+`
+
+type ListContentDataByRootIDParams struct {
+	RootID types.NullableContentID `json:"root_id"`
+}
+
+func (q *Queries) ListContentDataByRootID(ctx context.Context, arg ListContentDataByRootIDParams) ([]ContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listContentDataByRootID, arg.RootID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentData{}
+	for rows.Next() {
+		var i ContentData
+		if err := rows.Scan(
+			&i.ContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.RouteID,
+			&i.RootID,
 			&i.DatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -9221,7 +9640,7 @@ func (q *Queries) ListContentDataByDatatypeID(ctx context.Context, arg ListConte
 }
 
 const listContentDataByRoute = `-- name: ListContentDataByRoute :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, root_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 WHERE route_id = ?
 ORDER BY content_data_id
 `
@@ -9246,6 +9665,7 @@ func (q *Queries) ListContentDataByRoute(ctx context.Context, arg ListContentDat
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.RouteID,
+			&i.RootID,
 			&i.DatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -9270,7 +9690,7 @@ func (q *Queries) ListContentDataByRoute(ctx context.Context, arg ListContentDat
 }
 
 const listContentDataByRoutePaginated = `-- name: ListContentDataByRoutePaginated :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, root_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 WHERE route_id = ?
 ORDER BY content_data_id
 LIMIT ? OFFSET ?
@@ -9298,6 +9718,7 @@ func (q *Queries) ListContentDataByRoutePaginated(ctx context.Context, arg ListC
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.RouteID,
+			&i.RootID,
 			&i.DatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -9322,7 +9743,7 @@ func (q *Queries) ListContentDataByRoutePaginated(ctx context.Context, arg ListC
 }
 
 const listContentDataDueForPublish = `-- name: ListContentDataDueForPublish :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, root_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 WHERE publish_at IS NOT NULL AND publish_at <= ? AND status = 'draft'
 `
 
@@ -9346,6 +9767,7 @@ func (q *Queries) ListContentDataDueForPublish(ctx context.Context, arg ListCont
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.RouteID,
+			&i.RootID,
 			&i.DatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -9370,7 +9792,7 @@ func (q *Queries) ListContentDataDueForPublish(ctx context.Context, arg ListCont
 }
 
 const listContentDataGlobal = `-- name: ListContentDataGlobal :many
-SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision FROM content_data cd
+SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.root_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 WHERE dt.type = '_global' AND cd.parent_id IS NULL
 ORDER BY cd.content_data_id
@@ -9392,6 +9814,7 @@ func (q *Queries) ListContentDataGlobal(ctx context.Context) ([]ContentData, err
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.RouteID,
+			&i.RootID,
 			&i.DatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -9416,7 +9839,7 @@ func (q *Queries) ListContentDataGlobal(ctx context.Context) ([]ContentData, err
 }
 
 const listContentDataPaginated = `-- name: ListContentDataPaginated :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, root_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 ORDER BY content_data_id
 LIMIT ? OFFSET ?
 `
@@ -9442,6 +9865,7 @@ func (q *Queries) ListContentDataPaginated(ctx context.Context, arg ListContentD
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.RouteID,
+			&i.RootID,
 			&i.DatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -9466,7 +9890,7 @@ func (q *Queries) ListContentDataPaginated(ctx context.Context, arg ListContentD
 }
 
 const listContentDataTopLevelPaginated = `-- name: ListContentDataTopLevelPaginated :many
-SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label, COALESCE(dt.type, '') AS datatype_type FROM content_data cd
+SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.root_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label, COALESCE(dt.type, '') AS datatype_type FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 LEFT JOIN users u ON cd.author_id = u.user_id
 LEFT JOIN routes r ON cd.route_id = r.route_id
@@ -9487,6 +9911,7 @@ type ListContentDataTopLevelPaginatedRow struct {
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.UserID             `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
@@ -9519,6 +9944,7 @@ func (q *Queries) ListContentDataTopLevelPaginated(ctx context.Context, arg List
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.RouteID,
+			&i.RootID,
 			&i.DatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -9548,7 +9974,7 @@ func (q *Queries) ListContentDataTopLevelPaginated(ctx context.Context, arg List
 }
 
 const listContentDataTopLevelPaginatedByStatus = `-- name: ListContentDataTopLevelPaginatedByStatus :many
-SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label, COALESCE(dt.type, '') AS datatype_type FROM content_data cd
+SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.root_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label, COALESCE(dt.type, '') AS datatype_type FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 LEFT JOIN users u ON cd.author_id = u.user_id
 LEFT JOIN routes r ON cd.route_id = r.route_id
@@ -9570,6 +9996,7 @@ type ListContentDataTopLevelPaginatedByStatusRow struct {
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.UserID             `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
@@ -9602,6 +10029,7 @@ func (q *Queries) ListContentDataTopLevelPaginatedByStatus(ctx context.Context, 
 			&i.NextSiblingID,
 			&i.PrevSiblingID,
 			&i.RouteID,
+			&i.RootID,
 			&i.DatatypeID,
 			&i.AuthorID,
 			&i.Status,
@@ -9631,7 +10059,7 @@ func (q *Queries) ListContentDataTopLevelPaginatedByStatus(ctx context.Context, 
 }
 
 const listContentFields = `-- name: ListContentFields :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 ORDER BY content_field_id
 `
 
@@ -9647,6 +10075,7 @@ func (q *Queries) ListContentFields(ctx context.Context) ([]ContentFields, error
 		if err := rows.Scan(
 			&i.ContentFieldID,
 			&i.RouteID,
+			&i.RootID,
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
@@ -9669,7 +10098,7 @@ func (q *Queries) ListContentFields(ctx context.Context) ([]ContentFields, error
 }
 
 const listContentFieldsByContentData = `-- name: ListContentFieldsByContentData :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE content_data_id = ?
 ORDER BY content_field_id
 `
@@ -9690,6 +10119,7 @@ func (q *Queries) ListContentFieldsByContentData(ctx context.Context, arg ListCo
 		if err := rows.Scan(
 			&i.ContentFieldID,
 			&i.RouteID,
+			&i.RootID,
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
@@ -9712,7 +10142,7 @@ func (q *Queries) ListContentFieldsByContentData(ctx context.Context, arg ListCo
 }
 
 const listContentFieldsByContentDataAndLocale = `-- name: ListContentFieldsByContentDataAndLocale :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE content_data_id = ? AND locale IN (?, '')
 ORDER BY content_field_id
 `
@@ -9734,6 +10164,7 @@ func (q *Queries) ListContentFieldsByContentDataAndLocale(ctx context.Context, a
 		if err := rows.Scan(
 			&i.ContentFieldID,
 			&i.RouteID,
+			&i.RootID,
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
@@ -9756,7 +10187,7 @@ func (q *Queries) ListContentFieldsByContentDataAndLocale(ctx context.Context, a
 }
 
 const listContentFieldsByContentDataPaginated = `-- name: ListContentFieldsByContentDataPaginated :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE content_data_id = ?
 ORDER BY content_field_id
 LIMIT ? OFFSET ?
@@ -9780,6 +10211,96 @@ func (q *Queries) ListContentFieldsByContentDataPaginated(ctx context.Context, a
 		if err := rows.Scan(
 			&i.ContentFieldID,
 			&i.RouteID,
+			&i.RootID,
+			&i.ContentDataID,
+			&i.FieldID,
+			&i.FieldValue,
+			&i.Locale,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentFieldsByRootID = `-- name: ListContentFieldsByRootID :many
+SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+WHERE root_id = ?
+ORDER BY content_data_id, field_id
+`
+
+type ListContentFieldsByRootIDParams struct {
+	RootID types.NullableContentID `json:"root_id"`
+}
+
+func (q *Queries) ListContentFieldsByRootID(ctx context.Context, arg ListContentFieldsByRootIDParams) ([]ContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listContentFieldsByRootID, arg.RootID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentFields{}
+	for rows.Next() {
+		var i ContentFields
+		if err := rows.Scan(
+			&i.ContentFieldID,
+			&i.RouteID,
+			&i.RootID,
+			&i.ContentDataID,
+			&i.FieldID,
+			&i.FieldValue,
+			&i.Locale,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentFieldsByRootIDAndLocale = `-- name: ListContentFieldsByRootIDAndLocale :many
+SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+WHERE root_id = ? AND locale IN (?, '')
+ORDER BY content_data_id, field_id
+`
+
+type ListContentFieldsByRootIDAndLocaleParams struct {
+	RootID types.NullableContentID `json:"root_id"`
+	Locale string                  `json:"locale"`
+}
+
+func (q *Queries) ListContentFieldsByRootIDAndLocale(ctx context.Context, arg ListContentFieldsByRootIDAndLocaleParams) ([]ContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listContentFieldsByRootIDAndLocale, arg.RootID, arg.Locale)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentFields{}
+	for rows.Next() {
+		var i ContentFields
+		if err := rows.Scan(
+			&i.ContentFieldID,
+			&i.RouteID,
+			&i.RootID,
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
@@ -9802,7 +10323,7 @@ func (q *Queries) ListContentFieldsByContentDataPaginated(ctx context.Context, a
 }
 
 const listContentFieldsByRoute = `-- name: ListContentFieldsByRoute :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE route_id = ?
 ORDER BY content_field_id
 `
@@ -9823,6 +10344,7 @@ func (q *Queries) ListContentFieldsByRoute(ctx context.Context, arg ListContentF
 		if err := rows.Scan(
 			&i.ContentFieldID,
 			&i.RouteID,
+			&i.RootID,
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
@@ -9845,7 +10367,7 @@ func (q *Queries) ListContentFieldsByRoute(ctx context.Context, arg ListContentF
 }
 
 const listContentFieldsByRouteAndLocale = `-- name: ListContentFieldsByRouteAndLocale :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE route_id = ? AND locale IN (?, '')
 ORDER BY content_data_id, field_id
 `
@@ -9867,6 +10389,7 @@ func (q *Queries) ListContentFieldsByRouteAndLocale(ctx context.Context, arg Lis
 		if err := rows.Scan(
 			&i.ContentFieldID,
 			&i.RouteID,
+			&i.RootID,
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
@@ -9889,7 +10412,7 @@ func (q *Queries) ListContentFieldsByRouteAndLocale(ctx context.Context, arg Lis
 }
 
 const listContentFieldsByRoutePaginated = `-- name: ListContentFieldsByRoutePaginated :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE route_id = ?
 ORDER BY content_field_id
 LIMIT ? OFFSET ?
@@ -9913,6 +10436,7 @@ func (q *Queries) ListContentFieldsByRoutePaginated(ctx context.Context, arg Lis
 		if err := rows.Scan(
 			&i.ContentFieldID,
 			&i.RouteID,
+			&i.RootID,
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
@@ -9935,7 +10459,7 @@ func (q *Queries) ListContentFieldsByRoutePaginated(ctx context.Context, arg Lis
 }
 
 const listContentFieldsPaginated = `-- name: ListContentFieldsPaginated :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 ORDER BY content_field_id
 LIMIT ? OFFSET ?
 `
@@ -9957,6 +10481,7 @@ func (q *Queries) ListContentFieldsPaginated(ctx context.Context, arg ListConten
 		if err := rows.Scan(
 			&i.ContentFieldID,
 			&i.RouteID,
+			&i.RootID,
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
@@ -9981,7 +10506,7 @@ func (q *Queries) ListContentFieldsPaginated(ctx context.Context, arg ListConten
 const listContentFieldsWithFieldByContentData = `-- name: ListContentFieldsWithFieldByContentData :many
 SELECT
     cf.content_field_id, cf.route_id,
-    cf.content_data_id, cf.field_id,
+    cf.root_id, cf.content_data_id, cf.field_id,
     cf.field_value, cf.author_id,
     cf.date_created, cf.date_modified,
     f.field_id AS f_field_id,
@@ -10000,6 +10525,7 @@ type ListContentFieldsWithFieldByContentDataParams struct {
 type ListContentFieldsWithFieldByContentDataRow struct {
 	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
 	RouteID        types.NullableRouteID   `json:"route_id"`
+	RootID         types.NullableContentID `json:"root_id"`
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
@@ -10023,6 +10549,7 @@ func (q *Queries) ListContentFieldsWithFieldByContentData(ctx context.Context, a
 		if err := rows.Scan(
 			&i.ContentFieldID,
 			&i.RouteID,
+			&i.RootID,
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
@@ -12466,6 +12993,7 @@ SET parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
     prev_sibling_id = ?,
+    root_id = ?,
     admin_route_id = ?,
     admin_datatype_id = ?,
     author_id = ?,
@@ -12480,6 +13008,7 @@ type UpdateAdminContentDataParams struct {
 	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
 	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
+	RootID             types.NullableAdminContentID  `json:"root_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.UserID                  `json:"author_id"`
@@ -12495,6 +13024,7 @@ func (q *Queries) UpdateAdminContentData(ctx context.Context, arg UpdateAdminCon
 		arg.FirstChildID,
 		arg.NextSiblingID,
 		arg.PrevSiblingID,
+		arg.RootID,
 		arg.AdminRouteID,
 		arg.AdminDatatypeID,
 		arg.AuthorID,
@@ -12556,6 +13086,7 @@ func (q *Queries) UpdateAdminContentDataSchedule(ctx context.Context, arg Update
 const updateAdminContentDataWithRevision = `-- name: UpdateAdminContentDataWithRevision :exec
 UPDATE admin_content_data
 SET admin_route_id = ?,
+    root_id = ?,
     parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
@@ -12570,6 +13101,7 @@ WHERE admin_content_data_id = ? AND revision = ?
 
 type UpdateAdminContentDataWithRevisionParams struct {
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
+	RootID             types.NullableAdminContentID  `json:"root_id"`
 	ParentID           types.NullableAdminContentID  `json:"parent_id"`
 	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
 	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
@@ -12586,6 +13118,7 @@ type UpdateAdminContentDataWithRevisionParams struct {
 func (q *Queries) UpdateAdminContentDataWithRevision(ctx context.Context, arg UpdateAdminContentDataWithRevisionParams) error {
 	_, err := q.db.ExecContext(ctx, updateAdminContentDataWithRevision,
 		arg.AdminRouteID,
+		arg.RootID,
 		arg.ParentID,
 		arg.FirstChildID,
 		arg.NextSiblingID,
@@ -12604,6 +13137,7 @@ func (q *Queries) UpdateAdminContentDataWithRevision(ctx context.Context, arg Up
 const updateAdminContentField = `-- name: UpdateAdminContentField :exec
 UPDATE admin_content_fields
 SET admin_route_id = ?,
+    root_id = ?,
     admin_content_data_id = ?,
     admin_field_id = ?,
     admin_field_value = ?,
@@ -12616,6 +13150,7 @@ WHERE admin_content_field_id = ?
 
 type UpdateAdminContentFieldParams struct {
 	AdminRouteID        types.NullableAdminRouteID   `json:"admin_route_id"`
+	RootID              types.NullableAdminContentID `json:"root_id"`
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
@@ -12629,6 +13164,7 @@ type UpdateAdminContentFieldParams struct {
 func (q *Queries) UpdateAdminContentField(ctx context.Context, arg UpdateAdminContentFieldParams) error {
 	_, err := q.db.ExecContext(ctx, updateAdminContentField,
 		arg.AdminRouteID,
+		arg.RootID,
 		arg.AdminContentDataID,
 		arg.AdminFieldID,
 		arg.AdminFieldValue,
@@ -12917,6 +13453,7 @@ func (q *Queries) UpdateBackupStatus(ctx context.Context, arg UpdateBackupStatus
 const updateContentData = `-- name: UpdateContentData :exec
 UPDATE content_data
 SET route_id = ?,
+    root_id = ?,
     parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
@@ -12931,6 +13468,7 @@ WHERE content_data_id = ?
 
 type UpdateContentDataParams struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
 	FirstChildID  types.NullableContentID  `json:"first_child_id"`
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
@@ -12946,6 +13484,7 @@ type UpdateContentDataParams struct {
 func (q *Queries) UpdateContentData(ctx context.Context, arg UpdateContentDataParams) error {
 	_, err := q.db.ExecContext(ctx, updateContentData,
 		arg.RouteID,
+		arg.RootID,
 		arg.ParentID,
 		arg.FirstChildID,
 		arg.NextSiblingID,
@@ -13010,6 +13549,7 @@ func (q *Queries) UpdateContentDataSchedule(ctx context.Context, arg UpdateConte
 const updateContentDataWithRevision = `-- name: UpdateContentDataWithRevision :exec
 UPDATE content_data
 SET route_id = ?,
+    root_id = ?,
     parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
@@ -13024,6 +13564,7 @@ WHERE content_data_id = ? AND revision = ?
 
 type UpdateContentDataWithRevisionParams struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
 	FirstChildID  types.NullableContentID  `json:"first_child_id"`
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
@@ -13040,6 +13581,7 @@ type UpdateContentDataWithRevisionParams struct {
 func (q *Queries) UpdateContentDataWithRevision(ctx context.Context, arg UpdateContentDataWithRevisionParams) error {
 	_, err := q.db.ExecContext(ctx, updateContentDataWithRevision,
 		arg.RouteID,
+		arg.RootID,
 		arg.ParentID,
 		arg.FirstChildID,
 		arg.NextSiblingID,
@@ -13058,6 +13600,7 @@ func (q *Queries) UpdateContentDataWithRevision(ctx context.Context, arg UpdateC
 const updateContentField = `-- name: UpdateContentField :exec
 UPDATE content_fields
 SET route_id = ?,
+    root_id = ?,
     content_data_id = ?,
     field_id = ?,
     field_value = ?,
@@ -13070,6 +13613,7 @@ WHERE content_field_id = ?
 
 type UpdateContentFieldParams struct {
 	RouteID        types.NullableRouteID   `json:"route_id"`
+	RootID         types.NullableContentID `json:"root_id"`
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
@@ -13083,6 +13627,7 @@ type UpdateContentFieldParams struct {
 func (q *Queries) UpdateContentField(ctx context.Context, arg UpdateContentFieldParams) error {
 	_, err := q.db.ExecContext(ctx, updateContentField,
 		arg.RouteID,
+		arg.RootID,
 		arg.ContentDataID,
 		arg.FieldID,
 		arg.FieldValue,

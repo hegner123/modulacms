@@ -88,154 +88,10 @@ func (d Database) UpdateRoute(ctx context.Context, ac audited.AuditContext, s Up
 }
 
 ///////////////////////////////
-// MYSQL QUERIES
 //////////////////////////////
-
-// CreateRoute creates a new audited route record.
-func (d MysqlDatabase) CreateRoute(ctx context.Context, ac audited.AuditContext, s CreateRouteParams) (*Routes, error) {
-	cmd := d.NewRouteCmd(ctx, ac, s)
-	result, err := audited.Create(cmd)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create route: %w", err)
-	}
-	r := d.MapRoute(result)
-	return &r, nil
-}
-
-// DeleteRoute deletes a route by ID with auditing.
-func (d MysqlDatabase) DeleteRoute(ctx context.Context, ac audited.AuditContext, id types.RouteID) error {
-	cmd := d.DeleteRouteCmd(ctx, ac, id)
-	return audited.Delete(cmd)
-}
-
-// GetRouteID retrieves a route ID by slug.
-func (d MysqlDatabase) GetRouteID(slug string) (*types.RouteID, error) {
-	queries := mdbm.New(d.Connection)
-	id, err := queries.GetRouteIDBySlug(d.Context, mdbm.GetRouteIDBySlugParams{Slug: types.Slug(slug)})
-	if err != nil {
-		return nil, err
-	}
-	return &id, nil
-}
-
-// ListRoutesByDatatype returns routes for a specific datatype.
-func (d MysqlDatabase) ListRoutesByDatatype(datatypeID types.DatatypeID) (*[]Routes, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListRoutesByDatatype(d.Context, mdbm.ListRoutesByDatatypeParams{
-		DatatypeID: types.NullableDatatypeID{ID: datatypeID, Valid: true},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get routes by datatype: %w", err)
-	}
-	res := make([]Routes, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapRoute(v))
-	}
-	return &res, nil
-}
-
-// ListRoutesPaginated returns routes with pagination.
-func (d MysqlDatabase) ListRoutesPaginated(params PaginationParams) (*[]Routes, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListRoutePaginated(d.Context, mdbm.ListRoutePaginatedParams{
-		Limit:  int32(params.Limit),
-		Offset: int32(params.Offset),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Routes paginated: %v", err)
-	}
-	res := []Routes{}
-	for _, v := range rows {
-		m := d.MapRoute(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// UpdateRoute updates an existing route with auditing.
-func (d MysqlDatabase) UpdateRoute(ctx context.Context, ac audited.AuditContext, s UpdateRouteParams) (*string, error) {
-	cmd := d.UpdateRouteCmd(ctx, ac, s)
-	if err := audited.Update(cmd); err != nil {
-		return nil, fmt.Errorf("failed to update route: %w", err)
-	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Slug)
-	return &msg, nil
-}
 
 ///////////////////////////////
-// POSTGRES QUERIES
 //////////////////////////////
-
-// CreateRoute creates a new audited route record.
-func (d PsqlDatabase) CreateRoute(ctx context.Context, ac audited.AuditContext, s CreateRouteParams) (*Routes, error) {
-	cmd := d.NewRouteCmd(ctx, ac, s)
-	result, err := audited.Create(cmd)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create route: %w", err)
-	}
-	r := d.MapRoute(result)
-	return &r, nil
-}
-
-// DeleteRoute deletes a route by ID with auditing.
-func (d PsqlDatabase) DeleteRoute(ctx context.Context, ac audited.AuditContext, id types.RouteID) error {
-	cmd := d.DeleteRouteCmd(ctx, ac, id)
-	return audited.Delete(cmd)
-}
-
-// GetRouteID retrieves a route ID by slug.
-func (d PsqlDatabase) GetRouteID(slug string) (*types.RouteID, error) {
-	queries := mdbp.New(d.Connection)
-	id, err := queries.GetRouteIDBySlug(d.Context, mdbp.GetRouteIDBySlugParams{Slug: types.Slug(slug)})
-	if err != nil {
-		return nil, err
-	}
-	return &id, nil
-}
-
-// ListRoutesByDatatype returns routes for a specific datatype.
-func (d PsqlDatabase) ListRoutesByDatatype(datatypeID types.DatatypeID) (*[]Routes, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListRoutesByDatatype(d.Context, mdbp.ListRoutesByDatatypeParams{
-		DatatypeID: types.NullableDatatypeID{ID: datatypeID, Valid: true},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get routes by datatype: %w", err)
-	}
-	res := make([]Routes, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapRoute(v))
-	}
-	return &res, nil
-}
-
-// ListRoutesPaginated returns routes with pagination.
-func (d PsqlDatabase) ListRoutesPaginated(params PaginationParams) (*[]Routes, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListRoutePaginated(d.Context, mdbp.ListRoutePaginatedParams{
-		Limit:  int32(params.Limit),
-		Offset: int32(params.Offset),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Routes paginated: %v", err)
-	}
-	res := []Routes{}
-	for _, v := range rows {
-		m := d.MapRoute(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// UpdateRoute updates an existing route with auditing.
-func (d PsqlDatabase) UpdateRoute(ctx context.Context, ac audited.AuditContext, s UpdateRouteParams) (*string, error) {
-	cmd := d.UpdateRouteCmd(ctx, ac, s)
-	if err := audited.Update(cmd); err != nil {
-		return nil, fmt.Errorf("failed to update route: %w", err)
-	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Slug)
-	return &msg, nil
-}
 
 ///////////////////////////////
 // AUDITED COMMAND STRUCTS
@@ -359,6 +215,89 @@ func (d Database) DeleteRouteCmd(ctx context.Context, auditCtx audited.AuditCont
 
 // ----- MySQL CREATE -----
 
+// ----- MySQL UPDATE -----
+
+// ----- MySQL DELETE -----
+
+// ----- PostgreSQL CREATE -----
+
+// ----- PostgreSQL UPDATE -----
+
+// ----- PostgreSQL DELETE -----
+
+// MYSQL
+
+// GetRouteID retrieves a route ID by slug.
+func (d MysqlDatabase) GetRouteID(slug string) (*types.RouteID, error) {
+	queries := mdbm.New(d.Connection)
+	id, err := queries.GetRouteIDBySlug(d.Context, mdbm.GetRouteIDBySlugParams{Slug: types.Slug(slug)})
+	if err != nil {
+		return nil, err
+	}
+	return &id, nil
+}
+
+// ListRoutesByDatatype returns routes for a specific datatype.
+func (d MysqlDatabase) ListRoutesByDatatype(datatypeID types.DatatypeID) (*[]Routes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListRoutesByDatatype(d.Context, mdbm.ListRoutesByDatatypeParams{
+		DatatypeID: types.NullableDatatypeID{ID: datatypeID, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get routes by datatype: %w", err)
+	}
+	res := make([]Routes, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapRoute(v))
+	}
+	return &res, nil
+}
+
+// CreateRoute creates a new audited route record.
+func (d MysqlDatabase) CreateRoute(ctx context.Context, ac audited.AuditContext, s CreateRouteParams) (*Routes, error) {
+	cmd := d.NewRouteCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create route: %w", err)
+	}
+	r := d.MapRoute(result)
+	return &r, nil
+}
+
+// DeleteRoute deletes a route by ID with auditing.
+func (d MysqlDatabase) DeleteRoute(ctx context.Context, ac audited.AuditContext, id types.RouteID) error {
+	cmd := d.DeleteRouteCmd(ctx, ac, id)
+	return audited.Delete(cmd)
+}
+
+// ListRoutesPaginated returns routes with pagination.
+func (d MysqlDatabase) ListRoutesPaginated(params PaginationParams) (*[]Routes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListRoutePaginated(d.Context, mdbm.ListRoutePaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Routes paginated: %v", err)
+	}
+	res := []Routes{}
+	for _, v := range rows {
+		m := d.MapRoute(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// UpdateRoute updates an existing route with auditing.
+func (d MysqlDatabase) UpdateRoute(ctx context.Context, ac audited.AuditContext, s UpdateRouteParams) (*string, error) {
+	cmd := d.UpdateRouteCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update route: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	return &msg, nil
+}
+
 // NewRouteCmdMysql is an audited command for creating a route on MySQL.
 type NewRouteCmdMysql struct {
 	ctx      context.Context
@@ -375,7 +314,6 @@ func (c NewRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.reco
 func (c NewRouteCmdMysql) TableName() string                     { return "routes" }
 func (c NewRouteCmdMysql) Params() any                           { return c.params }
 func (c NewRouteCmdMysql) GetID(r mdbm.Routes) string            { return string(r.RouteID) }
-
 func (c NewRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Routes, error) {
 	queries := mdbm.New(tx)
 	params := mdbm.CreateRouteParams{
@@ -398,8 +336,6 @@ func (d MysqlDatabase) NewRouteCmd(ctx context.Context, auditCtx audited.AuditCo
 	return NewRouteCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
 
-// ----- MySQL UPDATE -----
-
 // UpdateRouteCmdMysql is an audited command for updating a route on MySQL.
 type UpdateRouteCmdMysql struct {
 	ctx      context.Context
@@ -416,7 +352,6 @@ func (c UpdateRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.r
 func (c UpdateRouteCmdMysql) TableName() string                     { return "routes" }
 func (c UpdateRouteCmdMysql) Params() any                           { return c.params }
 func (c UpdateRouteCmdMysql) GetID() string                         { return string(c.params.Slug_2) }
-
 func (c UpdateRouteCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Routes, error) {
 	queries := mdbm.New(tx)
 	routeID, err := queries.GetRouteIDBySlug(ctx, mdbm.GetRouteIDBySlugParams{Slug: c.params.Slug_2})
@@ -425,7 +360,6 @@ func (c UpdateRouteCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (md
 	}
 	return queries.GetRoute(ctx, mdbm.GetRouteParams{RouteID: routeID})
 }
-
 func (c UpdateRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.UpdateRoute(ctx, mdbm.UpdateRouteParams{
@@ -444,8 +378,6 @@ func (d MysqlDatabase) UpdateRouteCmd(ctx context.Context, auditCtx audited.Audi
 	return UpdateRouteCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
 
-// ----- MySQL DELETE -----
-
 // DeleteRouteCmdMysql is an audited command for deleting a route on MySQL.
 type DeleteRouteCmdMysql struct {
 	ctx      context.Context
@@ -461,12 +393,10 @@ func (c DeleteRouteCmdMysql) Connection() *sql.DB                   { return c.c
 func (c DeleteRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteRouteCmdMysql) TableName() string                     { return "routes" }
 func (c DeleteRouteCmdMysql) GetID() string                         { return string(c.id) }
-
 func (c DeleteRouteCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Routes, error) {
 	queries := mdbm.New(tx)
 	return queries.GetRoute(ctx, mdbm.GetRouteParams{RouteID: c.id})
 }
-
 func (c DeleteRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.DeleteRoute(ctx, mdbm.DeleteRouteParams{RouteID: c.id})
@@ -477,7 +407,78 @@ func (d MysqlDatabase) DeleteRouteCmd(ctx context.Context, auditCtx audited.Audi
 	return DeleteRouteCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
 }
 
-// ----- PostgreSQL CREATE -----
+// PSQL
+
+// GetRouteID retrieves a route ID by slug.
+func (d PsqlDatabase) GetRouteID(slug string) (*types.RouteID, error) {
+	queries := mdbp.New(d.Connection)
+	id, err := queries.GetRouteIDBySlug(d.Context, mdbp.GetRouteIDBySlugParams{Slug: types.Slug(slug)})
+	if err != nil {
+		return nil, err
+	}
+	return &id, nil
+}
+
+// ListRoutesByDatatype returns routes for a specific datatype.
+func (d PsqlDatabase) ListRoutesByDatatype(datatypeID types.DatatypeID) (*[]Routes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListRoutesByDatatype(d.Context, mdbp.ListRoutesByDatatypeParams{
+		DatatypeID: types.NullableDatatypeID{ID: datatypeID, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get routes by datatype: %w", err)
+	}
+	res := make([]Routes, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapRoute(v))
+	}
+	return &res, nil
+}
+
+// CreateRoute creates a new audited route record.
+func (d PsqlDatabase) CreateRoute(ctx context.Context, ac audited.AuditContext, s CreateRouteParams) (*Routes, error) {
+	cmd := d.NewRouteCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create route: %w", err)
+	}
+	r := d.MapRoute(result)
+	return &r, nil
+}
+
+// DeleteRoute deletes a route by ID with auditing.
+func (d PsqlDatabase) DeleteRoute(ctx context.Context, ac audited.AuditContext, id types.RouteID) error {
+	cmd := d.DeleteRouteCmd(ctx, ac, id)
+	return audited.Delete(cmd)
+}
+
+// ListRoutesPaginated returns routes with pagination.
+func (d PsqlDatabase) ListRoutesPaginated(params PaginationParams) (*[]Routes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListRoutePaginated(d.Context, mdbp.ListRoutePaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Routes paginated: %v", err)
+	}
+	res := []Routes{}
+	for _, v := range rows {
+		m := d.MapRoute(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// UpdateRoute updates an existing route with auditing.
+func (d PsqlDatabase) UpdateRoute(ctx context.Context, ac audited.AuditContext, s UpdateRouteParams) (*string, error) {
+	cmd := d.UpdateRouteCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update route: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	return &msg, nil
+}
 
 // NewRouteCmdPsql is an audited command for creating a route on PostgreSQL.
 type NewRouteCmdPsql struct {
@@ -495,7 +496,6 @@ func (c NewRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recor
 func (c NewRouteCmdPsql) TableName() string                     { return "routes" }
 func (c NewRouteCmdPsql) Params() any                           { return c.params }
 func (c NewRouteCmdPsql) GetID(r mdbp.Routes) string            { return string(r.RouteID) }
-
 func (c NewRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Routes, error) {
 	queries := mdbp.New(tx)
 	return queries.CreateRoute(ctx, mdbp.CreateRouteParams{
@@ -514,8 +514,6 @@ func (d PsqlDatabase) NewRouteCmd(ctx context.Context, auditCtx audited.AuditCon
 	return NewRouteCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }
 
-// ----- PostgreSQL UPDATE -----
-
 // UpdateRouteCmdPsql is an audited command for updating a route on PostgreSQL.
 type UpdateRouteCmdPsql struct {
 	ctx      context.Context
@@ -532,7 +530,6 @@ func (c UpdateRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.re
 func (c UpdateRouteCmdPsql) TableName() string                     { return "routes" }
 func (c UpdateRouteCmdPsql) Params() any                           { return c.params }
 func (c UpdateRouteCmdPsql) GetID() string                         { return string(c.params.Slug_2) }
-
 func (c UpdateRouteCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Routes, error) {
 	queries := mdbp.New(tx)
 	routeID, err := queries.GetRouteIDBySlug(ctx, mdbp.GetRouteIDBySlugParams{Slug: c.params.Slug_2})
@@ -541,7 +538,6 @@ func (c UpdateRouteCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdb
 	}
 	return queries.GetRoute(ctx, mdbp.GetRouteParams{RouteID: routeID})
 }
-
 func (c UpdateRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.UpdateRoute(ctx, mdbp.UpdateRouteParams{
@@ -560,8 +556,6 @@ func (d PsqlDatabase) UpdateRouteCmd(ctx context.Context, auditCtx audited.Audit
 	return UpdateRouteCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }
 
-// ----- PostgreSQL DELETE -----
-
 // DeleteRouteCmdPsql is an audited command for deleting a route on PostgreSQL.
 type DeleteRouteCmdPsql struct {
 	ctx      context.Context
@@ -577,12 +571,10 @@ func (c DeleteRouteCmdPsql) Connection() *sql.DB                   { return c.co
 func (c DeleteRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteRouteCmdPsql) TableName() string                     { return "routes" }
 func (c DeleteRouteCmdPsql) GetID() string                         { return string(c.id) }
-
 func (c DeleteRouteCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Routes, error) {
 	queries := mdbp.New(tx)
 	return queries.GetRoute(ctx, mdbp.GetRouteParams{RouteID: c.id})
 }
-
 func (c DeleteRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.DeleteRoute(ctx, mdbp.DeleteRouteParams{RouteID: c.id})

@@ -348,10 +348,13 @@ func TestURL_Validate(t *testing.T) {
 		{name: "with port", url: "https://example.com:8080", wantErr: false},
 		{name: "ftp scheme", url: "ftp://files.example.com", wantErr: false},
 
+		{name: "relative path", url: "/about", wantErr: false},
+		{name: "relative nested", url: "/about/team", wantErr: false},
+		{name: "relative dotdot", url: "../contact", wantErr: false},
+		{name: "bare segment", url: "example.com", wantErr: false},
+
 		{name: "empty", url: "", wantErr: true},
-		{name: "no scheme", url: "example.com", wantErr: true},
-		{name: "no host", url: "https://", wantErr: true},
-		{name: "relative path", url: "/about", wantErr: true},
+		{name: "scheme no host", url: "https://", wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -422,9 +425,9 @@ func TestURL_Scan(t *testing.T) {
 	}{
 		{name: "string", input: "https://example.com", wantErr: false, want: "https://example.com"},
 		{name: "bytes", input: []byte("https://example.com"), wantErr: false, want: "https://example.com"},
+		{name: "relative path", input: "/about", wantErr: false, want: "/about"},
 		{name: "nil", input: nil, wantErr: true},
 		{name: "int", input: 42, wantErr: true},
-		{name: "no scheme", input: "example.com", wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

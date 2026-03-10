@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_field_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_content_field_id) = 26),
     admin_route_id TEXT,
+    root_id TEXT,
     admin_content_data_id TEXT NOT NULL,
     admin_field_id TEXT NOT NULL,
     admin_field_value TEXT NOT NULL,
@@ -11,6 +12,8 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
 
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id)
         ON DELETE SET NULL,
+    FOREIGN KEY (root_id) REFERENCES admin_content_data(admin_content_data_id)
+        ON DELETE SET NULL,
     FOREIGN KEY (admin_content_data_id) REFERENCES admin_content_data(admin_content_data_id)
         ON DELETE CASCADE,
     FOREIGN KEY (admin_field_id) REFERENCES admin_fields(admin_field_id)
@@ -20,6 +23,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_route ON admin_content_fields(admin_route_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_fields_root ON admin_content_fields(root_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_content ON admin_content_fields(admin_content_data_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_field ON admin_content_fields(admin_field_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_author ON admin_content_fields(author_id);

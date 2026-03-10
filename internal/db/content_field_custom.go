@@ -29,42 +29,6 @@ func (d Database) ListContentFieldsByContentDataAndLocale(contentDataID types.Nu
 	return &res, nil
 }
 
-// ListContentFieldsByContentDataAndLocale returns content fields for a content data ID filtered by locale (MySQL).
-func (d MysqlDatabase) ListContentFieldsByContentDataAndLocale(contentDataID types.NullableContentID, locale string) (*[]ContentFields, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListContentFieldsByContentDataAndLocale(d.Context, mdbm.ListContentFieldsByContentDataAndLocaleParams{
-		ContentDataID: contentDataID,
-		Locale:        locale,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ContentFields by contentDataID and locale: %w", err)
-	}
-	res := []ContentFields{}
-	for _, v := range rows {
-		m := d.MapContentField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// ListContentFieldsByContentDataAndLocale returns content fields for a content data ID filtered by locale (PostgreSQL).
-func (d PsqlDatabase) ListContentFieldsByContentDataAndLocale(contentDataID types.NullableContentID, locale string) (*[]ContentFields, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListContentFieldsByContentDataAndLocale(d.Context, mdbp.ListContentFieldsByContentDataAndLocaleParams{
-		ContentDataID: contentDataID,
-		Locale:        locale,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ContentFields by contentDataID and locale: %w", err)
-	}
-	res := []ContentFields{}
-	for _, v := range rows {
-		m := d.MapContentField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
 // ListContentFieldsByRouteAndLocale returns content fields for a route filtered by locale (SQLite).
 // Returns fields matching the given locale plus non-translatable fields (locale = "").
 func (d Database) ListContentFieldsByRouteAndLocale(routeID types.NullableRouteID, locale string) (*[]ContentFields, error) {
@@ -84,15 +48,12 @@ func (d Database) ListContentFieldsByRouteAndLocale(routeID types.NullableRouteI
 	return &res, nil
 }
 
-// ListContentFieldsByRouteAndLocale returns content fields for a route filtered by locale (MySQL).
-func (d MysqlDatabase) ListContentFieldsByRouteAndLocale(routeID types.NullableRouteID, locale string) (*[]ContentFields, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListContentFieldsByRouteAndLocale(d.Context, mdbm.ListContentFieldsByRouteAndLocaleParams{
-		RouteID: routeID,
-		Locale:  locale,
-	})
+// ListContentFieldsByRootID returns content fields for a root_id (SQLite).
+func (d Database) ListContentFieldsByRootID(rootID types.NullableContentID) (*[]ContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRootID(d.Context, mdb.ListContentFieldsByRootIDParams{RootID: rootID})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get ContentFields by routeID and locale: %w", err)
+		return nil, fmt.Errorf("failed to get ContentFields by root_id: %w", err)
 	}
 	res := []ContentFields{}
 	for _, v := range rows {
@@ -102,15 +63,16 @@ func (d MysqlDatabase) ListContentFieldsByRouteAndLocale(routeID types.NullableR
 	return &res, nil
 }
 
-// ListContentFieldsByRouteAndLocale returns content fields for a route filtered by locale (PostgreSQL).
-func (d PsqlDatabase) ListContentFieldsByRouteAndLocale(routeID types.NullableRouteID, locale string) (*[]ContentFields, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListContentFieldsByRouteAndLocale(d.Context, mdbp.ListContentFieldsByRouteAndLocaleParams{
-		RouteID: routeID,
-		Locale:  locale,
+// ListContentFieldsByRootIDAndLocale returns content fields for a root_id filtered by locale (SQLite).
+// Returns fields matching the given locale plus non-translatable fields (locale = "").
+func (d Database) ListContentFieldsByRootIDAndLocale(rootID types.NullableContentID, locale string) (*[]ContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRootIDAndLocale(d.Context, mdb.ListContentFieldsByRootIDAndLocaleParams{
+		RootID: rootID,
+		Locale: locale,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get ContentFields by routeID and locale: %w", err)
+		return nil, fmt.Errorf("failed to get ContentFields by root_id and locale: %w", err)
 	}
 	res := []ContentFields{}
 	for _, v := range rows {
@@ -125,6 +87,7 @@ func (d PsqlDatabase) ListContentFieldsByRouteAndLocale(routeID types.NullableRo
 type ContentFieldsJSON struct {
 	ContentFieldID int64  `json:"content_field_id"`
 	RouteID        int64  `json:"route_id"`
+	RootID         string `json:"root_id"`
 	ContentDataID  int64  `json:"content_data_id"`
 	FieldID        int64  `json:"field_id"`
 	FieldValue     string `json:"field_value"`
@@ -139,6 +102,7 @@ func MapContentFieldJSON(a ContentFields) ContentFieldsJSON {
 	return ContentFieldsJSON{
 		ContentFieldID: 0, // Type conversion not available, set to 0
 		RouteID:        0, // Type conversion not available, set to 0
+		RootID:         a.RootID.String(),
 		ContentDataID:  0, // Type conversion not available, set to 0
 		FieldID:        0, // Type conversion not available, set to 0
 		FieldValue:     a.FieldValue,
@@ -172,6 +136,77 @@ func (d Database) ListContentFieldsPaginated(params PaginationParams) (*[]Conten
 	return &res, nil
 }
 
+// MYSQL
+
+// ListContentFieldsByRootID returns content fields for a root_id (MySQL).
+func (d MysqlDatabase) ListContentFieldsByRootID(rootID types.NullableContentID) (*[]ContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRootID(d.Context, mdbm.ListContentFieldsByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by root_id: %w", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListContentFieldsByContentDataAndLocale returns content fields for a content data ID filtered by locale (MySQL).
+func (d MysqlDatabase) ListContentFieldsByContentDataAndLocale(contentDataID types.NullableContentID, locale string) (*[]ContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentFieldsByContentDataAndLocale(d.Context, mdbm.ListContentFieldsByContentDataAndLocaleParams{
+		ContentDataID: contentDataID,
+		Locale:        locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by contentDataID and locale: %w", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListContentFieldsByRouteAndLocale returns content fields for a route filtered by locale (MySQL).
+func (d MysqlDatabase) ListContentFieldsByRouteAndLocale(routeID types.NullableRouteID, locale string) (*[]ContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRouteAndLocale(d.Context, mdbm.ListContentFieldsByRouteAndLocaleParams{
+		RouteID: routeID,
+		Locale:  locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by routeID and locale: %w", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListContentFieldsByRootIDAndLocale returns content fields for a root_id filtered by locale (MySQL).
+func (d MysqlDatabase) ListContentFieldsByRootIDAndLocale(rootID types.NullableContentID, locale string) (*[]ContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRootIDAndLocale(d.Context, mdbm.ListContentFieldsByRootIDAndLocaleParams{
+		RootID: rootID,
+		Locale: locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by root_id and locale: %w", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 // ListContentFieldsPaginated returns content fields with pagination (MySQL).
 func (d MysqlDatabase) ListContentFieldsPaginated(params PaginationParams) (*[]ContentFields, error) {
 	queries := mdbm.New(d.Connection)
@@ -181,6 +216,77 @@ func (d MysqlDatabase) ListContentFieldsPaginated(params PaginationParams) (*[]C
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentFields paginated: %w", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// PSQL
+
+// ListContentFieldsByRootID returns content fields for a root_id (PostgreSQL).
+func (d PsqlDatabase) ListContentFieldsByRootID(rootID types.NullableContentID) (*[]ContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRootID(d.Context, mdbp.ListContentFieldsByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by root_id: %w", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListContentFieldsByContentDataAndLocale returns content fields for a content data ID filtered by locale (PostgreSQL).
+func (d PsqlDatabase) ListContentFieldsByContentDataAndLocale(contentDataID types.NullableContentID, locale string) (*[]ContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentFieldsByContentDataAndLocale(d.Context, mdbp.ListContentFieldsByContentDataAndLocaleParams{
+		ContentDataID: contentDataID,
+		Locale:        locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by contentDataID and locale: %w", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListContentFieldsByRouteAndLocale returns content fields for a route filtered by locale (PostgreSQL).
+func (d PsqlDatabase) ListContentFieldsByRouteAndLocale(routeID types.NullableRouteID, locale string) (*[]ContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRouteAndLocale(d.Context, mdbp.ListContentFieldsByRouteAndLocaleParams{
+		RouteID: routeID,
+		Locale:  locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by routeID and locale: %w", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// ListContentFieldsByRootIDAndLocale returns content fields for a root_id filtered by locale (PostgreSQL).
+func (d PsqlDatabase) ListContentFieldsByRootIDAndLocale(rootID types.NullableContentID, locale string) (*[]ContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRootIDAndLocale(d.Context, mdbp.ListContentFieldsByRootIDAndLocaleParams{
+		RootID: rootID,
+		Locale: locale,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by root_id and locale: %w", err)
 	}
 	res := []ContentFields{}
 	for _, v := range rows {

@@ -58,42 +58,6 @@ func (d Database) ListAdminFieldsPaginated(params PaginationParams) (*[]AdminFie
 	return &res, nil
 }
 
-// ListAdminFieldsPaginated returns admin fields with pagination (MySQL).
-func (d MysqlDatabase) ListAdminFieldsPaginated(params PaginationParams) (*[]AdminFields, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminFieldPaginated(d.Context, mdbm.ListAdminFieldPaginatedParams{
-		Limit:  int32(params.Limit),
-		Offset: int32(params.Offset),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminFields paginated: %w", err)
-	}
-	res := []AdminFields{}
-	for _, v := range rows {
-		m := d.MapAdminField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// ListAdminFieldsPaginated returns admin fields with pagination (PostgreSQL).
-func (d PsqlDatabase) ListAdminFieldsPaginated(params PaginationParams) (*[]AdminFields, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminFieldPaginated(d.Context, mdbp.ListAdminFieldPaginatedParams{
-		Limit:  int32(params.Limit),
-		Offset: int32(params.Offset),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminFields paginated: %w", err)
-	}
-	res := []AdminFields{}
-	for _, v := range rows {
-		m := d.MapAdminField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
 // MapAdminFieldJSON converts AdminFields to FieldsJSON for tree building
 // by mapping admin field ID into the public FieldsJSON shape.
 func MapAdminFieldJSON(a AdminFields) FieldsJSON {
@@ -198,6 +162,70 @@ func (d Database) GetMaxAdminSortOrderByParentID(parentID types.NullableAdminDat
 
 // ===== MySQL UpdateAdminFieldSortOrder Audited Command =====
 
+// ===== PostgreSQL UpdateAdminFieldSortOrder Audited Command =====
+
+///////////////////////////////
+// LIST ADMIN FIELDS BY DATATYPE ID
+//////////////////////////////
+
+// ListAdminFieldsByDatatypeID retrieves admin fields by their parent admin datatype ID (SQLite).
+func (d Database) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentID(d.Context, mdb.ListAdminFieldByParentIDParams{ParentID: datatypeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin fields by datatype id: %w", err)
+	}
+	res := make([]AdminFields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminField(v))
+	}
+	return &res, nil
+}
+
+// MYSQL
+
+// GetMaxAdminSortOrderByParentID retrieves the maximum sort order for admin fields under a parent admin datatype (MySQL).
+func (d MysqlDatabase) GetMaxAdminSortOrderByParentID(parentID types.NullableAdminDatatypeID) (int64, error) {
+	queries := mdbm.New(d.Connection)
+	result, err := queries.GetMaxAdminSortOrderByParentID(d.Context, mdbm.GetMaxAdminSortOrderByParentIDParams{ParentID: parentID})
+	if err != nil {
+		return 0, fmt.Errorf("failed to get max admin sort order by parent id: %w", err)
+	}
+	return coalesceToInt64(result), nil
+}
+
+// ListAdminFieldsByDatatypeID retrieves admin fields by their parent admin datatype ID (MySQL).
+func (d MysqlDatabase) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentID(d.Context, mdbm.ListAdminFieldByParentIDParams{ParentID: datatypeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin fields by datatype id: %w", err)
+	}
+	res := make([]AdminFields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminField(v))
+	}
+	return &res, nil
+}
+
+// ListAdminFieldsPaginated returns admin fields with pagination (MySQL).
+func (d MysqlDatabase) ListAdminFieldsPaginated(params PaginationParams) (*[]AdminFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminFieldPaginated(d.Context, mdbm.ListAdminFieldPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminFields paginated: %w", err)
+	}
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 // UpdateAdminFieldSortOrderCmdMysql is an audited command for updating an admin field's sort order on MySQL.
 type UpdateAdminFieldSortOrderCmdMysql struct {
 	ctx      context.Context
@@ -256,17 +284,49 @@ func (d MysqlDatabase) UpdateAdminFieldSortOrder(ctx context.Context, ac audited
 	return audited.Update(cmd)
 }
 
-// GetMaxAdminSortOrderByParentID retrieves the maximum sort order for admin fields under a parent admin datatype (MySQL).
-func (d MysqlDatabase) GetMaxAdminSortOrderByParentID(parentID types.NullableAdminDatatypeID) (int64, error) {
-	queries := mdbm.New(d.Connection)
-	result, err := queries.GetMaxAdminSortOrderByParentID(d.Context, mdbm.GetMaxAdminSortOrderByParentIDParams{ParentID: parentID})
+// PSQL
+
+// GetMaxAdminSortOrderByParentID retrieves the maximum sort order for admin fields under a parent admin datatype (PostgreSQL).
+func (d PsqlDatabase) GetMaxAdminSortOrderByParentID(parentID types.NullableAdminDatatypeID) (int64, error) {
+	queries := mdbp.New(d.Connection)
+	result, err := queries.GetMaxAdminSortOrderByParentID(d.Context, mdbp.GetMaxAdminSortOrderByParentIDParams{ParentID: parentID})
 	if err != nil {
 		return 0, fmt.Errorf("failed to get max admin sort order by parent id: %w", err)
 	}
 	return coalesceToInt64(result), nil
 }
 
-// ===== PostgreSQL UpdateAdminFieldSortOrder Audited Command =====
+// ListAdminFieldsByDatatypeID retrieves admin fields by their parent admin datatype ID (PostgreSQL).
+func (d PsqlDatabase) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentID(d.Context, mdbp.ListAdminFieldByParentIDParams{ParentID: datatypeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin fields by datatype id: %w", err)
+	}
+	res := make([]AdminFields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminField(v))
+	}
+	return &res, nil
+}
+
+// ListAdminFieldsPaginated returns admin fields with pagination (PostgreSQL).
+func (d PsqlDatabase) ListAdminFieldsPaginated(params PaginationParams) (*[]AdminFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminFieldPaginated(d.Context, mdbp.ListAdminFieldPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminFields paginated: %w", err)
+	}
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
 
 // UpdateAdminFieldSortOrderCmdPsql is an audited command for updating an admin field's sort order on PostgreSQL.
 type UpdateAdminFieldSortOrderCmdPsql struct {
@@ -324,60 +384,4 @@ func (d PsqlDatabase) UpdateAdminFieldSortOrderCmd(ctx context.Context, auditCtx
 func (d PsqlDatabase) UpdateAdminFieldSortOrder(ctx context.Context, ac audited.AuditContext, s UpdateAdminFieldSortOrderParams) error {
 	cmd := d.UpdateAdminFieldSortOrderCmd(ctx, ac, s)
 	return audited.Update(cmd)
-}
-
-// GetMaxAdminSortOrderByParentID retrieves the maximum sort order for admin fields under a parent admin datatype (PostgreSQL).
-func (d PsqlDatabase) GetMaxAdminSortOrderByParentID(parentID types.NullableAdminDatatypeID) (int64, error) {
-	queries := mdbp.New(d.Connection)
-	result, err := queries.GetMaxAdminSortOrderByParentID(d.Context, mdbp.GetMaxAdminSortOrderByParentIDParams{ParentID: parentID})
-	if err != nil {
-		return 0, fmt.Errorf("failed to get max admin sort order by parent id: %w", err)
-	}
-	return coalesceToInt64(result), nil
-}
-
-///////////////////////////////
-// LIST ADMIN FIELDS BY DATATYPE ID
-//////////////////////////////
-
-// ListAdminFieldsByDatatypeID retrieves admin fields by their parent admin datatype ID (SQLite).
-func (d Database) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminFieldByParentID(d.Context, mdb.ListAdminFieldByParentIDParams{ParentID: datatypeID})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get admin fields by datatype id: %w", err)
-	}
-	res := make([]AdminFields, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminField(v))
-	}
-	return &res, nil
-}
-
-// ListAdminFieldsByDatatypeID retrieves admin fields by their parent admin datatype ID (MySQL).
-func (d MysqlDatabase) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminFieldByParentID(d.Context, mdbm.ListAdminFieldByParentIDParams{ParentID: datatypeID})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get admin fields by datatype id: %w", err)
-	}
-	res := make([]AdminFields, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminField(v))
-	}
-	return &res, nil
-}
-
-// ListAdminFieldsByDatatypeID retrieves admin fields by their parent admin datatype ID (PostgreSQL).
-func (d PsqlDatabase) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminFieldByParentID(d.Context, mdbp.ListAdminFieldByParentIDParams{ParentID: datatypeID})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get admin fields by datatype id: %w", err)
-	}
-	res := make([]AdminFields, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminField(v))
-	}
-	return &res, nil
 }

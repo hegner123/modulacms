@@ -21,6 +21,7 @@ import (
 type ContentFields struct {
 	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
 	RouteID        types.NullableRouteID   `json:"route_id"`
+	RootID         types.NullableContentID `json:"root_id"`
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
@@ -33,6 +34,7 @@ type ContentFields struct {
 // CreateContentFieldParams contains parameters for creating a new contentField.
 type CreateContentFieldParams struct {
 	RouteID       types.NullableRouteID   `json:"route_id"`
+	RootID        types.NullableContentID `json:"root_id"`
 	ContentDataID types.NullableContentID `json:"content_data_id"`
 	FieldID       types.NullableFieldID   `json:"field_id"`
 	FieldValue    string                  `json:"field_value"`
@@ -45,6 +47,7 @@ type CreateContentFieldParams struct {
 // UpdateContentFieldParams contains parameters for updating an existing contentField.
 type UpdateContentFieldParams struct {
 	RouteID        types.NullableRouteID   `json:"route_id"`
+	RootID         types.NullableContentID `json:"root_id"`
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
@@ -74,6 +77,7 @@ func MapStringContentField(a ContentFields) StringContentFields {
 	return StringContentFields{
 		ContentFieldID: a.ContentFieldID.String(),
 		RouteID:        a.RouteID.String(),
+		RootID:         a.RootID.String(),
 		ContentDataID:  a.ContentDataID.String(),
 		FieldID:        a.FieldID.String(),
 		FieldValue:     a.FieldValue,
@@ -96,6 +100,7 @@ func (d Database) MapContentField(a mdb.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: a.ContentFieldID,
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
@@ -111,6 +116,7 @@ func (d Database) MapCreateContentFieldParams(a CreateContentFieldParams) mdb.Cr
 	return mdb.CreateContentFieldParams{
 		ContentFieldID: types.NewContentFieldID(),
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
@@ -125,6 +131,7 @@ func (d Database) MapCreateContentFieldParams(a CreateContentFieldParams) mdb.Cr
 func (d Database) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdb.UpdateContentFieldParams {
 	return mdb.UpdateContentFieldParams{
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
@@ -287,6 +294,7 @@ func (d MysqlDatabase) MapContentField(a mdbm.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: a.ContentFieldID,
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
@@ -302,6 +310,7 @@ func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) m
 	return mdbm.CreateContentFieldParams{
 		ContentFieldID: types.NewContentFieldID(),
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
@@ -316,6 +325,7 @@ func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) m
 func (d MysqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdbm.UpdateContentFieldParams {
 	return mdbm.UpdateContentFieldParams{
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
@@ -478,6 +488,7 @@ func (d PsqlDatabase) MapContentField(a mdbp.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: a.ContentFieldID,
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
@@ -493,6 +504,7 @@ func (d PsqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) md
 	return mdbp.CreateContentFieldParams{
 		ContentFieldID: types.NewContentFieldID(),
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
@@ -507,6 +519,7 @@ func (d PsqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) md
 func (d PsqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdbp.UpdateContentFieldParams {
 	return mdbp.UpdateContentFieldParams{
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
@@ -698,6 +711,7 @@ func (c NewContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.C
 	return queries.CreateContentField(ctx, mdb.CreateContentFieldParams{
 		ContentFieldID: types.NewContentFieldID(),
 		RouteID:        c.params.RouteID,
+		RootID:         c.params.RootID,
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,
@@ -756,6 +770,7 @@ func (c UpdateContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) err
 	queries := mdb.New(tx)
 	return queries.UpdateContentField(ctx, mdb.UpdateContentFieldParams{
 		RouteID:        c.params.RouteID,
+		RootID:         c.params.RootID,
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,
@@ -856,6 +871,7 @@ func (c NewContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (
 	params := mdbm.CreateContentFieldParams{
 		ContentFieldID: types.NewContentFieldID(),
 		RouteID:        c.params.RouteID,
+		RootID:         c.params.RootID,
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,
@@ -918,6 +934,7 @@ func (c UpdateContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX
 	queries := mdbm.New(tx)
 	return queries.UpdateContentField(ctx, mdbm.UpdateContentFieldParams{
 		RouteID:        c.params.RouteID,
+		RootID:         c.params.RootID,
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,
@@ -1018,6 +1035,7 @@ func (c NewContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (m
 	return queries.CreateContentField(ctx, mdbp.CreateContentFieldParams{
 		ContentFieldID: types.NewContentFieldID(),
 		RouteID:        c.params.RouteID,
+		RootID:         c.params.RootID,
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,
@@ -1076,6 +1094,7 @@ func (c UpdateContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX)
 	queries := mdbp.New(tx)
 	return queries.UpdateContentField(ctx, mdbp.UpdateContentFieldParams{
 		RouteID:        c.params.RouteID,
+		RootID:         c.params.RootID,
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,

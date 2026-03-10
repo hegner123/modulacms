@@ -152,9 +152,43 @@ func (s *ContentService) ListPaginated(ctx context.Context, params db.Pagination
 // spliced into the parent's sibling chain via AppendChild. Auto-creates
 // empty content fields for every field belonging to the assigned datatype.
 func (s *ContentService) Create(ctx context.Context, ac audited.AuditContext, params db.CreateContentDataParams) (*db.ContentData, error) {
+	// Resolve root_id before creation when the caller hasn't set it.
+	// Child nodes inherit root_id from their parent.
+	if !params.RootID.Valid && params.ParentID.Valid {
+		parent, lookupErr := s.driver.GetContentData(params.ParentID.ID)
+		if lookupErr != nil {
+			utility.DefaultLogger.Error("create: failed to look up parent for root_id", lookupErr)
+		} else if parent != nil {
+			params.RootID = parent.RootID
+		}
+	}
+
 	cd, err := s.driver.CreateContentData(ctx, ac, params)
 	if err != nil {
 		return nil, fmt.Errorf("create content data: %w", err)
+	}
+
+	// Root nodes (no parent) set root_id to self. The ID is not available
+	// until after the INSERT, so a follow-up update is required.
+	if !cd.ParentID.Valid && !cd.RootID.Valid {
+		cd.RootID = types.NullableContentID{ID: cd.ContentDataID, Valid: true}
+		_, rootErr := s.driver.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+			ContentDataID: cd.ContentDataID,
+			RootID:        cd.RootID,
+			ParentID:      cd.ParentID,
+			FirstChildID:  cd.FirstChildID,
+			NextSiblingID: cd.NextSiblingID,
+			PrevSiblingID: cd.PrevSiblingID,
+			RouteID:       cd.RouteID,
+			DatatypeID:    cd.DatatypeID,
+			AuthorID:      cd.AuthorID,
+			Status:        cd.Status,
+			DateCreated:   cd.DateCreated,
+			DateModified:  types.TimestampNow(),
+		})
+		if rootErr != nil {
+			utility.DefaultLogger.Error("create: failed to set root_id on new root content", rootErr)
+		}
 	}
 
 	// Splice into parent's sibling chain
@@ -192,6 +226,7 @@ func (s *ContentService) autoCreateFields(ctx context.Context, ac audited.AuditC
 	for _, field := range *fieldList {
 		_, cfErr := s.driver.CreateContentField(ctx, ac, db.CreateContentFieldParams{
 			RouteID:       cd.RouteID,
+			RootID:        cd.RootID,
 			ContentDataID: types.NullableContentID{ID: cd.ContentDataID, Valid: true},
 			FieldID:       types.NullableFieldID{ID: field.FieldID, Valid: true},
 			FieldValue:    "",

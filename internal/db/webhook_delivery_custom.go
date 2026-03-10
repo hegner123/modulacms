@@ -128,8 +128,30 @@ func (d Database) PruneOldDeliveries(ctx context.Context, before types.Timestamp
 }
 
 ///////////////////////////////
-// MYSQL
 //////////////////////////////
+
+///////////////////////////////
+//////////////////////////////
+
+// parseNullTime converts a string timestamp to sql.NullTime.
+func parseNullTime(s string) sql.NullTime {
+	if s == "" {
+		return sql.NullTime{}
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return sql.NullTime{}
+	}
+	return sql.NullTime{Time: t, Valid: true}
+}
+
+// MYSQL
+
+// DeleteWebhookDelivery removes a delivery record.
+func (d MysqlDatabase) DeleteWebhookDelivery(ctx context.Context, id types.WebhookDeliveryID) error {
+	queries := mdbm.New(d.Connection)
+	return queries.DeleteWebhookDelivery(ctx, mdbm.DeleteWebhookDeliveryParams{DeliveryID: id})
+}
 
 // MapWebhookDelivery converts a sqlc-generated MySQL delivery to the wrapper type.
 func (d MysqlDatabase) MapWebhookDelivery(a mdbm.WebhookDeliveries) WebhookDelivery {
@@ -184,12 +206,6 @@ func (d MysqlDatabase) CreateWebhookDelivery(ctx context.Context, s CreateWebhoo
 	return &res, nil
 }
 
-// DeleteWebhookDelivery removes a delivery record.
-func (d MysqlDatabase) DeleteWebhookDelivery(ctx context.Context, id types.WebhookDeliveryID) error {
-	queries := mdbm.New(d.Connection)
-	return queries.DeleteWebhookDelivery(ctx, mdbm.DeleteWebhookDeliveryParams{DeliveryID: id})
-}
-
 // UpdateWebhookDeliveryStatus updates a delivery's status fields.
 func (d MysqlDatabase) UpdateWebhookDeliveryStatus(ctx context.Context, p UpdateWebhookDeliveryStatusParams) error {
 	queries := mdbm.New(d.Connection)
@@ -229,9 +245,25 @@ func (d MysqlDatabase) PruneOldDeliveries(ctx context.Context, before types.Time
 	})
 }
 
-///////////////////////////////
-// POSTGRES
-//////////////////////////////
+// PSQL
+
+// CreateWebhookDelivery inserts a new delivery record (non-audited, system operation).
+func (d PsqlDatabase) CreateWebhookDelivery(ctx context.Context, s CreateWebhookDeliveryParams) (*WebhookDelivery, error) {
+	queries := mdbp.New(d.Connection)
+	p := d.MapCreateWebhookDeliveryParams(s)
+	row, err := queries.CreateWebhookDelivery(ctx, p)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create webhook delivery: %w", err)
+	}
+	res := d.MapWebhookDelivery(row)
+	return &res, nil
+}
+
+// DeleteWebhookDelivery removes a delivery record.
+func (d PsqlDatabase) DeleteWebhookDelivery(ctx context.Context, id types.WebhookDeliveryID) error {
+	queries := mdbp.New(d.Connection)
+	return queries.DeleteWebhookDelivery(ctx, mdbp.DeleteWebhookDeliveryParams{DeliveryID: id})
+}
 
 // MapWebhookDelivery converts a sqlc-generated PostgreSQL delivery to the wrapper type.
 func (d PsqlDatabase) MapWebhookDelivery(a mdbp.WebhookDeliveries) WebhookDelivery {
@@ -271,24 +303,6 @@ func (d PsqlDatabase) MapCreateWebhookDeliveryParams(a CreateWebhookDeliveryPara
 	}
 }
 
-// CreateWebhookDelivery inserts a new delivery record (non-audited, system operation).
-func (d PsqlDatabase) CreateWebhookDelivery(ctx context.Context, s CreateWebhookDeliveryParams) (*WebhookDelivery, error) {
-	queries := mdbp.New(d.Connection)
-	p := d.MapCreateWebhookDeliveryParams(s)
-	row, err := queries.CreateWebhookDelivery(ctx, p)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create webhook delivery: %w", err)
-	}
-	res := d.MapWebhookDelivery(row)
-	return &res, nil
-}
-
-// DeleteWebhookDelivery removes a delivery record.
-func (d PsqlDatabase) DeleteWebhookDelivery(ctx context.Context, id types.WebhookDeliveryID) error {
-	queries := mdbp.New(d.Connection)
-	return queries.DeleteWebhookDelivery(ctx, mdbp.DeleteWebhookDeliveryParams{DeliveryID: id})
-}
-
 // UpdateWebhookDeliveryStatus updates a delivery's status fields.
 func (d PsqlDatabase) UpdateWebhookDeliveryStatus(ctx context.Context, p UpdateWebhookDeliveryStatusParams) error {
 	queries := mdbp.New(d.Connection)
@@ -326,16 +340,4 @@ func (d PsqlDatabase) PruneOldDeliveries(ctx context.Context, before types.Times
 	return queries.PruneOldDeliveries(ctx, mdbp.PruneOldDeliveriesParams{
 		CreatedAt: before.UTC(),
 	})
-}
-
-// parseNullTime converts a string timestamp to sql.NullTime.
-func parseNullTime(s string) sql.NullTime {
-	if s == "" {
-		return sql.NullTime{}
-	}
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		return sql.NullTime{}
-	}
-	return sql.NullTime{Time: t, Valid: true}
 }

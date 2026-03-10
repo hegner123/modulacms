@@ -345,6 +345,9 @@ func buildStandaloneNodes(items []db.ContentDataTopLevel) []*ContentSelectNode {
 		for _, item := range g.items {
 			title := string(item.RouteTitle)
 			if title == "" {
+				title = item.DatatypeLabel
+			}
+			if title == "" {
 				title = string(item.ContentDataID)
 			}
 			child := &ContentSelectNode{
@@ -397,6 +400,9 @@ func buildAdminStandaloneNodes(items []db.AdminContentDataTopLevel) []*ContentSe
 		}
 		for _, item := range g.items {
 			title := string(item.RouteTitle)
+			if title == "" {
+				title = item.DatatypeLabel
+			}
 			if title == "" {
 				title = string(item.AdminContentDataID)
 			}

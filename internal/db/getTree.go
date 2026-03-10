@@ -37,6 +37,7 @@ type GetContentTreeByRouteRow struct {
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	AuthorID      types.UserID             `json:"author_id"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
@@ -68,6 +69,7 @@ type AdminContentDataWithDatatypeRow struct {
 	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
+	RootID             types.NullableAdminContentID  `json:"root_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.UserID                  `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
@@ -86,6 +88,7 @@ type AdminContentDataWithDatatypeRow struct {
 type ContentFieldWithFieldRow struct {
 	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
 	RouteID        types.NullableRouteID   `json:"route_id"`
+	RootID         types.NullableContentID `json:"root_id"`
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
@@ -125,6 +128,7 @@ type FieldWithSortOrderRow struct {
 type AdminContentFieldsWithFieldRow struct {
 	AdminContentFieldID types.AdminContentFieldID     `json:"admin_content_field_id"`
 	AdminRouteID        types.NullableAdminRouteID    `json:"admin_route_id"`
+	RootID              types.NullableAdminContentID  `json:"root_id"`
 	AdminContentDataID  types.NullableAdminContentID  `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID    `json:"admin_field_id"`
 	AdminFieldValue     string                        `json:"admin_field_value"`
@@ -173,6 +177,7 @@ func (d Database) MapGetContentTreeByRouteRow(a mdb.GetContentTreeByRouteRow) Ge
 		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		RouteID:       a.RouteID,
+		RootID:        a.RootID,
 		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
@@ -261,6 +266,79 @@ func (d Database) GetContentFieldsByRoute(routeID types.NullableRouteID) (*[]Get
 	return &res, nil
 }
 
+// MapGetContentTreeByRootIDRow maps SQLite content tree by root_id row to wrapper struct.
+func (d Database) MapGetContentTreeByRootIDRow(a mdb.GetContentTreeByRootIDRow) GetContentTreeByRouteRow {
+	return GetContentTreeByRouteRow{
+		ContentDataID: a.ContentDataID,
+		ParentID:      a.ParentID,
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
+		DatatypeID:    a.DatatypeID,
+		RouteID:       a.RouteID,
+		RootID:        a.RootID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
+		Status:        a.Status,
+		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
+	}
+}
+
+// GetContentTreeByRootID retrieves content tree data by root_id (SQLite).
+func (d Database) GetContentTreeByRootID(rootID types.NullableContentID) (*[]GetContentTreeByRouteRow, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.GetContentTreeByRootID(d.Context, mdb.GetContentTreeByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get content tree by root_id: %w", err)
+	}
+	res := []GetContentTreeByRouteRow{}
+	for _, v := range rows {
+		res = append(res, d.MapGetContentTreeByRootIDRow(v))
+	}
+	return &res, nil
+}
+
+// MapAdminContentDataWithDatatypeByRootIDRow maps SQLite admin content+datatype JOIN row (by root_id) to wrapper struct.
+func (d Database) MapAdminContentDataWithDatatypeByRootIDRow(a mdb.ListAdminContentDataWithDatatypeByRootIDRow) AdminContentDataWithDatatypeRow {
+	return AdminContentDataWithDatatypeRow{
+		AdminContentDataID: a.AdminContentDataID,
+		ParentID:           a.ParentID,
+		FirstChildID:       a.FirstChildID,
+		NextSiblingID:      a.NextSiblingID,
+		PrevSiblingID:      a.PrevSiblingID,
+		AdminRouteID:       a.AdminRouteID,
+		RootID:             a.RootID,
+		AdminDatatypeID:    a.AdminDatatypeID,
+		AuthorID:           a.AuthorID,
+		Status:             a.Status,
+		DateCreated:        a.DateCreated,
+		DateModified:       a.DateModified,
+		DtAdminDatatypeID:  a.DtAdminDatatypeId,
+		DtParentID:         a.DtParentId,
+		DtLabel:            a.DtLabel,
+		DtType:             a.DtType,
+		DtAuthorID:         a.DtAuthorId,
+		DtDateCreated:      a.DtDateCreated,
+		DtDateModified:     a.DtDateModified,
+	}
+}
+
+// ListAdminContentDataWithDatatypeByRootID retrieves admin content data joined with datatypes by root_id (SQLite).
+func (d Database) ListAdminContentDataWithDatatypeByRootID(rootID types.NullableAdminContentID) (*[]AdminContentDataWithDatatypeRow, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentDataWithDatatypeByRootID(d.Context, mdb.ListAdminContentDataWithDatatypeByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content data with datatypes by root_id: %w", err)
+	}
+	res := []AdminContentDataWithDatatypeRow{}
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentDataWithDatatypeByRootIDRow(v))
+	}
+	return &res, nil
+}
+
 // MapAdminContentDataWithDatatypeRow maps SQLite admin content+datatype JOIN row to wrapper struct.
 func (d Database) MapAdminContentDataWithDatatypeRow(a mdb.ListAdminContentDataWithDatatypeByRouteRow) AdminContentDataWithDatatypeRow {
 	return AdminContentDataWithDatatypeRow{
@@ -270,6 +348,7 @@ func (d Database) MapAdminContentDataWithDatatypeRow(a mdb.ListAdminContentDataW
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
 		AdminRouteID:       a.AdminRouteID,
+		RootID:             a.RootID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
 		Status:             a.Status,
@@ -290,6 +369,7 @@ func (d Database) MapAdminContentFieldsWithFieldRow(a mdb.ListAdminContentFields
 	return AdminContentFieldsWithFieldRow{
 		AdminContentFieldID: a.AdminContentFieldID,
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -342,6 +422,7 @@ func (d Database) MapAdminContentFieldsWithFieldByContentDataRow(a mdb.ListAdmin
 	return AdminContentFieldsWithFieldRow{
 		AdminContentFieldID: a.AdminContentFieldID,
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -380,6 +461,7 @@ func (d Database) MapContentFieldWithFieldRow(a mdb.ListContentFieldsWithFieldBy
 	return ContentFieldWithFieldRow{
 		ContentFieldID: a.ContentFieldID,
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
@@ -492,6 +574,7 @@ func (d MysqlDatabase) MapGetContentTreeByRouteRow(a mdbm.GetContentTreeByRouteR
 		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		RouteID:       a.RouteID,
+		RootID:        a.RootID,
 		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
@@ -580,6 +663,79 @@ func (d MysqlDatabase) GetContentFieldsByRoute(routeID types.NullableRouteID) (*
 	return &res, nil
 }
 
+// MapGetContentTreeByRootIDRow maps MySQL content tree by root_id row to wrapper struct.
+func (d MysqlDatabase) MapGetContentTreeByRootIDRow(a mdbm.GetContentTreeByRootIDRow) GetContentTreeByRouteRow {
+	return GetContentTreeByRouteRow{
+		ContentDataID: a.ContentDataID,
+		ParentID:      a.ParentID,
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
+		DatatypeID:    a.DatatypeID,
+		RouteID:       a.RouteID,
+		RootID:        a.RootID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
+		Status:        a.Status,
+		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
+	}
+}
+
+// GetContentTreeByRootID retrieves content tree data by root_id (MySQL).
+func (d MysqlDatabase) GetContentTreeByRootID(rootID types.NullableContentID) (*[]GetContentTreeByRouteRow, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.GetContentTreeByRootID(d.Context, mdbm.GetContentTreeByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get content tree by root_id: %w", err)
+	}
+	res := []GetContentTreeByRouteRow{}
+	for _, v := range rows {
+		res = append(res, d.MapGetContentTreeByRootIDRow(v))
+	}
+	return &res, nil
+}
+
+// MapAdminContentDataWithDatatypeByRootIDRow maps MySQL admin content+datatype JOIN row (by root_id) to wrapper struct.
+func (d MysqlDatabase) MapAdminContentDataWithDatatypeByRootIDRow(a mdbm.ListAdminContentDataWithDatatypeByRootIDRow) AdminContentDataWithDatatypeRow {
+	return AdminContentDataWithDatatypeRow{
+		AdminContentDataID: a.AdminContentDataID,
+		ParentID:           a.ParentID,
+		FirstChildID:       a.FirstChildID,
+		NextSiblingID:      a.NextSiblingID,
+		PrevSiblingID:      a.PrevSiblingID,
+		AdminRouteID:       a.AdminRouteID,
+		RootID:             a.RootID,
+		AdminDatatypeID:    a.AdminDatatypeID,
+		AuthorID:           a.AuthorID,
+		Status:             a.Status,
+		DateCreated:        a.DateCreated,
+		DateModified:       a.DateModified,
+		DtAdminDatatypeID:  a.DtAdminDatatypeId,
+		DtParentID:         a.DtParentId,
+		DtLabel:            a.DtLabel,
+		DtType:             a.DtType,
+		DtAuthorID:         a.DtAuthorId,
+		DtDateCreated:      a.DtDateCreated,
+		DtDateModified:     a.DtDateModified,
+	}
+}
+
+// ListAdminContentDataWithDatatypeByRootID retrieves admin content data joined with datatypes by root_id (MySQL).
+func (d MysqlDatabase) ListAdminContentDataWithDatatypeByRootID(rootID types.NullableAdminContentID) (*[]AdminContentDataWithDatatypeRow, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentDataWithDatatypeByRootID(d.Context, mdbm.ListAdminContentDataWithDatatypeByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content data with datatypes by root_id: %w", err)
+	}
+	res := []AdminContentDataWithDatatypeRow{}
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentDataWithDatatypeByRootIDRow(v))
+	}
+	return &res, nil
+}
+
 // MapAdminContentDataWithDatatypeRow maps MySQL admin content+datatype JOIN row to wrapper struct.
 func (d MysqlDatabase) MapAdminContentDataWithDatatypeRow(a mdbm.ListAdminContentDataWithDatatypeByRouteRow) AdminContentDataWithDatatypeRow {
 	return AdminContentDataWithDatatypeRow{
@@ -589,6 +745,7 @@ func (d MysqlDatabase) MapAdminContentDataWithDatatypeRow(a mdbm.ListAdminConten
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
 		AdminRouteID:       a.AdminRouteID,
+		RootID:             a.RootID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
 		Status:             a.Status,
@@ -609,6 +766,7 @@ func (d MysqlDatabase) MapAdminContentFieldsWithFieldRow(a mdbm.ListAdminContent
 	return AdminContentFieldsWithFieldRow{
 		AdminContentFieldID: a.AdminContentFieldID,
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -661,6 +819,7 @@ func (d MysqlDatabase) MapAdminContentFieldsWithFieldByContentDataRow(a mdbm.Lis
 	return AdminContentFieldsWithFieldRow{
 		AdminContentFieldID: a.AdminContentFieldID,
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -699,6 +858,7 @@ func (d MysqlDatabase) MapContentFieldWithFieldRow(a mdbm.ListContentFieldsWithF
 	return ContentFieldWithFieldRow{
 		ContentFieldID: a.ContentFieldID,
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
@@ -811,6 +971,7 @@ func (d PsqlDatabase) MapGetContentTreeByRouteRow(a mdbp.GetContentTreeByRouteRo
 		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		RouteID:       a.RouteID,
+		RootID:        a.RootID,
 		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
@@ -899,6 +1060,79 @@ func (d PsqlDatabase) GetContentFieldsByRoute(routeID types.NullableRouteID) (*[
 	return &res, nil
 }
 
+// MapGetContentTreeByRootIDRow maps PostgreSQL content tree by root_id row to wrapper struct.
+func (d PsqlDatabase) MapGetContentTreeByRootIDRow(a mdbp.GetContentTreeByRootIDRow) GetContentTreeByRouteRow {
+	return GetContentTreeByRouteRow{
+		ContentDataID: a.ContentDataID,
+		ParentID:      a.ParentID,
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
+		DatatypeID:    a.DatatypeID,
+		RouteID:       a.RouteID,
+		RootID:        a.RootID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
+		Status:        a.Status,
+		DatatypeLabel: a.DatatypeLabel,
+		DatatypeType:  a.DatatypeType,
+	}
+}
+
+// GetContentTreeByRootID retrieves content tree data by root_id (PostgreSQL).
+func (d PsqlDatabase) GetContentTreeByRootID(rootID types.NullableContentID) (*[]GetContentTreeByRouteRow, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.GetContentTreeByRootID(d.Context, mdbp.GetContentTreeByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get content tree by root_id: %w", err)
+	}
+	res := []GetContentTreeByRouteRow{}
+	for _, v := range rows {
+		res = append(res, d.MapGetContentTreeByRootIDRow(v))
+	}
+	return &res, nil
+}
+
+// MapAdminContentDataWithDatatypeByRootIDRow maps PostgreSQL admin content+datatype JOIN row (by root_id) to wrapper struct.
+func (d PsqlDatabase) MapAdminContentDataWithDatatypeByRootIDRow(a mdbp.ListAdminContentDataWithDatatypeByRootIDRow) AdminContentDataWithDatatypeRow {
+	return AdminContentDataWithDatatypeRow{
+		AdminContentDataID: a.AdminContentDataID,
+		ParentID:           a.ParentID,
+		FirstChildID:       a.FirstChildID,
+		NextSiblingID:      a.NextSiblingID,
+		PrevSiblingID:      a.PrevSiblingID,
+		AdminRouteID:       a.AdminRouteID,
+		RootID:             a.RootID,
+		AdminDatatypeID:    a.AdminDatatypeID,
+		AuthorID:           a.AuthorID,
+		Status:             a.Status,
+		DateCreated:        a.DateCreated,
+		DateModified:       a.DateModified,
+		DtAdminDatatypeID:  a.DtAdminDatatypeId,
+		DtParentID:         a.DtParentId,
+		DtLabel:            a.DtLabel,
+		DtType:             a.DtType,
+		DtAuthorID:         a.DtAuthorId,
+		DtDateCreated:      a.DtDateCreated,
+		DtDateModified:     a.DtDateModified,
+	}
+}
+
+// ListAdminContentDataWithDatatypeByRootID retrieves admin content data joined with datatypes by root_id (PostgreSQL).
+func (d PsqlDatabase) ListAdminContentDataWithDatatypeByRootID(rootID types.NullableAdminContentID) (*[]AdminContentDataWithDatatypeRow, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentDataWithDatatypeByRootID(d.Context, mdbp.ListAdminContentDataWithDatatypeByRootIDParams{RootID: rootID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content data with datatypes by root_id: %w", err)
+	}
+	res := []AdminContentDataWithDatatypeRow{}
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentDataWithDatatypeByRootIDRow(v))
+	}
+	return &res, nil
+}
+
 // MapAdminContentDataWithDatatypeRow maps PostgreSQL admin content+datatype JOIN row to wrapper struct.
 func (d PsqlDatabase) MapAdminContentDataWithDatatypeRow(a mdbp.ListAdminContentDataWithDatatypeByRouteRow) AdminContentDataWithDatatypeRow {
 	return AdminContentDataWithDatatypeRow{
@@ -908,6 +1142,7 @@ func (d PsqlDatabase) MapAdminContentDataWithDatatypeRow(a mdbp.ListAdminContent
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
 		AdminRouteID:       a.AdminRouteID,
+		RootID:             a.RootID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
 		Status:             a.Status,
@@ -928,6 +1163,7 @@ func (d PsqlDatabase) MapAdminContentFieldsWithFieldRow(a mdbp.ListAdminContentF
 	return AdminContentFieldsWithFieldRow{
 		AdminContentFieldID: a.AdminContentFieldID,
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -980,6 +1216,7 @@ func (d PsqlDatabase) MapAdminContentFieldsWithFieldByContentDataRow(a mdbp.List
 	return AdminContentFieldsWithFieldRow{
 		AdminContentFieldID: a.AdminContentFieldID,
 		AdminRouteID:        a.AdminRouteID,
+		RootID:              a.RootID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -1018,6 +1255,7 @@ func (d PsqlDatabase) MapContentFieldWithFieldRow(a mdbp.ListContentFieldsWithFi
 	return ContentFieldWithFieldRow{
 		ContentFieldID: a.ContentFieldID,
 		RouteID:        a.RouteID,
+		RootID:         a.RootID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,

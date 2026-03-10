@@ -4,6 +4,10 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
         CONSTRAINT fk_admin_route_id
             REFERENCES admin_routes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    root_id TEXT
+        CONSTRAINT fk_root_id
+            REFERENCES admin_content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
     admin_content_data_id TEXT NOT NULL
         CONSTRAINT fk_admin_content_data
             REFERENCES admin_content_data
@@ -23,6 +27,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_route ON admin_content_fields(admin_route_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_fields_root ON admin_content_fields(root_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_content ON admin_content_fields(admin_content_data_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_field ON admin_content_fields(admin_field_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_author ON admin_content_fields(author_id);

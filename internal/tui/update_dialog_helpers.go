@@ -7,6 +7,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/utility"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -771,6 +772,25 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 			}
 		}
 
+		// Set root_id to self for the new root content node
+		_, rootUpdateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+			ContentDataID: contentData.ContentDataID,
+			RootID:        types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
+			ParentID:      contentData.ParentID,
+			FirstChildID:  contentData.FirstChildID,
+			NextSiblingID: contentData.NextSiblingID,
+			PrevSiblingID: contentData.PrevSiblingID,
+			RouteID:       contentData.RouteID,
+			DatatypeID:    contentData.DatatypeID,
+			AuthorID:      contentData.AuthorID,
+			Status:        contentData.Status,
+			DateCreated:   contentData.DateCreated,
+			DateModified:  types.TimestampNow(),
+		})
+		if rootUpdateErr != nil {
+			utility.DefaultLogger.Ferror("Failed to set root_id on new root content", rootUpdateErr)
+		}
+
 		return RouteWithContentCreatedMsg{
 			RouteID:       routeID,
 			ContentDataID: contentData.ContentDataID,
@@ -843,6 +863,25 @@ func (m Model) HandleInitializeRouteContent(msg InitializeRouteContentRequestMsg
 				Title:   "Error",
 				Message: errMsg,
 			}
+		}
+
+		// Set root_id to self for the new root content node
+		_, rootUpdateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+			ContentDataID: contentData.ContentDataID,
+			RootID:        types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
+			ParentID:      contentData.ParentID,
+			FirstChildID:  contentData.FirstChildID,
+			NextSiblingID: contentData.NextSiblingID,
+			PrevSiblingID: contentData.PrevSiblingID,
+			RouteID:       contentData.RouteID,
+			DatatypeID:    contentData.DatatypeID,
+			AuthorID:      contentData.AuthorID,
+			Status:        contentData.Status,
+			DateCreated:   contentData.DateCreated,
+			DateModified:  types.TimestampNow(),
+		})
+		if rootUpdateErr != nil {
+			utility.DefaultLogger.Ferror("Failed to set root_id on new root content", rootUpdateErr)
 		}
 
 		return RouteContentInitializedMsg{

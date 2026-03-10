@@ -1450,7 +1450,7 @@ func TestAdminContentDataStruct_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"admin_content_data_id", "parent_id", "first_child_id",
-		"next_sibling_id", "prev_sibling_id", "admin_route_id",
+		"next_sibling_id", "prev_sibling_id", "root_id", "admin_route_id",
 		"admin_datatype_id", "author_id", "status",
 		"date_created", "date_modified",
 		"published_at", "published_by", "publish_at", "revision",
@@ -1487,7 +1487,7 @@ func TestCreateAdminContentDataParams_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"parent_id", "first_child_id", "next_sibling_id",
-		"prev_sibling_id", "admin_route_id", "admin_datatype_id",
+		"prev_sibling_id", "root_id", "admin_route_id", "admin_datatype_id",
 		"author_id", "status", "date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1524,7 +1524,7 @@ func TestUpdateAdminContentDataParams_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"parent_id", "first_child_id", "next_sibling_id",
-		"prev_sibling_id", "admin_route_id", "admin_datatype_id",
+		"prev_sibling_id", "root_id", "admin_route_id", "admin_datatype_id",
 		"author_id", "status", "date_created", "date_modified",
 		"admin_content_data_id",
 	}

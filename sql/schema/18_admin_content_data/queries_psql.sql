@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
         CONSTRAINT fk_prev_sibling_id
             REFERENCES admin_content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
+    root_id TEXT
+        CONSTRAINT fk_root_id
+            REFERENCES admin_content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
     admin_route_id TEXT NOT NULL
         CONSTRAINT fk_admin_routes
             REFERENCES admin_routes
@@ -69,6 +73,7 @@ INSERT INTO admin_content_data (
     first_child_id,
     next_sibling_id,
     prev_sibling_id,
+    root_id,
     admin_route_id,
     admin_datatype_id,
     author_id,
@@ -86,7 +91,8 @@ INSERT INTO admin_content_data (
     $8,
     $9,
     $10,
-    $11
+    $11,
+    $12
 ) RETURNING *;
 
 -- name: UpdateAdminContentData :exec
@@ -95,13 +101,14 @@ SET parent_id = $1,
     first_child_id = $2,
     next_sibling_id = $3,
     prev_sibling_id = $4,
-    admin_route_id = $5,
-    admin_datatype_id = $6,
-    author_id = $7,
-    status = $8,
-    date_created = $9,
-    date_modified = $10
-WHERE admin_content_data_id = $11;
+    root_id = $5,
+    admin_route_id = $6,
+    admin_datatype_id = $7,
+    author_id = $8,
+    status = $9,
+    date_created = $10,
+    date_modified = $11
+WHERE admin_content_data_id = $12;
 
 -- name: DeleteAdminContentData :exec
 DELETE FROM admin_content_data
@@ -144,16 +151,17 @@ WHERE admin_content_data_id = $5;
 -- name: UpdateAdminContentDataWithRevision :exec
 UPDATE admin_content_data
 SET admin_route_id = $1,
-    parent_id = $2,
-    first_child_id = $3,
-    next_sibling_id = $4,
-    prev_sibling_id = $5,
-    admin_datatype_id = $6,
-    author_id = $7,
-    status = $8,
-    date_created = $9,
-    date_modified = $10
-WHERE admin_content_data_id = $11 AND revision = $12;
+    root_id = $2,
+    parent_id = $3,
+    first_child_id = $4,
+    next_sibling_id = $5,
+    prev_sibling_id = $6,
+    admin_datatype_id = $7,
+    author_id = $8,
+    status = $9,
+    date_created = $10,
+    date_modified = $11
+WHERE admin_content_data_id = $12 AND revision = $13;
 
 -- name: UpdateAdminContentDataSchedule :exec
 UPDATE admin_content_data
@@ -186,3 +194,8 @@ UPDATE admin_content_data SET author_id = $1 WHERE author_id = $2;
 
 -- name: CountAdminContentDataByAuthor :one
 SELECT COUNT(*) FROM admin_content_data WHERE author_id = $1;
+
+-- name: ListAdminContentDataByRootID :many
+SELECT * FROM admin_content_data
+WHERE root_id = $1
+ORDER BY admin_content_data_id;

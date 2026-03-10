@@ -24,6 +24,7 @@ type AdminContentData struct {
 	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
 	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
+	RootID             types.NullableAdminContentID  `json:"root_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.UserID                  `json:"author_id"`
@@ -42,6 +43,7 @@ type CreateAdminContentDataParams struct {
 	FirstChildID    types.NullableAdminContentID  `json:"first_child_id"`
 	NextSiblingID   types.NullableAdminContentID  `json:"next_sibling_id"`
 	PrevSiblingID   types.NullableAdminContentID  `json:"prev_sibling_id"`
+	RootID          types.NullableAdminContentID  `json:"root_id"`
 	AdminRouteID    types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID        types.UserID                  `json:"author_id"`
@@ -56,6 +58,7 @@ type UpdateAdminContentDataParams struct {
 	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
 	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
+	RootID             types.NullableAdminContentID  `json:"root_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.UserID                  `json:"author_id"`
@@ -77,6 +80,7 @@ func MapStringAdminContentData(a AdminContentData) StringAdminContentData {
 	return StringAdminContentData{
 		AdminContentDataID: a.AdminContentDataID.String(),
 		ParentID:           a.ParentID.String(),
+		RootID:             a.RootID.String(),
 		AdminRouteID:       a.AdminRouteID.String(),
 		AdminDatatypeID:    a.AdminDatatypeID.String(),
 		AuthorID:           a.AuthorID.String(),
@@ -105,6 +109,7 @@ func (d Database) MapAdminContentData(a mdb.AdminContentData) AdminContentData {
 		FirstChildID:       a.FirstChildID,
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
+		RootID:             a.RootID,
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
@@ -126,6 +131,7 @@ func (d Database) MapCreateAdminContentDataParams(a CreateAdminContentDataParams
 		FirstChildID:       a.FirstChildID,
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
+		RootID:             a.RootID,
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
@@ -142,6 +148,7 @@ func (d Database) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams
 		FirstChildID:       a.FirstChildID,
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
+		RootID:             a.RootID,
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
@@ -290,6 +297,7 @@ func (d MysqlDatabase) MapAdminContentData(a mdbm.AdminContentData) AdminContent
 		FirstChildID:       a.FirstChildID,
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
+		RootID:             a.RootID,
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
@@ -311,6 +319,7 @@ func (d MysqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataP
 		FirstChildID:       a.FirstChildID,
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
+		RootID:             a.RootID,
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
@@ -327,6 +336,7 @@ func (d MysqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataP
 		FirstChildID:       a.FirstChildID,
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
+		RootID:             a.RootID,
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
@@ -475,6 +485,7 @@ func (d PsqlDatabase) MapAdminContentData(a mdbp.AdminContentData) AdminContentD
 		FirstChildID:       a.FirstChildID,
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
+		RootID:             a.RootID,
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
@@ -496,6 +507,7 @@ func (d PsqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataPa
 		FirstChildID:       a.FirstChildID,
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
+		RootID:             a.RootID,
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
@@ -512,6 +524,7 @@ func (d PsqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataPa
 		FirstChildID:       a.FirstChildID,
 		NextSiblingID:      a.NextSiblingID,
 		PrevSiblingID:      a.PrevSiblingID,
+		RootID:             a.RootID,
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
@@ -691,6 +704,7 @@ func (c NewAdminContentDataCmd) Execute(ctx context.Context, tx audited.DBTX) (m
 		FirstChildID:       c.params.FirstChildID,
 		NextSiblingID:      c.params.NextSiblingID,
 		PrevSiblingID:      c.params.PrevSiblingID,
+		RootID:             c.params.RootID,
 		AdminRouteID:       c.params.AdminRouteID,
 		AdminDatatypeID:    c.params.AdminDatatypeID,
 		AuthorID:           c.params.AuthorID,
@@ -751,6 +765,7 @@ func (c UpdateAdminContentDataCmd) Execute(ctx context.Context, tx audited.DBTX)
 		FirstChildID:       c.params.FirstChildID,
 		NextSiblingID:      c.params.NextSiblingID,
 		PrevSiblingID:      c.params.PrevSiblingID,
+		RootID:             c.params.RootID,
 		AdminRouteID:       c.params.AdminRouteID,
 		AdminDatatypeID:    c.params.AdminDatatypeID,
 		AuthorID:           c.params.AuthorID,
@@ -855,6 +870,7 @@ func (c NewAdminContentDataCmdMysql) Execute(ctx context.Context, tx audited.DBT
 		FirstChildID:       c.params.FirstChildID,
 		NextSiblingID:      c.params.NextSiblingID,
 		PrevSiblingID:      c.params.PrevSiblingID,
+		RootID:             c.params.RootID,
 		AdminRouteID:       c.params.AdminRouteID,
 		AdminDatatypeID:    c.params.AdminDatatypeID,
 		AuthorID:           c.params.AuthorID,
@@ -919,6 +935,7 @@ func (c UpdateAdminContentDataCmdMysql) Execute(ctx context.Context, tx audited.
 		FirstChildID:       c.params.FirstChildID,
 		NextSiblingID:      c.params.NextSiblingID,
 		PrevSiblingID:      c.params.PrevSiblingID,
+		RootID:             c.params.RootID,
 		AdminRouteID:       c.params.AdminRouteID,
 		AdminDatatypeID:    c.params.AdminDatatypeID,
 		AuthorID:           c.params.AuthorID,
@@ -1023,6 +1040,7 @@ func (c NewAdminContentDataCmdPsql) Execute(ctx context.Context, tx audited.DBTX
 		FirstChildID:       c.params.FirstChildID,
 		NextSiblingID:      c.params.NextSiblingID,
 		PrevSiblingID:      c.params.PrevSiblingID,
+		RootID:             c.params.RootID,
 		AdminRouteID:       c.params.AdminRouteID,
 		AdminDatatypeID:    c.params.AdminDatatypeID,
 		AuthorID:           c.params.AuthorID,
@@ -1083,6 +1101,7 @@ func (c UpdateAdminContentDataCmdPsql) Execute(ctx context.Context, tx audited.D
 		FirstChildID:       c.params.FirstChildID,
 		NextSiblingID:      c.params.NextSiblingID,
 		PrevSiblingID:      c.params.PrevSiblingID,
+		RootID:             c.params.RootID,
 		AdminRouteID:       c.params.AdminRouteID,
 		AdminDatatypeID:    c.params.AdminDatatypeID,
 		AuthorID:           c.params.AuthorID,

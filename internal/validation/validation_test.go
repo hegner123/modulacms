@@ -108,8 +108,9 @@ func TestValidateType(t *testing.T) {
 
 		// url
 		{name: "url valid", fieldType: types.FieldTypeURL, value: "https://example.com", wantMsg: ""},
-		{name: "url invalid no scheme", fieldType: types.FieldTypeURL, value: "example.com", wantMsg: "must be a valid URL"},
-		{name: "url invalid no host", fieldType: types.FieldTypeURL, value: "https://", wantMsg: "must be a valid URL"},
+		{name: "url relative path", fieldType: types.FieldTypeURL, value: "/about", wantMsg: ""},
+		{name: "url bare segment", fieldType: types.FieldTypeURL, value: "example.com", wantMsg: ""},
+		{name: "url scheme no host", fieldType: types.FieldTypeURL, value: "https://", wantMsg: "must be a valid URL"},
 
 		// slug
 		{name: "slug valid root", fieldType: types.FieldTypeSlug, value: "/", wantMsg: ""},

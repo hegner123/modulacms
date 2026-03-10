@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
         CONSTRAINT fk_prev_sibling_id
             REFERENCES admin_content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
+    root_id TEXT
+        CONSTRAINT fk_root_id
+            REFERENCES admin_content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
     admin_route_id TEXT NOT NULL
         CONSTRAINT fk_admin_routes
             REFERENCES admin_routes
@@ -41,6 +45,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_parent ON admin_content_data(parent_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_data_root ON admin_content_data(root_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_route ON admin_content_data(admin_route_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_datatype ON admin_content_data(admin_datatype_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_author ON admin_content_data(author_id);

@@ -57,6 +57,7 @@ sql:
           prev_sibling_id: "PrevSiblingID"
           record_id: "RecordID"
           role_id: "RoleID"
+          root_id: "RootID"
           route_id: "RouteID"
           session_id: "SessionID"
           source_content_id: "SourceContentID"
@@ -248,6 +249,19 @@ sql:
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
           - column: "admin_content_data.prev_sibling_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          # root_id tree pointers (denormalized root node reference)
+          - column: "content_data.root_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "content_fields.root_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "admin_content_data.root_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          - column: "admin_content_fields.root_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
           # FIX: datatypes.parent_id references datatypes, not content_data
@@ -579,6 +593,7 @@ sql:
           prev_sibling_id: "PrevSiblingID"
           record_id: "RecordID"
           role_id: "RoleID"
+          root_id: "RootID"
           route_id: "RouteID"
           session_id: "SessionID"
           source_content_id: "SourceContentID"
@@ -770,6 +785,19 @@ sql:
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
           - column: "admin_content_data.prev_sibling_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          # root_id tree pointers (denormalized root node reference)
+          - column: "content_data.root_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "content_fields.root_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "admin_content_data.root_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          - column: "admin_content_fields.root_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
           # FIX: datatypes.parent_id references datatypes, not content_data
@@ -1101,6 +1129,7 @@ sql:
           prev_sibling_id: "PrevSiblingID"
           record_id: "RecordID"
           role_id: "RoleID"
+          root_id: "RootID"
           route_id: "RouteID"
           session_id: "SessionID"
           source_content_id: "SourceContentID"
@@ -1292,6 +1321,19 @@ sql:
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
           - column: "admin_content_data.prev_sibling_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          # root_id tree pointers (denormalized root node reference)
+          - column: "content_data.root_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "content_fields.root_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "admin_content_data.root_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          - column: "admin_content_fields.root_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
           # FIX: datatypes.parent_id references datatypes, not content_data

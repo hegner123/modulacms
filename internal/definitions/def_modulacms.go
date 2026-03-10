@@ -339,6 +339,18 @@ func init() {
 					{Name: "label", Label: "Label", Type: types.FieldTypeText},
 					{Name: "url", Label: "URL", Type: types.FieldTypeURL},
 					{Name: "target", Label: "Target", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["_self","_blank"]}`)},
+				},
+			},
+
+			"menu_icon_link": {
+				Name:      "menu_icon_link",
+				Label:     "Menu Icon Link",
+				Type:      types.NewNullableString("menu_component"),
+				ParentRef: "menu",
+				FieldRefs: []FieldDef{
+					{Name: "label", Label: "Label", Type: types.FieldTypeText},
+					{Name: "url", Label: "URL", Type: types.FieldTypeURL},
+					{Name: "target", Label: "Target", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["_self","_blank"]}`)},
 					{Name: "icon", Label: "Icon", Type: types.FieldTypeText},
 				},
 			},
@@ -365,6 +377,19 @@ func init() {
 				},
 			},
 
+			"menu_list_icon_link": {
+				Name:      "menu_list_icon_link",
+				Label:     "Menu List Icon Link",
+				Type:      types.NewNullableString("menu_component"),
+				ParentRef: "menu_list",
+				FieldRefs: []FieldDef{
+					{Name: "label", Label: "Label", Type: types.FieldTypeText},
+					{Name: "url", Label: "URL", Type: types.FieldTypeURL},
+					{Name: "target", Label: "Target", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["_self","_blank"]}`)},
+					{Name: "icon", Label: "Icon", Type: types.FieldTypeText},
+				},
+			},
+
 			"menu_nested_list": {
 				Name:      "menu_nested_list",
 				Label:     "Menu Nested List",
@@ -384,6 +409,19 @@ func init() {
 					{Name: "label", Label: "Label", Type: types.FieldTypeText},
 					{Name: "url", Label: "URL", Type: types.FieldTypeURL},
 					{Name: "target", Label: "Target", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["_self","_blank"]}`)},
+				},
+			},
+
+			"menu_nested_icon_link": {
+				Name:      "menu_nested_icon_link",
+				Label:     "Menu Nested Icon Link",
+				Type:      types.NewNullableString("menu_component"),
+				ParentRef: "menu_nested_list",
+				FieldRefs: []FieldDef{
+					{Name: "label", Label: "Label", Type: types.FieldTypeText},
+					{Name: "url", Label: "URL", Type: types.FieldTypeURL},
+					{Name: "target", Label: "Target", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["_self","_blank"]}`)},
+					{Name: "icon", Label: "Icon", Type: types.FieldTypeText},
 				},
 			},
 

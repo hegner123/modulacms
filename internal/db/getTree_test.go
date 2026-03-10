@@ -1095,7 +1095,7 @@ func TestGetContentTreeByRouteRow_JSONTags(t *testing.T) {
 	expectedFields := []string{
 		"content_data_id", "parent_id", "first_child_id",
 		"next_sibling_id", "prev_sibling_id",
-		"datatype_id", "route_id", "author_id",
+		"datatype_id", "route_id", "root_id", "author_id",
 		"date_created", "date_modified", "status",
 		"datatype_label", "datatype_type",
 	}
@@ -2892,7 +2892,7 @@ func TestAdminContentDataWithDatatypeRow_JSONTags(t *testing.T) {
 	expectedFields := []string{
 		"admin_content_data_id", "parent_id", "first_child_id",
 		"next_sibling_id", "prev_sibling_id",
-		"admin_route_id", "admin_datatype_id",
+		"admin_route_id", "root_id", "admin_datatype_id",
 		"author_id", "status", "date_created", "date_modified",
 		"dt_admin_datatype_id", "dt_parent_id", "dt_label", "dt_type",
 		"dt_author_id", "dt_date_created", "dt_date_modified",
@@ -2942,7 +2942,7 @@ func TestAdminContentFieldsWithFieldRow_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"admin_content_field_id", "admin_route_id", "admin_content_data_id",
+		"admin_content_field_id", "admin_route_id", "root_id", "admin_content_data_id",
 		"admin_field_id", "admin_field_value", "author_id",
 		"date_created", "date_modified",
 		"f_admin_field_id", "f_parent_id", "f_label", "f_data",
@@ -2987,7 +2987,7 @@ func TestContentFieldWithFieldRow_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"content_field_id", "route_id", "content_data_id",
+		"content_field_id", "route_id", "root_id", "content_data_id",
 		"field_id", "field_value", "author_id",
 		"date_created", "date_modified",
 		"f_field_id", "f_label", "f_type",

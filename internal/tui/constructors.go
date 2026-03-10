@@ -633,6 +633,14 @@ func ReloadContentTreeCmd(config *config.Config, routeID types.RouteID) tea.Cmd 
 	}
 }
 
+// ReloadContentTreeByRootIDCmd creates a command to reload the content tree by root_id.
+func ReloadContentTreeByRootIDCmd(config *config.Config, rootID types.ContentID) tea.Cmd {
+	return func() tea.Msg {
+		m := Model{Config: config}
+		return m.ReloadContentTreeByRootID(config, rootID)()
+	}
+}
+
 // PluginsFetchCmd creates a command to fetch the plugin list.
 func PluginsFetchCmd() tea.Cmd { return func() tea.Msg { return PluginsFetchMsg{} } }
 

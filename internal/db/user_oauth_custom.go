@@ -18,6 +18,8 @@ func (d Database) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	return &res, nil
 }
 
+// MYSQL
+
 // GetUserOauth retrieves a user OAuth record by ID (MySQL).
 func (d MysqlDatabase) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	queries := mdbm.New(d.Connection)
@@ -28,6 +30,8 @@ func (d MysqlDatabase) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	res := d.MapUserOauth(row)
 	return &res, nil
 }
+
+// PSQL
 
 // GetUserOauth retrieves a user OAuth record by ID (PostgreSQL).
 func (d PsqlDatabase) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {

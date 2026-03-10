@@ -369,6 +369,84 @@ func ReloadAdminContentTreeCmd(cfg *config.Config, adminRouteID types.AdminRoute
 	}
 }
 
+// ReloadAdminContentTreeByRootIDCmd loads an admin content tree by root_id for standalone/global content.
+func ReloadAdminContentTreeByRootIDCmd(cfg *config.Config, rootID types.AdminContentID) tea.Cmd {
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		rootFilter := types.NullableAdminContentID{ID: rootID, Valid: true}
+
+		rows, err := d.ListAdminContentDataWithDatatypeByRootID(rootFilter)
+		if err != nil {
+			return ActionResultMsg{Title: "Error", Message: "Failed to load admin content by root_id: " + err.Error()}
+		}
+
+		var cd []db.AdminContentData
+		var dt []db.AdminDatatypes
+		dtSeen := make(map[types.AdminDatatypeID]bool)
+
+		if rows != nil {
+			for _, r := range *rows {
+				cd = append(cd, db.AdminContentData{
+					AdminContentDataID: r.AdminContentDataID,
+					ParentID:           r.ParentID,
+					FirstChildID:       r.FirstChildID,
+					NextSiblingID:      r.NextSiblingID,
+					PrevSiblingID:      r.PrevSiblingID,
+					AdminRouteID:       r.AdminRouteID,
+					RootID:             r.RootID,
+					AdminDatatypeID:    r.AdminDatatypeID,
+					AuthorID:           r.AuthorID,
+					Status:             r.Status,
+					DateCreated:        r.DateCreated,
+					DateModified:       r.DateModified,
+				})
+				if !r.DtAdminDatatypeID.IsZero() && !dtSeen[r.DtAdminDatatypeID] {
+					dtSeen[r.DtAdminDatatypeID] = true
+					dt = append(dt, db.AdminDatatypes{
+						AdminDatatypeID: r.DtAdminDatatypeID,
+						ParentID:        r.DtParentID,
+						Label:           r.DtLabel,
+						Type:            r.DtType,
+						AuthorID:        r.DtAuthorID,
+						DateCreated:     r.DtDateCreated,
+						DateModified:    r.DtDateModified,
+					})
+				}
+			}
+		}
+
+		cfRows, cfErr := d.ListAdminContentFieldsByRootID(rootFilter)
+		if cfErr != nil {
+			return ActionResultMsg{Title: "Error", Message: "Failed to load admin content fields by root_id: " + cfErr.Error()}
+		}
+
+		var cf []db.AdminContentFields
+		var df []db.AdminFields
+		dfSeen := make(map[types.AdminFieldID]bool)
+
+		if cfRows != nil {
+			cf = *cfRows
+			for _, contentField := range cf {
+				if contentField.AdminFieldID.Valid && !dfSeen[contentField.AdminFieldID.ID] {
+					dfSeen[contentField.AdminFieldID.ID] = true
+					field, fieldErr := d.GetAdminField(contentField.AdminFieldID.ID)
+					if fieldErr == nil && field != nil {
+						df = append(df, *field)
+					}
+				}
+			}
+		}
+
+		root := tree.NewRoot()
+		stats, treeErr := root.LoadFromAdminData(cd, dt, cf, df)
+		if treeErr != nil {
+			return ActionResultMsg{Title: "Error", Message: "Failed to build admin tree: " + treeErr.Error()}
+		}
+
+		return AdminTreeLoadedMsg{RootNode: root, Stats: stats}
+	}
+}
+
 // LoadAdminContentFieldsCmd fetches admin content fields for display.
 // When adminDatatypeID is valid, it merges content field values with the
 // canonical field list from the datatype (showing all fields including empty ones).

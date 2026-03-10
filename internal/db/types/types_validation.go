@@ -294,6 +294,8 @@ func (e *Email) UnmarshalJSON(data []byte) error {
 type URL string
 
 // Validate checks if the URL is valid according to URL format rules.
+// Both absolute URLs (https://example.com/path) and relative paths
+// (/about, ../contact, section/page) are accepted.
 func (u URL) Validate() error {
 	if u == "" {
 		return fmt.Errorf("URL: cannot be empty")
@@ -302,11 +304,9 @@ func (u URL) Validate() error {
 	if err != nil {
 		return fmt.Errorf("URL: invalid format %q: %w", u, err)
 	}
-	if parsed.Scheme == "" {
-		return fmt.Errorf("URL: missing scheme in %q", u)
-	}
-	if parsed.Host == "" {
-		return fmt.Errorf("URL: missing host in %q", u)
+	// Absolute URLs must have both scheme and host.
+	if parsed.Scheme != "" && parsed.Host == "" {
+		return fmt.Errorf("URL: scheme %q without host in %q", parsed.Scheme, u)
 	}
 	return nil
 }

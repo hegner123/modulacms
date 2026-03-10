@@ -429,6 +429,14 @@ func (r *RemoteDriver) GetAdminContentDataDescendants(_ context.Context, _ types
 	return nil, ErrNotSupported{Method: "GetAdminContentDataDescendants"}
 }
 
+func (r *RemoteDriver) ListAdminContentDataByRootID(_ types.NullableAdminContentID) (*[]db.AdminContentData, error) {
+	return nil, ErrNotSupported{Method: "ListAdminContentDataByRootID"}
+}
+
+func (r *RemoteDriver) ListAdminContentDataWithDatatypeByRootID(_ types.NullableAdminContentID) (*[]db.AdminContentDataWithDatatypeRow, error) {
+	return nil, ErrNotSupported{Method: "ListAdminContentDataWithDatatypeByRootID"}
+}
+
 // ---------------------------------------------------------------------------
 // AdminContentFields
 // ---------------------------------------------------------------------------
@@ -653,6 +661,14 @@ func (r *RemoteDriver) UpdateAdminContentField(ctx context.Context, _ audited.Au
 		id := string(params.AdminContentFieldID)
 		return &id, nil
 	})
+}
+
+func (r *RemoteDriver) ListAdminContentFieldsByRootID(_ types.NullableAdminContentID) (*[]db.AdminContentFields, error) {
+	return nil, ErrNotSupported{Method: "ListAdminContentFieldsByRootID"}
+}
+
+func (r *RemoteDriver) ListAdminContentFieldsByRootIDAndLocale(_ types.NullableAdminContentID, _ string) (*[]db.AdminContentFields, error) {
+	return nil, ErrNotSupported{Method: "ListAdminContentFieldsByRootIDAndLocale"}
 }
 
 // ---------------------------------------------------------------------------
@@ -1737,6 +1753,10 @@ func (r *RemoteDriver) ListContentDataDueForPublish(_ types.Timestamp) (*[]db.Co
 	return nil, ErrNotSupported{Method: "ListContentDataDueForPublish"}
 }
 
+func (r *RemoteDriver) ListContentDataByRootID(_ types.NullableContentID) (*[]db.ContentData, error) {
+	return nil, ErrNotSupported{Method: "ListContentDataByRootID"}
+}
+
 // ---------------------------------------------------------------------------
 // ContentFields
 // ---------------------------------------------------------------------------
@@ -2046,6 +2066,14 @@ func (r *RemoteDriver) UpdateContentField(ctx context.Context, _ audited.AuditCo
 		id := string(params.ContentFieldID)
 		return &id, nil
 	})
+}
+
+func (r *RemoteDriver) ListContentFieldsByRootID(_ types.NullableContentID) (*[]db.ContentFields, error) {
+	return nil, ErrNotSupported{Method: "ListContentFieldsByRootID"}
+}
+
+func (r *RemoteDriver) ListContentFieldsByRootIDAndLocale(_ types.NullableContentID, _ string) (*[]db.ContentFields, error) {
+	return nil, ErrNotSupported{Method: "ListContentFieldsByRootIDAndLocale"}
 }
 
 // ---------------------------------------------------------------------------
@@ -3471,6 +3499,10 @@ func (r *RemoteDriver) GetContentTreeByRoute(routeID types.NullableRouteID) (*[]
 		}
 		return &result, nil
 	})
+}
+
+func (r *RemoteDriver) GetContentTreeByRootID(_ types.NullableContentID) (*[]db.GetContentTreeByRouteRow, error) {
+	return nil, ErrNotSupported{Method: "GetContentTreeByRootID"}
 }
 
 func (r *RemoteDriver) GetRoute(id types.RouteID) (*db.Routes, error) {

@@ -676,6 +676,26 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default content_data")
 	}
 
+	// 11.5. Set root_id to self for the root content node
+	contentRootID := types.NullableContentID{Valid: true, ID: contentData.ContentDataID}
+	_, err = d.UpdateContentData(ctx, ac, UpdateContentDataParams{
+		ContentDataID: contentData.ContentDataID,
+		RootID:        contentRootID,
+		RouteID:       contentData.RouteID,
+		ParentID:      contentData.ParentID,
+		FirstChildID:  contentData.FirstChildID,
+		NextSiblingID: contentData.NextSiblingID,
+		PrevSiblingID: contentData.PrevSiblingID,
+		DatatypeID:    contentData.DatatypeID,
+		AuthorID:      contentData.AuthorID,
+		Status:        contentData.Status,
+		DateCreated:   contentData.DateCreated,
+		DateModified:  types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set root_id on default content_data: %w", err)
+	}
+
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
 		ParentID:        types.NullableAdminContentID{},
@@ -696,9 +716,30 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin_content_data")
 	}
 
+	// 12.5. Set root_id to self for the root admin content node
+	adminContentRootID := types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID}
+	_, err = d.UpdateAdminContentData(ctx, ac, UpdateAdminContentDataParams{
+		AdminContentDataID: adminContentData.AdminContentDataID,
+		RootID:             adminContentRootID,
+		AdminRouteID:       adminContentData.AdminRouteID,
+		ParentID:           adminContentData.ParentID,
+		FirstChildID:       adminContentData.FirstChildID,
+		NextSiblingID:      adminContentData.NextSiblingID,
+		PrevSiblingID:      adminContentData.PrevSiblingID,
+		AdminDatatypeID:    adminContentData.AdminDatatypeID,
+		AuthorID:           adminContentData.AuthorID,
+		Status:             adminContentData.Status,
+		DateCreated:        adminContentData.DateCreated,
+		DateModified:       types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set root_id on default admin_content_data: %w", err)
+	}
+
 	// 13. Create default content_field (content_field_id = 1)
 	contentField, err := d.CreateContentField(ctx, ac, CreateContentFieldParams{
 		RouteID:       types.NullableRouteID{},
+		RootID:        contentRootID,
 		ContentDataID: types.NullableContentID{Valid: true, ID: contentData.ContentDataID},
 		FieldID:       types.NullableFieldID{Valid: true, ID: field.FieldID},
 		FieldValue:    "Default content",
@@ -716,6 +757,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
 	adminContentField, err := d.CreateAdminContentField(ctx, ac, CreateAdminContentFieldParams{
 		AdminRouteID:       types.NullableAdminRouteID{},
+		RootID:             adminContentRootID,
 		AdminContentDataID: types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID},
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",
@@ -1578,6 +1620,26 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default content_data")
 	}
 
+	// 11.5. Set root_id to self for the root content node
+	contentRootID := types.NullableContentID{Valid: true, ID: contentData.ContentDataID}
+	_, err = d.UpdateContentData(ctx, ac, UpdateContentDataParams{
+		ContentDataID: contentData.ContentDataID,
+		RootID:        contentRootID,
+		RouteID:       contentData.RouteID,
+		ParentID:      contentData.ParentID,
+		FirstChildID:  contentData.FirstChildID,
+		NextSiblingID: contentData.NextSiblingID,
+		PrevSiblingID: contentData.PrevSiblingID,
+		DatatypeID:    contentData.DatatypeID,
+		AuthorID:      contentData.AuthorID,
+		Status:        contentData.Status,
+		DateCreated:   contentData.DateCreated,
+		DateModified:  types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set root_id on default content_data: %w", err)
+	}
+
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
 		ParentID:        types.NullableAdminContentID{},
@@ -1598,9 +1660,30 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin_content_data")
 	}
 
+	// 12.5. Set root_id to self for the root admin content node
+	adminContentRootID := types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID}
+	_, err = d.UpdateAdminContentData(ctx, ac, UpdateAdminContentDataParams{
+		AdminContentDataID: adminContentData.AdminContentDataID,
+		RootID:             adminContentRootID,
+		AdminRouteID:       adminContentData.AdminRouteID,
+		ParentID:           adminContentData.ParentID,
+		FirstChildID:       adminContentData.FirstChildID,
+		NextSiblingID:      adminContentData.NextSiblingID,
+		PrevSiblingID:      adminContentData.PrevSiblingID,
+		AdminDatatypeID:    adminContentData.AdminDatatypeID,
+		AuthorID:           adminContentData.AuthorID,
+		Status:             adminContentData.Status,
+		DateCreated:        adminContentData.DateCreated,
+		DateModified:       types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set root_id on default admin_content_data: %w", err)
+	}
+
 	// 13. Create default content_field (content_field_id = 1)
 	contentField, err := d.CreateContentField(ctx, ac, CreateContentFieldParams{
 		RouteID:       types.NullableRouteID{},
+		RootID:        contentRootID,
 		ContentDataID: types.NullableContentID{Valid: true, ID: contentData.ContentDataID},
 		FieldID:       types.NullableFieldID{Valid: true, ID: field.FieldID},
 		FieldValue:    "Default content",
@@ -1618,6 +1701,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
 	adminContentField, err := d.CreateAdminContentField(ctx, ac, CreateAdminContentFieldParams{
 		AdminRouteID:       types.NullableAdminRouteID{},
+		RootID:             adminContentRootID,
 		AdminContentDataID: types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID},
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",
@@ -2453,6 +2537,26 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default content_data")
 	}
 
+	// 11.5. Set root_id to self for the root content node
+	contentRootID := types.NullableContentID{Valid: true, ID: contentData.ContentDataID}
+	_, err = d.UpdateContentData(ctx, ac, UpdateContentDataParams{
+		ContentDataID: contentData.ContentDataID,
+		RootID:        contentRootID,
+		RouteID:       contentData.RouteID,
+		ParentID:      contentData.ParentID,
+		FirstChildID:  contentData.FirstChildID,
+		NextSiblingID: contentData.NextSiblingID,
+		PrevSiblingID: contentData.PrevSiblingID,
+		DatatypeID:    contentData.DatatypeID,
+		AuthorID:      contentData.AuthorID,
+		Status:        contentData.Status,
+		DateCreated:   contentData.DateCreated,
+		DateModified:  types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set root_id on default content_data: %w", err)
+	}
+
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
 		ParentID:        types.NullableAdminContentID{},
@@ -2473,9 +2577,30 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin_content_data")
 	}
 
+	// 12.5. Set root_id to self for the root admin content node
+	adminContentRootID := types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID}
+	_, err = d.UpdateAdminContentData(ctx, ac, UpdateAdminContentDataParams{
+		AdminContentDataID: adminContentData.AdminContentDataID,
+		RootID:             adminContentRootID,
+		AdminRouteID:       adminContentData.AdminRouteID,
+		ParentID:           adminContentData.ParentID,
+		FirstChildID:       adminContentData.FirstChildID,
+		NextSiblingID:      adminContentData.NextSiblingID,
+		PrevSiblingID:      adminContentData.PrevSiblingID,
+		AdminDatatypeID:    adminContentData.AdminDatatypeID,
+		AuthorID:           adminContentData.AuthorID,
+		Status:             adminContentData.Status,
+		DateCreated:        adminContentData.DateCreated,
+		DateModified:       types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set root_id on default admin_content_data: %w", err)
+	}
+
 	// 13. Create default content_field (content_field_id = 1)
 	contentField, err := d.CreateContentField(ctx, ac, CreateContentFieldParams{
 		RouteID:       types.NullableRouteID{},
+		RootID:        contentRootID,
 		ContentDataID: types.NullableContentID{Valid: true, ID: contentData.ContentDataID},
 		FieldID:       types.NullableFieldID{Valid: true, ID: field.FieldID},
 		FieldValue:    "Default content",
@@ -2493,6 +2618,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
 	adminContentField, err := d.CreateAdminContentField(ctx, ac, CreateAdminContentFieldParams{
 		AdminRouteID:       types.NullableAdminRouteID{},
+		RootID:             adminContentRootID,
 		AdminContentDataID: types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID},
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",

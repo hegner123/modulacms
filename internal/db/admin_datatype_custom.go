@@ -30,16 +30,6 @@ func (d Database) GetAdminDatatypeById(id types.AdminDatatypeID) (*AdminDatatype
 	return d.GetAdminDatatype(id)
 }
 
-// GetAdminDatatypeById retrieves an admin datatype by ID.
-func (d MysqlDatabase) GetAdminDatatypeById(id types.AdminDatatypeID) (*AdminDatatypes, error) {
-	return d.GetAdminDatatype(id)
-}
-
-// GetAdminDatatypeById retrieves an admin datatype by ID.
-func (d PsqlDatabase) GetAdminDatatypeById(id types.AdminDatatypeID) (*AdminDatatypes, error) {
-	return d.GetAdminDatatype(id)
-}
-
 // MapAdminDatatypeJSON converts AdminDatatypes to DatatypeJSON for tree building
 // by mapping admin datatype ID into the public DatatypeJSON shape.
 func MapAdminDatatypeJSON(a AdminDatatypes) DatatypeJSON {
@@ -90,6 +80,29 @@ func (d Database) ListAdminDatatypesPaginated(params PaginationParams) (*[]Admin
 	return &res, nil
 }
 
+// MYSQL
+
+// ListAdminDatatypeGlobalId returns all admin datatypes with global scope.
+// Note: This query is only available for MySQL.
+func (d MysqlDatabase) ListAdminDatatypeGlobalId() (*[]AdminDatatypes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeGlobal(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin datatypes global: %w", err)
+	}
+	res := []AdminDatatypes{}
+	for _, v := range rows {
+		m := d.MapAdminDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// GetAdminDatatypeById retrieves an admin datatype by ID.
+func (d MysqlDatabase) GetAdminDatatypeById(id types.AdminDatatypeID) (*AdminDatatypes, error) {
+	return d.GetAdminDatatype(id)
+}
+
 // ListAdminDatatypesPaginated returns admin datatypes with pagination (MySQL).
 func (d MysqlDatabase) ListAdminDatatypesPaginated(params PaginationParams) (*[]AdminDatatypes, error) {
 	queries := mdbm.New(d.Connection)
@@ -106,6 +119,29 @@ func (d MysqlDatabase) ListAdminDatatypesPaginated(params PaginationParams) (*[]
 		res = append(res, m)
 	}
 	return &res, nil
+}
+
+// PSQL
+
+// ListAdminDatatypeGlobalId returns all admin datatypes with global scope.
+// Note: This query is only available for PostgreSQL.
+func (d PsqlDatabase) ListAdminDatatypeGlobalId() (*[]AdminDatatypes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeGlobal(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin datatypes global: %w", err)
+	}
+	res := []AdminDatatypes{}
+	for _, v := range rows {
+		m := d.MapAdminDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// GetAdminDatatypeById retrieves an admin datatype by ID.
+func (d PsqlDatabase) GetAdminDatatypeById(id types.AdminDatatypeID) (*AdminDatatypes, error) {
+	return d.GetAdminDatatype(id)
 }
 
 // ListAdminDatatypesPaginated returns admin datatypes with pagination (PostgreSQL).

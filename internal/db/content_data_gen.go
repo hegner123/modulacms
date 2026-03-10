@@ -24,6 +24,7 @@ type ContentData struct {
 	FirstChildID  types.NullableContentID  `json:"first_child_id"`
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.UserID             `json:"author_id"`
@@ -42,6 +43,7 @@ type CreateContentDataParams struct {
 	FirstChildID  types.NullableContentID  `json:"first_child_id"`
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.UserID             `json:"author_id"`
@@ -56,6 +58,7 @@ type UpdateContentDataParams struct {
 	FirstChildID  types.NullableContentID  `json:"first_child_id"`
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
+	RootID        types.NullableContentID  `json:"root_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.UserID             `json:"author_id"`
@@ -80,6 +83,7 @@ func MapStringContentData(a ContentData) StringContentData {
 		FirstChildID:  nullableIDToEmpty(a.FirstChildID),
 		NextSiblingID: nullableIDToEmpty(a.NextSiblingID),
 		PrevSiblingID: nullableIDToEmpty(a.PrevSiblingID),
+		RootID:        a.RootID.String(),
 		RouteID:       a.RouteID.String(),
 		DatatypeID:    a.DatatypeID.String(),
 		AuthorID:      a.AuthorID.String(),
@@ -108,6 +112,7 @@ func (d Database) MapContentData(a mdb.ContentData) ContentData {
 		FirstChildID:  a.FirstChildID,
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
+		RootID:        a.RootID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -129,6 +134,7 @@ func (d Database) MapCreateContentDataParams(a CreateContentDataParams) mdb.Crea
 		FirstChildID:  a.FirstChildID,
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
+		RootID:        a.RootID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -145,6 +151,7 @@ func (d Database) MapUpdateContentDataParams(a UpdateContentDataParams) mdb.Upda
 		FirstChildID:  a.FirstChildID,
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
+		RootID:        a.RootID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -293,6 +300,7 @@ func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 		FirstChildID:  a.FirstChildID,
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
+		RootID:        a.RootID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -314,6 +322,7 @@ func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdb
 		FirstChildID:  a.FirstChildID,
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
+		RootID:        a.RootID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -330,6 +339,7 @@ func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdb
 		FirstChildID:  a.FirstChildID,
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
+		RootID:        a.RootID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -478,6 +488,7 @@ func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 		FirstChildID:  a.FirstChildID,
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
+		RootID:        a.RootID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -499,6 +510,7 @@ func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp
 		FirstChildID:  a.FirstChildID,
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
+		RootID:        a.RootID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -515,6 +527,7 @@ func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp
 		FirstChildID:  a.FirstChildID,
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
+		RootID:        a.RootID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -692,6 +705,7 @@ func (c NewContentDataCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Co
 		FirstChildID:  c.params.FirstChildID,
 		NextSiblingID: c.params.NextSiblingID,
 		PrevSiblingID: c.params.PrevSiblingID,
+		RootID:        c.params.RootID,
 		RouteID:       c.params.RouteID,
 		DatatypeID:    c.params.DatatypeID,
 		AuthorID:      c.params.AuthorID,
@@ -752,6 +766,7 @@ func (c UpdateContentDataCmd) Execute(ctx context.Context, tx audited.DBTX) erro
 		FirstChildID:  c.params.FirstChildID,
 		NextSiblingID: c.params.NextSiblingID,
 		PrevSiblingID: c.params.PrevSiblingID,
+		RootID:        c.params.RootID,
 		RouteID:       c.params.RouteID,
 		DatatypeID:    c.params.DatatypeID,
 		AuthorID:      c.params.AuthorID,
@@ -854,6 +869,7 @@ func (c NewContentDataCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (m
 		FirstChildID:  c.params.FirstChildID,
 		NextSiblingID: c.params.NextSiblingID,
 		PrevSiblingID: c.params.PrevSiblingID,
+		RootID:        c.params.RootID,
 		RouteID:       c.params.RouteID,
 		DatatypeID:    c.params.DatatypeID,
 		AuthorID:      c.params.AuthorID,
@@ -918,6 +934,7 @@ func (c UpdateContentDataCmdMysql) Execute(ctx context.Context, tx audited.DBTX)
 		FirstChildID:  c.params.FirstChildID,
 		NextSiblingID: c.params.NextSiblingID,
 		PrevSiblingID: c.params.PrevSiblingID,
+		RootID:        c.params.RootID,
 		RouteID:       c.params.RouteID,
 		DatatypeID:    c.params.DatatypeID,
 		AuthorID:      c.params.AuthorID,
@@ -1020,6 +1037,7 @@ func (c NewContentDataCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (md
 		FirstChildID:  c.params.FirstChildID,
 		NextSiblingID: c.params.NextSiblingID,
 		PrevSiblingID: c.params.PrevSiblingID,
+		RootID:        c.params.RootID,
 		RouteID:       c.params.RouteID,
 		DatatypeID:    c.params.DatatypeID,
 		AuthorID:      c.params.AuthorID,
@@ -1080,6 +1098,7 @@ func (c UpdateContentDataCmdPsql) Execute(ctx context.Context, tx audited.DBTX) 
 		FirstChildID:  c.params.FirstChildID,
 		NextSiblingID: c.params.NextSiblingID,
 		PrevSiblingID: c.params.PrevSiblingID,
+		RootID:        c.params.RootID,
 		RouteID:       c.params.RouteID,
 		DatatypeID:    c.params.DatatypeID,
 		AuthorID:      c.params.AuthorID,

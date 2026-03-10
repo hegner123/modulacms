@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS content_data (
         CONSTRAINT fk_routes
             REFERENCES routes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    root_id TEXT
+        CONSTRAINT fk_root_id
+            REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
     datatype_id TEXT
         CONSTRAINT fk_datatypes
             REFERENCES datatypes
@@ -69,6 +73,7 @@ INSERT INTO content_data (
     next_sibling_id,
     prev_sibling_id,
     route_id,
+    root_id,
     datatype_id,
     author_id,
     status,
@@ -85,22 +90,24 @@ INSERT INTO content_data (
     $8,
     $9,
     $10,
-    $11
+    $11,
+    $12
 ) RETURNING *;
 
 -- name: UpdateContentData :exec
 UPDATE content_data
 SET route_id = $1,
-    parent_id = $2,
-    first_child_id = $3,
-    next_sibling_id = $4,
-    prev_sibling_id = $5,
-    datatype_id = $6,
-    author_id = $7,
-    status = $8,
-    date_created = $9,
-    date_modified = $10
-WHERE content_data_id = $11;
+    root_id = $2,
+    parent_id = $3,
+    first_child_id = $4,
+    next_sibling_id = $5,
+    prev_sibling_id = $6,
+    datatype_id = $7,
+    author_id = $8,
+    status = $9,
+    date_created = $10,
+    date_modified = $11
+WHERE content_data_id = $12;
 
 -- name: DeleteContentData :exec
 DELETE FROM content_data
@@ -153,16 +160,17 @@ WHERE content_data_id = $5;
 -- name: UpdateContentDataWithRevision :exec
 UPDATE content_data
 SET route_id = $1,
-    parent_id = $2,
-    first_child_id = $3,
-    next_sibling_id = $4,
-    prev_sibling_id = $5,
-    datatype_id = $6,
-    author_id = $7,
-    status = $8,
-    date_created = $9,
-    date_modified = $10
-WHERE content_data_id = $11 AND revision = $12;
+    root_id = $2,
+    parent_id = $3,
+    first_child_id = $4,
+    next_sibling_id = $5,
+    prev_sibling_id = $6,
+    datatype_id = $7,
+    author_id = $8,
+    status = $9,
+    date_created = $10,
+    date_modified = $11
+WHERE content_data_id = $12 AND revision = $13;
 
 -- name: UpdateContentDataSchedule :exec
 UPDATE content_data
@@ -209,3 +217,8 @@ UPDATE content_data SET author_id = $1 WHERE author_id = $2;
 
 -- name: CountContentDataByAuthor :one
 SELECT COUNT(*) FROM content_data WHERE author_id = $1;
+
+-- name: ListContentDataByRootID :many
+SELECT * FROM content_data
+WHERE root_id = $1
+ORDER BY content_data_id;

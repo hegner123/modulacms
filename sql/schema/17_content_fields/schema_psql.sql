@@ -4,6 +4,10 @@ CREATE TABLE IF NOT EXISTS content_fields (
         CONSTRAINT fk_route_id
             REFERENCES routes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    root_id TEXT
+        CONSTRAINT fk_root_id
+            REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
     content_data_id TEXT NOT NULL
         CONSTRAINT fk_content_data
             REFERENCES content_data
@@ -23,6 +27,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
 );
 
 CREATE INDEX IF NOT EXISTS idx_content_fields_route ON content_fields(route_id);
+CREATE INDEX IF NOT EXISTS idx_content_fields_root ON content_fields(root_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_content ON content_fields(content_data_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_field ON content_fields(field_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_author ON content_fields(author_id);

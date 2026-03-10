@@ -36,6 +36,8 @@ func (m Model) CreateContentWithFields(
 		logger.Finfo(fmt.Sprintf("Creating ContentData: DatatypeID=%s, RouteID=%s, AuthorID=%s", datatypeID, routeID, authorID))
 
 		// Step 1: Create ContentData using typed DbDriver method
+		// RootID is not set here because root nodes need their own ID, which
+		// is not known until after creation. It is set in Step 1.5 below.
 		contentData, err := d.CreateContentData(ctx, ac, db.CreateContentDataParams{
 			DatatypeID:    types.NullableDatatypeID{ID: datatypeID, Valid: true},
 			RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
@@ -61,6 +63,27 @@ func (m Model) CreateContentWithFields(
 			}
 		}
 
+		// Step 1.5: Set root_id on the new content.
+		// This function creates root-level content (no parent), so root_id = self.
+		rootID := types.NullableContentID{ID: contentData.ContentDataID, Valid: true}
+		_, rootUpdateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+			ContentDataID: contentData.ContentDataID,
+			RootID:        rootID,
+			ParentID:      contentData.ParentID,
+			FirstChildID:  contentData.FirstChildID,
+			NextSiblingID: contentData.NextSiblingID,
+			PrevSiblingID: contentData.PrevSiblingID,
+			RouteID:       contentData.RouteID,
+			DatatypeID:    contentData.DatatypeID,
+			AuthorID:      contentData.AuthorID,
+			Status:        contentData.Status,
+			DateCreated:   contentData.DateCreated,
+			DateModified:  types.TimestampNow(),
+		})
+		if rootUpdateErr != nil {
+			logger.Ferror("Failed to set root_id on new root content", rootUpdateErr)
+		}
+
 		// Step 2: Create ContentFields for every field defined on the datatype.
 		// Uses the canonical field list so all fields get a content_field row,
 		// matching the API/admin panel behavior.
@@ -80,6 +103,7 @@ func (m Model) CreateContentWithFields(
 					ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
 					FieldID:       types.NullableFieldID{ID: field.FieldID, Valid: true},
 					FieldValue:    value,
+					RootID:        rootID,
 					RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
 					AuthorID:      authorID,
 					DateCreated:   types.TimestampNow(),
@@ -99,6 +123,7 @@ func (m Model) CreateContentWithFields(
 					ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
 					FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
 					FieldValue:    value,
+					RootID:        rootID,
 					RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
 					AuthorID:      authorID,
 					DateCreated:   types.TimestampNow(),
@@ -150,15 +175,31 @@ func (m Model) HandleCreateContentFromDialog(
 		logger.Finfo(fmt.Sprintf("Creating ContentData from dialog: DatatypeID=%s, RouteID=%s, AuthorID=%s, HasParent=%v",
 			msg.DatatypeID, msg.RouteID, authorID, msg.ParentID.Valid))
 
+		// Step 0: Determine root_id before creation.
+		// Child nodes inherit root_id from their parent; root nodes set it to
+		// self after creation (since the ID is not known until INSERT).
+		var rootID types.NullableContentID
+		if msg.ParentID.Valid {
+			parentData, lookupErr := d.GetContentData(msg.ParentID.ID)
+			if lookupErr != nil {
+				logger.Ferror("Failed to look up parent content data for root_id", lookupErr)
+				// Proceed without root_id rather than aborting the entire creation
+			} else if parentData != nil {
+				rootID = parentData.RootID
+			}
+		}
+
 		// Step 1: Create ContentData using typed DbDriver method
+		nRouteID := types.NullableRouteID{ID: msg.RouteID, Valid: !msg.RouteID.IsZero()}
 		contentData, err := d.CreateContentData(ctx, ac, db.CreateContentDataParams{
 			DatatypeID:    types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true},
-			RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
+			RouteID:       nRouteID,
 			AuthorID:      authorID,
 			Status:        types.ContentStatusDraft,
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
 			ParentID:      msg.ParentID,
+			RootID:        rootID, // Set for child nodes; NULL for root nodes (updated in Step 1.5)
 			FirstChildID:  types.NullableContentID{}, // NULL - no children initially
 			NextSiblingID: types.NullableContentID{}, // NULL - no siblings initially
 			PrevSiblingID: types.NullableContentID{}, // NULL - no siblings initially
@@ -173,6 +214,29 @@ func (m Model) HandleCreateContentFromDialog(
 		if contentData.ContentDataID.IsZero() {
 			return DbErrMsg{
 				Error: fmt.Errorf("failed to create content data"),
+			}
+		}
+
+		// Step 1.5: For root nodes (no parent), set root_id to self.
+		// The ID was not available at creation time, so a follow-up update is required.
+		if !msg.ParentID.Valid {
+			rootID = types.NullableContentID{ID: contentData.ContentDataID, Valid: true}
+			_, rootUpdateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: contentData.ContentDataID,
+				RootID:        rootID,
+				ParentID:      contentData.ParentID,
+				FirstChildID:  contentData.FirstChildID,
+				NextSiblingID: contentData.NextSiblingID,
+				PrevSiblingID: contentData.PrevSiblingID,
+				RouteID:       contentData.RouteID,
+				DatatypeID:    contentData.DatatypeID,
+				AuthorID:      contentData.AuthorID,
+				Status:        contentData.Status,
+				DateCreated:   contentData.DateCreated,
+				DateModified:  types.TimestampNow(),
+			})
+			if rootUpdateErr != nil {
+				logger.Ferror("Failed to set root_id on new root content", rootUpdateErr)
 			}
 		}
 
@@ -193,7 +257,8 @@ func (m Model) HandleCreateContentFromDialog(
 					ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
 					FieldID:       types.NullableFieldID{ID: field.FieldID, Valid: true},
 					FieldValue:    value,
-					RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
+					RootID:        rootID,
+					RouteID:       nRouteID,
 					AuthorID:      authorID,
 					DateCreated:   types.TimestampNow(),
 					DateModified:  types.TimestampNow(),
@@ -212,7 +277,8 @@ func (m Model) HandleCreateContentFromDialog(
 					ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
 					FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
 					FieldValue:    value,
-					RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
+					RootID:        rootID,
+					RouteID:       nRouteID,
 					AuthorID:      authorID,
 					DateCreated:   types.TimestampNow(),
 					DateModified:  types.TimestampNow(),
@@ -357,6 +423,7 @@ func (m Model) HandleUpdateContentFromDialog(
 		}
 
 		// Build a map of existing content fields by field_id
+		nRouteID := types.NullableRouteID{ID: msg.RouteID, Valid: !msg.RouteID.IsZero()}
 		existingMap := make(map[string]db.ContentFields)
 		if existingFields != nil {
 			for _, cf := range *existingFields {
@@ -395,7 +462,7 @@ func (m Model) HandleUpdateContentFromDialog(
 					ContentDataID: contentDataID,
 					FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
 					FieldValue:    value,
-					RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
+					RouteID:       nRouteID,
 					AuthorID:      authorID,
 					DateCreated:   types.TimestampNow(),
 					DateModified:  types.TimestampNow(),
@@ -618,6 +685,86 @@ func BatchLoadAdminContentFieldsCmd(cfg *config.Config, adminRouteID types.Admin
 		}
 		if err != nil {
 			return FetchErrMsg{Error: fmt.Errorf("batch load admin content fields: %w", err)}
+		}
+
+		var allDefs []db.AdminFields
+		for _, dtID := range datatypeIDs {
+			nDtID := types.NullableAdminDatatypeID{ID: dtID, Valid: true}
+			defs, defErr := d.ListAdminFieldsByDatatypeID(nDtID)
+			if defErr != nil {
+				continue
+			}
+			if defs != nil {
+				allDefs = append(allDefs, *defs...)
+			}
+		}
+
+		var cfs []db.AdminContentFields
+		if contentFields != nil {
+			cfs = *contentFields
+		}
+
+		return BatchAdminContentFieldsLoadedMsg{
+			Fields: MapAdminContentFieldsToDisplay(cfs, allDefs),
+		}
+	}
+}
+
+// BatchLoadContentFieldsByRootIDCmd loads ALL content fields for a root_id in one pass.
+func BatchLoadContentFieldsByRootIDCmd(cfg *config.Config, rootID types.ContentID, datatypeIDs []types.DatatypeID, locale string) tea.Cmd {
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+
+		nRootID := types.NullableContentID{ID: rootID, Valid: true}
+		var contentFields *[]db.ContentFields
+		var err error
+		if locale != "" {
+			contentFields, err = d.ListContentFieldsByRootIDAndLocale(nRootID, locale)
+		} else {
+			contentFields, err = d.ListContentFieldsByRootID(nRootID)
+		}
+		if err != nil {
+			return FetchErrMsg{Error: fmt.Errorf("batch load content fields by root_id: %w", err)}
+		}
+
+		var allDefs []db.Fields
+		for _, dtID := range datatypeIDs {
+			nDtID := types.NullableDatatypeID{ID: dtID, Valid: true}
+			defs, defErr := d.ListFieldsByDatatypeID(nDtID)
+			if defErr != nil {
+				continue
+			}
+			if defs != nil {
+				allDefs = append(allDefs, *defs...)
+			}
+		}
+
+		var cfs []db.ContentFields
+		if contentFields != nil {
+			cfs = *contentFields
+		}
+
+		return BatchContentFieldsLoadedMsg{
+			Fields: MapContentFieldsToDisplay(cfs, allDefs),
+		}
+	}
+}
+
+// BatchLoadAdminContentFieldsByRootIDCmd loads ALL admin content fields for a root_id in one pass.
+func BatchLoadAdminContentFieldsByRootIDCmd(cfg *config.Config, rootID types.AdminContentID, datatypeIDs []types.AdminDatatypeID, locale string) tea.Cmd {
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+
+		nRootID := types.NullableAdminContentID{ID: rootID, Valid: true}
+		var contentFields *[]db.AdminContentFields
+		var err error
+		if locale != "" {
+			contentFields, err = d.ListAdminContentFieldsByRootIDAndLocale(nRootID, locale)
+		} else {
+			contentFields, err = d.ListAdminContentFieldsByRootID(nRootID)
+		}
+		if err != nil {
+			return FetchErrMsg{Error: fmt.Errorf("batch load admin content fields by root_id: %w", err)}
 		}
 
 		var allDefs []db.AdminFields
