@@ -2,10 +2,9 @@
 //
 // Pure functions (CompareVersions, GetDownloadURL, VerifyBinary) are tested
 // exhaustively with table-driven tests. Functions that perform HTTP calls
-// (DownloadUpdate) use httptest.Server. Functions that depend on os.Executable
-// (ApplyUpdate, RollbackUpdate) are tested with filesystem simulations where
-// possible, and marked REQUIRES REFACTOR where the hardcoded dependency
-// prevents proper isolation.
+// (DownloadUpdate, CheckForUpdates) use httptest.Server. Filesystem operations
+// (ApplyUpdateTo, RollbackUpdateTo) are tested with temp directory simulations
+// covering direct binary, symlink, read-only, and rollback scenarios.
 package update_test
 
 import (
@@ -466,52 +465,203 @@ func TestDownloadUpdate_SuccessfulDownload(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// ApplyUpdate
+// ApplyUpdateTo — tests the filesystem logic for each deployment scenario
 // ---------------------------------------------------------------------------
 
-// TestApplyUpdate_Success simulates the update flow by creating fake
-// "current executable" and "new binary" files, then calling ApplyUpdate
-// after temporarily adjusting what os.Executable would resolve to.
-//
-// REQUIRES REFACTOR: ApplyUpdate calls os.Executable() internally to find
-// the path of the running binary. In a test environment this resolves to
-// the test binary itself, which we cannot safely replace. To properly unit
-// test this function, it should accept the target executable path as a
-// parameter (or via an options struct), e.g.:
-//
-//	func ApplyUpdate(tempPath string, opts ...ApplyOption) error
-//
-// For now, we test the filesystem logic by calling ApplyUpdate with the
-// test binary path, which will attempt to rename the actual test binary.
-// We skip this test to avoid corrupting the test runner.
-
-func TestApplyUpdate_TempPathDoesNotExist(t *testing.T) {
+func TestApplyUpdateTo_DirectBinary(t *testing.T) {
 	t.Parallel()
 
-	// ApplyUpdate should fail when the temp path doesn't exist.
-	// Even though os.Executable resolves the test binary, the first
-	// operation that fails is os.Rename(execPath, backupPath), which
-	// will succeed for the test binary. But os.Rename(tempPath, execPath)
-	// will fail because tempPath doesn't exist, triggering rollback.
-	//
-	// We skip this because it would rename the actual test binary to .bak
-	// and then rollback -- risky in CI environments.
-	t.Skip("REQUIRES REFACTOR: ApplyUpdate uses os.Executable() internally, cannot safely test without injecting the exec path")
+	dir := t.TempDir()
+	execPath := filepath.Join(dir, "modula")
+	tempPath := filepath.Join(dir, "modula-new")
+
+	os.WriteFile(execPath, []byte("old-binary"), 0755)
+	os.WriteFile(tempPath, []byte("new-binary"), 0755)
+
+	if err := update.ApplyUpdateTo(tempPath, execPath); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify the binary was replaced
+	got, err := os.ReadFile(execPath)
+	if err != nil {
+		t.Fatalf("failed to read updated binary: %v", err)
+	}
+	if string(got) != "new-binary" {
+		t.Errorf("binary content = %q, want %q", got, "new-binary")
+	}
+
+	// Verify backup was cleaned up
+	if _, err := os.Stat(execPath + ".bak"); !os.IsNotExist(err) {
+		t.Error("expected .bak to be removed after successful update")
+	}
+
+	// Verify temp file was consumed (moved away)
+	if _, err := os.Stat(tempPath); !os.IsNotExist(err) {
+		t.Error("expected temp file to be removed after move")
+	}
+}
+
+func TestApplyUpdateTo_Symlink(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	realPath := filepath.Join(dir, "bin", "modula")
+	linkPath := filepath.Join(dir, "usr-local-bin", "modula")
+	tempPath := filepath.Join(dir, "modula-new")
+
+	// Create directory structure simulating /opt/modula/modula symlinked from /usr/local/bin/modula
+	os.MkdirAll(filepath.Join(dir, "bin"), 0755)
+	os.MkdirAll(filepath.Join(dir, "usr-local-bin"), 0755)
+	os.WriteFile(realPath, []byte("old-binary"), 0755)
+	os.Symlink(realPath, linkPath)
+	os.WriteFile(tempPath, []byte("new-binary"), 0755)
+
+	// Resolve the symlink (as ApplyUpdate would do)
+	resolved, err := filepath.EvalSymlinks(linkPath)
+	if err != nil {
+		t.Fatalf("failed to resolve symlink: %v", err)
+	}
+
+	if err := update.ApplyUpdateTo(tempPath, resolved); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify the real file was updated
+	got, err := os.ReadFile(realPath)
+	if err != nil {
+		t.Fatalf("failed to read real path: %v", err)
+	}
+	if string(got) != "new-binary" {
+		t.Errorf("real binary content = %q, want %q", got, "new-binary")
+	}
+
+	// Verify the symlink still works and points to the updated content
+	gotViaLink, err := os.ReadFile(linkPath)
+	if err != nil {
+		t.Fatalf("failed to read via symlink: %v", err)
+	}
+	if string(gotViaLink) != "new-binary" {
+		t.Errorf("symlink content = %q, want %q", gotViaLink, "new-binary")
+	}
+}
+
+func TestApplyUpdateTo_RollbackOnMissingTemp(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	execPath := filepath.Join(dir, "modula")
+	os.WriteFile(execPath, []byte("old-binary"), 0755)
+
+	// Point at a temp file that doesn't exist — the move will fail
+	// and the original binary should be restored via rollback.
+	missingTemp := filepath.Join(dir, "does-not-exist")
+	err := update.ApplyUpdateTo(missingTemp, execPath)
+	if err == nil {
+		t.Fatal("expected error for missing temp file, got nil")
+	}
+	if !strings.Contains(err.Error(), "rollback successful") {
+		t.Errorf("expected rollback message, got %q", err.Error())
+	}
+
+	// Verify original binary was restored
+	got, err := os.ReadFile(execPath)
+	if err != nil {
+		t.Fatalf("original binary should be restored: %v", err)
+	}
+	if string(got) != "old-binary" {
+		t.Errorf("restored binary content = %q, want %q", got, "old-binary")
+	}
+}
+
+func TestApplyUpdateTo_ReadOnlyDirectory(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	execPath := filepath.Join(dir, "modula")
+	tempPath := filepath.Join(t.TempDir(), "modula-new")
+
+	os.WriteFile(execPath, []byte("old-binary"), 0755)
+	os.WriteFile(tempPath, []byte("new-binary"), 0755)
+
+	// Make the directory read-only so the backup rename fails
+	os.Chmod(dir, 0555)
+	t.Cleanup(func() { os.Chmod(dir, 0755) })
+
+	err := update.ApplyUpdateTo(tempPath, execPath)
+	if err == nil {
+		t.Fatal("expected error for read-only directory, got nil")
+	}
+	if !strings.Contains(err.Error(), "failed to backup") {
+		t.Errorf("expected backup error, got %q", err.Error())
+	}
+}
+
+func TestApplyUpdateTo_PreservesPermissions(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	execPath := filepath.Join(dir, "modula")
+	tempPath := filepath.Join(dir, "modula-new")
+
+	os.WriteFile(execPath, []byte("old-binary"), 0755)
+	os.WriteFile(tempPath, []byte("new-binary"), 0755)
+
+	if err := update.ApplyUpdateTo(tempPath, execPath); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	info, err := os.Stat(execPath)
+	if err != nil {
+		t.Fatalf("failed to stat updated binary: %v", err)
+	}
+	if info.Mode()&0111 == 0 {
+		t.Error("updated binary lost executable permissions")
+	}
 }
 
 // ---------------------------------------------------------------------------
-// RollbackUpdate
+// RollbackUpdateTo
 // ---------------------------------------------------------------------------
 
-func TestRollbackUpdate_NoBackupFile(t *testing.T) {
-	// RollbackUpdate calls os.Executable() which resolves to the test binary.
-	// If there's no .bak file next to it, it should return an error.
-	// This is safe to run because it only stats a file that shouldn't exist.
+func TestRollbackUpdateTo_Success(t *testing.T) {
 	t.Parallel()
 
-	err := update.RollbackUpdate()
+	dir := t.TempDir()
+	execPath := filepath.Join(dir, "modula")
+	backupPath := execPath + ".bak"
+
+	// Simulate state after a failed update: .bak exists, current is broken
+	os.WriteFile(backupPath, []byte("good-binary"), 0755)
+	os.WriteFile(execPath, []byte("broken-binary"), 0755)
+
+	if err := update.RollbackUpdateTo(execPath); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	got, err := os.ReadFile(execPath)
+	if err != nil {
+		t.Fatalf("failed to read restored binary: %v", err)
+	}
+	if string(got) != "good-binary" {
+		t.Errorf("restored content = %q, want %q", got, "good-binary")
+	}
+
+	if _, err := os.Stat(backupPath); !os.IsNotExist(err) {
+		t.Error("expected .bak to be consumed by rollback")
+	}
+}
+
+func TestRollbackUpdateTo_NoBackup(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	execPath := filepath.Join(dir, "modula")
+	os.WriteFile(execPath, []byte("current-binary"), 0755)
+
+	err := update.RollbackUpdateTo(execPath)
 	if err == nil {
-		t.Fatal("expected error when no backup file exists, got nil")
+		t.Fatal("expected error when no backup exists, got nil")
 	}
 	if !strings.Contains(err.Error(), "no backup file found") {
 		t.Errorf("expected 'no backup file found' error, got %q", err.Error())
@@ -519,51 +669,208 @@ func TestRollbackUpdate_NoBackupFile(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// CheckForUpdates — tests the logic around version comparison and channel
-// filtering. The actual GitHub API call is hardcoded in fetchLatestRelease,
-// so we cannot inject a test server without refactoring.
+// CheckForUpdates — end-to-end tests using httptest servers via GitHubAPIURL
 // ---------------------------------------------------------------------------
 
-// REQUIRES REFACTOR: CheckForUpdates calls the unexported fetchLatestRelease()
-// which has a hardcoded GitHub API URL. To test CheckForUpdates properly, it
-// should accept an HTTP client or a fetcher interface:
-//
-//   type ReleaseFetcher interface {
-//       FetchLatest() (*ReleaseInfo, error)
-//   }
-//
-// Or at minimum, the URL should be configurable:
-//
-//   func CheckForUpdates(currentVersion, channel, apiURL string) (...)
-//
-// Since we cannot inject a test server, we test CompareVersions (which
-// CheckForUpdates delegates to) exhaustively above, and test the
-// channel/draft filtering logic via a simulated CheckForUpdates below.
-
-// TestCheckForUpdatesLogic verifies the decision logic of CheckForUpdates
-// by testing the individual conditions it evaluates. Since we can't mock
-// the HTTP call, we verify the building blocks.
-func TestCheckForUpdatesLogic_DraftSkipped(t *testing.T) {
-	t.Parallel()
-
-	// A draft release should return (nil, false, nil)
-	// We verify this by confirming CompareVersions behavior and documenting
-	// the expected path through CheckForUpdates.
-	//
-	// If release.Draft == true => return nil, false, nil
-	// This path doesn't depend on version comparison at all.
-
-	// Verified by reading the source: line 48-49 of checker.go
-	// No way to test without HTTP mock. Documenting expected behavior.
-	t.Log("Draft releases are skipped (returns nil, false, nil) -- verified by code review")
+// setTestAPIURL points GitHubAPIURL at the given httptest server and returns
+// a cleanup function that restores the original value.
+func setTestAPIURL(t *testing.T, url string) {
+	t.Helper()
+	original := update.GitHubAPIURL
+	update.GitHubAPIURL = url
+	t.Cleanup(func() { update.GitHubAPIURL = original })
 }
 
-func TestCheckForUpdatesLogic_StableChannelSkipsPrerelease(t *testing.T) {
-	t.Parallel()
+func TestCheckForUpdates_NetworkError(t *testing.T) {
+	// Point at a URL that will refuse connections.
+	setTestAPIURL(t, "http://127.0.0.1:1/releases/latest")
 
-	// If channel == "stable" && release.Prerelease == true => return nil, false, nil
-	// Verified by reading the source: line 53-55 of checker.go
-	t.Log("Stable channel skips prerelease (returns nil, false, nil) -- verified by code review")
+	_, available, err := update.CheckForUpdates("1.0.0", "stable")
+	if err == nil {
+		t.Fatal("expected error for unreachable server, got nil")
+	}
+	if available {
+		t.Error("expected available=false on error")
+	}
+	if !strings.Contains(err.Error(), "could not reach GitHub") {
+		t.Errorf("expected network error message, got %q", err.Error())
+	}
+}
+
+func TestCheckForUpdates_NoReleases(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	t.Cleanup(srv.Close)
+	setTestAPIURL(t, srv.URL)
+
+	release, available, err := update.CheckForUpdates("1.0.0", "stable")
+	if err != nil {
+		t.Fatalf("expected no error for 404, got %v", err)
+	}
+	if available {
+		t.Error("expected available=false when no releases exist")
+	}
+	if release != nil {
+		t.Error("expected nil release when no releases exist")
+	}
+}
+
+func TestCheckForUpdates_RateLimited(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	t.Cleanup(srv.Close)
+	setTestAPIURL(t, srv.URL)
+
+	_, _, err := update.CheckForUpdates("1.0.0", "stable")
+	if err == nil {
+		t.Fatal("expected error for 403, got nil")
+	}
+	if !strings.Contains(err.Error(), "rate limit") {
+		t.Errorf("expected rate limit error, got %q", err.Error())
+	}
+}
+
+func TestCheckForUpdates_UnexpectedStatus(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(srv.Close)
+	setTestAPIURL(t, srv.URL)
+
+	_, _, err := update.CheckForUpdates("1.0.0", "stable")
+	if err == nil {
+		t.Fatal("expected error for 500, got nil")
+	}
+	if !strings.Contains(err.Error(), "unexpected status 500") {
+		t.Errorf("expected unexpected status error, got %q", err.Error())
+	}
+}
+
+func TestCheckForUpdates_UpdateAvailable(t *testing.T) {
+	release := update.ReleaseInfo{
+		TagName:     "v2.0.0",
+		Name:        "Release 2.0.0",
+		PublishedAt: "2026-01-01T00:00:00Z",
+		Assets: []update.Asset{
+			{Name: "modulacms-linux-amd64", BrowserDownloadURL: "https://example.com/linux-amd64", Size: 10000000},
+		},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(release)
+	}))
+	t.Cleanup(srv.Close)
+	setTestAPIURL(t, srv.URL)
+
+	got, available, err := update.CheckForUpdates("1.0.0", "stable")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !available {
+		t.Error("expected available=true when current version is older")
+	}
+	if got == nil {
+		t.Fatal("expected non-nil release")
+	}
+	if got.TagName != "v2.0.0" {
+		t.Errorf("got tag %q, want %q", got.TagName, "v2.0.0")
+	}
+}
+
+func TestCheckForUpdates_AlreadyUpToDate(t *testing.T) {
+	release := update.ReleaseInfo{
+		TagName:     "v1.0.0",
+		Name:        "Release 1.0.0",
+		PublishedAt: "2026-01-01T00:00:00Z",
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(release)
+	}))
+	t.Cleanup(srv.Close)
+	setTestAPIURL(t, srv.URL)
+
+	_, available, err := update.CheckForUpdates("1.0.0", "stable")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if available {
+		t.Error("expected available=false when versions are equal")
+	}
+}
+
+func TestCheckForUpdates_DraftSkipped(t *testing.T) {
+	release := update.ReleaseInfo{
+		TagName: "v2.0.0",
+		Draft:   true,
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(release)
+	}))
+	t.Cleanup(srv.Close)
+	setTestAPIURL(t, srv.URL)
+
+	got, available, err := update.CheckForUpdates("1.0.0", "stable")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if available {
+		t.Error("expected available=false for draft release")
+	}
+	if got != nil {
+		t.Error("expected nil release for draft")
+	}
+}
+
+func TestCheckForUpdates_StableChannelSkipsPrerelease(t *testing.T) {
+	release := update.ReleaseInfo{
+		TagName:    "v2.0.0-beta.1",
+		Prerelease: true,
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(release)
+	}))
+	t.Cleanup(srv.Close)
+	setTestAPIURL(t, srv.URL)
+
+	got, available, err := update.CheckForUpdates("1.0.0", "stable")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if available {
+		t.Error("expected available=false for prerelease on stable channel")
+	}
+	if got != nil {
+		t.Error("expected nil release for filtered prerelease")
+	}
+}
+
+func TestCheckForUpdates_PrereleaseChannelIncludesPrerelease(t *testing.T) {
+	release := update.ReleaseInfo{
+		TagName:    "v2.0.0-beta.1",
+		Prerelease: true,
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(release)
+	}))
+	t.Cleanup(srv.Close)
+	setTestAPIURL(t, srv.URL)
+
+	got, available, err := update.CheckForUpdates("1.0.0", "beta")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !available {
+		t.Error("expected available=true for prerelease on non-stable channel")
+	}
+	if got == nil {
+		t.Fatal("expected non-nil release")
+	}
 }
 
 // ---------------------------------------------------------------------------

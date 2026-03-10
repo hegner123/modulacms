@@ -30,47 +30,50 @@ type Asset struct {
 	Size               int64  `json:"size"`
 }
 
-const (
-	githubAPIURL = "https://api.github.com/repos/hegner123/modulacms/releases/latest"
-	userAgent    = "ModulaCMS"
-)
+// GitHubAPIURL is the endpoint queried for the latest release.
+// Tests can override this to point at an httptest server.
+var GitHubAPIURL = "https://api.github.com/repos/hegner123/modulacms/releases/latest"
 
-// CheckForUpdates queries GitHub API for the latest release and compares with current version
+const userAgent = "ModulaCMS"
+
+// CheckForUpdates queries GitHub API for the latest release and compares with current version.
 // Returns: (latestRelease, updateAvailable, error)
 func CheckForUpdates(currentVersion string, channel string) (*ReleaseInfo, bool, error) {
-	// Query GitHub API
 	release, err := fetchLatestRelease()
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to fetch release info: %w", err)
+		return nil, false, err
 	}
 
-	// Skip draft releases
+	// No releases published yet
+	if release == nil {
+		return nil, false, nil
+	}
+
 	if release.Draft {
 		return nil, false, nil
 	}
 
-	// Check release channel (stable vs prerelease)
 	if channel == "stable" && release.Prerelease {
 		return nil, false, nil
 	}
 
-	// Compare versions
 	comparison := CompareVersions(currentVersion, release.TagName)
 	if comparison < 0 {
-		// Current version is older than latest release
 		return release, true, nil
 	}
 
 	return release, false, nil
 }
 
-// fetchLatestRelease queries the GitHub API
+// fetchLatestRelease queries the GitHub API.
+// Returns (nil, nil) when the repo has no published releases.
+// Returns (nil, err) on network failures or unexpected API errors.
 func fetchLatestRelease() (*ReleaseInfo, error) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
 
-	req, err := http.NewRequest("GET", githubAPIURL, nil)
+	req, err := http.NewRequest("GET", GitHubAPIURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -80,17 +83,26 @@ func fetchLatestRelease() (*ReleaseInfo, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch from GitHub: %w", err)
+		return nil, fmt.Errorf("could not reach GitHub (check your network connection): %w", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GitHub API returned status %d", resp.StatusCode)
+	switch resp.StatusCode {
+	case http.StatusOK:
+		// Release found — decode below
+	case http.StatusNotFound:
+		// Repo exists but has no releases, or repo itself is not found.
+		// Either way there is nothing to update to.
+		return nil, nil
+	case http.StatusForbidden, http.StatusTooManyRequests:
+		return nil, fmt.Errorf("GitHub API rate limit exceeded (status %d), try again later", resp.StatusCode)
+	default:
+		return nil, fmt.Errorf("GitHub API returned unexpected status %d", resp.StatusCode)
 	}
 
 	var release ReleaseInfo
 	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
+		return nil, fmt.Errorf("failed to parse release response: %w", err)
 	}
 
 	return &release, nil

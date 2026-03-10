@@ -1,11 +1,13 @@
 package update
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -62,37 +64,41 @@ func DownloadUpdate(url string) (string, error) {
 	return tmpPath, nil
 }
 
-// ApplyUpdate replaces the current binary with the downloaded version
-// Takes the path to the downloaded temporary file
+// ApplyUpdate resolves the running executable path (following symlinks)
+// and replaces it with the file at tempPath.
 func ApplyUpdate(tempPath string) error {
-	// Determine the path to the currently running executable
 	execPath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("failed to determine executable path: %v", err)
+		return fmt.Errorf("failed to determine executable path: %w", err)
 	}
 	execPath, err = filepath.EvalSymlinks(execPath)
 	if err != nil {
-		return fmt.Errorf("failed to resolve executable path: %v", err)
+		return fmt.Errorf("failed to resolve executable path: %w", err)
 	}
+	return ApplyUpdateTo(tempPath, execPath)
+}
 
-	// Backup the current executable
+// ApplyUpdateTo replaces the binary at execPath with the file at tempPath.
+// The execPath should be the resolved (non-symlink) path to the current binary.
+// Uses moveFile internally to handle cross-device moves (e.g. /tmp to /app in Docker).
+func ApplyUpdateTo(tempPath, execPath string) error {
 	backupPath := execPath + ".bak"
+
+	// Backup is always same-device (same directory), so os.Rename is safe.
 	if err := os.Rename(execPath, backupPath); err != nil {
-		return fmt.Errorf("failed to backup current executable: %v", err)
+		return fmt.Errorf("failed to backup current executable: %w", err)
 	}
 
-	// Replace the current executable with the new version
-	if err := os.Rename(tempPath, execPath); err != nil {
-		// Attempt rollback
+	// The temp file may be on a different filesystem (e.g. /tmp vs /app),
+	// so use moveFile which falls back to copy on cross-device errors.
+	if err := moveFile(tempPath, execPath); err != nil {
 		if rollbackErr := os.Rename(backupPath, execPath); rollbackErr != nil {
 			return fmt.Errorf("failed to update executable and rollback failed: %v (rollback error: %v)", err, rollbackErr)
 		}
-		return fmt.Errorf("failed to update executable (rollback successful): %v", err)
+		return fmt.Errorf("failed to update executable (rollback successful): %w", err)
 	}
 
-	// Remove the backup if update succeeded
 	_ = os.Remove(backupPath)
-
 	return nil
 }
 
@@ -121,24 +127,80 @@ func VerifyBinary(path string) error {
 	return nil
 }
 
-// RollbackUpdate restores the previous version from backup
+// RollbackUpdate resolves the running executable path and restores its backup.
 func RollbackUpdate() error {
 	execPath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("failed to determine executable path: %v", err)
+		return fmt.Errorf("failed to determine executable path: %w", err)
 	}
 	execPath, err = filepath.EvalSymlinks(execPath)
 	if err != nil {
-		return fmt.Errorf("failed to resolve executable path: %v", err)
+		return fmt.Errorf("failed to resolve executable path: %w", err)
 	}
+	return RollbackUpdateTo(execPath)
+}
 
+// RollbackUpdateTo restores the backup file (.bak) for the binary at execPath.
+func RollbackUpdateTo(execPath string) error {
 	backupPath := execPath + ".bak"
 	if _, err := os.Stat(backupPath); os.IsNotExist(err) {
 		return fmt.Errorf("no backup file found at %s", backupPath)
 	}
 
 	if err := os.Rename(backupPath, execPath); err != nil {
-		return fmt.Errorf("failed to restore backup: %v", err)
+		return fmt.Errorf("failed to restore backup: %w", err)
+	}
+
+	return nil
+}
+
+// moveFile attempts os.Rename, falling back to copy+remove for cross-device moves.
+func moveFile(src, dst string) error {
+	err := os.Rename(src, dst)
+	if err == nil {
+		return nil
+	}
+
+	// Cross-device rename: copy the file then remove the source.
+	var linkErr *os.LinkError
+	if errors.As(err, &linkErr) && errors.Is(linkErr.Err, syscall.EXDEV) {
+		if copyErr := copyFile(src, dst); copyErr != nil {
+			return fmt.Errorf("cross-device move failed: %w", copyErr)
+		}
+		os.Remove(src)
+		return nil
+	}
+
+	return err
+}
+
+// copyFile copies src to dst, preserving the source file's permissions.
+func copyFile(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("failed to open source: %w", err)
+	}
+	defer srcFile.Close()
+
+	srcInfo, err := srcFile.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to stat source: %w", err)
+	}
+
+	dstFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, srcInfo.Mode())
+	if err != nil {
+		return fmt.Errorf("failed to create destination: %w", err)
+	}
+
+	if _, err := io.Copy(dstFile, srcFile); err != nil {
+		dstFile.Close()
+		os.Remove(dst)
+		return fmt.Errorf("failed to copy data: %w", err)
+	}
+
+	if err := dstFile.Close(); err != nil {
+		os.Remove(dst)
+		return fmt.Errorf("failed to finalize destination: %w", err)
 	}
 
 	return nil
