@@ -271,6 +271,18 @@ dbgen-entity name:
 dbgen-verify:
     {{gocmd}} run ./tools/dbgen/... -verify
 
+# [Codegen] Generate MySQL/PSQL sections in _custom.go files from SQLite source
+drivergen:
+    {{gocmd}} run ./tools/drivergen/...
+
+# [Codegen] Generate a single custom file
+drivergen-file file:
+    {{gocmd}} run ./tools/drivergen/... {{file}}
+
+# [Codegen] Verify generated custom sections are up-to-date (for CI)
+drivergen-verify:
+    {{gocmd}} run ./tools/drivergen/... -verify
+
 # [SDK] Run SDK command: just sdk <lang> <action>
 # Langs: ts (install, build, test, typecheck, clean), go (test, vet), swift (build, test, clean)
 sdk lang action:
