@@ -94,9 +94,9 @@ run-admin:
 dev-admin:
     #!/usr/bin/env bash
     mkdir -p out
-    if [ ! -f out/config.json ]; then
-        cp config.json out/config.json
-        echo "Copied config.json to out/ — edit out/config.json for dev settings"
+    if [ ! -f out/modula.config.json ]; then
+        cp modula.config.json out/modula.config.json
+        echo "Copied modula.config.json to out/ — edit out/modula.config.json for dev settings"
     fi
     echo "" > debug.log
     VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -282,6 +282,14 @@ drivergen-file file:
 # [Codegen] Verify generated custom sections are up-to-date (for CI)
 drivergen-verify:
     {{gocmd}} run ./tools/drivergen/... -verify
+
+# [Codegen] Generate non-admin files from admin source (admin is source of truth)
+drivergen-admin:
+    {{gocmd}} run ./tools/drivergen/... --mode admin
+
+# [Codegen] Verify admin-generated files are up-to-date (for CI)
+drivergen-admin-verify:
+    {{gocmd}} run ./tools/drivergen/... --mode admin -verify
 
 # [SDK] Run SDK command: just sdk <lang> <action>
 # Langs: ts (install, build, test, typecheck, clean), go (test, vet), swift (build, test, clean)
