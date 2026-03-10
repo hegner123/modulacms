@@ -10,23 +10,44 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-func apiGetAdminDatatypeFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	q := r.URL.Query().Get("q")
-	adtID := types.AdminDatatypeID(q)
-	if err := adtID.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+// AdminDatatypesHandler handles CRUD operations that do not require a specific datatype ID.
+func AdminDatatypesHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		if HasPaginationParams(r) {
+			apiListAdminDatatypesPaginated(w, r, svc)
+		} else {
+			apiListAdminDatatypes(w, r, svc)
+		}
+	case http.MethodPost:
+		apiCreateAdminDatatype(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
 
-	view, err := svc.Schema.GetAdminDatatypeFull(r.Context(), adtID)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
+// AdminDatatypeHandler handles CRUD operations for specific datatype items.
+func AdminDatatypeHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiGetAdminDatatype(w, r, svc)
+	case http.MethodPut:
+		apiUpdateAdminDatatype(w, r, svc)
+	case http.MethodDelete:
+		apiDeleteAdminDatatype(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(view)
+// AdminDatatypeFullHandler handles requests for the composed admin datatype+fields view.
+func AdminDatatypeFullHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiGetAdminDatatypeFull(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func apiGetAdminDatatypeFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
@@ -48,68 +69,117 @@ func apiGetAdminDatatypeFull(w http.ResponseWriter, r *http.Request, svc *servic
 	json.NewEncoder(w).Encode(view)
 }
 
-func apiGetAdminDatatypeFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+// apiGetAdminDatatype handles GET requests for a single admin datatype
+func apiGetAdminDatatype(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
 	adtID := types.AdminDatatypeID(q)
 	if err := adtID.Validate(); err != nil {
+		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return err
 	}
-
-	view, err := svc.Schema.GetAdminDatatypeFull(r.Context(), adtID)
+	adminDatatype, err := svc.Schema.GetAdminDatatype(r.Context(), adtID)
 	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
+		writeServiceError(w, err)
+		return err
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(view)
+	json.NewEncoder(w).Encode(adminDatatype)
+	return nil
 }
 
-func apiGetAdminDatatypeFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+// apiListAdminDatatypes handles GET requests for listing admin datatypes
+func apiListAdminDatatypes(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	adminDatatypes, err := svc.Schema.ListAdminDatatypes(r.Context())
+	if err != nil {
+		writeServiceError(w, err)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(adminDatatypes)
+	return nil
+}
+
+// apiCreateAdminDatatype handles POST requests to create a new admin datatype
+func apiCreateAdminDatatype(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	var newAdminDatatype db.CreateAdminDatatypeParams
+	err := json.NewDecoder(r.Body).Decode(&newAdminDatatype)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
+
+	ac, err := svc.AuditCtx(r.Context())
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	createdAdminDatatype, err := svc.Schema.CreateAdminDatatype(r.Context(), ac, newAdminDatatype)
+	if err != nil {
+		writeServiceError(w, err)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(createdAdminDatatype)
+	return nil
+}
+
+// apiUpdateAdminDatatype handles PUT requests to update an existing admin datatype
+func apiUpdateAdminDatatype(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	var updateAdminDatatype db.UpdateAdminDatatypeParams
+	err := json.NewDecoder(r.Body).Decode(&updateAdminDatatype)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
+
+	ac, err := svc.AuditCtx(r.Context())
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	updated, err := svc.Schema.UpdateAdminDatatype(r.Context(), ac, updateAdminDatatype)
+	if err != nil {
+		writeServiceError(w, err)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(updated)
+	return nil
+}
+
+// apiDeleteAdminDatatype handles DELETE requests for admin datatypes
+func apiDeleteAdminDatatype(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
 	adtID := types.AdminDatatypeID(q)
 	if err := adtID.Validate(); err != nil {
+		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return err
 	}
 
-	view, err := svc.Schema.GetAdminDatatypeFull(r.Context(), adtID)
+	ac, err := svc.AuditCtx(r.Context())
 	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(view)
-}
-
-func apiGetAdminDatatypeFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	q := r.URL.Query().Get("q")
-	adtID := types.AdminDatatypeID(q)
-	if err := adtID.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	view, err := svc.Schema.GetAdminDatatypeFull(r.Context(), adtID)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(view)
-}
-
-// apiListAdminDatatypesPaginated handles GET requests for listing admin datatypes with pagination
-func apiListAdminDatatypesPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
-	params := ParsePaginationParams(r)
-
-	response, err := svc.Schema.ListAdminDatatypesPaginated(r.Context(), params)
+	err = svc.Schema.DeleteAdminDatatype(r.Context(), ac, adtID)
 	if err != nil {
 		writeServiceError(w, err)
 		return err
@@ -117,94 +187,6 @@ func apiListAdminDatatypesPaginated(w http.ResponseWriter, r *http.Request, svc 
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
-	return nil
-}
-
-// apiListAdminDatatypesPaginated handles GET requests for listing admin datatypes with pagination
-func apiListAdminDatatypesPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
-	params := ParsePaginationParams(r)
-
-	response, err := svc.Schema.ListAdminDatatypesPaginated(r.Context(), params)
-	if err != nil {
-		writeServiceError(w, err)
-		return err
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
-	return nil
-}
-
-// apiListAdminDatatypesPaginated handles GET requests for listing admin datatypes with pagination
-func apiListAdminDatatypesPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
-	params := ParsePaginationParams(r)
-
-	response, err := svc.Schema.ListAdminDatatypesPaginated(r.Context(), params)
-	if err != nil {
-		writeServiceError(w, err)
-		return err
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
-	return nil
-}
-
-// apiListAdminDatatypesPaginated handles GET requests for listing admin datatypes with pagination
-func apiListAdminDatatypesPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
-	params := ParsePaginationParams(r)
-
-	response, err := svc.Schema.ListAdminDatatypesPaginated(r.Context(), params)
-	if err != nil {
-		writeServiceError(w, err)
-		return err
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
-	return nil
-}
-
-// apiListAdminDatatypesPaginated handles GET requests for listing admin datatypes with pagination
-func apiListAdminDatatypesPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
-	params := ParsePaginationParams(r)
-
-	response, err := svc.Schema.ListAdminDatatypesPaginated(r.Context(), params)
-	if err != nil {
-		writeServiceError(w, err)
-		return err
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
-	return nil
-}
-
-// Admin datatypeCascadeDeleteResponse is the JSON response for DELETE with cascade=true.
-type AdminDatatypeCascadeDeleteResponse struct {
-	DeletedAdminDatatypeID types.AdminDatatypeID `json:"deleted_datatype_id"`
-	ContentDeleted         int                   `json:"content_deleted"`
-	Errors                 []string              `json:"errors"`
-}
-
-// apiListAdminDatatypesPaginated handles GET requests for listing admin datatypes with pagination
-func apiListAdminDatatypesPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
-	params := ParsePaginationParams(r)
-
-	response, err := svc.Schema.ListAdminDatatypesPaginated(r.Context(), params)
-	if err != nil {
-		writeServiceError(w, err)
-		return err
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
 	return nil
 }
 

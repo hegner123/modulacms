@@ -11,606 +11,192 @@ import (
 	"github.com/hegner123/modulacms/internal/tree/ops"
 )
 
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
+// AdminContentDatasHandler handles CRUD operations that do not require a specific data ID.
+func AdminContentDatasHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		if HasPaginationParams(r) {
+			apiListAdminContentDataPaginated(w, r, svc)
+		} else {
+			apiListAdminContentData(w, r, svc)
 		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
+	case http.MethodPost:
+		apiCreateAdminContentData(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
 
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
+// AdminContentDataHandler handles CRUD operations for specific admin content data items.
+func AdminContentDataHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodPost:
+		apiCreateAdminContentData(w, r, svc)
+	case http.MethodPut:
+		apiUpdateAdminContentData(w, r, svc)
+	case http.MethodDelete:
+		apiDeleteAdminContentData(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// AdminContentDataFullHandler handles requests for the composed admin content data view.
+func AdminContentDataFullHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiGetAdminContentDataFull(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func apiGetAdminContentDataFull(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	q := r.URL.Query().Get("q")
+	cdID := types.AdminContentID(q)
+	if err := cdID.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	ac := middleware.AuditContextFromRequest(r, *c)
 
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
+	view, err := svc.AdminContent.GetFull(r.Context(), cdID)
 	if err != nil {
 		service.HandleServiceError(w, r, err)
 		return
 	}
 
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(view)
 }
 
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+// apiListAdminContentData handles GET requests for listing admin content data
+func apiListAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	list, err := svc.AdminContent.List(r.Context())
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+	writeJSON(w, list)
+}
 
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+// apiCreateAdminContentData handles POST requests to create new admin content data
+func apiCreateAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var params db.CreateAdminContentDataParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
+	c, err := svc.Config()
+	if err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 	ac := middleware.AuditContextFromRequest(r, *c)
 
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
+	created, err := svc.AdminContent.Create(r.Context(), ac, params)
 	if err != nil {
 		service.HandleServiceError(w, r, err)
 		return
 	}
 
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(created)
 }
 
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
-		return
-	}
-	ac := middleware.AuditContextFromRequest(r, *c)
-
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
-}
-
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
-		return
-	}
-	ac := middleware.AuditContextFromRequest(r, *c)
-
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
-}
-
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
-		return
-	}
-	ac := middleware.AuditContextFromRequest(r, *c)
-
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
-}
-
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
-		return
-	}
-	ac := middleware.AuditContextFromRequest(r, *c)
-
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
-}
-
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
-		return
-	}
-	ac := middleware.AuditContextFromRequest(r, *c)
-
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
-}
-
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
-		return
-	}
-	ac := middleware.AuditContextFromRequest(r, *c)
-
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
-}
-
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
-		return
-	}
-	ac := middleware.AuditContextFromRequest(r, *c)
-
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
-}
-
-// updateAdminContentDataRequest wraps UpdateAdminContentDataParams with an optional
-// revision field for optimistic locking. If Revision is zero (omitted by the
-// client), the update falls through to the non-revision path for backward
-// compatibility.
+// updateAdminContentDataRequest wraps UpdateAdminContentDataParams with an
+// optional revision field for optimistic locking.
 type updateAdminContentDataRequest struct {
 	db.UpdateAdminContentDataParams
 	Revision int64 `json:"revision"`
 }
 
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
+// apiUpdateAdminContentData handles PUT requests to update existing admin content data
+func apiUpdateAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	var req updateAdminContentDataRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
+	req.DateModified = types.TimestampNow()
 
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
+	c, err := svc.Config()
+	if err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 	ac := middleware.AuditContextFromRequest(r, *c)
 
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
+	updated, err := svc.AdminContent.Update(r.Context(), ac, req.UpdateAdminContentDataParams, req.Revision)
 	if err != nil {
 		service.HandleServiceError(w, r, err)
 		return
 	}
 
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
+	writeJSON(w, updated)
 }
 
-// RecursiveDeleteResponse is the JSON response for DELETE with recursive=true.
-type RecursiveDeleteResponse struct {
-	DeletedRoot  types.AdminContentID   `json:"deleted_root"`
-	TotalDeleted int                    `json:"total_deleted"`
-	DeletedIDs   []types.AdminContentID `json:"deleted_ids"`
-}
-
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+// apiDeleteAdminContentData handles DELETE requests for admin content data
+func apiDeleteAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	q := r.URL.Query().Get("q")
+	acdID := types.AdminContentID(q)
+	if err := acdID.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
+	recursive := r.URL.Query().Get("recursive") == "true"
 
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
+	c, err := svc.Config()
+	if err != nil {
+		service.HandleServiceError(w, r, err)
 		return
 	}
 	ac := middleware.AuditContextFromRequest(r, *c)
 
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
+	deletedIDs, err := svc.AdminContent.Delete(r.Context(), ac, acdID, recursive)
 	if err != nil {
 		service.HandleServiceError(w, r, err)
 		return
 	}
 
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
+	if recursive {
+		writeJSON(w, map[string]any{
+			"deleted_root":  acdID,
+			"total_deleted": len(deletedIDs),
+			"deleted_ids":   deletedIDs,
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 }
 
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+// apiListAdminContentDataPaginated handles GET requests for listing admin content data with pagination
+func apiListAdminContentDataPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	params := ParsePaginationParams(r)
 
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
-		return
-	}
-	ac := middleware.AuditContextFromRequest(r, *c)
-
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
+	result, err := svc.AdminContent.ListPaginated(r.Context(), params)
 	if err != nil {
 		service.HandleServiceError(w, r, err)
 		return
 	}
 
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
+	writeJSON(w, result)
 }
 
-// MoveAdminContentDataRequest is the JSON body for POST /api/v1/contentdata/move.
+// MoveAdminContentDataRequest is the JSON body for POST /api/v1/admincontentdatas/move.
 type MoveAdminContentDataRequest struct {
 	NodeID      types.AdminContentID         `json:"node_id"`
 	NewParentID types.NullableAdminContentID `json:"new_parent_id"`
 	Position    int                          `json:"position"`
 }
 
-// MoveAdminContentDataResponse is the JSON response for POST /api/v1/contentdata/move.
+// MoveAdminContentDataResponse is the JSON response for POST /api/v1/admincontentdatas/move.
 type MoveAdminContentDataResponse struct {
 	NodeID      types.AdminContentID         `json:"node_id"`
 	OldParentID types.NullableAdminContentID `json:"old_parent_id"`
@@ -618,33 +204,34 @@ type MoveAdminContentDataResponse struct {
 	Position    int                          `json:"position"`
 }
 
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+// AdminContentDataMoveHandler handles POST requests to move admin content data to a new parent.
+func AdminContentDataMoveHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	apiMoveAdminContentData(w, r, svc)
+}
+
+// apiMoveAdminContentData moves an admin content data node to a new parent at a given position.
+func apiMoveAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
-	var req ReorderAdminContentDataRequest
+	var req MoveAdminContentDataRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
+	if err := req.NodeID.Validate(); err != nil {
+		http.Error(w, "invalid node_id", http.StatusBadRequest)
 		return
 	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
+	if req.NewParentID.Valid {
+		if err := req.NewParentID.ID.Validate(); err != nil {
+			http.Error(w, "invalid new_parent_id", http.StatusBadRequest)
 			return
 		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
+	}
+	if req.Position < 0 {
+		http.Error(w, "position must be >= 0", http.StatusBadRequest)
+		return
 	}
 
 	c, cfgErr := svc.Config()
@@ -654,124 +241,41 @@ func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *ser
 	}
 	ac := middleware.AuditContextFromRequest(r, *c)
 
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
+	moveParams := ops.MoveParams[types.AdminContentID]{
+		NodeID:      req.NodeID,
+		NewParentID: adminContentIDToOpsNullable(req.NewParentID),
+		Position:    req.Position,
+	}
+
+	result, err := svc.AdminContent.Move(r.Context(), ac, moveParams)
 	if err != nil {
 		service.HandleServiceError(w, r, err)
 		return
 	}
 
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
+	writeJSON(w, MoveAdminContentDataResponse{
+		NodeID:      req.NodeID,
+		OldParentID: opsNullableToAdminContentID(result.OldParentID),
+		NewParentID: req.NewParentID,
+		Position:    req.Position,
 	})
 }
 
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
-		return
-	}
-	ac := middleware.AuditContextFromRequest(r, *c)
-
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
-}
-
-// ReorderAdminContentDataRequest is the JSON body for POST /api/v1/contentdata/reorder.
+// ReorderAdminContentDataRequest is the JSON body for POST /api/v1/admincontentdatas/reorder.
 type ReorderAdminContentDataRequest struct {
 	ParentID   types.NullableAdminContentID `json:"parent_id"`
 	OrderedIDs []types.AdminContentID       `json:"ordered_ids"`
 }
 
-// ReorderAdminContentDataResponse is the JSON response for POST /api/v1/contentdata/reorder.
+// ReorderAdminContentDataResponse is the JSON response for POST /api/v1/admincontentdatas/reorder.
 type ReorderAdminContentDataResponse struct {
 	Updated  int                          `json:"updated"`
 	ParentID types.NullableAdminContentID `json:"parent_id"`
 }
 
-// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
-func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	var req ReorderAdminContentDataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	if len(req.OrderedIDs) == 0 {
-		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
-		return
-	}
-
-	seen := make(map[string]struct{}, len(req.OrderedIDs))
-	for _, id := range req.OrderedIDs {
-		if err := id.Validate(); err != nil {
-			http.Error(w, "invalid admin_content_data_id", http.StatusBadRequest)
-			return
-		}
-		s := string(id)
-		if _, exists := seen[s]; exists {
-			http.Error(w, "duplicate id", http.StatusBadRequest)
-			return
-		}
-		seen[s] = struct{}{}
-	}
-
-	c, cfgErr := svc.Config()
-	if cfgErr != nil {
-		service.HandleServiceError(w, r, cfgErr)
-		return
-	}
-	ac := middleware.AuditContextFromRequest(r, *c)
-
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
-		ParentID: req.ParentID,
-	})
+// AdminContentDataReorderHandler handles POST requests to reorder admin content data siblings.
+func AdminContentDataReorderHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	apiReorderAdminContentData(w, r, svc)
 }
 
 // apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
