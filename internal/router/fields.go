@@ -41,6 +41,53 @@ func FieldHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry)
 	}
 }
 
+// apiListFields handles GET requests for listing fields.
+// Filters results by the authenticated user's role.
+func apiListFields(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	user := middleware.AuthenticatedUser(r.Context())
+	isAdmin := middleware.ContextIsAdmin(r.Context())
+	roleID := ""
+	if user != nil {
+		roleID = user.Role
+	}
+
+	filtered, err := svc.Schema.ListFieldsFiltered(r.Context(), roleID, isAdmin)
+	if err != nil {
+		writeServiceError(w, err)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(filtered)
+	return nil
+}
+
+// apiListFieldsPaginated handles GET requests for listing fields with pagination.
+// Filters results by the authenticated user's role. Total count reflects
+// the pre-filter database count; Data contains only accessible fields.
+func apiListFieldsPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
+	params := ParsePaginationParams(r)
+
+	user := middleware.AuthenticatedUser(r.Context())
+	isAdmin := middleware.ContextIsAdmin(r.Context())
+	roleID := ""
+	if user != nil {
+		roleID = user.Role
+	}
+
+	response, err := svc.Schema.ListFieldsPaginated(r.Context(), params, roleID, isAdmin)
+	if err != nil {
+		writeServiceError(w, err)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+	return nil
+}
+
 // apiGetField handles GET requests for a single field
 func apiGetField(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	q := r.URL.Query().Get("q")
@@ -68,28 +115,6 @@ func apiGetField(w http.ResponseWriter, r *http.Request, svc *service.Registry) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(field)
-	return nil
-}
-
-// apiListFields handles GET requests for listing fields.
-// Filters results by the authenticated user's role.
-func apiListFields(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
-	user := middleware.AuthenticatedUser(r.Context())
-	isAdmin := middleware.ContextIsAdmin(r.Context())
-	roleID := ""
-	if user != nil {
-		roleID = user.Role
-	}
-
-	filtered, err := svc.Schema.ListFieldsFiltered(r.Context(), roleID, isAdmin)
-	if err != nil {
-		writeServiceError(w, err)
-		return err
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(filtered)
 	return nil
 }
 
@@ -176,30 +201,5 @@ func apiDeleteField(w http.ResponseWriter, r *http.Request, svc *service.Registr
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	return nil
-}
-
-// apiListFieldsPaginated handles GET requests for listing fields with pagination.
-// Filters results by the authenticated user's role. Total count reflects
-// the pre-filter database count; Data contains only accessible fields.
-func apiListFieldsPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
-	params := ParsePaginationParams(r)
-
-	user := middleware.AuthenticatedUser(r.Context())
-	isAdmin := middleware.ContextIsAdmin(r.Context())
-	roleID := ""
-	if user != nil {
-		roleID = user.Role
-	}
-
-	response, err := svc.Schema.ListFieldsPaginated(r.Context(), params, roleID, isAdmin)
-	if err != nil {
-		writeServiceError(w, err)
-		return err
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
 	return nil
 }

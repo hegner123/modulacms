@@ -73,53 +73,6 @@ func apiGetContentDataFull(w http.ResponseWriter, r *http.Request, svc *service.
 	json.NewEncoder(w).Encode(view)
 }
 
-// ContentDataByRouteHandler handles requests for content under a specific route.
-func ContentDataByRouteHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	switch r.Method {
-	case http.MethodGet:
-		apiListContentDataByRoute(w, r, svc)
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	}
-}
-
-func apiListContentDataByRoute(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	q := r.URL.Query().Get("q")
-	routeID := types.RouteID(q)
-	if err := routeID.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	views, err := svc.Content.ListByRoute(r.Context(), routeID)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(views)
-}
-
-// apiGetContentData handles GET requests for a single content data
-func apiGetContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	q := r.URL.Query().Get("q")
-	cdID := types.ContentID(q)
-	if err := cdID.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	cd, err := svc.Content.Get(r.Context(), cdID)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	writeJSON(w, cd)
-}
-
 // apiListContentData handles GET requests for listing content data
 func apiListContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	contentDataList, err := svc.Content.List(r.Context())
@@ -157,10 +110,8 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, svc *service.R
 	json.NewEncoder(w).Encode(created)
 }
 
-// updateContentDataRequest wraps UpdateContentDataParams with an optional
-// revision field for optimistic locking. If Revision is zero (omitted by the
-// client), the update falls through to the non-revision path for backward
-// compatibility.
+// updateContentDataRequest wraps UpdateContentDataParams with an
+// optional revision field for optimistic locking.
 type updateContentDataRequest struct {
 	db.UpdateContentDataParams
 	Revision int64 `json:"revision"`
@@ -188,13 +139,6 @@ func apiUpdateContentData(w http.ResponseWriter, r *http.Request, svc *service.R
 	}
 
 	writeJSON(w, updated)
-}
-
-// RecursiveDeleteResponse is the JSON response for DELETE with recursive=true.
-type RecursiveDeleteResponse struct {
-	DeletedRoot  types.ContentID   `json:"deleted_root"`
-	TotalDeleted int               `json:"total_deleted"`
-	DeletedIDs   []types.ContentID `json:"deleted_ids"`
 }
 
 // apiDeleteContentData handles DELETE requests for content data.
@@ -248,14 +192,14 @@ func apiListContentDataPaginated(w http.ResponseWriter, r *http.Request, svc *se
 	writeJSON(w, result)
 }
 
-// MoveContentDataRequest is the JSON body for POST /api/v1/contentdata/move.
+// MoveContentDataRequest is the JSON body for POST /api/v1/admincontentdatas/move.
 type MoveContentDataRequest struct {
 	NodeID      types.ContentID         `json:"node_id"`
 	NewParentID types.NullableContentID `json:"new_parent_id"`
 	Position    int                     `json:"position"`
 }
 
-// MoveContentDataResponse is the JSON response for POST /api/v1/contentdata/move.
+// MoveContentDataResponse is the JSON response for POST /api/v1/admincontentdatas/move.
 type MoveContentDataResponse struct {
 	NodeID      types.ContentID         `json:"node_id"`
 	OldParentID types.NullableContentID `json:"old_parent_id"`
@@ -320,13 +264,13 @@ func apiMoveContentData(w http.ResponseWriter, r *http.Request, svc *service.Reg
 	})
 }
 
-// ReorderContentDataRequest is the JSON body for POST /api/v1/contentdata/reorder.
+// ReorderContentDataRequest is the JSON body for POST /api/v1/admincontentdatas/reorder.
 type ReorderContentDataRequest struct {
 	ParentID   types.NullableContentID `json:"parent_id"`
 	OrderedIDs []types.ContentID       `json:"ordered_ids"`
 }
 
-// ReorderContentDataResponse is the JSON response for POST /api/v1/contentdata/reorder.
+// ReorderContentDataResponse is the JSON response for POST /api/v1/admincontentdatas/reorder.
 type ReorderContentDataResponse struct {
 	Updated  int                     `json:"updated"`
 	ParentID types.NullableContentID `json:"parent_id"`
@@ -385,18 +329,71 @@ func apiReorderContentData(w http.ResponseWriter, r *http.Request, svc *service.
 	})
 }
 
-// contentIDToOpsNullable converts types.NullableContentID to ops.NullableID for router use.
-func contentIDToOpsNullable(n types.NullableContentID) ops.NullableID[types.ContentID] {
-	if !n.Valid {
-		return ops.EmptyID[types.ContentID]()
-	}
-	return ops.NullID(n.ID)
-}
-
 // opsNullableToContentID converts ops.NullableID to types.NullableContentID for router use.
 func opsNullableToContentID(n ops.NullableID[types.ContentID]) types.NullableContentID {
 	if !n.Valid {
 		return types.NullableContentID{}
 	}
 	return types.NullableContentID{ID: n.Value, Valid: true}
+}
+
+// ContentDataByRouteHandler handles requests for content under a specific route.
+func ContentDataByRouteHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	switch r.Method {
+	case http.MethodGet:
+		apiListContentDataByRoute(w, r, svc)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+func apiListContentDataByRoute(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	q := r.URL.Query().Get("q")
+	routeID := types.RouteID(q)
+	if err := routeID.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	views, err := svc.Content.ListByRoute(r.Context(), routeID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(views)
+}
+
+// apiGetContentData handles GET requests for a single content data
+func apiGetContentData(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	q := r.URL.Query().Get("q")
+	cdID := types.ContentID(q)
+	if err := cdID.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	cd, err := svc.Content.Get(r.Context(), cdID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	writeJSON(w, cd)
+}
+
+// RecursiveDeleteResponse is the JSON response for DELETE with recursive=true.
+type RecursiveDeleteResponse struct {
+	DeletedRoot  types.ContentID   `json:"deleted_root"`
+	TotalDeleted int               `json:"total_deleted"`
+	DeletedIDs   []types.ContentID `json:"deleted_ids"`
+}
+
+// contentIDToOpsNullable converts types.NullableContentID to ops.NullableID for router use.
+func contentIDToOpsNullable(n types.NullableContentID) ops.NullableID[types.ContentID] {
+	if !n.Valid {
+		return ops.EmptyID[types.ContentID]()
+	}
+	return ops.NullID(n.ID)
 }

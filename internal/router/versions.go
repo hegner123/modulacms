@@ -14,16 +14,16 @@ import (
 // REQUEST TYPES
 ///////////////////////////////
 
+///////////////////////////////
+// HANDLERS
+///////////////////////////////
+
 // CreateVersionRequest is the JSON body for POST /api/v1/content/versions.
 type CreateVersionRequest struct {
 	ContentDataID types.ContentID `json:"content_data_id"`
 	Label         string          `json:"label"`
 	Locale        string          `json:"locale"`
 }
-
-///////////////////////////////
-// HANDLERS
-///////////////////////////////
 
 // ListVersionsHandler handles GET requests to list all versions for a content data item.
 // Reads content_data_id from the "q" query parameter.

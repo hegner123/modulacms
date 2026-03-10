@@ -40,24 +40,6 @@ func ContentFieldHandler(w http.ResponseWriter, r *http.Request, svc *service.Re
 	}
 }
 
-// apiGetContentField handles GET requests for a single content field
-func apiGetContentField(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	q := r.URL.Query().Get("q")
-	cfID := types.ContentFieldID(q)
-	if err := cfID.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	cf, err := svc.Content.GetField(r.Context(), cfID)
-	if err != nil {
-		service.HandleServiceError(w, r, err)
-		return
-	}
-
-	writeJSON(w, cf)
-}
-
 // apiListContentFields handles GET requests for listing content fields.
 // Supports optional locale query parameter to filter by locale code.
 func apiListContentFields(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
@@ -135,6 +117,24 @@ func apiUpdateContentField(w http.ResponseWriter, r *http.Request, svc *service.
 	}
 
 	writeJSON(w, updated)
+}
+
+// apiGetContentField handles GET requests for a single content field
+func apiGetContentField(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	q := r.URL.Query().Get("q")
+	cfID := types.ContentFieldID(q)
+	if err := cfID.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	cf, err := svc.Content.GetField(r.Context(), cfID)
+	if err != nil {
+		service.HandleServiceError(w, r, err)
+		return
+	}
+
+	writeJSON(w, cf)
 }
 
 // apiDeleteContentField handles DELETE requests for content fields

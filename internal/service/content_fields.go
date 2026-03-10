@@ -26,11 +26,6 @@ func (s *ContentService) ListFields(ctx context.Context) (*[]db.ContentFields, e
 	return s.driver.ListContentFields()
 }
 
-// ListFieldsByContentDataAndLocale returns content fields filtered by content data ID and locale.
-func (s *ContentService) ListFieldsByContentDataAndLocale(ctx context.Context, contentDataID types.NullableContentID, locale string) (*[]db.ContentFields, error) {
-	return s.driver.ListContentFieldsByContentDataAndLocale(contentDataID, locale)
-}
-
 // ListFieldsPaginated returns a paginated list of content fields.
 func (s *ContentService) ListFieldsPaginated(ctx context.Context, params db.PaginationParams) (*db.PaginatedResponse[db.ContentFields], error) {
 	items, err := s.driver.ListContentFieldsPaginated(params)
@@ -105,6 +100,11 @@ func (s *ContentService) DeleteField(ctx context.Context, ac audited.AuditContex
 		return fmt.Errorf("delete content field: %w", err)
 	}
 	return nil
+}
+
+// ListFieldsByContentDataAndLocale returns content fields filtered by content data ID and locale.
+func (s *ContentService) ListFieldsByContentDataAndLocale(ctx context.Context, contentDataID types.NullableContentID, locale string) (*[]db.ContentFields, error) {
+	return s.driver.ListContentFieldsByContentDataAndLocale(contentDataID, locale)
 }
 
 // validateContentFieldValue runs validation.ValidateField and converts the

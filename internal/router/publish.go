@@ -12,7 +12,11 @@ import (
 )
 
 ///////////////////////////////
-// REQUEST / RESPONSE TYPES
+// ADMIN REQUEST / RESPONSE TYPES
+///////////////////////////////
+
+///////////////////////////////
+// ADMIN HTTP HANDLERS
 ///////////////////////////////
 
 // PublishRequest is the JSON body for POST /api/v1/content/publish.
@@ -41,10 +45,6 @@ type ScheduleResponse struct {
 	ContentDataID string `json:"content_data_id"`
 	PublishAt     string `json:"publish_at"`
 }
-
-///////////////////////////////
-// HTTP HANDLERS
-///////////////////////////////
 
 // PublishHandler handles POST requests to publish content.
 // It builds a snapshot of the content tree, stores it as a versioned snapshot,
