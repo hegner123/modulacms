@@ -14,7 +14,7 @@ func init() {
 				Label: "Article",
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
-					{Name: "title", Label: "Title", Type: types.FieldTypeText},
+					{Name: "title", Label: "Title", Type: types.FieldTypeTitle},
 					{Name: "slug", Label: "Slug", Type: types.FieldTypeSlug},
 					{Name: "description", Label: "Description", Type: types.FieldTypeTextarea},
 					{Name: "content", Label: "Content", Type: types.FieldTypeRichText},
@@ -27,7 +27,7 @@ func init() {
 				Label: "Page",
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
-					{Name: "page_title", Label: "Page Title", Type: types.FieldTypeText},
+					{Name: "page_title", Label: "Page Title", Type: types.FieldTypeTitle},
 					{Name: "page_slug", Label: "Page Slug", Type: types.FieldTypeSlug},
 					{Name: "page_content", Label: "Page Content", Type: types.FieldTypeRichText},
 				},
@@ -37,7 +37,7 @@ func init() {
 				Label: "Global",
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
-					{Name: "site_name", Label: "Site Name", Type: types.FieldTypeText},
+					{Name: "site_name", Label: "Site Name", Type: types.FieldTypeTitle},
 					{Name: "site_description", Label: "Site Description", Type: types.FieldTypeTextarea},
 					{Name: "site_logo", Label: "Site Logo", Type: types.FieldTypeMedia},
 				},

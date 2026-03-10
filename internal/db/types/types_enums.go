@@ -169,6 +169,7 @@ const (
 	FieldTypeEmail    FieldType = "email"
 	FieldTypeURL      FieldType = "url"
 	FieldTypeIDRef    FieldType = "_id"
+	FieldTypeTitle    FieldType = "_title"
 )
 
 // String returns the string representation of FieldType.

@@ -64,7 +64,8 @@ type AdminContentDataFetchMsg struct{}
 
 // AdminContentDataFetchResultsMsg returns fetched admin content data.
 type AdminContentDataFetchResultsMsg struct {
-	Data []db.AdminContentDataTopLevel
+	Data     []db.AdminContentDataTopLevel
+	TitleMap map[string]string // AdminContentDataID → title from _title field
 }
 
 // AdminContentDataSet sets the admin content data list.

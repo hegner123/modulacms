@@ -158,7 +158,8 @@ type RootContentSummaryFetchMsg struct{}
 
 // RootContentSummaryFetchResultsMsg returns fetched root content summary.
 type RootContentSummaryFetchResultsMsg struct {
-	Data []db.ContentDataTopLevel
+	Data     []db.ContentDataTopLevel
+	TitleMap map[string]string // ContentDataID → title from _title field
 }
 
 // RootContentSummarySet sets the root content summary data.

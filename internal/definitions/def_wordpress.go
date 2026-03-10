@@ -14,7 +14,7 @@ func init() {
 				Label: "Post",
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
-					{Name: "title", Label: "Title", Type: types.FieldTypeText},
+					{Name: "title", Label: "Title", Type: types.FieldTypeTitle},
 					{Name: "slug", Label: "Slug", Type: types.FieldTypeSlug},
 					{Name: "content", Label: "Content", Type: types.FieldTypeRichText},
 					{Name: "excerpt", Label: "Excerpt", Type: types.FieldTypeTextarea},
@@ -29,7 +29,7 @@ func init() {
 				Label: "Page",
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
-					{Name: "page_title", Label: "Page Title", Type: types.FieldTypeText},
+					{Name: "page_title", Label: "Page Title", Type: types.FieldTypeTitle},
 					{Name: "page_slug", Label: "Page Slug", Type: types.FieldTypeSlug},
 					{Name: "page_content", Label: "Page Content", Type: types.FieldTypeRichText},
 					{Name: "page_featured_image", Label: "Page Featured Image", Type: types.FieldTypeMedia},

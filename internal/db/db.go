@@ -875,14 +875,14 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Seed field_types and admin_field_types with the 15 built-in field types
+	// 20. Seed field_types and admin_field_types with the built-in field types
 	fieldTypeSeedData := []struct{ Type, Label string }{
 		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
 		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
 		{"select", "Select"}, {"media", "Media"},
 		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
 		{"email", "Email"}, {"url", "URL"},
-		{"_id", "ID Reference"},
+		{"_id", "ID Reference"}, {"_title", "Title"},
 	}
 	for _, ft := range fieldTypeSeedData {
 		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})
@@ -1819,14 +1819,14 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Seed field_types and admin_field_types with the 15 built-in field types
+	// 20. Seed field_types and admin_field_types with the built-in field types
 	fieldTypeSeedData := []struct{ Type, Label string }{
 		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
 		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
 		{"select", "Select"}, {"media", "Media"},
 		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
 		{"email", "Email"}, {"url", "URL"},
-		{"_id", "ID Reference"},
+		{"_id", "ID Reference"}, {"_title", "Title"},
 	}
 	for _, ft := range fieldTypeSeedData {
 		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})
@@ -2736,14 +2736,14 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Seed field_types and admin_field_types with the 15 built-in field types
+	// 20. Seed field_types and admin_field_types with the built-in field types
 	fieldTypeSeedData := []struct{ Type, Label string }{
 		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
 		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
 		{"select", "Select"}, {"media", "Media"},
 		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
 		{"email", "Email"}, {"url", "URL"},
-		{"_id", "ID Reference"},
+		{"_id", "ID Reference"}, {"_title", "Title"},
 	}
 	for _, ft := range fieldTypeSeedData {
 		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})

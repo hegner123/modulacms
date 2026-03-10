@@ -47,6 +47,7 @@ type ContentScreen struct {
 	// Select phase (slug tree)
 	SelectTree     []*ContentSelectNode
 	FlatSelectList []*ContentSelectNode
+	TitleMap       map[string]string // ContentDataID → resolved _title field value
 
 	// Route list phase
 	RootContentSummary      []db.ContentDataTopLevel
@@ -224,10 +225,12 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			if summary == nil {
 				return RootContentSummaryFetchResultsMsg{Data: []db.ContentDataTopLevel{}}
 			}
-			return RootContentSummaryFetchResultsMsg{Data: *summary}
+			titleMap := resolveTitleFields(d, *summary)
+			return RootContentSummaryFetchResultsMsg{Data: *summary, TitleMap: titleMap}
 		}
 	case RootContentSummaryFetchResultsMsg:
 		s.RootContentSummary = msg.Data
+		s.TitleMap = msg.TitleMap
 		s.Cursor = 0
 		s.rebuildSelectTree()
 		return s, LoadingStopCmd()
@@ -244,10 +247,12 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			if contentData == nil {
 				return AdminContentDataFetchResultsMsg{Data: []db.AdminContentDataTopLevel{}}
 			}
-			return AdminContentDataFetchResultsMsg{Data: *contentData}
+			titleMap := resolveAdminTitleFields(d, *contentData)
+			return AdminContentDataFetchResultsMsg{Data: *contentData, TitleMap: titleMap}
 		}
 	case AdminContentDataFetchResultsMsg:
 		s.AdminRootContentSummary = msg.Data
+		s.TitleMap = msg.TitleMap
 		s.Cursor = 0
 		s.rebuildSelectTree()
 		return s, LoadingStopCmd()
@@ -1180,9 +1185,9 @@ func (s *ContentScreen) refreshSelectCmd() tea.Cmd {
 // from the current content summary data.
 func (s *ContentScreen) rebuildSelectTree() {
 	if s.AdminMode {
-		s.SelectTree = BuildAdminContentSelectTree(s.AdminRootContentSummary)
+		s.SelectTree = BuildAdminContentSelectTree(s.AdminRootContentSummary, s.TitleMap)
 	} else {
-		s.SelectTree = BuildContentSelectTree(s.RootContentSummary)
+		s.SelectTree = BuildContentSelectTree(s.RootContentSummary, s.TitleMap)
 	}
 	s.FlatSelectList = FlattenSelectTree(s.SelectTree)
 }

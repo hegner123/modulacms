@@ -69,6 +69,10 @@ const (
 
 	// FieldTypeURL stores a URL string with format validation.
 	FieldTypeURL FieldType = "url"
+
+	// FieldTypeTitle marks the field as the display title for this content item.
+	// Used by the CMS to resolve human-readable titles in tree navigation.
+	FieldTypeTitle FieldType = "_title"
 )
 
 // RouteType classifies how a route maps incoming URL patterns to content or

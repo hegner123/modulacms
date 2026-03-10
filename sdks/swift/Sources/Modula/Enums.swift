@@ -22,6 +22,7 @@ public enum FieldType: String, Codable, Sendable {
     case slug
     case email
     case url
+    case title = "_title"
 }
 
 // MARK: - RouteType

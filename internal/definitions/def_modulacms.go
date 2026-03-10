@@ -19,7 +19,7 @@ func init() {
 				Label: "Page",
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
-					{Name: "title", Label: "Title", Type: types.FieldTypeText},
+					{Name: "title", Label: "Title", Type: types.FieldTypeTitle},
 					{Name: "slug", Label: "Slug", Type: types.FieldTypeSlug},
 					{Name: "description", Label: "Description", Type: types.FieldTypeTextarea},
 					{Name: "featured_image", Label: "Featured Image", Type: types.FieldTypeMedia},
@@ -190,7 +190,7 @@ func init() {
 				Label: "Post",
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
-					{Name: "title", Label: "Title", Type: types.FieldTypeText},
+					{Name: "title", Label: "Title", Type: types.FieldTypeTitle},
 					{Name: "slug", Label: "Slug", Type: types.FieldTypeSlug},
 					{Name: "excerpt", Label: "Excerpt", Type: types.FieldTypeTextarea},
 					{Name: "featured_image", Label: "Featured Image", Type: types.FieldTypeMedia},
@@ -222,7 +222,7 @@ func init() {
 				Label: "Case Study",
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
-					{Name: "title", Label: "Title", Type: types.FieldTypeText},
+					{Name: "title", Label: "Title", Type: types.FieldTypeTitle},
 					{Name: "slug", Label: "Slug", Type: types.FieldTypeSlug},
 					{Name: "company_name", Label: "Company Name", Type: types.FieldTypeText},
 					{Name: "company_logo", Label: "Company Logo", Type: types.FieldTypeMedia},
@@ -247,7 +247,7 @@ func init() {
 				Label: "Documentation",
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
-					{Name: "title", Label: "Title", Type: types.FieldTypeText},
+					{Name: "title", Label: "Title", Type: types.FieldTypeTitle},
 					{Name: "slug", Label: "Slug", Type: types.FieldTypeSlug},
 					{Name: "chapter", Label: "Chapter", Type: types.FieldTypeText},
 					{Name: "sort_order", Label: "Sort Order", Type: types.FieldTypeNumber},
@@ -324,7 +324,7 @@ func init() {
 				Label: "Menu",
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
-					{Name: "title", Label: "Title", Type: types.FieldTypeText},
+					{Name: "title", Label: "Title", Type: types.FieldTypeTitle},
 					{Name: "slug", Label: "Slug", Type: types.FieldTypeSlug},
 					{Name: "position", Label: "Position", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["header","sidebar"]}`)},
 				},
@@ -434,7 +434,7 @@ func init() {
 				Label: "Footer",
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
-					{Name: "title", Label: "Title", Type: types.FieldTypeText},
+					{Name: "title", Label: "Title", Type: types.FieldTypeTitle},
 					{Name: "slug", Label: "Slug", Type: types.FieldTypeSlug},
 					{Name: "copyright", Label: "Copyright", Type: types.FieldTypeText},
 				},

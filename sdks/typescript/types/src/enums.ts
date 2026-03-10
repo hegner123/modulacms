@@ -31,6 +31,7 @@ export type FieldType =
   | 'slug'
   | 'email'
   | 'url'
+  | '_title'
 
 /**
  * Classifies how a route maps incoming URL patterns to content or behavior.

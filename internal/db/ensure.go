@@ -22,6 +22,9 @@ func EnsureSystemData(ctx context.Context, driver DbDriver) error {
 	if err := ensureFieldType(ctx, driver); err != nil {
 		return fmt.Errorf("ensureFieldType: %w", err)
 	}
+	if err := ensureTitleFieldType(ctx, driver); err != nil {
+		return fmt.Errorf("ensureTitleFieldType: %w", err)
+	}
 	if err := ensureReferenceDatatype(ctx, driver); err != nil {
 		return fmt.Errorf("ensureReferenceDatatype: %w", err)
 	}
@@ -53,6 +56,49 @@ func ensureFieldType(ctx context.Context, driver DbDriver) error {
 	}
 
 	// Check admin_field_types
+	_, err = driver.GetAdminFieldTypeByType(ftType)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) && !isNotFound(err) {
+			return fmt.Errorf("check admin_field_types for %q: %w", ftType, err)
+		}
+		systemUserID, userErr := findSystemUserID(driver)
+		if userErr != nil {
+			return fmt.Errorf("find system user for admin_field_type seed: %w", userErr)
+		}
+		ac := audited.Ctx(types.NewNodeID(), systemUserID, "ensure-system-data", "system")
+		_, err = driver.CreateAdminFieldType(ctx, ac, CreateAdminFieldTypeParams{Type: ftType, Label: ftLabel})
+		if err != nil {
+			return fmt.Errorf("create admin_field_type %q: %w", ftType, err)
+		}
+		utility.DefaultLogger.Info("Created missing admin_field_type", "type", ftType)
+	}
+
+	return nil
+}
+
+// ensureTitleFieldType checks that "_title" exists in both field_types
+// and admin_field_types tables, creating it if missing.
+func ensureTitleFieldType(ctx context.Context, driver DbDriver) error {
+	const ftType = "_title"
+	const ftLabel = "Title"
+
+	_, err := driver.GetFieldTypeByType(ftType)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) && !isNotFound(err) {
+			return fmt.Errorf("check field_types for %q: %w", ftType, err)
+		}
+		systemUserID, userErr := findSystemUserID(driver)
+		if userErr != nil {
+			return fmt.Errorf("find system user for field_type seed: %w", userErr)
+		}
+		ac := audited.Ctx(types.NewNodeID(), systemUserID, "ensure-system-data", "system")
+		_, err = driver.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ftType, Label: ftLabel})
+		if err != nil {
+			return fmt.Errorf("create field_type %q: %w", ftType, err)
+		}
+		utility.DefaultLogger.Info("Created missing field_type", "type", ftType)
+	}
+
 	_, err = driver.GetAdminFieldTypeByType(ftType)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) && !isNotFound(err) {

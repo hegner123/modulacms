@@ -1,11 +1,13 @@
 package tui
 
 import (
+	"context"
 	"sort"
 	"strings"
 
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // ContentSelectNodeKind discriminates the three node types in the select tree.
@@ -56,7 +58,7 @@ func (n *ContentSelectNode) hasChildren() bool {
 // top-level content items. Routed items are grouped by slug prefix under a
 // "Pages" section. Standalone items (no route) are grouped by datatype label
 // under a "Standalone" section.
-func BuildContentSelectTree(items []db.ContentDataTopLevel) []*ContentSelectNode {
+func BuildContentSelectTree(items []db.ContentDataTopLevel, titleMap map[string]string) []*ContentSelectNode {
 	var routed, globals, standalone []db.ContentDataTopLevel
 	for i := range items {
 		if items[i].RouteID.Valid {
@@ -77,19 +79,19 @@ func BuildContentSelectTree(items []db.ContentDataTopLevel) []*ContentSelectNode
 
 	if len(globals) > 0 {
 		roots = append(roots, &ContentSelectNode{Kind: NodeSection, Label: "Globals"})
-		roots = append(roots, buildStandaloneNodes(globals)...)
+		roots = append(roots, buildStandaloneNodes(globals, titleMap)...)
 	}
 
 	if len(standalone) > 0 {
 		roots = append(roots, &ContentSelectNode{Kind: NodeSection, Label: "Standalone"})
-		roots = append(roots, buildStandaloneNodes(standalone)...)
+		roots = append(roots, buildStandaloneNodes(standalone, titleMap)...)
 	}
 
 	return roots
 }
 
 // BuildAdminContentSelectTree builds the slug tree for admin content items.
-func BuildAdminContentSelectTree(items []db.AdminContentDataTopLevel) []*ContentSelectNode {
+func BuildAdminContentSelectTree(items []db.AdminContentDataTopLevel, titleMap map[string]string) []*ContentSelectNode {
 	var routed, globals, standalone []db.AdminContentDataTopLevel
 	for i := range items {
 		if items[i].AdminRouteID.Valid {
@@ -110,12 +112,12 @@ func BuildAdminContentSelectTree(items []db.AdminContentDataTopLevel) []*Content
 
 	if len(globals) > 0 {
 		roots = append(roots, &ContentSelectNode{Kind: NodeSection, Label: "Globals"})
-		roots = append(roots, buildAdminStandaloneNodes(globals)...)
+		roots = append(roots, buildAdminStandaloneNodes(globals, titleMap)...)
 	}
 
 	if len(standalone) > 0 {
 		roots = append(roots, &ContentSelectNode{Kind: NodeSection, Label: "Standalone"})
-		roots = append(roots, buildAdminStandaloneNodes(standalone)...)
+		roots = append(roots, buildAdminStandaloneNodes(standalone, titleMap)...)
 	}
 
 	return roots
@@ -309,7 +311,7 @@ func buildAdminRoutedNodes(items []db.AdminContentDataTopLevel) []*ContentSelect
 }
 
 // buildStandaloneNodes groups standalone content by datatype label.
-func buildStandaloneNodes(items []db.ContentDataTopLevel) []*ContentSelectNode {
+func buildStandaloneNodes(items []db.ContentDataTopLevel, titleMap map[string]string) []*ContentSelectNode {
 	sort.Slice(items, func(i, j int) bool {
 		if items[i].DatatypeLabel != items[j].DatatypeLabel {
 			return items[i].DatatypeLabel < items[j].DatatypeLabel
@@ -343,7 +345,10 @@ func buildStandaloneNodes(items []db.ContentDataTopLevel) []*ContentSelectNode {
 			Expand: true,
 		}
 		for _, item := range g.items {
-			title := string(item.RouteTitle)
+			title := titleMap[string(item.ContentDataID)]
+			if title == "" {
+				title = string(item.RouteTitle)
+			}
 			if title == "" {
 				title = item.DatatypeLabel
 			}
@@ -365,7 +370,7 @@ func buildStandaloneNodes(items []db.ContentDataTopLevel) []*ContentSelectNode {
 }
 
 // buildAdminStandaloneNodes is the admin variant of buildStandaloneNodes.
-func buildAdminStandaloneNodes(items []db.AdminContentDataTopLevel) []*ContentSelectNode {
+func buildAdminStandaloneNodes(items []db.AdminContentDataTopLevel, titleMap map[string]string) []*ContentSelectNode {
 	sort.Slice(items, func(i, j int) bool {
 		if items[i].DatatypeLabel != items[j].DatatypeLabel {
 			return items[i].DatatypeLabel < items[j].DatatypeLabel
@@ -399,7 +404,10 @@ func buildAdminStandaloneNodes(items []db.AdminContentDataTopLevel) []*ContentSe
 			Expand: true,
 		}
 		for _, item := range g.items {
-			title := string(item.RouteTitle)
+			title := titleMap[string(item.AdminContentDataID)]
+			if title == "" {
+				title = string(item.RouteTitle)
+			}
 			if title == "" {
 				title = item.DatatypeLabel
 			}
@@ -464,4 +472,110 @@ func slugLabel(slug string) string {
 		return "/"
 	}
 	return slug
+}
+
+// resolveTitleFields builds a map of ContentDataID → title by finding fields
+// with type _title and looking up their content field values. Only queries for
+// standalone/global items (no route).
+func resolveTitleFields(d db.DbDriver, items []db.ContentDataTopLevel) map[string]string {
+	// Collect content IDs of standalone/global items that need title resolution
+	var contentIDs []types.ContentID
+	for _, item := range items {
+		if item.RouteID.Valid {
+			continue
+		}
+		contentIDs = append(contentIDs, item.ContentDataID)
+	}
+	if len(contentIDs) == 0 {
+		return nil
+	}
+
+	// Find all _title field IDs
+	allFields, err := d.ListFields()
+	if err != nil || allFields == nil {
+		utility.DefaultLogger.Error("resolveTitleFields: ListFields failed", err)
+		return nil
+	}
+	titleFieldIDs := make(map[string]struct{})
+	for _, f := range *allFields {
+		if f.Type == types.FieldTypeTitle {
+			titleFieldIDs[string(f.FieldID)] = struct{}{}
+		}
+	}
+	if len(titleFieldIDs) == 0 {
+		return nil
+	}
+
+	// Batch-fetch content fields for these content items
+	contentFields, err := d.ListContentFieldsByContentDataIDs(context.Background(), contentIDs, "")
+	if err != nil || contentFields == nil {
+		utility.DefaultLogger.Error("resolveTitleFields: ListContentFieldsByContentDataIDs failed", err)
+		return nil
+	}
+
+	// Build title map: first _title field value wins per content item
+	titleMap := make(map[string]string)
+	for _, cf := range *contentFields {
+		if !cf.FieldID.Valid {
+			continue
+		}
+		if _, ok := titleFieldIDs[string(cf.FieldID.ID)]; !ok {
+			continue
+		}
+		cid := string(cf.ContentDataID.ID)
+		if _, exists := titleMap[cid]; !exists && cf.FieldValue != "" {
+			titleMap[cid] = cf.FieldValue
+		}
+	}
+	return titleMap
+}
+
+// resolveAdminTitleFields is the admin variant of resolveTitleFields.
+func resolveAdminTitleFields(d db.DbDriver, items []db.AdminContentDataTopLevel) map[string]string {
+	var contentIDs []types.AdminContentID
+	for _, item := range items {
+		if item.AdminRouteID.Valid {
+			continue
+		}
+		contentIDs = append(contentIDs, item.AdminContentDataID)
+	}
+	if len(contentIDs) == 0 {
+		return nil
+	}
+
+	allFields, err := d.ListAdminFields()
+	if err != nil || allFields == nil {
+		utility.DefaultLogger.Error("resolveAdminTitleFields: ListAdminFields failed", err)
+		return nil
+	}
+	titleFieldIDs := make(map[string]struct{})
+	for _, f := range *allFields {
+		if f.Type == types.FieldTypeTitle {
+			titleFieldIDs[string(f.AdminFieldID)] = struct{}{}
+		}
+	}
+	if len(titleFieldIDs) == 0 {
+		return nil
+	}
+
+	contentFields, err := d.ListAdminContentFieldsByContentDataIDs(context.Background(), contentIDs, "")
+	if err != nil || contentFields == nil {
+		utility.DefaultLogger.Error("resolveAdminTitleFields: ListAdminContentFieldsByContentDataIDs failed", err)
+		return nil
+	}
+
+	titleMap := make(map[string]string)
+	for _, cf := range *contentFields {
+		if !cf.AdminFieldID.Valid {
+			continue
+		}
+		if _, ok := titleFieldIDs[string(cf.AdminFieldID.ID)]; !ok {
+			continue
+		}
+		cid := string(cf.AdminContentDataID.ID)
+		if _, exists := titleMap[cid]; !exists && cf.AdminFieldValue != "" {
+			titleMap[cid] = cf.AdminFieldValue
+		}
+	}
+	return titleMap
 }

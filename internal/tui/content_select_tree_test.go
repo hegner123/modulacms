@@ -31,7 +31,7 @@ func TestBuildContentSelectTree_RoutedSorting(t *testing.T) {
 		makeTopLevel("/about/visit", "Page", "_root", true),
 	}
 
-	tree := BuildContentSelectTree(items)
+	tree := BuildContentSelectTree(items, nil)
 
 	// Flatten fully expanded
 	flat := FlattenSelectTree(tree)
@@ -54,7 +54,7 @@ func TestBuildContentSelectTree_CollapsedGroup(t *testing.T) {
 		makeTopLevel("/about/team", "Page", "_root", true),
 	}
 
-	tree := BuildContentSelectTree(items)
+	tree := BuildContentSelectTree(items, nil)
 	flat := FlattenSelectTree(tree)
 
 	// Find the /about node and collapse it
@@ -82,7 +82,7 @@ func TestBuildContentSelectTree_SectionHeaderExclusion(t *testing.T) {
 		makeTopLevel("/", "Page", "_root", true),
 	}
 
-	tree := BuildContentSelectTree(items)
+	tree := BuildContentSelectTree(items, nil)
 	flat := FlattenSelectTree(tree)
 
 	for _, n := range flat {
@@ -102,7 +102,7 @@ func TestBuildContentSelectTree_MixedRoutedStandalone(t *testing.T) {
 	items[1].RouteTitle = "Main Menu"
 	items[3].RouteTitle = "Site Settings"
 
-	tree := BuildContentSelectTree(items)
+	tree := BuildContentSelectTree(items, nil)
 	flat := FlattenSelectTree(tree)
 
 	// Routed items come first, then standalone
@@ -130,7 +130,7 @@ func TestBuildContentSelectTree_GlobalsSectionSeparation(t *testing.T) {
 	items[2].RouteTitle = "Footer Nav"
 	items[3].RouteTitle = "Hero Banner"
 
-	tree := BuildContentSelectTree(items)
+	tree := BuildContentSelectTree(items, nil)
 
 	// Check section headers exist in correct order
 	var sections []string
@@ -166,7 +166,7 @@ func TestBuildContentSelectTree_StandaloneGrouping(t *testing.T) {
 	items[1].RouteTitle = "Footer"
 	items[2].RouteTitle = "Site Settings"
 
-	tree := BuildContentSelectTree(items)
+	tree := BuildContentSelectTree(items, nil)
 	flat := FlattenSelectTree(tree)
 
 	// Should have: Config group, Site Settings, Menu group, Main Menu, Footer
@@ -239,7 +239,7 @@ func TestBuildAdminContentSelectTree(t *testing.T) {
 		},
 	}
 
-	tree := BuildAdminContentSelectTree(items)
+	tree := BuildAdminContentSelectTree(items, nil)
 	flat := FlattenSelectTree(tree)
 
 	if len(flat) != 2 {
