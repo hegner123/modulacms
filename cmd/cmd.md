@@ -13,7 +13,7 @@ The package uses cobra.Command structures with RunE handlers that load configura
 Persistent flags available to all commands:
 
 ```go
---config <path>    Path to configuration file (default: config.json)
+--config <path>    Path to configuration file (default: modula.config.json)
 -v, --verbose      Enable debug logging
 ```
 
@@ -80,7 +80,7 @@ Returns errors from server startup, configuration loading, or database initializ
 ```go
 modulacms serve
 modulacms serve --wizard
-modulacms serve --config=/etc/modulacms/config.json
+modulacms serve --config=/etc/modulacms/modula.config.json
 ```
 
 #### Wizard Flag
@@ -201,7 +201,7 @@ var tuiCmd = &cobra.Command{
 }
 ```
 
-Launches the Bubbletea terminal UI without starting HTTP/HTTPS/SSH servers. Connects directly to the database configured in config.json.
+Launches the Bubbletea terminal UI without starting HTTP/HTTPS/SSH servers. Connects directly to the database configured in modula.config.json.
 
 Loads configuration and initializes database before starting TUI. Initializes model with tui.InitialModel() and runs with tui.CliRun(). On exit, sends SIGTERM to current process for clean shutdown.
 
@@ -209,7 +209,7 @@ Returns errors from configuration loading, database initialization, or TUI execu
 
 ```go
 modulacms tui
-modulacms tui --config /path/to/config.json
+modulacms tui --config /path/to/modula.config.json
 ```
 
 ### cert Command
@@ -454,7 +454,7 @@ Returns errors from loadConfig() or utility.FormatJSON().
 
 ```go
 modulacms config show
-modulacms config show --config=/etc/modulacms/config.json
+modulacms config show --config=/etc/modulacms/modula.config.json
 ```
 
 #### configValidateCmd

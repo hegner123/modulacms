@@ -21,7 +21,7 @@ services:
       - sqlite_cms_data:/app/data
       - sqlite_cms_ssh:/app/.ssh
       - sqlite_cms_backups:/app/backups
-      - ./config.sqlite.json:/app/config.json:ro
+      - ./config.sqlite.json:/app/modula.config.json:ro
     env_file:
       - .env
     depends_on:

@@ -7,7 +7,7 @@
 
 ## Configuration File
 
-### config.json
+### modula.config.json
 
 ```json
 {
@@ -155,7 +155,7 @@ validFormats := config.GetValidOutputFormats()
 
 ## Environment Variables
 
-### Override config.json with environment variables
+### Override modula.config.json with environment variables
 
 ```bash
 # Set output format via env var
@@ -335,7 +335,7 @@ func SetupRoutes(cfg *config.Config, driver db.DbDriver) {
 ### When output_format is empty or missing
 
 ```go
-// In config.json
+// In modula.config.json
 {
   "output_format": ""  // Defaults to raw (no transformation)
 }
@@ -484,7 +484,7 @@ func CreateHandler(cfg *config.Config) http.HandlerFunc {
 
 ### Configuration Methods
 
-1. **config.json** - Static configuration
+1. **modula.config.json** - Static configuration
 2. **Environment variables** - Runtime override
 3. **Query parameters** - Per-request override
 4. **Accept headers** - Content negotiation

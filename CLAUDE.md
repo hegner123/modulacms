@@ -43,7 +43,7 @@ When a change touches multiple systems, follow this sequence:
 - The `DbDriver` interface in `internal/db/db.go` is the contract for all database operations. Any new query must be added to this interface and implemented on all three wrapper structs.
 - Audited mutations take `(context.Context, audited.AuditContext, Params)` and record change events.
 - NULL handling uses helper functions (`NullStringToString`, `StringToNullString`, `NullTimeToString`, etc.) in `internal/db/convert.go`.
-- Config is passed through via `config.Config` struct, not environment variables (though env vars can be referenced in config.json via `${VAR}` syntax).
+- Config is passed through via `config.Config` struct, not environment variables (though env vars can be referenced in modula.config.json via `${VAR}` syntax).
 - The TUI communicates via Bubbletea messages -- state changes happen in `Update()`, rendering in `View()`, side effects in `tea.Cmd` functions.
 - Permission labels follow the `resource:operation` format (e.g., `content:read`, `media:create`). Use `middleware.ValidatePermissionLabel()` before storing new labels. System-protected roles/permissions (bootstrap data) cannot be deleted or renamed via API.
 - Route handlers that modify roles or permissions must trigger an async `pc.Load(driver)` to refresh the PermissionCache. Registration always assigns the `viewer` role; non-admins cannot set or change roles.
@@ -363,7 +363,7 @@ Client -> Middleware Chain (CORS, Sessions, Auth, Rate Limit, Permissions, Audit
 
 ### Tri-Database Pattern
 
-ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `config.json`'s `db_driver` field. The architecture:
+ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `modula.config.json`'s `db_driver` field. The architecture:
 
 1. **sqlc generates** per-database Go code from SQL queries in `sql/schema/` into `internal/db-sqlite/`, `internal/db-mysql/`, `internal/db-psql/`
 2. **`internal/db/db.go`** defines the `DbDriver` interface (150+ methods) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`) that each implement it
@@ -451,7 +451,7 @@ Uses stdlib `http.ServeMux` (Go 1.22+ pattern routing). Endpoints are registered
 
 ### Configuration (internal/config/)
 
-Loaded from `config.json` at project root. Key fields: `db_driver`, `port`, `ssl_port`, `ssh_port`, `bucket_*` (S3), `oauth_*`, `cors_*`, `plugin_*`, `observability_*`. If no config exists at startup, auto-setup runs with defaults.
+Loaded from `modula.config.json` at project root. Key fields: `db_driver`, `port`, `ssl_port`, `ssh_port`, `bucket_*` (S3), `oauth_*`, `cors_*`, `plugin_*`, `observability_*`. If no config exists at startup, auto-setup runs with defaults.
 
 ## SQL Schema Organization
 

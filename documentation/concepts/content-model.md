@@ -203,7 +203,7 @@ type ContentRelation struct {
 
 Relations are created when a content node's `_id`-type field references another content node. `SortOrder` controls the display ordering when multiple relations exist on the same field.
 
-At content delivery time, `_id` fields can compose the referenced node's subtree inline. The composition depth limit is configurable via `composition_max_depth` in `config.json` (default: 10).
+At content delivery time, `_id` fields can compose the referenced node's subtree inline. The composition depth limit is configurable via `composition_max_depth` in `modula.config.json` (default: 10).
 
 ## Admin Content System
 

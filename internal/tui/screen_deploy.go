@@ -217,7 +217,7 @@ func (s *DeployScreen) View(ctx AppContext) string {
 // renderEnvsList renders the deploy environments list.
 func (s *DeployScreen) renderEnvsList() string {
 	if len(s.Environments) == 0 {
-		return "(no environments configured)\n\nAdd deploy_environments\nto config.json"
+		return "(no environments configured)\n\nAdd deploy_environments\nto modula.config.json"
 	}
 
 	lines := make([]string, 0, len(s.Environments))

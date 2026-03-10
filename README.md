@@ -26,7 +26,7 @@ Modula uses a dual content schema -- admin tables for editorial work and public 
 
 - **Runtime schema** -- define datatypes, attach fields, create content, and configure routes entirely through the API, admin panel, or TUI; no migrations, no redeploys
 - **Dual content schema** -- parallel admin and client table sets (`admin_content_data` / `content_data`, `admin_content_fields` / `content_fields`, etc.) give you a second full content layer with no prescribed purpose. Agencies use it to build custom admin panels where features toggle per client and upgrades distribute universally -- but it is just data, so use it for whatever you need
-- **Tri-database support** -- switch between SQLite, MySQL, and PostgreSQL by changing one field in `config.json`; the `DbDriver` interface (~150 methods) abstracts all differences
+- **Tri-database support** -- switch between SQLite, MySQL, and PostgreSQL by changing one field in `modula.config.json`; the `DbDriver` interface (~150 methods) abstracts all differences
 - **Six output formats** -- content responses can mimic Contentful, Sanity, Strapi, WordPress, or use Modula clean/raw format; set a default or override per request with `?format=`
 - **Multi-CMS import** -- bulk import content from Contentful, Sanity, Strapi, WordPress, or Modula clean format with automatic datatype and field creation
 - **Built-in backup and deploy** -- ZIP backups (SQL dump + media) stored locally or in S3; content sync between environments with export, import, push, pull, and snapshot restore with dry-run validation
@@ -46,7 +46,7 @@ Plugins always tell you what they need. Every plugin declares its capabilities a
 
 - **Plugin manifest** -- plugins declare capabilities (hooks, routes, core table access) in `plugin_info`; the system enforces exactly what was declared and nothing more
 - **Plugin safety** -- operation counting (default 1000 ops per checkout), per-hook timeouts (2000ms), per-event timeouts (5000ms), circuit breaker on consecutive failures, sandboxed Lua VMs with stripped globals, and table namespace isolation between plugins
-- **Single config file** -- `config.json` contains every setting: database, server ports, auth, OAuth, S3 storage, CORS, email, plugins, observability, i18n, and update preferences. Environment variables are referenced as `${VAR}` or `${VAR:-default}`, not scattered across the system
+- **Single config file** -- `modula.config.json` contains every setting: database, server ports, auth, OAuth, S3 storage, CORS, email, plugins, observability, i18n, and update preferences. Environment variables are referenced as `${VAR}` or `${VAR:-default}`, not scattered across the system
 - **Config introspection** -- `modula config fields` lists all 190+ config fields with metadata, `modula config validate` checks required fields, and `PATCH /api/v1/admin/config` with `GET /api/v1/admin/config/meta` expose field metadata programmatically
 - **Audit trail** -- every database mutation atomically records a `change_event` with operation type, old and new JSON values, user ID, request ID, IP address, hybrid logical clock timestamp, and optional metadata
 - **Request traceability** -- every request gets a UUID v4 `X-Request-ID` that flows through middleware, handlers, audit records, and logs for end-to-end tracing
@@ -65,7 +65,7 @@ Plugins always tell you what they need. Every plugin declares its capabilities a
 ## Quick Start
 
 ```bash
-# Build and run (auto-creates config.json with defaults on first run)
+# Build and run (auto-creates modula.config.json with defaults on first run)
 just run
 
 # Or build a local binary
@@ -76,7 +76,7 @@ just dev
 ./modula serve --wizard
 ```
 
-On first run without a `config.json`, Modula generates one with defaults, creates the database schema, bootstraps RBAC roles (admin, editor, viewer), and logs a random admin password. The SSH server starts immediately; HTTP/HTTPS start once the database is ready.
+On first run without a `modula.config.json`, Modula generates one with defaults, creates the database schema, bootstraps RBAC roles (admin, editor, viewer), and logs a random admin password. The SSH server starts immediately; HTTP/HTTPS start once the database is ready.
 
 **Default Ports:**
 
@@ -192,7 +192,7 @@ One codebase supports three databases through a layered abstraction:
 3. **`DbDriver` interface** (~150 methods in `internal/db/db.go`) provides the contract
 4. **Wrapper structs** (`Database`, `MysqlDatabase`, `PsqlDatabase`) implement the interface, converting between sqlc types and application types
 
-Switch databases by setting `db_driver` in `config.json` to `"sqlite"`, `"mysql"`, or `"postgres"`.
+Switch databases by setting `db_driver` in `modula.config.json` to `"sqlite"`, `"mysql"`, or `"postgres"`.
 
 ### Content Model
 
@@ -411,7 +411,7 @@ UI features: responsive panel layouts with three screen modes (normal/wide/full)
 
 ## Connect System
 
-The `connect` command provides a project registry for managing multiple CMS instances and environments from a single CLI. Each project can have multiple environments (local, dev, staging, prod), each pointing to a different `config.json`. The registry lives at `~/.modula/configs.json`.
+The `connect` command provides a project registry for managing multiple CMS instances and environments from a single CLI. Each project can have multiple environments (local, dev, staging, prod), each pointing to a different `modula.config.json`. The registry lives at `~/.modula/configs.json`.
 
 ### Local vs Remote
 
@@ -427,8 +427,8 @@ Remote connections include:
 
 ```bash
 # Register a project environment
-modula connect set mysite local ./config.json
-modula connect set mysite prod /srv/mysite/config.json
+modula connect set mysite local ./modula.config.json
+modula connect set mysite prod /srv/mysite/modula.config.json
 
 # Connect to a project
 modula connect                      # default project, default env
@@ -450,7 +450,7 @@ modula connect remove mysite --env dev  # remove single environment
 1. Both name and env given: use that exact project + environment
 2. Only name given: use that project's default environment
 3. Neither given: use the default project's default environment
-4. Registry empty: look for `config.json` in the current directory
+4. Registry empty: look for `modula.config.json` in the current directory
 
 ### Config Fields
 
@@ -533,7 +533,7 @@ Tools cover content CRUD, content fields, batch operations, schema management, m
 
 ## Configuration
 
-Configuration lives in `config.json` at the project root. Environment variables can be referenced as `${VAR}` or `${VAR:-default}`.
+Configuration lives in `modula.config.json` at the project root. Environment variables can be referenced as `${VAR}` or `${VAR:-default}`.
 
 Key configuration categories:
 
@@ -743,7 +743,7 @@ modula [--config=path] [--verbose] <command>
   backup restore     Restore from backup
   backup list        List backup history
   config show        Print config as JSON
-  config validate    Validate config.json
+  config validate    Validate modula.config.json
   config set         Update config field
   config fields      List all config fields with metadata
   cert generate      Generate self-signed certificates

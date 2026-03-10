@@ -138,7 +138,7 @@ Content nodes can reference other content nodes through `_id`-type fields. At de
 
 Referenced datatypes are resolved from their own published snapshots, giving both predictability (the reference is a specific published version) and shared-content flexibility (update the reference once, and all consumers see the change on next publish).
 
-The composition depth limit prevents infinite recursion. Configure it via `composition_max_depth` in `config.json` (default: 10).
+The composition depth limit prevents infinite recursion. Configure it via `composition_max_depth` in `modula.config.json` (default: 10).
 
 ## Tradeoffs
 

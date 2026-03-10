@@ -257,7 +257,7 @@ In the delivered JSON, children appear as a `nodes` array (ordered by the siblin
 
 ### Output Formats
 
-The content delivery endpoint supports multiple output formats that restructure the JSON to match other CMS conventions. Set the default format in `config.json` with `output_format`, or override per-request with the `format` query parameter:
+The content delivery endpoint supports multiple output formats that restructure the JSON to match other CMS conventions. Set the default format in `modula.config.json` with `output_format`, or override per-request with the `format` query parameter:
 
 ```bash
 curl "http://localhost:8080/api/v1/content/about?format=clean"
@@ -286,4 +286,4 @@ Available formats: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, `raw`
 - **Orphan detection.** During tree assembly, nodes whose `parent_id` references a nonexistent node are tracked as orphans. The tree builder retries linking them (in case of out-of-order processing) with a retry limit to detect circular references.
 - **Content field values include route_id.** The `route_id` is denormalized on content field records for query performance. Always include `route_id` when creating content fields.
 - **Deleting a node** does not automatically delete its children. Update child nodes to reassign them or delete them separately. Deleting the root node of a route's tree leaves the route without content.
-- **Tree composition.** When a content field of type `_id` holds a reference to another content data node, the delivery endpoint can compose the referenced node's subtree inline. The composition depth limit is configurable via `composition_max_depth` in `config.json` (default: 10).
+- **Tree composition.** When a content field of type `_id` holds a reference to another content data node, the delivery endpoint can compose the referenced node's subtree inline. The composition depth limit is configurable via `composition_max_depth` in `modula.config.json` (default: 10).

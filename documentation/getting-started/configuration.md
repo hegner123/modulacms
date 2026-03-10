@@ -1,13 +1,13 @@
 # Configuration
 
-ModulaCMS is configured through a single `config.json` file. The file is created automatically on first run with development defaults, or you can create it manually. Most fields have sensible defaults; you only need to set the fields relevant to your deployment.
+ModulaCMS is configured through a single `modula.config.json` file. The file is created automatically on first run with development defaults, or you can create it manually. Most fields have sensible defaults; you only need to set the fields relevant to your deployment.
 
 ## File Location
 
-By default, ModulaCMS looks for `config.json` in the working directory. Override the path with the `--config` flag:
+By default, ModulaCMS looks for `modula.config.json` in the working directory. Override the path with the `--config` flag:
 
 ```bash
-./modula-x86 serve --config /etc/modulacms/config.json
+./modula-x86 serve --config /etc/modulacms/modula.config.json
 ```
 
 ## Viewing and Validating
@@ -294,7 +294,7 @@ Fields that are hot-reloadable (take effect immediately):
 - Update settings
 - Output format and upload size
 
-You can update hot-reloadable fields through the admin panel at `/admin/settings`, through the REST API, or by editing `config.json` directly. When updating via the API or admin panel, changes are saved to `config.json` and applied immediately. Changes made by editing the file directly require the config to be reloaded.
+You can update hot-reloadable fields through the admin panel at `/admin/settings`, through the REST API, or by editing `modula.config.json` directly. When updating via the API or admin panel, changes are saved to `modula.config.json` and applied immediately. Changes made by editing the file directly require the config to be reloaded.
 
 ### API-Based Configuration
 
@@ -348,7 +348,7 @@ When updating configuration via the API, redacted values (`********`) are automa
 
 ## Full Default Configuration
 
-The default `config.json` created on first run uses these values:
+The default `modula.config.json` created on first run uses these values:
 
 ```json
 {

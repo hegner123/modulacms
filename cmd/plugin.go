@@ -65,7 +65,7 @@ Examples:
   modula plugin disable my-plugin`,
 }
 
-// pluginAPIClient reads config.json for the server port and the admin API token
+// pluginAPIClient reads modula.config.json for the server port and the admin API token
 // from <config_dir>/.plugin-api-token (or --token flag override). Returns a
 // configured apiClient targeting localhost:<port> with Bearer token auth.
 //
@@ -144,7 +144,7 @@ var pluginListCmd = &cobra.Command{
 	Short: "List installed plugins",
 	Long: `Scan the plugin directory and print a summary table of all discovered plugins.
 
-Reads from the plugin_directory configured in config.json (default: ./plugins/).
+Reads from the plugin_directory configured in modula.config.json (default: ./plugins/).
 Each subdirectory is checked for a valid init.lua manifest. Plugins with parse
 errors are listed as "[invalid]".
 

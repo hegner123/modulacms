@@ -166,7 +166,7 @@ This endpoint is public (no authentication required).
 
 ### Output Formats
 
-The response structure can be configured to match other CMS conventions. Set the default in `config.json`:
+The response structure can be configured to match other CMS conventions. Set the default in `modula.config.json`:
 
 ```json
 {
@@ -191,7 +191,7 @@ curl "http://localhost:8080/api/v1/content/homepage?format=contentful"
 
 ## Configuration
 
-Route-related configuration in `config.json`:
+Route-related configuration in `modula.config.json`:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|

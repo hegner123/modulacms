@@ -69,7 +69,7 @@ testing-config.json
 #certs
 certs/
 *.pem
-config.json
+modula.config.json
 config.*.json
 !tsconfig*.json
 bookmark.md

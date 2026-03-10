@@ -18,14 +18,14 @@ var initProjectName string
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize a new project and register it",
-	Long: `Initialize a new Modula project: create config.json, set up the database,
+	Long: `Initialize a new Modula project: create modula.config.json, set up the database,
 seed bootstrap data, and register the project in ~/.modula/configs.json.
 
 This is the same as 'install' but also registers the project in the global
 registry so it can be accessed via 'modula connect'.
 
 The project name defaults to the current directory name. The environment
-is registered as "local" pointing to the config.json in the current directory.
+is registered as "local" pointing to the modula.config.json in the current directory.
 
 Flags:
   --yes, -y          Accept all defaults without prompting

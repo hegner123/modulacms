@@ -89,7 +89,7 @@ Let's Encrypt requires your domain to be publicly accessible on port 80 for HTTP
 
 ## Configuration
 
-Create `/root/app/modula/config.json`:
+Create `/root/app/modula/modula.config.json`:
 
 ```json
 {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -37,14 +38,14 @@ Management commands:
   update     Check for and apply binary updates
 
 Global flags:
-  --config   Path to config.json (default: ./config.json)
+  --config   Path to modula.config.json (default: ./modula.config.json)
   --verbose  Enable debug-level log output`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgPath, "config", "config.json", "Path to configuration file")
+	rootCmd.PersistentFlags().StringVar(&cfgPath, "config", config.DefaultConfigFilename, "Path to configuration file")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable debug logging")
 
 	rootCmd.AddCommand(serveCmd)

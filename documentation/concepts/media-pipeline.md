@@ -141,7 +141,7 @@ curl -X PUT http://localhost:8080/api/v1/media/ \
 
 ## S3 Storage
 
-All media files are stored in S3-compatible object storage. Configure the storage backend in `config.json`:
+All media files are stored in S3-compatible object storage. Configure the storage backend in `modula.config.json`:
 
 | Config Field | Purpose |
 |-------------|---------|

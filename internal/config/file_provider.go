@@ -10,6 +10,11 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// DefaultConfigFilename is the filename the binary looks for when no --config
+// flag is provided. Every default path in the codebase should reference this
+// constant rather than a string literal.
+const DefaultConfigFilename = "modula.config.json"
+
 // Saver defines an interface for persisting configuration to storage.
 type Saver interface {
 	Save(c *Config) error
@@ -23,7 +28,7 @@ type FileProvider struct {
 // NewFileProvider creates a new file-based configuration provider
 func NewFileProvider(path string) *FileProvider {
 	if path == "" {
-		path = "config.json"
+		path = DefaultConfigFilename
 	}
 	return &FileProvider{path: path}
 }

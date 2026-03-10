@@ -291,7 +291,7 @@ All metadata moved to clean location:
 
 ## Configuration
 
-### Add to config.json
+### Add to modula.config.json
 
 ```json
 {

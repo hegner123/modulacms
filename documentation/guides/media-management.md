@@ -14,7 +14,7 @@ ModulaCMS stores media assets in S3-compatible object storage. When you upload a
 
 ## Configuration
 
-Set these fields in `config.json` to connect to your S3-compatible storage provider:
+Set these fields in `modula.config.json` to connect to your S3-compatible storage provider:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|

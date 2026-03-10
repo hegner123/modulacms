@@ -49,7 +49,7 @@ type InstallArguments struct {
 }
 ```
 
-The AdminPasswordHash field is omitted from JSON serialization for security. All other fields map to the final config.json structure.
+The AdminPasswordHash field is omitted from JSON serialization for security. All other fields map to the final modula.config.json structure.
 
 ### InstallError
 
@@ -225,7 +225,7 @@ CheckCerts verifies that localhost.crt and localhost.key exist in the given path
 func CheckConfigExists(path string) error
 ```
 
-CheckConfigExists checks if config file exists at the given path. Uses config.json as default if path is empty. Logs success and returns nil if file exists.
+CheckConfigExists checks if config file exists at the given path. Uses modula.config.json as default if path is empty. Logs success and returns nil if file exists.
 
 ### CheckDb
 
@@ -275,7 +275,7 @@ CreateDbSimple creates database without progress indicators for programmatic use
 func CreateDefaultConfig(path string) error
 ```
 
-CreateDefaultConfig writes a default config.json file at the given path. Creates the file if it does not exist. Truncates and overwrites if it does exist. Returns ErrConfigWrite on failure.
+CreateDefaultConfig writes a default modula.config.json file at the given path. Creates the file if it does not exist. Truncates and overwrites if it does exist. Returns ErrConfigWrite on failure.
 
 ## Interactive Forms
 
@@ -309,7 +309,7 @@ GetCertDir prompts for certificate directory path where localhost.crt and localh
 func GetConfigPath(i *InstallArguments) error
 ```
 
-GetConfigPath prompts for config file save location. Validates that parent directory exists and is writable. Defaults to config.json in current directory.
+GetConfigPath prompts for config file save location. Validates that parent directory exists and is writable. Defaults to modula.config.json in current directory.
 
 ### GetCookie
 

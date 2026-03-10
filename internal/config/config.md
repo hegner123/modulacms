@@ -303,7 +303,7 @@ type FileProvider struct {
 }
 ```
 
-FileProvider loads configuration from a JSON file. The path field specifies the file location. If path is empty, defaults to config.json. Implements the Provider interface via the Get method.
+FileProvider loads configuration from a JSON file. The path field specifies the file location. If path is empty, defaults to modula.config.json. Implements the Provider interface via the Get method.
 
 ### Manager
 
@@ -358,7 +358,7 @@ GetValidOutputFormats returns a slice of all valid output format strings: conten
 func NewFileProvider(path string) *FileProvider
 ```
 
-NewFileProvider creates a file-based configuration provider. If path is empty, defaults to config.json in the current directory. Returns a FileProvider ready to load configuration via the Get method.
+NewFileProvider creates a file-based configuration provider. If path is empty, defaults to modula.config.json in the current directory. Returns a FileProvider ready to load configuration via the Get method.
 
 #### NewManager
 

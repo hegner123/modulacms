@@ -8,7 +8,7 @@ Set up ModulaCMS from source and configure it for your environment.
 
 - [Installation](getting-started/installation.md) -- build from source, prerequisites, platform requirements
 - [Quickstart](getting-started/quickstart.md) -- clone to running in five minutes
-- [Configuration](getting-started/configuration.md) -- `config.json` reference, database drivers, S3, OAuth, CORS
+- [Configuration](getting-started/configuration.md) -- `modula.config.json` reference, database drivers, S3, OAuth, CORS
 
 ## Concepts
 
@@ -40,7 +40,7 @@ Documentation for building plugins. If you are a CMS administrator, the [Managin
 - [Overview](plugins/overview.md) -- architecture, VM pool design, lifecycle states, how plugins interact with the CMS
 - [Tutorial](plugins/tutorial.md) -- build a bookmarks plugin from scratch, step by step
 - [Lua API Reference](plugins/lua-api.md) -- every function, parameter, and return value for db, http, hooks, log, and require
-- [Configuration](plugins/configuration.md) -- all config.json fields with tuning guidance and example configurations
+- [Configuration](plugins/configuration.md) -- all modula.config.json fields with tuning guidance and example configurations
 - [Security](plugins/security.md) -- sandbox, database isolation, circuit breakers, rate limiting, operation budgets
 - [Approval Workflow](plugins/approval.md) -- route and hook approval via CLI, API, and TUI
 - [Examples](plugins/examples.md) -- complete example plugins: task tracker, content validator, webhook relay, analytics logger, API gateway

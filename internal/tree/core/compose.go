@@ -151,7 +151,7 @@ func resolveOneReference(ctx context.Context, refID types.ContentID, parentLabel
 	// Depth check
 	if depth+1 >= opts.MaxDepth {
 		return newSystemLogNode(parentLabel, refID, "max_depth",
-			fmt.Sprintf("Reference '%s' points to content_data_id %s but the maximum composition depth (%d) has been reached. This limit is configurable via composition_max_depth in config.json.", parentLabel, refID, opts.MaxDepth))
+			fmt.Sprintf("Reference '%s' points to content_data_id %s but the maximum composition depth (%d) has been reached. This limit is configurable via composition_max_depth in modula.config.json.", parentLabel, refID, opts.MaxDepth))
 	}
 
 	// Fetch and build the referenced tree

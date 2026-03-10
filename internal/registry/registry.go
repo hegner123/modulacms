@@ -1,6 +1,6 @@
 // Package registry manages the project registry at ~/.modula/configs.json.
 // The registry maps project names to environments, each containing an absolute
-// config.json path. All credentials, URLs, and settings stay in each project's
+// modula.config.json path. All credentials, URLs, and settings stay in each project's
 // own config — not in the registry.
 package registry
 

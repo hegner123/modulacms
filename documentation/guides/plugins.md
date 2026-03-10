@@ -14,7 +14,7 @@ Plugins run in sandboxed environments and cannot access the filesystem, execute 
 
 ## Enabling the Plugin System
 
-The plugin system is disabled by default. Enable it in `config.json`:
+The plugin system is disabled by default. Enable it in `modula.config.json`:
 
 ```json
 {

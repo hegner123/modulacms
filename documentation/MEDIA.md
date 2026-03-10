@@ -12,11 +12,11 @@ ModulaCMS stores media assets (images, documents, and other files) in S3-compati
 
 **Focal point** -- Normalized coordinates (`focal_x`, `focal_y`) ranging from 0.0 to 1.0 that define the center of interest in an image. When set, the optimization pipeline crops around this point instead of the image center. Set the focal point on the media record before or after upload; re-uploading is not required for the focal point to take effect on future optimization runs.
 
-**S3-compatible storage** -- ModulaCMS uses the AWS S3 API for object storage. Any S3-compatible provider works: AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, Cloudflare R2, and others. You configure the endpoint, credentials, and bucket name in `config.json`.
+**S3-compatible storage** -- ModulaCMS uses the AWS S3 API for object storage. Any S3-compatible provider works: AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, Cloudflare R2, and others. You configure the endpoint, credentials, and bucket name in `modula.config.json`.
 
 ## Configuration
 
-Set these fields in your `config.json` to connect media storage:
+Set these fields in your `modula.config.json` to connect media storage:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|

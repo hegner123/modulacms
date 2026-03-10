@@ -42,7 +42,7 @@ func runInstallDefaults(v *bool, adminPassword *string) error {
 
 	iarg := &InstallArguments{
 		UseDefaultConfig:  true,
-		ConfigPath:        "config.json",
+		ConfigPath:        config.DefaultConfigFilename,
 		Config:            config.DefaultConfig(),
 		DB_Driver:         SQLITE,
 		Create_Tables:     true,

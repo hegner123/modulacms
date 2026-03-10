@@ -27,18 +27,18 @@ var certGenerateCmd = &cobra.Command{
 	Short: "Generate self-signed SSL certificates for local development",
 	Long: `Generate a self-signed SSL certificate and private key for local HTTPS.
 
-Creates localhost.crt and localhost.key in the cert_dir configured in config.json
+Creates localhost.crt and localhost.key in the cert_dir configured in modula.config.json
 (default: ./certs). If a client_site domain is configured, the certificate is
 issued for that domain instead of localhost.
 
 After generation, attempts to add the certificate to the system trust store
 (macOS Keychain). On failure, prints instructions for manual trust.
 
-To use HTTPS locally, set "environment": "local" in config.json.
+To use HTTPS locally, set "environment": "local" in modula.config.json.
 
 Examples:
   modula cert generate
-  modula cert generate --config /path/to/config.json`,
+  modula cert generate --config /path/to/modula.config.json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -80,7 +80,7 @@ Examples:
 			utility.DefaultLogger.Info("You can manually trust it later - see LOCAL_HTTPS_SETUP.md")
 		}
 
-		utility.DefaultLogger.Info("To use HTTPS locally, set environment to 'local' in config.json")
+		utility.DefaultLogger.Info("To use HTTPS locally, set environment to 'local' in modula.config.json")
 		return nil
 	},
 }

@@ -27,7 +27,7 @@ openssl req -x509 -newkey rsa:4096 -nodes \
 
 ### 2. Configure for Local HTTPS
 
-Set these fields in your `config.json`:
+Set these fields in your `modula.config.json`:
 
 ```json
 {
@@ -169,7 +169,7 @@ mkcert -key-file certs/localhost.key -cert-file certs/localhost.crt modulacms.lo
 
 ModulaCMS expects the certificate files to be named `localhost.crt` and `localhost.key` in the `cert_dir` directory regardless of the domain.
 
-### 3. Update config.json
+### 3. Update modula.config.json
 
 ```json
 {

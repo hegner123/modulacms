@@ -13,7 +13,7 @@ import (
 var configParentCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Configuration management commands",
-	Long: `View, validate, and modify the Modula configuration file (config.json).
+	Long: `View, validate, and modify the Modula configuration file (modula.config.json).
 
 Subcommands:
   show       Print the full loaded configuration as JSON
@@ -33,14 +33,14 @@ Examples:
 var configShowCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Print the loaded configuration as JSON",
-	Long: `Load config.json and print its full contents as formatted JSON to stdout.
+	Long: `Load modula.config.json and print its full contents as formatted JSON to stdout.
 
-Reads from the path specified by --config (default: ./config.json). Environment
+Reads from the path specified by --config (default: ./modula.config.json). Environment
 variable references (${VAR}) in the config file are expanded before display.
 
 Examples:
   modula config show
-  modula config show --config /etc/modula/config.json`,
+  modula config show --config /etc/modula/modula.config.json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -62,14 +62,14 @@ Examples:
 var configValidateCmd = &cobra.Command{
 	Use:   "validate",
 	Short: "Validate the configuration file",
-	Long: `Load config.json and check that all required fields are present and non-empty.
+	Long: `Load modula.config.json and check that all required fields are present and non-empty.
 
 Required fields: db_driver, db_url, port, ssh_port. Reports the count and
 details of any validation errors found.
 
 Examples:
   modula config validate
-  modula config validate --config /etc/modula/config.json`,
+  modula config validate --config /etc/modula/modula.config.json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -106,7 +106,7 @@ Examples:
 var configSetCmd = &cobra.Command{
 	Use:   "set <key> <value>",
 	Short: "Update a configuration field and save to disk",
-	Long: `Update a single field in config.json and write the file back to disk.
+	Long: `Update a single field in modula.config.json and write the file back to disk.
 
 The key must be a known configuration field name. Use "modula config fields" to
 see all available keys and their descriptions. If the updated field requires a
@@ -161,7 +161,7 @@ Examples:
 var configFieldsCmd = &cobra.Command{
 	Use:   "fields [field-name]",
 	Short: "List every available configuration field",
-	Long: `List all configuration fields that config.json accepts, grouped by category.
+	Long: `List all configuration fields that modula.config.json accepts, grouped by category.
 
 Each field shows its JSON key (used with "modula config set"), a description,
 and flags indicating whether it is required, hot-reloadable (takes effect

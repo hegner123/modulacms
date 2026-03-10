@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/registry"
 	"github.com/hegner123/modulacms/internal/remote"
@@ -20,14 +21,14 @@ var connectCmd = &cobra.Command{
 	Long: `Open the SSH TUI connected to a registered project's config file.
 
 Each project can have multiple environments (local, dev, staging, prod, etc.),
-each pointing to a different config.json. The command resolves which config to
+each pointing to a different modula.config.json. The command resolves which config to
 use based on the project name and environment you provide.
 
 Resolution order:
   1. If both name and env are given, use that exact project + environment.
   2. If only name is given, use that project's default environment.
   3. If neither is given, use the default project's default environment.
-  4. If the registry is empty, look for config.json in the current directory.
+  4. If the registry is empty, look for modula.config.json in the current directory.
 
 Examples:
   modula connect                      # default project, default env
@@ -54,17 +55,17 @@ Examples:
 		configPath, err := reg.Resolve(name, env)
 		if err != nil {
 			// Auto-detect: when no name given and registry has no default,
-			// check for config.json in the current working directory
+			// check for modula.config.json in the current working directory
 			if name == "" {
 				cwd, wdErr := os.Getwd()
 				if wdErr != nil {
 					return err // return original registry error
 				}
-				localCfg := filepath.Join(cwd, "config.json")
+				localCfg := filepath.Join(cwd, config.DefaultConfigFilename)
 				if _, statErr := os.Stat(localCfg); statErr == nil {
 					configPath = localCfg
 				} else {
-					return fmt.Errorf("no project specified and no config.json in current directory")
+					return fmt.Errorf("no project specified and no %s in current directory", config.DefaultConfigFilename)
 				}
 			} else {
 				return err
@@ -107,7 +108,7 @@ Examples:
 			}
 			defer closeDBWithLog()
 		} else {
-			return fmt.Errorf("config.json must have either remote_url or db_driver")
+			return fmt.Errorf("modula.config.json must have either remote_url or db_driver")
 		}
 
 		model, _ := tui.InitialModel(&verbose, cfg, driver, utility.DefaultLogger, nil, mgr, nil, nil)
@@ -141,19 +142,19 @@ Creates the project if it does not exist. Creates the environment if it does not
 exist. Overwrites the config path if the environment already exists. The first
 environment added to a new project becomes its default.
 
-The config-path must point to an existing config.json file. Relative paths are
+The config-path must point to an existing modula.config.json file. Relative paths are
 resolved against the current working directory and stored as absolute paths in
-the registry, so "./config.json" and "/full/path/config.json" are equivalent.
+the registry, so "./modula.config.json" and "/full/path/modula.config.json" are equivalent.
 
 Arguments:
   name         Project name (e.g. mysite, blog, docs)
   env          Environment label (e.g. local, dev, staging, prod)
-  config-path  Path to the environment's config.json (relative or absolute)
+  config-path  Path to the environment's modula.config.json (relative or absolute)
 
 Examples:
-  modula connect set mysite local ./config.json           # register new project + env
-  modula connect set mysite prod /srv/mysite/config.json  # add another env
-  modula connect set mysite local /new/path/config.json   # update existing env path`,
+  modula connect set mysite local ./modula.config.json           # register new project + env
+  modula connect set mysite prod /srv/mysite/modula.config.json  # add another env
+  modula connect set mysite local /new/path/modula.config.json   # update existing env path`,
 	Args: cobra.ExactArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reg, err := registry.Load()
@@ -181,7 +182,7 @@ environment is marked with an asterisk (*).
 
 Example output:
   mysite (default)
-    local -> /home/user/mysite/config.json *
+    local -> /home/user/mysite/modula.config.json *
     prod  -> /srv/mysite/prod-config.json
   blog
     dev   -> /home/user/blog/dev-config.json *`,

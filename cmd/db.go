@@ -19,7 +19,7 @@ var dbCmd = &cobra.Command{
 	Short: "Database management commands",
 	Long: `Initialize, inspect, and manage the Modula database.
 
-Supports SQLite, MySQL, and PostgreSQL as configured in config.json.
+Supports SQLite, MySQL, and PostgreSQL as configured in modula.config.json.
 
 Subcommands:
   init           Create all tables and seed bootstrap data (roles, permissions, admin user)
@@ -46,12 +46,12 @@ Prompts for a system admin password (minimum 8 characters) and confirmation.
 Creates tables, default roles (admin, editor, viewer), permissions, and the
 system admin user.
 
-Use this when config.json and the database already exist but tables have not
+Use this when modula.config.json and the database already exist but tables have not
 been created (e.g. after a manual database reset or fresh PostgreSQL/MySQL setup).
 
 Examples:
   modula db init
-  modula db init --config /etc/modula/config.json`,
+  modula db init --config /etc/modula/modula.config.json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -255,7 +255,7 @@ var dbResetCmd = &cobra.Command{
 	Short: "Delete the database file (SQLite only)",
 	Long: `Delete the SQLite database file from disk.
 
-Only works with SQLite. The file path is read from db_url in config.json.
+Only works with SQLite. The file path is read from db_url in modula.config.json.
 After deletion, use "modula db init" or "modula serve" (which auto-initializes)
 to create a fresh database.
 

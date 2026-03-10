@@ -33,7 +33,7 @@ This structure supports O(1) reordering of siblings without updating every sibli
 
 ## Database
 
-**DbDriver** -- The Go interface that abstracts all database operations. ModulaCMS implements this interface three times: once for SQLite, once for MySQL, and once for PostgreSQL. Application code calls DbDriver methods without knowing which database backend is in use. The active driver is selected by the `db_driver` field in `config.json`.
+**DbDriver** -- The Go interface that abstracts all database operations. ModulaCMS implements this interface three times: once for SQLite, once for MySQL, and once for PostgreSQL. Application code calls DbDriver methods without knowing which database backend is in use. The active driver is selected by the `db_driver` field in `modula.config.json`.
 
 **sqlc** -- The code generation tool that compiles annotated SQL queries into type-safe Go functions. SQL queries live in `sql/schema/` directories with separate files for each database dialect. Running `just sqlc` generates Go code in `internal/db-sqlite/`, `internal/db-mysql/`, and `internal/db-psql/`. These generated files should never be edited by hand.
 
@@ -64,17 +64,17 @@ System-protected roles and permissions cannot be deleted or renamed through the 
 
 ## Configuration
 
-**config.json** -- The configuration file loaded at startup. Contains all runtime settings: database connection, server ports, TLS certificates, S3 storage credentials, OAuth configuration, CORS policy, and more. Environment variables can be referenced using `${VAR}` syntax. If no config file exists on first run, the setup wizard creates one with defaults.
+**modula.config.json** -- The configuration file loaded at startup. Contains all runtime settings: database connection, server ports, TLS certificates, S3 storage credentials, OAuth configuration, CORS policy, and more. Environment variables can be referenced using `${VAR}` syntax. If no config file exists on first run, the setup wizard creates one with defaults.
 
-**Environment** -- The `environment` field in `config.json` controls TLS behavior:
+**Environment** -- The `environment` field in `modula.config.json` controls TLS behavior:
 - `local` -- Uses self-signed certificates from `cert_dir`
 - `http-only` -- Disables HTTPS entirely
 - `development`, `staging`, `production` -- Uses automatic Let's Encrypt certificates
 
 ## Infrastructure
 
-**Backup** -- ModulaCMS can create and restore backups containing a SQL dump of the database and all media files. Backups can be stored locally or in S3-compatible storage. Configured via the `backup_option` field in `config.json`.
+**Backup** -- ModulaCMS can create and restore backups containing a SQL dump of the database and all media files. Backups can be stored locally or in S3-compatible storage. Configured via the `backup_option` field in `modula.config.json`.
 
 **Media Dimensions** -- Named width/height presets that define the sizes generated when an image is uploaded. The optimization pipeline produces a cropped and scaled variant for each preset where the source image is large enough. Presets that would require upscaling are skipped.
 
-**S3-Compatible Storage** -- Object storage for media files, accessed through the AWS S3 API. Any S3-compatible provider works: AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, Cloudflare R2. Configured through `bucket_*` fields in `config.json`.
+**S3-Compatible Storage** -- Object storage for media files, accessed through the AWS S3 API. Any S3-compatible provider works: AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, Cloudflare R2. Configured through `bucket_*` fields in `modula.config.json`.

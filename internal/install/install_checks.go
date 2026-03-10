@@ -25,7 +25,7 @@ func CheckConfigExists(path string) error {
 	if path != "" {
 		p = path
 	} else {
-		p = "config.json"
+		p = config.DefaultConfigFilename
 	}
 	_, err := os.Stat(p)
 	if err != nil {

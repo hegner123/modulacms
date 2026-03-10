@@ -55,7 +55,7 @@ To use a custom project name:
 modula init --name my-site --admin-password pw
 ```
 
-This creates `config.json` and `modula.db` in the current directory, creates all database tables, seeds bootstrap data (roles, permissions, system user), and registers the project.
+This creates `modula.config.json` and `modula.db` in the current directory, creates all database tables, seeds bootstrap data (roles, permissions, system user), and registers the project.
 
 ## Start the Server
 
@@ -124,20 +124,20 @@ modula connect mysite local # explicit project + env
 
 ## Multiple Environments
 
-Each project supports multiple environments (local, staging, production), each pointing to a different `config.json`:
+Each project supports multiple environments (local, staging, production), each pointing to a different `modula.config.json`:
 
 ```bash
-modula connect set mysite local ./config.json
-modula connect set mysite staging /srv/mysite/staging/config.json
-modula connect set mysite prod /srv/mysite/prod/config.json
+modula connect set mysite local ./modula.config.json
+modula connect set mysite staging /srv/mysite/staging/modula.config.json
+modula connect set mysite prod /srv/mysite/prod/modula.config.json
 ```
 
-For remote environments, the `config.json` uses `remote_url` and `remote_api_key` instead of `db_driver` -- the TUI connects over HTTPS via the Go SDK instead of a direct database connection.
+For remote environments, the `modula.config.json` uses `remote_url` and `remote_api_key` instead of `db_driver` -- the TUI connects over HTTPS via the Go SDK instead of a direct database connection.
 
 ## Next Steps
 
 - [Installation Guide](installation.md) -- build options, Docker, database backends, remote connections
-- [Configuration Reference](configuration.md) -- all config.json fields and options
+- [Configuration Reference](configuration.md) -- all modula.config.json fields and options
 
 ## Stopping the Server
 

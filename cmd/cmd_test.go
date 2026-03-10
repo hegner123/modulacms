@@ -622,8 +622,8 @@ func TestRootCommand_PersistentFlags(t *testing.T) {
 	if configFlag == nil {
 		t.Fatal("expected persistent flag 'config' not found")
 	}
-	if configFlag.DefValue != "config.json" {
-		t.Errorf("config flag default: got %q, want %q", configFlag.DefValue, "config.json")
+	if configFlag.DefValue != "modula.config.json" {
+		t.Errorf("config flag default: got %q, want %q", configFlag.DefValue, "modula.config.json")
 	}
 
 	verboseFlag := rootCmd.PersistentFlags().Lookup("verbose")

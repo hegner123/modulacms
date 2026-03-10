@@ -276,7 +276,7 @@ The menu content lives in one place but appears in every page that references it
 
 ### Composition Behavior
 
-- **Depth-bounded.** Composition recurses up to `composition_max_depth` levels (default 10, configurable in `config.json`). If a referenced tree itself contains `_reference` nodes, those are also resolved, up to the depth limit.
+- **Depth-bounded.** Composition recurses up to `composition_max_depth` levels (default 10, configurable in `modula.config.json`). If a referenced tree itself contains `_reference` nodes, those are also resolved, up to the depth limit.
 - **Concurrent.** Sibling references at the same level are resolved concurrently (up to 10 goroutines) for performance.
 - **Circular reference detection.** If a reference would create a cycle (A references B which references A), a `_system_log` node is injected instead with an error message explaining the cycle.
 - **Graceful degradation.** If a referenced content node does not exist or cannot be fetched, a `_system_log` node is injected with error details rather than failing the entire request. The rest of the tree is returned normally.

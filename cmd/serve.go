@@ -57,7 +57,7 @@ HTTP serves the REST API and admin panel. HTTPS uses autocert (Let's Encrypt)
 in production or self-signed certificates locally. SSH runs the Bubbletea TUI
 for terminal-based content management.
 
-If no config.json exists, an automatic setup runs with generated defaults and
+If no modula.config.json exists, an automatic setup runs with generated defaults and
 prints the system admin password. Use --wizard for an interactive setup instead.
 
 Graceful shutdown: first SIGINT/SIGTERM triggers a 30-second drain; a second
@@ -65,13 +65,13 @@ signal forces immediate exit.
 
 Flags:
   --wizard   Run the interactive configuration wizard before starting
-  --config   Path to config.json (default: ./config.json)
+  --config   Path to modula.config.json (default: ./modula.config.json)
   --verbose  Enable debug-level log output
 
 Examples:
   modula serve                        # start with existing or auto-generated config
   modula serve --wizard               # run interactive setup first
-  modula serve --config /etc/modula/config.json
+  modula serve --config /etc/modula/modula.config.json
   modula serve --verbose              # start with debug logging`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()

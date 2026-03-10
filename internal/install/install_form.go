@@ -126,7 +126,7 @@ func GetUseDefault(i *InstallArguments) error {
 
 // GetConfigPath prompts the user for the desired configuration file save location.
 func GetConfigPath(i *InstallArguments) error {
-	path := "config.json"
+	path := config.DefaultConfigFilename
 	f := huh.NewInput().
 		Title("Where would you like to save the config?").
 		Value(&path).

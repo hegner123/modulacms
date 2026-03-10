@@ -35,7 +35,7 @@ services:
       - prod_cms_data:/app/data
       - prod_cms_ssh:/app/.ssh
       - prod_cms_backups:/app/backups
-      - ./config.prod.json:/app/config.json:ro
+      - ./config.prod.json:/app/modula.config.json:ro
     entrypoint: ["/bin/sh", "-c", "/app/modula cert generate && /app/modula serve -v"]
     env_file:
       - .env

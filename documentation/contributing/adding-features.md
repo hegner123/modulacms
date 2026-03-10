@@ -172,7 +172,7 @@ Follow [Adding Tables](adding-tables.md) for the full schema-to-code workflow, t
 ### Background Job
 
 1. Implement the job logic
-2. Add configuration fields to `config.json` if needed
+2. Add configuration fields to `modula.config.json` if needed
 3. Register the job in the server startup flow
 4. Add logging for monitoring
 5. Test and deploy

@@ -330,7 +330,7 @@ All webhook endpoints require authentication and `webhooks:*` permissions (admin
 
 ## Configuration
 
-Webhook-related configuration in `config.json`:
+Webhook-related configuration in `modula.config.json`:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|

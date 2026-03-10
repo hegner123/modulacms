@@ -89,8 +89,8 @@ mkdir -p $(dirname /path/to/modula.db)
 # Check permissions
 chmod 755 $(dirname /path/to/modula.db)
 
-# Verify the path in config.json
-cat config.json | jq '.db_url'
+# Verify the path in modula.config.json
+cat modula.config.json | jq '.db_url'
 ```
 
 If `db_url` is not set, the default is `./modula.db` in the current working directory.
@@ -108,12 +108,12 @@ brew services start mysql   # macOS
 sudo systemctl start mysql  # Linux
 
 # Verify config
-cat config.json | jq '.db_url, .db_name, .db_username'
+cat modula.config.json | jq '.db_url, .db_name, .db_username'
 ```
 
 ### Access denied for user 'root'@'localhost'
 
-Incorrect username or password in `config.json`. Verify the credentials:
+Incorrect username or password in `modula.config.json`. Verify the credentials:
 
 ```json
 {
@@ -227,7 +227,7 @@ lsof -i :8080
 kill <PID>
 ```
 
-Or change the port in `config.json`:
+Or change the port in `modula.config.json`:
 
 ```json
 {
@@ -330,7 +330,7 @@ Verify the OAuth callback URL registered with your provider matches exactly: `ht
 
 ### Error exchanging token
 
-Invalid client credentials or incorrect token endpoint URL. Verify `oauth_client_id`, `oauth_client_secret`, and `oauth_endpoint` fields in `config.json`.
+Invalid client credentials or incorrect token endpoint URL. Verify `oauth_client_id`, `oauth_client_secret`, and `oauth_endpoint` fields in `modula.config.json`.
 
 ### sessions don't match
 
@@ -371,7 +371,7 @@ Most common errors and their one-line fixes:
 | Error | Fix |
 |-------|-----|
 | C compiler not found | Install gcc: `xcode-select --install` (macOS) or `apt-get install build-essential` (Linux) |
-| Database file not found | Check `db_url` path in `config.json` and create the directory |
+| Database file not found | Check `db_url` path in `modula.config.json` and create the directory |
 | Foreign key constraint failed | Verify parent record exists before insert |
 | Port already in use | `lsof -i :8080` then `kill <PID>`, or change port in config |
 | Session expired | Clear browser cookies and log in again |

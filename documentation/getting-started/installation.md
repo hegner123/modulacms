@@ -65,8 +65,8 @@ modula init
 
 `modula init` does two things:
 
-1. **Runs the install wizard** -- same as `modula install`. Prompts for database driver, connection details, ports, and admin credentials. Creates `config.json`, initializes the database, and seeds bootstrap data.
-2. **Registers the project** -- adds an entry to `~/.modula/configs.json` with the project name (defaults to the directory name) and environment `local` pointing to the new `config.json`. Sets it as the default project if it's the first one registered.
+1. **Runs the install wizard** -- same as `modula install`. Prompts for database driver, connection details, ports, and admin credentials. Creates `modula.config.json`, initializes the database, and seeds bootstrap data.
+2. **Registers the project** -- adds an entry to `~/.modula/configs.json` with the project name (defaults to the directory name) and environment `local` pointing to the new `modula.config.json`. Sets it as the default project if it's the first one registered.
 
 For automated/CI setups:
 
@@ -82,7 +82,7 @@ modula init --name my-site --admin-password pw
 
 ### What Init Creates
 
-1. **`config.json`** with your chosen settings.
+1. **`modula.config.json`** with your chosen settings.
 2. **Database tables** for all CMS entities.
 3. **Bootstrap data** including three roles (admin, editor, viewer), 47 permissions, and a system admin user.
 4. **Validation** of the database setup.
@@ -104,12 +104,12 @@ modula install --yes --admin-password your-password
 
 ## Project Registry
 
-The registry at `~/.modula/configs.json` maps project names to environments, each pointing to a `config.json` path. `modula init` populates this automatically. You can also manage it manually.
+The registry at `~/.modula/configs.json` maps project names to environments, each pointing to a `modula.config.json` path. `modula init` populates this automatically. You can also manage it manually.
 
 ### Manual Registration
 
 ```bash
-modula connect set mysite local ~/projects/mysite/config.json
+modula connect set mysite local ~/projects/mysite/modula.config.json
 ```
 
 This creates a project named "mysite" with a "local" environment. The first environment added becomes the default.
@@ -135,14 +135,14 @@ The `connect` command resolves the config path from the registry, changes to the
 
 ```bash
 modula connect list                        # show all projects + envs
-modula connect set mysite prod /srv/config.json  # add environment
+modula connect set mysite prod /srv/modula.config.json  # add environment
 modula connect remove mysite               # remove entire project
 modula connect remove mysite --env staging # remove one environment
 ```
 
 ### Auto-Detection
 
-If no project is specified and no default is set, `modula connect` checks for a `config.json` in the current working directory as a fallback.
+If no project is specified and no default is set, `modula connect` checks for a `modula.config.json` in the current working directory as a fallback.
 
 ## Multiple Environments
 
@@ -150,7 +150,7 @@ A typical setup has multiple environments per project:
 
 ```bash
 # Local development (direct database)
-modula connect set mysite local ~/projects/mysite/config.json
+modula connect set mysite local ~/projects/mysite/modula.config.json
 
 # Staging (remote connection over HTTPS)
 modula connect set mysite staging ~/projects/mysite/staging.json
@@ -159,7 +159,7 @@ modula connect set mysite staging ~/projects/mysite/staging.json
 modula connect set mysite prod ~/projects/mysite/prod.json
 ```
 
-**Local config** (`config.json`) uses `db_driver` for a direct database connection:
+**Local config** (`modula.config.json`) uses `db_driver` for a direct database connection:
 
 ```json
 {
@@ -298,7 +298,7 @@ Global flags:
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--config` | `config.json` | Path to configuration file |
+| `--config` | `modula.config.json` | Path to configuration file |
 | `-v`, `--verbose` | `false` | Enable debug logging |
 
 ## Notes

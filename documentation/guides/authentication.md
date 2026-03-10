@@ -37,7 +37,7 @@ Response (HTTP 200):
 }
 ```
 
-The response includes a `Set-Cookie` header with the session cookie. Include this cookie in subsequent requests. The cookie name is configured via the `cookie_name` field in `config.json`.
+The response includes a `Set-Cookie` header with the session cookie. Include this cookie in subsequent requests. The cookie name is configured via the `cookie_name` field in `modula.config.json`.
 
 ### OAuth Login
 
@@ -52,7 +52,7 @@ curl -L http://localhost:8080/api/v1/auth/oauth/login
 
 The server generates a state parameter and PKCE verifier, then redirects to the provider's authorization URL. After the user authenticates with the provider, the callback endpoint exchanges the authorization code for an access token, provisions or links the user account, creates a session, and redirects to the configured success URL.
 
-**OAuth configuration in `config.json`:**
+**OAuth configuration in `modula.config.json`:**
 
 ```json
 {
@@ -281,7 +281,7 @@ Changes to role-permission mappings are picked up by the permission cache within
 
 ## Session Configuration
 
-Session behavior is configured in `config.json`:
+Session behavior is configured in `modula.config.json`:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|

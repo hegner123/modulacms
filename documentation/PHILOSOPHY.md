@@ -56,7 +56,7 @@ ModulaCMS doesn't make storage decisions for you. You configure where media goes
 
 There are no black boxes. If you decide tomorrow that ModulaCMS isn't for you, you take everything with you — the database is standard SQL, the media is in your bucket, the backups are ZIP files you can open with literally any computer. No exit interview. No data hostage negotiation.
 
-One `config.json` file with every setting in one place — database, server, auth, S3, email, CORS, output format, plugins, deploy environments, observability. One file. Every text editor on earth can read it. No admin panel treasure hunt across seventeen screens. No PHP constants. No database rows pretending to be configuration. You can read it, diff it, version-control it, template it with environment variables, and update it at runtime with hot-reload support.
+One `modula.config.json` file with every setting in one place — database, server, auth, S3, email, CORS, output format, plugins, deploy environments, observability. One file. Every text editor on earth can read it. No admin panel treasure hunt across seventeen screens. No PHP constants. No database rows pretending to be configuration. You can read it, diff it, version-control it, template it with environment variables, and update it at runtime with hot-reload support.
 
 ## Data Authority, Not Behavior Authority
 
@@ -133,7 +133,7 @@ The SDK is the answer to "but you're making the developer do more work." No — 
 
 ModulaCMS doesn't make you choose your scale upfront.
 
-Day one, you're a small agency. One binary on one server. SQLite for the database. Total infrastructure cost: a $5 VPS. Year two, traffic is real and SQLite isn't cutting it. Change one string in `config.json` from `"sqlite"` to `"postgres"`, point it at a managed database, done. No migration tool. No export-import ritual. Same binary, same admin panel, same everything — just a different database engine underneath.
+Day one, you're a small agency. One binary on one server. SQLite for the database. Total infrastructure cost: a $5 VPS. Year two, traffic is real and SQLite isn't cutting it. Change one string in `modula.config.json` from `"sqlite"` to `"postgres"`, point it at a managed database, done. No migration tool. No export-import ritual. Same binary, same admin panel, same everything — just a different database engine underneath.
 
 Year five, you're running a distributed network. Multiple instances behind a load balancer. The audit trail's hybrid logical clocks handle distributed ordering. The plugin coordinator syncs state across instances. The permission cache refreshes independently per instance with lock-free reads. None of this was bolted on. It was all there from the first commit, waiting for you to need it.
 

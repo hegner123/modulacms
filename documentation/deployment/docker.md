@@ -126,7 +126,7 @@ This tags the image with both `latest` and the current version from `justfile`, 
 
 All Docker stacks include MinIO for S3-compatible media storage. When running in Docker, the CMS connects to MinIO using the container hostname (`minio:9000`), but browsers need the externally reachable address.
 
-Set `bucket_public_url` in your `config.json` to the address accessible from outside Docker:
+Set `bucket_public_url` in your `modula.config.json` to the address accessible from outside Docker:
 
 ```json
 {
@@ -147,5 +147,5 @@ just test-minio-down  # Stop MinIO
 
 - All Docker stacks require `DOCKER_BUILDKIT=1`, which `just` enables automatically.
 - The CMS binary is built inside the Docker image using a multi-stage build. CGO is enabled for SQLite support.
-- Configuration inside Docker containers uses the same `config.json` format as bare-metal deployments.
+- Configuration inside Docker containers uses the same `modula.config.json` format as bare-metal deployments.
 - The `docker-infra` command is useful for running cross-backend database integration tests locally.

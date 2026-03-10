@@ -14,11 +14,11 @@ var tuiCmd = &cobra.Command{
 	Short: "Launch the terminal UI without the server",
 	Long: `Launch the Bubbletea terminal UI for local content management without starting
 the HTTP, HTTPS, or SSH servers. Connects directly to the database configured
-in config.json.
+in modula.config.json.
 
 Examples:
   modula tui
-  modula tui --config /path/to/config.json`,
+  modula tui --config /path/to/modula.config.json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 

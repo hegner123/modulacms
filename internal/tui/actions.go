@@ -170,7 +170,7 @@ func runDBInit(cfg *config.Config) tea.Cmd {
 			}
 		}
 
-		if err := install.CreateDbSimple("config.json", cfg, adminHash); err != nil {
+		if err := install.CreateDbSimple(config.DefaultConfigFilename, cfg, adminHash); err != nil {
 			return ActionResultMsg{
 				Title:   "DB Init Failed",
 				Message: fmt.Sprintf("Database initialization failed:\n%s", err),

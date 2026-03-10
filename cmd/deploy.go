@@ -18,7 +18,7 @@ var deployCmd = &cobra.Command{
 	Long: `Sync content data between Modula environments.
 
 Export and import move data as JSON files. Push and pull transfer data between
-the local database and a remote CMS environment configured in config.json.
+the local database and a remote CMS environment configured in modula.config.json.
 Snapshots provide rollback points for import operations.
 
 Subcommands:
@@ -403,11 +403,11 @@ var deployPullCmd = &cobra.Command{
 	Long: `Download content data from a remote CMS environment and import it into the local
 database.
 
-The source environment must be configured in config.json under deploy_environments
+The source environment must be configured in modula.config.json under deploy_environments
 with a name, URL, and API key. A pre-import backup is created by default.
 
 Arguments:
-  source   Environment name (from config.json deploy_environments)
+  source   Environment name (from modula.config.json deploy_environments)
 
 Flags:
   --tables        Comma-separated table names (default: all sync tables)
@@ -492,11 +492,11 @@ var deployPushCmd = &cobra.Command{
 	Long: `Export content data from the local database and upload it to a remote CMS
 environment.
 
-The target environment must be configured in config.json under deploy_environments
+The target environment must be configured in modula.config.json under deploy_environments
 with a name, URL, and API key.
 
 Arguments:
-  target   Environment name (from config.json deploy_environments)
+  target   Environment name (from modula.config.json deploy_environments)
 
 Flags:
   --tables     Comma-separated table names (default: all sync tables)
@@ -576,9 +576,9 @@ Examples:
 var deployEnvCmd = &cobra.Command{
 	Use:   "env",
 	Short: "Manage deploy environments",
-	Long: `List and test remote deploy environments configured in config.json.
+	Long: `List and test remote deploy environments configured in modula.config.json.
 
-Environments are defined under deploy_environments in config.json, each with
+Environments are defined under deploy_environments in modula.config.json, each with
 a name, URL, and API key.
 
 Subcommands:
@@ -593,7 +593,7 @@ Examples:
 var deployEnvListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List configured deploy environments",
-	Long: `Display all deploy environments from config.json with name, URL, and API key status.
+	Long: `Display all deploy environments from modula.config.json with name, URL, and API key status.
 
 API keys are not printed in plain text; only "set" or "missing" is shown.
 Use --json for machine-readable output (keys redacted as has_api_key boolean).
@@ -632,7 +632,7 @@ Examples:
 
 		if len(envs) == 0 {
 			utility.DefaultLogger.Info("No deploy environments configured")
-			utility.DefaultLogger.Info("Add environments to config.json under deploy_environments")
+			utility.DefaultLogger.Info("Add environments to modula.config.json under deploy_environments")
 			return nil
 		}
 
@@ -659,7 +659,7 @@ Tests that the URL is reachable, the API key is valid, and the remote CMS is
 responding. Displays the remote server's status, version, and node ID.
 
 Arguments:
-  name   Environment name (from config.json deploy_environments)
+  name   Environment name (from modula.config.json deploy_environments)
 
 Flags:
   --json   Output as JSON

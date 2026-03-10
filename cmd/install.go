@@ -12,7 +12,7 @@ var installAdminPassword string
 var installCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Run the installation wizard",
-	Long: `Run the first-time setup wizard to create config.json, initialize the database,
+	Long: `Run the first-time setup wizard to create modula.config.json, initialize the database,
 and seed bootstrap data (admin user, default roles, permissions).
 
 In interactive mode, prompts for database driver, connection details, ports,

@@ -36,7 +36,7 @@ func TestNewFileProvider_CustomPath(t *testing.T) {
 func TestNewFileProvider_EmptyStringDefaultPath(t *testing.T) {
 	t.Parallel()
 
-	// When given an empty string, NewFileProvider defaults to "config.json".
+	// When given an empty string, NewFileProvider defaults to "modula.config.json".
 	// We cannot control whether that file exists in the test working directory,
 	// so we only verify the constructor returns a non-nil provider and that
 	// Get does not panic.
@@ -45,7 +45,7 @@ func TestNewFileProvider_EmptyStringDefaultPath(t *testing.T) {
 		t.Fatal("NewFileProvider(\"\") returned nil")
 	}
 
-	// Call Get -- if config.json exists it returns a Config, otherwise an error.
+	// Call Get -- if modula.config.json exists it returns a Config, otherwise an error.
 	// Either outcome is acceptable; the important thing is no panic.
 	_, _ = fp.Get()
 }

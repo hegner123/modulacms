@@ -296,7 +296,7 @@ Plugin management via the `modulacms plugin` command. Commands are split into of
 
 ### Offline Commands
 
-Offline commands read from the filesystem and config.json only. They work regardless of `plugin_enabled` and do not require a database connection.
+Offline commands read from the filesystem and modula.config.json only. They work regardless of `plugin_enabled` and do not require a database connection.
 
 #### `plugin list`
 
@@ -310,7 +310,7 @@ task_tracker      2.1.0     Task management system
 broken_plugin [invalid]
 ```
 
-Reads `plugin_directory` from config.json. Calls `ValidatePlugin()` on each subdirectory. Invalid plugins are shown with `[invalid]` marker.
+Reads `plugin_directory` from modula.config.json. Calls `ValidatePlugin()` on each subdirectory. Invalid plugins are shown with `[invalid]` marker.
 
 #### `plugin init <name>`
 
@@ -716,7 +716,7 @@ Tables created via `db.define_table()` are prefixed with `plugin_<name>_` and ge
 
 ## Configuration
 
-All fields in `config.json` under the `plugin_*` namespace:
+All fields in `modula.config.json` under the `plugin_*` namespace:
 
 | Field                                | Type     | Default   | Description                                    |
 |--------------------------------------|----------|-----------|------------------------------------------------|
