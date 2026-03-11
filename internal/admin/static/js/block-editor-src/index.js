@@ -56,6 +56,7 @@ if (isBrowser) {
                         this._state = null;
                         this._elementRegistry = new Map(); // blockId -> block-item element
                         this._wrapperRegistry = new Map(); // blockId -> block-wrapper element
+                        this._collapsedBlocks = new Set(); // blockId set for collapsed blocks
                         this._beforeUnloadHandler = this._onBeforeUnload.bind(this);
 
                         // Drag state
@@ -97,6 +98,7 @@ if (isBrowser) {
                         this._state.dirty = false;
                         this._elementRegistry.clear();
                         this._wrapperRegistry.clear();
+                        this._collapsedBlocks.clear();
                         this._render();
                 }
 
@@ -128,6 +130,7 @@ if (isBrowser) {
                                 field.value = value;
                                 this._state.dirty = true;
                                 this._updateSaveButton();
+                                this._updateContentPreview(blockId);
                         }
                 }
 
@@ -213,6 +216,7 @@ if (isBrowser) {
                         this._rootDatatypeId = this.getAttribute('data-root-datatype-id') || null;
                         this._elementRegistry.clear();
                         this._wrapperRegistry.clear();
+                        this._collapsedBlocks.clear();
                         this._render();
                 }
 
@@ -266,6 +270,23 @@ if (isBrowser) {
                         const header = document.createElement('div');
                         header.className = 'editor-header';
 
+                        const collapseControls = document.createElement('div');
+                        collapseControls.className = 'collapse-controls';
+
+                        const expandAllBtn = document.createElement('button');
+                        expandAllBtn.textContent = 'Expand All';
+                        expandAllBtn.className = 'collapse-btn';
+                        expandAllBtn.dataset.action = 'expand-all';
+                        collapseControls.appendChild(expandAllBtn);
+
+                        const collapseAllBtn = document.createElement('button');
+                        collapseAllBtn.textContent = 'Collapse All';
+                        collapseAllBtn.className = 'collapse-btn';
+                        collapseAllBtn.dataset.action = 'collapse-all';
+                        collapseControls.appendChild(collapseAllBtn);
+
+                        header.appendChild(collapseControls);
+
                         const saveBtn = document.createElement('button');
                         saveBtn.textContent = 'Save';
                         saveBtn.className = 'save-btn';
@@ -305,6 +326,9 @@ if (isBrowser) {
                 _renderBlockWrapper(block, depth) {
                         const wrapper = document.createElement('div');
                         wrapper.className = 'block-wrapper';
+                        if (this._collapsedBlocks.has(block.id)) {
+                                wrapper.classList.add('collapsed');
+                        }
                         wrapper.dataset.blockId = block.id;
                         wrapper.style.marginInlineStart = (depth * 24) + 'px';
 
@@ -354,6 +378,15 @@ if (isBrowser) {
                                 el.classList.add('block-item--container');
                         }
 
+                        // Collapse chevron
+                        const chevron = document.createElement('button');
+                        chevron.className = 'block-chevron';
+                        chevron.dataset.action = 'toggle-collapse';
+                        chevron.dataset.blockId = block.id;
+                        chevron.textContent = this._collapsedBlocks.has(block.id) ? '\u25B8' : '\u25BE';
+                        chevron.title = 'Toggle collapse';
+                        el.appendChild(chevron);
+
                         const badge = document.createElement('span');
                         badge.className = 'block-type-badge block-type-badge--' + block.type;
                         badge.textContent = getTypeConfig(block.type).label;
@@ -378,10 +411,10 @@ if (isBrowser) {
                         const hoverToolbar = this._renderHoverToolbar(block.id);
                         el.appendChild(hoverToolbar);
 
-                        // Type-specific content area
-                        const content = this._renderTypeContent(block);
-                        if (content) {
-                                el.appendChild(content);
+                        // Content preview (actual field values)
+                        const preview = this._renderContentPreview(block);
+                        if (preview) {
+                                el.appendChild(preview);
                         }
 
                         this._elementRegistry.set(block.id, el);
@@ -420,47 +453,52 @@ if (isBrowser) {
                 }
 
                 /**
-                 * Render type-specific content for a block.
-                 * text = paragraph placeholder lines
-                 * heading = large bold label
-                 * image = dashed rect placeholder
-                 * container = labeled children area indicator
+                 * Render content preview showing actual field values.
+                 * Returns null for container blocks (children ARE the content).
                  */
-                _renderTypeContent(block) {
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'block-type-content block-type-content--' + block.type;
+                _renderContentPreview(block) {
+                        if (block.type === 'container') return null;
 
-                        if (block.type === 'text') {
-                                // Three placeholder lines simulating paragraph text
-                                for (let i = 0; i < 3; i++) {
-                                        const line = document.createElement('div');
-                                        line.className = 'text-line';
-                                        wrapper.appendChild(line);
-                                }
-                                return wrapper;
-                        }
+                        var preview = document.createElement('div');
+                        preview.className = 'block-content-preview';
 
-                        if (block.type === 'heading') {
-                                wrapper.textContent = block.label;
-                                return wrapper;
-                        }
+                        var fields = block.fields || [];
+                        var hasContent = false;
 
-                        if (block.type === 'image') {
-                                wrapper.textContent = 'Image placeholder';
-                                return wrapper;
-                        }
+                        for (var i = 0; i < fields.length; i++) {
+                                var value = (fields[i].value || '').trim();
+                                if (!value) continue;
+                                // Skip ULID-looking values (media/reference IDs)
+                                if (value.length === 26 && /^[0-9A-HJKMNP-TV-Z]{26}$/.test(value)) continue;
 
-                        if (block.type === 'container') {
-                                const childCount = getDescendantCount(this._state, block.id);
-                                if (childCount > 0) {
-                                        wrapper.textContent = childCount + ' block' + (childCount === 1 ? '' : 's') + ' inside';
+                                hasContent = true;
+                                var el = document.createElement('div');
+
+                                if (i === 0 && block.type === 'heading') {
+                                        el.className = 'preview-heading';
+                                } else if (value.length > 200 || value.indexOf('\n') !== -1) {
+                                        el.className = 'preview-text';
                                 } else {
-                                        wrapper.textContent = 'Drop blocks here';
+                                        el.className = 'preview-field';
                                 }
-                                return wrapper;
+
+                                // Truncate very long values
+                                if (value.length > 500) {
+                                        value = value.substring(0, 500) + '\u2026';
+                                }
+
+                                el.textContent = value;
+                                preview.appendChild(el);
                         }
 
-                        return null;
+                        if (!hasContent) {
+                                var empty = document.createElement('div');
+                                empty.className = 'preview-empty';
+                                empty.textContent = 'No content yet';
+                                preview.appendChild(empty);
+                        }
+
+                        return preview;
                 }
 
                 /**
@@ -555,6 +593,12 @@ if (isBrowser) {
                                 this._doOutdentBlock(target.dataset.blockId);
                         } else if (action === 'toolbar-duplicate') {
                                 this._doDuplicateBlock(target.dataset.blockId);
+                        } else if (action === 'toggle-collapse') {
+                                this._toggleCollapse(target.dataset.blockId);
+                        } else if (action === 'expand-all') {
+                                this._expandAll();
+                        } else if (action === 'collapse-all') {
+                                this._collapseAll();
                         }
                 }
 
@@ -617,6 +661,7 @@ if (isBrowser) {
 
                         // Patch DOM — remove wrapper elements (wrapper contains both header and children)
                         for (const id of removedIds) {
+                                this._collapsedBlocks.delete(id);
                                 const wrapper = this._wrapperRegistry.get(id);
                                 if (wrapper) {
                                         wrapper.remove();
@@ -800,6 +845,57 @@ if (isBrowser) {
                 _updateSaveButton() {
                         // no-op: save button is always enabled.
                         // Dirty tracking remains for autosave and beforeunload.
+                }
+
+                // ---- Collapse / Expand ----
+
+                _toggleCollapse(blockId) {
+                        if (!blockId) return;
+                        var wrapper = this._wrapperRegistry.get(blockId);
+                        if (!wrapper) return;
+
+                        if (this._collapsedBlocks.has(blockId)) {
+                                this._collapsedBlocks.delete(blockId);
+                                wrapper.classList.remove('collapsed');
+                        } else {
+                                this._collapsedBlocks.add(blockId);
+                                wrapper.classList.add('collapsed');
+                        }
+
+                        var chevron = wrapper.querySelector(':scope > .block-item > .block-chevron');
+                        if (chevron) {
+                                chevron.textContent = this._collapsedBlocks.has(blockId) ? '\u25B8' : '\u25BE';
+                        }
+                }
+
+                _expandAll() {
+                        this._collapsedBlocks.clear();
+                        this._render();
+                }
+
+                _collapseAll() {
+                        for (var id in this._state.blocks) {
+                                this._collapsedBlocks.add(id);
+                        }
+                        this._render();
+                }
+
+                _updateContentPreview(blockId) {
+                        var el = this._elementRegistry.get(blockId);
+                        if (!el) return;
+                        var block = this._state.blocks[blockId];
+                        if (!block) return;
+
+                        var existingPreview = el.querySelector('.block-content-preview');
+                        var newPreview = this._renderContentPreview(block);
+
+                        if (existingPreview && newPreview) {
+                                existingPreview.replaceWith(newPreview);
+                        } else if (existingPreview && !newPreview) {
+                                existingPreview.remove();
+                        } else if (!existingPreview && newPreview) {
+                                el.appendChild(newPreview);
+                        }
                 }
 
                 // ---- Dev-mode validation ----

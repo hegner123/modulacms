@@ -26,6 +26,12 @@ export const dragMethods = {
                 const blockId = blockItem.dataset.blockId;
                 if (!blockId) return;
 
+                // Content preview clicks: select immediately, no drag
+                if (e.target.closest('.block-content-preview')) {
+                        this._selectBlock(blockId);
+                        return;
+                }
+
                 // Allow dragging ALL blocks (root and nested)
                 const block = this._state?.blocks[blockId];
                 if (!block) return;
