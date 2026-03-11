@@ -2867,7 +2867,7 @@ func (q *Queries) CreateUserOauthTable(ctx context.Context) error {
 	return err
 }
 
-const createUserSshKey = `-- name: CreateUserSshKey :execresult
+const createUserSshKey = `-- name: CreateUserSshKey :exec
 INSERT INTO user_ssh_keys (
     ssh_key_id,
     user_id,
@@ -2889,8 +2889,8 @@ type CreateUserSshKeyParams struct {
 	DateCreated types.Timestamp      `json:"date_created"`
 }
 
-func (q *Queries) CreateUserSshKey(ctx context.Context, arg CreateUserSshKeyParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createUserSshKey,
+func (q *Queries) CreateUserSshKey(ctx context.Context, arg CreateUserSshKeyParams) error {
+	_, err := q.db.ExecContext(ctx, createUserSshKey,
 		arg.SSHKeyID,
 		arg.UserID,
 		arg.PublicKey,
@@ -2899,6 +2899,7 @@ func (q *Queries) CreateUserSshKey(ctx context.Context, arg CreateUserSshKeyPara
 		arg.Label,
 		arg.DateCreated,
 	)
+	return err
 }
 
 const createUserSshKeyTable = `-- name: CreateUserSshKeyTable :exec
@@ -3684,12 +3685,12 @@ func (q *Queries) DeleteWebhookDelivery(ctx context.Context, arg DeleteWebhookDe
 	return err
 }
 
-const dropAdminContentData = `-- name: DropAdminContentData :exec
+const dropAdminContentDataTable = `-- name: DropAdminContentDataTable :exec
 DROP TABLE admin_content_data
 `
 
-func (q *Queries) DropAdminContentData(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, dropAdminContentData)
+func (q *Queries) DropAdminContentDataTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminContentDataTable)
 	return err
 }
 

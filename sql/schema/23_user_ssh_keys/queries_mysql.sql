@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS user_ssh_keys (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- name: CreateUserSshKey :execresult
+-- name: CreateUserSshKey :exec
 INSERT INTO user_ssh_keys (
     ssh_key_id,
     user_id,

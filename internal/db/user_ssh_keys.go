@@ -572,7 +572,7 @@ func (c NewUserSshKeyCmdMysql) GetID(u mdbm.UserSshKeys) string       { return u
 func (c NewUserSshKeyCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.UserSshKeys, error) {
 	queries := mdbm.New(tx)
 	sshKeyID := string(types.NewUserSshKeyID())
-	_, err := queries.CreateUserSshKey(ctx, mdbm.CreateUserSshKeyParams{
+	err := queries.CreateUserSshKey(ctx, mdbm.CreateUserSshKeyParams{
 		SSHKeyID:    sshKeyID,
 		UserID:      c.params.UserID,
 		PublicKey:   c.params.PublicKey,

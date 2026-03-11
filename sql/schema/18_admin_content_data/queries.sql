@@ -1,4 +1,4 @@
--- name: DropAdminContentData :exec
+-- name: DropAdminContentDataTable :exec
 DROP TABLE admin_content_data;
 
 -- name: CreateAdminContentDataTable :exec

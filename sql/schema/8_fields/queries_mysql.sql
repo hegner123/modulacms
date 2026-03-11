@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS fields (
             ON UPDATE CASCADE
 );
 
+-- name: CreateFieldParentIDIndex :exec
+CREATE INDEX fields_parent_id_index
+    ON fields (parent_id);
+
 -- name: CountField :one
 SELECT COUNT(*)
 FROM fields ;

@@ -25,8 +25,8 @@ CREATE TABLE IF NOT EXISTS fields (
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- name: CreateParentIDIndex :exec
-CREATE INDEX parent_id
+-- name: CreateFieldParentIDIndex :exec
+CREATE INDEX fields_parent_id_index
     ON fields (parent_id);
 
 -- name: CountField :one

@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS fields(
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+-- name: CreateFieldParentIDIndex :exec
+CREATE INDEX fields_parent_id_index
+    ON fields (parent_id);
+
 -- name: CountField :one
 SELECT COUNT(*)
 FROM fields ;

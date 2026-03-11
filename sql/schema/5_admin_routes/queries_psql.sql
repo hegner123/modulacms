@@ -28,7 +28,7 @@ SELECT * FROM admin_routes
 WHERE slug = $1 LIMIT 1;
 
 
--- name: GetAdminRoute :one
+-- name: GetAdminRouteById :one
 SELECT * FROM admin_routes
 WHERE admin_route_id = $1 LIMIT 1;
 

@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS datatypes (
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- name: CreateDatatypeParentIDIndex :exec
+CREATE INDEX datatypes_parent_id_index
+    ON datatypes (parent_id);
+
 -- name: CountDatatype :one
 SELECT COUNT(*)
 FROM datatypes;

@@ -4015,21 +4015,21 @@ func (q *Queries) DeleteWebhookDelivery(ctx context.Context, arg DeleteWebhookDe
 	return err
 }
 
-const dropAdminContentData = `-- name: DropAdminContentData :exec
+const dropAdminContentDataTable = `-- name: DropAdminContentDataTable :exec
 DROP TABLE admin_content_data
 `
 
-func (q *Queries) DropAdminContentData(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, dropAdminContentData)
+func (q *Queries) DropAdminContentDataTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminContentDataTable)
 	return err
 }
 
-const dropAdminContentField = `-- name: DropAdminContentField :exec
+const dropAdminContentFieldTable = `-- name: DropAdminContentFieldTable :exec
 DROP TABLE admin_content_fields
 `
 
-func (q *Queries) DropAdminContentField(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, dropAdminContentField)
+func (q *Queries) DropAdminContentFieldTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminContentFieldTable)
 	return err
 }
 

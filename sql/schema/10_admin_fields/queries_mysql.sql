@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS admin_fields (
             ON UPDATE CASCADE
 );
 
+-- name: CreateAdminFieldParentIndex :exec
+CREATE INDEX admin_fields_parent_id_index
+    ON admin_fields (parent_id);
+
 -- name: CountAdminField :one
 SELECT COUNT(*) FROM admin_fields;
 

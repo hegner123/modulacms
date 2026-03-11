@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS datatypes (
             ON UPDATE CASCADE
 );
 
+-- name: CreateDatatypeParentIDIndex :exec
+CREATE INDEX datatypes_parent_id_index
+    ON datatypes (parent_id);
 
 -- name: CountDatatype :one
 SELECT COUNT(*)

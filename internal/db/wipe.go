@@ -51,7 +51,7 @@ func (d Database) DropAllTables() error {
 	}
 
 	// Tier 5: Content field values
-	if err := queries.DropAdminContentField(d.Context); err != nil {
+	if err := queries.DropAdminContentFieldTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_content_fields: %w", err)
 	}
 	if err := queries.DropContentFieldTable(d.Context); err != nil {
@@ -59,7 +59,7 @@ func (d Database) DropAllTables() error {
 	}
 
 	// Tier 4: Content data tables
-	if err := queries.DropAdminContentData(d.Context); err != nil {
+	if err := queries.DropAdminContentDataTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_content_data: %w", err)
 	}
 	if err := queries.DropContentDataTable(d.Context); err != nil {
@@ -199,7 +199,7 @@ func (d MysqlDatabase) DropAllTables() error {
 	}
 
 	// Tier 4: Content data tables
-	if err := queries.DropAdminContentData(d.Context); err != nil {
+	if err := queries.DropAdminContentDataTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_content_data: %w", err)
 	}
 	if err := queries.DropContentDataTable(d.Context); err != nil {

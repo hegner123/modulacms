@@ -1,4 +1,4 @@
--- name: DropAdminContentField :exec
+-- name: DropAdminContentFieldTable :exec
 DROP TABLE admin_content_fields;
 
 -- name: CreateAdminContentFieldTable :exec

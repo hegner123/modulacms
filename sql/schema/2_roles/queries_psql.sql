@@ -9,9 +9,6 @@ CREATE TABLE IF NOT EXISTS roles (
     system_protected BOOLEAN NOT NULL DEFAULT FALSE
 );
 
--- name: CreateIDIndex :exec
-CREATE INDEX IF NOT EXISTS idx_role_id ON roles(role_id);
-
 -- name: GetRole :one
 SELECT *
 FROM roles

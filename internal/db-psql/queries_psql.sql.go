@@ -1210,6 +1210,16 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 	return i, err
 }
 
+const createAdminDatatypeParentIDIndex = `-- name: CreateAdminDatatypeParentIDIndex :exec
+CREATE INDEX admin_datatypes_parent_id_index
+    ON admin_datatypes (parent_id)
+`
+
+func (q *Queries) CreateAdminDatatypeParentIDIndex(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminDatatypeParentIDIndex)
+	return err
+}
+
 const createAdminDatatypeTable = `-- name: CreateAdminDatatypeTable :exec
 CREATE TABLE IF NOT EXISTS admin_datatypes (
     admin_datatype_id TEXT PRIMARY KEY NOT NULL,
@@ -1322,6 +1332,16 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 		&i.DateModified,
 	)
 	return i, err
+}
+
+const createAdminFieldParentIndex = `-- name: CreateAdminFieldParentIndex :exec
+CREATE INDEX admin_fields_parent_id_index
+    ON admin_fields (parent_id)
+`
+
+func (q *Queries) CreateAdminFieldParentIndex(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminFieldParentIndex)
+	return err
 }
 
 const createAdminFieldTable = `-- name: CreateAdminFieldTable :exec
@@ -2085,6 +2105,16 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 	return i, err
 }
 
+const createDatatypeParentIDIndex = `-- name: CreateDatatypeParentIDIndex :exec
+CREATE INDEX datatypes_parent_id_index
+    ON datatypes (parent_id)
+`
+
+func (q *Queries) CreateDatatypeParentIDIndex(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createDatatypeParentIDIndex)
+	return err
+}
+
 const createDatatypeTable = `-- name: CreateDatatypeTable :exec
 CREATE TABLE IF NOT EXISTS datatypes (
     datatype_id TEXT PRIMARY KEY NOT NULL,
@@ -2198,6 +2228,16 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field
 	return i, err
 }
 
+const createFieldParentIDIndex = `-- name: CreateFieldParentIDIndex :exec
+CREATE INDEX fields_parent_id_index
+    ON fields (parent_id)
+`
+
+func (q *Queries) CreateFieldParentIDIndex(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createFieldParentIDIndex)
+	return err
+}
+
 const createFieldTable = `-- name: CreateFieldTable :exec
 CREATE TABLE IF NOT EXISTS fields (
     field_id TEXT PRIMARY KEY NOT NULL,
@@ -2264,15 +2304,6 @@ CREATE TABLE IF NOT EXISTS field_types (
 
 func (q *Queries) CreateFieldTypeTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createFieldTypeTable)
-	return err
-}
-
-const createIDIndex = `-- name: CreateIDIndex :exec
-CREATE INDEX IF NOT EXISTS idx_role_id ON roles(role_id)
-`
-
-func (q *Queries) CreateIDIndex(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, createIDIndex)
 	return err
 }
 
@@ -2538,16 +2569,6 @@ CREATE TABLE IF NOT EXISTS media (
 
 func (q *Queries) CreateMediaTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createMediaTable)
-	return err
-}
-
-const createParentIDIndex = `-- name: CreateParentIDIndex :exec
-CREATE INDEX parent_id
-    ON fields (parent_id)
-`
-
-func (q *Queries) CreateParentIDIndex(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, createParentIDIndex)
 	return err
 }
 
@@ -4789,17 +4810,17 @@ func (q *Queries) GetAdminPublishedSnapshot(ctx context.Context, arg GetAdminPub
 	return i, err
 }
 
-const getAdminRoute = `-- name: GetAdminRoute :one
+const getAdminRouteById = `-- name: GetAdminRouteById :one
 SELECT admin_route_id, slug, title, status, author_id, date_created, date_modified FROM admin_routes
 WHERE admin_route_id = $1 LIMIT 1
 `
 
-type GetAdminRouteParams struct {
+type GetAdminRouteByIdParams struct {
 	AdminRouteID types.AdminRouteID `json:"admin_route_id"`
 }
 
-func (q *Queries) GetAdminRoute(ctx context.Context, arg GetAdminRouteParams) (AdminRoutes, error) {
-	row := q.db.QueryRowContext(ctx, getAdminRoute, arg.AdminRouteID)
+func (q *Queries) GetAdminRouteById(ctx context.Context, arg GetAdminRouteByIdParams) (AdminRoutes, error) {
+	row := q.db.QueryRowContext(ctx, getAdminRouteById, arg.AdminRouteID)
 	var i AdminRoutes
 	err := row.Scan(
 		&i.AdminRouteID,

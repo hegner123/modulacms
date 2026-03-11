@@ -21,6 +21,10 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
             ON UPDATE CASCADE
 );
 
+-- name: CreateAdminDatatypeParentIDIndex :exec
+CREATE INDEX admin_datatypes_parent_id_index
+    ON admin_datatypes (parent_id);
+
 -- name: CountAdminDatatype :one
 SELECT COUNT(*)
 FROM admin_datatypes;
