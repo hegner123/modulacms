@@ -64,7 +64,7 @@ func TestValidateType(t *testing.T) {
 		{name: "boolean invalid", fieldType: types.FieldTypeBoolean, value: "yes", wantMsg: "must be a boolean (true, false, 1, or 0)"},
 		{name: "boolean True", fieldType: types.FieldTypeBoolean, value: "True", wantMsg: "must be a boolean (true, false, 1, or 0)"},
 
-		// select
+		// select — flat label/value format
 		{
 			name:      "select valid",
 			fieldType: types.FieldTypeSelect,
@@ -79,6 +79,22 @@ func TestValidateType(t *testing.T) {
 			data:      `[{"label":"Red","value":"red"},{"label":"Blue","value":"blue"}]`,
 			wantMsg:   "must be one of the allowed options",
 		},
+		// select — wrapped options format (used by definitions/DB)
+		{
+			name:      "select wrapped valid",
+			fieldType: types.FieldTypeSelect,
+			value:     "_blank",
+			data:      `{"options":["_self","_blank"]}`,
+			wantMsg:   "",
+		},
+		{
+			name:      "select wrapped invalid value",
+			fieldType: types.FieldTypeSelect,
+			value:     "_parent",
+			data:      `{"options":["_self","_blank"]}`,
+			wantMsg:   "must be one of the allowed options",
+		},
+		// select — edge cases
 		{
 			name:      "select no options configured",
 			fieldType: types.FieldTypeSelect,

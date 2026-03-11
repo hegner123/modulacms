@@ -105,20 +105,41 @@ func validateType(ft types.FieldType, value string, data string) string {
 	}
 }
 
+// selectWrapped is the format used by definitions and the TUI: {"options":["a","b"]}
+type selectWrapped struct {
+	Options []string `json:"options"`
+}
+
 // validateSelect checks that value is one of the allowed options defined in the
-// field's data JSON column.
+// field's data JSON column. Supports two formats:
+//   - Wrapped:  {"options":["a","b"]}          (used by definitions, TUI, DB)
+//   - Flat:     [{"label":"A","value":"a"},...] (label/value pairs)
 func validateSelect(value string, data string) string {
 	if data == "" || data == "{}" {
 		// No options defined; cannot validate membership.
 		return "no select options configured"
 	}
 
-	var options []selectOption
-	if err := json.Unmarshal([]byte(data), &options); err != nil {
+	raw := []byte(data)
+
+	// Try wrapped format first — this is the format actually stored in the DB.
+	var wrapped selectWrapped
+	if err := json.Unmarshal(raw, &wrapped); err == nil && len(wrapped.Options) > 0 {
+		for _, o := range wrapped.Options {
+			if o == value {
+				return ""
+			}
+		}
+		return "must be one of the allowed options"
+	}
+
+	// Fall back to flat label/value array.
+	var flat []selectOption
+	if err := json.Unmarshal(raw, &flat); err != nil {
 		return "invalid select options configuration"
 	}
 
-	for _, opt := range options {
+	for _, opt := range flat {
 		if opt.Value == value {
 			return ""
 		}
