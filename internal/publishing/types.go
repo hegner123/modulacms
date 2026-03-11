@@ -66,6 +66,8 @@ type AdminSnapshot struct {
 // AdminSnapshotRoute holds admin route metadata at the time of publish.
 type AdminSnapshotRoute struct {
 	AdminRouteID string `json:"admin_route_id"`
+	Slug         string `json:"slug"`
+	Title        string `json:"title"`
 }
 
 // AdminSnapshotContentFieldJSON is a string-based representation of an admin content field.

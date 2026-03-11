@@ -318,6 +318,7 @@ type AdminRouteRepository interface {
 	CreateAdminRouteTable() error
 	DeleteAdminRoute(context.Context, audited.AuditContext, types.AdminRouteID) error
 	GetAdminRoute(types.Slug) (*AdminRoutes, error)
+	GetAdminRouteByID(types.AdminRouteID) (*AdminRoutes, error)
 	ListAdminRoutes() (*[]AdminRoutes, error)
 	ListAdminRoutesPaginated(PaginationParams) (*[]AdminRoutes, error)
 	UpdateAdminRoute(context.Context, audited.AuditContext, UpdateAdminRouteParams) (*string, error)

@@ -132,8 +132,17 @@ func BuildAdminSnapshot(d db.DbDriver, ctx context.Context, rootID types.AdminCo
 	}
 
 	// 6. Build route metadata.
-	route := AdminSnapshotRoute{
-		AdminRouteID: root.AdminRouteID.ID.String(),
+	var route AdminSnapshotRoute
+	if root.AdminRouteID.Valid {
+		r, rErr := d.GetAdminRouteByID(root.AdminRouteID.ID)
+		if rErr != nil {
+			return nil, fmt.Errorf("fetch admin route %s: %w", root.AdminRouteID.ID, rErr)
+		}
+		route = AdminSnapshotRoute{
+			AdminRouteID: r.AdminRouteID.String(),
+			Slug:         string(r.Slug),
+			Title:        r.Title,
+		}
 	}
 
 	// 7. Convert to JSON types for portable serialization.

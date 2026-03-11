@@ -47,13 +47,14 @@ func routeCreateFromDb(d db.CreateRouteParams) modula.CreateRouteParams {
 }
 
 // routeUpdateFromDb converts db UpdateRouteParams to SDK UpdateRouteParams.
+// Note: db.UpdateRouteParams uses Slug_2 as the old slug identifier;
+// the SDK uses RouteID. The caller must set RouteID separately if needed.
 func routeUpdateFromDb(d db.UpdateRouteParams) modula.UpdateRouteParams {
 	return modula.UpdateRouteParams{
 		Slug:     modula.Slug(string(d.Slug)),
 		Title:    d.Title,
 		Status:   d.Status,
 		AuthorID: userIDPtr(d.AuthorID),
-		Slug2:    modula.Slug(string(d.Slug_2)),
 	}
 }
 
@@ -134,7 +135,7 @@ func fieldToDb(s *modula.Field) db.Fields {
 		Validation:   s.Validation,
 		UIConfig:     s.UIConfig,
 		Type:         types.FieldType(string(s.Type)),
-		Translatable: s.Translatable != 0,
+		Translatable: s.Translatable,
 		Roles:        rolesToNullableString(s.Roles),
 		AuthorID:     nullUserID(s.AuthorID),
 		DateCreated:  sdkTimestampToDb(s.DateCreated),
@@ -144,10 +145,6 @@ func fieldToDb(s *modula.Field) db.Fields {
 
 // fieldFromDb converts a db Fields to a SDK Field.
 func fieldFromDb(d db.Fields) modula.Field {
-	var translatable int64
-	if d.Translatable {
-		translatable = 1
-	}
 	return modula.Field{
 		FieldID:      modula.FieldID(string(d.FieldID)),
 		ParentID:     datatypeIDPtr(d.ParentID),
@@ -158,7 +155,7 @@ func fieldFromDb(d db.Fields) modula.Field {
 		Validation:   d.Validation,
 		UIConfig:     d.UIConfig,
 		Type:         modula.FieldType(string(d.Type)),
-		Translatable: translatable,
+		Translatable: d.Translatable,
 		Roles:        nullableStringToRoles(d.Roles),
 		AuthorID:     userIDPtr(d.AuthorID),
 		DateCreated:  dbTimestampToSdk(d.DateCreated),

@@ -47,13 +47,14 @@ func adminRouteCreateFromDb(d db.CreateAdminRouteParams) modula.CreateAdminRoute
 }
 
 // adminRouteUpdateFromDb converts db UpdateAdminRouteParams to SDK UpdateAdminRouteParams.
+// Note: db.UpdateAdminRouteParams uses Slug_2 as the old slug identifier;
+// the SDK uses AdminRouteID. The caller must set AdminRouteID separately if needed.
 func adminRouteUpdateFromDb(d db.UpdateAdminRouteParams) modula.UpdateAdminRouteParams {
 	return modula.UpdateAdminRouteParams{
 		Slug:     modula.Slug(string(d.Slug)),
 		Title:    d.Title,
 		Status:   d.Status,
 		AuthorID: userIDPtr(d.AuthorID),
-		Slug2:    modula.Slug(string(d.Slug_2)),
 	}
 }
 
@@ -128,7 +129,7 @@ func adminFieldToDb(s *modula.AdminField) db.AdminFields {
 		Validation:   s.Validation,
 		UIConfig:     s.UIConfig,
 		Type:         types.FieldType(string(s.Type)),
-		Translatable: s.Translatable != 0,
+		Translatable: s.Translatable,
 		Roles:        rolesToNullableString(s.Roles),
 		AuthorID:     nullUserID(s.AuthorID),
 		DateCreated:  sdkTimestampToDb(s.DateCreated),
@@ -138,10 +139,6 @@ func adminFieldToDb(s *modula.AdminField) db.AdminFields {
 
 // adminFieldFromDb converts a db AdminFields to a SDK AdminField.
 func adminFieldFromDb(d db.AdminFields) modula.AdminField {
-	var translatable int64
-	if d.Translatable {
-		translatable = 1
-	}
 	return modula.AdminField{
 		AdminFieldID: modula.AdminFieldID(string(d.AdminFieldID)),
 		ParentID:     adminDatatypeIDPtr(d.ParentID),
@@ -152,7 +149,7 @@ func adminFieldFromDb(d db.AdminFields) modula.AdminField {
 		Validation:   d.Validation,
 		UIConfig:     d.UIConfig,
 		Type:         modula.FieldType(string(d.Type)),
-		Translatable: translatable,
+		Translatable: d.Translatable,
 		Roles:        nullableStringToRoles(d.Roles),
 		AuthorID:     userIDPtr(d.AuthorID),
 		DateCreated:  dbTimestampToSdk(d.DateCreated),

@@ -12,9 +12,9 @@ import (
 func registerAdminRouteTools(srv *server.MCPServer, client *modula.Client) {
 	// Admin Routes
 	srv.AddTool(mcp.NewTool("admin_list_routes", mcp.WithDescription("List all admin routes.")), handleAdminListRoutes(client))
-	srv.AddTool(mcp.NewTool("admin_get_route", mcp.WithDescription("Get a single admin route by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin route ID (ULID)"))), handleAdminGetRoute(client))
+	srv.AddTool(mcp.NewTool("admin_get_route", mcp.WithDescription("Get a single admin route by slug. The admin routes API uses slug-based lookup."), mcp.WithString("slug", mcp.Required(), mcp.Description("Admin route slug (e.g. '/admin')"))), handleAdminGetRoute(client))
 	srv.AddTool(mcp.NewTool("admin_create_route", mcp.WithDescription("Create a new admin route."), mcp.WithString("slug", mcp.Required(), mcp.Description("URL slug")), mcp.WithString("title", mcp.Required(), mcp.Description("Title")), mcp.WithNumber("status", mcp.Required(), mcp.Description("Status")), mcp.WithString("author_id", mcp.Description("Author user ID"))), handleAdminCreateRoute(client))
-	srv.AddTool(mcp.NewTool("admin_update_route", mcp.WithDescription("Update an admin route."), mcp.WithString("slug", mcp.Required(), mcp.Description("Current slug")), mcp.WithString("title", mcp.Required(), mcp.Description("Title")), mcp.WithNumber("status", mcp.Required(), mcp.Description("Status")), mcp.WithString("new_slug", mcp.Description("New slug if renaming")), mcp.WithString("author_id", mcp.Description("Author"))), handleAdminUpdateRoute(client))
+	srv.AddTool(mcp.NewTool("admin_update_route", mcp.WithDescription("Update an admin route by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin route ID (ULID)")), mcp.WithString("slug", mcp.Required(), mcp.Description("URL slug")), mcp.WithString("title", mcp.Required(), mcp.Description("Title")), mcp.WithNumber("status", mcp.Required(), mcp.Description("Status")), mcp.WithString("author_id", mcp.Description("Author"))), handleAdminUpdateRoute(client))
 	srv.AddTool(mcp.NewTool("admin_delete_route", mcp.WithDescription("Delete an admin route by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin route ID"))), handleAdminDeleteRoute(client))
 
 	// Admin Field Types
@@ -39,11 +39,12 @@ func handleAdminListRoutes(client *modula.Client) server.ToolHandlerFunc {
 
 func handleAdminGetRoute(client *modula.Client) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		id, err := req.RequireString("id")
+		slug, err := req.RequireString("slug")
 		if err != nil {
-			return mcp.NewToolResultError("id is required"), nil
+			return mcp.NewToolResultError("slug is required"), nil
 		}
-		result, err := client.AdminRoutes.Get(ctx, modula.AdminRouteID(id))
+		// Admin routes API uses slug-based lookup via the q parameter.
+		result, err := client.AdminRoutes.Get(ctx, modula.AdminRouteID(slug))
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -78,6 +79,10 @@ func handleAdminCreateRoute(client *modula.Client) server.ToolHandlerFunc {
 
 func handleAdminUpdateRoute(client *modula.Client) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
 		slug, err := req.RequireString("slug")
 		if err != nil {
 			return mcp.NewToolResultError("slug is required"), nil
@@ -88,11 +93,11 @@ func handleAdminUpdateRoute(client *modula.Client) server.ToolHandlerFunc {
 		}
 		status := int64(req.GetFloat("status", 0))
 		params := modula.UpdateAdminRouteParams{
-			Slug:     modula.Slug(slug),
-			Title:    title,
-			Status:   status,
-			AuthorID: optionalIDPtr[modula.UserID](req, "author_id"),
-			Slug2:    modula.Slug(req.GetString("new_slug", "")),
+			AdminRouteID: modula.AdminRouteID(id),
+			Slug:         modula.Slug(slug),
+			Title:        title,
+			Status:       status,
+			AuthorID:     optionalIDPtr[modula.UserID](req, "author_id"),
 		}
 		result, err := client.AdminRoutes.Update(ctx, params)
 		if err != nil {

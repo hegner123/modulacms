@@ -1255,6 +1255,18 @@ func (r *RemoteDriver) GetAdminRoute(slug types.Slug) (*db.AdminRoutes, error) {
 	})
 }
 
+func (r *RemoteDriver) GetAdminRouteByID(id types.AdminRouteID) (*db.AdminRoutes, error) {
+	return doRead(r, func() (*db.AdminRoutes, error) {
+		ctx := context.Background()
+		result, err := r.client.AdminRoutes.Get(ctx, modula.AdminRouteID(string(id)))
+		if err != nil {
+			return nil, fmt.Errorf("remote: GetAdminRouteByID: %w", err)
+		}
+		row := adminRouteToDb(result)
+		return &row, nil
+	})
+}
+
 func (r *RemoteDriver) ListAdminRoutes() (*[]db.AdminRoutes, error) {
 	return doRead(r, func() (*[]db.AdminRoutes, error) {
 		ctx := context.Background()

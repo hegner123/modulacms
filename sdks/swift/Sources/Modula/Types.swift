@@ -392,7 +392,7 @@ public struct Field: Codable, Sendable {
     public let validation: String
     public let uiConfig: String
     public let type: FieldType
-    public let translatable: Int
+    public let translatable: Bool
     public let roles: [String]?
     public let authorID: UserID?
     public let dateCreated: Timestamp
@@ -1659,7 +1659,7 @@ public struct AdminField: Codable, Sendable {
     public let validation: String
     public let uiConfig: String
     public let type: FieldType
-    public let translatable: Int
+    public let translatable: Bool
     public let roles: [String]?
     public let authorID: UserID?
     public let dateCreated: Timestamp

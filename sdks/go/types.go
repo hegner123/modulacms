@@ -187,7 +187,7 @@ type UpdateDatatypeParams struct {
 // The Type field specifies the data type (text, number, media, reference, etc.).
 // Data holds type-specific configuration as JSON, Validation holds validation rules as JSON,
 // and UIConfig holds rendering hints for admin interfaces as JSON.
-// When Translatable is non-zero, the field supports per-locale values for i18n content.
+// When Translatable is true, the field supports per-locale values for i18n content.
 // Roles restricts field visibility to specific roles; nil means unrestricted access.
 type Field struct {
 	FieldID      FieldID     `json:"field_id"`
@@ -199,7 +199,7 @@ type Field struct {
 	Validation   string      `json:"validation"`
 	UIConfig     string      `json:"ui_config"`
 	Type         FieldType   `json:"type"`
-	Translatable int64       `json:"translatable"`
+	Translatable bool        `json:"translatable"`
 	Roles        []string    `json:"roles"` // nil = unrestricted
 	AuthorID     *UserID     `json:"author_id"`
 	DateCreated  Timestamp   `json:"date_created"`
@@ -380,14 +380,13 @@ type CreateRouteParams struct {
 }
 
 // UpdateRouteParams contains parameters for updating an existing route.
-// Slug identifies the route to update. Slug2 is the new slug value when renaming
-// the route's URL path; set it equal to Slug if the path should not change.
+// RouteID identifies the route to update. Slug is the new slug value.
 type UpdateRouteParams struct {
+	RouteID  RouteID `json:"route_id"`
 	Slug     Slug    `json:"slug"`
 	Title    string  `json:"title"`
 	Status   int64   `json:"status"`
 	AuthorID *UserID `json:"author_id"`
-	Slug2    Slug    `json:"slug_2"` // New slug value when renaming; same as Slug if unchanged.
 }
 
 // ---------------------------------------------------------------------------
@@ -852,7 +851,7 @@ type AdminField struct {
 	Validation   string           `json:"validation"`
 	UIConfig     string           `json:"ui_config"`
 	Type         FieldType        `json:"type"`
-	Translatable int64            `json:"translatable"`
+	Translatable bool             `json:"translatable"`
 	Roles        []string         `json:"roles"` // nil = unrestricted
 	AuthorID     *UserID          `json:"author_id"`
 	DateCreated  Timestamp        `json:"date_created"`
@@ -999,13 +998,13 @@ type CreateAdminRouteParams struct {
 }
 
 // UpdateAdminRouteParams contains parameters for updating an existing admin route.
-// Slug identifies the route to update. Slug2 is the new slug value when renaming.
+// AdminRouteID identifies the route to update. Slug is the new slug value.
 type UpdateAdminRouteParams struct {
-	Slug     Slug    `json:"slug"`
-	Title    string  `json:"title"`
-	Status   int64   `json:"status"`
-	AuthorID *UserID `json:"author_id"`
-	Slug2    Slug    `json:"slug_2"` // New slug value when renaming; same as Slug if unchanged.
+	AdminRouteID AdminRouteID `json:"route_id"`
+	Slug         Slug         `json:"slug"`
+	Title        string       `json:"title"`
+	Status       int64        `json:"status"`
+	AuthorID     *UserID      `json:"author_id"`
 }
 
 // ---------------------------------------------------------------------------

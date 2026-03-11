@@ -50,6 +50,17 @@ func (d Database) GetAdminRoute(slug types.Slug) (*AdminRoutes, error) {
 	return &res, nil
 }
 
+// GetAdminRouteByID retrieves an admin route by ID.
+func (d Database) GetAdminRouteByID(id types.AdminRouteID) (*AdminRoutes, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetAdminRouteById(d.Context, mdb.GetAdminRouteByIdParams{AdminRouteID: id})
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapAdminRoute(row)
+	return &res, nil
+}
+
 // ListAdminRoutesPaginated returns a page of admin routes.
 func (d Database) ListAdminRoutesPaginated(params PaginationParams) (*[]AdminRoutes, error) {
 	queries := mdb.New(d.Connection)
@@ -225,6 +236,17 @@ func (d MysqlDatabase) GetAdminRoute(slug types.Slug) (*AdminRoutes, error) {
 	return &res, nil
 }
 
+// GetAdminRouteByID retrieves an admin route by ID.
+func (d MysqlDatabase) GetAdminRouteByID(id types.AdminRouteID) (*AdminRoutes, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetAdminRouteById(d.Context, mdbm.GetAdminRouteByIdParams{AdminRouteID: id})
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapAdminRoute(row)
+	return &res, nil
+}
+
 // CreateAdminRoute inserts a new admin route record.
 func (d MysqlDatabase) CreateAdminRoute(ctx context.Context, ac audited.AuditContext, s CreateAdminRouteParams) (*AdminRoutes, error) {
 	cmd := d.NewAdminRouteCmd(ctx, ac, s)
@@ -389,6 +411,17 @@ func (d PsqlDatabase) GetAdminRoute(slug types.Slug) (*AdminRoutes, error) {
 	return &res, nil
 }
 
+// GetAdminRouteByID retrieves an admin route by ID.
+func (d PsqlDatabase) GetAdminRouteByID(id types.AdminRouteID) (*AdminRoutes, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetAdminRouteById(d.Context, mdbp.GetAdminRouteByIdParams{AdminRouteID: id})
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapAdminRoute(row)
+	return &res, nil
+}
+
 // CreateAdminRoute inserts a new admin route record.
 func (d PsqlDatabase) CreateAdminRoute(ctx context.Context, ac audited.AuditContext, s CreateAdminRouteParams) (*AdminRoutes, error) {
 	cmd := d.NewAdminRouteCmd(ctx, ac, s)
@@ -523,7 +556,7 @@ func (c DeleteAdminRouteCmdPsql) TableName() string                     { return
 func (c DeleteAdminRouteCmdPsql) GetID() string                         { return string(c.id) }
 func (c DeleteAdminRouteCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminRoutes, error) {
 	queries := mdbp.New(tx)
-	return queries.GetAdminRoute(ctx, mdbp.GetAdminRouteParams{AdminRouteID: c.id})
+	return queries.GetAdminRouteById(ctx, mdbp.GetAdminRouteByIdParams{AdminRouteID: c.id})
 }
 func (c DeleteAdminRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)

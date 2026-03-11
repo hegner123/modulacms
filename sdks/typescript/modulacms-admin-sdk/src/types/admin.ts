@@ -200,8 +200,8 @@ export type AdminField = {
   ui_config: string
   /** The data type of this field. */
   type: FieldType
-  /** Whether this field is translatable (0 = no, 1 = yes). */
-  translatable: number
+  /** Whether this field supports per-locale values for i18n content. */
+  translatable: boolean
   /** Role names that can access this field, or `null` for unrestricted. */
   roles: string[] | null
   /** ID of the user who created this field, or `null`. */
