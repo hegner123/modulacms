@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -221,7 +222,19 @@ func handleAdminReorderContent(client *modula.Client) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
 		rawIDs, ok := args["ordered_ids"].([]any)
-		if !ok || len(rawIDs) == 0 {
+		if !ok {
+			if s, sOk := args["ordered_ids"].(string); sOk {
+				var parsed []string
+				if err := json.Unmarshal([]byte(s), &parsed); err != nil {
+					return mcp.NewToolResultError("ordered_ids must be a JSON array of admin content IDs"), nil
+				}
+				rawIDs = make([]any, len(parsed))
+				for i, v := range parsed {
+					rawIDs[i] = v
+				}
+			}
+		}
+		if len(rawIDs) == 0 {
 			return mcp.NewToolResultError("ordered_ids must be a non-empty array"), nil
 		}
 		ids := make([]modula.AdminContentID, 0, len(rawIDs))

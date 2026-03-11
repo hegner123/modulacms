@@ -231,9 +231,16 @@ func parseRouteApprovalItems(req mcp.CallToolRequest) ([]modula.RouteApprovalIte
 	if !ok {
 		return nil, nil
 	}
-	b, err := json.Marshal(raw)
-	if err != nil {
-		return nil, err
+	// Handle both string (JSON-encoded) and native array from MCP framework.
+	var b []byte
+	if s, ok := raw.(string); ok {
+		b = []byte(s)
+	} else {
+		var err error
+		b, err = json.Marshal(raw)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var items []modula.RouteApprovalItem
 	if err := json.Unmarshal(b, &items); err != nil {
@@ -292,9 +299,16 @@ func parseHookApprovalItems(req mcp.CallToolRequest) ([]modula.HookApprovalItem,
 	if !ok {
 		return nil, nil
 	}
-	b, err := json.Marshal(raw)
-	if err != nil {
-		return nil, err
+	// Handle both string (JSON-encoded) and native array from MCP framework.
+	var b []byte
+	if s, ok := raw.(string); ok {
+		b = []byte(s)
+	} else {
+		var err error
+		b, err = json.Marshal(raw)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var items []modula.HookApprovalItem
 	if err := json.Unmarshal(b, &items); err != nil {

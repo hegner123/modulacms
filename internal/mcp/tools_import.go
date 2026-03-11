@@ -23,6 +23,7 @@ func registerImportTools(srv *server.MCPServer, client *modula.Client) {
 	srv.AddTool(
 		mcp.NewTool("import_bulk",
 			mcp.WithDescription("Bulk import data. Accepts a raw JSON object that is posted directly to the bulk import endpoint."),
+			mcp.WithString("format", mcp.Required(), mcp.Description("Import format"), mcp.Enum("contentful", "sanity", "strapi", "wordpress", "clean")),
 			mcp.WithObject("data", mcp.Required(), mcp.Description("Import data as a JSON object")),
 		),
 		handleImportBulk(client),
@@ -66,12 +67,16 @@ func handleImportContent(client *modula.Client) server.ToolHandlerFunc {
 
 func handleImportBulk(client *modula.Client) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		format, err := req.RequireString("format")
+		if err != nil {
+			return mcp.NewToolResultError("format is required"), nil
+		}
 		args := req.GetArguments()
 		data, ok := args["data"]
 		if !ok {
 			return mcp.NewToolResultError("data is required"), nil
 		}
-		result, err := client.Import.Bulk(ctx, data)
+		result, err := client.Import.Bulk(ctx, format, data)
 		if err != nil {
 			return errResult(err), nil
 		}

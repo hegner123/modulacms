@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -316,6 +317,11 @@ func handleGetContentTree(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("slug is required"), nil
 		}
+		// The admin tree endpoint expects the slug as a path segment, not prefixed with "/".
+		slug = strings.TrimPrefix(slug, "/")
+		if slug == "" {
+			return mcp.NewToolResultError("slug must not be empty (use the route slug without leading '/')"), nil
+		}
 		format := req.GetString("format", "")
 		result, err := client.AdminTree.Get(ctx, slug, format)
 		if err != nil {
@@ -493,7 +499,19 @@ func handleReorderContent(client *modula.Client) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
 		rawIDs, ok := args["ordered_ids"].([]any)
-		if !ok || len(rawIDs) == 0 {
+		if !ok {
+			if s, sOk := args["ordered_ids"].(string); sOk {
+				var parsed []string
+				if err := json.Unmarshal([]byte(s), &parsed); err != nil {
+					return mcp.NewToolResultError("ordered_ids must be a JSON array of content IDs"), nil
+				}
+				rawIDs = make([]any, len(parsed))
+				for i, v := range parsed {
+					rawIDs[i] = v
+				}
+			}
+		}
+		if len(rawIDs) == 0 {
 			return mcp.NewToolResultError("ordered_ids must be a non-empty array of content IDs"), nil
 		}
 		ids := make([]modula.ContentID, 0, len(rawIDs))
