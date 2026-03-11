@@ -53,7 +53,5 @@ func (s *SSHKeysResource) GetByFingerprint(ctx context.Context, fingerprint stri
 // Delete removes an SSH key by its ID. After deletion, the key can no longer
 // be used to authenticate SSH connections to the CMS server.
 func (s *SSHKeysResource) Delete(ctx context.Context, id UserSshKeyID) error {
-	params := url.Values{}
-	params.Set("q", string(id))
-	return s.http.del(ctx, "/api/v1/ssh-keys/", params)
+	return s.http.del(ctx, "/api/v1/ssh-keys/"+string(id), nil)
 }

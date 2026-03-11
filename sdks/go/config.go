@@ -35,10 +35,16 @@ type ConfigFieldMeta struct {
 	Description   string `json:"description"`
 }
 
+// ConfigCategory describes a config category with its key and display label.
+type ConfigCategory struct {
+	Key   string `json:"key"`
+	Label string `json:"label"`
+}
+
 // ConfigMetaResponse is the response from the config meta endpoint.
 type ConfigMetaResponse struct {
 	Fields     []ConfigFieldMeta `json:"fields"`
-	Categories []string          `json:"categories"`
+	Categories []ConfigCategory  `json:"categories"`
 }
 
 // ---------------------------------------------------------------------------

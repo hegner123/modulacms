@@ -102,6 +102,27 @@ func (h *httpClient) doRaw(ctx context.Context, req *http.Request) (*http.Respon
 	return resp, nil
 }
 
+// postWithQuery performs a POST request with query parameters and a JSON body.
+func (h *httpClient) postWithQuery(ctx context.Context, path string, params url.Values, body any, result any) error {
+	fullURL := h.baseURL + path
+	if len(params) > 0 {
+		fullURL += "?" + params.Encode()
+	}
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(body); err != nil {
+		return fmt.Errorf("modula: encoding request body: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fullURL, &buf)
+	if err != nil {
+		return fmt.Errorf("modula: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	return h.do(req, result)
+}
+
 // jsonRequest builds and executes an HTTP request with a JSON-encoded body
 // and Content-Type: application/json header. Used by post and put.
 func (h *httpClient) jsonRequest(ctx context.Context, method string, path string, body any, result any) error {

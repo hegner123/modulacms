@@ -3,6 +3,8 @@ package modula
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/url"
 )
 
 // ImportResource provides CMS data import operations from various headless CMS
@@ -75,12 +77,13 @@ func (i *ImportResource) Clean(ctx context.Context, data any) (json.RawMessage, 
 }
 
 // Bulk performs a bulk import of data using the server's generic import endpoint.
-// The data parameter should contain a collection of records to import. This method
-// auto-detects the format or uses the raw payload directly for high-volume imports.
-func (i *ImportResource) Bulk(ctx context.Context, data any) (json.RawMessage, error) {
+// The format parameter specifies how the data should be parsed (e.g., "contentful",
+// "sanity", "clean"). The data parameter contains the import payload.
+func (i *ImportResource) Bulk(ctx context.Context, format string, data any) (json.RawMessage, error) {
+	params := url.Values{"format": {format}}
 	var result json.RawMessage
-	if err := i.http.post(ctx, "/api/v1/import", data, &result); err != nil {
-		return nil, err
+	if err := i.http.postWithQuery(ctx, "/api/v1/import", params, data, &result); err != nil {
+		return nil, fmt.Errorf("bulk import (%s): %w", format, err)
 	}
 	return result, nil
 }
