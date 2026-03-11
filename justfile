@@ -244,7 +244,8 @@ admin action:
         bundle)        esbuild internal/admin/static/js/block-editor-src/index.js --bundle --format=esm --banner:js="// AUTO-GENERATED — DO NOT EDIT. Source: block-editor-src/. Regenerate: just admin bundle" --outfile=internal/admin/static/js/block-editor.js ;;
         bundle-watch)  esbuild internal/admin/static/js/block-editor-src/index.js --bundle --format=esm --banner:js="// AUTO-GENERATED — DO NOT EDIT. Source: block-editor-src/. Regenerate: just admin bundle" --outfile=internal/admin/static/js/block-editor.js --watch ;;
         bundle-verify) just admin bundle && git diff --exit-code internal/admin/static/js/block-editor.js ;;
-        *)             echo "Unknown action: {{action}}"; echo "Actions: generate, watch, verify, bundle, bundle-watch, bundle-verify"; exit 1 ;;
+        test)          cd internal/admin/static/js/block-editor-src && npx vitest run ;;
+        *)             echo "Unknown action: {{action}}"; echo "Actions: generate, watch, verify, bundle, bundle-watch, bundle-verify, test"; exit 1 ;;
     esac
 
 # [Codegen] Generate sqlc.yml from shared definitions

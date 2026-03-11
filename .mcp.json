@@ -5,7 +5,7 @@
                         "args": ["mcp"],
                         "env": {
                                 "MODULA_URL": "${MODULA_URL:-http://localhost:8080}",
-                                "MODULA_API_KEY": "123123123"
+                                "MODULA_API_KEY": "mcms_0r_NxcfGGiiCwUgz6N9hYOtj-d7gOrXFQueA8--oTwE"
                         }
                 }
         }

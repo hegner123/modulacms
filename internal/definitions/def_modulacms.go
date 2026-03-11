@@ -322,7 +322,7 @@ func init() {
 			"menu": {
 				Name:  "menu",
 				Label: "Menu",
-				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
+				Type:  types.NewNullableString(string(types.DatatypeTypeGlobal)),
 				FieldRefs: []FieldDef{
 					{Name: "title", Label: "Title", Type: types.FieldTypeTitle},
 					{Name: "slug", Label: "Slug", Type: types.FieldTypeSlug},

@@ -12,6 +12,15 @@ ModulaCMS is a headless CMS written in Go that runs as a single binary with thre
 - Uses `just` (justfile) as the build runner, not Make
 - **Project Board:** [GitHub Project (Roadmap)](https://github.com/users/hegner123/projects/2/views/1)
 
+### Dual Content Schema
+
+ModulaCMS has two independent content systems with identical schema structure:
+
+- **Public tables** (`content_data`, `datatypes`, `fields`, `routes`, etc.) — content served to frontend clients via the API. This is the site's actual content.
+- **Admin tables** (`admin_content_data`, `admin_datatypes`, `admin_fields`, `admin_routes`, etc.) — content that powers the admin panel UI itself. Operators use these to build and customize their admin interface.
+
+These are **not** a draft/published pipeline. They are two parallel content systems sharing the same schema design. Each has its own publish flow, versioning, and tree structure. Code that works on one must work on both — any feature added to public content (search, nesting constraints, etc.) applies equally to admin content.
+
 ## Rules
 
 These are imperative rules. When a workflow document in `ai/workflows/` conflicts with this file, the workflow document is authoritative.
