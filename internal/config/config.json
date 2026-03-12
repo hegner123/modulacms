@@ -1,0 +1,60 @@
+{
+    "node_id": "01KGWQKFNTGWBT0A3ABK5VHXA6",
+    "port": "8080",
+    "ssl_port": "4000",
+    "client_site": "modulacms.com",
+    "admin__site": "admin.modulacms.com",
+    "ssh_host": "localhost",
+    "ssh_port": "2233",
+    "db_driver": "sqlite",
+    "db_url": "./modula.db",
+    "db_name": "modula.db",
+    "db_password": "none",
+    "bucket_endpoint": "us-iad-10.linodeobjects.com",
+    "bucket_access_key": "RMK7Q10WV4AUMFAZYI7E",
+    "bucket_secret_key": "LNbFZDSi25erOCWdRbADU4hmeLw97W8IHHx20sk4",
+    "backup_option": "",
+    "backup_path": [
+        ""
+    ],
+    "oauth_client_id": "Ov23liFoy8pVGnAnGgrE",
+    "oauth_client_secret": "f57dda6a58faa59e4803f08efca11362478dcd3c",
+    "oauth_scopes": [
+        "user"
+    ],
+    "oauth_endpoint": {
+        "oauth_auth_url": "https://github.com/login/oauth/authorize",
+        "oauth_token_url": "https://github.com/login/oauth2/token"
+    },
+    "cors_origins": [
+        "http://localhost:3000",
+        "https://modulacms.com",
+        "https://admin.modulacms.com"
+    ],
+    "cors_methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+    ],
+    "cors_headers": [
+        "Content-Type",
+        "Authorization"
+    ],
+    "cors_credentials": true,
+    "email_enabled": false,
+    "email_provider": "",
+    "email_from_address": "",
+    "email_from_name": "",
+    "email_host": "",
+    "email_port": 587,
+    "email_username": "",
+    "email_password": "",
+    "email_tls": true,
+    "email_api_key": "",
+    "email_api_endpoint": "",
+    "email_reply_to": "",
+    "email_aws_access_key_id": "",
+    "email_aws_secret_access_key": ""
+}
