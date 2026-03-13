@@ -7,11 +7,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerContentTools(srv *server.MCPServer, client *modula.Client) {
+func registerContentTools(srv *server.MCPServer, backend ContentBackend) {
 	// --- Content Data CRUD ---
 
 	srv.AddTool(
@@ -20,7 +18,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithNumber("limit", mcp.Description("Max items to return (default 20, max 1000)"), mcp.DefaultNumber(20)),
 			mcp.WithNumber("offset", mcp.Description("Number of items to skip (default 0)"), mcp.DefaultNumber(0)),
 		),
-		handleListContent(client),
+		handleListContent(backend),
 	)
 
 	srv.AddTool(
@@ -28,7 +26,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single content data entry by ID. Returns structural metadata without field values."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Content data ID (ULID)")),
 		),
-		handleGetContent(client),
+		handleGetContent(backend),
 	)
 
 	srv.AddTool(
@@ -40,7 +38,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("datatype_id", mcp.Description("Datatype ID defining the content schema")),
 			mcp.WithString("author_id", mcp.Description("Author user ID (use whoami to get yours)")),
 		),
-		handleCreateContent(client),
+		handleCreateContent(backend),
 	)
 
 	srv.AddTool(
@@ -53,7 +51,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("datatype_id", mcp.Description("Datatype ID")),
 			mcp.WithString("author_id", mcp.Description("Author user ID")),
 		),
-		handleUpdateContent(client),
+		handleUpdateContent(backend),
 	)
 
 	srv.AddTool(
@@ -61,7 +59,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete a content data entry by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Content data ID (ULID)")),
 		),
-		handleDeleteContent(client),
+		handleDeleteContent(backend),
 	)
 
 	// --- Content Delivery ---
@@ -73,7 +71,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("format", mcp.Description("Response format: contentful, sanity, strapi, wordpress, clean, raw (default: server default)"), mcp.Enum("contentful", "sanity", "strapi", "wordpress", "clean", "raw")),
 			mcp.WithString("locale", mcp.Description("Locale code for localized content (e.g. 'en', 'de', 'fr')")),
 		),
-		handleGetPage(client),
+		handleGetPage(backend),
 	)
 
 	srv.AddTool(
@@ -82,7 +80,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("slug", mcp.Required(), mcp.Description("URL slug to retrieve the tree for")),
 			mcp.WithString("format", mcp.Description("Response format: contentful, sanity, strapi, wordpress, clean, raw (default: server default)"), mcp.Enum("contentful", "sanity", "strapi", "wordpress", "clean", "raw")),
 		),
-		handleGetContentTree(client),
+		handleGetContentTree(backend),
 	)
 
 	// --- Content Fields ---
@@ -93,7 +91,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithNumber("limit", mcp.Description("Max items to return (default 20, max 1000)"), mcp.DefaultNumber(20)),
 			mcp.WithNumber("offset", mcp.Description("Number of items to skip (default 0)"), mcp.DefaultNumber(0)),
 		),
-		handleListContentFields(client),
+		handleListContentFields(backend),
 	)
 
 	srv.AddTool(
@@ -105,7 +103,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("route_id", mcp.Description("Route ID")),
 			mcp.WithString("author_id", mcp.Description("Author user ID")),
 		),
-		handleCreateContentField(client),
+		handleCreateContentField(backend),
 	)
 
 	srv.AddTool(
@@ -118,7 +116,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("route_id", mcp.Description("Route ID")),
 			mcp.WithString("author_id", mcp.Description("Author user ID")),
 		),
-		handleUpdateContentField(client),
+		handleUpdateContentField(backend),
 	)
 
 	srv.AddTool(
@@ -126,7 +124,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete a content field record by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Content field ID (ULID)")),
 		),
-		handleDeleteContentField(client),
+		handleDeleteContentField(backend),
 	)
 
 	// --- Content Field Get ---
@@ -136,7 +134,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single content field by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Content field ID (ULID)")),
 		),
-		handleGetContentField(client),
+		handleGetContentField(backend),
 	)
 
 	// --- Content Reorder ---
@@ -147,7 +145,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("parent_id", mcp.Description("Parent content ID (null for root-level siblings)")),
 			mcp.WithObject("ordered_ids", mcp.Required(), mcp.Description("Array of content data IDs in desired order")),
 		),
-		handleReorderContent(client),
+		handleReorderContent(backend),
 	)
 
 	srv.AddTool(
@@ -157,7 +155,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("new_parent_id", mcp.Description("New parent content ID (null for root)")),
 			mcp.WithNumber("position", mcp.Required(), mcp.Description("Zero-based position among siblings")),
 		),
-		handleMoveContent(client),
+		handleMoveContent(backend),
 	)
 
 	// --- Content Tree ---
@@ -167,7 +165,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Atomically apply tree structure changes (creates, deletes, pointer updates) in a single request. This is the preferred way to persist block editor state."),
 			mcp.WithObject("request", mcp.Required(), mcp.Description("TreeSaveRequest JSON: content_id (required), creates (array), updates (array), deletes (array of IDs)")),
 		),
-		handleSaveContentTree(client),
+		handleSaveContentTree(backend),
 	)
 
 	// --- Content Heal ---
@@ -177,7 +175,7 @@ func registerContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Scan content_data and content_field rows for malformed IDs and repair them. Use dry_run=true to preview without writing."),
 			mcp.WithBoolean("dry_run", mcp.Description("If true, preview repairs without writing changes (default false)")),
 		),
-		handleHealContent(client),
+		handleHealContent(backend),
 	)
 
 	// --- Content Batch ---
@@ -198,62 +196,63 @@ Response includes: content_data_id, content_data_updated, content_data_error, fi
 			mcp.WithObject("content_data", mcp.Description("Content data fields to update (parent_id, route_id, datatype_id, status, etc.)")),
 			mcp.WithObject("fields", mcp.Description("Map of field_id to new field value. Existing fields are updated; missing fields are created.")),
 		),
-		handleBatchUpdateContent(client),
+		handleBatchUpdateContent(backend),
 	)
 }
 
 // --- Content Data Handlers ---
 
-func handleListContent(client *modula.Client) server.ToolHandlerFunc {
+func handleListContent(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		limit := int64(req.GetFloat("limit", 20))
 		offset := int64(req.GetFloat("offset", 0))
-		result, err := client.ContentData.ListPaginated(ctx, modula.PaginationParams{
-			Limit: limit, Offset: offset,
+		data, err := backend.ListContent(ctx, limit, offset)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleGetContent(backend ContentBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		data, err := backend.GetContent(ctx, id)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleCreateContent(backend ContentBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		status, err := req.RequireString("status")
+		if err != nil {
+			return mcp.NewToolResultError("status is required"), nil
+		}
+		params, err := marshalParams(map[string]any{
+			"parent_id":   optionalStrPtr(req, "parent_id"),
+			"route_id":    optionalStrPtr(req, "route_id"),
+			"datatype_id": optionalStrPtr(req, "datatype_id"),
+			"author_id":   optionalStrPtr(req, "author_id"),
+			"status":      status,
 		})
 		if err != nil {
-			return errResult(err), nil
+			return nil, err
 		}
-		return jsonResult(result)
-	}
-}
-
-func handleGetContent(client *modula.Client) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		id, err := req.RequireString("id")
-		if err != nil {
-			return mcp.NewToolResultError("id is required"), nil
-		}
-		result, err := client.ContentData.Get(ctx, modula.ContentID(id))
+		data, err := backend.CreateContent(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleCreateContent(client *modula.Client) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		status, err := req.RequireString("status")
-		if err != nil {
-			return mcp.NewToolResultError("status is required"), nil
-		}
-		params := modula.CreateContentDataParams{
-			ParentID:   optionalIDPtr[modula.ContentID](req, "parent_id"),
-			RouteID:    optionalIDPtr[modula.RouteID](req, "route_id"),
-			DatatypeID: optionalIDPtr[modula.DatatypeID](req, "datatype_id"),
-			AuthorID:   optionalIDPtr[modula.UserID](req, "author_id"),
-			Status:     modula.ContentStatus(status),
-		}
-		result, err := client.ContentData.Create(ctx, params)
-		if err != nil {
-			return errResult(err), nil
-		}
-		return jsonResult(result)
-	}
-}
-
-func handleUpdateContent(client *modula.Client) server.ToolHandlerFunc {
+func handleUpdateContent(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -263,29 +262,32 @@ func handleUpdateContent(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("status is required"), nil
 		}
-		params := modula.UpdateContentDataParams{
-			ContentDataID: modula.ContentID(id),
-			ParentID:      optionalIDPtr[modula.ContentID](req, "parent_id"),
-			RouteID:       optionalIDPtr[modula.RouteID](req, "route_id"),
-			DatatypeID:    optionalIDPtr[modula.DatatypeID](req, "datatype_id"),
-			AuthorID:      optionalIDPtr[modula.UserID](req, "author_id"),
-			Status:        modula.ContentStatus(status),
+		params, err := marshalParams(map[string]any{
+			"content_data_id": id,
+			"parent_id":       optionalStrPtr(req, "parent_id"),
+			"route_id":        optionalStrPtr(req, "route_id"),
+			"datatype_id":     optionalStrPtr(req, "datatype_id"),
+			"author_id":       optionalStrPtr(req, "author_id"),
+			"status":          status,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.ContentData.Update(ctx, params)
+		data, err := backend.UpdateContent(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeleteContent(client *modula.Client) server.ToolHandlerFunc {
+func handleDeleteContent(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.ContentData.Delete(ctx, modula.ContentID(id))
+		err = backend.DeleteContent(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -295,7 +297,7 @@ func handleDeleteContent(client *modula.Client) server.ToolHandlerFunc {
 
 // --- Content Delivery Handlers ---
 
-func handleGetPage(client *modula.Client) server.ToolHandlerFunc {
+func handleGetPage(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		slug, err := req.RequireString("slug")
 		if err != nil {
@@ -303,15 +305,15 @@ func handleGetPage(client *modula.Client) server.ToolHandlerFunc {
 		}
 		format := req.GetString("format", "")
 		locale := req.GetString("locale", "")
-		result, err := client.Content.GetPage(ctx, slug, format, locale)
+		data, err := backend.GetPage(ctx, slug, format, locale)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return mcp.NewToolResultText(string(result)), nil
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleGetContentTree(client *modula.Client) server.ToolHandlerFunc {
+func handleGetContentTree(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		slug, err := req.RequireString("slug")
 		if err != nil {
@@ -323,31 +325,29 @@ func handleGetContentTree(client *modula.Client) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("slug must not be empty (use the route slug without leading '/')"), nil
 		}
 		format := req.GetString("format", "")
-		result, err := client.AdminTree.Get(ctx, slug, format)
+		data, err := backend.GetContentTree(ctx, slug, format)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return mcp.NewToolResultText(string(result)), nil
+		return rawJSONResult(data), nil
 	}
 }
 
 // --- Content Field Handlers ---
 
-func handleListContentFields(client *modula.Client) server.ToolHandlerFunc {
+func handleListContentFields(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		limit := int64(req.GetFloat("limit", 20))
 		offset := int64(req.GetFloat("offset", 0))
-		result, err := client.ContentFields.ListPaginated(ctx, modula.PaginationParams{
-			Limit: limit, Offset: offset,
-		})
+		data, err := backend.ListContentFields(ctx, limit, offset)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleCreateContentField(client *modula.Client) server.ToolHandlerFunc {
+func handleCreateContentField(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		cdID, err := req.RequireString("content_data_id")
 		if err != nil {
@@ -361,24 +361,25 @@ func handleCreateContentField(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("field_value is required"), nil
 		}
-		contentDataID := modula.ContentID(cdID)
-		fieldID := modula.FieldID(fID)
-		params := modula.CreateContentFieldParams{
-			ContentDataID: &contentDataID,
-			FieldID:       &fieldID,
-			FieldValue:    fVal,
-			RouteID:       optionalIDPtr[modula.RouteID](req, "route_id"),
-			AuthorID:      optionalIDPtr[modula.UserID](req, "author_id"),
+		params, err := marshalParams(map[string]any{
+			"content_data_id": cdID,
+			"field_id":        fID,
+			"field_value":     fVal,
+			"route_id":        optionalStrPtr(req, "route_id"),
+			"author_id":       optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.ContentFields.Create(ctx, params)
+		data, err := backend.CreateContentField(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleUpdateContentField(client *modula.Client) server.ToolHandlerFunc {
+func handleUpdateContentField(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -388,53 +389,32 @@ func handleUpdateContentField(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("field_value is required"), nil
 		}
-
-		cfID := modula.ContentFieldID(id)
-
-		// Fetch existing record to preserve unmodified fields (PUT is full replacement)
-		existing, err := client.ContentFields.Get(ctx, cfID)
+		params, err := marshalParams(map[string]any{
+			"content_field_id": id,
+			"content_data_id":  optionalStrPtr(req, "content_data_id"),
+			"field_id":         optionalStrPtr(req, "field_id"),
+			"field_value":      fVal,
+			"route_id":         optionalStrPtr(req, "route_id"),
+			"author_id":        optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
+		}
+		data, err := backend.UpdateContentField(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-
-		params := modula.UpdateContentFieldParams{
-			ContentFieldID: cfID,
-			ContentDataID:  existing.ContentDataID,
-			FieldID:        existing.FieldID,
-			FieldValue:     fVal,
-			RouteID:        existing.RouteID,
-			AuthorID:       existing.AuthorID,
-		}
-
-		// Override with explicitly provided values
-		if v := optionalIDPtr[modula.ContentID](req, "content_data_id"); v != nil {
-			params.ContentDataID = v
-		}
-		if v := optionalIDPtr[modula.FieldID](req, "field_id"); v != nil {
-			params.FieldID = v
-		}
-		if v := optionalIDPtr[modula.RouteID](req, "route_id"); v != nil {
-			params.RouteID = v
-		}
-		if v := optionalIDPtr[modula.UserID](req, "author_id"); v != nil {
-			params.AuthorID = v
-		}
-
-		result, err := client.ContentFields.Update(ctx, params)
-		if err != nil {
-			return errResult(err), nil
-		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeleteContentField(client *modula.Client) server.ToolHandlerFunc {
+func handleDeleteContentField(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.ContentFields.Delete(ctx, modula.ContentFieldID(id))
+		err = backend.DeleteContentField(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -444,7 +424,7 @@ func handleDeleteContentField(client *modula.Client) server.ToolHandlerFunc {
 
 // --- Content Batch Handler ---
 
-func handleBatchUpdateContent(client *modula.Client) server.ToolHandlerFunc {
+func handleBatchUpdateContent(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		cdID, err := req.RequireString("content_data_id")
 		if err != nil {
@@ -460,42 +440,37 @@ func handleBatchUpdateContent(client *modula.Client) server.ToolHandlerFunc {
 		if f, ok := args["fields"]; ok {
 			body["fields"] = f
 		}
-		result, err := client.ContentBatch.Update(ctx, body)
+		params, err := marshalParams(body)
+		if err != nil {
+			return nil, err
+		}
+		data, err := backend.BatchUpdateContent(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		// Pretty-print the raw JSON response
-		var pretty json.RawMessage
-		if jsonErr := json.Unmarshal(result, &pretty); jsonErr != nil {
-			return mcp.NewToolResultText(string(result)), nil
-		}
-		formatted, formatErr := json.MarshalIndent(pretty, "", "  ")
-		if formatErr != nil {
-			return mcp.NewToolResultText(string(result)), nil
-		}
-		return mcp.NewToolResultText(string(formatted)), nil
+		return rawJSONResult(data), nil
 	}
 }
 
 // --- Content Field Get Handler ---
 
-func handleGetContentField(client *modula.Client) server.ToolHandlerFunc {
+func handleGetContentField(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.ContentFields.Get(ctx, modula.ContentFieldID(id))
+		data, err := backend.GetContentField(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
 // --- Content Reorder Handlers ---
 
-func handleReorderContent(client *modula.Client) server.ToolHandlerFunc {
+func handleReorderContent(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
 		rawIDs, ok := args["ordered_ids"].([]any)
@@ -514,49 +489,55 @@ func handleReorderContent(client *modula.Client) server.ToolHandlerFunc {
 		if len(rawIDs) == 0 {
 			return mcp.NewToolResultError("ordered_ids must be a non-empty array of content IDs"), nil
 		}
-		ids := make([]modula.ContentID, 0, len(rawIDs))
+		ids := make([]string, 0, len(rawIDs))
 		for _, raw := range rawIDs {
 			s, ok := raw.(string)
 			if !ok {
 				return mcp.NewToolResultError("each ordered_id must be a string"), nil
 			}
-			ids = append(ids, modula.ContentID(s))
+			ids = append(ids, s)
 		}
-		params := modula.ContentReorderRequest{
-			ParentID:   optionalIDPtr[modula.ContentID](req, "parent_id"),
-			OrderedIDs: ids,
+		params, err := marshalParams(map[string]any{
+			"parent_id":   optionalStrPtr(req, "parent_id"),
+			"ordered_ids": ids,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.ContentReorder.Reorder(ctx, params)
+		data, err := backend.ReorderContent(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleMoveContent(client *modula.Client) server.ToolHandlerFunc {
+func handleMoveContent(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		nodeID, err := req.RequireString("node_id")
 		if err != nil {
 			return mcp.NewToolResultError("node_id is required"), nil
 		}
 		position := int(req.GetFloat("position", 0))
-		params := modula.ContentMoveRequest{
-			NodeID:      modula.ContentID(nodeID),
-			NewParentID: optionalIDPtr[modula.ContentID](req, "new_parent_id"),
-			Position:    position,
+		params, err := marshalParams(map[string]any{
+			"node_id":       nodeID,
+			"new_parent_id": optionalStrPtr(req, "new_parent_id"),
+			"position":      position,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.ContentReorder.Move(ctx, params)
+		data, err := backend.MoveContent(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
 // --- Content Tree Handler ---
 
-func handleSaveContentTree(client *modula.Client) server.ToolHandlerFunc {
+func handleSaveContentTree(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
 		rawReq, ok := args["request"]
@@ -567,27 +548,23 @@ func handleSaveContentTree(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("invalid request object"), nil
 		}
-		var treeReq modula.TreeSaveRequest
-		if err := json.Unmarshal(b, &treeReq); err != nil {
-			return mcp.NewToolResultError("invalid TreeSaveRequest: " + err.Error()), nil
-		}
-		result, err := client.ContentTree.Save(ctx, treeReq)
+		data, err := backend.SaveContentTree(ctx, json.RawMessage(b))
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
 // --- Content Heal Handler ---
 
-func handleHealContent(client *modula.Client) server.ToolHandlerFunc {
+func handleHealContent(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		dryRun := req.GetBool("dry_run", false)
-		result, err := client.ContentHeal.Heal(ctx, dryRun)
+		data, err := backend.HealContent(ctx, dryRun)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }

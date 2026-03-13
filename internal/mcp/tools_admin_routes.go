@@ -5,54 +5,51 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerAdminRouteTools(srv *server.MCPServer, client *modula.Client) {
+func registerAdminRouteTools(srv *server.MCPServer, backend AdminRouteBackend) {
 	// Admin Routes
-	srv.AddTool(mcp.NewTool("admin_list_routes", mcp.WithDescription("List all admin routes.")), handleAdminListRoutes(client))
-	srv.AddTool(mcp.NewTool("admin_get_route", mcp.WithDescription("Get a single admin route by slug. The admin routes API uses slug-based lookup."), mcp.WithString("slug", mcp.Required(), mcp.Description("Admin route slug (e.g. '/admin')"))), handleAdminGetRoute(client))
-	srv.AddTool(mcp.NewTool("admin_create_route", mcp.WithDescription("Create a new admin route."), mcp.WithString("slug", mcp.Required(), mcp.Description("URL slug")), mcp.WithString("title", mcp.Required(), mcp.Description("Title")), mcp.WithNumber("status", mcp.Required(), mcp.Description("Status")), mcp.WithString("author_id", mcp.Description("Author user ID"))), handleAdminCreateRoute(client))
-	srv.AddTool(mcp.NewTool("admin_update_route", mcp.WithDescription("Update an admin route by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin route ID (ULID)")), mcp.WithString("slug", mcp.Required(), mcp.Description("URL slug")), mcp.WithString("title", mcp.Required(), mcp.Description("Title")), mcp.WithNumber("status", mcp.Required(), mcp.Description("Status")), mcp.WithString("author_id", mcp.Description("Author"))), handleAdminUpdateRoute(client))
-	srv.AddTool(mcp.NewTool("admin_delete_route", mcp.WithDescription("Delete an admin route by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin route ID"))), handleAdminDeleteRoute(client))
+	srv.AddTool(mcp.NewTool("admin_list_routes", mcp.WithDescription("List all admin routes.")), handleAdminListRoutes(backend))
+	srv.AddTool(mcp.NewTool("admin_get_route", mcp.WithDescription("Get a single admin route by slug. The admin routes API uses slug-based lookup."), mcp.WithString("slug", mcp.Required(), mcp.Description("Admin route slug (e.g. '/admin')"))), handleAdminGetRoute(backend))
+	srv.AddTool(mcp.NewTool("admin_create_route", mcp.WithDescription("Create a new admin route."), mcp.WithString("slug", mcp.Required(), mcp.Description("URL slug")), mcp.WithString("title", mcp.Required(), mcp.Description("Title")), mcp.WithNumber("status", mcp.Required(), mcp.Description("Status")), mcp.WithString("author_id", mcp.Description("Author user ID"))), handleAdminCreateRoute(backend))
+	srv.AddTool(mcp.NewTool("admin_update_route", mcp.WithDescription("Update an admin route by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin route ID (ULID)")), mcp.WithString("slug", mcp.Required(), mcp.Description("URL slug")), mcp.WithString("title", mcp.Required(), mcp.Description("Title")), mcp.WithNumber("status", mcp.Required(), mcp.Description("Status")), mcp.WithString("author_id", mcp.Description("Author"))), handleAdminUpdateRoute(backend))
+	srv.AddTool(mcp.NewTool("admin_delete_route", mcp.WithDescription("Delete an admin route by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin route ID"))), handleAdminDeleteRoute(backend))
 
 	// Admin Field Types
-	srv.AddTool(mcp.NewTool("admin_list_field_types", mcp.WithDescription("List all admin field types.")), handleAdminListFieldTypes(client))
-	srv.AddTool(mcp.NewTool("admin_get_field_type", mcp.WithDescription("Get a single admin field type by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field type ID (ULID)"))), handleAdminGetFieldType(client))
-	srv.AddTool(mcp.NewTool("admin_create_field_type", mcp.WithDescription("Create a new admin field type."), mcp.WithString("type", mcp.Required(), mcp.Description("Type key")), mcp.WithString("label", mcp.Required(), mcp.Description("Label"))), handleAdminCreateFieldType(client))
-	srv.AddTool(mcp.NewTool("admin_update_field_type", mcp.WithDescription("Update an admin field type."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field type ID")), mcp.WithString("type", mcp.Required(), mcp.Description("Type key")), mcp.WithString("label", mcp.Required(), mcp.Description("Label"))), handleAdminUpdateFieldType(client))
-	srv.AddTool(mcp.NewTool("admin_delete_field_type", mcp.WithDescription("Delete an admin field type by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field type ID"))), handleAdminDeleteFieldType(client))
+	srv.AddTool(mcp.NewTool("admin_list_field_types", mcp.WithDescription("List all admin field types.")), handleAdminListFieldTypes(backend))
+	srv.AddTool(mcp.NewTool("admin_get_field_type", mcp.WithDescription("Get a single admin field type by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field type ID (ULID)"))), handleAdminGetFieldType(backend))
+	srv.AddTool(mcp.NewTool("admin_create_field_type", mcp.WithDescription("Create a new admin field type."), mcp.WithString("type", mcp.Required(), mcp.Description("Type key")), mcp.WithString("label", mcp.Required(), mcp.Description("Label"))), handleAdminCreateFieldType(backend))
+	srv.AddTool(mcp.NewTool("admin_update_field_type", mcp.WithDescription("Update an admin field type."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field type ID")), mcp.WithString("type", mcp.Required(), mcp.Description("Type key")), mcp.WithString("label", mcp.Required(), mcp.Description("Label"))), handleAdminUpdateFieldType(backend))
+	srv.AddTool(mcp.NewTool("admin_delete_field_type", mcp.WithDescription("Delete an admin field type by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field type ID"))), handleAdminDeleteFieldType(backend))
 }
 
 // --- Admin Route Handlers ---
 
-func handleAdminListRoutes(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminListRoutes(backend AdminRouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.AdminRoutes.List(ctx)
+		data, err := backend.ListAdminRoutes(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminGetRoute(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminGetRoute(backend AdminRouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		slug, err := req.RequireString("slug")
 		if err != nil {
 			return mcp.NewToolResultError("slug is required"), nil
 		}
-		// Admin routes API uses slug-based lookup via the q parameter.
-		result, err := client.AdminRoutes.Get(ctx, modula.AdminRouteID(slug))
+		data, err := backend.GetAdminRoute(ctx, slug)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminCreateRoute(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminCreateRoute(backend AdminRouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		slug, err := req.RequireString("slug")
 		if err != nil {
@@ -63,21 +60,24 @@ func handleAdminCreateRoute(client *modula.Client) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("title is required"), nil
 		}
 		status := int64(req.GetFloat("status", 0))
-		params := modula.CreateAdminRouteParams{
-			Slug:     modula.Slug(slug),
-			Title:    title,
-			Status:   status,
-			AuthorID: optionalIDPtr[modula.UserID](req, "author_id"),
+		params, err := marshalParams(map[string]any{
+			"slug":      slug,
+			"title":     title,
+			"status":    status,
+			"author_id": optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminRoutes.Create(ctx, params)
+		data, err := backend.CreateAdminRoute(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminUpdateRoute(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminUpdateRoute(backend AdminRouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -92,28 +92,31 @@ func handleAdminUpdateRoute(client *modula.Client) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("title is required"), nil
 		}
 		status := int64(req.GetFloat("status", 0))
-		params := modula.UpdateAdminRouteParams{
-			AdminRouteID: modula.AdminRouteID(id),
-			Slug:         modula.Slug(slug),
-			Title:        title,
-			Status:       status,
-			AuthorID:     optionalIDPtr[modula.UserID](req, "author_id"),
+		params, err := marshalParams(map[string]any{
+			"admin_route_id": id,
+			"slug":           slug,
+			"title":          title,
+			"status":         status,
+			"author_id":      optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminRoutes.Update(ctx, params)
+		data, err := backend.UpdateAdminRoute(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminDeleteRoute(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminDeleteRoute(backend AdminRouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.AdminRoutes.Delete(ctx, modula.AdminRouteID(id))
+		err = backend.DeleteAdminRoute(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -123,31 +126,31 @@ func handleAdminDeleteRoute(client *modula.Client) server.ToolHandlerFunc {
 
 // --- Admin Field Type Handlers ---
 
-func handleAdminListFieldTypes(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminListFieldTypes(backend AdminRouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.AdminFieldTypes.List(ctx)
+		data, err := backend.ListAdminFieldTypes(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminGetFieldType(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminGetFieldType(backend AdminRouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.AdminFieldTypes.Get(ctx, modula.AdminFieldTypeID(id))
+		data, err := backend.GetAdminFieldType(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminCreateFieldType(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminCreateFieldType(backend AdminRouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		typ, err := req.RequireString("type")
 		if err != nil {
@@ -157,19 +160,22 @@ func handleAdminCreateFieldType(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("label is required"), nil
 		}
-		params := modula.CreateAdminFieldTypeParams{
-			Type:  typ,
-			Label: label,
+		params, err := marshalParams(map[string]any{
+			"type":  typ,
+			"label": label,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminFieldTypes.Create(ctx, params)
+		data, err := backend.CreateAdminFieldType(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminUpdateFieldType(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminUpdateFieldType(backend AdminRouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -183,26 +189,29 @@ func handleAdminUpdateFieldType(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("label is required"), nil
 		}
-		params := modula.UpdateAdminFieldTypeParams{
-			AdminFieldTypeID: modula.AdminFieldTypeID(id),
-			Type:             typ,
-			Label:            label,
+		params, err := marshalParams(map[string]any{
+			"admin_field_type_id": id,
+			"type":                typ,
+			"label":               label,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminFieldTypes.Update(ctx, params)
+		data, err := backend.UpdateAdminFieldType(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminDeleteFieldType(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminDeleteFieldType(backend AdminRouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.AdminFieldTypes.Delete(ctx, modula.AdminFieldTypeID(id))
+		err = backend.DeleteAdminFieldType(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}

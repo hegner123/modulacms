@@ -5,16 +5,14 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerOAuthTools(srv *server.MCPServer, client *modula.Client) {
+func registerOAuthTools(srv *server.MCPServer, backend OAuthBackend) {
 	srv.AddTool(
 		mcp.NewTool("list_users_oauth",
 			mcp.WithDescription("List all user OAuth connections."),
 		),
-		handleListUsersOAuth(client),
+		handleListUsersOAuth(backend),
 	)
 
 	srv.AddTool(
@@ -22,7 +20,7 @@ func registerOAuthTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single user OAuth connection by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("User OAuth ID (ULID)")),
 		),
-		handleGetUserOAuth(client),
+		handleGetUserOAuth(backend),
 	)
 
 	srv.AddTool(
@@ -35,7 +33,7 @@ func registerOAuthTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("refresh_token", mcp.Required(), mcp.Description("OAuth refresh token")),
 			mcp.WithString("token_expires_at", mcp.Required(), mcp.Description("Token expiration timestamp")),
 		),
-		handleCreateUserOAuth(client),
+		handleCreateUserOAuth(backend),
 	)
 
 	srv.AddTool(
@@ -46,7 +44,7 @@ func registerOAuthTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("refresh_token", mcp.Required(), mcp.Description("New OAuth refresh token")),
 			mcp.WithString("token_expires_at", mcp.Required(), mcp.Description("New token expiration timestamp")),
 		),
-		handleUpdateUserOAuth(client),
+		handleUpdateUserOAuth(backend),
 	)
 
 	srv.AddTool(
@@ -54,35 +52,35 @@ func registerOAuthTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete a user OAuth connection by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("User OAuth ID (ULID)")),
 		),
-		handleDeleteUserOAuth(client),
+		handleDeleteUserOAuth(backend),
 	)
 }
 
-func handleListUsersOAuth(client *modula.Client) server.ToolHandlerFunc {
+func handleListUsersOAuth(backend OAuthBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.UsersOauth.List(ctx)
+		data, err := backend.ListUsersOAuth(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleGetUserOAuth(client *modula.Client) server.ToolHandlerFunc {
+func handleGetUserOAuth(backend OAuthBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.UsersOauth.Get(ctx, modula.UserOauthID(id))
+		data, err := backend.GetUserOAuth(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleCreateUserOAuth(client *modula.Client) server.ToolHandlerFunc {
+func handleCreateUserOAuth(backend OAuthBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		provider, err := req.RequireString("oauth_provider")
 		if err != nil {
@@ -104,23 +102,26 @@ func handleCreateUserOAuth(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("token_expires_at is required"), nil
 		}
-		params := modula.CreateUserOauthParams{
-			UserID:              optionalIDPtr[modula.UserID](req, "user_id"),
-			OauthProvider:       provider,
-			OauthProviderUserID: providerUserID,
-			AccessToken:         accessToken,
-			RefreshToken:        refreshToken,
-			TokenExpiresAt:      tokenExpiresAt,
+		params, err := marshalParams(map[string]any{
+			"user_id":                optionalStrPtr(req, "user_id"),
+			"oauth_provider":         provider,
+			"oauth_provider_user_id": providerUserID,
+			"access_token":           accessToken,
+			"refresh_token":          refreshToken,
+			"token_expires_at":       tokenExpiresAt,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.UsersOauth.Create(ctx, params)
+		data, err := backend.CreateUserOAuth(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleUpdateUserOAuth(client *modula.Client) server.ToolHandlerFunc {
+func handleUpdateUserOAuth(backend OAuthBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -138,27 +139,30 @@ func handleUpdateUserOAuth(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("token_expires_at is required"), nil
 		}
-		params := modula.UpdateUserOauthParams{
-			UserOauthID:    modula.UserOauthID(id),
-			AccessToken:    accessToken,
-			RefreshToken:   refreshToken,
-			TokenExpiresAt: tokenExpiresAt,
+		params, err := marshalParams(map[string]any{
+			"user_oauth_id":    id,
+			"access_token":     accessToken,
+			"refresh_token":    refreshToken,
+			"token_expires_at": tokenExpiresAt,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.UsersOauth.Update(ctx, params)
+		data, err := backend.UpdateUserOAuth(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeleteUserOAuth(client *modula.Client) server.ToolHandlerFunc {
+func handleDeleteUserOAuth(backend OAuthBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.UsersOauth.Delete(ctx, modula.UserOauthID(id))
+		err = backend.DeleteUserOAuth(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}

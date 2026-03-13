@@ -7,18 +7,16 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
+func registerMediaTools(srv *server.MCPServer, backend MediaBackend) {
 	srv.AddTool(
 		mcp.NewTool("list_media",
 			mcp.WithDescription("List media assets with pagination. Media files must be uploaded through the CMS web interface or API directly. This MCP server can view and update media metadata but cannot upload new files."),
 			mcp.WithNumber("limit", mcp.Description("Max items to return (default 20, max 1000)"), mcp.DefaultNumber(20)),
 			mcp.WithNumber("offset", mcp.Description("Number of items to skip (default 0)"), mcp.DefaultNumber(0)),
 		),
-		handleListMedia(client),
+		handleListMedia(backend),
 	)
 
 	srv.AddTool(
@@ -26,7 +24,7 @@ func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single media asset by ID. Returns metadata including URL, dimensions, alt text, focal point, etc."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Media ID (ULID)")),
 		),
-		handleGetMedia(client),
+		handleGetMedia(backend),
 	)
 
 	srv.AddTool(
@@ -42,7 +40,7 @@ func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithNumber("focal_x", mcp.Description("Focal point X coordinate (0.0 to image width)")),
 			mcp.WithNumber("focal_y", mcp.Description("Focal point Y coordinate (0.0 to image height)")),
 		),
-		handleUpdateMedia(client),
+		handleUpdateMedia(backend),
 	)
 
 	srv.AddTool(
@@ -50,7 +48,7 @@ func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete a media asset by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Media ID (ULID)")),
 		),
-		handleDeleteMedia(client),
+		handleDeleteMedia(backend),
 	)
 
 	// upload_media
@@ -60,7 +58,7 @@ func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("file_path", mcp.Required(), mcp.Description("Absolute path to the file to upload")),
 			mcp.WithString("filename", mcp.Description("Override filename (defaults to base name of file_path)")),
 		),
-		handleUploadMedia(client),
+		handleUploadMedia(backend),
 	)
 
 	// media_health
@@ -68,7 +66,7 @@ func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
 		mcp.NewTool("media_health",
 			mcp.WithDescription("Check media storage health status."),
 		),
-		handleMediaHealth(client),
+		handleMediaHealth(backend),
 	)
 
 	// media_cleanup
@@ -76,7 +74,7 @@ func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
 		mcp.NewTool("media_cleanup",
 			mcp.WithDescription("Run orphaned media cleanup. Removes media records without backing files."),
 		),
-		handleMediaCleanup(client),
+		handleMediaCleanup(backend),
 	)
 
 	// list_media_dimensions
@@ -84,7 +82,7 @@ func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
 		mcp.NewTool("list_media_dimensions",
 			mcp.WithDescription("List all media dimension presets."),
 		),
-		handleListMediaDimensions(client),
+		handleListMediaDimensions(backend),
 	)
 
 	// get_media_dimension
@@ -93,7 +91,7 @@ func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single media dimension preset by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Media dimension ID (ULID)")),
 		),
-		handleGetMediaDimension(client),
+		handleGetMediaDimension(backend),
 	)
 
 	// create_media_dimension
@@ -104,7 +102,7 @@ func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithNumber("width", mcp.Description("Width in pixels")),
 			mcp.WithNumber("height", mcp.Description("Height in pixels")),
 		),
-		handleCreateMediaDimension(client),
+		handleCreateMediaDimension(backend),
 	)
 
 	// update_media_dimension
@@ -116,7 +114,7 @@ func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithNumber("width", mcp.Description("Width in pixels")),
 			mcp.WithNumber("height", mcp.Description("Height in pixels")),
 		),
-		handleUpdateMediaDimension(client),
+		handleUpdateMediaDimension(backend),
 	)
 
 	// delete_media_dimension
@@ -125,70 +123,71 @@ func registerMediaTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete a media dimension preset by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Media dimension ID (ULID)")),
 		),
-		handleDeleteMediaDimension(client),
+		handleDeleteMediaDimension(backend),
 	)
 }
 
-func handleListMedia(client *modula.Client) server.ToolHandlerFunc {
+func handleListMedia(backend MediaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		limit := int64(req.GetFloat("limit", 20))
 		offset := int64(req.GetFloat("offset", 0))
-		result, err := client.Media.ListPaginated(ctx, modula.PaginationParams{
-			Limit: limit, Offset: offset,
+		data, err := backend.ListMedia(ctx, limit, offset)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleGetMedia(backend MediaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		data, err := backend.GetMedia(ctx, id)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleUpdateMedia(backend MediaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		params, err := marshalParams(map[string]any{
+			"media_id":     id,
+			"name":         optionalStrPtr(req, "name"),
+			"display_name": optionalStrPtr(req, "display_name"),
+			"alt":          optionalStrPtr(req, "alt"),
+			"caption":      optionalStrPtr(req, "caption"),
+			"description":  optionalStrPtr(req, "description"),
+			"class":        optionalStrPtr(req, "class"),
+			"focal_x":      optionalFloat64Ptr(req, "focal_x"),
+			"focal_y":      optionalFloat64Ptr(req, "focal_y"),
 		})
 		if err != nil {
+			return nil, err
+		}
+		data, err := backend.UpdateMedia(ctx, params)
+		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleGetMedia(client *modula.Client) server.ToolHandlerFunc {
+func handleDeleteMedia(backend MediaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.Media.Get(ctx, modula.MediaID(id))
-		if err != nil {
-			return errResult(err), nil
-		}
-		return jsonResult(result)
-	}
-}
-
-func handleUpdateMedia(client *modula.Client) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		id, err := req.RequireString("id")
-		if err != nil {
-			return mcp.NewToolResultError("id is required"), nil
-		}
-		params := modula.UpdateMediaParams{
-			MediaID:     modula.MediaID(id),
-			Name:        optionalStrPtr(req, "name"),
-			DisplayName: optionalStrPtr(req, "display_name"),
-			Alt:         optionalStrPtr(req, "alt"),
-			Caption:     optionalStrPtr(req, "caption"),
-			Description: optionalStrPtr(req, "description"),
-			Class:       optionalStrPtr(req, "class"),
-			FocalX:      optionalFloat64Ptr(req, "focal_x"),
-			FocalY:      optionalFloat64Ptr(req, "focal_y"),
-		}
-		result, err := client.Media.Update(ctx, params)
-		if err != nil {
-			return errResult(err), nil
-		}
-		return jsonResult(result)
-	}
-}
-
-func handleDeleteMedia(client *modula.Client) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		id, err := req.RequireString("id")
-		if err != nil {
-			return mcp.NewToolResultError("id is required"), nil
-		}
-		err = client.Media.Delete(ctx, modula.MediaID(id))
+		err = backend.DeleteMedia(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -196,7 +195,7 @@ func handleDeleteMedia(client *modula.Client) server.ToolHandlerFunc {
 	}
 }
 
-func handleUploadMedia(client *modula.Client) server.ToolHandlerFunc {
+func handleUploadMedia(backend MediaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		filePath, err := req.RequireString("file_path")
 		if err != nil {
@@ -211,112 +210,106 @@ func handleUploadMedia(client *modula.Client) server.ToolHandlerFunc {
 		if filename == "" {
 			filename = filepath.Base(filePath)
 		}
-		result, err := client.MediaUpload.Upload(ctx, f, filename, nil)
+		data, err := backend.UploadMedia(ctx, f, filename)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleMediaHealth(client *modula.Client) server.ToolHandlerFunc {
+func handleMediaHealth(backend MediaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.MediaAdmin.Health(ctx)
+		data, err := backend.MediaHealth(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return mcp.NewToolResultText(string(result)), nil
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleMediaCleanup(client *modula.Client) server.ToolHandlerFunc {
+func handleMediaCleanup(backend MediaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.MediaAdmin.Cleanup(ctx)
+		data, err := backend.MediaCleanup(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return mcp.NewToolResultText(string(result)), nil
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleListMediaDimensions(client *modula.Client) server.ToolHandlerFunc {
+func handleListMediaDimensions(backend MediaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.MediaDimensions.List(ctx)
+		data, err := backend.ListMediaDimensions(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleGetMediaDimension(client *modula.Client) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		id, err := req.RequireString("id")
-		if err != nil {
-			return mcp.NewToolResultError("id is required"), nil
-		}
-		result, err := client.MediaDimensions.Get(ctx, modula.MediaDimensionID(id))
-		if err != nil {
-			return errResult(err), nil
-		}
-		return jsonResult(result)
-	}
-}
-
-func handleCreateMediaDimension(client *modula.Client) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		params := modula.CreateMediaDimensionParams{
-			Label: optionalStrPtr(req, "label"),
-		}
-		if w := optionalFloat64Ptr(req, "width"); w != nil {
-			v := int64(*w)
-			params.Width = &v
-		}
-		if h := optionalFloat64Ptr(req, "height"); h != nil {
-			v := int64(*h)
-			params.Height = &v
-		}
-		result, err := client.MediaDimensions.Create(ctx, params)
-		if err != nil {
-			return errResult(err), nil
-		}
-		return jsonResult(result)
-	}
-}
-
-func handleUpdateMediaDimension(client *modula.Client) server.ToolHandlerFunc {
+func handleGetMediaDimension(backend MediaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		params := modula.UpdateMediaDimensionParams{
-			MdID:  modula.MediaDimensionID(id),
-			Label: optionalStrPtr(req, "label"),
-		}
-		if w := optionalFloat64Ptr(req, "width"); w != nil {
-			v := int64(*w)
-			params.Width = &v
-		}
-		if h := optionalFloat64Ptr(req, "height"); h != nil {
-			v := int64(*h)
-			params.Height = &v
-		}
-		result, err := client.MediaDimensions.Update(ctx, params)
+		data, err := backend.GetMediaDimension(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeleteMediaDimension(client *modula.Client) server.ToolHandlerFunc {
+func handleCreateMediaDimension(backend MediaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		params, err := marshalParams(map[string]any{
+			"label":  optionalStrPtr(req, "label"),
+			"width":  optionalFloat64Ptr(req, "width"),
+			"height": optionalFloat64Ptr(req, "height"),
+		})
+		if err != nil {
+			return nil, err
+		}
+		data, err := backend.CreateMediaDimension(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleUpdateMediaDimension(backend MediaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.MediaDimensions.Delete(ctx, modula.MediaDimensionID(id))
+		params, err := marshalParams(map[string]any{
+			"media_dimension_id": id,
+			"label":              optionalStrPtr(req, "label"),
+			"width":              optionalFloat64Ptr(req, "width"),
+			"height":             optionalFloat64Ptr(req, "height"),
+		})
+		if err != nil {
+			return nil, err
+		}
+		data, err := backend.UpdateMediaDimension(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleDeleteMediaDimension(backend MediaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		err = backend.DeleteMediaDimension(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}

@@ -5,16 +5,14 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerSSHKeyTools(srv *server.MCPServer, client *modula.Client) {
+func registerSSHKeyTools(srv *server.MCPServer, backend SSHKeyBackend) {
 	srv.AddTool(
 		mcp.NewTool("list_ssh_keys",
 			mcp.WithDescription("List all SSH keys for the authenticated user."),
 		),
-		handleListSSHKeys(client),
+		handleListSSHKeys(backend),
 	)
 
 	srv.AddTool(
@@ -23,7 +21,7 @@ func registerSSHKeyTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("public_key", mcp.Required(), mcp.Description("SSH public key (e.g. 'ssh-ed25519 AAAA...')")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Label for the key (e.g. 'work laptop')")),
 		),
-		handleCreateSSHKey(client),
+		handleCreateSSHKey(backend),
 	)
 
 	srv.AddTool(
@@ -31,21 +29,21 @@ func registerSSHKeyTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete an SSH key by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("SSH key ID (ULID)")),
 		),
-		handleDeleteSSHKey(client),
+		handleDeleteSSHKey(backend),
 	)
 }
 
-func handleListSSHKeys(client *modula.Client) server.ToolHandlerFunc {
+func handleListSSHKeys(backend SSHKeyBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.SSHKeys.List(ctx)
+		data, err := backend.ListSSHKeys(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleCreateSSHKey(client *modula.Client) server.ToolHandlerFunc {
+func handleCreateSSHKey(backend SSHKeyBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		publicKey, err := req.RequireString("public_key")
 		if err != nil {
@@ -55,25 +53,28 @@ func handleCreateSSHKey(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("label is required"), nil
 		}
-		params := modula.CreateSSHKeyParams{
-			PublicKey: publicKey,
-			Label:     label,
+		params, err := marshalParams(map[string]any{
+			"public_key": publicKey,
+			"label":      label,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.SSHKeys.Create(ctx, params)
+		data, err := backend.CreateSSHKey(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeleteSSHKey(client *modula.Client) server.ToolHandlerFunc {
+func handleDeleteSSHKey(backend SSHKeyBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.SSHKeys.Delete(ctx, modula.UserSshKeyID(id))
+		err = backend.DeleteSSHKey(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}

@@ -2,22 +2,19 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerImportTools(srv *server.MCPServer, client *modula.Client) {
+func registerImportTools(srv *server.MCPServer, backend ImportBackend) {
 	srv.AddTool(
 		mcp.NewTool("import_content",
 			mcp.WithDescription("Import content from another CMS format. Payloads should be kept under ~5MB. The format determines how the data is parsed and mapped to ModulaCMS entities."),
 			mcp.WithString("format", mcp.Required(), mcp.Description("Source CMS format"), mcp.Enum("contentful", "sanity", "strapi", "wordpress", "clean")),
 			mcp.WithObject("data", mcp.Required(), mcp.Description("Import data as a JSON object (structure depends on format)")),
 		),
-		handleImportContent(client),
+		handleImportContent(backend),
 	)
 
 	srv.AddTool(
@@ -26,11 +23,11 @@ func registerImportTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("format", mcp.Required(), mcp.Description("Import format"), mcp.Enum("contentful", "sanity", "strapi", "wordpress", "clean")),
 			mcp.WithObject("data", mcp.Required(), mcp.Description("Import data as a JSON object")),
 		),
-		handleImportBulk(client),
+		handleImportBulk(backend),
 	)
 }
 
-func handleImportContent(client *modula.Client) server.ToolHandlerFunc {
+func handleImportContent(backend ImportBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		format, err := req.RequireString("format")
 		if err != nil {
@@ -41,31 +38,15 @@ func handleImportContent(client *modula.Client) server.ToolHandlerFunc {
 		if !ok {
 			return mcp.NewToolResultError("data is required"), nil
 		}
-
-		var result json.RawMessage
-		switch format {
-		case "contentful":
-			result, err = client.Import.Contentful(ctx, data)
-		case "sanity":
-			result, err = client.Import.Sanity(ctx, data)
-		case "strapi":
-			result, err = client.Import.Strapi(ctx, data)
-		case "wordpress":
-			result, err = client.Import.WordPress(ctx, data)
-		case "clean":
-			result, err = client.Import.Clean(ctx, data)
-		default:
-			return mcp.NewToolResultError("invalid format: must be one of contentful, sanity, strapi, wordpress, clean"), nil
-		}
-
+		result, err := backend.ImportContent(ctx, format, data)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return mcp.NewToolResultText(string(result)), nil
+		return rawJSONResult(result), nil
 	}
 }
 
-func handleImportBulk(client *modula.Client) server.ToolHandlerFunc {
+func handleImportBulk(backend ImportBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		format, err := req.RequireString("format")
 		if err != nil {
@@ -76,10 +57,10 @@ func handleImportBulk(client *modula.Client) server.ToolHandlerFunc {
 		if !ok {
 			return mcp.NewToolResultError("data is required"), nil
 		}
-		result, err := client.Import.Bulk(ctx, format, data)
+		result, err := backend.ImportBulk(ctx, format, data)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return mcp.NewToolResultText(string(result)), nil
+		return rawJSONResult(result), nil
 	}
 }

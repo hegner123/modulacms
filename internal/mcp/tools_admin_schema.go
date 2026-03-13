@@ -2,66 +2,55 @@ package mcp
 
 import (
 	"context"
-	"net/url"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerAdminSchemaTools(srv *server.MCPServer, client *modula.Client) {
+func registerAdminSchemaTools(srv *server.MCPServer, backend AdminSchemaBackend) {
 	// Admin Datatypes
-	srv.AddTool(mcp.NewTool("admin_list_datatypes", mcp.WithDescription("List all admin datatypes."), mcp.WithBoolean("full", mcp.Description("Include linked fields"))), handleAdminListDatatypes(client))
-	srv.AddTool(mcp.NewTool("admin_get_datatype", mcp.WithDescription("Get a single admin datatype by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin datatype ID (ULID)"))), handleAdminGetDatatype(client))
-	srv.AddTool(mcp.NewTool("admin_create_datatype", mcp.WithDescription("Create a new admin datatype."), mcp.WithString("name", mcp.Description("Machine-readable name")), mcp.WithString("label", mcp.Required(), mcp.Description("Label")), mcp.WithString("type", mcp.Required(), mcp.Description("Type")), mcp.WithString("parent_id", mcp.Description("Parent admin datatype ID")), mcp.WithString("author_id", mcp.Description("Author user ID"))), handleAdminCreateDatatype(client))
-	srv.AddTool(mcp.NewTool("admin_update_datatype", mcp.WithDescription("Update an admin datatype."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin datatype ID")), mcp.WithString("name", mcp.Description("Machine-readable name")), mcp.WithString("label", mcp.Required(), mcp.Description("Label")), mcp.WithString("type", mcp.Required(), mcp.Description("Type")), mcp.WithString("parent_id", mcp.Description("Parent")), mcp.WithString("author_id", mcp.Description("Author"))), handleAdminUpdateDatatype(client))
-	srv.AddTool(mcp.NewTool("admin_delete_datatype", mcp.WithDescription("Delete an admin datatype by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin datatype ID"))), handleAdminDeleteDatatype(client))
+	srv.AddTool(mcp.NewTool("admin_list_datatypes", mcp.WithDescription("List all admin datatypes."), mcp.WithBoolean("full", mcp.Description("Include linked fields"))), handleAdminListDatatypes(backend))
+	srv.AddTool(mcp.NewTool("admin_get_datatype", mcp.WithDescription("Get a single admin datatype by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin datatype ID (ULID)"))), handleAdminGetDatatype(backend))
+	srv.AddTool(mcp.NewTool("admin_create_datatype", mcp.WithDescription("Create a new admin datatype."), mcp.WithString("name", mcp.Description("Machine-readable name")), mcp.WithString("label", mcp.Required(), mcp.Description("Label")), mcp.WithString("type", mcp.Required(), mcp.Description("Type")), mcp.WithString("parent_id", mcp.Description("Parent admin datatype ID")), mcp.WithString("author_id", mcp.Description("Author user ID"))), handleAdminCreateDatatype(backend))
+	srv.AddTool(mcp.NewTool("admin_update_datatype", mcp.WithDescription("Update an admin datatype."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin datatype ID")), mcp.WithString("name", mcp.Description("Machine-readable name")), mcp.WithString("label", mcp.Required(), mcp.Description("Label")), mcp.WithString("type", mcp.Required(), mcp.Description("Type")), mcp.WithString("parent_id", mcp.Description("Parent")), mcp.WithString("author_id", mcp.Description("Author"))), handleAdminUpdateDatatype(backend))
+	srv.AddTool(mcp.NewTool("admin_delete_datatype", mcp.WithDescription("Delete an admin datatype by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin datatype ID"))), handleAdminDeleteDatatype(backend))
 
 	// Admin Fields
-	srv.AddTool(mcp.NewTool("admin_list_fields", mcp.WithDescription("List all admin field definitions.")), handleAdminListFields(client))
-	srv.AddTool(mcp.NewTool("admin_get_field", mcp.WithDescription("Get a single admin field by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field ID (ULID)"))), handleAdminGetField(client))
-	srv.AddTool(mcp.NewTool("admin_create_field", mcp.WithDescription("Create a new admin field."), mcp.WithString("name", mcp.Description("Machine-readable name")), mcp.WithString("label", mcp.Required(), mcp.Description("Label")), mcp.WithString("field_type", mcp.Required(), mcp.Description("Field type"), mcp.Enum("text", "textarea", "number", "date", "datetime", "boolean", "select", "media", "relation", "json", "richtext", "slug", "email", "url")), mcp.WithString("parent_id", mcp.Description("Parent admin datatype ID")), mcp.WithString("data", mcp.Description("Additional data (JSON)")), mcp.WithString("validation", mcp.Description("Validation rules (JSON)")), mcp.WithString("ui_config", mcp.Description("UI config (JSON)")), mcp.WithString("author_id", mcp.Description("Author user ID"))), handleAdminCreateField(client))
-	srv.AddTool(mcp.NewTool("admin_update_field", mcp.WithDescription("Update an admin field."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field ID")), mcp.WithString("name", mcp.Description("Machine-readable name")), mcp.WithString("label", mcp.Required(), mcp.Description("Label")), mcp.WithString("field_type", mcp.Required(), mcp.Description("Field type"), mcp.Enum("text", "textarea", "number", "date", "datetime", "boolean", "select", "media", "relation", "json", "richtext", "slug", "email", "url")), mcp.WithString("parent_id", mcp.Description("Parent")), mcp.WithString("data", mcp.Description("Data")), mcp.WithString("validation", mcp.Description("Validation")), mcp.WithString("ui_config", mcp.Description("UI config")), mcp.WithString("author_id", mcp.Description("Author"))), handleAdminUpdateField(client))
-	srv.AddTool(mcp.NewTool("admin_delete_field", mcp.WithDescription("Delete an admin field by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field ID"))), handleAdminDeleteField(client))
+	srv.AddTool(mcp.NewTool("admin_list_fields", mcp.WithDescription("List all admin field definitions.")), handleAdminListFields(backend))
+	srv.AddTool(mcp.NewTool("admin_get_field", mcp.WithDescription("Get a single admin field by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field ID (ULID)"))), handleAdminGetField(backend))
+	srv.AddTool(mcp.NewTool("admin_create_field", mcp.WithDescription("Create a new admin field."), mcp.WithString("name", mcp.Description("Machine-readable name")), mcp.WithString("label", mcp.Required(), mcp.Description("Label")), mcp.WithString("field_type", mcp.Required(), mcp.Description("Field type"), mcp.Enum("text", "textarea", "number", "date", "datetime", "boolean", "select", "media", "relation", "json", "richtext", "slug", "email", "url")), mcp.WithString("parent_id", mcp.Description("Parent admin datatype ID")), mcp.WithString("data", mcp.Description("Additional data (JSON)")), mcp.WithString("validation", mcp.Description("Validation rules (JSON)")), mcp.WithString("ui_config", mcp.Description("UI config (JSON)")), mcp.WithString("author_id", mcp.Description("Author user ID"))), handleAdminCreateField(backend))
+	srv.AddTool(mcp.NewTool("admin_update_field", mcp.WithDescription("Update an admin field."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field ID")), mcp.WithString("name", mcp.Description("Machine-readable name")), mcp.WithString("label", mcp.Required(), mcp.Description("Label")), mcp.WithString("field_type", mcp.Required(), mcp.Description("Field type"), mcp.Enum("text", "textarea", "number", "date", "datetime", "boolean", "select", "media", "relation", "json", "richtext", "slug", "email", "url")), mcp.WithString("parent_id", mcp.Description("Parent")), mcp.WithString("data", mcp.Description("Data")), mcp.WithString("validation", mcp.Description("Validation")), mcp.WithString("ui_config", mcp.Description("UI config")), mcp.WithString("author_id", mcp.Description("Author"))), handleAdminUpdateField(backend))
+	srv.AddTool(mcp.NewTool("admin_delete_field", mcp.WithDescription("Delete an admin field by ID."), mcp.WithString("id", mcp.Required(), mcp.Description("Admin field ID"))), handleAdminDeleteField(backend))
 }
 
 // --- Admin Datatype Handlers ---
 
-func handleAdminListDatatypes(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminListDatatypes(backend AdminSchemaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		if req.GetBool("full", false) {
-			params := url.Values{}
-			params.Set("full", "true")
-			result, err := client.AdminDatatypes.RawList(ctx, params)
-			if err != nil {
-				return errResult(err), nil
-			}
-			return mcp.NewToolResultText(string(result)), nil
-		}
-		result, err := client.AdminDatatypes.List(ctx)
+		full := req.GetBool("full", false)
+		data, err := backend.ListAdminDatatypes(ctx, full)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminGetDatatype(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminGetDatatype(backend AdminSchemaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.AdminDatatypes.Get(ctx, modula.AdminDatatypeID(id))
+		data, err := backend.GetAdminDatatype(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminCreateDatatype(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminCreateDatatype(backend AdminSchemaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		label, err := req.RequireString("label")
 		if err != nil {
@@ -71,22 +60,25 @@ func handleAdminCreateDatatype(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("type is required"), nil
 		}
-		params := modula.CreateAdminDatatypeParams{
-			Name:     req.GetString("name", ""),
-			Label:    label,
-			Type:     typ,
-			ParentID: optionalIDPtr[modula.AdminDatatypeID](req, "parent_id"),
-			AuthorID: optionalIDPtr[modula.UserID](req, "author_id"),
+		params, err := marshalParams(map[string]any{
+			"name":      req.GetString("name", ""),
+			"label":     label,
+			"type":      typ,
+			"parent_id": optionalStrPtr(req, "parent_id"),
+			"author_id": optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminDatatypes.Create(ctx, params)
+		data, err := backend.CreateAdminDatatype(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminUpdateDatatype(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminUpdateDatatype(backend AdminSchemaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -100,29 +92,32 @@ func handleAdminUpdateDatatype(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("type is required"), nil
 		}
-		params := modula.UpdateAdminDatatypeParams{
-			AdminDatatypeID: modula.AdminDatatypeID(id),
-			Name:            req.GetString("name", ""),
-			Label:           label,
-			Type:            typ,
-			ParentID:        optionalIDPtr[modula.AdminDatatypeID](req, "parent_id"),
-			AuthorID:        optionalIDPtr[modula.UserID](req, "author_id"),
+		params, err := marshalParams(map[string]any{
+			"admin_datatype_id": id,
+			"name":              req.GetString("name", ""),
+			"label":             label,
+			"type":              typ,
+			"parent_id":         optionalStrPtr(req, "parent_id"),
+			"author_id":         optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminDatatypes.Update(ctx, params)
+		data, err := backend.UpdateAdminDatatype(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminDeleteDatatype(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminDeleteDatatype(backend AdminSchemaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.AdminDatatypes.Delete(ctx, modula.AdminDatatypeID(id))
+		err = backend.DeleteAdminDatatype(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -132,31 +127,31 @@ func handleAdminDeleteDatatype(client *modula.Client) server.ToolHandlerFunc {
 
 // --- Admin Field Handlers ---
 
-func handleAdminListFields(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminListFields(backend AdminSchemaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.AdminFields.List(ctx)
+		data, err := backend.ListAdminFields(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminGetField(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminGetField(backend AdminSchemaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.AdminFields.Get(ctx, modula.AdminFieldID(id))
+		data, err := backend.GetAdminField(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminCreateField(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminCreateField(backend AdminSchemaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		label, err := req.RequireString("label")
 		if err != nil {
@@ -166,25 +161,28 @@ func handleAdminCreateField(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("field_type is required"), nil
 		}
-		params := modula.CreateAdminFieldParams{
-			Name:       req.GetString("name", ""),
-			Label:      label,
-			Type:       modula.FieldType(ft),
-			ParentID:   optionalIDPtr[modula.AdminDatatypeID](req, "parent_id"),
-			Data:       req.GetString("data", ""),
-			Validation: req.GetString("validation", ""),
-			UIConfig:   req.GetString("ui_config", ""),
-			AuthorID:   optionalIDPtr[modula.UserID](req, "author_id"),
+		params, err := marshalParams(map[string]any{
+			"name":       req.GetString("name", ""),
+			"label":      label,
+			"type":       ft,
+			"parent_id":  optionalStrPtr(req, "parent_id"),
+			"data":       req.GetString("data", ""),
+			"validation": req.GetString("validation", ""),
+			"ui_config":  req.GetString("ui_config", ""),
+			"author_id":  optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminFields.Create(ctx, params)
+		data, err := backend.CreateAdminField(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminUpdateField(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminUpdateField(backend AdminSchemaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -198,32 +196,35 @@ func handleAdminUpdateField(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("field_type is required"), nil
 		}
-		params := modula.UpdateAdminFieldParams{
-			AdminFieldID: modula.AdminFieldID(id),
-			Name:         req.GetString("name", ""),
-			Label:        label,
-			Type:         modula.FieldType(ft),
-			ParentID:     optionalIDPtr[modula.AdminDatatypeID](req, "parent_id"),
-			Data:         req.GetString("data", ""),
-			Validation:   req.GetString("validation", ""),
-			UIConfig:     req.GetString("ui_config", ""),
-			AuthorID:     optionalIDPtr[modula.UserID](req, "author_id"),
+		params, err := marshalParams(map[string]any{
+			"admin_field_id": id,
+			"name":           req.GetString("name", ""),
+			"label":          label,
+			"type":           ft,
+			"parent_id":      optionalStrPtr(req, "parent_id"),
+			"data":           req.GetString("data", ""),
+			"validation":     req.GetString("validation", ""),
+			"ui_config":      req.GetString("ui_config", ""),
+			"author_id":      optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminFields.Update(ctx, params)
+		data, err := backend.UpdateAdminField(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminDeleteField(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminDeleteField(backend AdminSchemaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.AdminFields.Delete(ctx, modula.AdminFieldID(id))
+		err = backend.DeleteAdminField(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}

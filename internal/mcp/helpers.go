@@ -7,25 +7,58 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 
+	"github.com/hegner123/modulacms/internal/service"
 	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-// errResult formats an error into an MCP error result, preserving API error details.
+// errResult formats an error into an MCP error result, handling both
+// service errors (direct mode) and SDK errors (remote mode).
 func errResult(err error) *mcp.CallToolResult {
+	if service.IsNotFound(err) {
+		return mcp.NewToolResultError(formatMCPError(404, err.Error()))
+	}
+	if service.IsValidation(err) {
+		return mcp.NewToolResultError(formatMCPError(422, err.Error()))
+	}
+	if service.IsConflict(err) {
+		return mcp.NewToolResultError(formatMCPError(409, err.Error()))
+	}
+	if service.IsForbidden(err) {
+		return mcp.NewToolResultError(formatMCPError(403, err.Error()))
+	}
+	if service.IsUnauthorized(err) {
+		return mcp.NewToolResultError(formatMCPError(401, err.Error()))
+	}
+
 	var apiErr *modula.ApiError
 	if errors.As(err, &apiErr) {
-		detail := map[string]any{
-			"status":  apiErr.StatusCode,
-			"message": apiErr.Message,
-			"body":    apiErr.Body,
-		}
-		b, jsonErr := json.Marshal(detail)
-		if jsonErr != nil {
-			return mcp.NewToolResultError(err.Error())
-		}
-		return mcp.NewToolResultError(string(b))
+		return mcp.NewToolResultError(formatMCPError(apiErr.StatusCode, apiErr.Message))
 	}
-	return mcp.NewToolResultError(err.Error())
+
+	return mcp.NewToolResultError(formatMCPError(500, err.Error()))
+}
+
+// formatMCPError creates a consistent JSON error string for MCP tool results.
+func formatMCPError(status int, message string) string {
+	b, jsonErr := json.Marshal(map[string]any{"status": status, "message": message})
+	if jsonErr != nil {
+		return message
+	}
+	return string(b)
+}
+
+// rawJSONResult wraps pre-marshaled JSON data as an MCP text result.
+func rawJSONResult(data json.RawMessage) *mcp.CallToolResult {
+	return mcp.NewToolResultText(string(data))
+}
+
+// marshalParams marshals a map of parameters to json.RawMessage for backend calls.
+func marshalParams(m map[string]any) (json.RawMessage, error) {
+	b, err := json.Marshal(m)
+	if err != nil {
+		return nil, fmt.Errorf("marshal params: %w", err)
+	}
+	return json.RawMessage(b), nil
 }
 
 // jsonResult marshals a value to pretty-printed JSON and returns it as a text result.

@@ -5,23 +5,21 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
+func registerRBACTools(srv *server.MCPServer, backend RBACBackend) {
 	srv.AddTool(
 		mcp.NewTool("list_roles",
 			mcp.WithDescription("List all roles. Default roles are admin, editor, and viewer."),
 		),
-		handleListRoles(client),
+		handleListRoles(backend),
 	)
 
 	srv.AddTool(
 		mcp.NewTool("list_permissions",
 			mcp.WithDescription("List all permissions. Permissions follow the resource:operation format (e.g. content:read, media:create)."),
 		),
-		handleListPermissions(client),
+		handleListPermissions(backend),
 	)
 
 	srv.AddTool(
@@ -30,7 +28,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("role_id", mcp.Required(), mcp.Description("Role ID (ULID)")),
 			mcp.WithString("permission_id", mcp.Required(), mcp.Description("Permission ID (ULID)")),
 		),
-		handleAssignRolePermission(client),
+		handleAssignRolePermission(backend),
 	)
 
 	srv.AddTool(
@@ -38,7 +36,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Remove a permission from a role. Requires the role-permission association ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Role-permission association ID (ULID)")),
 		),
-		handleRemoveRolePermission(client),
+		handleRemoveRolePermission(backend),
 	)
 
 	// --- Role CRUD ---
@@ -48,7 +46,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single role by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Role ID (ULID)")),
 		),
-		handleGetRole(client),
+		handleGetRole(backend),
 	)
 
 	srv.AddTool(
@@ -56,7 +54,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Create a new role."),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Role label (e.g. 'moderator')")),
 		),
-		handleCreateRole(client),
+		handleCreateRole(backend),
 	)
 
 	srv.AddTool(
@@ -65,7 +63,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("id", mcp.Required(), mcp.Description("Role ID (ULID)")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("New role label")),
 		),
-		handleUpdateRole(client),
+		handleUpdateRole(backend),
 	)
 
 	srv.AddTool(
@@ -73,7 +71,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete a role by ID. System-protected roles cannot be deleted."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Role ID (ULID)")),
 		),
-		handleDeleteRole(client),
+		handleDeleteRole(backend),
 	)
 
 	// --- Permission CRUD ---
@@ -83,7 +81,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single permission by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Permission ID (ULID)")),
 		),
-		handleGetPermission(client),
+		handleGetPermission(backend),
 	)
 
 	srv.AddTool(
@@ -91,7 +89,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Create a new permission. Label must follow resource:operation format (e.g. 'content:read')."),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Permission label (resource:operation format)")),
 		),
-		handleCreatePermission(client),
+		handleCreatePermission(backend),
 	)
 
 	srv.AddTool(
@@ -100,7 +98,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("id", mcp.Required(), mcp.Description("Permission ID (ULID)")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("New permission label (resource:operation format)")),
 		),
-		handleUpdatePermission(client),
+		handleUpdatePermission(backend),
 	)
 
 	srv.AddTool(
@@ -108,7 +106,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete a permission by ID. System-protected permissions cannot be deleted."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Permission ID (ULID)")),
 		),
-		handleDeletePermission(client),
+		handleDeletePermission(backend),
 	)
 
 	// --- Role-Permission queries ---
@@ -117,7 +115,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 		mcp.NewTool("list_role_permissions",
 			mcp.WithDescription("List all role-permission associations."),
 		),
-		handleListRolePermissions(client),
+		handleListRolePermissions(backend),
 	)
 
 	srv.AddTool(
@@ -125,7 +123,7 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single role-permission association by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Role-permission ID (ULID)")),
 		),
-		handleGetRolePermission(client),
+		handleGetRolePermission(backend),
 	)
 
 	srv.AddTool(
@@ -133,31 +131,31 @@ func registerRBACTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("List all permissions assigned to a specific role."),
 			mcp.WithString("role_id", mcp.Required(), mcp.Description("Role ID (ULID)")),
 		),
-		handleListRolePermissionsByRole(client),
+		handleListRolePermissionsByRole(backend),
 	)
 }
 
-func handleListRoles(client *modula.Client) server.ToolHandlerFunc {
+func handleListRoles(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.Roles.List(ctx)
+		data, err := backend.ListRoles(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleListPermissions(client *modula.Client) server.ToolHandlerFunc {
+func handleListPermissions(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.Permissions.List(ctx)
+		data, err := backend.ListPermissions(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAssignRolePermission(client *modula.Client) server.ToolHandlerFunc {
+func handleAssignRolePermission(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		roleID, err := req.RequireString("role_id")
 		if err != nil {
@@ -167,25 +165,28 @@ func handleAssignRolePermission(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("permission_id is required"), nil
 		}
-		params := modula.CreateRolePermissionParams{
-			RoleID:       modula.RoleID(roleID),
-			PermissionID: modula.PermissionID(permID),
+		params, err := marshalParams(map[string]any{
+			"role_id":       roleID,
+			"permission_id": permID,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.RolePermissions.Create(ctx, params)
+		data, err := backend.AssignRolePermission(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleRemoveRolePermission(client *modula.Client) server.ToolHandlerFunc {
+func handleRemoveRolePermission(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.RolePermissions.Delete(ctx, modula.RolePermissionID(id))
+		err = backend.RemoveRolePermission(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -193,36 +194,41 @@ func handleRemoveRolePermission(client *modula.Client) server.ToolHandlerFunc {
 	}
 }
 
-func handleGetRole(client *modula.Client) server.ToolHandlerFunc {
+func handleGetRole(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.Roles.Get(ctx, modula.RoleID(id))
+		data, err := backend.GetRole(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleCreateRole(client *modula.Client) server.ToolHandlerFunc {
+func handleCreateRole(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		label, err := req.RequireString("label")
 		if err != nil {
 			return mcp.NewToolResultError("label is required"), nil
 		}
-		params := modula.CreateRoleParams{Label: label}
-		result, err := client.Roles.Create(ctx, params)
+		params, err := marshalParams(map[string]any{
+			"label": label,
+		})
+		if err != nil {
+			return nil, err
+		}
+		data, err := backend.CreateRole(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleUpdateRole(client *modula.Client) server.ToolHandlerFunc {
+func handleUpdateRole(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -232,25 +238,28 @@ func handleUpdateRole(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("label is required"), nil
 		}
-		params := modula.UpdateRoleParams{
-			RoleID: modula.RoleID(id),
-			Label:  label,
+		params, err := marshalParams(map[string]any{
+			"role_id": id,
+			"label":   label,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.Roles.Update(ctx, params)
+		data, err := backend.UpdateRole(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeleteRole(client *modula.Client) server.ToolHandlerFunc {
+func handleDeleteRole(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.Roles.Delete(ctx, modula.RoleID(id))
+		err = backend.DeleteRole(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -258,36 +267,41 @@ func handleDeleteRole(client *modula.Client) server.ToolHandlerFunc {
 	}
 }
 
-func handleGetPermission(client *modula.Client) server.ToolHandlerFunc {
+func handleGetPermission(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.Permissions.Get(ctx, modula.PermissionID(id))
+		data, err := backend.GetPermission(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleCreatePermission(client *modula.Client) server.ToolHandlerFunc {
+func handleCreatePermission(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		label, err := req.RequireString("label")
 		if err != nil {
 			return mcp.NewToolResultError("label is required"), nil
 		}
-		params := modula.CreatePermissionParams{Label: label}
-		result, err := client.Permissions.Create(ctx, params)
+		params, err := marshalParams(map[string]any{
+			"label": label,
+		})
+		if err != nil {
+			return nil, err
+		}
+		data, err := backend.CreatePermission(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleUpdatePermission(client *modula.Client) server.ToolHandlerFunc {
+func handleUpdatePermission(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -297,25 +311,28 @@ func handleUpdatePermission(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("label is required"), nil
 		}
-		params := modula.UpdatePermissionParams{
-			PermissionID: modula.PermissionID(id),
-			Label:        label,
+		params, err := marshalParams(map[string]any{
+			"permission_id": id,
+			"label":         label,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.Permissions.Update(ctx, params)
+		data, err := backend.UpdatePermission(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeletePermission(client *modula.Client) server.ToolHandlerFunc {
+func handleDeletePermission(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.Permissions.Delete(ctx, modula.PermissionID(id))
+		err = backend.DeletePermission(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -323,40 +340,40 @@ func handleDeletePermission(client *modula.Client) server.ToolHandlerFunc {
 	}
 }
 
-func handleListRolePermissions(client *modula.Client) server.ToolHandlerFunc {
+func handleListRolePermissions(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.RolePermissions.List(ctx)
+		data, err := backend.ListRolePermissions(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleGetRolePermission(client *modula.Client) server.ToolHandlerFunc {
+func handleGetRolePermission(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.RolePermissions.Get(ctx, modula.RolePermissionID(id))
+		data, err := backend.GetRolePermission(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleListRolePermissionsByRole(client *modula.Client) server.ToolHandlerFunc {
+func handleListRolePermissionsByRole(backend RBACBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		roleID, err := req.RequireString("role_id")
 		if err != nil {
 			return mcp.NewToolResultError("role_id is required"), nil
 		}
-		result, err := client.RolePermissions.ListByRole(ctx, modula.RoleID(roleID))
+		data, err := backend.ListRolePermissionsByRole(ctx, roleID)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }

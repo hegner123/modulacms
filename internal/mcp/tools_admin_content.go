@@ -6,18 +6,16 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
+func registerAdminContentTools(srv *server.MCPServer, backend AdminContentBackend) {
 	srv.AddTool(
 		mcp.NewTool("admin_list_content",
 			mcp.WithDescription("List admin content data entries with pagination."),
 			mcp.WithNumber("limit", mcp.Description("Max items (default 20)"), mcp.DefaultNumber(20)),
 			mcp.WithNumber("offset", mcp.Description("Items to skip (default 0)"), mcp.DefaultNumber(0)),
 		),
-		handleAdminListContent(client),
+		handleAdminListContent(backend),
 	)
 
 	srv.AddTool(
@@ -25,7 +23,7 @@ func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single admin content data entry by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin content data ID (ULID)")),
 		),
-		handleAdminGetContent(client),
+		handleAdminGetContent(backend),
 	)
 
 	srv.AddTool(
@@ -37,7 +35,7 @@ func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("admin_datatype_id", mcp.Description("Admin datatype ID")),
 			mcp.WithString("author_id", mcp.Description("Author user ID")),
 		),
-		handleAdminCreateContent(client),
+		handleAdminCreateContent(backend),
 	)
 
 	srv.AddTool(
@@ -50,7 +48,7 @@ func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("admin_datatype_id", mcp.Description("Admin datatype ID")),
 			mcp.WithString("author_id", mcp.Description("Author user ID")),
 		),
-		handleAdminUpdateContent(client),
+		handleAdminUpdateContent(backend),
 	)
 
 	srv.AddTool(
@@ -58,7 +56,7 @@ func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete an admin content data entry by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin content data ID (ULID)")),
 		),
-		handleAdminDeleteContent(client),
+		handleAdminDeleteContent(backend),
 	)
 
 	srv.AddTool(
@@ -67,7 +65,7 @@ func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("parent_id", mcp.Description("Parent admin content ID")),
 			mcp.WithObject("ordered_ids", mcp.Required(), mcp.Description("Array of admin content IDs in desired order")),
 		),
-		handleAdminReorderContent(client),
+		handleAdminReorderContent(backend),
 	)
 
 	srv.AddTool(
@@ -77,7 +75,7 @@ func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("new_parent_id", mcp.Description("New parent admin content ID")),
 			mcp.WithNumber("position", mcp.Required(), mcp.Description("Zero-based position")),
 		),
-		handleAdminMoveContent(client),
+		handleAdminMoveContent(backend),
 	)
 
 	srv.AddTool(
@@ -86,7 +84,7 @@ func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithNumber("limit", mcp.Description("Max items (default 20)"), mcp.DefaultNumber(20)),
 			mcp.WithNumber("offset", mcp.Description("Items to skip (default 0)"), mcp.DefaultNumber(0)),
 		),
-		handleAdminListContentFields(client),
+		handleAdminListContentFields(backend),
 	)
 
 	srv.AddTool(
@@ -94,7 +92,7 @@ func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single admin content field by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin content field ID (ULID)")),
 		),
-		handleAdminGetContentField(client),
+		handleAdminGetContentField(backend),
 	)
 
 	srv.AddTool(
@@ -106,7 +104,7 @@ func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("admin_route_id", mcp.Description("Admin route ID")),
 			mcp.WithString("author_id", mcp.Description("Author user ID")),
 		),
-		handleAdminCreateContentField(client),
+		handleAdminCreateContentField(backend),
 	)
 
 	srv.AddTool(
@@ -119,7 +117,7 @@ func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("admin_route_id", mcp.Description("Admin route ID")),
 			mcp.WithString("author_id", mcp.Description("Author user ID")),
 		),
-		handleAdminUpdateContentField(client),
+		handleAdminUpdateContentField(backend),
 	)
 
 	srv.AddTool(
@@ -127,58 +125,61 @@ func registerAdminContentTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete an admin content field by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin content field ID (ULID)")),
 		),
-		handleAdminDeleteContentField(client),
+		handleAdminDeleteContentField(backend),
 	)
 }
 
-func handleAdminListContent(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminListContent(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		limit := int64(req.GetFloat("limit", 20))
 		offset := int64(req.GetFloat("offset", 0))
-		result, err := client.AdminContentData.ListPaginated(ctx, modula.PaginationParams{Limit: limit, Offset: offset})
+		data, err := backend.ListAdminContent(ctx, limit, offset)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminGetContent(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminGetContent(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.AdminContentData.Get(ctx, modula.AdminContentID(id))
+		data, err := backend.GetAdminContent(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminCreateContent(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminCreateContent(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		status, err := req.RequireString("status")
 		if err != nil {
 			return mcp.NewToolResultError("status is required"), nil
 		}
-		params := modula.CreateAdminContentDataParams{
-			ParentID:        optionalIDPtr[modula.AdminContentID](req, "parent_id"),
-			AdminRouteID:    optionalIDPtr[modula.AdminRouteID](req, "admin_route_id"),
-			AdminDatatypeID: optionalIDPtr[modula.AdminDatatypeID](req, "admin_datatype_id"),
-			AuthorID:        optionalIDPtr[modula.UserID](req, "author_id"),
-			Status:          modula.ContentStatus(status),
+		params, err := marshalParams(map[string]any{
+			"parent_id":         optionalStrPtr(req, "parent_id"),
+			"admin_route_id":    optionalStrPtr(req, "admin_route_id"),
+			"admin_datatype_id": optionalStrPtr(req, "admin_datatype_id"),
+			"author_id":         optionalStrPtr(req, "author_id"),
+			"status":            status,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminContentData.Create(ctx, params)
+		data, err := backend.CreateAdminContent(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminUpdateContent(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminUpdateContent(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -188,29 +189,32 @@ func handleAdminUpdateContent(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("status is required"), nil
 		}
-		params := modula.UpdateAdminContentDataParams{
-			AdminContentDataID: modula.AdminContentID(id),
-			ParentID:           optionalIDPtr[modula.AdminContentID](req, "parent_id"),
-			AdminRouteID:       optionalIDPtr[modula.AdminRouteID](req, "admin_route_id"),
-			AdminDatatypeID:    optionalIDPtr[modula.AdminDatatypeID](req, "admin_datatype_id"),
-			AuthorID:           optionalIDPtr[modula.UserID](req, "author_id"),
-			Status:             modula.ContentStatus(status),
+		params, err := marshalParams(map[string]any{
+			"admin_content_data_id": id,
+			"parent_id":             optionalStrPtr(req, "parent_id"),
+			"admin_route_id":        optionalStrPtr(req, "admin_route_id"),
+			"admin_datatype_id":     optionalStrPtr(req, "admin_datatype_id"),
+			"author_id":             optionalStrPtr(req, "author_id"),
+			"status":                status,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminContentData.Update(ctx, params)
+		data, err := backend.UpdateAdminContent(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminDeleteContent(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminDeleteContent(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.AdminContentData.Delete(ctx, modula.AdminContentID(id))
+		err = backend.DeleteAdminContent(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -218,7 +222,7 @@ func handleAdminDeleteContent(client *modula.Client) server.ToolHandlerFunc {
 	}
 }
 
-func handleAdminReorderContent(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminReorderContent(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
 		rawIDs, ok := args["ordered_ids"].([]any)
@@ -237,73 +241,79 @@ func handleAdminReorderContent(client *modula.Client) server.ToolHandlerFunc {
 		if len(rawIDs) == 0 {
 			return mcp.NewToolResultError("ordered_ids must be a non-empty array"), nil
 		}
-		ids := make([]modula.AdminContentID, 0, len(rawIDs))
+		ids := make([]string, 0, len(rawIDs))
 		for _, raw := range rawIDs {
 			s, ok := raw.(string)
 			if !ok {
 				return mcp.NewToolResultError("each ordered_id must be a string"), nil
 			}
-			ids = append(ids, modula.AdminContentID(s))
+			ids = append(ids, s)
 		}
-		params := modula.AdminContentReorderRequest{
-			ParentID:   optionalIDPtr[modula.AdminContentID](req, "parent_id"),
-			OrderedIDs: ids,
+		params, err := marshalParams(map[string]any{
+			"parent_id":   optionalStrPtr(req, "parent_id"),
+			"ordered_ids": ids,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminContentReorder.Reorder(ctx, params)
+		data, err := backend.ReorderAdminContent(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminMoveContent(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminMoveContent(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		nodeID, err := req.RequireString("node_id")
 		if err != nil {
 			return mcp.NewToolResultError("node_id is required"), nil
 		}
 		position := int(req.GetFloat("position", 0))
-		params := modula.AdminContentMoveRequest{
-			NodeID:      modula.AdminContentID(nodeID),
-			NewParentID: optionalIDPtr[modula.AdminContentID](req, "new_parent_id"),
-			Position:    position,
+		params, err := marshalParams(map[string]any{
+			"node_id":       nodeID,
+			"new_parent_id": optionalStrPtr(req, "new_parent_id"),
+			"position":      position,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminContentReorder.Move(ctx, params)
+		data, err := backend.MoveAdminContent(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminListContentFields(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminListContentFields(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		limit := int64(req.GetFloat("limit", 20))
 		offset := int64(req.GetFloat("offset", 0))
-		result, err := client.AdminContentFields.ListPaginated(ctx, modula.PaginationParams{Limit: limit, Offset: offset})
+		data, err := backend.ListAdminContentFields(ctx, limit, offset)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminGetContentField(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminGetContentField(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.AdminContentFields.Get(ctx, modula.AdminContentFieldID(id))
+		data, err := backend.GetAdminContentField(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminCreateContentField(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminCreateContentField(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		cdID, err := req.RequireString("admin_content_data_id")
 		if err != nil {
@@ -317,24 +327,25 @@ func handleAdminCreateContentField(client *modula.Client) server.ToolHandlerFunc
 		if err != nil {
 			return mcp.NewToolResultError("admin_field_value is required"), nil
 		}
-		contentDataID := modula.AdminContentID(cdID)
-		fieldID := modula.AdminFieldID(fID)
-		params := modula.CreateAdminContentFieldParams{
-			AdminContentDataID: &contentDataID,
-			AdminFieldID:       &fieldID,
-			AdminFieldValue:    fVal,
-			AdminRouteID:       optionalIDPtr[modula.AdminRouteID](req, "admin_route_id"),
-			AuthorID:           optionalIDPtr[modula.UserID](req, "author_id"),
+		params, err := marshalParams(map[string]any{
+			"admin_content_data_id": cdID,
+			"admin_field_id":        fID,
+			"admin_field_value":     fVal,
+			"admin_route_id":        optionalStrPtr(req, "admin_route_id"),
+			"author_id":             optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.AdminContentFields.Create(ctx, params)
+		data, err := backend.CreateAdminContentField(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminUpdateContentField(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminUpdateContentField(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -344,46 +355,32 @@ func handleAdminUpdateContentField(client *modula.Client) server.ToolHandlerFunc
 		if err != nil {
 			return mcp.NewToolResultError("admin_field_value is required"), nil
 		}
-		cfID := modula.AdminContentFieldID(id)
-		existing, err := client.AdminContentFields.Get(ctx, cfID)
+		params, err := marshalParams(map[string]any{
+			"admin_content_field_id": id,
+			"admin_content_data_id":  optionalStrPtr(req, "admin_content_data_id"),
+			"admin_field_id":         optionalStrPtr(req, "admin_field_id"),
+			"admin_field_value":      fVal,
+			"admin_route_id":         optionalStrPtr(req, "admin_route_id"),
+			"author_id":              optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
+		}
+		data, err := backend.UpdateAdminContentField(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		params := modula.UpdateAdminContentFieldParams{
-			AdminContentFieldID: cfID,
-			AdminContentDataID:  existing.AdminContentDataID,
-			AdminFieldID:        existing.AdminFieldID,
-			AdminFieldValue:     fVal,
-			AdminRouteID:        existing.AdminRouteID,
-			AuthorID:            existing.AuthorID,
-		}
-		if v := optionalIDPtr[modula.AdminContentID](req, "admin_content_data_id"); v != nil {
-			params.AdminContentDataID = v
-		}
-		if v := optionalIDPtr[modula.AdminFieldID](req, "admin_field_id"); v != nil {
-			params.AdminFieldID = v
-		}
-		if v := optionalIDPtr[modula.AdminRouteID](req, "admin_route_id"); v != nil {
-			params.AdminRouteID = v
-		}
-		if v := optionalIDPtr[modula.UserID](req, "author_id"); v != nil {
-			params.AuthorID = v
-		}
-		result, err := client.AdminContentFields.Update(ctx, params)
-		if err != nil {
-			return errResult(err), nil
-		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleAdminDeleteContentField(client *modula.Client) server.ToolHandlerFunc {
+func handleAdminDeleteContentField(backend AdminContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.AdminContentFields.Delete(ctx, modula.AdminContentFieldID(id))
+		err = backend.DeleteAdminContentField(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}

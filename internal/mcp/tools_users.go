@@ -5,23 +5,21 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerUserTools(srv *server.MCPServer, client *modula.Client) {
+func registerUserTools(srv *server.MCPServer, backend UserBackend) {
 	srv.AddTool(
 		mcp.NewTool("whoami",
 			mcp.WithDescription("Get the currently authenticated user's profile. Returns user_id, username, name, email, role, and timestamps. Use this to get your user_id for content authoring."),
 		),
-		handleWhoami(client),
+		handleWhoami(backend),
 	)
 
 	srv.AddTool(
 		mcp.NewTool("list_users",
 			mcp.WithDescription("List all users."),
 		),
-		handleListUsers(client),
+		handleListUsers(backend),
 	)
 
 	srv.AddTool(
@@ -29,7 +27,7 @@ func registerUserTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single user by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("User ID (ULID)")),
 		),
-		handleGetUser(client),
+		handleGetUser(backend),
 	)
 
 	srv.AddTool(
@@ -41,7 +39,7 @@ func registerUserTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("password", mcp.Required(), mcp.Description("Password")),
 			mcp.WithString("role", mcp.Required(), mcp.Description("Role name (e.g. admin, editor, viewer)")),
 		),
-		handleCreateUser(client),
+		handleCreateUser(backend),
 	)
 
 	srv.AddTool(
@@ -54,7 +52,7 @@ func registerUserTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("password", mcp.Description("New password (omit to keep current)")),
 			mcp.WithString("role", mcp.Description("Role name")),
 		),
-		handleUpdateUser(client),
+		handleUpdateUser(backend),
 	)
 
 	srv.AddTool(
@@ -62,14 +60,14 @@ func registerUserTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete a user by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("User ID (ULID)")),
 		),
-		handleDeleteUser(client),
+		handleDeleteUser(backend),
 	)
 
 	srv.AddTool(
 		mcp.NewTool("list_users_full",
 			mcp.WithDescription("List all users with full associated data (roles, permissions, sessions, etc.). Returns raw JSON."),
 		),
-		handleListUsersFull(client),
+		handleListUsersFull(backend),
 	)
 
 	srv.AddTool(
@@ -77,45 +75,45 @@ func registerUserTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single user with full associated data by ID. Returns raw JSON."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("User ID (ULID)")),
 		),
-		handleGetUserFull(client),
+		handleGetUserFull(backend),
 	)
 }
 
-func handleWhoami(client *modula.Client) server.ToolHandlerFunc {
+func handleWhoami(backend UserBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.Auth.Me(ctx)
+		data, err := backend.Whoami(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleListUsers(client *modula.Client) server.ToolHandlerFunc {
+func handleListUsers(backend UserBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.Users.List(ctx)
+		data, err := backend.ListUsers(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleGetUser(client *modula.Client) server.ToolHandlerFunc {
+func handleGetUser(backend UserBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.Users.Get(ctx, modula.UserID(id))
+		data, err := backend.GetUser(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleCreateUser(client *modula.Client) server.ToolHandlerFunc {
+func handleCreateUser(backend UserBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		username, err := req.RequireString("username")
 		if err != nil {
@@ -137,50 +135,56 @@ func handleCreateUser(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("role is required"), nil
 		}
-		params := modula.CreateUserParams{
-			Username: username,
-			Name:     name,
-			Email:    modula.Email(email),
-			Password: password,
-			Role:     role,
+		params, err := marshalParams(map[string]any{
+			"username": username,
+			"name":     name,
+			"email":    email,
+			"password": password,
+			"role":     role,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.Users.Create(ctx, params)
+		data, err := backend.CreateUser(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleUpdateUser(client *modula.Client) server.ToolHandlerFunc {
+func handleUpdateUser(backend UserBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		params := modula.UpdateUserParams{
-			UserID:   modula.UserID(id),
-			Username: req.GetString("username", ""),
-			Name:     req.GetString("name", ""),
-			Email:    modula.Email(req.GetString("email", "")),
-			Password: req.GetString("password", ""),
-			Role:     req.GetString("role", ""),
+		params, err := marshalParams(map[string]any{
+			"user_id":  id,
+			"username": req.GetString("username", ""),
+			"name":     req.GetString("name", ""),
+			"email":    req.GetString("email", ""),
+			"password": req.GetString("password", ""),
+			"role":     req.GetString("role", ""),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.Users.Update(ctx, params)
+		data, err := backend.UpdateUser(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeleteUser(client *modula.Client) server.ToolHandlerFunc {
+func handleDeleteUser(backend UserBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.Users.Delete(ctx, modula.UserID(id))
+		err = backend.DeleteUser(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -188,26 +192,26 @@ func handleDeleteUser(client *modula.Client) server.ToolHandlerFunc {
 	}
 }
 
-func handleListUsersFull(client *modula.Client) server.ToolHandlerFunc {
+func handleListUsersFull(backend UserBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.UsersFull.List(ctx)
+		data, err := backend.ListUsersFull(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return mcp.NewToolResultText(string(result)), nil
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleGetUserFull(client *modula.Client) server.ToolHandlerFunc {
+func handleGetUserFull(backend UserBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.UsersFull.Get(ctx, modula.UserID(id))
+		data, err := backend.GetUserFull(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return mcp.NewToolResultText(string(result)), nil
+		return rawJSONResult(data), nil
 	}
 }

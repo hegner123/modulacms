@@ -5,16 +5,14 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerRouteTools(srv *server.MCPServer, client *modula.Client) {
+func registerRouteTools(srv *server.MCPServer, backend RouteBackend) {
 	srv.AddTool(
 		mcp.NewTool("list_routes",
 			mcp.WithDescription("List all routes."),
 		),
-		handleListRoutes(client),
+		handleListRoutes(backend),
 	)
 
 	srv.AddTool(
@@ -22,7 +20,7 @@ func registerRouteTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single route by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Route ID (ULID)")),
 		),
-		handleGetRoute(client),
+		handleGetRoute(backend),
 	)
 
 	srv.AddTool(
@@ -33,7 +31,7 @@ func registerRouteTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithNumber("status", mcp.Required(), mcp.Description("Route status (positive integer)")),
 			mcp.WithString("author_id", mcp.Description("Author user ID")),
 		),
-		handleCreateRoute(client),
+		handleCreateRoute(backend),
 	)
 
 	srv.AddTool(
@@ -45,7 +43,7 @@ func registerRouteTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithNumber("status", mcp.Required(), mcp.Description("Route status (positive integer)")),
 			mcp.WithString("author_id", mcp.Description("Author user ID")),
 		),
-		handleUpdateRoute(client),
+		handleUpdateRoute(backend),
 	)
 
 	srv.AddTool(
@@ -53,35 +51,35 @@ func registerRouteTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete a route by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Route ID (ULID)")),
 		),
-		handleDeleteRoute(client),
+		handleDeleteRoute(backend),
 	)
 }
 
-func handleListRoutes(client *modula.Client) server.ToolHandlerFunc {
+func handleListRoutes(backend RouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.Routes.List(ctx)
+		data, err := backend.ListRoutes(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleGetRoute(client *modula.Client) server.ToolHandlerFunc {
+func handleGetRoute(backend RouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.Routes.Get(ctx, modula.RouteID(id))
+		data, err := backend.GetRoute(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleCreateRoute(client *modula.Client) server.ToolHandlerFunc {
+func handleCreateRoute(backend RouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		slug, err := req.RequireString("slug")
 		if err != nil {
@@ -92,21 +90,24 @@ func handleCreateRoute(client *modula.Client) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("title is required"), nil
 		}
 		status := int64(req.GetFloat("status", 0))
-		params := modula.CreateRouteParams{
-			Slug:     modula.Slug(slug),
-			Title:    title,
-			Status:   status,
-			AuthorID: optionalIDPtr[modula.UserID](req, "author_id"),
+		params, err := marshalParams(map[string]any{
+			"slug":      slug,
+			"title":     title,
+			"status":    status,
+			"author_id": optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.Routes.Create(ctx, params)
+		data, err := backend.CreateRoute(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleUpdateRoute(client *modula.Client) server.ToolHandlerFunc {
+func handleUpdateRoute(backend RouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -121,28 +122,31 @@ func handleUpdateRoute(client *modula.Client) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("title is required"), nil
 		}
 		status := int64(req.GetFloat("status", 0))
-		params := modula.UpdateRouteParams{
-			RouteID:  modula.RouteID(id),
-			Slug:     modula.Slug(slug),
-			Title:    title,
-			Status:   status,
-			AuthorID: optionalIDPtr[modula.UserID](req, "author_id"),
+		params, err := marshalParams(map[string]any{
+			"route_id":  id,
+			"slug":      slug,
+			"title":     title,
+			"status":    status,
+			"author_id": optionalStrPtr(req, "author_id"),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.Routes.Update(ctx, params)
+		data, err := backend.UpdateRoute(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeleteRoute(client *modula.Client) server.ToolHandlerFunc {
+func handleDeleteRoute(backend RouteBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.Routes.Delete(ctx, modula.RouteID(id))
+		err = backend.DeleteRoute(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}

@@ -5,16 +5,14 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerTokenTools(srv *server.MCPServer, client *modula.Client) {
+func registerTokenTools(srv *server.MCPServer, backend TokenBackend) {
 	srv.AddTool(
 		mcp.NewTool("list_tokens",
 			mcp.WithDescription("List all authentication tokens."),
 		),
-		handleListTokens(client),
+		handleListTokens(backend),
 	)
 
 	srv.AddTool(
@@ -22,7 +20,7 @@ func registerTokenTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single token by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Token ID (ULID)")),
 		),
-		handleGetToken(client),
+		handleGetToken(backend),
 	)
 
 	srv.AddTool(
@@ -35,7 +33,7 @@ func registerTokenTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("user_id", mcp.Description("User ID to associate with the token")),
 			mcp.WithBoolean("revoked", mcp.Description("Whether the token is revoked (default false)")),
 		),
-		handleCreateToken(client),
+		handleCreateToken(backend),
 	)
 
 	srv.AddTool(
@@ -43,35 +41,35 @@ func registerTokenTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete a token by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Token ID (ULID)")),
 		),
-		handleDeleteToken(client),
+		handleDeleteToken(backend),
 	)
 }
 
-func handleListTokens(client *modula.Client) server.ToolHandlerFunc {
+func handleListTokens(backend TokenBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.Tokens.List(ctx)
+		data, err := backend.ListTokens(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleGetToken(client *modula.Client) server.ToolHandlerFunc {
+func handleGetToken(backend TokenBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.Tokens.Get(ctx, modula.TokenID(id))
+		data, err := backend.GetToken(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleCreateToken(client *modula.Client) server.ToolHandlerFunc {
+func handleCreateToken(backend TokenBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		tokenType, err := req.RequireString("token_type")
 		if err != nil {
@@ -89,29 +87,32 @@ func handleCreateToken(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("expires_at is required"), nil
 		}
-		params := modula.CreateTokenParams{
-			UserID:    optionalIDPtr[modula.UserID](req, "user_id"),
-			TokenType: tokenType,
-			Token:     token,
-			IssuedAt:  issuedAt,
-			ExpiresAt: modula.Timestamp(expiresAt),
-			Revoked:   req.GetBool("revoked", false),
+		params, err := marshalParams(map[string]any{
+			"user_id":    optionalStrPtr(req, "user_id"),
+			"token_type": tokenType,
+			"token":      token,
+			"issued_at":  issuedAt,
+			"expires_at": expiresAt,
+			"revoked":    req.GetBool("revoked", false),
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.Tokens.Create(ctx, params)
+		data, err := backend.CreateToken(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeleteToken(client *modula.Client) server.ToolHandlerFunc {
+func handleDeleteToken(backend TokenBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.Tokens.Delete(ctx, modula.TokenID(id))
+		err = backend.DeleteToken(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}

@@ -5,16 +5,14 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerTableTools(srv *server.MCPServer, client *modula.Client) {
+func registerTableTools(srv *server.MCPServer, backend TableBackend) {
 	srv.AddTool(
 		mcp.NewTool("list_tables",
 			mcp.WithDescription("List all CMS metadata tables."),
 		),
-		handleListTables(client),
+		handleListTables(backend),
 	)
 
 	srv.AddTool(
@@ -22,7 +20,7 @@ func registerTableTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get a single table by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Table ID (ULID)")),
 		),
-		handleGetTable(client),
+		handleGetTable(backend),
 	)
 
 	srv.AddTool(
@@ -30,7 +28,7 @@ func registerTableTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Create a new table record."),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Table label")),
 		),
-		handleCreateTable(client),
+		handleCreateTable(backend),
 	)
 
 	srv.AddTool(
@@ -39,7 +37,7 @@ func registerTableTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithString("id", mcp.Required(), mcp.Description("Table ID (ULID)")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("New table label")),
 		),
-		handleUpdateTable(client),
+		handleUpdateTable(backend),
 	)
 
 	srv.AddTool(
@@ -47,50 +45,55 @@ func registerTableTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Delete a table by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Table ID (ULID)")),
 		),
-		handleDeleteTable(client),
+		handleDeleteTable(backend),
 	)
 }
 
-func handleListTables(client *modula.Client) server.ToolHandlerFunc {
+func handleListTables(backend TableBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.Tables.List(ctx)
+		data, err := backend.ListTables(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleGetTable(client *modula.Client) server.ToolHandlerFunc {
+func handleGetTable(backend TableBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		result, err := client.Tables.Get(ctx, modula.TableID(id))
+		data, err := backend.GetTable(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleCreateTable(client *modula.Client) server.ToolHandlerFunc {
+func handleCreateTable(backend TableBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		label, err := req.RequireString("label")
 		if err != nil {
 			return mcp.NewToolResultError("label is required"), nil
 		}
-		params := modula.CreateTableParams{Label: label}
-		result, err := client.Tables.Create(ctx, params)
+		params, err := marshalParams(map[string]any{
+			"label": label,
+		})
+		if err != nil {
+			return nil, err
+		}
+		data, err := backend.CreateTable(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleUpdateTable(client *modula.Client) server.ToolHandlerFunc {
+func handleUpdateTable(backend TableBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
@@ -100,25 +103,28 @@ func handleUpdateTable(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("label is required"), nil
 		}
-		params := modula.UpdateTableParams{
-			ID:    modula.TableID(id),
-			Label: label,
+		params, err := marshalParams(map[string]any{
+			"id":    id,
+			"label": label,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.Tables.Update(ctx, params)
+		data, err := backend.UpdateTable(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeleteTable(client *modula.Client) server.ToolHandlerFunc {
+func handleDeleteTable(backend TableBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id, err := req.RequireString("id")
 		if err != nil {
 			return mcp.NewToolResultError("id is required"), nil
 		}
-		err = client.Tables.Delete(ctx, modula.TableID(id))
+		err = backend.DeleteTable(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}

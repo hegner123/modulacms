@@ -321,16 +321,11 @@ Examples:
 			)(middleware.DefaultMiddlewareChain(mgr, pc)(mux))
 
 			// MCP server (Model Context Protocol for AI tooling).
-			// Registered after middleware wrapping so DirectHandler's SDK
-			// calls route through the full auth/permission/audit stack
-			// in-process, eliminating the HTTP loopback.
+			// Direct mode: tools call services directly without HTTP round-trips.
 			if cfg.MCP_Enabled && cfg.MCP_API_Key != "" {
-				mcpHandler, mcpErr := mcpserver.DirectHandler(fullHandler, cfg.MCP_API_Key)
-				if mcpErr != nil {
-					utility.DefaultLogger.Ferror("Failed to create MCP handler", mcpErr)
-				} else {
-					mux.Handle("/mcp", mcpserver.APIKeyAuth(cfg.MCP_API_Key, mcpHandler))
-				}
+				mcpAC := audited.Ctx(types.NewNodeID(), types.UserID("mcp-direct"), "", "127.0.0.1")
+				mcpHandler := mcpserver.DirectHandler(svc, mcpAC)
+				mux.Handle("/mcp", mcpserver.APIKeyAuth(cfg.MCP_API_Key, mcpHandler))
 			}
 
 			return fullHandler

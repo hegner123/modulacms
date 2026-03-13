@@ -6,16 +6,14 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerPluginTools(srv *server.MCPServer, client *modula.Client) {
+func registerPluginTools(srv *server.MCPServer, backend PluginBackend) {
 	srv.AddTool(
 		mcp.NewTool("list_plugins",
 			mcp.WithDescription("List all installed plugins with their status."),
 		),
-		handleListPlugins(client),
+		handleListPlugins(backend),
 	)
 
 	srv.AddTool(
@@ -23,7 +21,7 @@ func registerPluginTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Get detailed info for a specific plugin."),
 			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin name")),
 		),
-		handleGetPlugin(client),
+		handleGetPlugin(backend),
 	)
 
 	srv.AddTool(
@@ -31,7 +29,7 @@ func registerPluginTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Reload a plugin from disk."),
 			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin name")),
 		),
-		handleReloadPlugin(client),
+		handleReloadPlugin(backend),
 	)
 
 	srv.AddTool(
@@ -39,7 +37,7 @@ func registerPluginTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Enable a disabled plugin."),
 			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin name")),
 		),
-		handleEnablePlugin(client),
+		handleEnablePlugin(backend),
 	)
 
 	srv.AddTool(
@@ -47,14 +45,14 @@ func registerPluginTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Disable an active plugin."),
 			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin name")),
 		),
-		handleDisablePlugin(client),
+		handleDisablePlugin(backend),
 	)
 
 	srv.AddTool(
 		mcp.NewTool("plugin_cleanup_dry_run",
 			mcp.WithDescription("List orphaned plugin tables without dropping them."),
 		),
-		handlePluginCleanupDryRun(client),
+		handlePluginCleanupDryRun(backend),
 	)
 
 	srv.AddTool(
@@ -63,14 +61,14 @@ func registerPluginTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithBoolean("confirm", mcp.Required(), mcp.Description("Must be true to confirm dropping tables")),
 			mcp.WithObject("tables", mcp.Required(), mcp.Description("Array of table names to drop")),
 		),
-		handlePluginCleanupDrop(client),
+		handlePluginCleanupDrop(backend),
 	)
 
 	srv.AddTool(
 		mcp.NewTool("list_plugin_routes",
 			mcp.WithDescription("List all plugin-registered HTTP routes with their approval status."),
 		),
-		handleListPluginRoutes(client),
+		handleListPluginRoutes(backend),
 	)
 
 	srv.AddTool(
@@ -78,7 +76,7 @@ func registerPluginTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Approve one or more plugin routes. Each route requires plugin, method, and path."),
 			mcp.WithObject("routes", mcp.Required(), mcp.Description("Array of {plugin, method, path} objects to approve")),
 		),
-		handleApprovePluginRoutes(client),
+		handleApprovePluginRoutes(backend),
 	)
 
 	srv.AddTool(
@@ -86,14 +84,14 @@ func registerPluginTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Revoke approval for one or more plugin routes."),
 			mcp.WithObject("routes", mcp.Required(), mcp.Description("Array of {plugin, method, path} objects to revoke")),
 		),
-		handleRevokePluginRoutes(client),
+		handleRevokePluginRoutes(backend),
 	)
 
 	srv.AddTool(
 		mcp.NewTool("list_plugin_hooks",
 			mcp.WithDescription("List all plugin-registered hooks with their approval status."),
 		),
-		handleListPluginHooks(client),
+		handleListPluginHooks(backend),
 	)
 
 	srv.AddTool(
@@ -101,7 +99,7 @@ func registerPluginTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Approve one or more plugin hooks. Each hook requires plugin, event, and table."),
 			mcp.WithObject("hooks", mcp.Required(), mcp.Description("Array of {plugin, event, table} objects to approve")),
 		),
-		handleApprovePluginHooks(client),
+		handleApprovePluginHooks(backend),
 	)
 
 	srv.AddTool(
@@ -109,87 +107,87 @@ func registerPluginTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Revoke approval for one or more plugin hooks."),
 			mcp.WithObject("hooks", mcp.Required(), mcp.Description("Array of {plugin, event, table} objects to revoke")),
 		),
-		handleRevokePluginHooks(client),
+		handleRevokePluginHooks(backend),
 	)
 }
 
-func handleListPlugins(client *modula.Client) server.ToolHandlerFunc {
+func handleListPlugins(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.Plugins.List(ctx)
+		data, err := backend.ListPlugins(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleGetPlugin(client *modula.Client) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		name, err := req.RequireString("name")
-		if err != nil {
-			return mcp.NewToolResultError("name is required"), nil
-		}
-		result, err := client.Plugins.Get(ctx, name)
-		if err != nil {
-			return errResult(err), nil
-		}
-		return jsonResult(result)
-	}
-}
-
-func handleReloadPlugin(client *modula.Client) server.ToolHandlerFunc {
+func handleGetPlugin(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		name, err := req.RequireString("name")
 		if err != nil {
 			return mcp.NewToolResultError("name is required"), nil
 		}
-		result, err := client.Plugins.Reload(ctx, name)
+		data, err := backend.GetPlugin(ctx, name)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleEnablePlugin(client *modula.Client) server.ToolHandlerFunc {
+func handleReloadPlugin(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		name, err := req.RequireString("name")
 		if err != nil {
 			return mcp.NewToolResultError("name is required"), nil
 		}
-		result, err := client.Plugins.Enable(ctx, name)
+		data, err := backend.ReloadPlugin(ctx, name)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDisablePlugin(client *modula.Client) server.ToolHandlerFunc {
+func handleEnablePlugin(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		name, err := req.RequireString("name")
 		if err != nil {
 			return mcp.NewToolResultError("name is required"), nil
 		}
-		result, err := client.Plugins.Disable(ctx, name)
+		data, err := backend.EnablePlugin(ctx, name)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handlePluginCleanupDryRun(client *modula.Client) server.ToolHandlerFunc {
+func handleDisablePlugin(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.Plugins.CleanupDryRun(ctx)
+		name, err := req.RequireString("name")
+		if err != nil {
+			return mcp.NewToolResultError("name is required"), nil
+		}
+		data, err := backend.DisablePlugin(ctx, name)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handlePluginCleanupDrop(client *modula.Client) server.ToolHandlerFunc {
+func handlePluginCleanupDryRun(backend PluginBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		data, err := backend.PluginCleanupDryRun(ctx)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handlePluginCleanupDrop(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		confirm := req.GetBool("confirm", false)
 		args := req.GetArguments()
@@ -203,35 +201,37 @@ func handlePluginCleanupDrop(client *modula.Client) server.ToolHandlerFunc {
 				}
 			}
 		}
-		params := modula.CleanupDropParams{
-			Confirm: confirm,
-			Tables:  tables,
+		params, err := marshalParams(map[string]any{
+			"confirm": confirm,
+			"tables":  tables,
+		})
+		if err != nil {
+			return nil, err
 		}
-		result, err := client.Plugins.CleanupDrop(ctx, params)
+		data, err := backend.PluginCleanupDrop(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleListPluginRoutes(client *modula.Client) server.ToolHandlerFunc {
+func handleListPluginRoutes(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.PluginRoutes.List(ctx)
+		data, err := backend.ListPluginRoutes(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func parseRouteApprovalItems(req mcp.CallToolRequest) ([]modula.RouteApprovalItem, error) {
+func marshalApprovalItems(req mcp.CallToolRequest, key string) (json.RawMessage, error) {
 	args := req.GetArguments()
-	raw, ok := args["routes"]
+	raw, ok := args[key]
 	if !ok {
 		return nil, nil
 	}
-	// Handle both string (JSON-encoded) and native array from MCP framework.
 	var b []byte
 	if s, ok := raw.(string); ok {
 		b = []byte(s)
@@ -242,23 +242,19 @@ func parseRouteApprovalItems(req mcp.CallToolRequest) ([]modula.RouteApprovalIte
 			return nil, err
 		}
 	}
-	var items []modula.RouteApprovalItem
-	if err := json.Unmarshal(b, &items); err != nil {
-		return nil, err
-	}
-	return items, nil
+	return json.RawMessage(b), nil
 }
 
-func handleApprovePluginRoutes(client *modula.Client) server.ToolHandlerFunc {
+func handleApprovePluginRoutes(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		routes, err := parseRouteApprovalItems(req)
+		params, err := marshalApprovalItems(req, "routes")
 		if err != nil {
 			return mcp.NewToolResultError("invalid routes: " + err.Error()), nil
 		}
-		if len(routes) == 0 {
+		if len(params) == 0 {
 			return mcp.NewToolResultError("routes array is required"), nil
 		}
-		err = client.PluginRoutes.Approve(ctx, routes)
+		err = backend.ApprovePluginRoutes(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -266,16 +262,16 @@ func handleApprovePluginRoutes(client *modula.Client) server.ToolHandlerFunc {
 	}
 }
 
-func handleRevokePluginRoutes(client *modula.Client) server.ToolHandlerFunc {
+func handleRevokePluginRoutes(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		routes, err := parseRouteApprovalItems(req)
+		params, err := marshalApprovalItems(req, "routes")
 		if err != nil {
 			return mcp.NewToolResultError("invalid routes: " + err.Error()), nil
 		}
-		if len(routes) == 0 {
+		if len(params) == 0 {
 			return mcp.NewToolResultError("routes array is required"), nil
 		}
-		err = client.PluginRoutes.Revoke(ctx, routes)
+		err = backend.RevokePluginRoutes(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -283,50 +279,26 @@ func handleRevokePluginRoutes(client *modula.Client) server.ToolHandlerFunc {
 	}
 }
 
-func handleListPluginHooks(client *modula.Client) server.ToolHandlerFunc {
+func handleListPluginHooks(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.PluginHooks.List(ctx)
+		data, err := backend.ListPluginHooks(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func parseHookApprovalItems(req mcp.CallToolRequest) ([]modula.HookApprovalItem, error) {
-	args := req.GetArguments()
-	raw, ok := args["hooks"]
-	if !ok {
-		return nil, nil
-	}
-	// Handle both string (JSON-encoded) and native array from MCP framework.
-	var b []byte
-	if s, ok := raw.(string); ok {
-		b = []byte(s)
-	} else {
-		var err error
-		b, err = json.Marshal(raw)
-		if err != nil {
-			return nil, err
-		}
-	}
-	var items []modula.HookApprovalItem
-	if err := json.Unmarshal(b, &items); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-func handleApprovePluginHooks(client *modula.Client) server.ToolHandlerFunc {
+func handleApprovePluginHooks(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		hooks, err := parseHookApprovalItems(req)
+		params, err := marshalApprovalItems(req, "hooks")
 		if err != nil {
 			return mcp.NewToolResultError("invalid hooks: " + err.Error()), nil
 		}
-		if len(hooks) == 0 {
+		if len(params) == 0 {
 			return mcp.NewToolResultError("hooks array is required"), nil
 		}
-		err = client.PluginHooks.Approve(ctx, hooks)
+		err = backend.ApprovePluginHooks(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}
@@ -334,16 +306,16 @@ func handleApprovePluginHooks(client *modula.Client) server.ToolHandlerFunc {
 	}
 }
 
-func handleRevokePluginHooks(client *modula.Client) server.ToolHandlerFunc {
+func handleRevokePluginHooks(backend PluginBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		hooks, err := parseHookApprovalItems(req)
+		params, err := marshalApprovalItems(req, "hooks")
 		if err != nil {
 			return mcp.NewToolResultError("invalid hooks: " + err.Error()), nil
 		}
-		if len(hooks) == 0 {
+		if len(params) == 0 {
 			return mcp.NewToolResultError("hooks array is required"), nil
 		}
-		err = client.PluginHooks.Revoke(ctx, hooks)
+		err = backend.RevokePluginHooks(ctx, params)
 		if err != nil {
 			return errResult(err), nil
 		}

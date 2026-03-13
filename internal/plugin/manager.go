@@ -655,7 +655,7 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 		RegisterHooksAPI(L, pluginName)
 		coreAPI := NewCoreTableAPI(dbAPI, pluginName, m.dialect, inst.ApprovedAccess)
 		RegisterCoreAPI(L, coreAPI)
-		reqAPI := RegisterRequestAPI(L, pluginName, nil) // engine wired in future issue
+		reqAPI := RegisterRequestAPI(L, pluginName, m.requestEngine)
 		FreezeModule(L, "db")
 		FreezeModule(L, "log")
 		FreezeModule(L, "http")

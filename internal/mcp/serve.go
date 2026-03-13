@@ -8,38 +8,40 @@ import (
 
 	"github.com/mark3labs/mcp-go/server"
 
+	"github.com/hegner123/modulacms/internal/db/audited"
+	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
 // newServer creates an MCPServer with all tools registered.
-func newServer(client *modula.Client) *server.MCPServer {
+func newServer(backends *Backends) *server.MCPServer {
 	srv := server.NewMCPServer("modula", utility.Version)
 
-	registerContentTools(srv, client)
-	registerSchemaTools(srv, client)
-	registerMediaTools(srv, client)
-	registerRouteTools(srv, client)
-	registerUserTools(srv, client)
-	registerRBACTools(srv, client)
-	registerConfigTools(srv, client)
-	registerImportTools(srv, client)
-	registerDeployTools(srv, client)
-	registerHealthTools(srv, client)
-	registerSessionTools(srv, client)
-	registerTokenTools(srv, client)
-	registerSSHKeyTools(srv, client)
-	registerOAuthTools(srv, client)
-	registerTableTools(srv, client)
-	registerPluginTools(srv, client)
-	registerAdminContentTools(srv, client)
-	registerAdminSchemaTools(srv, client)
-	registerAdminRouteTools(srv, client)
+	registerContentTools(srv, backends.Content)
+	registerSchemaTools(srv, backends.Schema)
+	registerMediaTools(srv, backends.Media)
+	registerRouteTools(srv, backends.Routes)
+	registerUserTools(srv, backends.Users)
+	registerRBACTools(srv, backends.RBAC)
+	registerConfigTools(srv, backends.Config)
+	registerImportTools(srv, backends.Import)
+	registerDeployTools(srv, backends.Deploy)
+	registerHealthTools(srv, backends.Health)
+	registerSessionTools(srv, backends.Sessions)
+	registerTokenTools(srv, backends.Tokens)
+	registerSSHKeyTools(srv, backends.SSHKeys)
+	registerOAuthTools(srv, backends.OAuth)
+	registerTableTools(srv, backends.Tables)
+	registerPluginTools(srv, backends.Plugins)
+	registerAdminContentTools(srv, backends.AdminContent)
+	registerAdminSchemaTools(srv, backends.AdminSchema)
+	registerAdminRouteTools(srv, backends.AdminRoutes)
 
 	return srv
 }
 
-// Serve creates an MCP server connected to a Modula instance and serves over stdio.
+// Serve creates an MCP server connected to a remote Modula instance and serves over stdio.
 // This mode makes real HTTP calls to the CMS at the given URL.
 func Serve(url, apiKey string) error {
 	client, err := modula.NewClient(modula.ClientConfig{
@@ -50,33 +52,38 @@ func Serve(url, apiKey string) error {
 		return fmt.Errorf("create SDK client: %w", err)
 	}
 
-	return server.ServeStdio(newServer(client))
+	return server.ServeStdio(newServer(NewSDKBackends(client)))
+}
+
+// ServeDirect creates an MCP server that calls services directly and serves over stdio.
+func ServeDirect(svc *service.Registry, ac audited.AuditContext) error {
+	return server.ServeStdio(newServer(NewServiceBackends(svc, ac)))
 }
 
 // DirectHandler returns an http.Handler that serves the MCP protocol over
-// Streamable HTTP, routing SDK calls directly to the given in-process handler
-// instead of making HTTP requests over the network.
-//
-// The handler should be the full middleware-wrapped ServeMux so that SDK calls
-// go through auth, permissions, and audit middleware normally.
-func DirectHandler(handler http.Handler, apiKey string) (http.Handler, error) {
-	client, err := modula.NewClient(modula.ClientConfig{
-		BaseURL: "http://internal",
-		APIKey:  apiKey,
-		HTTPClient: &http.Client{
-			Transport: &directTransport{handler: handler},
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("create direct SDK client: %w", err)
-	}
-
-	httpServer := server.NewStreamableHTTPServer(
-		newServer(client),
+// Streamable HTTP, calling services directly without HTTP round-trips.
+func DirectHandler(svc *service.Registry, ac audited.AuditContext) http.Handler {
+	return server.NewStreamableHTTPServer(
+		newServer(NewServiceBackends(svc, ac)),
 		server.WithEndpointPath("/mcp"),
 	)
+}
 
-	return httpServer, nil
+// RemoteHandler returns an http.Handler that serves the MCP protocol over
+// Streamable HTTP, proxying calls to a remote CMS via the Go SDK.
+func RemoteHandler(url, apiKey string) (http.Handler, error) {
+	client, err := modula.NewClient(modula.ClientConfig{
+		BaseURL: url,
+		APIKey:  apiKey,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create SDK client: %w", err)
+	}
+
+	return server.NewStreamableHTTPServer(
+		newServer(NewSDKBackends(client)),
+		server.WithEndpointPath("/mcp"),
+	), nil
 }
 
 // APIKeyAuth wraps an http.Handler with Bearer token authentication for the

@@ -42,8 +42,15 @@ func TestErrResult_PlainError(t *testing.T) {
 		t.Fatal("expected IsError=true")
 	}
 	text := resultText(t, result)
-	if text != "connection refused" {
-		t.Errorf("text = %q, want %q", text, "connection refused")
+	var detail map[string]any
+	if err := json.Unmarshal([]byte(text), &detail); err != nil {
+		t.Fatalf("failed to parse error JSON: %v", err)
+	}
+	if detail["status"] != float64(500) {
+		t.Errorf("status = %v, want 500", detail["status"])
+	}
+	if detail["message"] != "connection refused" {
+		t.Errorf("message = %v, want %q", detail["message"], "connection refused")
 	}
 }
 
@@ -71,9 +78,6 @@ func TestErrResult_ApiError(t *testing.T) {
 	}
 	if detail["message"] != "not found" {
 		t.Errorf("message = %v, want %q", detail["message"], "not found")
-	}
-	if detail["body"] != `{"error":"not found"}` {
-		t.Errorf("body = %v, want %q", detail["body"], `{"error":"not found"}`)
 	}
 }
 

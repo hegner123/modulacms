@@ -6,16 +6,14 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
-func registerDeployTools(srv *server.MCPServer, client *modula.Client) {
+func registerDeployTools(srv *server.MCPServer, backend DeployBackend) {
 	srv.AddTool(
 		mcp.NewTool("deploy_health",
 			mcp.WithDescription("Check deploy sync health status. Returns status, version, and node ID."),
 		),
-		handleDeployHealth(client),
+		handleDeployHealth(backend),
 	)
 
 	srv.AddTool(
@@ -23,7 +21,7 @@ func registerDeployTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Export a sync payload from the server. Optionally filter by table names."),
 			mcp.WithObject("tables", mcp.Description("Array of table names to export. Omit for full export.")),
 		),
-		handleDeployExport(client),
+		handleDeployExport(backend),
 	)
 
 	srv.AddTool(
@@ -31,7 +29,7 @@ func registerDeployTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Import a sync payload into the server. The payload should be the raw JSON from deploy_export."),
 			mcp.WithObject("payload", mcp.Required(), mcp.Description("Sync payload JSON from deploy_export")),
 		),
-		handleDeployImport(client),
+		handleDeployImport(backend),
 	)
 
 	srv.AddTool(
@@ -39,21 +37,21 @@ func registerDeployTools(srv *server.MCPServer, client *modula.Client) {
 			mcp.WithDescription("Dry-run import: shows what would change without writing. Same payload format as deploy_import."),
 			mcp.WithObject("payload", mcp.Required(), mcp.Description("Sync payload JSON from deploy_export")),
 		),
-		handleDeployDryRun(client),
+		handleDeployDryRun(backend),
 	)
 }
 
-func handleDeployHealth(client *modula.Client) server.ToolHandlerFunc {
+func handleDeployHealth(backend DeployBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		result, err := client.Deploy.Health(ctx)
+		data, err := backend.DeployHealth(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeployExport(client *modula.Client) server.ToolHandlerFunc {
+func handleDeployExport(backend DeployBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		var tables []string
 		args := req.GetArguments()
@@ -66,15 +64,15 @@ func handleDeployExport(client *modula.Client) server.ToolHandlerFunc {
 				}
 			}
 		}
-		result, err := client.Deploy.Export(ctx, tables)
+		data, err := backend.DeployExport(ctx, tables)
 		if err != nil {
 			return errResult(err), nil
 		}
-		return mcp.NewToolResultText(string(result)), nil
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeployImport(client *modula.Client) server.ToolHandlerFunc {
+func handleDeployImport(backend DeployBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
 		rawPayload, ok := args["payload"]
@@ -85,15 +83,15 @@ func handleDeployImport(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("invalid payload"), nil
 		}
-		result, err := client.Deploy.Import(ctx, json.RawMessage(b))
+		data, err := backend.DeployImport(ctx, json.RawMessage(b))
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }
 
-func handleDeployDryRun(client *modula.Client) server.ToolHandlerFunc {
+func handleDeployDryRun(backend DeployBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := req.GetArguments()
 		rawPayload, ok := args["payload"]
@@ -104,10 +102,10 @@ func handleDeployDryRun(client *modula.Client) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError("invalid payload"), nil
 		}
-		result, err := client.Deploy.DryRunImport(ctx, json.RawMessage(b))
+		data, err := backend.DeployDryRun(ctx, json.RawMessage(b))
 		if err != nil {
 			return errResult(err), nil
 		}
-		return jsonResult(result)
+		return rawJSONResult(data), nil
 	}
 }

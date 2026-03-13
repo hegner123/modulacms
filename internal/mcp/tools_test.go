@@ -28,6 +28,12 @@ func newTestClient(t *testing.T, srv *httptest.Server) *modula.Client {
 	return client
 }
 
+// newTestBackends creates SDK backends backed by the given httptest.Server.
+func newTestBackends(t *testing.T, srv *httptest.Server) *Backends {
+	t.Helper()
+	return NewSDKBackends(newTestClient(t, srv))
+}
+
 // callTool invokes a tool handler directly, returning the result.
 func callTool(t *testing.T, handler server.ToolHandlerFunc, args map[string]any) *mcp.CallToolResult {
 	t.Helper()
@@ -53,8 +59,8 @@ func TestHandleHealth_Success(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleHealth(client)
+	backends := newTestBackends(t, ts)
+	handler := handleHealth(backends.Health)
 	result := callTool(t, handler, nil)
 
 	if result.IsError {
@@ -79,8 +85,8 @@ func TestHandleHealth_ServerError(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleHealth(client)
+	backends := newTestBackends(t, ts)
+	handler := handleHealth(backends.Health)
 	result := callTool(t, handler, nil)
 
 	if !result.IsError {
@@ -120,8 +126,8 @@ func TestHandleListRoutes(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleListRoutes(client)
+	backends := newTestBackends(t, ts)
+	handler := handleListRoutes(backends.Routes)
 	result := callTool(t, handler, nil)
 
 	if result.IsError {
@@ -157,8 +163,8 @@ func TestHandleGetRoute(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleGetRoute(client)
+	backends := newTestBackends(t, ts)
+	handler := handleGetRoute(backends.Routes)
 	result := callTool(t, handler, map[string]any{"id": "rt-001"})
 
 	if result.IsError {
@@ -181,8 +187,8 @@ func TestHandleGetRoute_MissingID(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleGetRoute(client)
+	backends := newTestBackends(t, ts)
+	handler := handleGetRoute(backends.Routes)
 	result := callTool(t, handler, map[string]any{})
 
 	if !result.IsError {
@@ -221,8 +227,8 @@ func TestHandleCreateRoute(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleCreateRoute(client)
+	backends := newTestBackends(t, ts)
+	handler := handleCreateRoute(backends.Routes)
 	result := callTool(t, handler, map[string]any{
 		"slug":   "contact",
 		"title":  "Contact",
@@ -270,8 +276,8 @@ func TestHandleCreateRoute_WithOptionalAuthorID(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleCreateRoute(client)
+	backends := newTestBackends(t, ts)
+	handler := handleCreateRoute(backends.Routes)
 	result := callTool(t, handler, map[string]any{
 		"slug":      "faq",
 		"title":     "FAQ",
@@ -297,8 +303,8 @@ func TestHandleDeleteRoute(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleDeleteRoute(client)
+	backends := newTestBackends(t, ts)
+	handler := handleDeleteRoute(backends.Routes)
 	result := callTool(t, handler, map[string]any{"id": "rt-del"})
 
 	if result.IsError {
@@ -318,8 +324,8 @@ func TestHandleDeleteRoute_NotFound(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleDeleteRoute(client)
+	backends := newTestBackends(t, ts)
+	handler := handleDeleteRoute(backends.Routes)
 	result := callTool(t, handler, map[string]any{"id": "rt-nonexistent"})
 
 	if !result.IsError {
@@ -359,9 +365,10 @@ func TestHandleUpdateRoute(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleUpdateRoute(client)
+	backends := newTestBackends(t, ts)
+	handler := handleUpdateRoute(backends.Routes)
 	result := callTool(t, handler, map[string]any{
+		"id":     "rt-001",
 		"slug":   "about",
 		"title":  "About Updated",
 		"status": float64(1),
@@ -389,8 +396,8 @@ func TestHandleGetConfig(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleGetConfig(client)
+	backends := newTestBackends(t, ts)
+	handler := handleGetConfig(backends.Config)
 	result := callTool(t, handler, nil)
 
 	if result.IsError {
@@ -416,7 +423,9 @@ func TestHandleGetConfigMeta(t *testing.T) {
 		"fields": []map[string]any{
 			{"json_key": "port", "label": "Port", "category": "server", "required": true},
 		},
-		"categories": []string{"server"},
+		"categories": []map[string]any{
+			{"key": "server", "label": "Server"},
+		},
 	}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -425,8 +434,8 @@ func TestHandleGetConfigMeta(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleGetConfigMeta(client)
+	backends := newTestBackends(t, ts)
+	handler := handleGetConfigMeta(backends.Config)
 	result := callTool(t, handler, nil)
 
 	if result.IsError {
@@ -447,8 +456,8 @@ func TestHandleUpdateConfig(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleUpdateConfig(client)
+	backends := newTestBackends(t, ts)
+	handler := handleUpdateConfig(backends.Config)
 	result := callTool(t, handler, map[string]any{
 		"updates": map[string]any{"port": float64(9090)},
 	})
@@ -464,8 +473,8 @@ func TestHandleUpdateConfig_InvalidUpdates(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleUpdateConfig(client)
+	backends := newTestBackends(t, ts)
+	handler := handleUpdateConfig(backends.Config)
 	result := callTool(t, handler, map[string]any{
 		"updates": "not-an-object",
 	})
@@ -493,8 +502,8 @@ func TestHandleListSessions(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleListSessions(client)
+	backends := newTestBackends(t, ts)
+	handler := handleListSessions(backends.Sessions)
 	result := callTool(t, handler, nil)
 
 	if result.IsError {
@@ -522,8 +531,8 @@ func TestHandleGetSession(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleGetSession(client)
+	backends := newTestBackends(t, ts)
+	handler := handleGetSession(backends.Sessions)
 	result := callTool(t, handler, map[string]any{"id": "sess-001"})
 
 	if result.IsError {
@@ -549,8 +558,8 @@ func TestHandleUpdateSession(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleUpdateSession(client)
+	backends := newTestBackends(t, ts)
+	handler := handleUpdateSession(backends.Sessions)
 	result := callTool(t, handler, map[string]any{
 		"id":         "sess-001",
 		"ip_address": "192.168.1.1",
@@ -570,8 +579,8 @@ func TestHandleDeleteSession(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleDeleteSession(client)
+	backends := newTestBackends(t, ts)
+	handler := handleDeleteSession(backends.Sessions)
 	result := callTool(t, handler, map[string]any{"id": "sess-001"})
 
 	if result.IsError {
@@ -597,8 +606,8 @@ func TestHandleListDatatypes(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleListDatatypes(client)
+	backends := newTestBackends(t, ts)
+	handler := handleListDatatypes(backends.Schema)
 	result := callTool(t, handler, map[string]any{})
 
 	if result.IsError {
@@ -628,8 +637,8 @@ func TestHandleGetDatatype(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleGetDatatype(client)
+	backends := newTestBackends(t, ts)
+	handler := handleGetDatatype(backends.Schema)
 	result := callTool(t, handler, map[string]any{"id": "dt-001"})
 
 	if result.IsError {
@@ -670,8 +679,8 @@ func TestHandleCreateDatatype(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleCreateDatatype(client)
+	backends := newTestBackends(t, ts)
+	handler := handleCreateDatatype(backends.Schema)
 	result := callTool(t, handler, map[string]any{
 		"label": "Event",
 		"type":  "component",
@@ -700,8 +709,8 @@ func TestHandleDeleteDatatype(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleDeleteDatatype(client)
+	backends := newTestBackends(t, ts)
+	handler := handleDeleteDatatype(backends.Schema)
 	result := callTool(t, handler, map[string]any{"id": "dt-001"})
 
 	if result.IsError {
@@ -717,29 +726,29 @@ func TestToolRegistration_AllGroupsRegistered(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
+	backends := newTestBackends(t, ts)
 	srv := server.NewMCPServer("modulacms-test", "0.0.1")
 
 	// All register functions should not panic
-	registerContentTools(srv, client)
-	registerSchemaTools(srv, client)
-	registerMediaTools(srv, client)
-	registerRouteTools(srv, client)
-	registerUserTools(srv, client)
-	registerRBACTools(srv, client)
-	registerConfigTools(srv, client)
-	registerImportTools(srv, client)
-	registerDeployTools(srv, client)
-	registerHealthTools(srv, client)
-	registerSessionTools(srv, client)
-	registerTokenTools(srv, client)
-	registerSSHKeyTools(srv, client)
-	registerOAuthTools(srv, client)
-	registerTableTools(srv, client)
-	registerPluginTools(srv, client)
-	registerAdminContentTools(srv, client)
-	registerAdminSchemaTools(srv, client)
-	registerAdminRouteTools(srv, client)
+	registerContentTools(srv, backends.Content)
+	registerSchemaTools(srv, backends.Schema)
+	registerMediaTools(srv, backends.Media)
+	registerRouteTools(srv, backends.Routes)
+	registerUserTools(srv, backends.Users)
+	registerRBACTools(srv, backends.RBAC)
+	registerConfigTools(srv, backends.Config)
+	registerImportTools(srv, backends.Import)
+	registerDeployTools(srv, backends.Deploy)
+	registerHealthTools(srv, backends.Health)
+	registerSessionTools(srv, backends.Sessions)
+	registerTokenTools(srv, backends.Tokens)
+	registerSSHKeyTools(srv, backends.SSHKeys)
+	registerOAuthTools(srv, backends.OAuth)
+	registerTableTools(srv, backends.Tables)
+	registerPluginTools(srv, backends.Plugins)
+	registerAdminContentTools(srv, backends.AdminContent)
+	registerAdminSchemaTools(srv, backends.AdminSchema)
+	registerAdminRouteTools(srv, backends.AdminRoutes)
 }
 
 // --- Auth header propagation ---
@@ -755,8 +764,8 @@ func TestAuthHeaderPropagated(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := newTestClient(t, ts)
-	handler := handleHealth(client)
+	backends := newTestBackends(t, ts)
+	handler := handleHealth(backends.Health)
 	result := callTool(t, handler, nil)
 
 	if result.IsError {
