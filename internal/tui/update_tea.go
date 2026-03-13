@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 // TeaUpdate signals a Tea framework update, triggered by window size changes.
@@ -41,13 +41,13 @@ func (m Model) UpdateTea(msg tea.Msg) (Model, tea.Cmd) {
 		verticalMarginHeight := headerHeight + footerHeight
 
 		if !m.Ready {
-			m.Viewport = viewport.New(msg.Width-4, msg.Height-verticalMarginHeight)
+			m.Viewport = viewport.New(viewport.WithWidth(msg.Width-4), viewport.WithHeight(msg.Height-verticalMarginHeight))
 			m.Viewport.YPosition = headerHeight
 			m.Ready = true
 		} else {
 			m.Viewport.YPosition = headerHeight
-			m.Viewport.Width = msg.Width - 4
-			m.Viewport.Height = msg.Height - verticalMarginHeight - 10
+			m.Viewport.SetWidth(msg.Width - 4)
+			m.Viewport.SetHeight(msg.Height - verticalMarginHeight - 10)
 		}
 		return m, NewTea()
 	default:
@@ -78,13 +78,13 @@ func (m Model) headerView() string {
 		titleText = "Configuration"
 	}
 	title := titleStyle.Render(titleText)
-	line := strings.Repeat("─", max(0, m.Viewport.Width-lipgloss.Width(title)))
+	line := strings.Repeat("─", max(0, m.Viewport.Width()-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }
 
 // footerView renders the viewport footer showing scroll percentage.
 func (m Model) footerView() string {
 	info := infoStyle.Render(fmt.Sprintf("%3.f%%", m.Viewport.ScrollPercent()*100))
-	line := strings.Repeat("─", max(0, m.Viewport.Width-lipgloss.Width(info)))
+	line := strings.Repeat("─", max(0, m.Viewport.Width()-lipgloss.Width(info)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, line, info)
 }

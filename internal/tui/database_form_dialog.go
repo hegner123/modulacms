@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 )
@@ -61,7 +61,7 @@ func NewDatabaseInsertDialog(title string, table db.DBTable, columns []string, c
 	for i, col := range columns {
 		ti := textinput.New()
 		ti.CharLimit = 256
-		ti.Width = 40
+		ti.SetWidth(40)
 
 		typeName := ""
 		nullable := false
@@ -133,7 +133,7 @@ func NewDatabaseUpdateDialog(title string, table db.DBTable, columns []string, c
 	for i, col := range columns {
 		ti := textinput.New()
 		ti.CharLimit = 256
-		ti.Width = 40
+		ti.SetWidth(40)
 
 		typeName := ""
 		nullable := false
@@ -226,7 +226,7 @@ func (d *DatabaseFormDialogModel) confirmButtonIndex() int {
 // Update handles user input for the database form dialog.
 func (d *DatabaseFormDialogModel) Update(msg tea.Msg) (DatabaseFormDialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "tab", "down":
 			d.dbFormFocusNext()
@@ -307,7 +307,7 @@ func (d *DatabaseFormDialogModel) dbFormUpdateFocus() {
 }
 
 // OverlayUpdate implements ModalOverlay for DatabaseFormDialogModel.
-func (d *DatabaseFormDialogModel) OverlayUpdate(msg tea.KeyMsg) (ModalOverlay, tea.Cmd) {
+func (d *DatabaseFormDialogModel) OverlayUpdate(msg tea.KeyPressMsg) (ModalOverlay, tea.Cmd) {
 	updated, cmd := d.Update(msg)
 	return &updated, cmd
 }

@@ -3,15 +3,15 @@ package tui
 import (
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
-func runeKey(r rune) tea.KeyMsg {
-	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}}
+func runeKey(r rune) tea.KeyPressMsg {
+	return tea.KeyPressMsg{Code: r, Text: string(r)}
 }
 
-func namedKey(t tea.KeyType) tea.KeyMsg {
-	return tea.KeyMsg{Type: t}
+func namedKey(code rune) tea.KeyPressMsg {
+	return tea.KeyPressMsg{Code: code}
 }
 
 // --- NumberBubble ---
@@ -118,7 +118,7 @@ func TestDatePickerBubble_HourWrap(t *testing.T) {
 	tests := []struct {
 		name     string
 		initial  string
-		key      tea.KeyType
+		key      rune
 		expected string
 	}{
 		{"23 wraps to 0", "23:00", tea.KeyUp, "00:00"},
@@ -141,7 +141,7 @@ func TestDatePickerBubble_MinuteWrap(t *testing.T) {
 	tests := []struct {
 		name     string
 		initial  string
-		key      tea.KeyType
+		key      rune
 		expected string
 	}{
 		{"59 wraps to 0", "00:59", tea.KeyUp, "00:00"},

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/hegner123/modulacms/internal/config"
 )
 
@@ -63,7 +63,7 @@ func (s *CMSMenuScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		}
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 

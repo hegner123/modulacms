@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"github.com/charmbracelet/huh"
+	"charm.land/huh/v2"
 )
 
 // FormCreate requests creation of a new form of the specified type.

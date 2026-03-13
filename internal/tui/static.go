@@ -3,7 +3,7 @@ package tui
 import (
 	"fmt"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	config "github.com/hegner123/modulacms/internal/config"
 	install "github.com/hegner123/modulacms/internal/install"
 )

@@ -1,6 +1,6 @@
 package tui
 
-import "github.com/charmbracelet/huh"
+import "charm.land/huh/v2"
 
 // FormModel encapsulates all form-related state extracted from Model.
 // This groups the form lifecycle fields together following the DialogModel pattern.

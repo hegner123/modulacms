@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -105,7 +105,7 @@ func (d *ContentFormDialogModel) ButtonConfirmIndex() int {
 // Update handles input for the content form dialog
 func (d *ContentFormDialogModel) Update(msg tea.Msg) (ContentFormDialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "tab", "down":
 			d.focusNext()
@@ -263,7 +263,7 @@ func (d *ContentFormDialogModel) updateFocus() {
 }
 
 // OverlayUpdate implements ModalOverlay for ContentFormDialogModel.
-func (d *ContentFormDialogModel) OverlayUpdate(msg tea.KeyMsg) (ModalOverlay, tea.Cmd) {
+func (d *ContentFormDialogModel) OverlayUpdate(msg tea.KeyPressMsg) (ModalOverlay, tea.Cmd) {
 	updated, cmd := d.Update(msg)
 	return &updated, cmd
 }

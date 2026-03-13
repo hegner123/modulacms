@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
 )
 
@@ -18,20 +17,18 @@ func TestDefaultStyle_AllFieldsPopulated(t *testing.T) {
 	s := config.DefaultStyle
 
 	// Use reflection to iterate over every field in Color and verify it is
-	// not the zero value of CompleteAdaptiveColor. This catches new fields
-	// added to Color that are forgotten in DefaultStyle initialization.
+	// not nil. This catches new fields added to Color that are forgotten
+	// in DefaultStyle initialization.
 	v := reflect.ValueOf(s)
 	ty := v.Type()
-
-	zero := reflect.ValueOf(lipgloss.CompleteAdaptiveColor{})
 
 	for i := range ty.NumField() {
 		field := ty.Field(i)
 		t.Run(field.Name, func(t *testing.T) {
 			t.Parallel()
 			fv := v.Field(i)
-			if reflect.DeepEqual(fv.Interface(), zero.Interface()) {
-				t.Errorf("DefaultStyle.%s is zero-value (not initialized)", field.Name)
+			if fv.IsNil() {
+				t.Errorf("DefaultStyle.%s is nil (not initialized)", field.Name)
 			}
 		})
 	}
@@ -52,60 +49,6 @@ func TestDefaultStyle_FieldCount(t *testing.T) {
 
 	if got != want {
 		t.Errorf("Color struct has %d fields, want %d -- update DefaultStyle and this test", got, want)
-	}
-}
-
-// ---------------------------------------------------------------------------
-// DefaultStyle -- spot-check specific semantic pairs
-// ---------------------------------------------------------------------------
-
-func TestDefaultStyle_PrimaryPair(t *testing.T) {
-	t.Parallel()
-
-	s := config.DefaultStyle
-
-	// In dark mode, primary text is white; in light mode, black.
-	if s.Primary.Dark.TrueColor != "#FFFFFF" {
-		t.Errorf("Primary.Dark.TrueColor = %q, want %q", s.Primary.Dark.TrueColor, "#FFFFFF")
-	}
-	if s.Primary.Light.TrueColor != "#000000" {
-		t.Errorf("Primary.Light.TrueColor = %q, want %q", s.Primary.Light.TrueColor, "#000000")
-	}
-}
-
-func TestDefaultStyle_AccentPair(t *testing.T) {
-	t.Parallel()
-
-	s := config.DefaultStyle
-
-	// Accent uses blue in both light and dark modes.
-	if s.Accent.Dark.TrueColor != "#5f5fff" {
-		t.Errorf("Accent.Dark.TrueColor = %q, want %q", s.Accent.Dark.TrueColor, "#5f5fff")
-	}
-	if s.Accent.Light.TrueColor != "#5f5fff" {
-		t.Errorf("Accent.Light.TrueColor = %q, want %q", s.Accent.Light.TrueColor, "#5f5fff")
-	}
-}
-
-func TestDefaultStyle_WarnPair(t *testing.T) {
-	t.Parallel()
-
-	s := config.DefaultStyle
-
-	// Warn uses orange for both themes.
-	if s.Warn.Dark.TrueColor != "#F75C03" {
-		t.Errorf("Warn.Dark.TrueColor = %q, want %q", s.Warn.Dark.TrueColor, "#F75C03")
-	}
-	if s.Warn.Light.TrueColor != "#F75C03" {
-		t.Errorf("Warn.Light.TrueColor = %q, want %q", s.Warn.Light.TrueColor, "#F75C03")
-	}
-
-	// Warn background is white in both themes.
-	if s.WarnBG.Dark.TrueColor != "#FFFFFF" {
-		t.Errorf("WarnBG.Dark.TrueColor = %q, want %q", s.WarnBG.Dark.TrueColor, "#FFFFFF")
-	}
-	if s.WarnBG.Light.TrueColor != "#FFFFFF" {
-		t.Errorf("WarnBG.Light.TrueColor = %q, want %q", s.WarnBG.Light.TrueColor, "#FFFFFF")
 	}
 }
 

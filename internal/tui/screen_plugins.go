@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/hegner123/modulacms/internal/config"
 )
 
@@ -53,7 +53,7 @@ func (s *PluginsScreen) PageIndex() PageIndex { return PLUGINSPAGE }
 
 func (s *PluginsScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 

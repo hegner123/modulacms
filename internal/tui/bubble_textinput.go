@@ -1,8 +1,8 @@
 package tui
 
 import (
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
 )
 
 // TextInputBubble wraps textinput.Model as a generic FieldBubble for single-line text input.
@@ -19,7 +19,7 @@ func NewTextInputBubble(label, placeholder string, charLimit int, validate func(
 	ti := textinput.New()
 	ti.Placeholder = placeholder
 	ti.CharLimit = charLimit
-	ti.Width = 50
+	ti.SetWidth(50)
 	return &TextInputBubble{input: ti, label: label, validate: validate}
 }
 
@@ -35,7 +35,7 @@ func (b *TextInputBubble) SetValue(v string)       { b.input.SetValue(v) }
 func (b *TextInputBubble) Focus() tea.Cmd          { return b.input.Focus() }
 func (b *TextInputBubble) Blur()                   { b.input.Blur() }
 func (b *TextInputBubble) Focused() bool           { return b.input.Focused() }
-func (b *TextInputBubble) SetWidth(w int)          { b.input.Width = w }
+func (b *TextInputBubble) SetWidth(w int)          { b.input.SetWidth(w) }
 func (b *TextInputBubble) SetPlaceholder(p string) { b.input.Placeholder = p }
 
 // Validate runs the validation function if set, returning nil if no validator is configured.

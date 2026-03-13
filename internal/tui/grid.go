@@ -1,7 +1,9 @@
 package tui
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"image/color"
+
+	"charm.land/lipgloss/v2"
 )
 
 // Grid defines a 12-column grid layout for screen rendering.
@@ -56,12 +58,12 @@ func (g Grid) CellTitle(idx int) string {
 // (top-to-bottom in each column, left-to-right across columns).
 // focusIdx highlights the cell at that index. accent overrides the
 // default panel accent color when non-zero.
-func (g Grid) Render(cells []CellContent, width, height, focusIdx int, accent ...lipgloss.CompleteAdaptiveColor) string {
+func (g Grid) Render(cells []CellContent, width, height, focusIdx int, accent ...color.Color) string {
 	if len(g.Columns) == 0 {
 		return ""
 	}
 
-	var accentColor lipgloss.CompleteAdaptiveColor
+	var accentColor color.Color
 	if len(accent) > 0 {
 		accentColor = accent[0]
 	}

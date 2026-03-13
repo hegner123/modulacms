@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -75,12 +75,12 @@ func NewUIConfigFormDialog(title, fieldID string) UIConfigFormDialogModel {
 	placeholder := textinput.New()
 	placeholder.Placeholder = "Placeholder text shown to users"
 	placeholder.CharLimit = 128
-	placeholder.Width = 40
+	placeholder.SetWidth(40)
 
 	helpText := textinput.New()
 	helpText.Placeholder = "Help text for this field"
 	helpText.CharLimit = 256
-	helpText.Width = 40
+	helpText.SetWidth(40)
 
 	return UIConfigFormDialogModel{
 		dialogStyles:     newDialogStyles(),
@@ -101,13 +101,13 @@ func NewEditUIConfigFormDialog(title, fieldID string, existing types.UIConfig) U
 	placeholder := textinput.New()
 	placeholder.Placeholder = "Placeholder text shown to users"
 	placeholder.CharLimit = 128
-	placeholder.Width = 40
+	placeholder.SetWidth(40)
 	placeholder.SetValue(existing.Placeholder)
 
 	helpText := textinput.New()
 	helpText.Placeholder = "Help text for this field"
 	helpText.CharLimit = 256
-	helpText.Width = 40
+	helpText.SetWidth(40)
 	helpText.SetValue(existing.HelpText)
 
 	return UIConfigFormDialogModel{
@@ -127,7 +127,7 @@ func NewEditUIConfigFormDialog(title, fieldID string, existing types.UIConfig) U
 // Update handles input for the UIConfig form dialog.
 func (d *UIConfigFormDialogModel) Update(msg tea.Msg) (UIConfigFormDialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "tab", "down":
 			d.uiConfigFocusNext()
@@ -197,7 +197,7 @@ func (d *UIConfigFormDialogModel) Update(msg tea.Msg) (UIConfigFormDialogModel, 
 				d.focusIndex = 5
 				return *d, nil
 			}
-		case " ":
+		case "space":
 			// Space toggles hidden
 			if d.focusIndex == 3 {
 				d.HiddenToggle = !d.HiddenToggle
@@ -244,7 +244,7 @@ func (d *UIConfigFormDialogModel) uiConfigUpdateFocus() {
 }
 
 // OverlayUpdate implements ModalOverlay for UIConfigFormDialogModel.
-func (d *UIConfigFormDialogModel) OverlayUpdate(msg tea.KeyMsg) (ModalOverlay, tea.Cmd) {
+func (d *UIConfigFormDialogModel) OverlayUpdate(msg tea.KeyPressMsg) (ModalOverlay, tea.Cmd) {
 	updated, cmd := d.Update(msg)
 	return &updated, cmd
 }

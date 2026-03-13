@@ -4,19 +4,26 @@ import (
 	"embed"
 	"encoding/json"
 
+	tea "charm.land/bubbletea/v2"
 	config "github.com/hegner123/modulacms/internal/config"
 )
 
-func (m Model) View() string {
+func (m Model) View() tea.View {
+	var content string
 	// Show user provisioning form if needed
 	if m.NeedsProvisioning {
 		if m.FormState != nil && m.FormState.Form != nil {
-			return m.FormState.Form.View()
+			content = m.FormState.Form.View()
+		} else {
+			content = "Initializing user provisioning..."
 		}
-		return "Initializing user provisioning..."
+	} else {
+		content = renderCMSPanelLayout(m)
 	}
 
-	return renderCMSPanelLayout(m)
+	v := tea.NewView(content)
+	v.AltScreen = true
+	return v
 }
 
 // Rendering utilities

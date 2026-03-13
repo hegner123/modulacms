@@ -6,16 +6,15 @@ import (
 	"fmt"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/ssh"
-	"github.com/charmbracelet/wish"
-	"github.com/charmbracelet/wish/bubbletea"
+	"charm.land/wish/v2"
+	"charm.land/wish/v2/bubbletea"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/publishing"
-	"github.com/muesli/termenv"
 )
 
 // timeMsg is a message type for periodic time updates.
@@ -66,7 +65,7 @@ func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver, logger Logger,
 			m.UserID = userID
 		}
 
-		return newProg(&m, append(bubbletea.MakeOptions(s), tea.WithAltScreen())...)
+		return newProg(&m, bubbletea.MakeOptions(s)...)
 	}
-	return bubbletea.MiddlewareWithProgramHandler(teaHandler, termenv.ANSI256)
+	return bubbletea.MiddlewareWithProgramHandler(teaHandler)
 }

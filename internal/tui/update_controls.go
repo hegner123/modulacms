@@ -3,7 +3,7 @@ package tui
 import (
 	"github.com/hegner123/modulacms/internal/config"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // ShowConfigFieldEditDialogCmd returns a command that shows the config field edit dialog.

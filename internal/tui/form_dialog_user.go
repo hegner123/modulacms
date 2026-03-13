@@ -3,9 +3,9 @@ package tui
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 )
@@ -79,23 +79,23 @@ func NewUserFormDialog(title string, roles []db.Roles) UserFormDialogModel {
 	username := textinput.New()
 	username.Placeholder = "username"
 	username.CharLimit = 64
-	username.Width = 40
+	username.SetWidth(40)
 	username.Focus()
 
 	name := textinput.New()
 	name.Placeholder = "Full Name"
 	name.CharLimit = 128
-	name.Width = 40
+	name.SetWidth(40)
 
 	email := textinput.New()
 	email.Placeholder = "user@example.com"
 	email.CharLimit = 128
-	email.Width = 40
+	email.SetWidth(40)
 
 	password := textinput.New()
 	password.Placeholder = "password"
 	password.CharLimit = 72
-	password.Width = 40
+	password.SetWidth(40)
 	password.EchoMode = textinput.EchoPassword
 
 	roleOptions := make([]RoleOption, 0, len(roles))
@@ -126,27 +126,27 @@ func NewEditUserFormDialog(title string, user db.UserWithRoleLabelRow, roles []d
 	username := textinput.New()
 	username.Placeholder = "username"
 	username.CharLimit = 64
-	username.Width = 40
+	username.SetWidth(40)
 	username.SetValue(user.Username)
 	username.Focus()
 
 	name := textinput.New()
 	name.Placeholder = "Full Name"
 	name.CharLimit = 128
-	name.Width = 40
+	name.SetWidth(40)
 	name.SetValue(user.Name)
 
 	email := textinput.New()
 	email.Placeholder = "user@example.com"
 	email.CharLimit = 128
-	email.Width = 40
+	email.SetWidth(40)
 	email.SetValue(user.Email.String())
 
 	// Password input exists but is not shown in edit mode
 	password := textinput.New()
 	password.Placeholder = ""
 	password.CharLimit = 72
-	password.Width = 40
+	password.SetWidth(40)
 	password.EchoMode = textinput.EchoPassword
 
 	roleOptions := make([]RoleOption, 0, len(roles))
@@ -180,7 +180,7 @@ func NewEditUserFormDialog(title string, user db.UserWithRoleLabelRow, roles []d
 // Update handles user input for the user form dialog
 func (d *UserFormDialogModel) Update(msg tea.Msg) (UserFormDialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "tab", "down":
 			d.userFormFocusNext()
@@ -295,7 +295,7 @@ func (d *UserFormDialogModel) userFormUpdateFocus() {
 }
 
 // OverlayUpdate implements ModalOverlay for UserFormDialogModel.
-func (d *UserFormDialogModel) OverlayUpdate(msg tea.KeyMsg) (ModalOverlay, tea.Cmd) {
+func (d *UserFormDialogModel) OverlayUpdate(msg tea.KeyPressMsg) (ModalOverlay, tea.Cmd) {
 	updated, cmd := d.Update(msg)
 	return &updated, cmd
 }

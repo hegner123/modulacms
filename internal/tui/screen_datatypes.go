@@ -3,8 +3,8 @@ package tui
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -212,7 +212,7 @@ func (s *DatatypesScreen) rebuildProperties() {
 
 func (s *DatatypesScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		if s.Phase == DatatypesPhaseBrowse {
 			return s.updateBrowse(ctx, msg)
 		}
@@ -292,7 +292,7 @@ func (s *DatatypesScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) 
 // Phase 1: Browse
 // ---------------------------------------------------------------------------
 
-func (s *DatatypesScreen) updateBrowse(ctx AppContext, msg tea.KeyMsg) (Screen, tea.Cmd) {
+func (s *DatatypesScreen) updateBrowse(ctx AppContext, msg tea.KeyPressMsg) (Screen, tea.Cmd) {
 	km := ctx.Config.KeyBindings
 	key := msg.String()
 
@@ -427,7 +427,7 @@ func (s *DatatypesScreen) updateBrowse(ctx AppContext, msg tea.KeyMsg) (Screen, 
 	return s, nil
 }
 
-func (s *DatatypesScreen) updateSearch(msg tea.KeyMsg) (Screen, tea.Cmd) {
+func (s *DatatypesScreen) updateSearch(msg tea.KeyPressMsg) (Screen, tea.Cmd) {
 	key := msg.String()
 	switch key {
 	case "enter":
@@ -457,7 +457,7 @@ func (s *DatatypesScreen) updateSearch(msg tea.KeyMsg) (Screen, tea.Cmd) {
 // Phase 2: Fields
 // ---------------------------------------------------------------------------
 
-func (s *DatatypesScreen) updateFields(ctx AppContext, msg tea.KeyMsg) (Screen, tea.Cmd) {
+func (s *DatatypesScreen) updateFields(ctx AppContext, msg tea.KeyPressMsg) (Screen, tea.Cmd) {
 	km := ctx.Config.KeyBindings
 	key := msg.String()
 

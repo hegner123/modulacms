@@ -1,8 +1,8 @@
 package tui
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 // ModalOverlay is the interface satisfied by all dialog types
@@ -10,7 +10,7 @@ import (
 // When non-nil on Model.ActiveOverlay, it captures all key input
 // and renders on top of the base UI.
 type ModalOverlay interface {
-	OverlayUpdate(msg tea.KeyMsg) (ModalOverlay, tea.Cmd)
+	OverlayUpdate(msg tea.KeyPressMsg) (ModalOverlay, tea.Cmd)
 	OverlayView(width, height int) string
 }
 

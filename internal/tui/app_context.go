@@ -1,7 +1,8 @@
 package tui
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"image/color"
+
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -28,7 +29,7 @@ type AppContext struct {
 	ActiveLocale     string
 	AccordionEnabled bool
 	AdminMode        bool
-	ActiveAccent     lipgloss.CompleteAdaptiveColor
+	ActiveAccent     color.Color
 }
 
 // AppCtx builds an AppContext snapshot from the current Model state.
@@ -56,7 +57,7 @@ func (m Model) AppCtx() AppContext {
 }
 
 // activeAccent returns the accent color based on admin mode.
-func (m Model) activeAccent() lipgloss.CompleteAdaptiveColor {
+func (m Model) activeAccent() color.Color {
 	if m.AdminMode {
 		return config.DefaultStyle.AdminAccent
 	}

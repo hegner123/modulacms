@@ -3,10 +3,10 @@ package tui
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/filepicker"
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/filepicker"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
@@ -126,7 +126,7 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 		return d.LocaleSelectControls(msg)
 	case DIALOGGENERIC:
 		// Generic dialog dismisses on enter or esc
-		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg, ok := msg.(tea.KeyPressMsg); ok {
 			switch keyMsg.String() {
 			case "enter", "esc":
 				return *d, func() tea.Msg { return DialogCancelMsg{} }
@@ -139,7 +139,7 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 }
 
 // OverlayUpdate implements ModalOverlay for DialogModel.
-func (d *DialogModel) OverlayUpdate(msg tea.KeyMsg) (ModalOverlay, tea.Cmd) {
+func (d *DialogModel) OverlayUpdate(msg tea.KeyPressMsg) (ModalOverlay, tea.Cmd) {
 	updated, cmd := d.Update(msg)
 	return &updated, cmd
 }
@@ -152,7 +152,7 @@ func (d *DialogModel) OverlayView(width, height int) string {
 // ToggleControls handles navigation and selection within the dialog.
 func (d *DialogModel) ToggleControls(msg tea.Msg) (DialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "tab", "shift+tab", "h", "l", "j", "k", "left", "right", "up", "down":
 			if d.ShowCancel {
@@ -382,7 +382,7 @@ func FilePickerOverlay(base string, fp filepicker.Model, width, height int) stri
 // enter selects the current locale, esc cancels.
 func (d *DialogModel) LocaleSelectControls(msg tea.Msg) (DialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "up", "k":
 			if d.ActionIndex > 0 {

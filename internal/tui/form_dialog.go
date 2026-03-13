@@ -3,9 +3,9 @@ package tui
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 )
@@ -183,20 +183,20 @@ func NewFormDialog(title string, action FormDialogAction, parents []db.Datatypes
 	nameInput := textinput.New()
 	nameInput.Placeholder = "Machine name"
 	nameInput.CharLimit = 64
-	nameInput.Width = 40
+	nameInput.SetWidth(40)
 	nameInput.Focus()
 
 	// Create label input
 	labelInput := textinput.New()
 	labelInput.Placeholder = "Display name"
 	labelInput.CharLimit = 64
-	labelInput.Width = 40
+	labelInput.SetWidth(40)
 
 	// Create type input
 	typeInput := textinput.New()
 	typeInput.Placeholder = "_root"
 	typeInput.CharLimit = 32
-	typeInput.Width = 40
+	typeInput.SetWidth(40)
 
 	// Build parent options
 	parentOptions := []ParentOption{
@@ -229,14 +229,14 @@ func NewFieldFormDialog(title string, action FormDialogAction) FormDialogModel {
 	nameInput := textinput.New()
 	nameInput.Placeholder = "Machine name"
 	nameInput.CharLimit = 64
-	nameInput.Width = 40
+	nameInput.SetWidth(40)
 	nameInput.Focus()
 
 	// Create label input
 	labelInput := textinput.New()
 	labelInput.Placeholder = "Display name"
 	labelInput.CharLimit = 64
-	labelInput.Width = 40
+	labelInput.SetWidth(40)
 
 	return FormDialogModel{
 		dialogStyles: newDialogStyles(),
@@ -257,14 +257,14 @@ func NewRouteFormDialog(title string, action FormDialogAction) FormDialogModel {
 	titleInput := textinput.New()
 	titleInput.Placeholder = "Page title"
 	titleInput.CharLimit = 128
-	titleInput.Width = 40
+	titleInput.SetWidth(40)
 	titleInput.Focus()
 
 	// Create slug input (uses TypeInput field)
 	slugInput := textinput.New()
 	slugInput.Placeholder = "url-slug"
 	slugInput.CharLimit = 128
-	slugInput.Width = 40
+	slugInput.SetWidth(40)
 
 	return FormDialogModel{
 		dialogStyles: newDialogStyles(),
@@ -308,7 +308,7 @@ func (d *FormDialogModel) HasSecondField() bool {
 // Update handles input for the form dialog
 func (d *FormDialogModel) Update(msg tea.Msg) (FormDialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		// Special handling for child datatype selection and move content - simple vertical list
 		if d.Action == FORMDIALOGCHILDDATATYPE || d.Action == FORMDIALOGMOVECONTENT {
 			return d.updateChildDatatypeSelection(msg)
@@ -409,7 +409,7 @@ func (d *FormDialogModel) Update(msg tea.Msg) (FormDialogModel, tea.Cmd) {
 }
 
 // updateChildDatatypeSelection handles input for the child datatype selection dialog
-func (d *FormDialogModel) updateChildDatatypeSelection(msg tea.KeyMsg) (FormDialogModel, tea.Cmd) {
+func (d *FormDialogModel) updateChildDatatypeSelection(msg tea.KeyPressMsg) (FormDialogModel, tea.Cmd) {
 	switch msg.String() {
 	case "up", "k":
 		if d.ParentIndex > 0 {
@@ -507,7 +507,7 @@ func (d *FormDialogModel) updateFocus() {
 }
 
 // OverlayUpdate implements ModalOverlay for FormDialogModel.
-func (d *FormDialogModel) OverlayUpdate(msg tea.KeyMsg) (ModalOverlay, tea.Cmd) {
+func (d *FormDialogModel) OverlayUpdate(msg tea.KeyPressMsg) (ModalOverlay, tea.Cmd) {
 	updated, cmd := d.Update(msg)
 	return &updated, cmd
 }

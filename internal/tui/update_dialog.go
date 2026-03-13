@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/filepicker"
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/filepicker"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -208,7 +208,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		fp.AllowedTypes = []string{".zip"}
 		fp.CurrentDirectory, _ = os.UserHomeDir()
 		fp.AutoHeight = false
-		fp.Height = filePickerHeight(m.Height)
+		fp.SetHeight(filePickerHeight(m.Height))
 		m.FilePicker = fp
 		m.FilePickerActive = true
 		m.FilePickerPurpose = FILEPICKER_RESTORE
@@ -402,7 +402,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		labelInput := textinput.New()
 		labelInput.Placeholder = "Value"
 		labelInput.CharLimit = 512
-		labelInput.Width = 50
+		labelInput.SetWidth(50)
 		labelInput.SetValue(msg.CurrentValue)
 		labelInput.Focus()
 

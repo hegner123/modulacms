@@ -1,8 +1,8 @@
 package tui
 
 import (
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
 )
 
 func init() {
@@ -24,16 +24,16 @@ func NewNumberBubble() *NumberBubble {
 	ti := textinput.New()
 	ti.Placeholder = "0"
 	ti.CharLimit = 32
-	ti.Width = 50
+	ti.SetWidth(50)
 	return &NumberBubble{input: ti}
 }
 
 // Update handles Bubble Tea messages for the number bubble.
 // Intercepts key runes and drops non-numeric characters.
 func (b *NumberBubble) Update(msg tea.Msg) (FieldBubble, tea.Cmd) {
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		if keyMsg.Type == tea.KeyRunes && len(keyMsg.Runes) == 1 {
-			r := keyMsg.Runes[0]
+	if keyMsg, ok := msg.(tea.KeyPressMsg); ok {
+		if len(keyMsg.Text) == 1 {
+			r := rune(keyMsg.Text[0])
 			switch {
 			case r >= '0' && r <= '9':
 				// allow digits
@@ -78,4 +78,4 @@ func (b *NumberBubble) Blur() { b.input.Blur() }
 func (b *NumberBubble) Focused() bool { return b.input.Focused() }
 
 // SetWidth sets the number input width for layout.
-func (b *NumberBubble) SetWidth(w int) { b.input.Width = w }
+func (b *NumberBubble) SetWidth(w int) { b.input.SetWidth(w) }

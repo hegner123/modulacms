@@ -1,6 +1,6 @@
 package tui
 
-import tea "github.com/charmbracelet/bubbletea"
+import tea "charm.land/bubbletea/v2"
 
 // FieldBubble is the interface that field input components must satisfy for content entry forms.
 type FieldBubble interface {

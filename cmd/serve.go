@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/charmbracelet/ssh"
-	"github.com/charmbracelet/wish"
-	"github.com/charmbracelet/wish/logging"
+	"charm.land/wish/v2"
+	"charm.land/wish/v2/logging"
 	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/bucket"
 	"github.com/hegner123/modulacms/internal/config"

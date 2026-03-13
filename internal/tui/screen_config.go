@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/hegner123/modulacms/internal/config"
 )
 
@@ -59,7 +59,7 @@ func (s *ConfigScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	// "raw_json", delegate all non-navigation keys to the viewport for scrolling.
 	if s.ConfigCategory == "raw_json" && s.FocusIndex == 1 {
 		switch msg := msg.(type) {
-		case tea.KeyMsg:
+		case tea.KeyPressMsg:
 			km := ctx.Config.KeyBindings
 			key := msg.String()
 
@@ -85,7 +85,7 @@ func (s *ConfigScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	menuItems := ConfigCategoryMenuInit()
 
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		km := ctx.Config.KeyBindings
 		key := msg.String()
 

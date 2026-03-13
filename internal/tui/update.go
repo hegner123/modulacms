@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/charmbracelet/bubbles/filepicker"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/filepicker"
+	tea "charm.land/bubbletea/v2"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -16,7 +16,7 @@ func (m Model) handleFilePicker(msg tea.Msg) (Model, tea.Cmd, bool) {
 	if !m.FilePickerActive {
 		return m, nil, false
 	}
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+	if keyMsg, ok := msg.(tea.KeyPressMsg); ok {
 		if keyMsg.String() == "esc" || keyMsg.String() == "ctrl+c" {
 			m.FilePickerActive = false
 			return m, nil, true
@@ -51,7 +51,7 @@ func (m Model) handleFilePicker(msg tea.Msg) (Model, tea.Cmd, bool) {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Ctrl+c always force-quits, regardless of overlay, focus, or screen state.
 	// Esc shows a quit confirmation dialog (or quits immediately if one is already showing).
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+	if keyMsg, ok := msg.(tea.KeyPressMsg); ok {
 		switch keyMsg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
@@ -100,7 +100,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		fp.CurrentDirectory, _ = os.UserHomeDir()
 		fp.AutoHeight = false
-		fp.Height = filePickerHeight(m.Height)
+		fp.SetHeight(filePickerHeight(m.Height))
 		m.FilePicker = fp
 		m.FilePickerActive = true
 		m.FilePickerPurpose = typedMsg.Purpose
@@ -662,7 +662,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Overlay intercepts key input even for Screen-based pages.
 	// Must run before global keys so modals receive all keystrokes.
 	if m.ActiveOverlay != nil {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg, ok := msg.(tea.KeyPressMsg); ok {
 			overlay, cmd := m.ActiveOverlay.OverlayUpdate(keyMsg)
 			m.ActiveOverlay = overlay
 			return m, cmd
@@ -670,7 +670,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Global key handling for Screen-based pages (screen mode + accordion).
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+	if keyMsg, ok := msg.(tea.KeyPressMsg); ok {
 		km := m.Config.KeyBindings
 		key := keyMsg.String()
 		if km.Matches(key, config.ActionAccordion) {

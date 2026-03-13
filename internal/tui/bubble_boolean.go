@@ -1,8 +1,8 @@
 package tui
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/hegner123/modulacms/internal/config"
 )
 
@@ -31,9 +31,9 @@ func (b *BooleanBubble) Update(msg tea.Msg) (FieldBubble, tea.Cmd) {
 	if !b.focused {
 		return b, nil
 	}
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+	if keyMsg, ok := msg.(tea.KeyPressMsg); ok {
 		switch keyMsg.String() {
-		case "left", "right", " ":
+		case "left", "right", "space":
 			b.value = !b.value
 		}
 	}

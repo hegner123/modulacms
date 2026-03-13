@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"image/color"
+
+	"charm.land/lipgloss/v2"
 	"github.com/hegner123/modulacms/internal/config"
 )
 
@@ -39,7 +41,7 @@ type Panel struct {
 	ScrollOffset int                            // first visible line index
 	TabLabels    []string                       // tab labels for tab bar (shown when len > 1)
 	ActiveTab    int                            // index of the currently active tab
-	Accent       lipgloss.CompleteAdaptiveColor // override accent; zero value uses DefaultStyle.Accent
+	Accent       color.Color // override accent; zero value uses DefaultStyle.Accent
 }
 
 // Render draws the panel as a bordered box with a title bar.
@@ -48,7 +50,7 @@ type Panel struct {
 // to the title.
 func (p Panel) Render() string {
 	accent := config.DefaultStyle.Accent
-	if p.Accent != (lipgloss.CompleteAdaptiveColor{}) {
+	if p.Accent != nil {
 		accent = p.Accent
 	}
 

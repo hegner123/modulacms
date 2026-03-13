@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/table"
 	"github.com/hegner123/modulacms/internal/config"
 )
 
@@ -87,7 +87,7 @@ func (b *DatePickerBubble) Update(msg tea.Msg) (FieldBubble, tea.Cmd) {
 	if !b.focused {
 		return b, nil
 	}
-	keyMsg, ok := msg.(tea.KeyMsg)
+	keyMsg, ok := msg.(tea.KeyPressMsg)
 	if !ok {
 		return b, nil
 	}
@@ -102,7 +102,7 @@ func (b *DatePickerBubble) Update(msg tea.Msg) (FieldBubble, tea.Cmd) {
 	return b, nil
 }
 
-func (b *DatePickerBubble) updateCalendar(msg tea.KeyMsg) {
+func (b *DatePickerBubble) updateCalendar(msg tea.KeyPressMsg) {
 	switch msg.String() {
 	case "left", "h":
 		b.cursor = b.cursor.AddDate(0, 0, -1)
@@ -125,7 +125,7 @@ func (b *DatePickerBubble) updateCalendar(msg tea.KeyMsg) {
 	}
 }
 
-func (b *DatePickerBubble) updateHour(msg tea.KeyMsg) {
+func (b *DatePickerBubble) updateHour(msg tea.KeyPressMsg) {
 	switch msg.String() {
 	case "up", "k":
 		b.hour = (b.hour + 1) % 24
@@ -142,7 +142,7 @@ func (b *DatePickerBubble) updateHour(msg tea.KeyMsg) {
 	}
 }
 
-func (b *DatePickerBubble) updateMinute(msg tea.KeyMsg) {
+func (b *DatePickerBubble) updateMinute(msg tea.KeyPressMsg) {
 	switch msg.String() {
 	case "up", "k":
 		b.minute = (b.minute + 1) % 60
@@ -159,11 +159,11 @@ func (b *DatePickerBubble) updateMinute(msg tea.KeyMsg) {
 	}
 }
 
-func (b *DatePickerBubble) typeDigitHour(msg tea.KeyMsg) {
-	if msg.Type != tea.KeyRunes || len(msg.Runes) != 1 {
+func (b *DatePickerBubble) typeDigitHour(msg tea.KeyPressMsg) {
+	if len(msg.Text) != 1 {
 		return
 	}
-	r := msg.Runes[0]
+	r := rune(msg.Text[0])
 	if r < '0' || r > '9' {
 		return
 	}
@@ -175,11 +175,11 @@ func (b *DatePickerBubble) typeDigitHour(msg tea.KeyMsg) {
 	b.hour = h
 }
 
-func (b *DatePickerBubble) typeDigitMinute(msg tea.KeyMsg) {
-	if msg.Type != tea.KeyRunes || len(msg.Runes) != 1 {
+func (b *DatePickerBubble) typeDigitMinute(msg tea.KeyPressMsg) {
+	if len(msg.Text) != 1 {
 		return
 	}
-	r := msg.Runes[0]
+	r := rune(msg.Text[0])
 	if r < '0' || r > '9' {
 		return
 	}

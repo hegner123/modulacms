@@ -7,9 +7,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/tree"
@@ -21,7 +21,7 @@ func NewEditDatatypeDialog(title string, action FormDialogAction, parents []db.D
 	nameInput := textinput.New()
 	nameInput.Placeholder = "Machine name"
 	nameInput.CharLimit = 64
-	nameInput.Width = 40
+	nameInput.SetWidth(40)
 	nameInput.SetValue(datatype.Name)
 	nameInput.Focus()
 
@@ -29,14 +29,14 @@ func NewEditDatatypeDialog(title string, action FormDialogAction, parents []db.D
 	labelInput := textinput.New()
 	labelInput.Placeholder = "Display name"
 	labelInput.CharLimit = 64
-	labelInput.Width = 40
+	labelInput.SetWidth(40)
 	labelInput.SetValue(datatype.Label)
 
 	// Create type input with current value
 	typeInput := textinput.New()
 	typeInput.Placeholder = "_root"
 	typeInput.CharLimit = 32
-	typeInput.Width = 40
+	typeInput.SetWidth(40)
 	typeInput.SetValue(datatype.Type)
 
 	// Build parent options
@@ -80,7 +80,7 @@ func NewEditFieldDialog(title string, action FormDialogAction, field db.Fields) 
 	nameInput := textinput.New()
 	nameInput.Placeholder = "Machine name"
 	nameInput.CharLimit = 64
-	nameInput.Width = 40
+	nameInput.SetWidth(40)
 	nameInput.SetValue(field.Name)
 	nameInput.Focus()
 
@@ -88,7 +88,7 @@ func NewEditFieldDialog(title string, action FormDialogAction, field db.Fields) 
 	labelInput := textinput.New()
 	labelInput.Placeholder = "Display name"
 	labelInput.CharLimit = 64
-	labelInput.Width = 40
+	labelInput.SetWidth(40)
 	labelInput.SetValue(field.Label)
 
 	return FormDialogModel{
@@ -111,7 +111,7 @@ func NewEditRouteDialog(title string, action FormDialogAction, route db.Routes) 
 	titleInput := textinput.New()
 	titleInput.Placeholder = "Page title"
 	titleInput.CharLimit = 128
-	titleInput.Width = 40
+	titleInput.SetWidth(40)
 	titleInput.SetValue(route.Title)
 	titleInput.Focus()
 
@@ -119,7 +119,7 @@ func NewEditRouteDialog(title string, action FormDialogAction, route db.Routes) 
 	slugInput := textinput.New()
 	slugInput.Placeholder = "url-slug"
 	slugInput.CharLimit = 128
-	slugInput.Width = 40
+	slugInput.SetWidth(40)
 	slugInput.SetValue(string(route.Slug))
 
 	return FormDialogModel{
@@ -184,14 +184,14 @@ func NewRouteWithContentDialog(title string, action FormDialogAction, rootDataty
 	titleInput := textinput.New()
 	titleInput.Placeholder = "Page title"
 	titleInput.CharLimit = 128
-	titleInput.Width = 40
+	titleInput.SetWidth(40)
 	titleInput.Focus()
 
 	// Create slug input (uses TypeInput field)
 	slugInput := textinput.New()
 	slugInput.Placeholder = "url-slug"
 	slugInput.CharLimit = 128
-	slugInput.Width = 40
+	slugInput.SetWidth(40)
 
 	// Build datatype options using ParentOptions carousel
 	parentOptions := make([]ParentOption, len(rootDatatypes))
@@ -248,13 +248,13 @@ func NewAdminRouteWithContentDialog(title string, action FormDialogAction, admin
 	titleInput := textinput.New()
 	titleInput.Placeholder = "Page title"
 	titleInput.CharLimit = 128
-	titleInput.Width = 40
+	titleInput.SetWidth(40)
 	titleInput.Focus()
 
 	slugInput := textinput.New()
 	slugInput.Placeholder = "url-slug"
 	slugInput.CharLimit = 128
-	slugInput.Width = 40
+	slugInput.SetWidth(40)
 
 	parentOptions := make([]ParentOption, len(adminRootDatatypes))
 	for i, dt := range adminRootDatatypes {
