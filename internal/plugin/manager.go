@@ -89,6 +89,12 @@ type PluginInfo struct {
 	// HasOnInit indicates whether the plugin defines an on_init() function.
 	// Set during ExtractManifest() by checking the global before the VM is closed.
 	HasOnInit bool
+
+	// Screens lists TUI screen definitions from the manifest.
+	Screens []ScreenDefinition
+
+	// Interfaces lists field interface definitions from the manifest.
+	Interfaces []InterfaceDefinition
 }
 
 // PluginInstance represents a loaded plugin with its state and resources.
@@ -135,6 +141,18 @@ type PluginInstance struct {
 	// before-hook guard wiring. Each requestAPIState is bound to exactly one
 	// LState (1:1 invariant).
 	requestAPIs map[*lua.LState]*requestAPIState
+
+	// Screens lists the TUI screen definitions parsed from the plugin manifest.
+	// Empty if the plugin does not declare any screens.
+	Screens []ScreenDefinition
+
+	// Interfaces lists the field interface definitions parsed from the manifest.
+	// Empty if the plugin does not declare any interfaces.
+	Interfaces []InterfaceDefinition
+
+	// UIPool is the dedicated VM pool for long-held UI coroutines.
+	// Nil if the plugin has no screens or interfaces.
+	UIPool *UIVMPool
 }
 
 // ManagerConfig configures the plugin manager runtime behavior.
@@ -955,6 +973,76 @@ func (m *Manager) GetPlugin(name string) *PluginInstance {
 	return m.plugins[name]
 }
 
+// PluginScreens returns all visible screen definitions across all running plugins.
+// Hidden screens are excluded. Used by the TUI sidebar to build navigation.
+func (m *Manager) PluginScreens() []ScreenDefinition {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var screens []ScreenDefinition
+	for pluginName, inst := range m.plugins {
+		if inst.State != StateRunning {
+			continue
+		}
+		for _, s := range inst.Info.Screens {
+			if s.Hidden {
+				continue
+			}
+			// Copy with plugin name context for the TUI.
+			screens = append(screens, ScreenDefinition{
+				Name:   pluginName + "/" + s.Name,
+				Label:  s.Label,
+				Icon:   s.Icon,
+				Hidden: s.Hidden,
+			})
+		}
+	}
+	return screens
+}
+
+// PluginInterfaces returns all interface definitions across all running plugins.
+func (m *Manager) PluginInterfaces() []InterfaceDefinition {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var ifaces []InterfaceDefinition
+	for pluginName, inst := range m.plugins {
+		if inst.State != StateRunning {
+			continue
+		}
+		for _, iface := range inst.Info.Interfaces {
+			ifaces = append(ifaces, InterfaceDefinition{
+				Name:  pluginName + "/" + iface.Name,
+				Label: iface.Label,
+				Mode:  iface.Mode,
+			})
+		}
+	}
+	return ifaces
+}
+
+// PluginInterface returns a specific interface definition by plugin and interface name.
+// Returns nil if not found.
+func (m *Manager) PluginInterface(pluginName, ifaceName string) *InterfaceDefinition {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	inst, ok := m.plugins[pluginName]
+	if !ok || inst.State != StateRunning {
+		return nil
+	}
+	for _, iface := range inst.Info.Interfaces {
+		if iface.Name == ifaceName {
+			return &InterfaceDefinition{
+				Name:  iface.Name,
+				Label: iface.Label,
+				Mode:  iface.Mode,
+			}
+		}
+	}
+	return nil
+}
+
 // ListPlugins returns all loaded plugin instances.
 // Thread-safe via read lock.
 func (m *Manager) ListPlugins() []*PluginInstance {
@@ -1070,6 +1158,51 @@ func ExtractManifest(initPath string) (*PluginInfo, error) {
 				}
 			})
 			info.CoreAccess[string(tableName)] = ops
+		})
+	}
+
+	// Extract screens (optional list of {name, label, icon, hidden}).
+	screensVal := L.GetField(infoTbl, "screens")
+	if screensTbl, ok := screensVal.(*lua.LTable); ok {
+		screensTbl.ForEach(func(_, v lua.LValue) {
+			entry, ok := v.(*lua.LTable)
+			if !ok {
+				return
+			}
+			def := ScreenDefinition{
+				Name:  luaTableString(L, entry, "name"),
+				Label: luaTableString(L, entry, "label"),
+				Icon:  luaTableString(L, entry, "icon"),
+			}
+			hiddenVal := L.GetField(entry, "hidden")
+			if b, ok := hiddenVal.(lua.LBool); ok {
+				def.Hidden = bool(b)
+			}
+			if def.Name != "" {
+				info.Screens = append(info.Screens, def)
+			}
+		})
+	}
+
+	// Extract interfaces (optional list of {name, label, mode}).
+	interfacesVal := L.GetField(infoTbl, "interfaces")
+	if interfacesTbl, ok := interfacesVal.(*lua.LTable); ok {
+		interfacesTbl.ForEach(func(_, v lua.LValue) {
+			entry, ok := v.(*lua.LTable)
+			if !ok {
+				return
+			}
+			def := InterfaceDefinition{
+				Name:  luaTableString(L, entry, "name"),
+				Label: luaTableString(L, entry, "label"),
+				Mode:  luaTableString(L, entry, "mode"),
+			}
+			if def.Mode == "" {
+				def.Mode = "inline"
+			}
+			if def.Name != "" {
+				info.Interfaces = append(info.Interfaces, def)
+			}
 		})
 	}
 

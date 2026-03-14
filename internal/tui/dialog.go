@@ -44,6 +44,7 @@ const (
 	DIALOGRESTOREVERSION       DialogAction = "restore_version"
 	DIALOGLOCALESELECT         DialogAction = "locale_select"
 	DIALOGDELETEWEBHOOK        DialogAction = "delete_webhook"
+	DIALOGPLUGINCONFIRM        DialogAction = "plugin_confirm"
 )
 
 // dialogBorderPadding accounts for border and padding in dialog width calculations.

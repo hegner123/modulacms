@@ -16,24 +16,11 @@ const (
 	ADMINCMSPAGE
 	DATABASEPAGE
 	CONFIGPAGE
-	_ // 5 -- was TABLEPAGE (deprecated Phase 1)
-	_ // 6 -- was CREATEPAGE (deprecated Phase 4)
 	READPAGE
-	_ // 8 -- was UPDATEPAGE (deprecated Phase 3)
-	_ // 9 -- was DELETEPAGE (deprecated Phase 3)
-	_ // 10 -- was UPDATEFORMPAGE (deprecated Phase 4)
-	_ // 11 -- was READSINGLEPAGE (deprecated Phase 3)
-	_ // 12 -- was DYNAMICPAGE (deprecated Phase 0)
 	DATATYPES
-	_ // 14 -- was DATATYPESMENU (deprecated Phase 0)
-	_ // 15 -- was FIELDS (deprecated Phase 0)
-	_ // 16 -- was DEVELOPMENT (deprecated Phase 0)
-	_ // 17 -- was DATATYPE (deprecated Phase 4)
 	USERSADMIN
 	MEDIA
 	CONTENT
-	_ // 21 -- was PICKCONTENT (deprecated Phase 0)
-	_ // 22 -- was EDITCONTENT (deprecated Phase 0)
 	ACTIONSPAGE
 	ROUTES
 	ADMINROUTES
@@ -41,7 +28,6 @@ const (
 	ADMINCONTENT
 	PLUGINSPAGE
 	PLUGINDETAILPAGE
-	_ // 30 -- was CONFIGCATEGORYPAGE (deprecated Phase 2)
 	QUICKSTARTPAGE
 	FIELDTYPES
 	ADMINFIELDTYPES
@@ -49,6 +35,7 @@ const (
 	PIPELINESPAGE
 	PIPELINEDETAILPAGE
 	WEBHOOKSPAGE
+	PLUGINTUIPAGE
 )
 
 // NewPage creates a new page with the specified index and label.
@@ -82,6 +69,7 @@ func InitPages() *map[PageIndex]Page {
 	pipelinesPage := NewPage(PIPELINESPAGE, "Pipelines")
 	pipelineDetailPage := NewPage(PIPELINEDETAILPAGE, "Pipeline Detail")
 	webhooksPage := NewPage(WEBHOOKSPAGE, "Webhooks")
+	pluginTuiPage := NewPage(PLUGINTUIPAGE, "Plugin")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -109,5 +97,6 @@ func InitPages() *map[PageIndex]Page {
 	p[PIPELINESPAGE] = pipelinesPage
 	p[PIPELINEDETAILPAGE] = pipelineDetailPage
 	p[WEBHOOKSPAGE] = webhooksPage
+	p[PLUGINTUIPAGE] = pluginTuiPage
 	return &p
 }

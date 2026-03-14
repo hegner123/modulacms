@@ -65,6 +65,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.ActiveOverlay != nil {
 				break
 			}
+			// Let the file picker handle its own escape.
+			if m.FilePickerActive {
+				break
+			}
 			// Let screen-level search handle escape before showing quit.
 			if ds, ok := m.ActiveScreen.(*DatatypesScreen); ok && ds.Searching {
 				break
@@ -145,6 +149,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case SelectPluginAndNavigateMsg:
 		m.SelectedPlugin = typedMsg.PluginName
 		return m, NavigateToPageCmd(m.PageMap[PLUGINDETAILPAGE])
+
+	// Plugin TUI screen navigation (emitted by PluginTUIScreen or sidebar).
+	case NavigateToPluginScreenMsg:
+		screen := NewPluginTUIScreen(typedMsg.PluginName, typedMsg.ScreenName, typedMsg.Params)
+		// Push current state onto history, then set the plugin screen as active.
+		m.ActiveScreen = screen
+		return m, tea.Batch(
+			HistoryPushCmd(PageHistory{Page: m.Page, Cursor: m.Cursor, Menu: m.PageMenu, Screen: m.ActiveScreen}),
+			PageSetCmd(m.PageMap[PLUGINTUIPAGE]),
+			PluginScreenSetupCmd(typedMsg.PluginName, typedMsg.ScreenName, typedMsg.Params, m.Width, m.Height, m.PluginManager),
+		)
 
 	// Pipeline selection + navigation (emitted by PipelinesScreen).
 	case SelectPipelineAndNavigateMsg:
@@ -525,6 +540,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.UpdateDialog(msg)
 	case ShowApproveAllHooksDialogMsg:
 		return m.UpdateDialog(msg)
+	case ShowPluginConfirmDialogMsg:
+		return m.UpdateDialog(msg)
+
+	// Plugin TUI screen messages — forward to ActiveScreen.
+	case PluginScreenInitMsg, PluginScreenErrorMsg, PluginDataMsg, PluginDialogResponseMsg:
+		ctx := m.AppCtx()
+		screen, cmd := m.ActiveScreen.Update(ctx, msg)
+		m.ActiveScreen = screen
+		return m, cmd
 
 	// Content screen: dialog-flow messages → UpdateDialog.
 	case ShowRestoreVersionDialogMsg:

@@ -97,6 +97,7 @@ type DbDriver interface {
 	PluginRepository
 	LocaleRepository
 	WebhookRepository
+	FieldPluginConfigRepository
 }
 
 // GetConnection returns the database connection and context
@@ -946,6 +947,188 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	}
 
 	utility.DefaultLogger.Finfo("Bootstrap data created successfully: all tables validated with bootstrap records + complete table registry populated")
+	return nil
+}
+
+// CleanupBootstrapData removes verification-only records after
+// ValidateBootstrapData has confirmed all tables are working. These records
+// exist solely to prove inserts succeed during install — they are not needed
+// for CMS operation. Records that persist: permissions, roles, role_permissions,
+// system user, field_types, admin_field_types, tables registry.
+func (d Database) CleanupBootstrapData() error {
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "bootstrap-cleanup", "system")
+
+	// Public content tables (dependency order: leaf → root)
+
+	contentFields, err := d.ListContentFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list content_fields: %w", err)
+	}
+	for _, cf := range *contentFields {
+		if err := d.DeleteContentField(ctx, ac, cf.ContentFieldID); err != nil {
+			return fmt.Errorf("cleanup: delete content_field %s: %w", cf.ContentFieldID, err)
+		}
+	}
+
+	contentData, err := d.ListContentData()
+	if err != nil {
+		return fmt.Errorf("cleanup: list content_data: %w", err)
+	}
+	for _, cd := range *contentData {
+		if err := d.DeleteContentData(ctx, ac, cd.ContentDataID); err != nil {
+			return fmt.Errorf("cleanup: delete content_data %s: %w", cd.ContentDataID, err)
+		}
+	}
+
+	fields, err := d.ListFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list fields: %w", err)
+	}
+	for _, f := range *fields {
+		if err := d.DeleteField(ctx, ac, f.FieldID); err != nil {
+			return fmt.Errorf("cleanup: delete field %s: %w", f.FieldID, err)
+		}
+	}
+
+	datatypes, err := d.ListDatatypes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list datatypes: %w", err)
+	}
+	for _, dt := range *datatypes {
+		if err := d.DeleteDatatype(ctx, ac, dt.DatatypeID); err != nil {
+			return fmt.Errorf("cleanup: delete datatype %s: %w", dt.DatatypeID, err)
+		}
+	}
+
+	routes, err := d.ListRoutes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list routes: %w", err)
+	}
+	for _, r := range *routes {
+		if err := d.DeleteRoute(ctx, ac, r.RouteID); err != nil {
+			return fmt.Errorf("cleanup: delete route %s: %w", r.RouteID, err)
+		}
+	}
+
+	// Admin content tables (same dependency order)
+
+	adminContentFields, err := d.ListAdminContentFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_content_fields: %w", err)
+	}
+	for _, acf := range *adminContentFields {
+		if err := d.DeleteAdminContentField(ctx, ac, acf.AdminContentFieldID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_content_field %s: %w", acf.AdminContentFieldID, err)
+		}
+	}
+
+	adminContentData, err := d.ListAdminContentData()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_content_data: %w", err)
+	}
+	for _, acd := range *adminContentData {
+		if err := d.DeleteAdminContentData(ctx, ac, acd.AdminContentDataID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_content_data %s: %w", acd.AdminContentDataID, err)
+		}
+	}
+
+	adminFields, err := d.ListAdminFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_fields: %w", err)
+	}
+	for _, af := range *adminFields {
+		if err := d.DeleteAdminField(ctx, ac, af.AdminFieldID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_field %s: %w", af.AdminFieldID, err)
+		}
+	}
+
+	adminDatatypes, err := d.ListAdminDatatypes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_datatypes: %w", err)
+	}
+	for _, adt := range *adminDatatypes {
+		if err := d.DeleteAdminDatatype(ctx, ac, adt.AdminDatatypeID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_datatype %s: %w", adt.AdminDatatypeID, err)
+		}
+	}
+
+	adminRoutes, err := d.ListAdminRoutes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_routes: %w", err)
+	}
+	for _, ar := range *adminRoutes {
+		if err := d.DeleteAdminRoute(ctx, ac, ar.AdminRouteID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_route %s: %w", ar.AdminRouteID, err)
+		}
+	}
+
+	// Media tables
+
+	media, err := d.ListMedia()
+	if err != nil {
+		return fmt.Errorf("cleanup: list media: %w", err)
+	}
+	for _, m := range *media {
+		if err := d.DeleteMedia(ctx, ac, m.MediaID); err != nil {
+			return fmt.Errorf("cleanup: delete media %s: %w", m.MediaID, err)
+		}
+	}
+
+	mediaDimensions, err := d.ListMediaDimensions()
+	if err != nil {
+		return fmt.Errorf("cleanup: list media_dimensions: %w", err)
+	}
+	for _, md := range *mediaDimensions {
+		if err := d.DeleteMediaDimension(ctx, ac, md.MdID); err != nil {
+			return fmt.Errorf("cleanup: delete media_dimension %s: %w", md.MdID, err)
+		}
+	}
+
+	// Auth verification records (token, session, user_oauth, user_ssh_key)
+
+	tokens, err := d.ListTokens()
+	if err != nil {
+		return fmt.Errorf("cleanup: list tokens: %w", err)
+	}
+	for _, tk := range *tokens {
+		if err := d.DeleteToken(ctx, ac, tk.ID); err != nil {
+			return fmt.Errorf("cleanup: delete token %s: %w", tk.ID, err)
+		}
+	}
+
+	sessions, err := d.ListSessions()
+	if err != nil {
+		return fmt.Errorf("cleanup: list sessions: %w", err)
+	}
+	for _, s := range *sessions {
+		if err := d.DeleteSession(ctx, ac, s.SessionID); err != nil {
+			return fmt.Errorf("cleanup: delete session %s: %w", s.SessionID, err)
+		}
+	}
+
+	userOauths, err := d.ListUserOauths()
+	if err != nil {
+		return fmt.Errorf("cleanup: list user_oauth: %w", err)
+	}
+	for _, uo := range *userOauths {
+		if err := d.DeleteUserOauth(ctx, ac, uo.UserOauthID); err != nil {
+			return fmt.Errorf("cleanup: delete user_oauth %s: %w", uo.UserOauthID, err)
+		}
+	}
+
+	systemUserID := types.NullableUserID{Valid: true, ID: types.SystemUserID}
+	sshKeys, err := d.ListUserSshKeys(systemUserID)
+	if err != nil {
+		return fmt.Errorf("cleanup: list user_ssh_keys: %w", err)
+	}
+	for _, sk := range *sshKeys {
+		if err := d.DeleteUserSshKey(ctx, ac, sk.SshKeyID); err != nil {
+			return fmt.Errorf("cleanup: delete user_ssh_key %s: %w", sk.SshKeyID, err)
+		}
+	}
+
+	utility.DefaultLogger.Finfo("Bootstrap cleanup: removed all verification-only records")
 	return nil
 }
 
@@ -2016,7 +2199,177 @@ func (d MysqlDatabase) ValidateBootstrapData() error {
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 28 tables contain expected records")
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 28 tables contain expected records (MySQL)")
+	return nil
+}
+
+// CleanupBootstrapData removes verification-only records after validation (MySQL).
+func (d MysqlDatabase) CleanupBootstrapData() error {
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "bootstrap-cleanup", "system")
+
+	contentFields, err := d.ListContentFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list content_fields: %w", err)
+	}
+	for _, cf := range *contentFields {
+		if err := d.DeleteContentField(ctx, ac, cf.ContentFieldID); err != nil {
+			return fmt.Errorf("cleanup: delete content_field %s: %w", cf.ContentFieldID, err)
+		}
+	}
+
+	contentData, err := d.ListContentData()
+	if err != nil {
+		return fmt.Errorf("cleanup: list content_data: %w", err)
+	}
+	for _, cd := range *contentData {
+		if err := d.DeleteContentData(ctx, ac, cd.ContentDataID); err != nil {
+			return fmt.Errorf("cleanup: delete content_data %s: %w", cd.ContentDataID, err)
+		}
+	}
+
+	fields, err := d.ListFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list fields: %w", err)
+	}
+	for _, f := range *fields {
+		if err := d.DeleteField(ctx, ac, f.FieldID); err != nil {
+			return fmt.Errorf("cleanup: delete field %s: %w", f.FieldID, err)
+		}
+	}
+
+	datatypes, err := d.ListDatatypes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list datatypes: %w", err)
+	}
+	for _, dt := range *datatypes {
+		if err := d.DeleteDatatype(ctx, ac, dt.DatatypeID); err != nil {
+			return fmt.Errorf("cleanup: delete datatype %s: %w", dt.DatatypeID, err)
+		}
+	}
+
+	routes, err := d.ListRoutes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list routes: %w", err)
+	}
+	for _, r := range *routes {
+		if err := d.DeleteRoute(ctx, ac, r.RouteID); err != nil {
+			return fmt.Errorf("cleanup: delete route %s: %w", r.RouteID, err)
+		}
+	}
+
+	adminContentFields, err := d.ListAdminContentFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_content_fields: %w", err)
+	}
+	for _, acf := range *adminContentFields {
+		if err := d.DeleteAdminContentField(ctx, ac, acf.AdminContentFieldID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_content_field %s: %w", acf.AdminContentFieldID, err)
+		}
+	}
+
+	adminContentData, err := d.ListAdminContentData()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_content_data: %w", err)
+	}
+	for _, acd := range *adminContentData {
+		if err := d.DeleteAdminContentData(ctx, ac, acd.AdminContentDataID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_content_data %s: %w", acd.AdminContentDataID, err)
+		}
+	}
+
+	adminFields, err := d.ListAdminFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_fields: %w", err)
+	}
+	for _, af := range *adminFields {
+		if err := d.DeleteAdminField(ctx, ac, af.AdminFieldID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_field %s: %w", af.AdminFieldID, err)
+		}
+	}
+
+	adminDatatypes, err := d.ListAdminDatatypes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_datatypes: %w", err)
+	}
+	for _, adt := range *adminDatatypes {
+		if err := d.DeleteAdminDatatype(ctx, ac, adt.AdminDatatypeID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_datatype %s: %w", adt.AdminDatatypeID, err)
+		}
+	}
+
+	adminRoutes, err := d.ListAdminRoutes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_routes: %w", err)
+	}
+	for _, ar := range *adminRoutes {
+		if err := d.DeleteAdminRoute(ctx, ac, ar.AdminRouteID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_route %s: %w", ar.AdminRouteID, err)
+		}
+	}
+
+	media, err := d.ListMedia()
+	if err != nil {
+		return fmt.Errorf("cleanup: list media: %w", err)
+	}
+	for _, m := range *media {
+		if err := d.DeleteMedia(ctx, ac, m.MediaID); err != nil {
+			return fmt.Errorf("cleanup: delete media %s: %w", m.MediaID, err)
+		}
+	}
+
+	mediaDimensions, err := d.ListMediaDimensions()
+	if err != nil {
+		return fmt.Errorf("cleanup: list media_dimensions: %w", err)
+	}
+	for _, md := range *mediaDimensions {
+		if err := d.DeleteMediaDimension(ctx, ac, md.MdID); err != nil {
+			return fmt.Errorf("cleanup: delete media_dimension %s: %w", md.MdID, err)
+		}
+	}
+
+	tokens, err := d.ListTokens()
+	if err != nil {
+		return fmt.Errorf("cleanup: list tokens: %w", err)
+	}
+	for _, tk := range *tokens {
+		if err := d.DeleteToken(ctx, ac, tk.ID); err != nil {
+			return fmt.Errorf("cleanup: delete token %s: %w", tk.ID, err)
+		}
+	}
+
+	sessions, err := d.ListSessions()
+	if err != nil {
+		return fmt.Errorf("cleanup: list sessions: %w", err)
+	}
+	for _, s := range *sessions {
+		if err := d.DeleteSession(ctx, ac, s.SessionID); err != nil {
+			return fmt.Errorf("cleanup: delete session %s: %w", s.SessionID, err)
+		}
+	}
+
+	userOauths, err := d.ListUserOauths()
+	if err != nil {
+		return fmt.Errorf("cleanup: list user_oauth: %w", err)
+	}
+	for _, uo := range *userOauths {
+		if err := d.DeleteUserOauth(ctx, ac, uo.UserOauthID); err != nil {
+			return fmt.Errorf("cleanup: delete user_oauth %s: %w", uo.UserOauthID, err)
+		}
+	}
+
+	systemUserID := types.NullableUserID{Valid: true, ID: types.SystemUserID}
+	sshKeys, err := d.ListUserSshKeys(systemUserID)
+	if err != nil {
+		return fmt.Errorf("cleanup: list user_ssh_keys: %w", err)
+	}
+	for _, sk := range *sshKeys {
+		if err := d.DeleteUserSshKey(ctx, ac, sk.SshKeyID); err != nil {
+			return fmt.Errorf("cleanup: delete user_ssh_key %s: %w", sk.SshKeyID, err)
+		}
+	}
+
+	utility.DefaultLogger.Finfo("Bootstrap cleanup: removed all verification-only records (MySQL)")
 	return nil
 }
 
@@ -2934,7 +3287,177 @@ func (d PsqlDatabase) ValidateBootstrapData() error {
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 28 tables contain expected records")
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 28 tables contain expected records (PostgreSQL)")
+	return nil
+}
+
+// CleanupBootstrapData removes verification-only records after validation (PostgreSQL).
+func (d PsqlDatabase) CleanupBootstrapData() error {
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "bootstrap-cleanup", "system")
+
+	contentFields, err := d.ListContentFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list content_fields: %w", err)
+	}
+	for _, cf := range *contentFields {
+		if err := d.DeleteContentField(ctx, ac, cf.ContentFieldID); err != nil {
+			return fmt.Errorf("cleanup: delete content_field %s: %w", cf.ContentFieldID, err)
+		}
+	}
+
+	contentData, err := d.ListContentData()
+	if err != nil {
+		return fmt.Errorf("cleanup: list content_data: %w", err)
+	}
+	for _, cd := range *contentData {
+		if err := d.DeleteContentData(ctx, ac, cd.ContentDataID); err != nil {
+			return fmt.Errorf("cleanup: delete content_data %s: %w", cd.ContentDataID, err)
+		}
+	}
+
+	fields, err := d.ListFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list fields: %w", err)
+	}
+	for _, f := range *fields {
+		if err := d.DeleteField(ctx, ac, f.FieldID); err != nil {
+			return fmt.Errorf("cleanup: delete field %s: %w", f.FieldID, err)
+		}
+	}
+
+	datatypes, err := d.ListDatatypes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list datatypes: %w", err)
+	}
+	for _, dt := range *datatypes {
+		if err := d.DeleteDatatype(ctx, ac, dt.DatatypeID); err != nil {
+			return fmt.Errorf("cleanup: delete datatype %s: %w", dt.DatatypeID, err)
+		}
+	}
+
+	routes, err := d.ListRoutes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list routes: %w", err)
+	}
+	for _, r := range *routes {
+		if err := d.DeleteRoute(ctx, ac, r.RouteID); err != nil {
+			return fmt.Errorf("cleanup: delete route %s: %w", r.RouteID, err)
+		}
+	}
+
+	adminContentFields, err := d.ListAdminContentFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_content_fields: %w", err)
+	}
+	for _, acf := range *adminContentFields {
+		if err := d.DeleteAdminContentField(ctx, ac, acf.AdminContentFieldID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_content_field %s: %w", acf.AdminContentFieldID, err)
+		}
+	}
+
+	adminContentData, err := d.ListAdminContentData()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_content_data: %w", err)
+	}
+	for _, acd := range *adminContentData {
+		if err := d.DeleteAdminContentData(ctx, ac, acd.AdminContentDataID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_content_data %s: %w", acd.AdminContentDataID, err)
+		}
+	}
+
+	adminFields, err := d.ListAdminFields()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_fields: %w", err)
+	}
+	for _, af := range *adminFields {
+		if err := d.DeleteAdminField(ctx, ac, af.AdminFieldID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_field %s: %w", af.AdminFieldID, err)
+		}
+	}
+
+	adminDatatypes, err := d.ListAdminDatatypes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_datatypes: %w", err)
+	}
+	for _, adt := range *adminDatatypes {
+		if err := d.DeleteAdminDatatype(ctx, ac, adt.AdminDatatypeID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_datatype %s: %w", adt.AdminDatatypeID, err)
+		}
+	}
+
+	adminRoutes, err := d.ListAdminRoutes()
+	if err != nil {
+		return fmt.Errorf("cleanup: list admin_routes: %w", err)
+	}
+	for _, ar := range *adminRoutes {
+		if err := d.DeleteAdminRoute(ctx, ac, ar.AdminRouteID); err != nil {
+			return fmt.Errorf("cleanup: delete admin_route %s: %w", ar.AdminRouteID, err)
+		}
+	}
+
+	media, err := d.ListMedia()
+	if err != nil {
+		return fmt.Errorf("cleanup: list media: %w", err)
+	}
+	for _, m := range *media {
+		if err := d.DeleteMedia(ctx, ac, m.MediaID); err != nil {
+			return fmt.Errorf("cleanup: delete media %s: %w", m.MediaID, err)
+		}
+	}
+
+	mediaDimensions, err := d.ListMediaDimensions()
+	if err != nil {
+		return fmt.Errorf("cleanup: list media_dimensions: %w", err)
+	}
+	for _, md := range *mediaDimensions {
+		if err := d.DeleteMediaDimension(ctx, ac, md.MdID); err != nil {
+			return fmt.Errorf("cleanup: delete media_dimension %s: %w", md.MdID, err)
+		}
+	}
+
+	tokens, err := d.ListTokens()
+	if err != nil {
+		return fmt.Errorf("cleanup: list tokens: %w", err)
+	}
+	for _, tk := range *tokens {
+		if err := d.DeleteToken(ctx, ac, tk.ID); err != nil {
+			return fmt.Errorf("cleanup: delete token %s: %w", tk.ID, err)
+		}
+	}
+
+	sessions, err := d.ListSessions()
+	if err != nil {
+		return fmt.Errorf("cleanup: list sessions: %w", err)
+	}
+	for _, s := range *sessions {
+		if err := d.DeleteSession(ctx, ac, s.SessionID); err != nil {
+			return fmt.Errorf("cleanup: delete session %s: %w", s.SessionID, err)
+		}
+	}
+
+	userOauths, err := d.ListUserOauths()
+	if err != nil {
+		return fmt.Errorf("cleanup: list user_oauth: %w", err)
+	}
+	for _, uo := range *userOauths {
+		if err := d.DeleteUserOauth(ctx, ac, uo.UserOauthID); err != nil {
+			return fmt.Errorf("cleanup: delete user_oauth %s: %w", uo.UserOauthID, err)
+		}
+	}
+
+	systemUserID := types.NullableUserID{Valid: true, ID: types.SystemUserID}
+	sshKeys, err := d.ListUserSshKeys(systemUserID)
+	if err != nil {
+		return fmt.Errorf("cleanup: list user_ssh_keys: %w", err)
+	}
+	for _, sk := range *sshKeys {
+		if err := d.DeleteUserSshKey(ctx, ac, sk.SshKeyID); err != nil {
+			return fmt.Errorf("cleanup: delete user_ssh_key %s: %w", sk.SshKeyID, err)
+		}
+	}
+
+	utility.DefaultLogger.Finfo("Bootstrap cleanup: removed all verification-only records (PostgreSQL)")
 	return nil
 }
 

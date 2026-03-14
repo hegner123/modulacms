@@ -170,6 +170,7 @@ const (
 	FieldTypeURL      FieldType = "url"
 	FieldTypeIDRef    FieldType = "_id"
 	FieldTypeTitle    FieldType = "_title"
+	FieldTypePlugin   FieldType = "plugin"
 )
 
 // String returns the string representation of FieldType.

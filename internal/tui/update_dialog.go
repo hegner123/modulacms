@@ -58,6 +58,12 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			OverlaySetCmd(&dialog),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	case ShowPluginConfirmDialogMsg:
+		dialog := NewDialog(msg.Title, msg.Message, true, DIALOGPLUGINCONFIRM)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
 	case ShowPublishDialogMsg:
 		// Show publish or unpublish confirmation dialog
 		var dialogMsg string
@@ -631,6 +637,15 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		if m.DCtx.RestoreRequiresQuit {
 			m.DCtx.RestoreRequiresQuit = false
 			return m, tea.Quit
+		}
+		// Plugin confirm dialogs send a cancel response to the coroutine.
+		if d, ok := m.ActiveOverlay.(*DialogModel); ok && d != nil && d.Action == DIALOGPLUGINCONFIRM {
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				func() tea.Msg { return PluginDialogResponseMsg{Accepted: false} },
+			)
 		}
 		// Handle dialog cancel action
 		m.DCtx.Active = nil

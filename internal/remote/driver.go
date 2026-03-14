@@ -159,6 +159,10 @@ func (r *RemoteDriver) CreateBootstrapData(adminHash string) error {
 	return ErrNotSupported{Method: "CreateBootstrapData"}
 }
 
+func (r *RemoteDriver) CleanupBootstrapData() error {
+	return ErrNotSupported{Method: "CleanupBootstrapData"}
+}
+
 func (r *RemoteDriver) DropAllTables() error {
 	return ErrNotSupported{Method: "DropAllTables"}
 }
@@ -4822,4 +4826,46 @@ func (r *RemoteDriver) UpdateWebhookDeliveryStatus(_ context.Context, _ db.Updat
 
 func (r *RemoteDriver) PruneOldDeliveries(_ context.Context, _ types.Timestamp) error {
 	return ErrNotSupported{Method: "PruneOldDeliveries"}
+}
+
+// FieldPluginConfigRepository stubs — not supported in remote mode.
+
+func (r *RemoteDriver) CreateFieldPluginConfigTable() error {
+	return ErrNotSupported{Method: "CreateFieldPluginConfigTable"}
+}
+
+func (r *RemoteDriver) CreateAdminFieldPluginConfigTable() error {
+	return ErrNotSupported{Method: "CreateAdminFieldPluginConfigTable"}
+}
+
+func (r *RemoteDriver) GetFieldPluginConfig(_ context.Context, _ types.FieldID) (*db.FieldPluginConfig, error) {
+	return nil, ErrNotSupported{Method: "GetFieldPluginConfig"}
+}
+
+func (r *RemoteDriver) GetAdminFieldPluginConfig(_ context.Context, _ types.FieldID) (*db.FieldPluginConfig, error) {
+	return nil, ErrNotSupported{Method: "GetAdminFieldPluginConfig"}
+}
+
+func (r *RemoteDriver) CreateFieldPluginConfig(_ context.Context, _ db.CreateFieldPluginConfigParams) error {
+	return ErrNotSupported{Method: "CreateFieldPluginConfig"}
+}
+
+func (r *RemoteDriver) CreateAdminFieldPluginConfig(_ context.Context, _ db.CreateFieldPluginConfigParams) error {
+	return ErrNotSupported{Method: "CreateAdminFieldPluginConfig"}
+}
+
+func (r *RemoteDriver) UpdateFieldPluginConfig(_ context.Context, _ db.UpdateFieldPluginConfigParams) error {
+	return ErrNotSupported{Method: "UpdateFieldPluginConfig"}
+}
+
+func (r *RemoteDriver) UpdateAdminFieldPluginConfig(_ context.Context, _ db.UpdateFieldPluginConfigParams) error {
+	return ErrNotSupported{Method: "UpdateAdminFieldPluginConfig"}
+}
+
+func (r *RemoteDriver) DeleteFieldPluginConfig(_ context.Context, _ types.FieldID) error {
+	return ErrNotSupported{Method: "DeleteFieldPluginConfig"}
+}
+
+func (r *RemoteDriver) DeleteAdminFieldPluginConfig(_ context.Context, _ types.FieldID) error {
+	return ErrNotSupported{Method: "DeleteAdminFieldPluginConfig"}
 }

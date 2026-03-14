@@ -76,6 +76,15 @@ type AdminDatatypes struct {
 	DateModified    types.Timestamp               `json:"date_modified"`
 }
 
+type AdminFieldPluginConfig struct {
+	FieldID         types.NullableFieldID `json:"field_id"`
+	PluginName      string                `json:"plugin_name"`
+	PluginInterface string                `json:"plugin_interface"`
+	PluginVersion   string                `json:"plugin_version"`
+	DateCreated     types.Timestamp       `json:"date_created"`
+	DateModified    types.Timestamp       `json:"date_modified"`
+}
+
 type AdminFieldTypes struct {
 	AdminFieldTypeID types.AdminFieldTypeID `json:"admin_field_type_id"`
 	Type             string                 `json:"type"`
@@ -235,6 +244,15 @@ type Datatypes struct {
 	AuthorID     types.UserID             `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`
 	DateModified types.Timestamp          `json:"date_modified"`
+}
+
+type FieldPluginConfig struct {
+	FieldID         types.NullableFieldID `json:"field_id"`
+	PluginName      string                `json:"plugin_name"`
+	PluginInterface string                `json:"plugin_interface"`
+	PluginVersion   string                `json:"plugin_version"`
+	DateCreated     types.Timestamp       `json:"date_created"`
+	DateModified    types.Timestamp       `json:"date_modified"`
 }
 
 type FieldTypes struct {

@@ -18,6 +18,7 @@ import (
 type SchemaRepository interface {
 	CreateAllTables() error
 	CreateBootstrapData(adminHash string) error
+	CleanupBootstrapData() error
 	DropAllTables() error
 	DumpSql(config.Config) error
 	SortTables() error
@@ -569,4 +570,19 @@ type WebhookRepository interface {
 	ListPendingRetries(types.Timestamp, int64) (*[]WebhookDelivery, error)
 	UpdateWebhookDeliveryStatus(context.Context, UpdateWebhookDeliveryStatusParams) error
 	PruneOldDeliveries(context.Context, types.Timestamp) error
+}
+
+// FieldPluginConfigRepository manages the field_plugin_config extension table
+// that binds plugin field types to their plugin and interface definitions.
+type FieldPluginConfigRepository interface {
+	CreateFieldPluginConfigTable() error
+	CreateAdminFieldPluginConfigTable() error
+	GetFieldPluginConfig(context.Context, types.FieldID) (*FieldPluginConfig, error)
+	GetAdminFieldPluginConfig(context.Context, types.FieldID) (*FieldPluginConfig, error)
+	CreateFieldPluginConfig(context.Context, CreateFieldPluginConfigParams) error
+	CreateAdminFieldPluginConfig(context.Context, CreateFieldPluginConfigParams) error
+	UpdateFieldPluginConfig(context.Context, UpdateFieldPluginConfigParams) error
+	UpdateAdminFieldPluginConfig(context.Context, UpdateFieldPluginConfigParams) error
+	DeleteFieldPluginConfig(context.Context, types.FieldID) error
+	DeleteAdminFieldPluginConfig(context.Context, types.FieldID) error
 }

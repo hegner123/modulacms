@@ -127,6 +127,11 @@ func (m Model) screenForPage(page Page) Screen {
 		return NewContentScreen(false, nil, nil, nil, nil, m.PageRouteId)
 	case ADMINCONTENT:
 		return NewContentScreen(true, nil, nil, nil, nil, "")
+	case PLUGINTUIPAGE:
+		// Plugin TUI screens are created dynamically via NavigateToPluginScreenMsg
+		// and pushed onto history. This case returns nil because plugin screens
+		// don't come from the page map — they're created with plugin/screen params.
+		return nil
 	}
 	return nil
 }

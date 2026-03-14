@@ -155,6 +155,14 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, StatusSetCmd(OK))
 			cmds = append(cmds, CursorResetCmd())
 			return m, tea.Batch(cmds...)
+		case PLUGINTUIPAGE:
+			// Plugin TUI screens are set up via NavigateToPluginScreenMsg,
+			// which directly creates the screen and sends PluginScreenSetupCmd.
+			// This case handles navigation via the page map (e.g., history pop).
+			page := m.PageMap[PLUGINTUIPAGE]
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			return m, tea.Batch(cmds...)
 		case DEPLOYPAGE:
 			page := m.PageMap[DEPLOYPAGE]
 			cmds = append(cmds, DeployEnvsFetchCmd())

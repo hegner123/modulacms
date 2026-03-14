@@ -63,6 +63,9 @@ class McmsFieldRenderer extends HTMLElement {
             case 'reference':
                 this._buildReference(wrapper, name, value);
                 break;
+            case 'plugin':
+                this._buildPluginField(wrapper, name, value);
+                break;
             default:
                 this._buildText(wrapper, name, value);
         }
@@ -644,6 +647,114 @@ class McmsFieldRenderer extends HTMLElement {
         // After _escapeText, [] and () are not escaped, only <, >, &, " are
         text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
         return text;
+    }
+    _buildPluginField(wrapper, name, value) {
+        var pluginName = this.getAttribute('data-plugin-name') || '';
+        var pluginInterface = this.getAttribute('data-plugin-interface') || '';
+        var mode = this.getAttribute('data-plugin-mode') || 'inline';
+
+        var container = document.createElement('div');
+        container.className = 'field-renderer-plugin';
+
+        // Hidden input for the field value (opaque string).
+        var hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = name;
+        hidden.id = 'field-' + name;
+        hidden.value = value;
+        container.appendChild(hidden);
+
+        if (!pluginName || !pluginInterface) {
+            // No plugin config — show raw text input as fallback.
+            var fallback = document.createElement('input');
+            fallback.type = 'text';
+            fallback.name = name;
+            fallback.id = 'field-' + name;
+            fallback.value = value;
+            fallback.placeholder = '(plugin field — raw value)';
+            wrapper.appendChild(fallback);
+            this._attachChangeListener(fallback, name);
+            return;
+        }
+
+        if (mode === 'inline') {
+            // Inline mode: load web component from plugin HTTP route.
+            var componentUrl = '/api/v1/plugins/' + encodeURIComponent(pluginName) + '/interface/' + encodeURIComponent(pluginInterface) + '/component.js';
+            var componentTag = 'plugin-' + pluginName + '-' + pluginInterface;
+
+            // Attempt to load the plugin component script dynamically.
+            var script = document.createElement('script');
+            script.src = componentUrl;
+            script.onerror = function() {
+                // Fallback: show text input if component not available.
+                var fallbackInput = document.createElement('input');
+                fallbackInput.type = 'text';
+                fallbackInput.value = value;
+                fallbackInput.placeholder = '(plugin editor unavailable)';
+                container.appendChild(fallbackInput);
+                var self2 = this;
+                fallbackInput.addEventListener('input', function() {
+                    hidden.value = fallbackInput.value;
+                    self2.dispatchEvent(new CustomEvent('field-change', {
+                        bubbles: true,
+                        detail: { name: name, value: fallbackInput.value }
+                    }));
+                }.bind(self2));
+            }.bind(this);
+            script.onload = function() {
+                var el = document.createElement(componentTag);
+                el.setAttribute('value', value);
+                el.setAttribute('name', name);
+                container.appendChild(el);
+                // Listen for field-change from the plugin component.
+                el.addEventListener('field-change', function(e) {
+                    hidden.value = e.detail.value;
+                    this.dispatchEvent(new CustomEvent('field-change', {
+                        bubbles: true,
+                        detail: { name: name, value: e.detail.value }
+                    }));
+                }.bind(this));
+            }.bind(this);
+            document.head.appendChild(script);
+        } else {
+            // Overlay mode: show button with current value, open modal on click.
+            var display = document.createElement('span');
+            display.className = 'field-renderer-plugin-display';
+            display.textContent = value || '(not set)';
+            container.appendChild(display);
+
+            var editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.textContent = 'Edit';
+            editBtn.className = 'btn btn-sm';
+            container.appendChild(editBtn);
+
+            var self = this;
+            editBtn.addEventListener('click', function() {
+                var dialog = document.createElement('mcms-dialog');
+                dialog.setAttribute('title', pluginInterface);
+                dialog.setAttribute('confirm-label', 'Done');
+                dialog.setAttribute('cancel-label', 'Cancel');
+
+                var iframe = document.createElement('iframe');
+                iframe.src = '/api/v1/plugins/' + encodeURIComponent(pluginName) + '/interface/' + encodeURIComponent(pluginInterface) + '/';
+                iframe.style.width = '100%';
+                iframe.style.height = '400px';
+                iframe.style.border = 'none';
+                dialog.appendChild(iframe);
+                document.body.appendChild(dialog);
+
+                dialog.addEventListener('confirm', function() {
+                    // The plugin UI communicates via postMessage.
+                    dialog.remove();
+                });
+                dialog.addEventListener('cancel', function() {
+                    dialog.remove();
+                });
+            });
+        }
+
+        wrapper.appendChild(container);
     }
 }
 

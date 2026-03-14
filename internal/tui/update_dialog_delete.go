@@ -770,6 +770,13 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 			OverlayClearCmd(),
 			FocusSetCmd(PAGEFOCUS),
 		)
+	case DIALOGPLUGINCONFIRM:
+		m.DCtx.Active = nil
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			func() tea.Msg { return PluginDialogResponseMsg{Accepted: true} },
+		)
 	default:
 		return m, tea.Batch(
 			OverlayClearCmd(),

@@ -1299,6 +1299,51 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 	return i, err
 }
 
+const createAdminFieldPluginConfig = `-- name: CreateAdminFieldPluginConfig :exec
+INSERT INTO admin_field_plugin_config (
+    field_id, plugin_name, plugin_interface, plugin_version,
+    date_created, date_modified
+) VALUES (?, ?, ?, ?, ?, ?)
+`
+
+type CreateAdminFieldPluginConfigParams struct {
+	FieldID         types.NullableFieldID `json:"field_id"`
+	PluginName      string                `json:"plugin_name"`
+	PluginInterface string                `json:"plugin_interface"`
+	PluginVersion   string                `json:"plugin_version"`
+	DateCreated     types.Timestamp       `json:"date_created"`
+	DateModified    types.Timestamp       `json:"date_modified"`
+}
+
+func (q *Queries) CreateAdminFieldPluginConfig(ctx context.Context, arg CreateAdminFieldPluginConfigParams) error {
+	_, err := q.db.ExecContext(ctx, createAdminFieldPluginConfig,
+		arg.FieldID,
+		arg.PluginName,
+		arg.PluginInterface,
+		arg.PluginVersion,
+		arg.DateCreated,
+		arg.DateModified,
+	)
+	return err
+}
+
+const createAdminFieldPluginConfigTable = `-- name: CreateAdminFieldPluginConfigTable :exec
+CREATE TABLE IF NOT EXISTS admin_field_plugin_config (
+    field_id         TEXT PRIMARY KEY NOT NULL
+        REFERENCES admin_fields(field_id) ON DELETE CASCADE,
+    plugin_name      TEXT NOT NULL,
+    plugin_interface TEXT NOT NULL,
+    plugin_version   TEXT NOT NULL DEFAULT '',
+    date_created     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_modified    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateAdminFieldPluginConfigTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminFieldPluginConfigTable)
+	return err
+}
+
 const createAdminFieldTable = `-- name: CreateAdminFieldTable :exec
 CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id TEXT
@@ -2152,6 +2197,51 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field
 		&i.DateModified,
 	)
 	return i, err
+}
+
+const createFieldPluginConfig = `-- name: CreateFieldPluginConfig :exec
+INSERT INTO field_plugin_config (
+    field_id, plugin_name, plugin_interface, plugin_version,
+    date_created, date_modified
+) VALUES (?, ?, ?, ?, ?, ?)
+`
+
+type CreateFieldPluginConfigParams struct {
+	FieldID         types.NullableFieldID `json:"field_id"`
+	PluginName      string                `json:"plugin_name"`
+	PluginInterface string                `json:"plugin_interface"`
+	PluginVersion   string                `json:"plugin_version"`
+	DateCreated     types.Timestamp       `json:"date_created"`
+	DateModified    types.Timestamp       `json:"date_modified"`
+}
+
+func (q *Queries) CreateFieldPluginConfig(ctx context.Context, arg CreateFieldPluginConfigParams) error {
+	_, err := q.db.ExecContext(ctx, createFieldPluginConfig,
+		arg.FieldID,
+		arg.PluginName,
+		arg.PluginInterface,
+		arg.PluginVersion,
+		arg.DateCreated,
+		arg.DateModified,
+	)
+	return err
+}
+
+const createFieldPluginConfigTable = `-- name: CreateFieldPluginConfigTable :exec
+CREATE TABLE IF NOT EXISTS field_plugin_config (
+    field_id         TEXT PRIMARY KEY NOT NULL
+        REFERENCES fields(field_id) ON DELETE CASCADE,
+    plugin_name      TEXT NOT NULL,
+    plugin_interface TEXT NOT NULL,
+    plugin_version   TEXT NOT NULL DEFAULT '',
+    date_created     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_modified    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateFieldPluginConfigTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createFieldPluginConfigTable)
+	return err
 }
 
 const createFieldTable = `-- name: CreateFieldTable :exec
@@ -3542,6 +3632,19 @@ func (q *Queries) DeleteAdminField(ctx context.Context, arg DeleteAdminFieldPara
 	return err
 }
 
+const deleteAdminFieldPluginConfig = `-- name: DeleteAdminFieldPluginConfig :exec
+DELETE FROM admin_field_plugin_config WHERE field_id = ?
+`
+
+type DeleteAdminFieldPluginConfigParams struct {
+	FieldID types.NullableFieldID `json:"field_id"`
+}
+
+func (q *Queries) DeleteAdminFieldPluginConfig(ctx context.Context, arg DeleteAdminFieldPluginConfigParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminFieldPluginConfig, arg.FieldID)
+	return err
+}
+
 const deleteAdminFieldType = `-- name: DeleteAdminFieldType :exec
 DELETE FROM admin_field_types
 WHERE admin_field_type_id = ?
@@ -3709,6 +3812,19 @@ type DeleteFieldParams struct {
 
 func (q *Queries) DeleteField(ctx context.Context, arg DeleteFieldParams) error {
 	_, err := q.db.ExecContext(ctx, deleteField, arg.FieldID)
+	return err
+}
+
+const deleteFieldPluginConfig = `-- name: DeleteFieldPluginConfig :exec
+DELETE FROM field_plugin_config WHERE field_id = ?
+`
+
+type DeleteFieldPluginConfigParams struct {
+	FieldID types.NullableFieldID `json:"field_id"`
+}
+
+func (q *Queries) DeleteFieldPluginConfig(ctx context.Context, arg DeleteFieldPluginConfigParams) error {
+	_, err := q.db.ExecContext(ctx, deleteFieldPluginConfig, arg.FieldID)
 	return err
 }
 
@@ -4060,6 +4176,15 @@ func (q *Queries) DropAdminDatatypeTable(ctx context.Context) error {
 	return err
 }
 
+const dropAdminFieldPluginConfigTable = `-- name: DropAdminFieldPluginConfigTable :exec
+DROP TABLE IF EXISTS admin_field_plugin_config
+`
+
+func (q *Queries) DropAdminFieldPluginConfigTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminFieldPluginConfigTable)
+	return err
+}
+
 const dropAdminFieldTable = `-- name: DropAdminFieldTable :exec
 DROP TABLE admin_fields
 `
@@ -4183,6 +4308,15 @@ DROP TABLE datatypes
 
 func (q *Queries) DropDatatypeTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, dropDatatypeTable)
+	return err
+}
+
+const dropFieldPluginConfigTable = `-- name: DropFieldPluginConfigTable :exec
+DROP TABLE IF EXISTS field_plugin_config
+`
+
+func (q *Queries) DropFieldPluginConfigTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropFieldPluginConfigTable)
 	return err
 }
 
@@ -4573,6 +4707,29 @@ func (q *Queries) GetAdminField(ctx context.Context, arg GetAdminFieldParams) (A
 		&i.Translatable,
 		&i.Roles,
 		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getAdminFieldPluginConfig = `-- name: GetAdminFieldPluginConfig :one
+SELECT field_id, plugin_name, plugin_interface, plugin_version, date_created, date_modified FROM admin_field_plugin_config
+WHERE field_id = ? LIMIT 1
+`
+
+type GetAdminFieldPluginConfigParams struct {
+	FieldID types.NullableFieldID `json:"field_id"`
+}
+
+func (q *Queries) GetAdminFieldPluginConfig(ctx context.Context, arg GetAdminFieldPluginConfigParams) (AdminFieldPluginConfig, error) {
+	row := q.db.QueryRowContext(ctx, getAdminFieldPluginConfig, arg.FieldID)
+	var i AdminFieldPluginConfig
+	err := row.Scan(
+		&i.FieldID,
+		&i.PluginName,
+		&i.PluginInterface,
+		&i.PluginVersion,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -5646,6 +5803,29 @@ func (q *Queries) GetFieldDefinitionsByRoute(ctx context.Context, arg GetFieldDe
 		return nil, err
 	}
 	return items, nil
+}
+
+const getFieldPluginConfig = `-- name: GetFieldPluginConfig :one
+SELECT field_id, plugin_name, plugin_interface, plugin_version, date_created, date_modified FROM field_plugin_config
+WHERE field_id = ? LIMIT 1
+`
+
+type GetFieldPluginConfigParams struct {
+	FieldID types.NullableFieldID `json:"field_id"`
+}
+
+func (q *Queries) GetFieldPluginConfig(ctx context.Context, arg GetFieldPluginConfigParams) (FieldPluginConfig, error) {
+	row := q.db.QueryRowContext(ctx, getFieldPluginConfig, arg.FieldID)
+	var i FieldPluginConfig
+	err := row.Scan(
+		&i.FieldID,
+		&i.PluginName,
+		&i.PluginInterface,
+		&i.PluginVersion,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
 }
 
 const getFieldType = `-- name: GetFieldType :one
@@ -9138,6 +9318,46 @@ func (q *Queries) ListAdminFieldPaginated(ctx context.Context, arg ListAdminFiel
 	return items, nil
 }
 
+const listAdminFieldPluginConfigByPlugin = `-- name: ListAdminFieldPluginConfigByPlugin :many
+SELECT field_id, plugin_name, plugin_interface, plugin_version, date_created, date_modified FROM admin_field_plugin_config
+WHERE plugin_name = ?
+ORDER BY date_created
+`
+
+type ListAdminFieldPluginConfigByPluginParams struct {
+	PluginName string `json:"plugin_name"`
+}
+
+func (q *Queries) ListAdminFieldPluginConfigByPlugin(ctx context.Context, arg ListAdminFieldPluginConfigByPluginParams) ([]AdminFieldPluginConfig, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminFieldPluginConfigByPlugin, arg.PluginName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminFieldPluginConfig{}
+	for rows.Next() {
+		var i AdminFieldPluginConfig
+		if err := rows.Scan(
+			&i.FieldID,
+			&i.PluginName,
+			&i.PluginInterface,
+			&i.PluginVersion,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAdminFieldType = `-- name: ListAdminFieldType :many
 SELECT admin_field_type_id, type, label FROM admin_field_types
 ORDER BY label
@@ -11284,6 +11504,46 @@ func (q *Queries) ListFieldPaginated(ctx context.Context, arg ListFieldPaginated
 	return items, nil
 }
 
+const listFieldPluginConfigByPlugin = `-- name: ListFieldPluginConfigByPlugin :many
+SELECT field_id, plugin_name, plugin_interface, plugin_version, date_created, date_modified FROM field_plugin_config
+WHERE plugin_name = ?
+ORDER BY date_created
+`
+
+type ListFieldPluginConfigByPluginParams struct {
+	PluginName string `json:"plugin_name"`
+}
+
+func (q *Queries) ListFieldPluginConfigByPlugin(ctx context.Context, arg ListFieldPluginConfigByPluginParams) ([]FieldPluginConfig, error) {
+	rows, err := q.db.QueryContext(ctx, listFieldPluginConfigByPlugin, arg.PluginName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FieldPluginConfig{}
+	for rows.Next() {
+		var i FieldPluginConfig
+		if err := rows.Scan(
+			&i.FieldID,
+			&i.PluginName,
+			&i.PluginInterface,
+			&i.PluginVersion,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFieldType = `-- name: ListFieldType :many
 SELECT field_type_id, type, label FROM field_types
 ORDER BY label
@@ -13304,6 +13564,31 @@ func (q *Queries) UpdateAdminField(ctx context.Context, arg UpdateAdminFieldPara
 	return err
 }
 
+const updateAdminFieldPluginConfig = `-- name: UpdateAdminFieldPluginConfig :exec
+UPDATE admin_field_plugin_config
+SET plugin_name = ?, plugin_interface = ?, plugin_version = ?, date_modified = ?
+WHERE field_id = ?
+`
+
+type UpdateAdminFieldPluginConfigParams struct {
+	PluginName      string                `json:"plugin_name"`
+	PluginInterface string                `json:"plugin_interface"`
+	PluginVersion   string                `json:"plugin_version"`
+	DateModified    types.Timestamp       `json:"date_modified"`
+	FieldID         types.NullableFieldID `json:"field_id"`
+}
+
+func (q *Queries) UpdateAdminFieldPluginConfig(ctx context.Context, arg UpdateAdminFieldPluginConfigParams) error {
+	_, err := q.db.ExecContext(ctx, updateAdminFieldPluginConfig,
+		arg.PluginName,
+		arg.PluginInterface,
+		arg.PluginVersion,
+		arg.DateModified,
+		arg.FieldID,
+	)
+	return err
+}
+
 const updateAdminFieldSortOrder = `-- name: UpdateAdminFieldSortOrder :exec
 UPDATE admin_fields
 SET sort_order = ?
@@ -13761,6 +14046,31 @@ func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error 
 		arg.Roles,
 		arg.AuthorID,
 		arg.DateCreated,
+		arg.DateModified,
+		arg.FieldID,
+	)
+	return err
+}
+
+const updateFieldPluginConfig = `-- name: UpdateFieldPluginConfig :exec
+UPDATE field_plugin_config
+SET plugin_name = ?, plugin_interface = ?, plugin_version = ?, date_modified = ?
+WHERE field_id = ?
+`
+
+type UpdateFieldPluginConfigParams struct {
+	PluginName      string                `json:"plugin_name"`
+	PluginInterface string                `json:"plugin_interface"`
+	PluginVersion   string                `json:"plugin_version"`
+	DateModified    types.Timestamp       `json:"date_modified"`
+	FieldID         types.NullableFieldID `json:"field_id"`
+}
+
+func (q *Queries) UpdateFieldPluginConfig(ctx context.Context, arg UpdateFieldPluginConfigParams) error {
+	_, err := q.db.ExecContext(ctx, updateFieldPluginConfig,
+		arg.PluginName,
+		arg.PluginInterface,
+		arg.PluginVersion,
 		arg.DateModified,
 		arg.FieldID,
 	)
