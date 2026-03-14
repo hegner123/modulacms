@@ -39,7 +39,7 @@ Documentation for building plugins. If you are a CMS administrator, the [Managin
 
 - [Overview](plugins/overview.md) -- architecture, VM pool design, lifecycle states, how plugins interact with the CMS
 - [Tutorial](plugins/tutorial.md) -- build a bookmarks plugin from scratch, step by step
-- [Lua API Reference](plugins/lua-api.md) -- every function, parameter, and return value for db, http, hooks, log, and require
+- [Lua API Reference](plugins/lua-api.md) -- every function, parameter, and return value for db, http, hooks, log, tui, and require
 - [Configuration](plugins/configuration.md) -- all modula.config.json fields with tuning guidance and example configurations
 - [Security](plugins/security.md) -- sandbox, database isolation, circuit breakers, rate limiting, operation budgets
 - [Approval Workflow](plugins/approval.md) -- route and hook approval via CLI, API, and TUI
