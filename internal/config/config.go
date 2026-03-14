@@ -215,6 +215,10 @@ type Config struct {
 	MCP_Enabled bool   `json:"mcp_enabled"`
 	MCP_API_Key string `json:"mcp_api_key"` // API key for authenticating MCP clients
 
+	// Search
+	Search_Enabled bool   `json:"search_enabled"`
+	Search_Path    string `json:"search_path"`
+
 	KeyBindings KeyMap `json:"keybindings"`
 }
 
@@ -340,6 +344,9 @@ func (c Config) WebhookDeliveryRetentionDays() int {
 	}
 	return c.Webhook_Delivery_Retention_Days
 }
+
+// SearchEnabled returns whether search is enabled.
+func (c Config) SearchEnabled() bool { return c.Search_Enabled }
 
 // I18nEnabled returns whether internationalization is active.
 func (c Config) I18nEnabled() bool { return c.I18n_Enabled }

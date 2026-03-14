@@ -37,10 +37,10 @@ type Panel struct {
 	Height       int
 	Content      string
 	Focused      bool
-	TotalLines   int                            // total content lines; 0 = no scrollbar
-	ScrollOffset int                            // first visible line index
-	TabLabels    []string                       // tab labels for tab bar (shown when len > 1)
-	ActiveTab    int                            // index of the currently active tab
+	TotalLines   int         // total content lines; 0 = no scrollbar
+	ScrollOffset int         // first visible line index
+	TabLabels    []string    // tab labels for tab bar (shown when len > 1)
+	ActiveTab    int         // index of the currently active tab
 	Accent       color.Color // override accent; zero value uses DefaultStyle.Accent
 }
 
@@ -55,8 +55,10 @@ func (p Panel) Render() string {
 	}
 
 	borderColor := config.DefaultStyle.Tertiary
+	borderStyle := lipgloss.RoundedBorder()
 	if p.Focused {
 		borderColor = accent
+		borderStyle = lipgloss.DoubleBorder()
 	}
 
 	titleStyle := lipgloss.NewStyle().
@@ -108,16 +110,13 @@ func (p Panel) Render() string {
 
 	body := title + "\n" + tabBar + content
 
-	boxHeight := innerHeight + 1 // +1 for the title line
-	if showTabs {
-		boxHeight++ // +1 for the tab bar line
-	}
-
+	// lipgloss v2: Width/Height set the total block size including borders.
+	// lipgloss internally subtracts border dimensions, so pass full panel size.
 	box := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
+		Border(borderStyle).
 		BorderForeground(borderColor).
-		Width(innerWidth).
-		Height(boxHeight).
+		Width(p.Width).
+		Height(p.Height).
 		Render(body)
 
 	return box

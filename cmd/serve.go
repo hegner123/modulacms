@@ -17,9 +17,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/charmbracelet/ssh"
 	"charm.land/wish/v2"
 	"charm.land/wish/v2/logging"
+	"github.com/charmbracelet/ssh"
 	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/bucket"
 	"github.com/hegner123/modulacms/internal/config"
@@ -32,6 +32,7 @@ import (
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/router"
+	"github.com/hegner123/modulacms/internal/search"
 	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/tui"
 	"github.com/hegner123/modulacms/internal/utility"
@@ -211,6 +212,30 @@ Examples:
 			utility.DefaultLogger.Debug("Webhook dispatcher goroutine started, event channel open, HMAC signing active")
 		}
 
+		// Search index (nil if disabled).
+		var searchSvc *search.Service
+		if cfg.SearchEnabled() {
+			searchSvc = search.NewService(driver, search.SearchConfig{
+				K1:                  1.2,
+				B:                   0.75,
+				FieldWeights:        search.DefaultFieldWeights,
+				IndexableFieldTypes: search.DefaultIndexableFieldTypes,
+				StopWords:           search.DefaultConfig().StopWords,
+				MinTermLength:       1,
+				IndexPath:           cfg.Search_Path,
+				MaxResults:          100,
+				SnippetLength:       200,
+				DefaultLimit:        20,
+			})
+			if err := searchSvc.Start(rootCtx); err != nil {
+				utility.DefaultLogger.Error("search index failed to start", err)
+				// Non-fatal: CMS runs without search
+				searchSvc = nil
+			} else {
+				utility.DefaultLogger.Info("Search index loaded")
+			}
+		}
+
 		// SSH server — started before permission cache so it remains available
 		// even when the HTTP stack cannot initialize (e.g. missing bootstrap data).
 		sshServer, err := wish.NewServer(
@@ -310,7 +335,7 @@ Examples:
 				}
 			}
 
-			mux := router.NewModulaMux(mgr, bridge, driver, pc, emailSvc, dispatcher, svc)
+			mux := router.NewModulaMux(mgr, bridge, driver, pc, emailSvc, dispatcher, svc, searchSvc)
 
 			var hookRunner audited.HookRunner
 			if pluginManager != nil {
@@ -487,6 +512,13 @@ Examples:
 		if err := sshServer.Shutdown(shutdownCtx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
 			utility.DefaultLogger.Error("SSH server shutdown error:", err)
 			return err
+		}
+
+		// Flush search index to disk before shutting down.
+		if searchSvc != nil {
+			if err := searchSvc.Stop(); err != nil {
+				utility.DefaultLogger.Error("search index shutdown error", err)
+			}
 		}
 
 		// Clean up the plugin API token before shutting down the plugin

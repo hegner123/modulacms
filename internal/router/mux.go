@@ -13,11 +13,12 @@ import (
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/publishing"
+	"github.com/hegner123/modulacms/internal/search"
 	"github.com/hegner123/modulacms/internal/service"
 	"golang.org/x/time/rate"
 )
 
-func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher, svc *service.Registry) *http.ServeMux {
+func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher, svc *service.Registry, searchSvc *search.Service) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	c, err := mgr.Config()
@@ -578,6 +579,18 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	mux.HandleFunc("/api/v1/content/", func(w http.ResponseWriter, r *http.Request) {
 		SlugHandler(w, r, svc)
 	})
+
+	// Search endpoint (PUBLIC — no auth, indexes published content only)
+	if searchSvc != nil {
+		mux.HandleFunc("GET /api/v1/search", func(w http.ResponseWriter, r *http.Request) {
+			SearchHandler(w, r, searchSvc)
+		})
+
+		// Admin rebuild endpoint
+		mux.Handle("POST /api/v1/admin/search/rebuild", middleware.RequirePermission("search:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			SearchRebuildHandler(w, r, searchSvc)
+		})))
+	}
 
 	// HTMX admin panel
 	registerAdminRoutes(mux, mgr, driver, pc, emailSvc, dispatcher, svc)

@@ -987,6 +987,47 @@ func TestDatabase_CreateBootstrapData_Success(t *testing.T) {
 	if err := d.ValidateBootstrapData(); err != nil {
 		t.Fatalf("ValidateBootstrapData: %v", err)
 	}
+
+	// Run cleanup to remove all verification-only records
+	if err := d.CleanupBootstrapData(); err != nil {
+		t.Fatalf("CleanupBootstrapData: %v", err)
+	}
+
+	// Verify all verification tables are empty
+	type countCheck struct {
+		name  string
+		count func() (*int64, error)
+	}
+	checks := []countCheck{
+		{"content_fields", d.CountContentFields},
+		{"content_data", d.CountContentData},
+		{"fields", d.CountFields},
+		{"datatypes", d.CountDatatypes},
+		{"routes", d.CountRoutes},
+		{"admin_content_fields", d.CountAdminContentFields},
+		{"admin_content_data", d.CountAdminContentData},
+		{"admin_fields", d.CountAdminFields},
+		{"admin_datatypes", d.CountAdminDatatypes},
+		{"admin_routes", d.CountAdminRoutes},
+		{"media", d.CountMedia},
+		{"media_dimensions", d.CountMediaDimensions},
+		{"tokens", d.CountTokens},
+		{"sessions", d.CountSessions},
+		{"user_oauth", d.CountUserOauths},
+	}
+	for _, c := range checks {
+		n, err := c.count()
+		if err != nil {
+			t.Fatalf("Count %s after cleanup: %v", c.name, err)
+		}
+		if n == nil || *n != 0 {
+			actual := int64(-1)
+			if n != nil {
+				actual = *n
+			}
+			t.Errorf("expected 0 %s after cleanup, got %d", c.name, actual)
+		}
+	}
 }
 
 func TestDatabase_ValidateBootstrapData_EmptyTables(t *testing.T) {

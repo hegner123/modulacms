@@ -203,7 +203,7 @@ func (m Model) HandleCreateContentFromDialog(
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
 			ParentID:      msg.ParentID,
-			RootID:        rootID, // Set for child nodes; NULL for root nodes (updated in Step 1.5)
+			RootID:        rootID,                    // Set for child nodes; NULL for root nodes (updated in Step 1.5)
 			FirstChildID:  types.NullableContentID{}, // NULL - no children initially
 			NextSiblingID: types.NullableContentID{}, // NULL - no siblings initially
 			PrevSiblingID: types.NullableContentID{}, // NULL - no siblings initially

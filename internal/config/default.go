@@ -120,6 +120,10 @@ func DefaultConfig() Config {
 	c.Webhook_Allow_HTTP = false
 	c.Webhook_Delivery_Retention_Days = 30
 
+	// Default search settings
+	c.Search_Enabled = false
+	c.Search_Path = "search.idx"
+
 	c.Node_ID = string(types.NewNodeID())
 
 	c.KeyBindings = DefaultKeyMap()

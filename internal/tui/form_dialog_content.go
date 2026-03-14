@@ -268,6 +268,17 @@ func (d *ContentFormDialogModel) OverlayUpdate(msg tea.KeyPressMsg) (ModalOverla
 	return &updated, cmd
 }
 
+// OverlayTick forwards non-key messages (cursor blink, etc.) to the
+// focused field bubble so it can animate and re-render correctly.
+func (d *ContentFormDialogModel) OverlayTick(msg tea.Msg) (ModalOverlay, tea.Cmd) {
+	if d.focusIndex < len(d.Fields) {
+		var cmd tea.Cmd
+		d.Fields[d.focusIndex].Bubble, cmd = d.Fields[d.focusIndex].Bubble.Update(msg)
+		return d, cmd
+	}
+	return d, nil
+}
+
 // OverlayView implements ModalOverlay for ContentFormDialogModel.
 func (d *ContentFormDialogModel) OverlayView(width, height int) string {
 	return d.Render(width, height)

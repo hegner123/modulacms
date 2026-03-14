@@ -1656,7 +1656,7 @@ func ContentPublishHandler(driver db.DbDriver, mgr *config.Manager, dispatcher p
 
 		contentID := types.ContentID(id)
 		locale := r.URL.Query().Get("locale")
-		_, pubErr := publishing.PublishContent(r.Context(), driver, contentID, locale, user.UserID, ac, cfg.VersionMaxPerContent(), dispatcher)
+		_, pubErr := publishing.PublishContent(r.Context(), driver, contentID, locale, user.UserID, ac, cfg.VersionMaxPerContent(), dispatcher, nil)
 		if pubErr != nil {
 			utility.DefaultLogger.Error("admin publish content failed", pubErr)
 			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Publish failed: %s", "type": "error"}}`, pubErr.Error())
@@ -1702,7 +1702,7 @@ func ContentUnpublishHandler(driver db.DbDriver, mgr *config.Manager, dispatcher
 
 		contentID := types.ContentID(id)
 		locale := r.URL.Query().Get("locale")
-		unpubErr := publishing.UnpublishContent(r.Context(), driver, contentID, locale, user.UserID, ac, dispatcher)
+		unpubErr := publishing.UnpublishContent(r.Context(), driver, contentID, locale, user.UserID, ac, dispatcher, nil)
 		if unpubErr != nil {
 			utility.DefaultLogger.Error("admin unpublish content failed", unpubErr)
 			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Unpublish failed: %s", "type": "error"}}`, unpubErr.Error())

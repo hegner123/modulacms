@@ -22,13 +22,15 @@ Completed: 2026-03-14
 | DB Export crashes TUI (FINDING-014) | Critical | Changed log.Fatal to log.Ferror in all 15 DumpSql calls |
 | `q` exits without confirmation (FINDING-001) | Medium | Changed HandleCommonKeys to show ShowQuitConfirmDialogMsg instead of tea.Quit |
 | Content list no refresh after create (FINDING-002) | Medium | Added RootContentSummaryFetchCmd to ContentCreatedFromDialogMsg handler |
-| Escape key trap / search exit (FINDING-007/008) | High | Added overlay and search guards to esc handler in update.go |
-| Form text input display lag (FINDING-009) | Medium | Added OverlayTicker interface + OverlayTick on FormDialogModel |
+| Escape key trap / search exit (FINDING-007/008) | High | Added overlay, search, and file picker guards to esc handler in update.go |
+| Form text input display lag (FINDING-009) | Medium | Added OverlayTicker interface + OverlayTick on FormDialogModel + ContentFormDialogModel |
 | Form button contrast (FINDING-010) | Medium | Removed background from unfocused buttons, matching dialog.go pattern |
 | Child type list non-deterministic (FINDING-005) | Low | Added slices.SortFunc by sort_order then label in filterChildDatatypes |
 | Fields panel stale after search (FINDING-006) | Low | Added fetchFieldsForCurrentDT to search keystroke handler |
 | Search cursor reset on escape (FINDING-011) | Medium | Save selected datatype ID before clearing search, restore position in rebuilt list |
 | Tree no refresh after delete (FINDING-017) | Medium | Added RootContentSummaryFetchCmd to ContentDeletedMsg handler |
+| Content form display lag (FINDING-009 partial) | Low | Added OverlayTick on ContentFormDialogModel forwarding ticks to focused FieldBubble |
+| File picker escape kills process (FINDING-016) | Medium | Added `FilePickerActive` guard in global escape handler before quit dialog fallback |
 
 ## Feature Added During QA
 
@@ -41,14 +43,12 @@ Completed: 2026-03-14
 
 ## Open Findings
 
-| Finding | Severity | Description |
-|---------|----------|-------------|
-| FINDING-009 (partial) | Low | Form display lag partially fixed — focused field renders live, other fields still show placeholders until focus cycles. Data capture is correct. |
-| FINDING-012 | Low | Panel focus indicator is color-only — not accessible on monochrome terminals |
-| FINDING-013 | High | DB Export missing embedded scripts (dump_sql.sh, dump_mysql.sh, dump_psql.sh) — feature incomplete, requires Docker tooling |
-| FINDING-015 | Low | File picker starts at $HOME, not project/backups directory |
-| FINDING-016 | Medium | File picker escape doesn't close cleanly — second escape kills process |
-| Media edit | Low | No metadata edit capability in TUI for media items (spec written: TUI_MEDIA_FIELD_SPEC.md) |
+| Finding | Severity | Description | Root Cause | Fix |
+|---------|----------|-------------|------------|-----|
+| FINDING-012 | Low | Panel focus indicator is color-only — not accessible on monochrome terminals. | panel.go:57-59 distinguishes focus solely by `borderColor` (Tertiary vs Accent). Both use `RoundedBorder()`. | Add non-color indicator: bold title, `DoubleBorder()` for focused panel, or focus glyph prefix. |
+| FINDING-013 | High | DB Export (`DumpSql()`) uses embedded shell scripts with bugs. PostgreSQL variant passes wrong args (2 instead of 4) and wrong filename prefix ("sqlite" instead of "psql"). | `PsqlDatabase.DumpSql()` in db.go passes `(Db_Name, "sqlite"+t+".sql")` to a script expecting `(username, password, database, output_file)`. | Superseded by PLUGIN_DB_EXPORTER plan (ai/plans/db/PLUGIN_DB_EXPORTER.md). Once `DeployOps.IntrospectColumns` + `QueryAllRows` are implemented, `DumpSql()` should be rewritten in pure Go using those methods — no shell scripts, no external tool dependencies. |
+| FINDING-015 | Low | File picker starts at $HOME, not project/backups directory for RESTORE operations. | update_dialog.go:210 hardcodes `fp.CurrentDirectory, _ = os.UserHomeDir()`. | Use `filepath.Join(cfg.Backup_Option, "backups")` with fallback to `UserHomeDir()`. |
+| Media edit | Low | No metadata edit capability in TUI for media items. | `media` field type has no registered bubble in type_registry.go — falls back to `TextBubble` (manual ULID entry). | Implement spec in ai/plans/TUI_MEDIA_FIELD_SPEC.md: create `bubble_media.go`, register `media` type in field bubble registry. |
 
 ## Screens Verified
 
@@ -76,8 +76,8 @@ All 18 screens tested with real data:
 
 ## Key Metrics
 
-- **12 bugs fixed** during QA (3 critical, 4 medium, 2 high, 3 low)
-- **6 open findings** remaining (0 critical, 1 high, 1 medium, 4 low)
+- **14 bugs fixed** during QA (3 critical, 5 medium, 2 high, 4 low)
+- **4 open findings** remaining (0 critical, 1 high, 0 medium, 3 low)
 - **1 feature added** (Webhooks CRUD)
 - **92 tests passing** across 108 total
 - **16 skipped** (require external infrastructure: SSH, plugins, deploy environments)

@@ -37,6 +37,14 @@ func CreateDb(path string, c *config.Config, adminHash string) error {
 		return nil
 	})
 
+	progress.AddStep("Bootstrap cleanup", "Removing verification records from content tables", func() error {
+		err := d.CleanupBootstrapData()
+		if err != nil {
+			return ErrDBBootstrap(err)
+		}
+		return nil
+	})
+
 	return progress.Run()
 }
 
@@ -55,6 +63,11 @@ func CreateDbSimple(path string, c *config.Config, adminHash string) error {
 	}
 
 	err = d.ValidateBootstrapData()
+	if err != nil {
+		return ErrDBBootstrap(err)
+	}
+
+	err = d.CleanupBootstrapData()
 	if err != nil {
 		return ErrDBBootstrap(err)
 	}

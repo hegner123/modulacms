@@ -110,7 +110,10 @@ When a subscribed event occurs, ModulaCMS POSTs a JSON payload to the webhook UR
   "occurred_at": "2026-03-07T14:30:00Z",
   "data": {
     "content_data_id": "01JNRWBM4FNRZ7R5N9X4C6K8DM",
-    "version_number": 3
+    "content_version_id": "01JNRWEP7HNTZ0T8R2A5C9L6GT",
+    "version_number": 3,
+    "locale": "",
+    "published_by": "01JNRWAM3ENRZ7R5N9X4C6K8DL"
   }
 }
 ```
@@ -134,7 +137,7 @@ Any custom headers configured on the webhook are also included.
 |--------|-------------|
 | `pending` | Queued for delivery |
 | `success` | Delivered successfully (2xx response) |
-| `failed` | Delivery failed (non-2xx response or network error) |
+| `failed` | Permanently failed after exhausting all retry attempts |
 | `retrying` | Queued for retry after a previous failure |
 
 ## Delivery History
@@ -334,8 +337,12 @@ Webhook-related configuration in `modula.config.json`:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
+| `webhook_enabled` | bool | `false` | Enable the webhook dispatcher. Required for any webhook delivery. |
 | `webhook_allow_http` | bool | `false` | Allow HTTP (non-HTTPS) webhook URLs |
-| `webhook_timeout` | int | 10 | Timeout in seconds for webhook delivery requests |
+| `webhook_timeout` | int | `10` | Timeout in seconds for webhook delivery requests |
+| `webhook_max_retries` | int | `3` | Maximum delivery attempts before marking as permanently failed |
+| `webhook_workers` | int | `4` | Number of concurrent delivery worker goroutines |
+| `webhook_delivery_retention_days` | int | `30` | Days to retain delivery history records |
 
 ## Notes
 
@@ -343,3 +350,5 @@ Webhook-related configuration in `modula.config.json`:
 - **SSRF protection.** Webhook URLs are validated to prevent server-side request forgery. Private IP ranges, loopback addresses, and non-HTTPS URLs are blocked by default.
 - **Wildcard events.** Use `["*"]` in the events list to subscribe to all event types, including any added in future versions.
 - **No redirects.** Webhook delivery does not follow HTTP redirects. A redirect response is treated as a non-2xx status.
+- **Must be enabled.** Webhooks require `"webhook_enabled": true` in `modula.config.json`. Without it, the dispatcher is not created and all webhook events silently no-op.
+- **Automatic retries.** Failed deliveries are retried with exponential backoff: 1 minute, 5 minutes, then 30 minutes. After `webhook_max_retries` attempts (default 3), the delivery is marked as permanently failed. A background process checks for retryable deliveries every 60 seconds.

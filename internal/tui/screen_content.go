@@ -56,11 +56,11 @@ type ContentScreen struct {
 	AdminRootDatatypes      []db.AdminDatatypes
 
 	// Tree browsing phase (entered after selecting a route or root_id)
-	PageRouteId      types.RouteID
-	AdminPageRouteId types.AdminRouteID
-	PageRootId       types.ContentID
-	AdminPageRootId  types.AdminContentID
-	Root             tree.Root
+	PageRouteId            types.RouteID
+	AdminPageRouteId       types.AdminRouteID
+	PageRootId             types.ContentID
+	AdminPageRootId        types.AdminContentID
+	Root                   tree.Root
 	SelectedDatatypeID     types.DatatypeID
 	PendingCursorContentID types.ContentID
 

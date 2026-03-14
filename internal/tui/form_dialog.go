@@ -51,8 +51,8 @@ const (
 	FORMDIALOGCHILDADMINDATATYPE          FormDialogAction = "child_admin_datatype"
 	FORMDIALOGADDADMINCONTENTFIELD        FormDialogAction = "add_admin_content_field"
 	FORMDIALOGEDITADMINSINGLEFIELD        FormDialogAction = "edit_admin_single_field"
-	FORMDIALOGCREATEWEBHOOK              FormDialogAction = "create_webhook"
-	FORMDIALOGEDITWEBHOOK                FormDialogAction = "edit_webhook"
+	FORMDIALOGCREATEWEBHOOK               FormDialogAction = "create_webhook"
+	FORMDIALOGEDITWEBHOOK                 FormDialogAction = "edit_webhook"
 )
 
 // FormDialogField constants define focus indices for dialog fields.

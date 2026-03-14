@@ -18,6 +18,12 @@ type WebhookDispatcher interface {
 	Dispatch(ctx context.Context, event string, data map[string]any)
 }
 
+// SearchIndexer is called after successful publish/unpublish to update the search index.
+type SearchIndexer interface {
+	OnPublish(snapshot *Snapshot, version db.ContentVersion)
+	OnUnpublish(contentDataID string)
+}
+
 // PruneExcessVersions removes the oldest unlabeled, unpublished versions that
 // exceed the retention cap. It counts total versions first and only deletes the
 // excess (total - cap). If cap is 0, pruning is disabled (unlimited retention).
@@ -191,7 +197,7 @@ func BuildSnapshot(d db.DbDriver, ctx context.Context, rootID types.ContentID, l
 // publishing stale data. retentionCap: max versions to keep (0 = unlimited).
 // locale specifies which locale to snapshot ("" for all fields / i18n disabled).
 // Async pruning runs after return.
-func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, locale string, userID types.UserID, ac audited.AuditContext, retentionCap int, dispatcher WebhookDispatcher) (*db.ContentVersion, error) {
+func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, locale string, userID types.UserID, ac audited.AuditContext, retentionCap int, dispatcher WebhookDispatcher, indexer SearchIndexer) (*db.ContentVersion, error) {
 	// 1. Read root's current revision for TOCTOU guard.
 	root, err := d.GetContentData(rootID)
 	if err != nil {
@@ -275,13 +281,18 @@ func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, 
 		})
 	}
 
+	// 11. Update search index.
+	if indexer != nil {
+		indexer.OnPublish(snapshot, *version)
+	}
+
 	return version, nil
 }
 
 // UnpublishContent clears the published flag on all versions for the given
 // content data and locale, and resets the publish metadata to draft status.
 // locale specifies which locale to unpublish ("" for i18n disabled).
-func UnpublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, locale string, userID types.UserID, ac audited.AuditContext, dispatcher WebhookDispatcher) error {
+func UnpublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, locale string, userID types.UserID, ac audited.AuditContext, dispatcher WebhookDispatcher, indexer SearchIndexer) error {
 	// 1. Clear published flag on all versions for this content+locale.
 	if err := d.ClearPublishedFlag(rootID, locale); err != nil {
 		return fmt.Errorf("clear published flag: %w", err)
@@ -307,6 +318,11 @@ func UnpublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID
 			"locale":          locale,
 			"unpublished_by":  userID.String(),
 		})
+	}
+
+	// 4. Update search index.
+	if indexer != nil {
+		indexer.OnUnpublish(rootID.String())
 	}
 
 	return nil

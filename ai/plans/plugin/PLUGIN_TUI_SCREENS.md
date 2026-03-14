@@ -112,7 +112,7 @@ CREATE TABLE admin_field_plugin_config (
 );
 ```
 
-This follows the same extension-table pattern as `plugin_routes`, `plugin_hooks`, and `plugin_requests` — separate table with approval/config data, FK back to the parent entity, CASCADE on delete.
+This uses a dedicated extension table pattern with FK back to the parent entity and CASCADE on delete. Note: the existing plugin tables (`plugin_routes`, `plugin_hooks`, `plugin_requests`) use a different pattern — raw DDL managed in Go code with composite primary keys and no foreign key constraints. The `field_plugin_config` table is sqlc-managed with a proper FK to `fields`, which is the correct pattern for field-level extension data.
 
 **Why not the `data` JSON column?** The `data` TEXT column on `fields` stores field-type-specific config as opaque JSON (e.g., min/max for numbers, options for selects). Using it for plugin identity has three problems: (1) JSON extraction syntax differs across SQLite/MySQL/PostgreSQL, making queries unreliable in the tri-database pattern; (2) `plugin_name` and `plugin_interface` are identity — they define what the field IS, not how it's configured; (3) a dedicated table is queryable with `WHERE plugin_name = ?` for listing all fields bound to a plugin.
 
@@ -297,13 +297,22 @@ coroutine.yield({ action = "confirm", title = "Delete?", message = "This cannot 
 -- Show a toast notification (non-blocking)
 coroutine.yield({ action = "toast", message = "Item saved", level = "success" })
 
--- Start async data fetch (result delivered as "data" event)
+-- Start async data READ via the existing DatabaseAPI (result delivered as "data" event).
+-- The fetch action executes against the plugin's own DatabaseAPI instance, which enforces
+-- operation budgets, table access policies, and condition validation. The query/params
+-- map to DatabaseAPI.luaQuery() with the same condition sentinel syntax (__op, __val).
+-- Plugins can only query tables they created or tables approved via CoreTableAPI.
 coroutine.yield({ action = "fetch", id = "load_items", query = "tasks", params = { where = { status = "active" } } })
 
--- Start async mutation (result delivered as "data" event)
+-- Start async WRITE via the existing DatabaseAPI (result delivered as "data" event).
+-- The `mutation` field distinguishes writes from reads: when `mutation` is present, the
+-- Go handler calls luaInsert/luaUpdate/luaDelete instead of luaQuery. The `mutation`
+-- value must be one of "insert", "update", "delete". Same operation budget and table access controls.
 coroutine.yield({ action = "fetch", id = "save", mutation = "update", query = "tasks", params = { set = { status = "done" }, where = { id = "123" } } })
 
--- Start async HTTP request (result delivered as "data" event)
+-- Start async HTTP request via the existing RequestEngine (result delivered as "data" event).
+-- Uses the full RequestEngine pipeline: SSRF protection, domain approval check, circuit
+-- breaker, per-domain rate limiting, global rate limiting, response size limits.
 coroutine.yield({ action = "request", id = "api_call", method = "GET", url = "https://example.com/api" })
 
 -- Commit a value and close (field interfaces only)
@@ -319,11 +328,11 @@ coroutine.yield({ action = "quit" })
 ### Events (Go → Lua on Resume)
 
 ```lua
--- Initialization
-{ type = "init", width = 120, height = 40, params = { id = "123" } }
+-- Initialization (protocol_version enables future backward-compatible changes)
+{ type = "init", protocol_version = 1, width = 120, height = 40, params = { id = "123" } }
 
 -- Field interface initialization (includes current field value)
-{ type = "init", width = 60, height = 3, value = "#ff0000", config = { ... } }
+{ type = "init", protocol_version = 1, width = 60, height = 3, value = "#ff0000", config = { ... } }
 
 -- Key press
 { type = "key", key = "j" }
@@ -401,8 +410,12 @@ func (b *PluginFieldBubble) View() string {
     // Render b.primitive within b.width x b.height
 }
 
-func (b *PluginFieldBubble) Value() string { return b.value }
+func (b *PluginFieldBubble) Value() string    { return b.value }
 func (b *PluginFieldBubble) SetValue(v string) { b.value = v }
+func (b *PluginFieldBubble) SetWidth(w int)    { b.width = w }
+func (b *PluginFieldBubble) Focus() tea.Cmd    { b.focused = true; /* resume with { type = "focus" } */ return nil }
+func (b *PluginFieldBubble) Blur()             { b.focused = false; /* resume with { type = "blur" } */ }
+func (b *PluginFieldBubble) Focused() bool     { return b.focused }
 ```
 
 #### Overlay Mode
@@ -446,13 +459,15 @@ type PluginFieldOverlay struct {
     committed bool
 }
 
-func (o *PluginFieldOverlay) OverlayUpdate(msg tea.KeyMsg) (ModalOverlay, tea.Cmd)
+func (o *PluginFieldOverlay) OverlayUpdate(msg tea.KeyPressMsg) (ModalOverlay, tea.Cmd)
 func (o *PluginFieldOverlay) OverlayView(width, height int) string
 ```
 
 When the overlay closes, the `PluginFieldBubble` reads the committed value and updates its internal state.
 
 ### In the Admin Panel
+
+Plugin field interfaces require dual implementation: a Lua coroutine for the TUI and a JavaScript web component for the admin panel. The coroutine bridge is a terminal-specific mechanism — JavaScript cannot run Lua coroutines in the browser. Plugin authors who need custom field UIs in both surfaces must build both. This is an intentional tradeoff: the admin panel and TUI are fundamentally different rendering environments, and forcing a single abstraction across both would compromise both experiences. Plugins that only need TUI support can skip the web component entirely — the admin panel will show the raw field value with a text input fallback.
 
 When `mcms-field-renderer` encounters type `plugin`:
 
@@ -462,7 +477,9 @@ When `mcms-field-renderer` encounters type `plugin`:
 
 **Inline mode**: Load a web component served by the plugin's approved HTTP route at `/api/v1/plugins/<plugin>/interface/<interface>`. The plugin registers this route like any other HTTP route. The web component must dispatch `field-change` custom events (same contract as all admin field renderers).
 
-**Overlay mode**: Show a button with the current value display. On click, open a modal that loads the plugin's web UI. The modal communicates the committed value back via a custom event.
+**Overlay mode**: Show a button with the current value display. On click, open a modal that loads the plugin's web UI. The modal captures the committed value via a custom event and dispatches `field-change`.
+
+**Fallback (no web component registered)**: Render a plain text input with the raw field value. The field remains functional — operators can view and edit the opaque string directly.
 
 This is an extension point in the existing `mcms-field-renderer.js` `connectedCallback()` switch statement — one new case for `plugin`.
 
@@ -527,11 +544,12 @@ end
 | `internal/plugin/ui_primitives.go` | Lua table → Go primitive conversion (layout parser) |
 | `internal/plugin/ui_renderer.go` | Go primitives → styled string rendering |
 | `internal/plugin/ui_api.go` | Register `tui` Lua module with helper constructors |
+| `internal/plugin/ui_pool.go` | `UIVMPool` — Separate VM pool for long-held UI coroutines |
 | `internal/tui/screen_plugin_tui.go` | `PluginTUIScreen` — Screen impl for standalone screens |
 | `internal/tui/bubble_plugin.go` | `PluginFieldBubble` — FieldBubble impl for plugin fields |
 | `internal/tui/overlay_plugin.go` | `PluginFieldOverlay` — ModalOverlay impl for overlay-mode fields |
 | `internal/tui/commands_plugin_tui.go` | tea.Cmd functions for plugin UI lifecycle |
-| `sql/schema/XX_field_plugin_config/` | Schema + queries for `field_plugin_config` and `admin_field_plugin_config` (all 3 dialects) |
+| `sql/schema/<next>_field_plugin_config/` | Schema + queries for `field_plugin_config` and `admin_field_plugin_config` (all 3 dialects). Use the next available number after the highest existing schema directory. |
 | `internal/db/field_plugin_config.go` | DbDriver wrapper methods for extension table CRUD |
 
 ### CoroutineBridge
@@ -540,12 +558,13 @@ Shared by screens, inline interfaces, and overlay interfaces. Manages one corout
 
 ```go
 type CoroutineBridge struct {
-    parentL  *lua.LState      // checked out from VMPool
-    thread   *lua.LState      // child coroutine
-    entryFn  *lua.LFunction   // screen(ctx) or interface(ctx)
-    plugin   *PluginInstance
-    started  bool
-    done     bool
+    parentL      *lua.LState      // checked out from UIVMPool
+    thread       *lua.LState      // child coroutine
+    entryFn      *lua.LFunction   // screen(ctx) or interface(ctx)
+    plugin       *PluginInstance
+    started      bool
+    done         bool
+    renderingUI  bool              // true while coroutine is active; used by UI pool drain
 }
 
 func NewCoroutineBridge(plugin *PluginInstance, L *lua.LState, fn *lua.LFunction) *CoroutineBridge
@@ -586,6 +605,7 @@ type PluginTUIScreen struct {
 func (s *PluginTUIScreen) PageIndex() PageIndex { return PLUGINTUIPAGE }
 func (s *PluginTUIScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd)
 func (s *PluginTUIScreen) View(ctx AppContext) string
+// PluginTUIScreen also implements KeyHinter (separate optional interface in screen.go)
 func (s *PluginTUIScreen) KeyHints(km config.KeyMap) []KeyHint
 ```
 
@@ -801,7 +821,7 @@ end
 
 ### Type Registry
 
-Register `plugin` in `type_registry.go`:
+Register `plugin` in `type_registry.go`. The `NewBubble` factory creates an unconfigured `PluginFieldBubble` — the coroutine bridge is NOT initialized here. Configuration happens post-construction in the content form dialog where `AppContext` (and thus `PluginManager`) is available.
 
 ```go
 func init() {
@@ -816,24 +836,37 @@ func init() {
 
 ### Content Form Dialog
 
-In `form_dialog_content.go`, the `resolveFieldInput` function already resolves the FieldBubble by type. For type `plugin`, the `PluginFieldBubble` is created and initialized:
+The `resolveFieldInput` function in `uiconfig_form_dialog.go` takes `db.Fields` and has no access to `AppContext` or `PluginManager`. The plugin field configuration must happen after construction. Add a `ConfigurePluginFields(ctx AppContext)` method on `ContentFormDialogModel` that the caller invokes after `NewContentFormDialog` returns and before the dialog is shown. This method iterates the dialog's field inputs and configures any plugin bubbles:
 
 ```go
-case "plugin":
-    bubble := NewPluginFieldBubble()
-    // Look up plugin binding from extension table
-    pluginCfg, err := driver.GetFieldPluginConfig(ctx, field.FieldID) // or GetAdminFieldPluginConfig for admin fields
-    if err != nil {
-        bubble.SetError(fmt.Errorf("plugin config not found for field %s", field.FieldID))
-    } else {
+// ConfigurePluginFields configures PluginFieldBubble instances that were created
+// unconfigured by the type registry. Must be called after NewContentFormDialog
+// and before the dialog processes any messages.
+func (m *ContentFormDialogModel) ConfigurePluginFields(ctx AppContext) {
+    for _, field := range m.fieldInputs {
+        if field.Type != "plugin" {
+            continue
+        }
+        bubble, ok := field.Bubble.(*PluginFieldBubble)
+        if !ok {
+            continue
+        }
+        pluginCfg, err := ctx.DB.GetFieldPluginConfig(context.Background(), field.FieldID)
+        // Use GetAdminFieldPluginConfig when ctx.AdminMode is true
+        if err != nil {
+            bubble.SetError(fmt.Errorf("plugin config not found for field %s", field.FieldID))
+            continue
+        }
         bubble.Configure(ctx.PluginManager, pluginCfg.PluginName, pluginCfg.PluginInterface)
     }
-    bubble.SetValue(existingValue)
+}
 ```
+
+Callers that create content form dialogs (in `commands.go` and `update.go`) call `dialog.ConfigurePluginFields(ctx)` immediately after construction. Non-plugin paths are unaffected — the loop is a no-op when no plugin fields exist.
 
 The `Configure` call:
 1. Looks up the plugin instance
-2. Checks out an LState from the pool
+2. Checks out an LState from the UI VM pool
 3. Loads `interfaces/<name>.lua`
 4. Extracts the `interface` function
 5. Creates a CoroutineBridge
@@ -841,7 +874,7 @@ The `Configure` call:
 
 ### Navigation
 
-Visible plugin screens appear in the TUI sidebar under a "Plugins" group. The page system gets a new `PLUGINTUIPAGE` page index. Selecting a plugin screen entry creates a `PluginTUIScreen` and pushes it onto the navigation history.
+Visible plugin screens appear in the TUI sidebar under a "Plugins" group. The page system gets a new `PLUGINTUIPAGE` page index (added to `pages.go` constants). The `screenForPage` function in `screen.go` needs a new case for `PLUGINTUIPAGE`. Selecting a plugin screen entry creates a `PluginTUIScreen` and pushes it onto the navigation history.
 
 ## Admin Panel Integration Points
 
@@ -889,23 +922,55 @@ tui.select(id, options, selected)
 tui.tree(nodes, cursor)
 ```
 
-These are pure functions that build tables — no side effects, no I/O. Plugins can also build tables by hand.
+These are pure convenience functions that build tables — no side effects, no I/O, no defaulting logic. `tui.list(items, cursor)` produces the exact same table as `{ type = "list", items = items, cursor = cursor }`. Plugins can build tables by hand and get identical behavior — the `tui` module is purely sugar.
 
 ## VM Pool Impact
 
-A plugin with UI declarations needs additional VMs:
+UI VMs are held for the lifetime of a screen or field interface — fundamentally different from the existing pool's short-checkout model (100ms `acquireTimeout`). A separate UI VM pool is required.
 
-- Standard pool: 4 general + 1 reserved = 5 VMs
-- With UI: +1 per concurrent screen/interface viewer
+### Separate UI VM Pool
 
-Each active plugin screen or field interface holds one VM for its lifetime. For screens, that's until the user navigates away. For field interfaces, that's until the content form dialog closes.
+Each plugin with UI declarations gets a dedicated `UIVMPool` alongside its existing `VMPool`. The UI pool has different semantics:
+
+- **No acquisition timeout** — VMs are checked out when screens/fields open and held indefinitely
+- **Bounded size** — `MaxUIVMs` caps concurrent UI sessions per plugin (default 4)
+- **Independent drain** — UI VMs track a `renderingUI` flag on the `CoroutineBridge`; the standard pool's `Drain()` does not wait for UI VMs
 
 ```go
 // ManagerConfig addition
-MaxUIVMs int // Additional VMs for screens/interfaces (default 2)
+MaxUIVMs int // UI VM pool size per plugin (default 4)
 ```
 
-Pool exhaustion shows "Plugin busy" instead of blocking.
+### Sizing
+
+- Standard pool: 3 general + 1 reserved = 4 VMs total per `MaxVMsPerPlugin` default (unchanged, for hooks/HTTP/DB)
+- UI pool: `MaxUIVMs` VMs per plugin (default 4)
+- Each active plugin screen or field interface holds one UI VM for its lifetime
+
+In a multi-user SSH environment, each concurrent SSH session editing a plugin field or viewing a plugin screen consumes one UI VM. With the default of 4, four operators can use plugin UIs simultaneously per plugin.
+
+Pool exhaustion shows "Plugin busy" instead of blocking. The standard pool is unaffected by UI activity.
+
+### Hot Reload and Drain
+
+Each `CoroutineBridge` carries a `renderingUI bool` flag set to `true` while the coroutine is active. During hot reload:
+
+1. Standard pool `Drain()` proceeds normally — UI VMs are in a separate pool
+2. UI pool marks `draining` to reject new checkouts
+3. Active UI coroutines continue running on old VMs until the user navigates away or the form closes
+4. When the coroutine finishes (user leaves screen, form closes), the old VM is closed (not returned to the new pool)
+5. New screen/field opens get VMs from the reloaded UI pool with fresh code
+
+## Remote Mode (`IsRemote == true`)
+
+Remote mode support for plugin UIs is deferred to a future implementation phase. The coroutine bridge requires a local `PluginManager` with VM pools, but in remote mode no plugins are loaded locally — the `RemoteDriver` provides only `DbDriver` over HTTPS, not plugin execution.
+
+When `IsRemote == true`:
+- **Plugin screens** do not appear in the sidebar navigation. The sidebar query for plugin screens checks `ctx.IsRemote` and returns an empty list.
+- **Plugin field interfaces** show the raw field value in a plain text input with a "(plugin editor unavailable in remote mode)" hint. The value remains editable as a raw string.
+- The `ConfigurePluginFields` method on `ContentFormDialogModel` skips configuration when `ctx.IsRemote` is true, leaving plugin bubbles in their unconfigured error state with a descriptive message.
+
+A future phase will add remote plugin UI support via new `RemoteDriver` endpoints that proxy coroutine resume/yield as JSON over HTTP.
 
 ## Approval Model
 
@@ -919,7 +984,7 @@ Pool exhaustion shows "Plugin busy" instead of blocking.
 
 Layout yields are validated before rendering:
 
-- Column spans sum to 12 (grid only)
+- Column spans should sum to 12 (grid only) — non-12 sums log a warning but still render using proportional widths
 - Cell heights are positive
 - Primitive types are recognized
 - List/table row counts capped at 10,000
@@ -927,13 +992,23 @@ Layout yields are validated before rendering:
 - Tree depth capped at 20 levels
 - Inline interface yields must be a single primitive (not a grid)
 
-Invalid yields show an error message instead of the plugin UI.
+Malformed Lua tables (missing required fields like `type`, wrong value types, `columns` is not a table, `items` contains non-table values) are treated as invalid yields. The bridge returns an error, and the host (screen/bubble/overlay) shows "Plugin error: <description>" in place of the UI. The coroutine remains alive and receives the next event normally — one bad yield does not kill the coroutine.
 
 ## Execution Limits
 
-- **Per-resume timeout**: Same as `ExecTimeout` (default 5s). Coroutine killed on timeout.
+- **Per-resume timeout**: Same as `ExecTimeoutSec` (default 5s). If a single Resume call (processing one keypress or event) exceeds the timeout, the coroutine is killed via context cancellation.
 - **No operation budget**: UI code is pure computation (no direct DB calls). Timeout prevents infinite loops.
-- **Async I/O only**: All data access goes through `fetch`/`request` actions. Direct `db.query()` calls inside screen/interface functions are blocked.
+- **Async I/O only**: All data access goes through `fetch`/`request` actions, which use the existing `DatabaseAPI` (with operation budgets and table access policies) and `RequestEngine` (with SSRF protection, rate limiting, circuit breakers) respectively. Direct `db.query()` calls inside screen/interface functions are blocked.
+
+### Timeout Recovery
+
+When a coroutine is killed by timeout:
+
+- **Screens**: The `PluginTUIScreen` shows an error message: "Plugin '<name>' timed out — press any key to return." The screen is non-functional; the user must navigate away. No state recovery — the coroutine is dead.
+- **Inline field interfaces**: The `PluginFieldBubble` shows "Plugin error" in the field row. The last committed value (from `Value()`) is preserved. The field becomes non-editable until the content form is reopened.
+- **Overlay field interfaces**: The `PluginFieldOverlay` closes automatically. The field value is unchanged (treated as cancel). A toast notification shows "Plugin '<name>' timed out."
+
+In all cases, the dead VM is closed (not returned to the UI pool).
 
 ## Implementation Phases
 
@@ -952,17 +1027,25 @@ Invalid yields show an error message instead of the plugin UI.
 
 **Files:** `internal/plugin/ui_renderer.go`
 
-1. Each primitive type's `Render(width, height, focused, accent)` method
-2. `PluginLayout` → `Grid` + `[]CellContent` conversion
-3. Single primitive rendering for inline mode
+1. Each primitive type's `Render(width, height, focused, accent)` method — returns a rendered string
+2. `PluginLayout` → `Grid` + `[]CellContent` conversion. The `PluginTUIScreen` maintains a `[]CellContent` array that is rebuilt each render cycle by calling `primitive.Render()` to produce `CellContent.Content` (string). Scroll state (`ScrollOffset`, `TotalLines`) is tracked per-cell in the `PluginTUIScreen`, not in the primitive or the coroutine.
+3. Single primitive rendering for inline mode (returns string directly, no `CellContent` wrapper)
 4. Snapshot tests for each primitive
 
 ### Phase 3: Standalone Screens
 
 **Files:** `internal/tui/screen_plugin_tui.go`, `internal/tui/commands_plugin_tui.go`
 
-1. `PluginTUIScreen` implementing `Screen`
-2. `tea.Msg` → Lua event conversion
+1. `PluginTUIScreen` implementing `Screen` (and `KeyHinter` for dynamic key hints)
+2. `tea.Msg` → Lua event conversion using this mapping:
+
+| `tea.Msg` type | Lua event | Notes |
+|---|---|---|
+| `tea.KeyPressMsg` | `{ type = "key", key = "..." }` | Key string from `.String()` |
+| `tea.WindowSizeMsg` | `{ type = "resize", width = N, height = N }` | |
+| `PluginDataMsg` | `{ type = "data", id = "...", ok = bool, result/error = ... }` | Custom msg from async fetch/request |
+| `PluginDialogResponseMsg` | `{ type = "dialog", accepted = bool }` | Custom msg from confirm action |
+| All other `tea.Msg` types | Not forwarded to the coroutine | |
 3. Action handling (navigate, confirm, toast, quit)
 4. Screen discovery from manifest
 5. Sidebar navigation entries for visible screens
@@ -972,9 +1055,9 @@ Invalid yields show an error message instead of the plugin UI.
 
 **Files:** `internal/tui/commands_plugin_tui.go`
 
-1. `fetch` action → goroutine → `PluginDataMsg` → resume with data event
-2. `mutation` actions → same pattern
-3. `request` action → RequestEngine → data event
+1. `fetch` action → goroutine that calls the plugin's existing `DatabaseAPI` instance (same `luaQuery`/`luaQueryOne`/`luaCount`/`luaExists` methods, same condition sentinel syntax with `__op`/`__val`, same operation budgets and table access policies) → `PluginDataMsg` → resume with data event
+2. `mutation` actions → same `DatabaseAPI` path (`luaInsert`/`luaUpdate`/`luaDelete`, same operation budgets)
+3. `request` action → existing `RequestEngine.Execute()` with full pipeline (SSRF protection, domain approval, circuit breaker, per-domain rate limiting, global rate limiting, response size limits) → data event
 4. Error handling for timeout, pool exhaustion, DB errors
 
 ### Phase 5: Field Interfaces
@@ -985,34 +1068,33 @@ Invalid yields show an error message instead of the plugin UI.
 2. Inline mode: single primitive rendering within field row
 3. Overlay mode: `PluginFieldOverlay` implementing `ModalOverlay`
 4. `commit`/`cancel` action handling
-5. Coroutine bridge lifecycle tied to content form dialog
-6. Register in type_registry as `plugin` field type
-7. Wire into `resolveFieldInput` in `uiconfig_form_dialog.go`
+5. Coroutine bridge lifecycle tied to content form dialog — `CoroutineBridge.Close()` called when form closes
+6. Register in type_registry as `plugin` field type (unconfigured factory)
+7. Add post-resolution plugin configuration loop in content form dialog initialization — after `resolveFieldInput` returns `ContentFieldInput` structs, iterate over fields with `Type == "plugin"`, type-assert to `*PluginFieldBubble`, and call `Configure(ctx.PluginManager, pluginName, pluginInterface)` using data from `GetFieldPluginConfig`/`GetAdminFieldPluginConfig`. `AppContext` provides the `PluginManager` reference.
 
 ### Phase 6: Plugin Field Type + Extension Table
 
 **Files:** `sql/schema/XX_field_plugin_config/`, `internal/db/types/types_enums.go`, `internal/db/field_plugin_config.go`, `internal/validation/type_validators.go`
 
-1. Create `field_plugin_config` and `admin_field_plugin_config` schemas and queries for all three dialects (SQLite, MySQL, PostgreSQL)
+1. Create `field_plugin_config` and `admin_field_plugin_config` schemas and queries for all three dialects (SQLite, MySQL, PostgreSQL) in `sql/schema/<next>_field_plugin_config/` (use next available number after highest existing directory)
 2. Run `just sqlc` to generate type-safe Go code
-3. Add `FieldPluginConfigID` typed ID to `internal/db/types/`
-4. Add `FieldTypePlugin` to `FieldType` enum
-5. Add `DbDriver` interface methods: `GetFieldPluginConfig`, `CreateFieldPluginConfig`, `UpdateFieldPluginConfig`, `DeleteFieldPluginConfig` (and admin variants)
-6. Implement wrapper methods in `internal/db/field_plugin_config.go` (SQLite source), run `just drivergen`
-7. Validation: query extension table, verify plugin/interface exist and are enabled
-8. Content field value stored as opaque string (whatever plugin produces)
-9. Handle "plugin unavailable" gracefully when plugin disabled/missing
-10. Add `'plugin'` to the `type` CHECK constraint in `fields` and `admin_fields` schemas
+3. Add `FieldTypePlugin` to `FieldType` enum (no new ID type needed — `field_plugin_config` is keyed by `FieldID`, not its own ID)
+4. Add `DbDriver` interface methods: `GetFieldPluginConfig`, `CreateFieldPluginConfig`, `UpdateFieldPluginConfig`, `DeleteFieldPluginConfig` (and admin variants)
+5. Implement wrapper methods in `internal/db/field_plugin_config.go` (SQLite source), run `just drivergen`
+6. Validation: query extension table, verify plugin/interface exist and are enabled
+7. Content field value stored as opaque string (whatever plugin produces)
+8. Handle "plugin unavailable" gracefully when plugin disabled/missing
+9. Insert a `plugin` row into the `field_types` table (schema 27) via `CreateBootstrapData` in the install package — the `field_types` table is the authoritative registry for valid field types, not CHECK constraints on the `fields` table
 
 ### Phase 7: TUI Module + Screen/Interface Discovery
 
-**Files:** `internal/plugin/ui_api.go`, `internal/plugin/manager.go`
+**Files:** `internal/plugin/ui_api.go`, `internal/plugin/ui_pool.go`, `internal/plugin/manager.go`
 
-1. Register `tui` Lua module with constructors
+1. Register `tui` Lua module with constructors (pure sugar, no defaulting — produces identical tables to hand-built Lua tables)
 2. Parse `screens` and `interfaces` from manifest
 3. Store definitions on `PluginInstance`
 4. `Manager.PluginScreens()`, `Manager.PluginInterfaces()`, `Manager.PluginInterface(plugin, name)`
-5. VM pool sizing with `MaxUIVMs`
+5. Create separate `UIVMPool` for plugins with UI declarations — `MaxUIVMs` (default 4) per plugin, no acquisition timeout, independent drain from standard `VMPool`
 
 ### Phase 8: Admin Panel Integration
 
@@ -1036,9 +1118,9 @@ Phase 1 (bridge) → Phase 2 (renderer) → Phase 3 (screens)
                                             ↓
                                        Phase 4 (async)
                                             ↓
-                              ┌─────── Phase 5 (field interfaces)
+                              ┌─────── Phase 6 (field type + extension table)
                               │              ↓
-                              │         Phase 6 (field type)
+                              │         Phase 5 (field interfaces — requires Phase 6's DbDriver methods)
                               │
                               ├─────── Phase 7 (discovery + tui module)
                               │
@@ -1047,12 +1129,12 @@ Phase 1 (bridge) → Phase 2 (renderer) → Phase 3 (screens)
                               └─────── Phase 9 (plugin-to-plugin nav)
 ```
 
-Phases 5-9 are independent of each other after Phase 4.
+Phase 5 depends on Phase 6 (field interfaces need `GetFieldPluginConfig`/`GetAdminFieldPluginConfig` from the extension table). Phases 6-9 are independent of each other after Phase 4, but Phase 5 must follow Phase 6.
 
 ## Edge Cases
 
 - **Plugin disabled while field interface is open** — Interface continues until form closes. "Plugin unavailable" shown on next open.
-- **Plugin hot-reloaded while screen/interface active** — Old coroutine keeps running on old VM. New instances use new VMs.
+- **Plugin hot-reloaded while screen/interface active** — Old coroutine keeps running on old VM (tracked by `renderingUI` flag on `CoroutineBridge`). Standard pool drain proceeds independently. Old UI VMs are closed when the coroutine finishes (user navigates away or form closes). New screen/field opens get VMs from the reloaded UI pool.
 - **Field references a nonexistent plugin** — Shows "Plugin 'X' not found" as the field value display. Field value preserved but not editable.
 - **Interface coroutine returns without committing** — Treated as cancel. Field value unchanged.
 - **Inline interface yields a grid instead of primitive** — Validation error, shows error message in field row.

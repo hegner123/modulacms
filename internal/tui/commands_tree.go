@@ -563,7 +563,7 @@ func (m Model) HandleConfirmedPublish(msg ConfirmedPublishMsg) tea.Cmd {
 		logger := utility.DefaultLogger
 
 		retentionCap := cfg.VersionMaxPerContent()
-		_, pubErr := publishing.PublishContent(ctx, d, msg.ContentID, locale, userID, ac, retentionCap, dispatcher)
+		_, pubErr := publishing.PublishContent(ctx, d, msg.ContentID, locale, userID, ac, retentionCap, dispatcher, nil)
 		if pubErr != nil {
 			logger.Ferror(fmt.Sprintf("Failed to publish content %s", msg.ContentID), pubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Publish failed: %v", pubErr)}
@@ -595,7 +595,7 @@ func (m Model) HandleConfirmedUnpublish(msg ConfirmedUnpublishMsg) tea.Cmd {
 		ac := middleware.AuditContextFromCLI(*cfg, userID)
 		logger := utility.DefaultLogger
 
-		unpubErr := publishing.UnpublishContent(ctx, d, msg.ContentID, locale, userID, ac, dispatcher)
+		unpubErr := publishing.UnpublishContent(ctx, d, msg.ContentID, locale, userID, ac, dispatcher, nil)
 		if unpubErr != nil {
 			logger.Ferror(fmt.Sprintf("Failed to unpublish content %s", msg.ContentID), unpubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Unpublish failed: %v", unpubErr)}

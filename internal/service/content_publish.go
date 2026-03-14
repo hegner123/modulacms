@@ -20,7 +20,7 @@ func (s *ContentService) Publish(ctx context.Context, ac audited.AuditContext, c
 	}
 	retentionCap := cfg.VersionMaxPerContent()
 
-	version, err := publishing.PublishContent(ctx, s.driver, contentID, locale, userID, ac, retentionCap, s.dispatcher)
+	version, err := publishing.PublishContent(ctx, s.driver, contentID, locale, userID, ac, retentionCap, s.dispatcher, nil)
 	if err != nil {
 		if publishing.IsRevisionConflict(err) {
 			return nil, &ConflictError{
@@ -36,7 +36,7 @@ func (s *ContentService) Publish(ctx context.Context, ac audited.AuditContext, c
 
 // Unpublish clears the published flag and resets publish metadata to draft.
 func (s *ContentService) Unpublish(ctx context.Context, ac audited.AuditContext, contentID types.ContentID, locale string, userID types.UserID) error {
-	err := publishing.UnpublishContent(ctx, s.driver, contentID, locale, userID, ac, s.dispatcher)
+	err := publishing.UnpublishContent(ctx, s.driver, contentID, locale, userID, ac, s.dispatcher, nil)
 	if err != nil {
 		return fmt.Errorf("unpublish content: %w", err)
 	}
