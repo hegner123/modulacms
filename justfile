@@ -138,6 +138,16 @@ watch:
     PACKAGE_NAME=$(head -n 1 go.mod | cut -d ' ' -f2)
     docker run -it --rm -w /go/src/${PACKAGE_NAME} -v $(pwd):/go/src/${PACKAGE_NAME} -p {{service_port}}:{{service_port}} cosmtrek/air
 
+# [Docs] Check documentation staleness against upstream (or explicit range)
+doc-check *RANGE:
+    @.githooks/doc-check {{RANGE}}
+
+# [Docs] Install git hooks (.githooks/ directory)
+install-hooks:
+    git config core.hooksPath .githooks
+    chmod +x .githooks/pre-push .githooks/doc-check
+    @echo "Git hooks installed (core.hooksPath -> .githooks/)"
+
 # [Dump] Dump sqlite db to sql
 dump:
     sqlite3 modula.db .dump > modula_db.sql
