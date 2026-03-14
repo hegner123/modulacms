@@ -107,12 +107,15 @@ func (d *Dispatcher) Dispatch(ctx context.Context, event string, data map[string
 		return
 	}
 
+	utility.DefaultLogger.Info("Webhook event triggered", "event", event)
+
 	webhooks, err := d.driver.ListActiveWebhooks()
 	if err != nil {
 		utility.DefaultLogger.Error("Failed to list active webhooks", err)
 		return
 	}
 	if webhooks == nil {
+		utility.DefaultLogger.Debug("No active webhooks registered", "event", event)
 		return
 	}
 
@@ -127,10 +130,12 @@ func (d *Dispatcher) Dispatch(ctx context.Context, event string, data map[string
 		return
 	}
 
+	matched := 0
 	for _, wh := range *webhooks {
 		if !matchesEvent(wh.Events, event) {
 			continue
 		}
+		matched++
 
 		delivery, createErr := d.driver.CreateWebhookDelivery(ctx, db.CreateWebhookDeliveryParams{
 			WebhookID: wh.WebhookID,
@@ -145,12 +150,18 @@ func (d *Dispatcher) Dispatch(ctx context.Context, event string, data map[string
 			continue
 		}
 
+		utility.DefaultLogger.Info("Webhook delivery enqueued", "event", event, "webhook_id", wh.WebhookID, "delivery_id", delivery.DeliveryID, "url", wh.URL)
+
 		// Non-blocking send — if the channel is full, the retry processor will pick it up.
 		select {
 		case d.ch <- dispatchJob{delivery: *delivery, webhook: wh}:
 		default:
 			utility.DefaultLogger.Warn("Webhook dispatch channel full, delivery will be retried", nil, "delivery_id", delivery.DeliveryID)
 		}
+	}
+
+	if matched == 0 {
+		utility.DefaultLogger.Debug("No webhooks matched event", "event", event, "total_webhooks", len(*webhooks))
 	}
 }
 
@@ -170,12 +181,16 @@ func (d *Dispatcher) ProcessRetries(ctx context.Context) {
 		return
 	}
 
+	utility.DefaultLogger.Info("Processing webhook retries", "count", len(*deliveries))
+
 	for _, del := range *deliveries {
 		wh, whErr := d.driver.GetWebhook(del.WebhookID)
 		if whErr != nil {
 			utility.DefaultLogger.Error("Failed to get webhook for retry", whErr, "webhook_id", del.WebhookID)
 			continue
 		}
+
+		utility.DefaultLogger.Info("Retrying webhook delivery", "event", del.Event, "webhook_id", del.WebhookID, "delivery_id", del.DeliveryID, "attempt", del.Attempts+1)
 
 		select {
 		case d.ch <- dispatchJob{delivery: del, webhook: *wh}:
@@ -240,6 +255,7 @@ func (d *Dispatcher) deliver(ctx context.Context, job dispatchJob) {
 	resp.Body.Close()
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		utility.DefaultLogger.Info("Webhook delivered successfully", "event", del.Event, "webhook_id", wh.WebhookID, "delivery_id", del.DeliveryID, "url", wh.URL, "status_code", resp.StatusCode)
 		now := time.Now().UTC().Format(time.RFC3339)
 		updateErr := d.driver.UpdateWebhookDeliveryStatus(ctx, db.UpdateWebhookDeliveryStatusParams{
 			Status:         db.DeliveryStatusSuccess,
@@ -254,6 +270,7 @@ func (d *Dispatcher) deliver(ctx context.Context, job dispatchJob) {
 		return
 	}
 
+	utility.DefaultLogger.Warn("Webhook delivery failed", nil, "event", del.Event, "webhook_id", wh.WebhookID, "delivery_id", del.DeliveryID, "url", wh.URL, "status_code", resp.StatusCode)
 	d.handleFailure(ctx, del, int64(resp.StatusCode), fmt.Sprintf("HTTP %d", resp.StatusCode))
 }
 
