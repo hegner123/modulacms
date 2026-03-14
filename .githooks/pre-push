@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# .githooks/pre-push — Documentation staleness detector
+#
+# Runs on git push. Detects code changes that may have made documentation
+# outdated and saves an AI review prompt to .git/doc-review.md.
+#
+# Non-blocking: always allows the push to proceed.
+
+set -uo pipefail
+
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+REVIEW_FILE="${REPO_ROOT}/.git/doc-review.md"
+DOC_CHECK="${HOOK_DIR}/doc-check"
+
+# Bail if doc-check script is missing
+if [ ! -x "$DOC_CHECK" ]; then
+    exit 0
+fi
+
+# ── Collect changed files from all refs being pushed ─────────────
+# stdin format: <local_ref> <local_sha> <remote_ref> <remote_sha>
+changed=""
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+    # Skip branch deletions
+    [ "$local_sha" = "0000000000000000000000000000000000000000" ] && continue
+
+    if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+        # New branch: compare against merge-base with main
+        base=$(git merge-base main "$local_sha" 2>/dev/null || echo "main")
+    else
+        base="$remote_sha"
+    fi
+
+    files=$(git diff --name-only "$base" "$local_sha" 2>/dev/null || true)
+    changed="${changed}"$'\n'"${files}"
+done
+
+changed=$(printf '%s' "$changed" | sort -u | sed '/^$/d')
+[ -z "$changed" ] && exit 0
+
+# ── Generate review prompt ───────────────────────────────────────
+if printf '%s\n' "$changed" | "$DOC_CHECK" --stdin > "$REVIEW_FILE" 2>/dev/null; then
+    if [ -s "$REVIEW_FILE" ]; then
+        doc_count=$(grep -c '^### `' "$REVIEW_FILE" 2>/dev/null || echo "?")
+        printf '\n' >&2
+        printf '  \033[36m\033[1mdoc-check:\033[0m %s docs may need review\n' "$doc_count" >&2
+        printf '  \033[2mPrompt saved to .git/doc-review.md\033[0m\n' >&2
+        printf '  \033[2mpbcopy < .git/doc-review.md    # copy to clipboard\033[0m\n' >&2
+        printf '  \033[2mcat .git/doc-review.md         # view prompt\033[0m\n' >&2
+        printf '\n' >&2
+    else
+        rm -f "$REVIEW_FILE"
+    fi
+fi
+
+# Always allow the push
+exit 0

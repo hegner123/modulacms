@@ -1,0 +1,244 @@
+#!/usr/bin/env bash
+# doc-check — Detect documentation that may need updating after code changes.
+#
+# Generates an AI prompt for reviewing documentation accuracy.
+#
+# Usage:
+#   doc-check                   # Compare HEAD vs upstream (or main)
+#   doc-check <range>           # Explicit git diff range (e.g., main..HEAD)
+#   doc-check --staged          # Staged changes only
+#   doc-check --stdin           # Read file list from stdin
+#
+# Output:
+#   stdout: AI prompt (pipe to clipboard or redirect to file)
+#   stderr: status summary
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || pwd)"
+TRIGGERS_FILE="${SCRIPT_DIR}/doc-triggers.conf"
+
+# ── Colors (stderr only, when connected to terminal) ─────────────
+if [ -t 2 ]; then
+    BOLD='\033[1m' DIM='\033[2m' CYAN='\033[36m'
+    YELLOW='\033[33m' GREEN='\033[32m' RESET='\033[0m'
+else
+    BOLD='' DIM='' CYAN='' YELLOW='' GREEN='' RESET=''
+fi
+
+info()  { printf "${CYAN}${BOLD}doc-check:${RESET} %s\n" "$*" >&2; }
+dim()   { printf "${DIM}doc-check: %s${RESET}\n" "$*" >&2; }
+warn()  { printf "${YELLOW}doc-check:${RESET} %s\n" "$*" >&2; }
+
+# ── 1. Collect changed files ─────────────────────────────────────
+if [ "${1:-}" = "--stdin" ]; then
+    changed=$(cat)
+elif [ "${1:-}" = "--staged" ]; then
+    changed=$(git -C "$REPO_ROOT" diff --name-only --cached)
+elif [ -n "${1:-}" ]; then
+    changed=$(git -C "$REPO_ROOT" diff --name-only "$1")
+else
+    upstream=$(git -C "$REPO_ROOT" rev-parse --abbrev-ref '@{upstream}' 2>/dev/null || echo "origin/main")
+    base=$(git -C "$REPO_ROOT" merge-base "$upstream" HEAD 2>/dev/null) || \
+    base=$(git -C "$REPO_ROOT" merge-base main HEAD 2>/dev/null) || \
+    base="HEAD~1"
+    changed=$(git -C "$REPO_ROOT" diff --name-only "$base" HEAD)
+fi
+
+changed=$(printf '%s' "$changed" | sort -u | sed '/^$/d')
+if [ -z "$changed" ]; then
+    dim "no changed files"
+    exit 0
+fi
+
+file_count=$(printf '%s\n' "$changed" | wc -l | tr -d ' ')
+
+# ── 2. Verify trigger map ────────────────────────────────────────
+if [ ! -f "$TRIGGERS_FILE" ]; then
+    warn "trigger map not found: $TRIGGERS_FILE"
+    exit 1
+fi
+
+# ── 3. Match changed files against trigger map ───────────────────
+# Produces sorted, deduplicated pairs: "doc_path|source_path"
+pairs=""
+while IFS= read -r line; do
+    # Skip comments and blank lines
+    case "$line" in
+        '#'*|'') continue ;;
+    esac
+    [[ -z "${line// }" ]] && continue
+
+    prefix="${line%%:*}"
+    docs="${line#*:}"
+    prefix=$(printf '%s' "$prefix" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    docs=$(printf '%s' "$docs" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    [ -z "$prefix" ] || [ -z "$docs" ] && continue
+
+    while IFS= read -r file; do
+        case "$file" in
+            "${prefix}"*)
+                for doc in $docs; do
+                    pairs="${pairs}${doc}|${file}"$'\n'
+                done
+                ;;
+        esac
+    done <<< "$changed"
+done < "$TRIGGERS_FILE"
+
+pairs=$(printf '%s' "$pairs" | sort -u | sed '/^$/d')
+if [ -z "$pairs" ]; then
+    dim "${file_count} files changed, no documentation triggers matched"
+    exit 0
+fi
+
+doc_count=$(printf '%s\n' "$pairs" | cut -d'|' -f1 | sort -u | wc -l | tr -d ' ')
+info "${file_count} files changed -> ${doc_count} docs to review"
+
+# ── 4. Determine smart verification checks ───────────────────────
+checks=""
+add_check() { checks="${checks}- $1"$'\n'; }
+
+printf '%s\n' "$changed" | grep -q '^justfile$' 2>/dev/null && \
+    add_check "Count all recipes in justfile and verify every command table in CLAUDE.md and AGENTS.md is complete (no missing, no extra)"
+
+printf '%s\n' "$changed" | grep -q '^internal/db/db\.go$' 2>/dev/null && \
+    add_check "Count exported methods on the DbDriver interface in internal/db/db.go and verify the documented method count"
+
+printf '%s\n' "$changed" | grep -q '^sql/schema/' 2>/dev/null && \
+    add_check "Count numbered directories in sql/schema/ and verify the documented count (may say '37 numbered directories')"
+
+printf '%s\n' "$changed" | grep -q '^internal/middleware/authorization\.go$' 2>/dev/null && \
+    add_check "Verify bootstrap role/permission counts (admin: 47 permissions, editor: 28, viewer: 3 read-only)"
+
+printf '%s\n' "$changed" | grep -q '^cmd/' 2>/dev/null && \
+    add_check "List all Cobra subcommands in cmd/ and verify the documented CLI command list"
+
+printf '%s\n' "$changed" | grep -q '^internal/db/types/' 2>/dev/null && \
+    add_check "Count typed ID types in internal/db/types/types_ids.go and verify the documented count"
+
+printf '%s\n' "$changed" | grep -q '^internal/admin/' 2>/dev/null && \
+    add_check "Verify admin panel structure counts (pages, partials, components, web components) match actual directory contents"
+
+printf '%s\n' "$changed" | grep -qE '^sdks/' 2>/dev/null && \
+    add_check "Verify SDK file inventory tables match the actual files in each changed SDK directory"
+
+printf '%s\n' "$changed" | grep -qE '^\.github/workflows/' 2>/dev/null && \
+    add_check "Verify CI/CD documentation matches actual workflow triggers, jobs, and matrix settings"
+
+printf '%s\n' "$changed" | grep -q '^internal/router/mux\.go$' 2>/dev/null && \
+    add_check "Verify API route documentation covers all routes registered in mux.go"
+
+printf '%s\n' "$changed" | grep -qE '^tools/(dbgen|sqlcgen|drivergen)/' 2>/dev/null && \
+    add_check "Verify code generation workflow docs match actual tool behavior and flags"
+
+# ── 5. Generate prompt ───────────────────────────────────────────
+
+cat << 'EOF'
+# Documentation Staleness Review
+
+Review the documentation files listed below for accuracy after recent code changes in ModulaCMS.
+
+## Project Context
+
+ModulaCMS is a headless CMS in Go. Single binary, three concurrent servers (HTTP, HTTPS with autocert, SSH TUI via Wish). Supports SQLite, MySQL, and PostgreSQL via a unified `DbDriver` interface. Content managed through REST API, HTMX admin panel, or Bubbletea SSH TUI.
+
+Key patterns: tri-database with sqlc codegen, ULID typed IDs, audited command pattern for mutations, RBAC with `resource:operation` permissions, content trees with sibling pointers.
+
+## Changed Source Files
+EOF
+
+# Categorize changed files by area
+current_cat=""
+while IFS= read -r file; do
+    case "$file" in
+        internal/db/*)         cat="Database Layer" ;;
+        internal/admin/*)      cat="Admin Panel" ;;
+        internal/tui/*|internal/cli/*) cat="TUI" ;;
+        internal/router/*)     cat="Router & API" ;;
+        internal/middleware/*)  cat="Middleware" ;;
+        internal/auth/*)       cat="Authentication" ;;
+        internal/*)            cat="Internal Packages" ;;
+        sql/*)                 cat="SQL Schema" ;;
+        cmd/*)                 cat="CLI Commands" ;;
+        sdks/*)                cat="SDKs" ;;
+        tools/*)               cat="Code Generation Tools" ;;
+        .github/*)             cat="CI/CD" ;;
+        *)                     cat="Project Root" ;;
+    esac
+    if [ "$cat" != "$current_cat" ]; then
+        [ -n "$current_cat" ] && echo ""
+        echo "**${cat}**"
+        current_cat="$cat"
+    fi
+    echo "- \`${file}\`"
+done <<< "$changed"
+
+echo ""
+echo "## Documentation to Review"
+
+# Group triggered docs with their source files
+current_doc=""
+while IFS='|' read -r doc src; do
+    if [ "$doc" != "$current_doc" ]; then
+        echo ""
+        echo "### \`${doc}\`"
+        echo "Triggered by:"
+        current_doc="$doc"
+    fi
+    echo "- \`${src}\`"
+done <<< "$pairs"
+
+# Append smart checks if any
+if [ -n "$checks" ]; then
+    echo ""
+    echo "## Specific Verification Checks"
+    echo ""
+    echo "These target factual claims likely affected by the changes above:"
+    echo ""
+    printf '%s' "$checks"
+fi
+
+cat << 'EOF'
+
+## Review Instructions
+
+For each documentation file:
+
+1. **Read** the doc file and the source files that triggered the review
+2. **Verify** factual claims against the actual code:
+   - File paths, package names, import paths
+   - Function/method/type names and signatures
+   - Counts (interface methods, schema dirs, permissions, roles, pages, etc.)
+   - Code examples, config snippets, CLI commands and flags
+   - Default values and behavioral descriptions
+3. **Identify gaps**:
+   - New code not yet documented
+   - Documented items that no longer exist
+   - Changed behavior not reflected in docs
+
+## Output Format
+
+**If accurate:**
+```
+✓ path/to/doc.md — Up to date
+```
+
+**If issues found:**
+```
+✗ path/to/doc.md — Needs update
+
+| Line/Section | Doc Says | Code Shows | Fix |
+|---|---|---|---|
+| §Package Map | "37 numbered directories" | 38 dirs in sql/schema/ | Update count to 38 |
+```
+
+Focus on **factual errors** (wrong counts, dead references, missing entries) over style or phrasing.
+EOF
+
+# ── 6. Hint on stderr ────────────────────────────────────────────
+printf '\n' >&2
+printf "${GREEN}Prompt written to stdout.${RESET} Paste into your AI tool, or:\n" >&2
+printf "  ${DIM}just doc-check | pbcopy${RESET}     # copy to clipboard\n" >&2
+printf "  ${DIM}just doc-check > review.md${RESET}  # save to file\n" >&2
