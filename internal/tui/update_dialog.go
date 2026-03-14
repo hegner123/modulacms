@@ -573,6 +573,57 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			OverlayClearCmd(),
 			FocusSetCmd(PAGEFOCUS),
 		)
+	case ShowWebhookFormDialogMsg:
+		dialog := NewWebhookFormDialog(msg.Title)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditWebhookDialogMsg:
+		dialog := NewEditWebhookFormDialog("Edit Webhook", msg.Webhook)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteWebhookDialogMsg:
+		dialog := NewDialog("Delete Webhook", fmt.Sprintf("Delete webhook '%s'?\nThis cannot be undone.", msg.Name), true, DIALOGDELETEWEBHOOK)
+		dialog.SetButtons("Delete", "Cancel")
+		m.DCtx.Active = &DeleteWebhookContext{
+			WebhookID: msg.WebhookID,
+			Name:      msg.Name,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case WebhookFormDialogAcceptMsg:
+		switch msg.Action {
+		case FORMDIALOGCREATEWEBHOOK:
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				CreateWebhookFromDialogCmd(msg.Name, msg.URL, msg.Secret, msg.Events, msg.IsActive),
+			)
+		case FORMDIALOGEDITWEBHOOK:
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				UpdateWebhookFromDialogCmd(msg.EntityID, msg.Name, msg.URL, msg.Secret, msg.Events, msg.IsActive),
+			)
+		default:
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		}
+	case WebhookFormDialogCancelMsg:
+		m.DCtx.Active = nil
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
 	case DialogAcceptMsg:
 		return m.handleDialogAccept(msg)
 	case DialogCancelMsg:

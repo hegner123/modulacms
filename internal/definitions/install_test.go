@@ -74,7 +74,7 @@ func TestInstall_DefaultSchema(t *testing.T) {
 
 	mock := &mockInstaller{}
 	authorID := types.NewUserID()
-	result, err := Install(mock, def, authorID)
+	result, err := Install(mock, def, authorID, nil)
 	if err != nil {
 		t.Fatalf("Install failed: %v", err)
 	}
@@ -102,7 +102,7 @@ func TestInstall_FieldsHaveParentID(t *testing.T) {
 
 	mock := &mockInstaller{}
 	authorID := types.NewUserID()
-	_, err := Install(mock, def, authorID)
+	_, err := Install(mock, def, authorID, nil)
 	if err != nil {
 		t.Fatalf("Install failed: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestInstall_PhaseOrdering(t *testing.T) {
 
 	mock := &mockInstaller{}
 	authorID := types.NewUserID()
-	_, err := Install(mock, def, authorID)
+	_, err := Install(mock, def, authorID, nil)
 	if err != nil {
 		t.Fatalf("Install failed: %v", err)
 	}
@@ -150,7 +150,7 @@ func TestInstall_ChildDatatypeReceivesParentID(t *testing.T) {
 
 	mock := &mockInstaller{}
 	authorID := types.NewUserID()
-	_, err := Install(mock, def, authorID)
+	_, err := Install(mock, def, authorID, nil)
 	if err != nil {
 		t.Fatalf("Install failed: %v", err)
 	}
@@ -186,7 +186,7 @@ func TestInstall_EmptyAuthorID(t *testing.T) {
 	}
 
 	mock := &mockInstaller{}
-	_, err := Install(mock, def, types.UserID(""))
+	_, err := Install(mock, def, types.UserID(""), nil)
 	if err == nil {
 		t.Fatal("expected error for empty authorID")
 	}
@@ -202,7 +202,7 @@ func TestInstall_InvalidDefinition(t *testing.T) {
 	invalid := SchemaDefinition{
 		Name: "", // will fail validation
 	}
-	_, err := Install(mock, invalid, authorID)
+	_, err := Install(mock, invalid, authorID, nil)
 	if err == nil {
 		t.Fatal("expected error for invalid definition")
 	}
@@ -213,7 +213,7 @@ func TestInstall_AllRegisteredDefinitions(t *testing.T) {
 		t.Run(def.Name, func(t *testing.T) {
 			mock := &mockInstaller{}
 			authorID := types.NewUserID()
-			result, err := Install(mock, def, authorID)
+			result, err := Install(mock, def, authorID, nil)
 			if err != nil {
 				t.Fatalf("Install(%q) failed: %v", def.Name, err)
 			}

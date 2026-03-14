@@ -175,22 +175,26 @@ func (m Model) HandleCreateContentFromDialog(
 		logger.Finfo(fmt.Sprintf("Creating ContentData from dialog: DatatypeID=%s, RouteID=%s, AuthorID=%s, HasParent=%v",
 			msg.DatatypeID, msg.RouteID, authorID, msg.ParentID.Valid))
 
-		// Step 0: Determine root_id before creation.
-		// Child nodes inherit root_id from their parent; root nodes set it to
-		// self after creation (since the ID is not known until INSERT).
+		// Step 0: Determine root_id and route_id before creation.
+		// Child nodes inherit root_id and route_id from their parent; root
+		// nodes set root_id to self after creation.
 		var rootID types.NullableContentID
+		resolvedRouteID := msg.RouteID
 		if msg.ParentID.Valid {
 			parentData, lookupErr := d.GetContentData(msg.ParentID.ID)
 			if lookupErr != nil {
 				logger.Ferror("Failed to look up parent content data for root_id", lookupErr)
-				// Proceed without root_id rather than aborting the entire creation
 			} else if parentData != nil {
 				rootID = parentData.RootID
+				// Inherit route from parent when not explicitly provided.
+				if resolvedRouteID.IsZero() && parentData.RouteID.Valid {
+					resolvedRouteID = types.RouteID(parentData.RouteID.ID)
+				}
 			}
 		}
 
 		// Step 1: Create ContentData using typed DbDriver method
-		nRouteID := types.NullableRouteID{ID: msg.RouteID, Valid: !msg.RouteID.IsZero()}
+		nRouteID := types.NullableRouteID{ID: resolvedRouteID, Valid: !resolvedRouteID.IsZero()}
 		contentData, err := d.CreateContentData(ctx, ac, db.CreateContentDataParams{
 			DatatypeID:    types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true},
 			RouteID:       nRouteID,
@@ -237,6 +241,37 @@ func (m Model) HandleCreateContentFromDialog(
 			})
 			if rootUpdateErr != nil {
 				logger.Ferror("Failed to set root_id on new root content", rootUpdateErr)
+			}
+		}
+
+		// Step 1.75: Wire tree pointers for child nodes.
+		// attachAsLastChild sets the parent's first_child_id (if first child)
+		// or the last sibling's next_sibling_id, and returns the prev sibling
+		// ID so we can set it on the new node.
+		if msg.ParentID.Valid {
+			ops := newContentTreeOps(d)
+			prevID, attachErr := attachAsLastChild(ctx, ac, ops, string(contentData.ContentDataID), string(msg.ParentID.ID))
+			if attachErr != nil {
+				logger.Ferror("Failed to attach content as last child", attachErr)
+			} else if prevID.Valid {
+				// Update the new node's prev_sibling_id
+				_, prevErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+					ContentDataID: contentData.ContentDataID,
+					RootID:        rootID,
+					ParentID:      contentData.ParentID,
+					FirstChildID:  contentData.FirstChildID,
+					NextSiblingID: contentData.NextSiblingID,
+					PrevSiblingID: types.NullableContentID{ID: types.ContentID(prevID.ID), Valid: true},
+					RouteID:       nRouteID,
+					DatatypeID:    contentData.DatatypeID,
+					AuthorID:      contentData.AuthorID,
+					Status:        contentData.Status,
+					DateCreated:   contentData.DateCreated,
+					DateModified:  types.TimestampNow(),
+				})
+				if prevErr != nil {
+					logger.Ferror("Failed to set prev_sibling_id on new content", prevErr)
+				}
 			}
 		}
 
@@ -296,7 +331,7 @@ func (m Model) HandleCreateContentFromDialog(
 		if len(failedFields) > 0 {
 			return ContentCreatedWithErrorsMsg{
 				ContentDataID: contentData.ContentDataID,
-				RouteID:       msg.RouteID,
+				RouteID:       resolvedRouteID,
 				CreatedFields: createdFields,
 				FailedFields:  failedFields,
 			}
@@ -305,7 +340,7 @@ func (m Model) HandleCreateContentFromDialog(
 		return ContentCreatedFromDialogMsg{
 			ContentID:  contentData.ContentDataID,
 			DatatypeID: msg.DatatypeID,
-			RouteID:    msg.RouteID,
+			RouteID:    resolvedRouteID,
 			FieldCount: createdFields,
 		}
 	}

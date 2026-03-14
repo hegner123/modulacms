@@ -324,9 +324,8 @@ func TestDefaultConfig_KeyBindings_Populated(t *testing.T) {
 	if !c.KeyBindings.Matches("q", config.ActionQuit) {
 		t.Error("KeyBindings does not map 'q' to ActionQuit")
 	}
-	if !c.KeyBindings.Matches("ctrl+c", config.ActionQuit) {
-		t.Error("KeyBindings does not map 'ctrl+c' to ActionQuit")
-	}
+	// ctrl+c is a hardcoded force-quit in update.go, not in the KeyMap.
+	// q shows the quit confirmation dialog via the KeyMap.
 	if !c.KeyBindings.Matches("enter", config.ActionSelect) {
 		t.Error("KeyBindings does not map 'enter' to ActionSelect")
 	}

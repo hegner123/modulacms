@@ -233,6 +233,49 @@ func DeleteUserCmd(userID types.UserID) tea.Cmd {
 }
 
 // =============================================================================
+// DELETE WEBHOOK
+// =============================================================================
+
+// DeleteWebhookContext stores context for a webhook deletion operation.
+type DeleteWebhookContext struct {
+	WebhookID types.WebhookID
+	Name      string
+}
+
+// ShowDeleteWebhookDialogMsg triggers showing a delete webhook confirmation dialog.
+type ShowDeleteWebhookDialogMsg struct {
+	WebhookID types.WebhookID
+	Name      string
+}
+
+// ShowDeleteWebhookDialogCmd creates a command to show a delete webhook confirmation dialog.
+func ShowDeleteWebhookDialogCmd(webhookID types.WebhookID, name string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteWebhookDialogMsg{
+			WebhookID: webhookID,
+			Name:      name,
+		}
+	}
+}
+
+// DeleteWebhookRequestMsg triggers webhook deletion.
+type DeleteWebhookRequestMsg struct {
+	WebhookID types.WebhookID
+}
+
+// WebhookDeletedMsg is sent after a webhook is successfully deleted.
+type WebhookDeletedMsg struct {
+	WebhookID types.WebhookID
+}
+
+// DeleteWebhookCmd creates a command to delete a webhook.
+func DeleteWebhookCmd(webhookID types.WebhookID) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteWebhookRequestMsg{WebhookID: webhookID}
+	}
+}
+
+// =============================================================================
 // DIALOG ACCEPT DISPATCH
 // =============================================================================
 
@@ -706,6 +749,21 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 				OverlayClearCmd(),
 				FocusSetCmd(PAGEFOCUS),
 				DeployPushCmd(envName, false),
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case DIALOGDELETEWEBHOOK:
+		if ctx, ok := m.DCtx.Active.(*DeleteWebhookContext); ok {
+			webhookID := ctx.WebhookID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				DeleteWebhookCmd(webhookID),
 			)
 		}
 		return m, tea.Batch(

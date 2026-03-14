@@ -434,7 +434,7 @@ type Webhooks struct {
 	URL          string               `json:"url"`
 	Secret       string               `json:"secret"`
 	Events       string               `json:"events"`
-	IsActive     int64                `json:"is_active"`
+	IsActive     types.SafeBool       `json:"is_active"`
 	Headers      string               `json:"headers"`
 	AuthorID     types.NullableUserID `json:"author_id"`
 	DateCreated  types.Timestamp      `json:"date_created"`

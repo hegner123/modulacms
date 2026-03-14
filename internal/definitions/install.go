@@ -50,7 +50,11 @@ type InstallResult struct {
 }
 
 // Install creates all datatypes and fields from a SchemaDefinition.
-func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (InstallResult, error) {
+// existingDatatypes is an optional list of datatypes already in the database.
+// When provided, root datatypes that match an existing record by name are
+// reused instead of creating duplicates (e.g. bootstrap "page" matches
+// schema "page"). Pass nil to skip this check.
+func Install(driver Installer, def SchemaDefinition, authorID types.UserID, existingDatatypes []db.Datatypes) (InstallResult, error) {
 	if authorID.IsZero() {
 		return InstallResult{}, fmt.Errorf("definitions: authorID cannot be empty")
 	}
@@ -64,11 +68,24 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 
 	now := types.TimestampNow()
 
+	// Build name→ID lookup from existing datatypes for dedup.
+	existingByName := make(map[string]types.DatatypeID, len(existingDatatypes))
+	for _, dt := range existingDatatypes {
+		if dt.Name != "" {
+			existingByName[dt.Name] = dt.DatatypeID
+		}
+	}
+
 	// Phase 1: Create root datatypes (no ParentRef)
 	datatypeIDMap := make(map[string]types.DatatypeID, len(def.Datatypes))
 
 	for key, dt := range def.Datatypes {
 		if dt.ParentRef != "" {
+			continue
+		}
+		// Reuse existing datatype if one matches by name.
+		if existingID, found := existingByName[dt.Name]; found {
+			datatypeIDMap[key] = existingID
 			continue
 		}
 		created, createErr := driver.CreateDatatype(db.CreateDatatypeParams{
@@ -287,8 +304,8 @@ func Reinstall(ctx context.Context, cleaner Cleaner, installer Installer, def Sc
 		}
 	}
 
-	// Now install fresh.
-	return Install(installer, def, authorID)
+	// Now install fresh. Reinstall cleans up first, so no existing datatypes to dedup.
+	return Install(installer, def, authorID, nil)
 }
 
 // marshalConfig marshals a config struct to JSON. Returns EmptyJSON for zero-value structs.

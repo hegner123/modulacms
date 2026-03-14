@@ -215,6 +215,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 			ShowDialog("Success", "Content deleted successfully", false),
 			LogMessageCmd(fmt.Sprintf("Content deleted: ID=%s", msg.ContentID)),
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
+			RootContentSummaryFetchCmd(),
 		)
 	case DeleteDatatypeRequestMsg:
 		// Delete datatype and its junction records
@@ -248,6 +249,15 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case DeleteUserRequestMsg:
 		// Delete user
 		return m, m.HandleDeleteUser(msg)
+	case CreateWebhookFromDialogRequestMsg:
+		// Create webhook from form dialog
+		return m, m.HandleCreateWebhook(msg)
+	case UpdateWebhookFromDialogRequestMsg:
+		// Update webhook from form dialog
+		return m, m.HandleUpdateWebhook(msg)
+	case DeleteWebhookRequestMsg:
+		// Delete webhook
+		return m, m.HandleDeleteWebhook(msg)
 	case ContentCreatedMsg:
 		if msg.AdminMode {
 			return m, tea.Batch(

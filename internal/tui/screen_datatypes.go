@@ -437,11 +437,25 @@ func (s *DatatypesScreen) updateSearch(msg tea.KeyPressMsg) (Screen, tea.Cmd) {
 		s.rebuildTree()
 		return s, s.fetchFieldsForCurrentDT()
 	case "esc":
+		// Preserve selected datatype across search clear so the cursor
+		// stays on the same item instead of jumping to the top.
+		var selectedID string
+		if s.Cursor < len(s.FlatDTList) {
+			selectedID = string(s.FlatDTList[s.Cursor].DatatypeID())
+		}
 		s.Searching = false
 		s.SearchQuery = ""
 		s.SearchInput.SetValue("")
 		s.SearchInput.Blur()
 		s.rebuildTree()
+		if selectedID != "" {
+			for i, node := range s.FlatDTList {
+				if string(node.DatatypeID()) == selectedID {
+					s.Cursor = i
+					break
+				}
+			}
+		}
 		return s, s.fetchFieldsForCurrentDT()
 	default:
 		var cmd tea.Cmd
@@ -449,7 +463,7 @@ func (s *DatatypesScreen) updateSearch(msg tea.KeyPressMsg) (Screen, tea.Cmd) {
 		// Live filter on each keystroke
 		s.SearchQuery = s.SearchInput.Value()
 		s.rebuildTree()
-		return s, cmd
+		return s, tea.Batch(cmd, s.fetchFieldsForCurrentDT())
 	}
 }
 

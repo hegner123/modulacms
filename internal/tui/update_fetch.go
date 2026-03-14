@@ -1,6 +1,9 @@
 package tui
 
 import (
+	"slices"
+	"strings"
+
 	tea "charm.land/bubbletea/v2"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -91,6 +94,14 @@ func filterChildDatatypes(all []db.Datatypes, rootDatatypeID types.DatatypeID) [
 			addUnique(collectDescendants(dt.DatatypeID))
 		}
 	}
+
+	// Sort by sort_order then label for deterministic, user-friendly ordering.
+	slices.SortFunc(filtered, func(a, b db.Datatypes) int {
+		if a.SortOrder != b.SortOrder {
+			return int(a.SortOrder) - int(b.SortOrder)
+		}
+		return strings.Compare(a.Label, b.Label)
+	})
 
 	return filtered
 }

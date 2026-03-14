@@ -45,6 +45,14 @@ func NewWebhooksScreen(webhooks []db.Webhook) *WebhooksScreen {
 
 func (s *WebhooksScreen) PageIndex() PageIndex { return WEBHOOKSPAGE }
 
+// selectedWebhook returns the webhook at the current cursor, or nil.
+func (s *WebhooksScreen) selectedWebhook() *db.Webhook {
+	if len(s.WebhooksList) == 0 || s.Cursor >= len(s.WebhooksList) {
+		return nil
+	}
+	return &s.WebhooksList[s.Cursor]
+}
+
 func (s *WebhooksScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -55,6 +63,26 @@ func (s *WebhooksScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			return s, nil
 		}
 
+		// New webhook dialog
+		if km.Matches(key, config.ActionNew) {
+			return s, ShowCreateWebhookDialogCmd()
+		}
+
+		// Edit webhook dialog
+		if km.Matches(key, config.ActionEdit) {
+			if wh := s.selectedWebhook(); wh != nil {
+				return s, ShowEditWebhookDialogCmd(*wh)
+			}
+		}
+
+		// Delete webhook dialog
+		if km.Matches(key, config.ActionDelete) {
+			if wh := s.selectedWebhook(); wh != nil {
+				return s, ShowDeleteWebhookDialogCmd(wh.WebhookID, wh.Name)
+			}
+		}
+
+		// Common keys (quit, back, cursor)
 		cursorMax := len(s.WebhooksList) - 1
 		if cursorMax < 0 {
 			cursorMax = 0
@@ -100,6 +128,9 @@ func (s *WebhooksScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 
 func (s *WebhooksScreen) KeyHints(km config.KeyMap) []KeyHint {
 	return []KeyHint{
+		{km.HintString(config.ActionNew), "new"},
+		{km.HintString(config.ActionEdit), "edit"},
+		{km.HintString(config.ActionDelete), "del"},
 		{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionBack), "back"},

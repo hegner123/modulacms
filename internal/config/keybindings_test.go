@@ -74,7 +74,7 @@ func TestDefaultKeyMap_SpotCheckBindings(t *testing.T) {
 		action config.Action
 		keys   []string
 	}{
-		{name: "quit includes q and ctrl+c", action: config.ActionQuit, keys: []string{"q", "ctrl+c"}},
+		{name: "quit includes q", action: config.ActionQuit, keys: []string{"q"}},
 		{name: "up includes up and k", action: config.ActionUp, keys: []string{"up", "k"}},
 		{name: "select includes enter", action: config.ActionSelect, keys: []string{"enter", "l", "right"}},
 		{name: "dismiss is esc", action: config.ActionDismiss, keys: []string{"esc"}},

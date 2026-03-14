@@ -56,10 +56,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "esc":
+			// Double-esc from quit dialog exits immediately.
 			if d, ok := m.ActiveOverlay.(*DialogModel); ok && d != nil && d.Action == DIALOGQUITCONFIRM {
 				return m, tea.Quit
 			}
-			m.ActiveOverlay = nil
+			// Let active overlays (form dialogs, confirmation dialogs) handle
+			// their own escape — they return cancel messages.
+			if m.ActiveOverlay != nil {
+				break
+			}
+			// Let screen-level search handle escape before showing quit.
+			if ds, ok := m.ActiveScreen.(*DatatypesScreen); ok && ds.Searching {
+				break
+			}
+			if ms, ok := m.ActiveScreen.(*MediaScreen); ok && ms.Searching {
+				break
+			}
+			// Default: show quit confirmation.
 			return m.UpdateDialog(ShowQuitConfirmDialogMsg{})
 		}
 	}
@@ -407,6 +420,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case MediaDeletedMsg:
 		return m.UpdateDialog(msg)
 
+	// Webhook dialog show messages → UpdateDialog.
+	case ShowWebhookFormDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowEditWebhookDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowDeleteWebhookDialogMsg:
+		return m.UpdateDialog(msg)
+	case WebhookFormDialogAcceptMsg:
+		return m.UpdateDialog(msg)
+	case WebhookFormDialogCancelMsg:
+		return m.UpdateDialog(msg)
+
+	// Webhook CRUD requests → UpdateCms.
+	case CreateWebhookFromDialogRequestMsg:
+		return m.UpdateCms(msg)
+	case UpdateWebhookFromDialogRequestMsg:
+		return m.UpdateCms(msg)
+	case DeleteWebhookRequestMsg:
+		return m.UpdateCms(msg)
+
+	// Webhook CRUD results → UpdateDialog.
+	case WebhookCreatedMsg:
+		return m.UpdateDialog(msg)
+	case WebhookUpdatedMsg:
+		return m.UpdateDialog(msg)
+	case WebhookDeletedMsg:
+		return m.UpdateDialog(msg)
+
 	// Field type dialog show messages → UpdateDialog.
 	case ShowDeleteFieldTypeDialogMsg:
 		return m.UpdateDialog(msg)
@@ -664,6 +705,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.ActiveOverlay != nil {
 		if keyMsg, ok := msg.(tea.KeyPressMsg); ok {
 			overlay, cmd := m.ActiveOverlay.OverlayUpdate(keyMsg)
+			m.ActiveOverlay = overlay
+			return m, cmd
+		}
+		// Forward non-key messages (cursor blink, timer ticks) to overlays
+		// that implement OverlayTicker. Without this, text input cursors
+		// freeze and typed text may not render until focus changes.
+		if ticker, ok := m.ActiveOverlay.(OverlayTicker); ok {
+			overlay, cmd := ticker.OverlayTick(msg)
 			m.ActiveOverlay = overlay
 			return m, cmd
 		}

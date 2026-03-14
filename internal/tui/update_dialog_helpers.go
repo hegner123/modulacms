@@ -929,6 +929,7 @@ func (m Model) handleCrudResultMsg(msg tea.Msg) (Model, tea.Cmd, bool) {
 			),
 			LogMessageCmd(fmt.Sprintf("Content created: ID=%s, DatatypeID=%s", msg.ContentID, msg.DatatypeID)),
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
+			RootContentSummaryFetchCmd(),
 		), true
 	case ContentUpdatedFromDialogMsg:
 		return m, tea.Batch(
@@ -1020,6 +1021,26 @@ func (m Model) handleCrudResultMsg(msg tea.Msg) (Model, tea.Cmd, bool) {
 			LoadingStopCmd(),
 			LogMessageCmd(fmt.Sprintf("Media deleted: %s", msg.MediaID)),
 			MediaFetchCmd(),
+		), true
+	case WebhookCreatedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Webhook created: %s", msg.Name)),
+			WebhooksFetchCmd(),
+		), true
+	case WebhookUpdatedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Webhook updated: %s", msg.Name)),
+			WebhooksFetchCmd(),
+		), true
+	case WebhookDeletedMsg:
+		newModel := m
+		newModel.Cursor = 0
+		return newModel, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Webhook deleted: %s", msg.WebhookID)),
+			WebhooksFetchCmd(),
 		), true
 	default:
 		return m, nil, false

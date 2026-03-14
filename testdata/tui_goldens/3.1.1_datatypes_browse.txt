@@ -1,0 +1,41 @@
+# tuikit snapshot cols=120 rows=40 cursor=39,38
+ ___  ___          _       _       _____ ___  ___ _____ 
+ |  \/  |         | |     | |     /  __ \|  \/  |/  ___|
+ | .  . | ___   __| |_   _| | __ _| /  \/| .  . |\ `--. 
+ | |\/| |/ _ \ / _` | | | | |/ _` | |    | |\/| | `--. \
+ | |  | | (_) | (_| | |_| | | (_| | \__/\| |  | |/\__/ /
+ \_|  |_/\___/ \__,_|\__,_|_|\__,_|\____/\_|  |_/\____/ 
+
+ Datatypes  [postgres]
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+╭────────────────────────────────────╮╭────────────────────────────────────────────────────────────────────────────╮
+│Datatypes 1/37                      ││Details                                                                     │
+│ ->   Case Study [_root]            ││ Label   Case Study                                                         │
+│▓                                   ││ Name    case_study                                                         │
+│    v Documentation [_root]         ││ Type    _root                                                              │
+│▓                                   ││                                                                            │
+│        Code Block [doc_component]  ││ ID      01KKMDNPBYB59SMRDQERXRPDSR                                         │
+│▓                                   │╰────────────────────────────────────────────────────────────────────────────╯
+│        Image [doc_component]       │╭────────────────────────────────────────────────────────────────────────────╮
+│▓                                   ││Fields                                                                      │
+│        Reference [doc_component]   ││ 1. Title [_title]                                                          │
+│▓                                   ││ 2. Slug [slug]                                                             │
+│        Section [doc_component]     ││ 3. Company Name [text]                                                     │
+│▓                                   ││ 4. Company Logo [media]                                                    │
+│        Step Header [doc_component] ││ 5. Company URL [url]                                                       │
+│▓                                   ││ 6. Industry [text]                                                         │
+│    v Footer [_root]                ││ 7. Description [textarea]                                                  │
+│▓                                   ││ 8. Challenge [richtext]                                                    │
+│      v Footer Column               ││ 9. Solution [richtext]                                                     │
+│[footer_compone▓                    ││ 10. Results [richtext]                                                     │
+│          Footer Link               ││ 11. Testimonial [textarea]                                                 │
+│[footer_compone▓                    ││ 12. Featured Image [media]                                                 │
+│        Footer Social               ││ 13. Published [boolean]                                                    │
+│[footer_compone▓                    ││                                                                            │
+│        Footer Text                 ││                                                                            │
+│[footer_component▓                  ││                                                                            │
+│    v Menu [_global]                ││                                                                            │
+│▓                                   ││                                                                            │
+│        Menu Icon Link              │╰────────────────────────────────────────────────────────────────────────────╯
+│[menu_componen▓                     │
+│        Menu Link [menu_component]  │

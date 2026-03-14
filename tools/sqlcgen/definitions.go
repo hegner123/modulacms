@@ -347,7 +347,7 @@ var Overrides = []Override{
 	// WEBHOOKS
 	{Comment: "WEBHOOKS", Column: "webhooks.webhook_id", Import: typesImport, Type: "WebhookID"},
 	{Column: "webhooks.author_id", Import: typesImport, Type: "UserID"},
-	{Column: "webhooks.is_active", Type: "int64"},
+	{Column: "webhooks.is_active", Import: typesImport, Type: "SafeBool"},
 	{Column: "webhook_deliveries.delivery_id", Import: typesImport, Type: "WebhookDeliveryID"},
 	{Column: "webhook_deliveries.webhook_id", Import: typesImport, Type: "WebhookID"},
 	// PIPELINES

@@ -43,6 +43,7 @@ const (
 	DIALOGUNPUBLISHCONTENT     DialogAction = "unpublish_content"
 	DIALOGRESTOREVERSION       DialogAction = "restore_version"
 	DIALOGLOCALESELECT         DialogAction = "locale_select"
+	DIALOGDELETEWEBHOOK        DialogAction = "delete_webhook"
 )
 
 // dialogBorderPadding accounts for border and padding in dialog width calculations.
@@ -120,7 +121,8 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 		DIALOGBACKUPRESTORE, DIALOGAPPROVEPLUGINROUTES, DIALOGAPPROVEPLUGINSHOOKS,
 		DIALOGQUICKSTART, DIALOGDELETEFIELDTYPE, DIALOGDELETEADMINFIELDTYPE,
 		DIALOGDEPLOYPULL, DIALOGDEPLOYPUSH,
-		DIALOGPUBLISHCONTENT, DIALOGUNPUBLISHCONTENT, DIALOGRESTOREVERSION:
+		DIALOGPUBLISHCONTENT, DIALOGUNPUBLISHCONTENT, DIALOGRESTOREVERSION,
+		DIALOGDELETEWEBHOOK:
 		return d.ToggleControls(msg)
 	case DIALOGLOCALESELECT:
 		return d.LocaleSelectControls(msg)

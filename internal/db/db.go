@@ -532,6 +532,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	// 6. Create default page datatype (datatype_id = 1)
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
+		Name:         "page",
 		SortOrder:    0,
 		Label:        "Page",
 		Type:         string(types.DatatypeTypeRoot),
@@ -1476,6 +1477,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 6. Create default page datatype (datatype_id = 1)
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
+		Name:         "page",
 		SortOrder:    0,
 		Label:        "Page",
 		Type:         string(types.DatatypeTypeRoot),
@@ -2393,6 +2395,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 6. Create default page datatype (datatype_id = 1)
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
+		Name:         "page",
 		SortOrder:    0,
 		Label:        "Page",
 		Type:         string(types.DatatypeTypeRoot),
@@ -3063,14 +3066,14 @@ func (d Database) DumpSql(c config.Config) error {
 	// Read the embedded Bash script.
 	script, err := sqlFiles.ReadFile("sql/dump_sql.sh")
 	if err != nil {
-		utility.DefaultLogger.Fatal("failed to read embedded script: %v", err)
+		utility.DefaultLogger.Ferror("failed to read embedded script: %v", err)
 		return err
 	}
 
 	// Create a temporary file for the script.
 	tmpFile, err := os.CreateTemp("", "embedded_script_*.sh")
 	if err != nil {
-		utility.DefaultLogger.Fatal("failed to create temporary file: %v", err)
+		utility.DefaultLogger.Ferror("failed to create temporary file: %v", err)
 		return err
 	}
 	// Ensure the file is removed after execution.
@@ -3082,7 +3085,7 @@ func (d Database) DumpSql(c config.Config) error {
 
 	// Write the embedded script contents to the temporary file.
 	if _, err := tmpFile.Write(script); err != nil {
-		utility.DefaultLogger.Fatal("failed to write script to file: %v", err)
+		utility.DefaultLogger.Ferror("failed to write script to file: %v", err)
 		return err
 	}
 	// Close the file so that it can be executed.
@@ -3093,7 +3096,7 @@ func (d Database) DumpSql(c config.Config) error {
 
 	// Make the temporary file executable.
 	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
-		utility.DefaultLogger.Fatal("failed to chmod the temporary file: %v", err)
+		utility.DefaultLogger.Ferror("failed to chmod the temporary file: %v", err)
 		return err
 	}
 
@@ -3102,7 +3105,7 @@ func (d Database) DumpSql(c config.Config) error {
 	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_Name, "sqlite"+t+".sql")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		utility.DefaultLogger.Fatal("failed to execute script: %v, output: %s", err, output)
+		utility.DefaultLogger.Ferror("failed to execute script: %v, output: %s", err, output)
 		return err
 	}
 	return nil
@@ -3113,14 +3116,14 @@ func (d MysqlDatabase) DumpSql(c config.Config) error {
 	// Read the embedded Bash script.
 	script, err := sqlFiles.ReadFile("sql/dump_mysql.sh")
 	if err != nil {
-		utility.DefaultLogger.Fatal("failed to read embedded script: %v", err)
+		utility.DefaultLogger.Ferror("failed to read embedded script: %v", err)
 		return err
 	}
 
 	// Create a temporary file for the script.
 	tmpFile, err := os.CreateTemp("", "embedded_script_*.sh")
 	if err != nil {
-		utility.DefaultLogger.Fatal("failed to create temporary file: %v", err)
+		utility.DefaultLogger.Ferror("failed to create temporary file: %v", err)
 		return err
 	}
 	// Ensure the file is removed after execution.
@@ -3132,7 +3135,7 @@ func (d MysqlDatabase) DumpSql(c config.Config) error {
 
 	// Write the embedded script contents to the temporary file.
 	if _, err := tmpFile.Write(script); err != nil {
-		utility.DefaultLogger.Fatal("failed to write script to file: %v", err)
+		utility.DefaultLogger.Ferror("failed to write script to file: %v", err)
 		return err
 	}
 	// Close the file so that it can be executed.
@@ -3143,7 +3146,7 @@ func (d MysqlDatabase) DumpSql(c config.Config) error {
 
 	// Make the temporary file executable.
 	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
-		utility.DefaultLogger.Fatal("failed to chmod the temporary file: %v", err)
+		utility.DefaultLogger.Ferror("failed to chmod the temporary file: %v", err)
 		return err
 	}
 
@@ -3152,7 +3155,7 @@ func (d MysqlDatabase) DumpSql(c config.Config) error {
 	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_User, c.Db_Password, c.Db_Name, "mysql"+t+".sql")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		utility.DefaultLogger.Fatal("failed to execute script: %v, output: %s", err, string(output))
+		utility.DefaultLogger.Ferror("failed to execute script: %v, output: %s", err, string(output))
 		return err
 	}
 	return nil
@@ -3163,14 +3166,14 @@ func (d PsqlDatabase) DumpSql(c config.Config) error {
 	// Read the embedded Bash script.
 	script, err := sqlFiles.ReadFile("sql/dump_psql.sh")
 	if err != nil {
-		utility.DefaultLogger.Fatal("failed to read embedded script: %v", err)
+		utility.DefaultLogger.Ferror("failed to read embedded script: %v", err)
 		return err
 	}
 
 	// Create a temporary file for the script.
 	tmpFile, err := os.CreateTemp("", "embedded_script_*.sh")
 	if err != nil {
-		utility.DefaultLogger.Fatal("failed to create temporary file: %v", err)
+		utility.DefaultLogger.Ferror("failed to create temporary file: %v", err)
 		return err
 	}
 	// Ensure the file is removed after execution.
@@ -3182,7 +3185,7 @@ func (d PsqlDatabase) DumpSql(c config.Config) error {
 
 	// Write the embedded script contents to the temporary file.
 	if _, err := tmpFile.Write(script); err != nil {
-		utility.DefaultLogger.Fatal("failed to write script to file: %v", err)
+		utility.DefaultLogger.Ferror("failed to write script to file: %v", err)
 		return err
 	}
 	// Close the file so that it can be executed.
@@ -3193,7 +3196,7 @@ func (d PsqlDatabase) DumpSql(c config.Config) error {
 
 	// Make the temporary file executable.
 	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
-		utility.DefaultLogger.Fatal("failed to chmod the temporary file: %v", err)
+		utility.DefaultLogger.Ferror("failed to chmod the temporary file: %v", err)
 		return err
 	}
 
@@ -3202,7 +3205,7 @@ func (d PsqlDatabase) DumpSql(c config.Config) error {
 	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_Name, "sqlite"+t+".sql")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		utility.DefaultLogger.Fatal("failed to execute script: %v, output: %s", err, output)
+		utility.DefaultLogger.Ferror("failed to execute script: %v, output: %s", err, output)
 		return err
 	}
 	return nil

@@ -82,7 +82,14 @@ func RunQuickstartInstallCmd(cfg *config.Config, userID types.UserID, schemaInde
 			ac:     ac,
 		}
 
-		result, err := definitions.Install(adapter, def, userID)
+		// Fetch existing datatypes so Install can reuse bootstrap records
+		// (e.g. the "page" datatype) instead of creating duplicates.
+		var existing []db.Datatypes
+		if list, listErr := driver.ListDatatypes(); listErr == nil && list != nil {
+			existing = *list
+		}
+
+		result, err := definitions.Install(adapter, def, userID, existing)
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Install Failed",

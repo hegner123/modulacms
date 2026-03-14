@@ -50,7 +50,7 @@ type KeyMap map[Action][]string
 // hardcoded values in the control handlers.
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
-		ActionQuit:         {"q", "ctrl+c"},
+		ActionQuit:         {"q"},
 		ActionDismiss:      {"esc"},
 		ActionUp:           {"up", "k"},
 		ActionDown:         {"down", "j"},

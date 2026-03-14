@@ -14,6 +14,14 @@ type ModalOverlay interface {
 	OverlayView(width, height int) string
 }
 
+// OverlayTicker is an optional interface that overlays can implement
+// to receive non-key messages (cursor blink, timer ticks, etc.).
+// Without this, text input cursors in form dialogs don't animate
+// and typed text may not render until focus changes.
+type OverlayTicker interface {
+	OverlayTick(msg tea.Msg) (ModalOverlay, tea.Cmd)
+}
+
 // OverlaySetMsg replaces the per-type Set messages.
 type OverlaySetMsg struct {
 	Overlay ModalOverlay

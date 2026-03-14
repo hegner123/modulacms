@@ -1,0 +1,41 @@
+# tuikit snapshot cols=120 rows=40 cursor=29,78
+ ___  ___          _       _       _____ ___  ___ _____ 
+ |  \/  |         | |     | |     /  __ \|  \/  |/  ___|
+ | .  . | ___   __| |_   _| | __ _| /  \/| .  . |\ `--. 
+ | |\/| |/ _ \ / _` | | | | |/ _` | |    | |\/| | `--. \
+ | |  | | (_) | (_| | |_| | | (_| | \__/\| |  | |/\__/ /
+ \_|  |_/\___/ \__,_|\__,_|_|\__,_|\____/\_|  |_/\____/ 
+
+ Home  [postgres]
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+╭────────────────╮╭──────────────────────────────────────────────╮╭──────────────────────────────────────────────╮
+│Nav             ││Plugins                                       ││Activity                                      │
+│-> Content      ││ No plugins installed                         ││ 18:10 INSERT content_fields                  │
+│   Media        ││                                              ││ 18:10 INSERT content_fields                  │
+│   Routes       ││                                              ││ 18:10 INSERT content_fields                  │
+│   Datatypes    ││                                              ││ 18:10 INSERT content_fields                  │
+│   Field Types  ││                                              ││ 18:10 INSERT content_data                    │
+│   Users        ││                                              ││ 18:09 INSERT content_fields                  │
+│   Plugins      ││                                              ││ 18:09 INSERT content_data                    │
+│   Pipelines    ││                                              ││ 18:07 INSERT content_fields                  │
+│   Webhooks     ││                                              ││ 18:07 INSERT content_data                    │
+│   Config       ││                                              ││ 18:07 INSERT content_fields                  │
+│   Deploy       ││                                              ││                                              │
+│   Actions      ││                                              ││                                              │
+│   Database     ││                                              ││                                              │
+│   Quickstart   ││                                              ││                                              │
+│                ││                                              ││                                              │
+│                │╰──────────────────────────────────────────────╯╰──────────────────────────────────────────────╯
+│                │╭──────────────────────────────────────────────╮╭──────────────────────────────────────────────╮
+╰────────────────╯│Connections                                   ││Backups                                       │
+╭────────────────╮│ DB:     postgres     OK                      ││ No backups                                   │
+│Site            ││ S3:     us-iad-10.linodeobjects.com OK       ││                                              │
+│ Mode local     ││ Remote: n/a          OFF                     ││                                              │
+│ HTTP :8080     ││                                              ││                                              │
+│ SSL  :4000     ││                                              ││                                              │
+│ SSH  2233      ││                                              ││                                              │
+│ CORS           ││                                              ││                                              │
+│http://local    ││                                              ││                                              │
+│                │╰──────────────────────────────────────────────╯╰──────────────────────────────────────────────╯
+╰────────────────╯
+   OK      [Client]    [Normal] 

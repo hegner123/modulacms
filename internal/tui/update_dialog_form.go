@@ -85,6 +85,82 @@ func UpdateUserFromDialogCmd(userID, username, name, email, role string) tea.Cmd
 }
 
 // =============================================================================
+// CREATE/UPDATE WEBHOOK FROM DIALOG
+// =============================================================================
+
+// CreateWebhookFromDialogRequestMsg triggers webhook creation from dialog.
+type CreateWebhookFromDialogRequestMsg struct {
+	Name     string
+	URL      string
+	Secret   string
+	Events   string // comma-separated
+	IsActive bool
+}
+
+// WebhookCreatedMsg is sent after a webhook is successfully created.
+type WebhookCreatedMsg struct {
+	WebhookID types.WebhookID
+	Name      string
+}
+
+// UpdateWebhookFromDialogRequestMsg triggers webhook update from dialog.
+type UpdateWebhookFromDialogRequestMsg struct {
+	WebhookID string
+	Name      string
+	URL       string
+	Secret    string
+	Events    string // comma-separated
+	IsActive  bool
+}
+
+// WebhookUpdatedMsg is sent after a webhook is successfully updated.
+type WebhookUpdatedMsg struct {
+	WebhookID types.WebhookID
+	Name      string
+}
+
+// ShowCreateWebhookDialogCmd creates a command to show a webhook creation dialog.
+func ShowCreateWebhookDialogCmd() tea.Cmd {
+	return func() tea.Msg {
+		return ShowWebhookFormDialogMsg{Title: "New Webhook"}
+	}
+}
+
+// ShowEditWebhookDialogCmd creates a command to show a webhook edit dialog.
+func ShowEditWebhookDialogCmd(webhook db.Webhook) tea.Cmd {
+	return func() tea.Msg {
+		return ShowEditWebhookDialogMsg{Webhook: webhook}
+	}
+}
+
+// CreateWebhookFromDialogCmd creates a command to trigger webhook creation from dialog.
+func CreateWebhookFromDialogCmd(name, url, secret, events string, isActive bool) tea.Cmd {
+	return func() tea.Msg {
+		return CreateWebhookFromDialogRequestMsg{
+			Name:     name,
+			URL:      url,
+			Secret:   secret,
+			Events:   events,
+			IsActive: isActive,
+		}
+	}
+}
+
+// UpdateWebhookFromDialogCmd creates a command to trigger webhook update from dialog.
+func UpdateWebhookFromDialogCmd(webhookID, name, url, secret, events string, isActive bool) tea.Cmd {
+	return func() tea.Msg {
+		return UpdateWebhookFromDialogRequestMsg{
+			WebhookID: webhookID,
+			Name:      name,
+			URL:       url,
+			Secret:    secret,
+			Events:    events,
+			IsActive:  isActive,
+		}
+	}
+}
+
+// =============================================================================
 // CREATE DATATYPE FROM DIALOG
 // =============================================================================
 

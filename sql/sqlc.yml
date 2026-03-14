@@ -496,7 +496,7 @@ sql:
           - column: "webhooks.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           - column: "webhooks.is_active"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "webhook_deliveries.delivery_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookDeliveryID"}
           - column: "webhook_deliveries.webhook_id"
@@ -1032,7 +1032,7 @@ sql:
           - column: "webhooks.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           - column: "webhooks.is_active"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "webhook_deliveries.delivery_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookDeliveryID"}
           - column: "webhook_deliveries.webhook_id"
@@ -1568,7 +1568,7 @@ sql:
           - column: "webhooks.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           - column: "webhooks.is_active"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "webhook_deliveries.delivery_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookDeliveryID"}
           - column: "webhook_deliveries.webhook_id"

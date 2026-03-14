@@ -51,6 +51,8 @@ const (
 	FORMDIALOGCHILDADMINDATATYPE          FormDialogAction = "child_admin_datatype"
 	FORMDIALOGADDADMINCONTENTFIELD        FormDialogAction = "add_admin_content_field"
 	FORMDIALOGEDITADMINSINGLEFIELD        FormDialogAction = "edit_admin_single_field"
+	FORMDIALOGCREATEWEBHOOK              FormDialogAction = "create_webhook"
+	FORMDIALOGEDITWEBHOOK                FormDialogAction = "edit_webhook"
 )
 
 // FormDialogField constants define focus indices for dialog fields.
@@ -139,12 +141,10 @@ func newDialogStyles() dialogStyles {
 			MarginRight(2),
 		cancelButtonStyle: lipgloss.NewStyle().
 			Foreground(config.DefaultStyle.Secondary).
-			Background(config.DefaultStyle.Tertiary).
 			Padding(0, 2).
 			MarginRight(2),
 		confirmButtonStyle: lipgloss.NewStyle().
 			Foreground(config.DefaultStyle.Primary).
-			Background(config.DefaultStyle.Accent).
 			Padding(0, 2),
 	}
 }
@@ -510,6 +510,23 @@ func (d *FormDialogModel) updateFocus() {
 func (d *FormDialogModel) OverlayUpdate(msg tea.KeyPressMsg) (ModalOverlay, tea.Cmd) {
 	updated, cmd := d.Update(msg)
 	return &updated, cmd
+}
+
+// OverlayTick forwards non-key messages (cursor blink, etc.) to the
+// focused text input so it can animate and re-render correctly.
+func (d *FormDialogModel) OverlayTick(msg tea.Msg) (ModalOverlay, tea.Cmd) {
+	var cmd tea.Cmd
+	switch d.focusIndex {
+	case FormDialogFieldName:
+		d.NameInput, cmd = d.NameInput.Update(msg)
+	case FormDialogFieldLabel:
+		d.LabelInput, cmd = d.LabelInput.Update(msg)
+	case FormDialogFieldType:
+		if !d.HasTypeSelector() {
+			d.TypeInput, cmd = d.TypeInput.Update(msg)
+		}
+	}
+	return d, cmd
 }
 
 // OverlayView implements ModalOverlay for FormDialogModel.

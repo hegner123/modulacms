@@ -52,7 +52,7 @@ type OpenFilePickerMsg struct {
 // the updated cursor, an optional command, and whether the key was handled.
 func HandleCommonKeys(key string, km config.KeyMap, cursor, cursorMax int) (newCursor int, cmd tea.Cmd, handled bool) {
 	if km.Matches(key, config.ActionQuit) {
-		return cursor, tea.Quit, true
+		return cursor, func() tea.Msg { return ShowQuitConfirmDialogMsg{} }, true
 	}
 	if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
 		return cursor, HistoryPopCmd(), true
