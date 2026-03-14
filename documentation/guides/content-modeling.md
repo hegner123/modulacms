@@ -160,6 +160,7 @@ Each field type determines two things: the editor component rendered in the admi
 | `slug` | URL-safe slug input | Slug string |
 | `email` | Email input | Email address |
 | `url` | URL input | URL string |
+| `plugin` | Plugin-provided editor (inline or overlay) | Opaque string (plugin decides format) |
 
 ### Custom Field Types
 

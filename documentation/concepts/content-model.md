@@ -112,6 +112,8 @@ The `FieldType` enum defines all available field types:
 | `slug` | URL-safe slug, validated to contain only lowercase letters, numbers, and hyphens |
 | `email` | Email address with format validation |
 | `url` | URL string with format validation |
+| `_title` | System title field (auto-generated for datatype display) |
+| `plugin` | Plugin-provided field editor. The value is an opaque string produced by the plugin's coroutine-based interface. Configured via the `field_plugin_config` extension table. |
 
 Custom field types can be registered via the FieldType API to extend the CMS.
 

@@ -60,7 +60,7 @@ just dc <backend> <action>
 | `dev` | Rebuild and restart only the CMS container |
 | `fresh` | Delete volumes, rebuild, and start everything from scratch |
 | `logs` | Follow CMS container logs |
-| `nuke` | Stop containers, delete volumes, and remove all images |
+| `destroy` | Stop containers, delete volumes, and remove all images (`full` backend only) |
 | `minio` | Restart just the MinIO container |
 
 ### Examples
@@ -83,10 +83,10 @@ View CMS logs:
 just dc postgres logs
 ```
 
-Destroy everything including images:
+Destroy everything including images (full backend only):
 
 ```bash
-just dc sqlite nuke
+just dc full destroy
 ```
 
 ## Volume Management
@@ -98,9 +98,9 @@ Docker volumes persist data between container restarts. Understanding when data 
 | `just dc <backend> down` | Stopped | Preserved | Preserved |
 | `just dc <backend> reset` | Stopped | Deleted | Preserved |
 | `just dc <backend> fresh` | Restarted | Deleted | Rebuilt |
-| `just dc <backend> nuke` | Stopped | Deleted | Deleted |
+| `just dc full destroy` | Stopped | Deleted | Deleted |
 
-Use `down` during normal development. Use `reset` or `fresh` when you want to start with an empty database. Use `nuke` when you need to clear cached Docker layers.
+Use `down` during normal development. Use `reset` or `fresh` when you want to start with an empty database. Use `destroy` (full backend only) when you need to clear cached Docker layers.
 
 ## Building the CMS Image
 

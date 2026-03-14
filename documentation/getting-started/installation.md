@@ -84,7 +84,7 @@ modula init --name my-site --admin-password pw
 
 1. **`modula.config.json`** with your chosen settings.
 2. **Database tables** for all CMS entities.
-3. **Bootstrap data** including three roles (admin, editor, viewer), 47 permissions, and a system admin user.
+3. **Bootstrap data** including three roles (admin, editor, viewer), 72 permissions, and a system admin user.
 4. **Validation** of the database setup.
 5. **Registry entry** in `~/.modula/configs.json` mapping the project name to this directory's config.
 

@@ -10,9 +10,9 @@ ModulaCMS ships with three built-in roles. These are system-protected and cannot
 
 | Role | Permissions | Description |
 |------|-------------|-------------|
-| `admin` | All 47 permissions | Full access, bypasses permission checks |
-| `editor` | 28 permissions | Content management, media, routes |
-| `viewer` | 3 permissions | Read-only access (content, media, routes) |
+| `admin` | All 72 permissions | Full access, bypasses permission checks |
+| `editor` | 36 permissions | Content management, media, routes, datatypes, fields, field types |
+| `viewer` | 5 permissions | Read-only access (content, media, routes, field types) |
 
 ## Create a User
 

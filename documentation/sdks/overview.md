@@ -23,7 +23,7 @@ ModulaCMS provides official SDKs for Go, TypeScript, and Swift. All three SDKs s
 | Property | Go | TypeScript | Swift |
 |----------|:--:|:----------:|:-----:|
 | Install method | `go get` | `npm install` / `pnpm add` | Swift Package Manager |
-| Min runtime | Go 1.24+ | Node 22+ / any modern browser | iOS 16+, macOS 13+, tvOS 16+, watchOS 9+ |
+| Min runtime | Go 1.25+ | Node 22+ / any modern browser | iOS 16+, macOS 13+, tvOS 16+, watchOS 9+ |
 | Dependencies | Zero | Zero | Zero |
 | Build output | Compiled binary | ESM + CJS dual build | Framework |
 | Package name | `modulacms` | `@modulacms/sdk`, `@modulacms/admin-sdk` | `ModulaCMS` |

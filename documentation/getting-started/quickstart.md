@@ -27,7 +27,7 @@ modula version
 
 ### Prerequisites
 
-- **Go 1.24+** with CGO enabled (`CGO_ENABLED=1`)
+- **Go 1.25+** with CGO enabled (`CGO_ENABLED=1`)
 - **just** command runner ([installation](https://github.com/casey/just#installation))
 - **GCC or Clang** (CGO compiles the SQLite driver)
 - Linux or macOS (Windows is not supported)

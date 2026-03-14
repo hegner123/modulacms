@@ -45,8 +45,8 @@ This structure supports O(1) reordering of siblings without updating every sibli
 
 Three bootstrap roles are created on first run:
 - **admin** -- All permissions. Bypasses permission checks entirely.
-- **editor** -- 28 permissions covering content, media, and schema management.
-- **viewer** -- 3 read-only permissions.
+- **editor** -- 36 permissions covering content, media, routes, datatypes, fields, and field types.
+- **viewer** -- 5 read-only permissions (`content:read`, `media:read`, `routes:read`, `field_types:read`, `admin_field_types:read`).
 
 System-protected roles and permissions cannot be deleted or renamed through the API. The permission cache is held in memory, loaded at startup, and refreshed every 60 seconds.
 

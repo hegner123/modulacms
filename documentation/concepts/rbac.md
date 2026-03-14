@@ -8,9 +8,9 @@ The CMS ships with three built-in roles created during installation:
 
 | Role | Permissions | Behavior |
 |------|-------------|----------|
-| `admin` | All 47 permissions | Bypasses permission checks entirely via `ContextIsAdmin` |
-| `editor` | 28 permissions | Content management, media, routes, datatypes, fields -- no user or role management |
-| `viewer` | 3 permissions | `content:read`, `media:read`, `routes:read` |
+| `admin` | All 72 permissions | Bypasses permission checks entirely via `ContextIsAdmin` |
+| `editor` | 36 permissions | Content management, media, routes, datatypes, fields, field types -- no user or role management |
+| `viewer` | 5 permissions | `content:read`, `media:read`, `routes:read`, `field_types:read`, `admin_field_types:read` |
 
 These roles are system-protected. They cannot be deleted or renamed via the API.
 

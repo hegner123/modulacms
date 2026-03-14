@@ -16,7 +16,7 @@ import modula "github.com/hegner123/modulacms/sdks/go"
 
 The package name is `modula`. All types and functions are accessed as `modula.Client`, `modula.NewClient`, etc.
 
-Requires Go 1.24 or later.
+Requires Go 1.25 or later.
 
 ## Creating a Client
 

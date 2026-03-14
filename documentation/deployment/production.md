@@ -9,7 +9,7 @@ This guide covers deploying ModulaCMS to a Linux server with automatic CI/CD via
 - A Linux server (AMD64) with root or sudo access
 - A domain name with DNS pointing to your server's IP address
 - Ports 80, 443, and your SSH port (default 2233) open in the firewall
-- Go 1.24+ with CGO enabled (for building from source)
+- Go 1.25+ with CGO enabled (for building from source)
 
 ## Server Setup
 
