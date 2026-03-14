@@ -10,6 +10,11 @@ Built on [gopher-lua](https://github.com/yuin/gopher-lua) (pure Go Lua VM). Zero
 plugins/
   my_plugin/
     init.lua          # Entry point (required)
+    screens/
+      main.lua        # function screen(ctx) ... end (optional)
+      edit.lua
+    interfaces/
+      picker.lua      # function interface(ctx) ... end (optional)
     lib/
       helpers.lua     # Optional modules loaded via require("helpers")
 ```
@@ -27,6 +32,18 @@ plugin_info = {
   license      = "MIT",                 -- optional
   min_cms_version = "1.0.0",           -- optional
   dependencies = {"other_plugin"},      -- optional, loaded in dependency order
+
+  -- TUI screens (standalone pages in the SSH TUI sidebar)
+  screens = {
+    { name = "main", label = "Tasks", icon = "list" },
+    { name = "edit", label = "Edit Task", hidden = true },
+  },
+
+  -- Field interfaces (editors for fields of type "plugin")
+  interfaces = {
+    { name = "picker", label = "Color Picker", mode = "overlay" },
+    { name = "swatch", label = "Color Swatch", mode = "inline" },
+  },
 }
 ```
 
@@ -269,6 +286,62 @@ if v.not_empty(title) then ... end
 ```
 
 Only files under the plugin's own `lib/` directory are loadable (sandbox enforced).
+
+### TUI Screens (`tui.*`)
+
+Plugins that declare `screens` or `interfaces` in their manifest get access to the `tui` module for building terminal UIs via the coroutine bridge. Screen functions yield layout tables and receive events on resume.
+
+#### Constructors
+
+```lua
+tui.grid(columns, hints)       -- Grid layout container
+tui.column(span, cells)        -- Column (span out of 12)
+tui.cell(title, height, content) -- Cell within a column
+tui.list(items, cursor)        -- Vertical item list
+tui.detail(fields)             -- Key-value pair display
+tui.text(lines)                -- Styled text block
+tui.table(headers, rows, cursor) -- Table with headers
+tui.input(id, value, placeholder) -- Text input
+tui.select_field(id, options, selected) -- Option selector
+tui.tree(nodes, cursor)        -- Hierarchical tree
+tui.progress(value, label)     -- Progress bar
+```
+
+All constructors are pure sugar — they produce the same tables as hand-built Lua tables. The `tui` module is frozen (read-only).
+
+#### Screen Lifecycle
+
+```lua
+-- screens/main.lua
+function screen(ctx)
+    -- ctx contains: protocol_version, width, height, params
+    while true do
+        local event = coroutine.yield({
+            type = "grid",
+            columns = { ... },
+            hints = { { key = "q", label = "quit" } },
+        })
+        if event.type == "key" and event.key == "q" then return end
+    end
+end
+```
+
+#### Actions
+
+Yield a table with an `action` field instead of a layout:
+
+```lua
+coroutine.yield({ action = "navigate", plugin = "other", screen = "detail" })
+coroutine.yield({ action = "confirm", title = "Delete?", message = "Cannot undo." })
+coroutine.yield({ action = "toast", message = "Saved", level = "success" })
+coroutine.yield({ action = "request", id = "api", method = "GET", url = "https://..." })
+coroutine.yield({ action = "commit", value = "#ff0000" })  -- field interfaces
+coroutine.yield({ action = "cancel" })                       -- field interfaces
+```
+
+#### UI VM Pool
+
+Plugins with screens or interfaces get a dedicated `UIVMPool` (default 4 VMs) separate from the standard pool. UI VMs are held for the lifetime of a screen/field session, with no acquisition timeout — pool exhaustion shows "Plugin busy" instead of blocking.
 
 ## Approval System
 

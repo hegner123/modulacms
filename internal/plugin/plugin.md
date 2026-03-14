@@ -270,3 +270,35 @@ Returns current time as RFC3339 UTC string. Replaces os.date which is sandboxed 
 `db.define_table(tableName, definition) -> nil | raises error`
 
 Creates plugin table with auto-injected id, created_at, updated_at columns. definition fields: columns sequence required non-empty with each entry having name string, type string, not_null bool optional, default string or number optional, unique bool optional. indexes sequence optional with each entry having columns sequence and unique bool. foreign_keys sequence optional with each entry having column string, ref_table string, ref_column string, on_delete string optional. Reserved column names id, created_at, updated_at rejected. Column types validated via db.ValidateColumnType. Foreign key ref_table must start with same plugin prefix for namespace isolation. Executes DDL with IfNotExists true.
+
+## TUI Coroutine Bridge
+
+Plugin TUI screens and field interfaces use a coroutine bridge that connects gopher-lua coroutines to Bubbletea's Update/View cycle. Plugins yield layout tables, Go renders them; Go sends events, plugins process them on resume.
+
+### Key Types
+
+- `CoroutineBridge` — manages one coroutine on one checked-out LState (ui_bridge.go)
+- `YieldValue` — parsed result: Layout, Primitive, or Action
+- `PluginAction` — navigate, confirm, toast, fetch, request, commit, cancel, quit
+- `PluginLayout` — grid with columns, cells, and key hints
+- `PluginPrimitive` — interface for 8 primitive types: list, detail, text, table, input, select, tree, progress
+- `UIVMPool` — separate VM pool for long-held UI coroutines, no acquisition timeout (ui_pool.go)
+- `ScreenDefinition` / `InterfaceDefinition` — manifest-declared screen and field interface metadata
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| ui_bridge.go | CoroutineBridge lifecycle, event builders, action parser |
+| ui_primitives.go | Lua table → Go primitive conversion with validation |
+| ui_renderer.go | Go primitives → styled string rendering |
+| ui_api.go | `tui` Lua module with 11 constructors |
+| ui_pool.go | UIVMPool for long-held UI coroutines |
+
+### tui Module
+
+Frozen Lua module with pure constructors: `tui.grid`, `tui.column`, `tui.cell`, `tui.list`, `tui.detail`, `tui.text`, `tui.table`, `tui.input`, `tui.select_field`, `tui.tree`, `tui.progress`. Registered via RegisterTUIModule.
+
+### Manifest Discovery
+
+ExtractManifest parses `plugin_info.screens` and `plugin_info.interfaces` arrays. Manager exposes PluginScreens(), PluginInterfaces(), and PluginInterface() for TUI sidebar and field configuration.

@@ -40,7 +40,7 @@ Constants: `Open`, `Closed`, `Err`.
 
 ### DbDriver
 
-Unified interface for all database operations across SQLite, MySQL, PostgreSQL. Provides connection management, table operations, and CRUD methods for all 26 ModulaCMS tables. Each method group handles a specific entity type with consistent naming patterns.
+Unified interface for all database operations across SQLite, MySQL, PostgreSQL. Composes 23 focused repository interfaces defined in repositories.go. Provides connection management, table operations, and CRUD methods for all ModulaCMS tables. Each method group handles a specific entity type with consistent naming patterns.
 
 ## Connection Methods
 

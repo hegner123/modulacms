@@ -14,7 +14,7 @@ ModulaCMS is a headless CMS written in Go that ships as a **single binary** runn
 
 Content is managed through the SSH TUI, a server-rendered HTMX admin panel, or the REST API and delivered to frontends over HTTP/HTTPS.
 
-**Requirements**: Go 1.24+, CGO enabled (SQLite via `mattn/go-sqlite3`), Linux/macOS only.
+**Requirements**: Go 1.25+, CGO enabled (SQLite via `mattn/go-sqlite3`), Linux/macOS only.
 
 ---
 
@@ -184,7 +184,7 @@ sdks/
   go/                         # Go SDK (modulacms package)
   swift/                      # Swift SDK (SPM package, Apple platforms)
 sql/
-  schema/                     # 36 numbered directories (0-35), each with 6 files (3 schema + 3 queries per DB engine)
+  schema/                     # 37 numbered directories (0-36), each with 6 files (3 schema + 3 queries per DB engine)
   sqlc.yml                    # sqlc configuration (generated — do not hand-edit)
   all_schema*.sql             # Combined schemas for fresh installs
 tools/
@@ -206,7 +206,7 @@ deploy/                       # Docker compose files and deployment configs
 ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `config.json`'s `db_driver` field:
 
 1. **sqlc generates** per-database Go code from SQL queries in `sql/schema/` into `internal/db-sqlite/` (package `mdb`), `internal/db-mysql/` (package `mdbm`), `internal/db-psql/` (package `mdbp`)
-2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 22 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`)
+2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 23 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`)
 3. **Wrapper methods** in `internal/db/*.go` convert between sqlc types and application types, handling NULL conversions and type width differences (SQLite uses int64, MySQL/PostgreSQL use int32)
 4. **`db.DefaultDriver`** is set at startup based on config and injected into handlers
 
@@ -395,7 +395,7 @@ Focus system: `PAGEFOCUS`, `TABLEFOCUS`, `FORMFOCUS`, `DIALOGFOCUS` — determin
 
 ## SQL Schema
 
-Schemas live in `sql/schema/` as 36 numbered directories (0-35). Each directory contains up to 6 files:
+Schemas live in `sql/schema/` as 37 numbered directories (0-36). Each directory contains up to 6 files:
 
 ```
 sql/schema/{N}_{name}/
@@ -523,7 +523,7 @@ SPM package. Platforms: iOS 16+, macOS 13+, tvOS 16+, watchOS 9+. Swift 5.9+, ze
 
 - Triggers on `sdks/**` changes
 - **TypeScript**: pnpm 9 + Node 22 → install → typecheck → build → test
-- **Go SDK**: Go 1.24 → vet → test
+- **Go SDK**: Go 1.25 → vet → test
 - **Swift SDK**: macOS 14 + Xcode 15.4 → build → test
 
 ---

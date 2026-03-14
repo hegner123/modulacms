@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ModulaCMS is a headless CMS written in Go that runs as a single binary with three concurrent servers: HTTP, HTTPS (with Let's Encrypt autocert), and SSH (running a Bubbletea TUI). Content is managed via the SSH TUI, web admin panel, or REST API and served to frontend clients over HTTP/HTTPS.
 
 - **Project stage:** Greenfield, no active users. Prefer completing refactors over deferring for safety.
-- **Go 1.24+** required, CGO enabled (for SQLite via mattn/go-sqlite3)
+- **Go 1.25+** required, CGO enabled (for SQLite via mattn/go-sqlite3)
 - Linux/macOS only
 - Uses `just` (justfile) as the build runner, not Make
 - **Project Board:** [GitHub Project (Roadmap)](https://github.com/users/hegner123/projects/2/views/1)
@@ -375,7 +375,7 @@ Client -> Middleware Chain (CORS, Sessions, Auth, Rate Limit, Permissions, Audit
 ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `modula.config.json`'s `db_driver` field. The architecture:
 
 1. **sqlc generates** per-database Go code from SQL queries in `sql/schema/` into `internal/db-sqlite/`, `internal/db-mysql/`, `internal/db-psql/`
-2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 22 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`) that each implement it
+2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 23 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`) that each implement it
 3. **Wrapper methods** in `internal/db/*.go` (e.g., `datatype.go`, `content_data.go`, `media.go`) convert between sqlc-generated types and application-level types, handling NULL conversions and type width differences (SQLite uses int64, MySQL/PostgreSQL use int32)
 4. **`db.DefaultDriver`** is set at startup based on config and injected into handlers
 
@@ -465,7 +465,7 @@ Loaded from `modula.config.json` at project root. Key fields: `db_driver`, `port
 
 ## SQL Schema Organization
 
-Schemas live in `sql/schema/` as 36 numbered directories (0-35). Each directory contains six files:
+Schemas live in `sql/schema/` as 37 numbered directories (0-36). Each directory contains six files:
 
 ```
 sql/schema/{N}_{name}/

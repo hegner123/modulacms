@@ -104,6 +104,7 @@ Each screen_*.go file implements the Screen interface:
 | screen_field_types.go | FieldTypesScreen | Field type management |
 | screen_pipelines.go | PipelinesScreen | Pipeline management |
 | screen_quickstart.go | QuickstartScreen | First-run guide |
+| screen_plugin_tui.go | PluginTUIScreen | Standalone plugin UI via coroutine bridge |
 
 ## Dialogs
 

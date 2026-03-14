@@ -360,7 +360,7 @@ Unmarshals from JSON string. Validates after unmarshaling. Returns error for inv
 
 Type of content field. Determines validation rules and UI rendering.
 
-Constants: `FieldTypeText`, `FieldTypeTextarea`, `FieldTypeNumber`, `FieldTypeDate`, `FieldTypeDatetime`, `FieldTypeBoolean`, `FieldTypeSelect`, `FieldTypeMedia`, `FieldTypeRelation`, `FieldTypeJSON`, `FieldTypeRichText`, `FieldTypeSlug`, `FieldTypeEmail`, `FieldTypeURL`.
+Constants: `FieldTypeText`, `FieldTypeTextarea`, `FieldTypeNumber`, `FieldTypeDate`, `FieldTypeDatetime`, `FieldTypeBoolean`, `FieldTypeSelect`, `FieldTypeMedia`, `FieldTypeJSON`, `FieldTypeRichText`, `FieldTypeSlug`, `FieldTypeEmail`, `FieldTypeURL`, `FieldTypeIDRef`, `FieldTypeTitle`, `FieldTypePlugin`.
 
 Methods: `Validate`, `String`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to ContentStatus.
 

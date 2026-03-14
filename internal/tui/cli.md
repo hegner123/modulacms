@@ -68,7 +68,7 @@ Returns tea.View (Bubbletea v2). Shows user provisioning form if needed. Otherwi
 
 ## Screen Implementations
 
-Screens are defined in screen_*.go files. Each implements the Screen interface and typically embeds PanelScreen for multi-panel layouts. Screens include: HomeScreen, ContentScreen, DatatypesScreen, MediaScreen, RoutesScreen, UsersScreen, PluginsScreen, WebhooksScreen, ConfigScreen, DatabaseScreen, DeployScreen, ActionsScreen, and others.
+Screens are defined in screen_*.go files. Each implements the Screen interface and typically embeds GridScreen for multi-panel layouts. Screens include: HomeScreen, ContentScreen, DatatypesScreen, MediaScreen, RoutesScreen, UsersScreen, PluginsScreen, PluginTUIScreen, WebhooksScreen, ConfigScreen, DatabaseScreen, DeployScreen, ActionsScreen, FieldTypesScreen, PipelinesScreen, QuickstartScreen, and others.
 
 ## Page Management
 
