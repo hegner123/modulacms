@@ -164,22 +164,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 The View function takes state and returns a string representation.
 
-**Function signature:**
+**Function signature (Bubbletea v2):**
 ```go
-func (m Model) View() string
+func (m Model) View() tea.View
 ```
 
 **Key points:**
 - Pure function of state
 - Same state always produces same output
 - No side effects
-- Returns ANSI-formatted string
+- Returns `tea.View` (wraps content string + options like AltScreen)
 
 **Example:**
 ```go
-func (m Model) View() string {
+func (m Model) View() tea.View {
     if !m.ready {
-        return "Loading..."
+        return tea.NewView("Loading...")
     }
 
     // Build UI from current state
@@ -187,12 +187,12 @@ func (m Model) View() string {
     content := m.renderContent()
     footer := m.renderFooter()
 
-    return lipgloss.JoinVertical(
+    return tea.NewView(lipgloss.JoinVertical(
         lipgloss.Left,
         header,
         content,
         footer,
-    )
+    ))
 }
 ```
 
@@ -297,11 +297,11 @@ case tea.KeyMsg:
 
 **5. View Renders New State**
 ```go
-func (m Model) View() string {
+func (m Model) View() tea.View {
     if m.loading {
-        return m.spinner.View() + " Loading..."
+        return tea.NewView(m.spinner.View() + " Loading...")
     }
-    return m.renderContent()
+    return tea.NewView(m.renderContent())
 }
 ```
 - Bubbletea calls View() with new model
@@ -1314,9 +1314,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     return m, cmd
 }
 
-func (m Model) View() string {
-    // Pure function: state → string
-    return renderedUI
+func (m Model) View() tea.View {
+    // Pure function: state → view
+    return tea.NewView(renderedUI)
 }
 ```
 

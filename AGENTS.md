@@ -10,7 +10,7 @@ ModulaCMS is a headless CMS written in Go that ships as a **single binary** runn
 
 1. **HTTP** (default `:8080`) — REST API + admin panel
 2. **HTTPS** (default `:8443`) — autocert via Let's Encrypt
-3. **SSH** (default `2222`) — Bubbletea TUI via Charmbracelet Wish
+3. **SSH** (default `2233`) — Bubbletea TUI via Charmbracelet Wish
 
 Content is managed through the SSH TUI, a server-rendered HTMX admin panel, or the REST API and delivered to frontends over HTTP/HTTPS.
 
@@ -138,7 +138,7 @@ just plugin disable <name>    # Disable a plugin
 ## Code Organization
 
 ```
-cmd/                          # Cobra CLI commands (serve, install, tui, cert, db, config, backup, update, version)
+cmd/                          # Cobra CLI commands (serve, install, init, tui, connect, deploy, pipeline, cert, db, config, backup, update, version, plugin, mcp)
 internal/
   db/                         # DbDriver interface, wrapper structs, application types, query builder
     types/                    # ULID-based typed IDs, enums, timestamps, nullable wrappers, field configs
@@ -150,19 +150,21 @@ internal/
   admin/                      # HTMX admin panel: CSRF, auth middleware, static file embed
     handlers/                 # Admin page handlers (render, auth, CRUD for all resources)
     layouts/                  # templ layouts (base, admin, auth) and AdminData type
-    pages/                    # templ full-page components (~23 pages)
-    partials/                 # templ HTMX swap targets (~28 partials)
+    pages/                    # templ full-page components (~28 pages)
+    partials/                 # templ HTMX swap targets (~27 partials)
     components/               # templ shared UI: sidebar, topbar, icon, status_badge
     static/                   # CSS, JS, HTMX, web components (go:embed)
-  cli/                        # Bubbletea TUI (40+ files, Elm Architecture)
+  tui/                        # Bubbletea TUI (130+ files, Elm Architecture)
   router/                     # HTTP route registration with stdlib ServeMux (Go 1.22+ patterns)
   middleware/                  # CORS, rate limiting, sessions, audit logging, RBAC authorization
   auth/                       # Authentication (password + OAuth with Google/GitHub/Azure)
   config/                     # Config struct, file provider, defaults
   media/                      # Image optimization, preset dimensions, S3 upload
   backup/                     # Backup/restore (SQL dump + media)
+  definitions/                # Schema definitions for installations and code generation
   deploy/                     # Deployment client/server, export/import, snapshot
   install/                    # Setup wizard and bootstrap checks
+  mcp/                        # MCP server for AI tool integration
   model/                      # Domain structs (Root, Node, Datatype, Field)
   plugin/                     # Lua plugin system via gopher-lua
   publishing/                 # Snapshot publishing, version history
@@ -171,6 +173,8 @@ internal/
   tree/                       # Content tree operations
   transform/                  # Response format transformers (Contentful, Sanity, Strapi, WordPress, Clean, Raw)
   validation/                 # Input validation rules and type validators
+  bucket/                     # S3-compatible storage client
+  service/                    # Service layer for business logic orchestration
   utility/                    # Logging (slog), version info, helpers, metrics, observability
   email/                      # Email service (SMTP, SendGrid, SES, Postmark)
   tui/                        # TUI layout framework (header, panel, statusbar, layers)
@@ -180,7 +184,7 @@ sdks/
   go/                         # Go SDK (modulacms package)
   swift/                      # Swift SDK (SPM package, Apple platforms)
 sql/
-  schema/                     # 37 numbered directories, each with 6 files (3 schema + 3 queries per DB engine)
+  schema/                     # 36 numbered directories (0-35), each with 6 files (3 schema + 3 queries per DB engine)
   sqlc.yml                    # sqlc configuration (generated — do not hand-edit)
   all_schema*.sql             # Combined schemas for fresh installs
 tools/
@@ -202,7 +206,7 @@ deploy/                       # Docker compose files and deployment configs
 ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `config.json`'s `db_driver` field:
 
 1. **sqlc generates** per-database Go code from SQL queries in `sql/schema/` into `internal/db-sqlite/` (package `mdb`), `internal/db-mysql/` (package `mdbm`), `internal/db-psql/` (package `mdbp`)
-2. **`internal/db/db.go`** defines the `DbDriver` interface (150+ methods) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`)
+2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 22 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`)
 3. **Wrapper methods** in `internal/db/*.go` convert between sqlc types and application types, handling NULL conversions and type width differences (SQLite uses int64, MySQL/PostgreSQL use int32)
 4. **`db.DefaultDriver`** is set at startup based on config and injected into handlers
 
@@ -286,7 +290,7 @@ Client → Middleware Chain (CORS, Sessions, Auth, Rate Limit, Permissions, Audi
 
 Role-based access control with `resource:operation` granular permissions (`internal/middleware/authorization.go`):
 
-- **Three bootstrap roles**: admin (all 47 permissions, bypasses checks), editor (28), viewer (3 read-only)
+- **Three bootstrap roles**: admin (all 72 permissions, bypasses checks), editor (36), viewer (5 read-only)
 - **`PermissionCache`** — in-memory role-to-permissions map, loaded at startup, refreshed every 60s. Build-then-swap for lock-free reads.
 - **Permission middleware**: `RequirePermission("resource:operation")`, `RequireResourcePermission("resource")` (auto-maps HTTP method → operation), `RequireAnyPermission(...)`, `RequireAllPermissions(...)`
 - **Admin bypass** via `ContextIsAdmin()` boolean, not wildcard
@@ -391,7 +395,7 @@ Focus system: `PAGEFOCUS`, `TABLEFOCUS`, `FORMFOCUS`, `DIALOGFOCUS` — determin
 
 ## SQL Schema
 
-Schemas live in `sql/schema/` as 37 numbered directories. Each directory contains up to 6 files:
+Schemas live in `sql/schema/` as 36 numbered directories (0-35). Each directory contains up to 6 files:
 
 ```
 sql/schema/{N}_{name}/
@@ -585,7 +589,7 @@ Environment variables can be referenced via `${VAR}` syntax in config.json.
 
 11. **Admin panel HTMX patterns**: full page loads render the complete layout; HTMX navigation requests (`HX-Request` header) return only the content partial + OOB swap targets. Both paths go through the same handler.
 
-12. **Cobra CLI structure**: `cmd/main.go` is the entrypoint. `cmd/root.go` defines the root command. Subcommands: `serve`, `install`, `tui`, `cert`, `db`, `config`, `backup`, `update`, `version`, `plugin`, `pipeline`, `deploy`.
+12. **Cobra CLI structure**: `cmd/main.go` is the entrypoint. `cmd/root.go` defines the root command. Subcommands: `serve`, `install`, `init`, `tui`, `connect`, `deploy`, `pipeline`, `cert`, `db`, `config`, `backup`, `update`, `version`, `plugin`, `mcp`.
 
 ---
 

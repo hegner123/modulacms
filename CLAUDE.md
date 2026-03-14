@@ -360,7 +360,7 @@ Taken to extremes these values break down. Performance to the extreme means writ
 The `serve` command starts three concurrent servers:
 1. **HTTP** on configurable port (default `:8080`)
 2. **HTTPS** on configurable port (default `:8443`) with autocert
-3. **SSH** on configurable port (default `2222`) via Charmbracelet Wish, piping into the Bubbletea TUI
+3. **SSH** on configurable port (default `2233`) via Charmbracelet Wish, piping into the Bubbletea TUI
 
 Graceful shutdown: first SIGINT/SIGTERM triggers shutdown; second forces exit.
 
@@ -375,7 +375,7 @@ Client -> Middleware Chain (CORS, Sessions, Auth, Rate Limit, Permissions, Audit
 ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `modula.config.json`'s `db_driver` field. The architecture:
 
 1. **sqlc generates** per-database Go code from SQL queries in `sql/schema/` into `internal/db-sqlite/`, `internal/db-mysql/`, `internal/db-psql/`
-2. **`internal/db/db.go`** defines the `DbDriver` interface (150+ methods) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`) that each implement it
+2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 22 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`) that each implement it
 3. **Wrapper methods** in `internal/db/*.go` (e.g., `datatype.go`, `content_data.go`, `media.go`) convert between sqlc-generated types and application-level types, handling NULL conversions and type width differences (SQLite uses int64, MySQL/PostgreSQL use int32)
 4. **`db.DefaultDriver`** is set at startup based on config and injected into handlers
 
@@ -398,16 +398,17 @@ Database mutations use an audited command pattern that atomically records `chang
 
 ### TUI (internal/tui/)
 
-Built with Charmbracelet Bubbletea (Elm Architecture: Model-Update-View). Key files:
+Built with Charmbracelet Bubbletea v2 (Elm Architecture: Model-Update-View). Key files:
 - `model.go` -- central state machine
+- `screen.go` -- Screen interface for self-contained page implementations
 - `commands.go` -- async action handlers returning `tea.Cmd`
-- `page_builders.go` -- screen rendering
+- `view.go` / `panel_view.go` -- screen rendering (View returns `tea.View`)
 - `dialog.go` / `form_dialog.go` -- modal dialog system
-- `table_model.go` -- table rendering
+- `screen_*.go` -- individual screen implementations (content, datatypes, media, routes, etc.)
 
 ### RBAC Authorization (internal/middleware/authorization.go)
 
-Role-based access control with `resource:operation` granular permissions. Three bootstrap roles: **admin** (all 47 permissions, bypasses checks), **editor** (28 permissions), **viewer** (3 read-only permissions).
+Role-based access control with `resource:operation` granular permissions. Three bootstrap roles: **admin** (all 72 permissions, bypasses checks), **editor** (36 permissions), **viewer** (5 read-only permissions).
 
 Key components:
 - `PermissionCache` -- in-memory role-to-permissions map, loaded at startup, refreshed every 60s via `StartPeriodicRefresh`. Uses build-then-swap for lock-free reads.
@@ -464,7 +465,7 @@ Loaded from `modula.config.json` at project root. Key fields: `db_driver`, `port
 
 ## SQL Schema Organization
 
-Schemas live in `sql/schema/` as numbered directories (0-26+). Each directory contains six files:
+Schemas live in `sql/schema/` as 36 numbered directories (0-35). Each directory contains six files:
 
 ```
 sql/schema/{N}_{name}/
@@ -485,7 +486,7 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 
 | Package | Purpose |
 |---------|---------|
-| `cmd/` | Cobra CLI commands (serve, install, tui, connect, deploy, pipeline, cert, db, config, backup, update, version) |
+| `cmd/` | Cobra CLI commands (serve, install, init, tui, connect, deploy, pipeline, cert, db, config, backup, update, version, plugin, mcp) |
 | `internal/db/` | DbDriver interface, wrapper structs, application-level types, query builder |
 | `internal/db/types/` | ULID-based typed IDs, enums, timestamps, nullable wrappers, field configs |
 | `internal/db/audited/` | Audited command pattern for change event recording |
@@ -493,11 +494,11 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `internal/admin/` | HTMX admin panel: CSRF, auth middleware, static file embed |
 | `internal/admin/handlers/` | Admin page handlers (render, auth, CRUD for all resources) |
 | `internal/admin/layouts/` | templ layouts (base, admin, auth) and AdminData type |
-| `internal/admin/pages/` | templ full-page components (~23 pages) |
-| `internal/admin/partials/` | templ HTMX swap targets (~19 partials) |
+| `internal/admin/pages/` | templ full-page components (~28 pages) |
+| `internal/admin/partials/` | templ HTMX swap targets (~27 partials) |
 | `internal/admin/components/` | templ shared UI: sidebar, topbar, icon, status_badge |
 | `internal/admin/static/` | CSS, JS, HTMX, web components (go:embed) |
-| `internal/tui/` | Bubbletea TUI (40+ files, Elm Architecture) |
+| `internal/tui/` | Bubbletea TUI (130+ files, Elm Architecture) |
 | `internal/router/` | HTTP route registration with stdlib ServeMux |
 | `internal/middleware/` | CORS, rate limiting, sessions, audit logging, RBAC authorization |
 | `internal/auth/` | Authentication (password + OAuth with Google/GitHub/Azure) |
@@ -510,6 +511,18 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `internal/registry/` | Project registry (`~/.modula/configs.json`) for `connect` command |
 | `internal/remote/` | RemoteDriver -- DbDriver over Go SDK (HTTPS) with retry and connection tracking |
 | `internal/deploy/` | Content sync: export, import, push, pull, snapshots between environments |
+| `internal/bucket/` | S3-compatible storage client |
+| `internal/definitions/` | Schema definitions for installations and code generation |
+| `internal/email/` | Email service (SMTP, SendGrid, SES, Postmark) |
+| `internal/mcp/` | MCP server for AI tool integration |
+| `internal/publishing/` | Snapshot publishing, version history |
+| `internal/query/` | Content query: filter, sort, paginate, transform |
+| `internal/service/` | Service layer for business logic orchestration |
+| `internal/transform/` | Response format transformers (Contentful, Sanity, Strapi, WordPress, Clean, Raw) |
+| `internal/tree/` | Content tree operations |
+| `internal/update/` | Self-update checker |
+| `internal/validation/` | Input validation rules and type validators |
+| `internal/webhooks/` | Webhook dispatcher, events, signing |
 | `internal/utility/` | Logging (slog), version info, helpers |
 | `sdks/typescript/types/` | `@modulacms/types` -- shared TypeScript entity types, branded IDs, enums |
 | `sdks/typescript/modulacms-sdk/` | `@modulacms/sdk` -- read-only content delivery TypeScript SDK |

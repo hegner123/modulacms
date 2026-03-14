@@ -58,7 +58,7 @@ Create `screen_mypage.go`. Embed `PanelScreen` for 3-panel layouts:
 package tui
 
 import (
-    tea "github.com/charmbracelet/bubbletea"
+    tea "charm.land/bubbletea/v2"
     "github.com/hegner123/modulacms/internal/config"
 )
 
@@ -463,7 +463,7 @@ Commands perform async operations and return messages.
 package cli
 
 import (
-    tea "github.com/charmbracelet/bubbletea"
+    tea "charm.land/bubbletea/v2"
     "github.com/hegner123/modulacms/internal/config"
     "github.com/hegner123/modulacms/internal/db"
 )
@@ -549,7 +549,7 @@ Handle messages specific to your page.
 package cli
 
 import (
-    tea "github.com/charmbracelet/bubbletea"
+    tea "charm.land/bubbletea/v2"
     "github.com/hegner123/modulacms/internal/db"
 )
 
@@ -1257,7 +1257,7 @@ package cli
 
 import (
     "fmt"
-    tea "github.com/charmbracelet/bubbletea"
+    tea "charm.land/bubbletea/v2"
     "github.com/hegner123/modulacms/internal/config"
     "github.com/hegner123/modulacms/internal/db"
 )
@@ -1325,7 +1325,7 @@ package cli
 import (
     "fmt"
     "strconv"
-    tea "github.com/charmbracelet/bubbletea"
+    tea "charm.land/bubbletea/v2"
 )
 
 func (m Model) UpdateComment(msg tea.Msg) (Model, tea.Cmd) {

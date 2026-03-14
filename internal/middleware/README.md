@@ -8,16 +8,16 @@ Composable middleware for HTTP and SSH servers.
 
 ```go
 // Global - used in main.go
-middleware.DefaultMiddlewareChain(c)(mux)
+middleware.DefaultMiddlewareChain(mgr, pc)(mux)
 
 // Protected endpoints (requires auth)
-middleware.AuthenticatedChain(c)(handler)
+middleware.AuthenticatedChain(mgr)(handler)
 
 // Auth endpoints (login, register) - includes rate limiting
-middleware.AuthEndpointChain(c)(handler)
+middleware.AuthEndpointChain(mgr)(handler)
 
 // Public API endpoints
-middleware.PublicAPIChain(c)(handler)
+middleware.PublicAPIChain(mgr)(handler)
 ```
 
 ### Components
@@ -26,7 +26,29 @@ middleware.PublicAPIChain(c)(handler)
 - `HTTPAuthenticationMiddleware(c)` - Session validation, populates context
 - `HTTPAuthorizationMiddleware(c)` - Requires authentication
 - `CorsMiddleware(c)` - CORS headers
+- `ClientIPMiddleware()` - Client IP resolution
+- `UserAgentMiddleware()` - User-Agent parsing
 - `RateLimiter` - Per-IP rate limiting
+
+## Authorization (RBAC)
+
+```go
+// Permission cache (loaded at startup, refreshed every 60s)
+pc := middleware.NewPermissionCache()
+pc.Load(driver)
+pc.StartPeriodicRefresh(ctx, driver, 60*time.Second)
+
+// Per-route permission middleware
+middleware.RequirePermission("content:read")(handler)
+middleware.RequireResourcePermission("content")(handler)  // auto-maps HTTP method
+middleware.RequireAnyPermission("content:read", "media:read")(handler)
+middleware.RequireAllPermissions("content:read", "content:update")(handler)
+
+// Context helpers
+middleware.ContextPermissions(ctx)
+middleware.ContextIsAdmin(ctx)
+middleware.ValidatePermissionLabel("content:read")
+```
 
 ## SSH Middleware
 

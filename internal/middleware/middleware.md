@@ -220,15 +220,15 @@ Builds an AuditContext for CLI and TUI operations. Uses "cli" as the IP address 
 ### DefaultMiddlewareChain
 
 ```go
-func DefaultMiddlewareChain(c *config.Config) func(http.Handler) http.Handler
+func DefaultMiddlewareChain(mgr *config.Manager, pc *PermissionCache) func(http.Handler) http.Handler
 ```
 
-Returns the standard middleware chain for the application. Includes request ID generation, logging, CORS, authentication, and public endpoint protection in that order.
+Returns the standard middleware chain for the application. Includes request ID generation, logging, client IP resolution, user agent parsing, CORS, authentication, permission injection, and public endpoint protection in that order.
 
 ### AuthenticatedChain
 
 ```go
-func AuthenticatedChain(c *config.Config) func(http.Handler) http.Handler
+func AuthenticatedChain(mgr *config.Manager) func(http.Handler) http.Handler
 ```
 
 Returns middleware for authenticated-only endpoints. Use this for endpoints that absolutely require authentication. Includes request ID, logging, CORS, authentication, and authorization middleware.
@@ -334,9 +334,171 @@ var PublicEndpoints = []string{
     "/api/v1/auth/me",
     "/api/v1/auth/oauth/login",
     "/api/v1/auth/oauth/callback",
-    "/api/v1/users",
+    "/api/v1/health",
     "/favicon.ico",
 }
 ```
 
 Lists API endpoints that do not require authentication. Used by HTTPPublicEndpointMiddleware to allow unauthenticated access to specific routes.
+
+## Authorization (RBAC)
+
+### PermissionCache
+
+```go
+type PermissionCache struct { ... }
+```
+
+In-memory role-to-permissions map for lock-free reads. Uses build-then-swap pattern for concurrent safety.
+
+### NewPermissionCache
+
+```go
+func NewPermissionCache() *PermissionCache
+```
+
+Creates a new empty PermissionCache.
+
+### PermissionCache.Load
+
+```go
+func (pc *PermissionCache) Load(driver db.DbDriver) error
+```
+
+Loads all role-permission mappings from the database. Builds a new map and atomically swaps it in.
+
+### PermissionCache.PermissionsForRole
+
+```go
+func (pc *PermissionCache) PermissionsForRole(roleID types.RoleID) PermissionSet
+```
+
+Returns the PermissionSet for a given role.
+
+### PermissionCache.IsAdmin
+
+```go
+func (pc *PermissionCache) IsAdmin(roleID types.RoleID) bool
+```
+
+Checks if a role is the admin role.
+
+### PermissionCache.StartPeriodicRefresh
+
+```go
+func (pc *PermissionCache) StartPeriodicRefresh(ctx context.Context, driver db.DbDriver, interval time.Duration)
+```
+
+Starts a background goroutine that refreshes the permission cache at the specified interval.
+
+### PermissionInjector
+
+```go
+func PermissionInjector(pc *PermissionCache) func(http.Handler) http.Handler
+```
+
+Middleware that resolves the authenticated user's role to a PermissionSet and stores it in the request context.
+
+### RequirePermission
+
+```go
+func RequirePermission(permission string) func(http.Handler) http.Handler
+```
+
+Middleware that checks for a single permission. Returns 403 if missing.
+
+### RequireResourcePermission
+
+```go
+func RequireResourcePermission(resource string) func(http.Handler) http.Handler
+```
+
+Middleware that auto-maps HTTP method to operation (GET→read, POST→create, PUT/PATCH→update, DELETE→delete).
+
+### RequireAnyPermission
+
+```go
+func RequireAnyPermission(permissions ...string) func(http.Handler) http.Handler
+```
+
+Middleware that requires at least one of the given permissions (OR logic).
+
+### RequireAllPermissions
+
+```go
+func RequireAllPermissions(permissions ...string) func(http.Handler) http.Handler
+```
+
+Middleware that requires all of the given permissions (AND logic).
+
+### ContextPermissions
+
+```go
+func ContextPermissions(ctx context.Context) PermissionSet
+```
+
+Extracts the PermissionSet from the request context.
+
+### ContextIsAdmin
+
+```go
+func ContextIsAdmin(ctx context.Context) bool
+```
+
+Checks if the user in context is an admin. Admin bypass uses this boolean, not a wildcard in PermissionSet.
+
+### ValidatePermissionLabel
+
+```go
+func ValidatePermissionLabel(label string) error
+```
+
+Validates `resource:operation` format (character-by-character, no regex).
+
+### SetAuthenticatedUser
+
+```go
+func SetAuthenticatedUser(ctx context.Context, user *db.Users) context.Context
+```
+
+Sets the authenticated user in the request context.
+
+### ClientIPMiddleware
+
+```go
+func ClientIPMiddleware() func(http.Handler) http.Handler
+```
+
+Resolves client IP from request headers and stores in context.
+
+### ClientIPFromContext
+
+```go
+func ClientIPFromContext(ctx context.Context) string
+```
+
+Extracts client IP from the request context.
+
+### UserAgentMiddleware
+
+```go
+func UserAgentMiddleware() func(http.Handler) http.Handler
+```
+
+Parses User-Agent and Client Hints headers and stores UserAgentInfo in context.
+
+### UserAgentInfoFromContext
+
+```go
+func UserAgentInfoFromContext(ctx context.Context) *UserAgentInfo
+```
+
+Extracts UserAgentInfo from the request context.
+
+### HookRunnerMiddleware
+
+```go
+func HookRunnerMiddleware(runner webhook.HookRunner) func(http.Handler) http.Handler
+```
+
+Middleware for storing a webhook hook runner in context.

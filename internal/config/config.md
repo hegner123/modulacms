@@ -74,11 +74,20 @@ const (
     ActionCollapse    Action = "collapse"
     ActionReorderUp   Action = "reorder_up"
     ActionReorderDown Action = "reorder_down"
-    ActionCopy        Action = "copy"
-    ActionPublish     Action = "publish"
-    ActionArchive     Action = "archive"
-    ActionGoParent    Action = "go_parent"
-    ActionGoChild     Action = "go_child"
+    ActionCopy         Action = "copy"
+    ActionPublish      Action = "publish"
+    ActionGoParent     Action = "go_parent"
+    ActionGoChild      Action = "go_child"
+    ActionVersions     Action = "versions"
+    ActionLocale       Action = "locale"
+    ActionScreenNext   Action = "screen_next"
+    ActionScreenToggle Action = "screen_toggle"
+    ActionScreenReset  Action = "screen_reset"
+    ActionAccordion    Action = "accordion"
+    ActionTabPrev      Action = "tab_prev"
+    ActionTabNext      Action = "tab_next"
+    ActionAdminToggle  Action = "admin_toggle"
+    ActionSearch       Action = "search"
 )
 ```
 
@@ -88,49 +97,50 @@ Action constants represent semantic TUI operations independent of physical keys.
 
 ```go
 var (
-    White       = lipgloss.CompleteColor{TrueColor: "#FFFFFF", ANSI256: "15", ANSI: "15"}
-    LightGray   = lipgloss.CompleteColor{TrueColor: "#c0c0c0", ANSI256: "254", ANSI: "7"}
-    Gray        = lipgloss.CompleteColor{TrueColor: "#808080", ANSI256: "250", ANSI: "8"}
-    Black       = lipgloss.CompleteColor{TrueColor: "#000000", ANSI256: "0", ANSI: "0"}
-    Purple      = lipgloss.CompleteColor{TrueColor: "#6612e3", ANSI256: "129", ANSI: "5"}
-    LightPurple = lipgloss.CompleteColor{TrueColor: "#8347de", ANSI256: "98", ANSI: "13"}
-    Emerald     = lipgloss.CompleteColor{TrueColor: "#00CC66", ANSI256: "41", ANSI: "2"}
-    Rose        = lipgloss.CompleteColor{TrueColor: "#D90368", ANSI256: "161", ANSI: "1"}
-    Yellow      = lipgloss.CompleteColor{TrueColor: "#F1C40F", ANSI256: "220", ANSI: "11"}
-    Orange      = lipgloss.CompleteColor{TrueColor: "#F75C03", ANSI256: "202", ANSI: "3"}
-    Blue        = lipgloss.CompleteColor{TrueColor: "#5f5fff", ANSI256: "63", ANSI: "4"}
+    White       = lipgloss.Color("#FFFFFF")
+    LightGray   = lipgloss.Color("#c0c0c0")
+    Gray        = lipgloss.Color("#808080")
+    Black       = lipgloss.Color("#000000")
+    Purple      = lipgloss.Color("#6612e3")
+    LightPurple = lipgloss.Color("#8347de")
+    Emerald     = lipgloss.Color("#00CC66")
+    Rose        = lipgloss.Color("#D90368")
+    Yellow      = lipgloss.Color("#F1C40F")
+    Orange      = lipgloss.Color("#F75C03")
+    Blue        = lipgloss.Color("#5f5fff")
+    Amber       = lipgloss.Color("#FFBF00")
 )
 ```
 
-Color variables define lipgloss.CompleteColor values with TrueColor, ANSI256, and ANSI fallback codes. Used in DefaultStyle and available for custom styling. Each color supports terminal environments from basic 16-color ANSI to full truecolor RGB.
+Color variables define lipgloss.Color values (truecolor hex). Bubble Tea v2 handles color downsampling automatically. Used in DefaultStyle and available for custom styling.
 
 ```go
 var DefaultStyle Color = Color{
-    Primary: lipgloss.CompleteAdaptiveColor{Light: Black, Dark: White},
-    PrimaryBG: lipgloss.CompleteAdaptiveColor{Light: White, Dark: Black},
-    Secondary: lipgloss.CompleteAdaptiveColor{Light: Gray, Dark: LightGray},
-    SecondaryBG: lipgloss.CompleteAdaptiveColor{Light: White, Dark: Black},
-    Tertiary: lipgloss.CompleteAdaptiveColor{Light: LightGray, Dark: Gray},
-    TertiaryBG: lipgloss.CompleteAdaptiveColor{Light: Gray, Dark: Black},
-    Accent: lipgloss.CompleteAdaptiveColor{Light: Purple, Dark: Purple},
-    AccentBG: lipgloss.CompleteAdaptiveColor{Light: White, Dark: Blue},
-    Accent2: lipgloss.CompleteAdaptiveColor{Light: Rose, Dark: Rose},
-    Accent2BG: lipgloss.CompleteAdaptiveColor{Light: White, Dark: Black},
-    Active: lipgloss.CompleteAdaptiveColor{Light: Black, Dark: Black},
-    ActiveBG: lipgloss.CompleteAdaptiveColor{Light: Gray, Dark: LightGray},
-    Status1: lipgloss.CompleteAdaptiveColor{Light: Black, Dark: White},
-    Status1BG: lipgloss.CompleteAdaptiveColor{Light: LightGray, Dark: Black},
-    Status2: lipgloss.CompleteAdaptiveColor{Light: Gray, Dark: Black},
-    Status2BG: lipgloss.CompleteAdaptiveColor{Light: Black, Dark: Gray},
-    Status3: lipgloss.CompleteAdaptiveColor{Light: LightPurple, Dark: LightPurple},
-    Status3BG: lipgloss.CompleteAdaptiveColor{Light: Black, Dark: Black},
-    PrimaryBorder: lipgloss.CompleteAdaptiveColor{Light: Purple, Dark: Purple},
-    Warn: lipgloss.CompleteAdaptiveColor{Light: Orange, Dark: Orange},
-    WarnBG: lipgloss.CompleteAdaptiveColor{Light: White, Dark: White},
+    Primary:       compat.AdaptiveColor{Light: Black, Dark: White},
+    PrimaryBG:     compat.AdaptiveColor{Light: White, Dark: Black},
+    Secondary:     compat.AdaptiveColor{Light: Gray, Dark: LightGray},
+    SecondaryBG:   compat.AdaptiveColor{Light: White, Dark: Black},
+    Tertiary:      compat.AdaptiveColor{Light: LightGray, Dark: Gray},
+    TertiaryBG:    compat.AdaptiveColor{Light: Gray, Dark: Black},
+    Accent:        compat.AdaptiveColor{Light: Blue, Dark: Blue},
+    AccentBG:      compat.AdaptiveColor{Light: White, Dark: Blue},
+    Accent2:       compat.AdaptiveColor{Light: Rose, Dark: Rose},
+    Accent2BG:     compat.AdaptiveColor{Light: White, Dark: Black},
+    Active:        compat.AdaptiveColor{Light: Black, Dark: Black},
+    ActiveBG:      compat.AdaptiveColor{Light: Gray, Dark: LightGray},
+    Status1:       compat.AdaptiveColor{Light: Black, Dark: White},
+    Status1BG:     compat.AdaptiveColor{Light: LightGray, Dark: Black},
+    Status2:       compat.AdaptiveColor{Light: Gray, Dark: Black},
+    Status2BG:     compat.AdaptiveColor{Light: Black, Dark: Gray},
+    Status3:       compat.AdaptiveColor{Light: LightPurple, Dark: LightPurple},
+    Status3BG:     compat.AdaptiveColor{Light: Black, Dark: Black},
+    PrimaryBorder: compat.AdaptiveColor{Light: Purple, Dark: Purple},
+    Warn:          compat.AdaptiveColor{Light: Orange, Dark: Orange},
+    WarnBG:        compat.AdaptiveColor{Light: White, Dark: White},
 }
 ```
 
-DefaultStyle provides the built-in TUI color scheme with adaptive light and dark variants. Each semantic role (Primary, Secondary, Accent, Active, Status, Warn) has foreground and background colors. Adapts to terminal background automatically.
+DefaultStyle provides the built-in TUI color scheme with adaptive light and dark variants using `compat.AdaptiveColor` from `charm.land/lipgloss/v2/compat`. Each semantic role (Primary, Secondary, Accent, Active, Status, Warn) has foreground and background colors. Adapts to terminal background automatically.
 
 ## Types
 
@@ -170,27 +180,27 @@ Action represents a semantic TUI operation independent of physical key bindings.
 
 ```go
 type Color struct {
-    Primary       lipgloss.CompleteAdaptiveColor
-    PrimaryBG     lipgloss.CompleteAdaptiveColor
-    Secondary     lipgloss.CompleteAdaptiveColor
-    SecondaryBG   lipgloss.CompleteAdaptiveColor
-    Tertiary      lipgloss.CompleteAdaptiveColor
-    TertiaryBG    lipgloss.CompleteAdaptiveColor
-    Accent        lipgloss.CompleteAdaptiveColor
-    AccentBG      lipgloss.CompleteAdaptiveColor
-    Accent2       lipgloss.CompleteAdaptiveColor
-    Accent2BG     lipgloss.CompleteAdaptiveColor
-    Active        lipgloss.CompleteAdaptiveColor
-    ActiveBG      lipgloss.CompleteAdaptiveColor
-    Status1       lipgloss.CompleteAdaptiveColor
-    Status1BG     lipgloss.CompleteAdaptiveColor
-    Status2       lipgloss.CompleteAdaptiveColor
-    Status2BG     lipgloss.CompleteAdaptiveColor
-    Status3       lipgloss.CompleteAdaptiveColor
-    Status3BG     lipgloss.CompleteAdaptiveColor
-    PrimaryBorder lipgloss.CompleteAdaptiveColor
-    Warn          lipgloss.CompleteAdaptiveColor
-    WarnBG        lipgloss.CompleteAdaptiveColor
+    Primary       compat.AdaptiveColor
+    PrimaryBG     compat.AdaptiveColor
+    Secondary     compat.AdaptiveColor
+    SecondaryBG   compat.AdaptiveColor
+    Tertiary      compat.AdaptiveColor
+    TertiaryBG    compat.AdaptiveColor
+    Accent        compat.AdaptiveColor
+    AccentBG      compat.AdaptiveColor
+    Accent2       compat.AdaptiveColor
+    Accent2BG     compat.AdaptiveColor
+    Active        compat.AdaptiveColor
+    ActiveBG      compat.AdaptiveColor
+    Status1       compat.AdaptiveColor
+    Status1BG     compat.AdaptiveColor
+    Status2       compat.AdaptiveColor
+    Status2BG     compat.AdaptiveColor
+    Status3       compat.AdaptiveColor
+    Status3BG     compat.AdaptiveColor
+    PrimaryBorder compat.AdaptiveColor
+    Warn          compat.AdaptiveColor
+    WarnBG        compat.AdaptiveColor
 }
 ```
 
