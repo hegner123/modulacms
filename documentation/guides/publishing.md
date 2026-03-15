@@ -4,7 +4,7 @@ ModulaCMS manages content through a lifecycle of statuses -- draft, published, a
 
 ## Concepts
 
-**Content status** -- Every content data record has a status field. The two primary statuses are `draft` (editable, not visible through the public delivery API) and `published` (live, returned by the content delivery endpoint). A third status, `scheduled`, indicates the content will be automatically published at a future time.
+**Content status** -- Every content data record has a status field. The two statuses are `draft` (editable, not visible through the public delivery API) and `published` (live, returned by the content delivery endpoint). Content with a future `publish_at` time is still stored as `draft` internally; the API returns `"status": "scheduled"` as a convenience to indicate pending publication.
 
 **Version snapshot** -- An immutable, point-in-time copy of a content node's field values. Versions are created automatically when you publish and can also be created manually as checkpoints. Each version has a version number, a trigger (what caused the snapshot), and the serialized field values.
 
@@ -16,7 +16,7 @@ ModulaCMS manages content through a lifecycle of statuses -- draft, published, a
 |--------|-------------|
 | `draft` | Editable. Not visible through the public content delivery API. |
 | `published` | Live. Returned by the content delivery endpoint (`/api/v1/content/{slug}`). |
-| `scheduled` | Draft with a future `publish_at` time. Automatically transitions to `published` when the time arrives. |
+| `scheduled` (API response only) | Draft with a future `publish_at` time. Stored as `draft` internally; the API response returns `"scheduled"` for clarity. Automatically transitions to `published` when the time arrives. |
 
 ## Publishing Content
 
@@ -69,7 +69,7 @@ curl -X POST http://localhost:8080/api/v1/content/unpublish \
 
 ## Scheduling Content
 
-Scheduling sets a future publication time. The content remains in draft until the server automatically publishes it at the specified time. A version snapshot is created at the time of the schedule call.
+Scheduling sets a future publication time. The content remains in draft until the server automatically publishes it at the specified time. No version snapshot is created at schedule time; the snapshot is built when the scheduler publishes the content.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/content/schedule \
@@ -140,7 +140,7 @@ curl -X POST http://localhost:8080/api/v1/content/versions \
 
 ### Deleting a Version
 
-Remove a historical snapshot. This does not affect the current content:
+Remove a historical snapshot. This does not affect the current content. Published versions cannot be deleted -- unpublish the content first or delete a different version.
 
 ```bash
 curl -X DELETE "http://localhost:8080/api/v1/content/versions/?q=01JNRWCP5GNSY8Q6P0Z3B7L9EN" \
