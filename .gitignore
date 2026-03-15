@@ -22,7 +22,6 @@ go.work
 go.work.sum
 
 node_modules/
-api/
 package-lock.json
 testFiles/
 volumes/
