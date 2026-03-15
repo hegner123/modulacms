@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/hegner123/modulacms/internal/db"
 )
 
 // DeployClient communicates with a remote Modula deploy API.
@@ -70,14 +68,14 @@ func (c *DeployClient) Health(ctx context.Context) (*HealthResponse, error) {
 }
 
 // Export calls POST /api/v1/deploy/export on the remote instance and returns the SyncPayload.
-func (c *DeployClient) Export(ctx context.Context, tables []db.DBTable) (*SyncPayload, error) {
+func (c *DeployClient) Export(ctx context.Context, opts ExportOptions) (*SyncPayload, error) {
 	var body any
-	if len(tables) > 0 {
-		names := make([]string, len(tables))
-		for i, t := range tables {
+	if len(opts.Tables) > 0 || opts.IncludePlugins {
+		names := make([]string, len(opts.Tables))
+		for i, t := range opts.Tables {
 			names[i] = string(t)
 		}
-		body = exportRequest{Tables: names}
+		body = exportRequest{Tables: names, IncludePlugins: opts.IncludePlugins}
 	}
 
 	var buf bytes.Buffer

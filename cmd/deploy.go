@@ -78,7 +78,7 @@ Examples:
 		_ = mgr
 		defer closeDBWithLog()
 
-		var tables []db.DBTable
+		opts := deploy.ExportOptions{}
 		if tablesFlag != "" {
 			for _, name := range strings.Split(tablesFlag, ",") {
 				name = strings.TrimSpace(name)
@@ -86,12 +86,14 @@ Examples:
 				if vErr != nil {
 					return vErr
 				}
-				tables = append(tables, t)
+				opts.Tables = append(opts.Tables, t)
 			}
 		}
+		includePlugins, _ := cmd.Flags().GetBool("include-plugins")
+		opts.IncludePlugins = includePlugins
 
 		ctx := context.Background()
-		manifest, actualPath, err := deploy.ExportToFile(ctx, driver, tables, outFile)
+		manifest, actualPath, err := deploy.ExportToFile(ctx, driver, opts, outFile)
 		if err != nil {
 			return fmt.Errorf("export failed: %w", err)
 		}
@@ -440,13 +442,15 @@ Examples:
 			return fmt.Errorf("reading configuration: %w", err)
 		}
 
-		tables := parseTablesFlag(tablesFlag)
-		if tables == nil && tablesFlag != "" {
+		opts := deploy.ExportOptions{Tables: parseTablesFlag(tablesFlag)}
+		if opts.Tables == nil && tablesFlag != "" {
 			return fmt.Errorf("invalid --tables flag")
 		}
+		includePlugins, _ := cmd.Flags().GetBool("include-plugins")
+		opts.IncludePlugins = includePlugins
 
 		ctx := context.Background()
-		result, err := deploy.Pull(ctx, *cfg, driver, envName, tables, skipBackup, dryRun)
+		result, err := deploy.Pull(ctx, *cfg, driver, envName, opts, skipBackup, dryRun)
 		if err != nil {
 			if result != nil && jsonOutput {
 				data, _ := json.MarshalIndent(result, "", "  ")
@@ -527,13 +531,15 @@ Examples:
 			return fmt.Errorf("reading configuration: %w", err)
 		}
 
-		tables := parseTablesFlag(tablesFlag)
-		if tables == nil && tablesFlag != "" {
+		opts := deploy.ExportOptions{Tables: parseTablesFlag(tablesFlag)}
+		if opts.Tables == nil && tablesFlag != "" {
 			return fmt.Errorf("invalid --tables flag")
 		}
+		includePlugins, _ := cmd.Flags().GetBool("include-plugins")
+		opts.IncludePlugins = includePlugins
 
 		ctx := context.Background()
-		result, err := deploy.Push(ctx, *cfg, driver, envName, tables, dryRun)
+		result, err := deploy.Push(ctx, *cfg, driver, envName, opts, dryRun)
 		if err != nil {
 			if result != nil && jsonOutput {
 				data, _ := json.MarshalIndent(result, "", "  ")
@@ -774,6 +780,7 @@ func init() {
 	// deploy export flags
 	deployExportCmd.Flags().String("file", "", "Output file path (required)")
 	deployExportCmd.Flags().String("tables", "", "Comma-separated table names (default: all sync tables)")
+	deployExportCmd.Flags().Bool("include-plugins", false, "Include plugin table data in export")
 	deployExportCmd.Flags().Bool("json", false, "Output as JSON")
 
 	// deploy import flags
@@ -783,12 +790,14 @@ func init() {
 
 	// deploy pull flags
 	deployPullCmd.Flags().String("tables", "", "Comma-separated table names (default: all sync tables)")
+	deployPullCmd.Flags().Bool("include-plugins", false, "Include plugin table data")
 	deployPullCmd.Flags().Bool("skip-backup", false, "Skip pre-import backup")
 	deployPullCmd.Flags().Bool("dry-run", false, "Validate only, show impact report without importing")
 	deployPullCmd.Flags().Bool("json", false, "Output as JSON")
 
 	// deploy push flags
 	deployPushCmd.Flags().String("tables", "", "Comma-separated table names (default: all sync tables)")
+	deployPushCmd.Flags().Bool("include-plugins", false, "Include plugin table data")
 	deployPushCmd.Flags().Bool("dry-run", false, "Validate only, show impact report without importing")
 	deployPushCmd.Flags().Bool("json", false, "Output as JSON")
 

@@ -35,7 +35,8 @@ func DeployHealthHandler(w http.ResponseWriter, r *http.Request, svc *service.Re
 
 // exportRequest is the JSON body for POST /api/v1/deploy/export.
 type exportRequest struct {
-	Tables []string `json:"tables"`
+	Tables         []string `json:"tables"`
+	IncludePlugins bool     `json:"include_plugins"`
 }
 
 // DeployExportHandler exports CMS data as a SyncPayload JSON response.
@@ -48,8 +49,8 @@ func DeployExportHandler(w http.ResponseWriter, r *http.Request, svc *service.Re
 
 	driver := svc.Driver()
 
-	// Parse optional table list from request body.
-	var tables []db.DBTable
+	// Parse optional table list and plugin flag from request body.
+	var opts ExportOptions
 	if r.Body != nil && r.ContentLength != 0 {
 		r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MB limit for request body
 
@@ -69,12 +70,13 @@ func DeployExportHandler(w http.ResponseWriter, r *http.Request, svc *service.Re
 				writeDeployError(w, http.StatusBadRequest, fmt.Sprintf("invalid table name %q", name), nil)
 				return
 			}
-			tables = append(tables, t)
+			opts.Tables = append(opts.Tables, t)
 		}
+		opts.IncludePlugins = req.IncludePlugins
 	}
 
 	ctx := r.Context()
-	payload, err := ExportPayload(ctx, driver, tables)
+	payload, err := ExportPayload(ctx, driver, opts)
 	if err != nil {
 		utility.DefaultLogger.Error("deploy export failed", err)
 		writeDeployError(w, http.StatusInternalServerError, "export failed", nil)

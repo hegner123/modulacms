@@ -105,7 +105,7 @@ func (m Model) UpdateDeployCms(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		return m, func() tea.Msg {
 			ctx := context.Background()
-			result, err := deploy.Pull(ctx, *cfg, driver, envName, nil, false, dryRun)
+			result, err := deploy.Pull(ctx, *cfg, driver, envName, deploy.ExportOptions{}, false, dryRun)
 			if err != nil {
 				return DeployPullResultMsg{
 					Err: err.Error(),
@@ -150,7 +150,7 @@ func (m Model) UpdateDeployCms(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		return m, func() tea.Msg {
 			ctx := context.Background()
-			result, err := deploy.Push(ctx, *cfg, driver, envName, nil, dryRun)
+			result, err := deploy.Push(ctx, *cfg, driver, envName, deploy.ExportOptions{}, dryRun)
 			if err != nil {
 				return DeployPushResultMsg{
 					Err: err.Error(),

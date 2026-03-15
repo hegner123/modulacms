@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"sync"
 	"time"
 
@@ -109,6 +110,55 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 
 			if iErr := ops.BulkInsert(ctx, ex, t, td.Columns, rows); iErr != nil {
 				return fmt.Errorf("insert %s: %w", t, iErr)
+			}
+		}
+
+		// Import plugin tables (after core tables).
+		var pluginTableNames []string
+		for name := range payload.Tables {
+			if isPluginTable(name) {
+				pluginTableNames = append(pluginTableNames, name)
+			}
+		}
+		sort.Strings(pluginTableNames)
+
+		// Truncate existing plugin tables in reverse sorted order.
+		for i := len(pluginTableNames) - 1; i >= 0; i-- {
+			name := pluginTableNames[i]
+			t := db.DBTable(name)
+			if _, iErr := ops.IntrospectColumns(ctx, t); iErr != nil {
+				warnings = append(warnings, fmt.Sprintf("plugin table %q not on destination (plugin not installed); skipping", name))
+				continue
+			}
+			if tErr := ops.TruncateTable(ctx, ex, t); tErr != nil {
+				return fmt.Errorf("truncate plugin table %s: %w", name, tErr)
+			}
+		}
+
+		// Insert plugin table data.
+		for _, name := range pluginTableNames {
+			td := payload.Tables[name]
+			if len(td.Rows) == 0 {
+				continue
+			}
+			t := db.DBTable(name)
+
+			destCols, iErr := ops.IntrospectColumns(ctx, t)
+			if iErr != nil {
+				continue // already warned above
+			}
+
+			destColNames := extractColNames(destCols)
+			if !columnsMatch(td.Columns, destColNames) {
+				warnings = append(warnings, fmt.Sprintf("plugin table %q schema mismatch; skipping", name))
+				continue
+			}
+
+			intCols := buildIntColumnMap(td.Columns, destCols)
+			rows := coerceWithIntMap(td.Rows, intCols)
+
+			if iErr := ops.BulkInsert(ctx, ex, t, td.Columns, rows); iErr != nil {
+				return fmt.Errorf("insert plugin table %s: %w", name, iErr)
 			}
 		}
 
@@ -231,7 +281,7 @@ func coerceRows(table db.DBTable, td TableData) ([][]any, error) {
 		return td.Rows, nil
 	}
 
-	// Build a map of column name → true if the struct field is an integer type.
+	// Build a map of column index → true if the struct field is an integer type.
 	intCols := make(map[int]bool)
 	for i, col := range td.Columns {
 		for j := range structType.NumField() {
@@ -251,12 +301,17 @@ func coerceRows(table db.DBTable, td TableData) ([][]any, error) {
 		}
 	}
 
+	return coerceWithIntMap(td.Rows, intCols), nil
+}
+
+// coerceWithIntMap converts float64 values to int64 at the column indices in intCols.
+func coerceWithIntMap(rows [][]any, intCols map[int]bool) [][]any {
 	if len(intCols) == 0 {
-		return td.Rows, nil
+		return rows
 	}
 
-	result := make([][]any, len(td.Rows))
-	for i, row := range td.Rows {
+	result := make([][]any, len(rows))
+	for i, row := range rows {
 		newRow := make([]any, len(row))
 		copy(newRow, row)
 		for colIdx := range intCols {
@@ -270,7 +325,47 @@ func coerceRows(table db.DBTable, td TableData) ([][]any, error) {
 		result[i] = newRow
 	}
 
-	return result, nil
+	return result
+}
+
+// extractColNames returns just the Name field from each ColumnMeta.
+func extractColNames(cols []db.ColumnMeta) []string {
+	names := make([]string, len(cols))
+	for i, c := range cols {
+		names[i] = c.Name
+	}
+	return names
+}
+
+// columnsMatch returns true if both slices contain the same column names in the same order.
+func columnsMatch(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// buildIntColumnMap returns a map of column indices that correspond to integer columns
+// according to destMeta. Used for JSON float64 → int64 coercion on plugin tables.
+func buildIntColumnMap(cols []string, destMeta []db.ColumnMeta) map[int]bool {
+	metaByName := make(map[string]bool, len(destMeta))
+	for _, cm := range destMeta {
+		if cm.IsInteger {
+			metaByName[cm.Name] = true
+		}
+	}
+	intCols := make(map[int]bool)
+	for i, col := range cols {
+		if metaByName[col] {
+			intCols[i] = true
+		}
+	}
+	return intCols
 }
 
 // findCharIndex returns the index of a byte in a string, or -1 if not found.

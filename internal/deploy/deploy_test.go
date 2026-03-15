@@ -792,7 +792,7 @@ func TestExportPayload_CanceledContext(t *testing.T) {
 
 	// ExportPayload should still succeed because it does not use the
 	// context for anything besides passing through.
-	payload, err := ExportPayload(ctx, driver, []db.DBTable{db.Datatype})
+	payload, err := ExportPayload(ctx, driver, ExportOptions{Tables: []db.DBTable{db.Datatype}})
 	if err != nil {
 		t.Fatalf("ExportPayload with canceled context: %v", err)
 	}
@@ -1845,6 +1845,14 @@ func (f *stubDeployOps) VerifyForeignKeys(_ context.Context, _ db.Executor) ([]d
 
 func (f *stubDeployOps) Placeholder(n int) string { return fmt.Sprintf("$%d", n) }
 
+func (f *stubDeployOps) IntrospectColumns(_ context.Context, _ db.DBTable) ([]db.ColumnMeta, error) {
+	return nil, fmt.Errorf("table does not exist")
+}
+
+func (f *stubDeployOps) QueryAllRows(_ context.Context, _ db.DBTable) ([]string, [][]any, error) {
+	return nil, nil, fmt.Errorf("not implemented")
+}
+
 // sqliteTestDeployOps wraps a *sql.DB for SQLite-compatible deploy ops in tests.
 type sqliteTestDeployOps struct {
 	pool *sql.DB
@@ -1887,6 +1895,36 @@ func (s *sqliteTestDeployOps) VerifyForeignKeys(_ context.Context, _ db.Executor
 }
 
 func (s *sqliteTestDeployOps) Placeholder(_ int) string { return "?" }
+
+func (s *sqliteTestDeployOps) IntrospectColumns(ctx context.Context, table db.DBTable) ([]db.ColumnMeta, error) {
+	rows, err := s.pool.QueryContext(ctx, "PRAGMA table_info("+string(table)+");")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var cols []db.ColumnMeta
+	for rows.Next() {
+		var cid int
+		var name, colType string
+		var notnull int
+		var dflt sql.NullString
+		var pk int
+		if err := rows.Scan(&cid, &name, &colType, &notnull, &dflt, &pk); err != nil {
+			return nil, err
+		}
+		upper := strings.ToUpper(colType)
+		isInt := strings.Contains(upper, "INT") || upper == "SERIAL"
+		cols = append(cols, db.ColumnMeta{Name: name, IsInteger: isInt})
+	}
+	if len(cols) == 0 {
+		return nil, fmt.Errorf("table %q does not exist", string(table))
+	}
+	return cols, rows.Err()
+}
+
+func (s *sqliteTestDeployOps) QueryAllRows(_ context.Context, _ db.DBTable) ([]string, [][]any, error) {
+	return nil, nil, fmt.Errorf("not implemented in test stub")
+}
 
 // fakeDbDriver is a minimal DbDriver mock for ExportPayload tests.
 // It only implements the methods actually called during export of Datatype table.

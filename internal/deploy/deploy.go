@@ -23,8 +23,8 @@ const gzipThreshold = 1 << 30
 // ExportToFile exports data from the driver, marshals it to JSON, and writes it to outPath.
 // If the serialized JSON exceeds gzipThreshold (1 GB), the file is gzip-compressed and
 // ".gz" is appended to the path. Returns the manifest and the actual path written.
-func ExportToFile(ctx context.Context, driver db.DbDriver, tables []db.DBTable, outPath string) (*SyncManifest, string, error) {
-	payload, err := ExportPayload(ctx, driver, tables)
+func ExportToFile(ctx context.Context, driver db.DbDriver, opts ExportOptions, outPath string) (*SyncManifest, string, error) {
+	payload, err := ExportPayload(ctx, driver, opts)
 	if err != nil {
 		return nil, "", fmt.Errorf("export payload: %w", err)
 	}
@@ -70,7 +70,7 @@ func ImportFromFile(ctx context.Context, cfg config.Config, driver db.DbDriver, 
 // Pull exports data from a remote Modula instance and imports it into the local database.
 // The environment name is resolved from cfg.Deploy_Environments.
 // If dryRun is true, the payload is validated locally without modifying the database.
-func Pull(ctx context.Context, cfg config.Config, driver db.DbDriver, envName string, tables []db.DBTable, skipBackup bool, dryRun bool) (*SyncResult, error) {
+func Pull(ctx context.Context, cfg config.Config, driver db.DbDriver, envName string, opts ExportOptions, skipBackup bool, dryRun bool) (*SyncResult, error) {
 	ctx, cancel := resolveContext(ctx)
 	defer cancel()
 
@@ -85,7 +85,7 @@ func Pull(ctx context.Context, cfg config.Config, driver db.DbDriver, envName st
 	}
 
 	// Export from remote.
-	payload, err := client.Export(ctx, tables)
+	payload, err := client.Export(ctx, opts)
 	if err != nil {
 		return nil, fmt.Errorf("remote export: %w", err)
 	}
@@ -101,7 +101,7 @@ func Pull(ctx context.Context, cfg config.Config, driver db.DbDriver, envName st
 // Push exports data from the local database and sends it to a remote Modula instance.
 // The environment name is resolved from cfg.Deploy_Environments.
 // If dryRun is true, the payload is validated on the remote without modifying its database.
-func Push(ctx context.Context, cfg config.Config, driver db.DbDriver, envName string, tables []db.DBTable, dryRun bool) (*SyncResult, error) {
+func Push(ctx context.Context, cfg config.Config, driver db.DbDriver, envName string, opts ExportOptions, dryRun bool) (*SyncResult, error) {
 	ctx, cancel := resolveContext(ctx)
 	defer cancel()
 
@@ -116,7 +116,7 @@ func Push(ctx context.Context, cfg config.Config, driver db.DbDriver, envName st
 	}
 
 	// Export locally.
-	payload, err := ExportPayload(ctx, driver, tables)
+	payload, err := ExportPayload(ctx, driver, opts)
 	if err != nil {
 		return nil, fmt.Errorf("local export: %w", err)
 	}

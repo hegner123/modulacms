@@ -38,9 +38,16 @@ type SyncManifest struct {
 	SourceURL     string         `json:"source_url"`
 	Version       string         `json:"version"` // Modula version
 	Strategy      MergeStrategy  `json:"strategy"`
-	Tables        []string       `json:"tables"`       // table names included
-	RowCounts     map[string]int `json:"row_counts"`   // table -> count
-	PayloadHash   string         `json:"payload_hash"` // SHA256 of Tables map JSON
+	Tables        []string       `json:"tables"`                  // table names included
+	RowCounts     map[string]int `json:"row_counts"`              // table -> count
+	PayloadHash   string         `json:"payload_hash"`            // SHA256 of Tables map JSON
+	PluginTables  []string       `json:"plugin_tables,omitempty"` // subset of Tables that are plugin tables
+}
+
+// ExportOptions controls what is included in a deploy export.
+type ExportOptions struct {
+	Tables         []db.DBTable // core tables; nil = DefaultTableSet
+	IncludePlugins bool         // discover and include registered plugin tables
 }
 
 // SyncResult is returned after a sync operation completes.

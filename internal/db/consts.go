@@ -74,20 +74,39 @@ var allTables = map[DBTable]struct{}{
 	User_ssh_keys:           {},
 }
 
-// ValidateTableName checks that name corresponds to a known table.
-// Returns the typed DBTable on success or an error for unknown names.
-func ValidateTableName(name string) (DBTable, error) {
-	t := DBTable(name)
-	if _, ok := allTables[t]; !ok {
-		return "", fmt.Errorf("unknown table name: %q", name)
-	}
-	return t, nil
+// SystemPluginTables are CMS-managed plugin infrastructure tables that should
+// not be included in plugin data export/import.
+var SystemPluginTables = map[string]bool{
+	"plugin_routes":   true,
+	"plugin_hooks":    true,
+	"plugin_requests": true,
 }
 
-// IsValidTable reports whether t is a known table name.
+// IsValidPluginTableName reports whether name follows the plugin table naming
+// convention (plugin_ prefix) and is safe for use in SQL queries.
+func IsValidPluginTableName(name string) bool {
+	return len(name) >= 9 && name[:7] == "plugin_" && ValidTableName(name) == nil
+}
+
+// ValidateTableName checks that name corresponds to a known table or a valid
+// plugin table. Returns the typed DBTable on success or an error for unknown names.
+func ValidateTableName(name string) (DBTable, error) {
+	t := DBTable(name)
+	if _, ok := allTables[t]; ok {
+		return t, nil
+	}
+	if IsValidPluginTableName(name) {
+		return t, nil
+	}
+	return "", fmt.Errorf("unknown table name: %q", name)
+}
+
+// IsValidTable reports whether t is a known table name or a valid plugin table.
 func IsValidTable(t DBTable) bool {
-	_, ok := allTables[t]
-	return ok
+	if _, ok := allTables[t]; ok {
+		return true
+	}
+	return IsValidPluginTableName(string(t))
 }
 
 // TableStructMap maps each DBTable to its associated struct type

@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+// ColumnMeta describes a single column from database catalog introspection.
+type ColumnMeta struct {
+	Name      string
+	IsInteger bool // INTEGER, INT, BIGINT, SMALLINT, TINYINT, SERIAL
+}
+
 // FKViolation describes a single foreign key constraint violation.
 type FKViolation struct {
 	Table   string
@@ -49,6 +55,15 @@ type DeployOps interface {
 	// Placeholder returns the parameter placeholder for the nth parameter (1-based).
 	// SQLite/MySQL return "?", PostgreSQL returns "$n".
 	Placeholder(n int) string
+
+	// IntrospectColumns queries the database catalog for column names and types.
+	// Returns an error if the table does not exist.
+	IntrospectColumns(ctx context.Context, table DBTable) ([]ColumnMeta, error)
+
+	// QueryAllRows returns all rows from a table as column names and untyped values.
+	// Integer columns (detected via IntrospectColumns) are scanned as int64;
+	// all others are scanned as string (or nil for NULL).
+	QueryAllRows(ctx context.Context, table DBTable) ([]string, [][]any, error)
 }
 
 // ImportFunc is the callback executed inside ImportAtomic.
@@ -199,6 +214,47 @@ func (s *sqliteDeployOps) VerifyForeignKeys(ctx context.Context, ex Executor) ([
 	return violations, rows.Err()
 }
 
+func (s *sqliteDeployOps) IntrospectColumns(ctx context.Context, table DBTable) ([]ColumnMeta, error) {
+	if !IsValidTable(table) {
+		return nil, fmt.Errorf("introspect: unknown table %q", string(table))
+	}
+	rows, err := s.pool.QueryContext(ctx, "PRAGMA table_info("+string(table)+");")
+	if err != nil {
+		return nil, fmt.Errorf("introspect %s: %w", table, err)
+	}
+	defer rows.Close()
+
+	var cols []ColumnMeta
+	for rows.Next() {
+		var cid int
+		var name, colType string
+		var notnull int
+		var dflt sql.NullString
+		var pk int
+		if err := rows.Scan(&cid, &name, &colType, &notnull, &dflt, &pk); err != nil {
+			return nil, fmt.Errorf("scan column info for %s: %w", table, err)
+		}
+		upper := strings.ToUpper(colType)
+		isInt := strings.Contains(upper, "INT") || upper == "SERIAL"
+		cols = append(cols, ColumnMeta{Name: name, IsInteger: isInt})
+	}
+	if len(cols) == 0 {
+		return nil, fmt.Errorf("table %q does not exist or has no columns", string(table))
+	}
+	return cols, rows.Err()
+}
+
+func (s *sqliteDeployOps) QueryAllRows(ctx context.Context, table DBTable) ([]string, [][]any, error) {
+	if !IsValidTable(table) {
+		return nil, nil, fmt.Errorf("query all rows: unknown table %q", string(table))
+	}
+	colMeta, err := s.IntrospectColumns(ctx, table)
+	if err != nil {
+		return nil, nil, err
+	}
+	return queryAllRowsGeneric(ctx, s.pool, table, colMeta)
+}
+
 // ---------- PostgreSQL ----------
 
 type psqlDeployOps struct {
@@ -346,6 +402,46 @@ func (p *psqlDeployOps) VerifyForeignKeys(ctx context.Context, ex Executor) ([]F
 	}
 
 	return verifyFKsViaJoin(ctx, ex, fks)
+}
+
+func (p *psqlDeployOps) IntrospectColumns(ctx context.Context, table DBTable) ([]ColumnMeta, error) {
+	if !IsValidTable(table) {
+		return nil, fmt.Errorf("introspect: unknown table %q", string(table))
+	}
+	rows, err := p.pool.QueryContext(ctx,
+		"SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name=$1 ORDER BY ordinal_position",
+		string(table),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("introspect %s: %w", table, err)
+	}
+	defer rows.Close()
+
+	var cols []ColumnMeta
+	for rows.Next() {
+		var name, dataType string
+		if err := rows.Scan(&name, &dataType); err != nil {
+			return nil, fmt.Errorf("scan column info for %s: %w", table, err)
+		}
+		upper := strings.ToUpper(dataType)
+		isInt := strings.Contains(upper, "INT") || upper == "SERIAL" || upper == "BIGSERIAL" || upper == "SMALLSERIAL"
+		cols = append(cols, ColumnMeta{Name: name, IsInteger: isInt})
+	}
+	if len(cols) == 0 {
+		return nil, fmt.Errorf("table %q does not exist or has no columns", string(table))
+	}
+	return cols, rows.Err()
+}
+
+func (p *psqlDeployOps) QueryAllRows(ctx context.Context, table DBTable) ([]string, [][]any, error) {
+	if !IsValidTable(table) {
+		return nil, nil, fmt.Errorf("query all rows: unknown table %q", string(table))
+	}
+	colMeta, err := p.IntrospectColumns(ctx, table)
+	if err != nil {
+		return nil, nil, err
+	}
+	return queryAllRowsGeneric(ctx, p.pool, table, colMeta)
 }
 
 // ---------- Shared FK verification ----------
@@ -523,6 +619,97 @@ func (m *mysqlDeployOps) VerifyForeignKeys(ctx context.Context, ex Executor) ([]
 	}
 
 	return verifyFKsViaJoin(ctx, ex, fks)
+}
+
+func (m *mysqlDeployOps) IntrospectColumns(ctx context.Context, table DBTable) ([]ColumnMeta, error) {
+	if !IsValidTable(table) {
+		return nil, fmt.Errorf("introspect: unknown table %q", string(table))
+	}
+	rows, err := m.pool.QueryContext(ctx,
+		"SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY ORDINAL_POSITION",
+		string(table),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("introspect %s: %w", table, err)
+	}
+	defer rows.Close()
+
+	var cols []ColumnMeta
+	for rows.Next() {
+		var name, dataType string
+		if err := rows.Scan(&name, &dataType); err != nil {
+			return nil, fmt.Errorf("scan column info for %s: %w", table, err)
+		}
+		upper := strings.ToUpper(dataType)
+		isInt := strings.Contains(upper, "INT") || upper == "SERIAL"
+		cols = append(cols, ColumnMeta{Name: name, IsInteger: isInt})
+	}
+	if len(cols) == 0 {
+		return nil, fmt.Errorf("table %q does not exist or has no columns", string(table))
+	}
+	return cols, rows.Err()
+}
+
+func (m *mysqlDeployOps) QueryAllRows(ctx context.Context, table DBTable) ([]string, [][]any, error) {
+	if !IsValidTable(table) {
+		return nil, nil, fmt.Errorf("query all rows: unknown table %q", string(table))
+	}
+	colMeta, err := m.IntrospectColumns(ctx, table)
+	if err != nil {
+		return nil, nil, err
+	}
+	return queryAllRowsGeneric(ctx, m.pool, table, colMeta)
+}
+
+// ---------- Shared helpers ----------
+
+// queryAllRowsGeneric implements QueryAllRows for all backends.
+// Scans every column as *sql.NullString then converts integer columns to int64.
+func queryAllRowsGeneric(ctx context.Context, pool *sql.DB, table DBTable, colMeta []ColumnMeta) ([]string, [][]any, error) {
+	intSet := make(map[int]bool, len(colMeta))
+	colNames := make([]string, len(colMeta))
+	for i, cm := range colMeta {
+		colNames[i] = cm.Name
+		if cm.IsInteger {
+			intSet[i] = true
+		}
+	}
+
+	rows, err := pool.QueryContext(ctx, "SELECT * FROM "+string(table)+";")
+	if err != nil {
+		return nil, nil, fmt.Errorf("query all rows %s: %w", table, err)
+	}
+	defer rows.Close()
+
+	var result [][]any
+	for rows.Next() {
+		scanTargets := make([]any, len(colMeta))
+		for i := range scanTargets {
+			scanTargets[i] = new(sql.NullString)
+		}
+		if err := rows.Scan(scanTargets...); err != nil {
+			return nil, nil, fmt.Errorf("scan row in %s: %w", table, err)
+		}
+
+		row := make([]any, len(colMeta))
+		for i, target := range scanTargets {
+			ns := target.(*sql.NullString)
+			if !ns.Valid {
+				row[i] = nil
+				continue
+			}
+			if intSet[i] {
+				var v int64
+				fmt.Sscanf(ns.String, "%d", &v)
+				row[i] = v
+			} else {
+				row[i] = ns.String
+			}
+		}
+		result = append(result, row)
+	}
+
+	return colNames, result, rows.Err()
 }
 
 // ---------- Constructor ----------

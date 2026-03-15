@@ -34,8 +34,10 @@ var tableListFuncs = map[db.DBTable]tableListFunc{
 }
 
 // ExportPayload exports data from the driver into a SyncPayload.
-// If tables is nil or empty, DefaultTableSet is used.
-func ExportPayload(_ context.Context, driver db.DbDriver, tables []db.DBTable) (*SyncPayload, error) {
+// If opts.Tables is nil or empty, DefaultTableSet is used.
+// If opts.IncludePlugins is true, registered plugin tables are discovered and included.
+func ExportPayload(ctx context.Context, driver db.DbDriver, opts ExportOptions) (*SyncPayload, error) {
+	tables := opts.Tables
 	if len(tables) == 0 {
 		tables = DefaultTableSet
 	}
@@ -66,6 +68,34 @@ func ExportPayload(_ context.Context, driver db.DbDriver, tables []db.DBTable) (
 		rowCounts[name] = len(td.Rows)
 	}
 
+	// Export plugin tables via catalog introspection (no struct type needed).
+	var pluginNames []string
+	if opts.IncludePlugins {
+		ops, err := db.NewDeployOps(driver)
+		if err != nil {
+			return nil, fmt.Errorf("export: create deploy ops for plugin tables: %w", err)
+		}
+		pluginTables, err := discoverPluginTables(driver)
+		if err != nil {
+			return nil, fmt.Errorf("export: discover plugin tables: %w", err)
+		}
+
+		for _, pt := range pluginTables {
+			cols, rows, err := ops.QueryAllRows(ctx, pt)
+			if err != nil {
+				utility.DefaultLogger.Warn("export: skipping plugin table "+string(pt), err)
+				continue
+			}
+
+			td := TableData{Columns: cols, Rows: rows}
+			name := string(pt)
+			tableDataMap[name] = td
+			tableNames = append(tableNames, name)
+			rowCounts[name] = len(rows)
+			pluginNames = append(pluginNames, name)
+		}
+	}
+
 	userRefs := collectUserRefs(tableDataMap, driver)
 
 	schemaVersion := computeSchemaVersion(tableDataMap)
@@ -82,6 +112,7 @@ func ExportPayload(_ context.Context, driver db.DbDriver, tables []db.DBTable) (
 		Tables:        tableNames,
 		RowCounts:     rowCounts,
 		PayloadHash:   payloadHash,
+		PluginTables:  pluginNames,
 	}
 
 	return &SyncPayload{
@@ -89,6 +120,34 @@ func ExportPayload(_ context.Context, driver db.DbDriver, tables []db.DBTable) (
 		Tables:   tableDataMap,
 		UserRefs: userRefs,
 	}, nil
+}
+
+// isPluginTable reports whether a table name follows the plugin table naming convention.
+func isPluginTable(name string) bool {
+	return db.IsValidPluginTableName(name)
+}
+
+// discoverPluginTables finds user-created plugin tables registered in the tables table,
+// excluding system plugin tables (plugin_routes, plugin_hooks, plugin_requests).
+func discoverPluginTables(driver db.DbDriver) ([]db.DBTable, error) {
+	tables, err := driver.ListTables()
+	if err != nil {
+		return nil, err
+	}
+
+	system := db.SystemPluginTables
+
+	var result []db.DBTable
+	if tables != nil {
+		for _, t := range *tables {
+			if !isPluginTable(t.Label) || system[t.Label] {
+				continue
+			}
+			result = append(result, db.DBTable(t.Label))
+		}
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })
+	return result, nil
 }
 
 // columnsFromType extracts ordered column names from struct json tags.
@@ -179,17 +238,16 @@ func structSliceToTableData(slicePtr any) (TableData, error) {
 func collectUserRefs(tables map[string]TableData, driver db.DbDriver) map[string]string {
 	refs := make(map[string]string)
 
-	// Columns that contain user IDs.
-	userCols := map[string]bool{
-		"author_id": true,
-		"user_id":   true,
-	}
-
 	// Collect all user ID values from the exported data.
 	userIDs := make(map[string]bool)
-	for _, td := range tables {
+	for tableName, td := range tables {
+		isPlugin := isPluginTable(tableName)
 		for colIdx, col := range td.Columns {
-			if !userCols[col] {
+			// For plugin tables, only collect author_id (user_id may reference external systems).
+			if col == "user_id" && isPlugin {
+				continue
+			}
+			if col != "author_id" && col != "user_id" {
 				continue
 			}
 			for _, row := range td.Rows {

@@ -59,8 +59,11 @@ func ValidatePayload(payload *SyncPayload, targetDriver db.DbDriver) []SyncError
 		})
 	}
 
-	// 4. Validate ULID strings in ID columns.
+	// 4. Validate ULID strings in ID columns (skip plugin tables — they may use non-ULID IDs).
 	for tableName, td := range payload.Tables {
+		if isPluginTable(tableName) {
+			continue
+		}
 		idCols := findIDColumns(td.Columns)
 		for _, row := range td.Rows {
 			for _, colIdx := range idCols {
@@ -92,6 +95,22 @@ func ValidatePayload(payload *SyncPayload, targetDriver db.DbDriver) []SyncError
 
 	// 7. All author_id values present in UserRefs.
 	errs = append(errs, validateUserRefs(payload)...)
+
+	// 8. Row width consistency for plugin tables.
+	for tableName, td := range payload.Tables {
+		if !isPluginTable(tableName) {
+			continue
+		}
+		for i, row := range td.Rows {
+			if len(row) != len(td.Columns) {
+				errs = append(errs, SyncError{
+					Table:   tableName,
+					Phase:   "validate",
+					Message: fmt.Sprintf("row %d has %d values but %d columns", i, len(row), len(td.Columns)),
+				})
+			}
+		}
+	}
 
 	return errs
 }
