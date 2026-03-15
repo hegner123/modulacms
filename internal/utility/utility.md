@@ -659,6 +659,16 @@ MeasureTimeCtx executes a function and records its duration, returns any error. 
 func MeasureTimeCtx(name string, labels Labels, fn func() error) error
 ```
 
+## Functions - Runtime Metrics
+
+### StartRuntimeMetrics
+
+StartRuntimeMetrics starts a background goroutine that periodically records `memory.usage` and `goroutines.count` gauge metrics via GlobalMetrics. The goroutine exits when the context is cancelled.
+
+```go
+func StartRuntimeMetrics(ctx context.Context, interval time.Duration)
+```
+
 ## Functions - Observability
 
 ### NewObservabilityClient

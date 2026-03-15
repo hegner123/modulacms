@@ -8,11 +8,11 @@ Package router provides HTTP handlers for the ModulaCMS REST API. Uses standard 
 
 ## Mux Configuration
 
-### NewModulacmsMux
+### NewModulaMux
 
 Creates and configures HTTP router with all endpoint registrations. Returns configured ServeMux ready for use by HTTP server.
 
-Parameters: config.Config containing CORS origins, rate limits, OAuth settings.
+Parameters: mgr (*config.Manager), bridge (*plugin.HTTPBridge), driver (db.DbDriver), pc (*middleware.PermissionCache), emailSvc (*email.Service), dispatcher (publishing.WebhookDispatcher), svc (*service.Registry), searchSvc (*search.Service).
 
 Returns: Configured http.ServeMux with all routes registered.
 

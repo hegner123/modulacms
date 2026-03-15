@@ -6,7 +6,7 @@ Package middleware provides HTTP and SSH middleware components for ModulaCMS. It
 
 The middleware package implements the chain-of-responsibility pattern for HTTP request processing and SSH session handling. HTTP middleware wraps handlers to add cross-cutting concerns like authentication, CORS headers, and logging. SSH middleware uses the Charm Wish framework to provide similar functionality for terminal sessions.
 
-Key capabilities include cookie-based and API key authentication, per-IP rate limiting, session validation, audit context extraction, and predefined middleware chains for common use cases.
+Key capabilities include panic recovery, request ID generation, cookie-based and API key authentication, per-IP rate limiting, session validation, HTTP request metrics recording, audit context extraction, and predefined middleware chains for common use cases.
 
 ## Constants
 
@@ -145,6 +145,22 @@ func (rl *RateLimiter) Clear()
 
 Removes all rate limiters. Should only be used in testing to reset state between tests.
 
+### RecoveryMiddleware
+
+```go
+func RecoveryMiddleware() func(http.Handler) http.Handler
+```
+
+Catches panics in HTTP handlers, recovers, reports the error via utility.CaptureError, and returns a 500 Internal Server Error response. Should be the outermost middleware in the chain.
+
+### HTTPMetricsMiddleware
+
+```go
+func HTTPMetricsMiddleware() func(http.Handler) http.Handler
+```
+
+Records HTTP request metrics to utility.GlobalMetrics. Tracks request counts (http.requests counter), request duration (http.duration histogram), and error counts (http.errors counter) with labels for method, path, and status code.
+
 ### HTTPLoggingMiddleware
 
 ```go
@@ -223,7 +239,7 @@ Builds an AuditContext for CLI and TUI operations. Uses "cli" as the IP address 
 func DefaultMiddlewareChain(mgr *config.Manager, pc *PermissionCache) func(http.Handler) http.Handler
 ```
 
-Returns the standard middleware chain for the application. Includes request ID generation, logging, client IP resolution, user agent parsing, CORS, authentication, permission injection, and public endpoint protection in that order.
+Returns the standard middleware chain for the application. Includes, in order: (1) panic recovery, (2) request ID generation, (3) client IP resolution, (4) user agent parsing, (5) request/response logging, (6) HTTP request metrics recording, (7) CORS, (8) session authentication, (9) public endpoint protection, (10) permission set injection.
 
 ### AuthenticatedChain
 
@@ -362,7 +378,7 @@ Creates a new empty PermissionCache.
 ### PermissionCache.Load
 
 ```go
-func (pc *PermissionCache) Load(driver db.DbDriver) error
+func (pc *PermissionCache) Load(driver db.RBACRepository) error
 ```
 
 Loads all role-permission mappings from the database. Builds a new map and atomically swaps it in.
@@ -386,7 +402,7 @@ Checks if a role is the admin role.
 ### PermissionCache.StartPeriodicRefresh
 
 ```go
-func (pc *PermissionCache) StartPeriodicRefresh(ctx context.Context, driver db.DbDriver, interval time.Duration)
+func (pc *PermissionCache) StartPeriodicRefresh(ctx context.Context, driver db.RBACRepository, interval time.Duration)
 ```
 
 Starts a background goroutine that refreshes the permission cache at the specified interval.

@@ -196,7 +196,7 @@ A GET request to an endpoint guarded by `RequireResourcePermission("media")` che
 
 ModulaCMS creates three system-protected roles during installation. These roles cannot be deleted or renamed.
 
-**Admin** -- Has all 67 RBAC permissions and bypasses permission checks entirely. The admin bypass is checked before any permission evaluation, so admin users always have full access even if new permissions are added.
+**Admin** -- Has all 72 RBAC permissions and bypasses permission checks entirely. The admin bypass is checked before any permission evaluation, so admin users always have full access even if new permissions are added.
 
 **Editor** -- 36 permissions. Full CRUD on content-related resources, read-only on user management:
 
@@ -227,11 +227,11 @@ ModulaCMS creates three system-protected roles during installation. These roles 
 
 ### System Permissions
 
-The full set of 67 RBAC permissions covers these resources:
+The full set of 72 RBAC permissions covers these resources:
 
 | Resource | Operations |
 |----------|-----------|
-| content | read, create, update, delete, admin |
+| content | read, create, update, delete, publish, admin |
 | datatypes | read, create, update, delete, admin |
 | fields | read, create, update, delete, admin |
 | media | read, create, update, delete, admin |
@@ -246,6 +246,7 @@ The full set of 67 RBAC permissions covers these resources:
 | field_types | read, create, update, delete, admin |
 | admin_field_types | read, create, update, delete, admin |
 | deploy | read, create |
+| webhook | create, read, update, delete |
 
 All bootstrap permissions are system-protected and cannot be deleted or renamed via the API.
 
@@ -334,7 +335,7 @@ Note: Token and import permissions (`tokens:*`, `import:*`, `plugins:*`) are enf
 ## Notes
 
 - **User enumeration prevention.** The password reset request endpoint always returns HTTP 200 with the same message regardless of whether the email exists.
-- **System-protected records.** The three bootstrap roles (admin, editor, viewer) and all 67 bootstrap permissions cannot be deleted or renamed. Attempts return an error.
+- **System-protected records.** The three bootstrap roles (admin, editor, viewer) and all 72 bootstrap permissions cannot be deleted or renamed. Attempts return an error.
 - **Permission cache latency.** After changing role-permission assignments, up to 60 seconds may elapse before the change takes effect. The cache uses a build-then-swap strategy that does not block reads during refresh.
 - **OAuth token refresh.** OAuth access tokens are refreshed transparently during session validation. If refresh fails, the session remains valid -- the user is not logged out.
 - **Non-admin role assignment.** Non-admin users cannot set or change roles during registration or profile updates. The API ignores any role field in the request body.

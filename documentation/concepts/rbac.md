@@ -24,14 +24,16 @@ Examples:
 |-------|--------|
 | `content:read` | Read content data and content fields |
 | `content:create` | Create content data nodes and content fields |
-| `content:update` | Update content data, move nodes, reorder siblings, publish |
+| `content:update` | Update content data, move nodes, reorder siblings |
+| `content:publish` | Publish, unpublish, and schedule content |
 | `content:delete` | Delete content data nodes |
 | `media:create` | Upload media files |
 | `users:read` | List and view user accounts |
 | `roles:update` | Modify role definitions |
 | `permissions:read` | List permissions |
+| `webhook:create` | Create webhook configurations |
 
-Permission labels are validated with `ValidatePermissionLabel`, which checks the `resource:operation` format character-by-character (no regex). Both the resource and operation segments must be non-empty and contain only lowercase letters, numbers, underscores, and hyphens.
+Permission labels are validated with `ValidatePermissionLabel`, which checks the `resource:operation` format character-by-character (no regex). Both the resource and operation segments must be non-empty. The resource segment allows lowercase letters, numbers, and underscores. The operation segment allows lowercase letters only.
 
 System-protected permissions cannot be deleted or renamed.
 
@@ -47,7 +49,7 @@ curl -X POST http://localhost:8080/api/v1/roles \
   -d '{"label": "contributor"}'
 
 # Grant permissions to the role
-curl -X POST http://localhost:8080/api/v1/rolepermissions \
+curl -X POST http://localhost:8080/api/v1/role-permissions \
   -H "Cookie: session=YOUR_SESSION_COOKIE" \
   -H "Content-Type: application/json" \
   -d '{"role_id": "01ABC...", "permission_id": "01DEF..."}'
@@ -134,6 +136,6 @@ The `role_permissions` junction table in `sql/schema/26_role_permissions/` maps 
 | POST | `/api/v1/permissions` | `permissions:create` | Create a permission |
 | PUT | `/api/v1/permissions/` | `permissions:update` | Update a permission |
 | DELETE | `/api/v1/permissions/` | `permissions:delete` | Delete a permission |
-| GET | `/api/v1/rolepermissions` | `roles:read` | List role-permission mappings |
-| POST | `/api/v1/rolepermissions` | `roles:update` | Grant a permission to a role |
-| DELETE | `/api/v1/rolepermissions/` | `roles:update` | Revoke a permission from a role |
+| GET | `/api/v1/role-permissions` | `roles:read` | List role-permission mappings |
+| POST | `/api/v1/role-permissions` | `roles:update` | Grant a permission to a role |
+| DELETE | `/api/v1/role-permissions/` | `roles:update` | Revoke a permission from a role |

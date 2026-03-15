@@ -22,7 +22,10 @@ middleware.PublicAPIChain(mgr)(handler)
 
 ### Components
 
+- `RecoveryMiddleware()` - Panic recovery and error capture
+- `RequestIDMiddleware()` - UUID per-request ID generation
 - `HTTPLoggingMiddleware()` - Request/response logging
+- `HTTPMetricsMiddleware()` - Request metrics recording
 - `HTTPAuthenticationMiddleware(c)` - Session validation, populates context
 - `HTTPAuthorizationMiddleware(c)` - Requires authentication
 - `CorsMiddleware(c)` - CORS headers

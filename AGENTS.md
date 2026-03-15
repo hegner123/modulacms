@@ -143,6 +143,7 @@ internal/
   db/                         # DbDriver interface, wrapper structs, application types, query builder
     types/                    # ULID-based typed IDs, enums, timestamps, nullable wrappers, field configs
     audited/                  # Audited command pattern for atomic change event recording
+    dbmetrics/                # SQL driver-level instrumentation, query metrics recording
     sql/                      # Embedded SQL for migrations
   db-sqlite/                  # sqlc-generated SQLite code (DO NOT EDIT)
   db-mysql/                   # sqlc-generated MySQL code (DO NOT EDIT)
@@ -156,7 +157,7 @@ internal/
     static/                   # CSS, JS, HTMX, web components (go:embed)
   tui/                        # Bubbletea TUI (130+ files, Elm Architecture)
   router/                     # HTTP route registration with stdlib ServeMux (Go 1.22+ patterns)
-  middleware/                  # CORS, rate limiting, sessions, audit logging, RBAC authorization
+  middleware/                  # CORS, rate limiting, sessions, panic recovery, HTTP metrics, RBAC authorization
   auth/                       # Authentication (password + OAuth with Google/GitHub/Azure)
   config/                     # Config struct, file provider, defaults
   media/                      # Image optimization, preset dimensions, S3 upload
@@ -277,7 +278,7 @@ Content uses sibling pointers for O(1) navigation and reordering:
 ### Request Flow
 
 ```
-Client → Middleware Chain (CORS, Sessions, Auth, Rate Limit, Permissions, Audit)
+Client → Middleware Chain (Recovery, RequestID, ClientIP, UserAgent, Logging, HTTPMetrics, CORS, Auth, PublicEndpoint, PermissionInjector)
        → stdlib ServeMux (Go 1.22+ pattern routing)
        → Permission Guards
        → Handlers

@@ -367,7 +367,7 @@ Graceful shutdown: first SIGINT/SIGTERM triggers shutdown; second forces exit.
 ### Request Flow
 
 ```
-Client -> Middleware Chain (CORS, Sessions, Auth, Rate Limit, Permissions, Audit) -> stdlib ServeMux (Go 1.22+) -> Permission Guards -> Handlers -> DbDriver interface -> Database-specific driver -> SQL
+Client -> Middleware Chain (Recovery, RequestID, ClientIP, UserAgent, Logging, HTTPMetrics, CORS, Auth, PublicEndpoint, PermissionInjector) -> stdlib ServeMux (Go 1.22+) -> Permission Guards -> Handlers -> DbDriver interface -> Database-specific driver -> SQL
 ```
 
 ### Tri-Database Pattern
@@ -457,7 +457,7 @@ just admin bundle-verify # Verify bundle is up-to-date (CI)
 
 Uses stdlib `http.ServeMux` (Go 1.22+ pattern routing). Endpoints are registered in `internal/router/mux.go` with per-route permission middleware wrappers. Response formats are configurable per-request (contentful, sanity, strapi, wordpress, clean, raw).
 
-`NewModulacmsMux` takes `(mgr, bridge, driver, pc)` where `pc` is `*middleware.PermissionCache`. Every admin endpoint is wrapped with either `RequireResourcePermission` or `RequirePermission`. Public routes (auth, OAuth, slug delivery) have no permission guards.
+`NewModulaMux` takes `(mgr, bridge, driver, pc, emailSvc, dispatcher, svc, searchSvc)` where `pc` is `*middleware.PermissionCache`. Every admin endpoint is wrapped with either `RequireResourcePermission` or `RequirePermission`. Public routes (auth, OAuth, slug delivery) have no permission guards.
 
 ### Configuration (internal/config/)
 
@@ -490,6 +490,7 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `internal/db/` | DbDriver interface, wrapper structs, application-level types, query builder |
 | `internal/db/types/` | ULID-based typed IDs, enums, timestamps, nullable wrappers, field configs |
 | `internal/db/audited/` | Audited command pattern for change event recording |
+| `internal/db/dbmetrics/` | SQL driver-level instrumentation, query metrics recording |
 | `internal/db-sqlite/`, `db-mysql/`, `db-psql/` | sqlc-generated code (do not edit) |
 | `internal/admin/` | HTMX admin panel: CSRF, auth middleware, static file embed |
 | `internal/admin/handlers/` | Admin page handlers (render, auth, CRUD for all resources) |
@@ -500,7 +501,7 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `internal/admin/static/` | CSS, JS, HTMX, web components (go:embed) |
 | `internal/tui/` | Bubbletea TUI (130+ files, Elm Architecture) |
 | `internal/router/` | HTTP route registration with stdlib ServeMux |
-| `internal/middleware/` | CORS, rate limiting, sessions, audit logging, RBAC authorization |
+| `internal/middleware/` | CORS, rate limiting, sessions, panic recovery, HTTP metrics, RBAC authorization |
 | `internal/auth/` | Authentication (password + OAuth with Google/GitHub/Azure) |
 | `internal/config/` | Config struct, file provider, defaults |
 | `internal/media/` | Image optimization, preset dimensions, S3 upload |
@@ -523,7 +524,7 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `internal/update/` | Self-update checker |
 | `internal/validation/` | Input validation rules and type validators |
 | `internal/webhooks/` | Webhook dispatcher, events, signing |
-| `internal/utility/` | Logging (slog), version info, helpers |
+| `internal/utility/` | Logging (slog), version info, helpers, metrics, observability, runtime metrics |
 | `sdks/typescript/types/` | `@modulacms/types` -- shared TypeScript entity types, branded IDs, enums |
 | `sdks/typescript/modulacms-sdk/` | `@modulacms/sdk` -- read-only content delivery TypeScript SDK |
 | `sdks/typescript/modulacms-admin-sdk/` | `@modulacms/admin-sdk` -- full admin CRUD TypeScript SDK |
