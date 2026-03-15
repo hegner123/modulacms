@@ -301,4 +301,12 @@ Frozen Lua module with pure constructors: `tui.grid`, `tui.column`, `tui.cell`, 
 
 ### Manifest Discovery
 
-ExtractManifest parses `plugin_info.screens` and `plugin_info.interfaces` arrays. Manager exposes PluginScreens(), PluginInterfaces(), and PluginInterface() for TUI sidebar and field configuration.
+ExtractManifest parses `plugin_info.screens`, `plugin_info.interfaces`, and `plugin_info.ui` tables. Manager exposes PluginScreens(), PluginInterfaces(), and PluginInterface() for TUI sidebar and field configuration.
+
+### UI Metadata
+
+PluginUIInfo struct holds optional Web Component UI declaration: Tag (custom element name), Bundle (opaque path metadata), HasAdmin (whether plugin provides admin UI). Populated from `plugin_info.ui` table in ExtractManifest when `ui.tag` is non-empty.
+
+ValidateManifest enforces tag-name binding: tag must equal `"mcms-" + name` (underscores replaced with hyphens). Tag format validated character-by-character via validateUITag (no regex): starts with lowercase letter, contains hyphen, only `[a-z0-9-]`, max 64 chars, not a reserved HTML custom element name.
+
+API responses surface UI metadata: PluginListHandler includes `has_admin_ui` flag, PluginInfoHandler includes nested `ui` object with tag, bundle, has_admin fields.

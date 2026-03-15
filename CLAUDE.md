@@ -63,15 +63,16 @@ When a workflow is not covered here, check `ai/workflows/` and `ai/` for relevan
 
 ## TypeScript SDKs
 
-The `sdks/typescript/` directory is a pnpm workspace monorepo containing three packages:
+The `sdks/typescript/` directory is a pnpm workspace monorepo containing four packages:
 
 | Package | npm Name | Purpose |
 |---------|----------|---------|
 | `types/` | `@modulacms/types` | Shared entity types, branded IDs, enums |
 | `modulacms-sdk/` | `@modulacms/sdk` | Read-only content delivery SDK |
 | `modulacms-admin-sdk/` | `@modulacms/admin-sdk` | Full admin CRUD SDK |
+| `plugin-sdk/` | `@modulacms/plugin-sdk` | Plugin UI SDK (Web Components, zero deps, browser-only) |
 
-Both SDKs depend on `@modulacms/types` via `workspace:*`. The admin SDK uses thin re-export files in `src/types/` that re-export shared entity types from `@modulacms/types` while keeping Create/Update param types local.
+The content SDKs depend on `@modulacms/types` via `workspace:*`. The admin SDK uses thin re-export files in `src/types/` that re-export shared entity types from `@modulacms/types` while keeping Create/Update param types local. The plugin SDK has zero dependencies — plugin API responses are opaque and consumers provide their own types via generics.
 
 ```bash
 just sdk ts install     # pnpm install (workspace root)
@@ -83,7 +84,7 @@ just sdk ts clean       # Clean build artifacts
 
 Tooling: TypeScript 5.7+, tsup (ESM+CJS dual builds), Vitest, pnpm 9+, Node 22+.
 
-**CI:** `.github/workflows/sdks.yml` runs on `sdks/typescript/**`, `sdks/go/**`, and `sdks/swift/**` changes. The Go CI workflow (`.github/workflows/go.yml`) ignores `sdks/**` changes.
+**CI:** `.github/workflows/sdks.yml` runs on `sdks/typescript/**`, `sdks/go/**`, `sdks/swift/**`, and `testdata/**` changes. The Go CI workflow (`.github/workflows/go.yml`) ignores `sdks/**` changes.
 
 ## Go SDK
 
@@ -528,6 +529,7 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `sdks/typescript/types/` | `@modulacms/types` -- shared TypeScript entity types, branded IDs, enums |
 | `sdks/typescript/modulacms-sdk/` | `@modulacms/sdk` -- read-only content delivery TypeScript SDK |
 | `sdks/typescript/modulacms-admin-sdk/` | `@modulacms/admin-sdk` -- full admin CRUD TypeScript SDK |
+| `sdks/typescript/plugin-sdk/` | `@modulacms/plugin-sdk` -- plugin UI SDK (Web Components, zero deps) |
 | `sdks/go/` | `modulacms` -- Go SDK for content delivery and admin CRUD |
 | `sdks/swift/` | `ModulaCMS` -- Swift SDK for Apple platforms (iOS/macOS/tvOS/watchOS) |
 
