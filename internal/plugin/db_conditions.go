@@ -117,8 +117,12 @@ func parseConditionFromLua(L *lua.LState, tbl *lua.LTable) (db.Condition, error)
 		}
 	}
 
-	// If first element is a table, it's an implicit AND of conditions.
-	if _, ok := first.(*lua.LTable); ok {
+	// If first element is a table, check for aggregate sentinel before implicit AND.
+	if firstTbl, ok := first.(*lua.LTable); ok {
+		aggVal := firstTbl.RawGetString(aggregateSentinelKey)
+		if aggVal != lua.LNil {
+			return parseAggregateConditionFromLua(L, tbl, firstTbl)
+		}
 		return parseImplicitAndFromLua(L, tbl)
 	}
 
@@ -256,6 +260,81 @@ func parseImplicitAndFromLua(L *lua.LState, tbl *lua.LTable) (db.Condition, erro
 		return nil, fmt.Errorf("implicit AND: %w", err)
 	}
 	return db.And{Conditions: children}, nil
+}
+
+// parseAggregateConditionFromLua parses {db.agg_count("*"), ">", 5} into an AggregateCondition.
+// The first element is a sentinel table with __agg, __arg, __alias keys.
+// Element 2 is the operator string, element 3 is the value.
+func parseAggregateConditionFromLua(L *lua.LState, tbl *lua.LTable, aggTbl *lua.LTable) (db.Condition, error) {
+	fn, ok := aggTbl.RawGetString(aggregateSentinelKey).(lua.LString)
+	if !ok {
+		return nil, fmt.Errorf("aggregate sentinel %s must be a string", aggregateSentinelKey)
+	}
+
+	arg := ""
+	if s, ok := aggTbl.RawGetString(aggregateArgKey).(lua.LString); ok {
+		arg = string(s)
+	}
+
+	alias := ""
+	if s, ok := aggTbl.RawGetString(aggregateAliasKey).(lua.LString); ok {
+		alias = string(s)
+	}
+
+	// Element 2: operator string.
+	second := tbl.RawGetInt(2)
+	opStr, ok2 := second.(lua.LString)
+	if !ok2 {
+		return nil, fmt.Errorf("aggregate condition element 2 must be an operator string, got %s", second.Type())
+	}
+
+	op := strings.ToUpper(string(opStr))
+	// Normalize != to <>
+	if op == "!=" {
+		op = "<>"
+	}
+
+	compareOp := db.CompareOp(op)
+
+	// Element 3: value.
+	third := tbl.RawGetInt(3)
+	if third == lua.LNil {
+		return nil, fmt.Errorf("aggregate condition element 3 (value) cannot be nil")
+	}
+	value := LuaValueToGo(third)
+
+	return db.AggregateCondition{
+		Agg:   db.AggregateColumn{Func: string(fn), Arg: arg, Alias: alias},
+		Op:    compareOp,
+		Value: value,
+	}, nil
+}
+
+// parseHavingCondition extracts the "having" field and parses it as a condition,
+// returning db.Condition (not map[string]any). Used for the filtered query path.
+// Returns nil if no "having" field is present.
+func parseHavingCondition(L *lua.LState, optsTbl *lua.LTable) (db.Condition, error) {
+	havingVal := L.GetField(optsTbl, "having")
+	if havingVal == lua.LNil {
+		return nil, nil
+	}
+	havingTbl, ok := havingVal.(*lua.LTable)
+	if !ok {
+		return nil, nil
+	}
+
+	// Check if the table is empty.
+	isEmpty := true
+	havingTbl.ForEach(func(_, _ lua.LValue) { isEmpty = false })
+	if isEmpty {
+		return nil, nil
+	}
+
+	cond, err := parseConditionFromLua(L, havingTbl)
+	if err != nil {
+		return nil, fmt.Errorf("having condition: %w", err)
+	}
+	return cond, nil
 }
 
 // parseConditionSequence parses a Lua sequence table where each element is a condition table.

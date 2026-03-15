@@ -164,6 +164,7 @@ func RegisterDBAPI(L *lua.LState, api *DatabaseAPI) {
 	dbTable.RawSetString("exists", L.NewFunction(api.luaExists))
 	dbTable.RawSetString("insert", L.NewFunction(api.luaInsert))
 	dbTable.RawSetString("insert_many", L.NewFunction(api.luaInsertMany))
+	dbTable.RawSetString("upsert", L.NewFunction(api.luaUpsert))
 	dbTable.RawSetString("update", L.NewFunction(api.luaUpdate))
 	dbTable.RawSetString("delete", L.NewFunction(api.luaDelete))
 	dbTable.RawSetString("create_index", L.NewFunction(api.luaCreateIndex))
@@ -175,6 +176,7 @@ func RegisterDBAPI(L *lua.LState, api *DatabaseAPI) {
 	))
 
 	registerConditionConstructors(L, dbTable)
+	registerAggregateConstructors(L, dbTable)
 
 	L.SetGlobal("db", dbTable)
 }
@@ -273,6 +275,50 @@ func registerConditionConstructors(L *lua.LState, dbTable *lua.LTable) {
 		L.Push(tbl)
 		return 1
 	}))
+}
+
+// ===== AGGREGATE CONSTRUCTORS =====
+
+// Sentinel keys for aggregate constructor tables.
+const (
+	aggregateSentinelKey = "__agg"
+	aggregateArgKey      = "__arg"
+	aggregateAliasKey    = "__alias"
+)
+
+// registerAggregateConstructors adds db.agg_count, db.agg_sum, db.agg_avg,
+// db.agg_min, db.agg_max to the db Lua table.
+// Each returns a sentinel table {__agg = "FUNC", __arg = arg, __alias = alias}
+// that the Go-side column parser recognizes and converts to db.AggregateColumn.
+// Uses the agg_ prefix to avoid overwriting the existing db.count (luaCount) function.
+func registerAggregateConstructors(L *lua.LState, dbTable *lua.LTable) {
+	for _, entry := range []struct {
+		name string
+		fn   string
+	}{
+		{"agg_count", "COUNT"},
+		{"agg_sum", "SUM"},
+		{"agg_avg", "AVG"},
+		{"agg_min", "MIN"},
+		{"agg_max", "MAX"},
+	} {
+		fn := entry.fn // capture for closure
+		dbTable.RawSetString(entry.name, L.NewFunction(func(L *lua.LState) int {
+			arg := L.CheckString(1)
+			alias := ""
+			if L.GetTop() >= 2 {
+				if s, ok := L.Get(2).(lua.LString); ok {
+					alias = string(s)
+				}
+			}
+			tbl := L.NewTable()
+			tbl.RawSetString(aggregateSentinelKey, lua.LString(fn))
+			tbl.RawSetString(aggregateArgKey, lua.LString(arg))
+			tbl.RawSetString(aggregateAliasKey, lua.LString(alias))
+			L.Push(tbl)
+			return 1
+		}))
+	}
 }
 
 // ===== CONDITION RESOLUTION =====
@@ -395,19 +441,21 @@ func toAnySlice(val any) ([]any, error) {
 
 // parsedSelectOpts collects all parsed fields from a Lua opts table for SELECT queries.
 type parsedSelectOpts struct {
-	columns  []string
-	where    map[string]any
-	filter   db.Condition // non-nil when new-style condition syntax is used
-	whereOr  []map[string]any
-	joins    []db.JoinClause
-	orderBy  string
-	desc     bool
-	orders   []db.OrderByClause
-	groupBy  []string
-	having   map[string]any
-	distinct bool
-	limit    int64
-	offset   int64
+	columns          []string
+	aggregates       []db.AggregateColumn
+	where            map[string]any
+	filter           db.Condition // non-nil when new-style condition syntax is used
+	whereOr          []map[string]any
+	joins            []db.JoinClause
+	orderBy          string
+	desc             bool
+	orders           []db.OrderByClause
+	groupBy          []string
+	having           map[string]any
+	havingCondition  db.Condition // non-nil when condition-style HAVING is used (filtered path)
+	distinct         bool
+	limit            int64
+	offset           int64
 }
 
 // parseSelectOpts extracts all SELECT-related fields from a Lua opts table.
@@ -428,11 +476,12 @@ func parseSelectOpts(L *lua.LState, optsTbl *lua.LTable, pluginName string) (par
 	}
 	opts.whereOr = whereOr
 
-	cols, err := parseColumnsFromLua(L, optsTbl, pluginName)
+	cols, aggs, err := parseColumnsFromLua(L, optsTbl, pluginName)
 	if err != nil {
 		return opts, err
 	}
 	opts.columns = cols
+	opts.aggregates = aggs
 
 	orderBy, desc, orders, err := parseOrderByFromLua(L, optsTbl, pluginName)
 	if err != nil {
@@ -448,11 +497,20 @@ func parseSelectOpts(L *lua.LState, optsTbl *lua.LTable, pluginName string) (par
 	}
 	opts.groupBy = groupBy
 
-	having, err := parseHavingFromLua(L, optsTbl)
-	if err != nil {
-		return opts, err
+	// HAVING dispatch: condition-style for filtered path, map-style for legacy.
+	if opts.filter != nil {
+		havingCond, err := parseHavingCondition(L, optsTbl)
+		if err != nil {
+			return opts, err
+		}
+		opts.havingCondition = havingCond
+	} else {
+		having, err := parseHavingFromLua(L, optsTbl)
+		if err != nil {
+			return opts, err
+		}
+		opts.having = having
 	}
-	opts.having = having
 
 	opts.distinct = parseBoolField(L, optsTbl, "distinct")
 
@@ -513,19 +571,22 @@ func parseWhereOrFromLua(L *lua.LState, optsTbl *lua.LTable) ([]map[string]any, 
 	return resolved, nil
 }
 
-// parseColumnsFromLua extracts the "columns" field: a Lua sequence of column name strings.
+// parseColumnsFromLua extracts the "columns" field: a Lua sequence of column name strings
+// and/or aggregate sentinel tables ({__agg, __arg, __alias}).
 // Qualified column names (e.g., "tasks.title") have the table part auto-prefixed.
-func parseColumnsFromLua(L *lua.LState, optsTbl *lua.LTable, pluginName string) ([]string, error) {
+// Returns plain columns and aggregate columns separately.
+func parseColumnsFromLua(L *lua.LState, optsTbl *lua.LTable, pluginName string) ([]string, []db.AggregateColumn, error) {
 	colsVal := L.GetField(optsTbl, "columns")
 	if colsVal == lua.LNil {
-		return nil, nil
+		return nil, nil, nil
 	}
 	colsTbl, ok := colsVal.(*lua.LTable)
 	if !ok {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	var cols []string
+	var aggs []db.AggregateColumn
 	var parseErr error
 	colsTbl.ForEach(func(key, value lua.LValue) {
 		if parseErr != nil {
@@ -534,6 +595,8 @@ func parseColumnsFromLua(L *lua.LState, optsTbl *lua.LTable, pluginName string) 
 		if _, ok := key.(lua.LNumber); !ok {
 			return
 		}
+
+		// Plain string column.
 		if s, ok := value.(lua.LString); ok {
 			prefixed, err := prefixQualifiedColumn(pluginName, string(s))
 			if err != nil {
@@ -541,12 +604,56 @@ func parseColumnsFromLua(L *lua.LState, optsTbl *lua.LTable, pluginName string) 
 				return
 			}
 			cols = append(cols, prefixed)
+			return
+		}
+
+		// Aggregate sentinel table.
+		if tbl, ok := value.(*lua.LTable); ok {
+			aggVal := tbl.RawGetString(aggregateSentinelKey)
+			if aggVal == lua.LNil {
+				parseErr = fmt.Errorf("columns: table element is not an aggregate sentinel (missing %s key)", aggregateSentinelKey)
+				return
+			}
+			fn, ok := aggVal.(lua.LString)
+			if !ok {
+				parseErr = fmt.Errorf("columns: %s must be a string", aggregateSentinelKey)
+				return
+			}
+
+			argVal := tbl.RawGetString(aggregateArgKey)
+			arg := ""
+			if s, ok := argVal.(lua.LString); ok {
+				arg = string(s)
+			}
+
+			aliasVal := tbl.RawGetString(aggregateAliasKey)
+			alias := ""
+			if s, ok := aliasVal.(lua.LString); ok {
+				alias = string(s)
+			}
+
+			// Prefix qualified aggregate args (contain dot, not "*").
+			if arg != "*" && strings.Contains(arg, ".") {
+				prefixed, err := prefixQualifiedColumn(pluginName, arg)
+				if err != nil {
+					parseErr = fmt.Errorf("columns: aggregate arg: %w", err)
+					return
+				}
+				arg = prefixed
+			}
+
+			aggs = append(aggs, db.AggregateColumn{
+				Func:  string(fn),
+				Arg:   arg,
+				Alias: alias,
+			})
+			return
 		}
 	})
 	if parseErr != nil {
-		return nil, parseErr
+		return nil, nil, parseErr
 	}
-	return cols, nil
+	return cols, aggs, nil
 }
 
 // parseOrderByFromLua extracts the "order_by" field.
@@ -811,8 +918,9 @@ func (api *DatabaseAPI) luaQuery(L *lua.LState) int {
 	}
 
 	var rows []db.Row
-	if opts.filter != nil {
-		// New condition-based path.
+	useFilteredPath := opts.filter != nil || opts.havingCondition != nil || len(opts.aggregates) > 0
+	if useFilteredPath {
+		// New condition-based path (also used for aggregate queries without WHERE).
 		var orderByCols []db.OrderByColumn
 		for _, o := range opts.orders {
 			orderByCols = append(orderByCols, db.OrderByColumn{Column: o.Column, Desc: o.Desc})
@@ -823,7 +931,10 @@ func (api *DatabaseAPI) luaQuery(L *lua.LState) int {
 		rows, err = db.QSelectFiltered(ctx, api.currentExec, api.dialect, db.FilteredSelectParams{
 			Table:       prefixed,
 			Columns:     opts.columns,
+			Aggregates:  opts.aggregates,
 			Filter:      opts.filter,
+			GroupBy:     opts.groupBy,
+			Having:      opts.havingCondition,
 			OrderByCols: orderByCols,
 			Distinct:    opts.distinct,
 			Limit:       opts.limit,
@@ -832,19 +943,20 @@ func (api *DatabaseAPI) luaQuery(L *lua.LState) int {
 	} else {
 		// Old map-based path.
 		rows, err = db.QSelect(ctx, api.currentExec, api.dialect, db.SelectParams{
-			Table:    prefixed,
-			Columns:  opts.columns,
-			Where:    opts.where,
-			WhereOr:  opts.whereOr,
-			Joins:    opts.joins,
-			OrderBy:  opts.orderBy,
-			Desc:     opts.desc,
-			Orders:   opts.orders,
-			GroupBy:  opts.groupBy,
-			Having:   opts.having,
-			Distinct: opts.distinct,
-			Limit:    opts.limit,
-			Offset:   opts.offset,
+			Table:      prefixed,
+			Columns:    opts.columns,
+			Aggregates: opts.aggregates,
+			Where:      opts.where,
+			WhereOr:    opts.whereOr,
+			Joins:      opts.joins,
+			OrderBy:    opts.orderBy,
+			Desc:       opts.desc,
+			Orders:     opts.orders,
+			GroupBy:    opts.groupBy,
+			Having:     opts.having,
+			Distinct:   opts.distinct,
+			Limit:      opts.limit,
+			Offset:     opts.offset,
 		})
 	}
 	if err != nil {
@@ -901,26 +1013,31 @@ func (api *DatabaseAPI) luaQueryOne(L *lua.LState) int {
 	}
 
 	var row db.Row
-	if opts.filter != nil {
+	useFilteredPath := opts.filter != nil || opts.havingCondition != nil || len(opts.aggregates) > 0
+	if useFilteredPath {
 		row, err = db.QSelectOneFiltered(ctx, api.currentExec, api.dialect, db.FilteredSelectParams{
-			Table:    prefixed,
-			Columns:  opts.columns,
-			Filter:   opts.filter,
-			Distinct: opts.distinct,
+			Table:      prefixed,
+			Columns:    opts.columns,
+			Aggregates: opts.aggregates,
+			Filter:     opts.filter,
+			GroupBy:    opts.groupBy,
+			Having:     opts.havingCondition,
+			Distinct:   opts.distinct,
 		})
 	} else {
 		row, err = db.QSelectOne(ctx, api.currentExec, api.dialect, db.SelectParams{
-			Table:    prefixed,
-			Columns:  opts.columns,
-			Where:    opts.where,
-			WhereOr:  opts.whereOr,
-			Joins:    opts.joins,
-			OrderBy:  opts.orderBy,
-			Desc:     opts.desc,
-			Orders:   opts.orders,
-			GroupBy:  opts.groupBy,
-			Having:   opts.having,
-			Distinct: opts.distinct,
+			Table:      prefixed,
+			Columns:    opts.columns,
+			Aggregates: opts.aggregates,
+			Where:      opts.where,
+			WhereOr:    opts.whereOr,
+			Joins:      opts.joins,
+			OrderBy:    opts.orderBy,
+			Desc:       opts.desc,
+			Orders:     opts.orders,
+			GroupBy:    opts.groupBy,
+			Having:     opts.having,
+			Distinct:   opts.distinct,
 		})
 	}
 	if err != nil {
@@ -1089,6 +1206,113 @@ func (api *DatabaseAPI) luaInsert(L *lua.LState) int {
 	_, err = db.QInsert(ctx, api.currentExec, api.dialect, db.InsertParams{
 		Table:  prefixed,
 		Values: values,
+	})
+	if err != nil {
+		L.Push(lua.LNil)
+		L.Push(lua.LString(err.Error()))
+		return 2
+	}
+
+	return 0
+}
+
+// luaUpsert implements db.upsert(table, opts).
+// Follows luaUpdate pattern for argument parsing (CheckString(1) + CheckTable(2) with named fields).
+// Auto-sets updated_at in values if missing. Does NOT auto-set id or created_at.
+// Returns nothing on success, nil+errmsg on error. checkOpLimit and nil context use L.RaiseError.
+func (api *DatabaseAPI) luaUpsert(L *lua.LState) int {
+	if err := api.checkOpLimit(); err != nil {
+		L.RaiseError("%s", err.Error())
+		return 0
+	}
+
+	tableName := L.CheckString(1)
+	optsTbl := L.CheckTable(2)
+
+	prefixed, err := prefixTable(api.pluginName, tableName)
+	if err != nil {
+		L.Push(lua.LNil)
+		L.Push(lua.LString(err.Error()))
+		return 2
+	}
+
+	// Parse values (required).
+	valuesVal := L.GetField(optsTbl, "values")
+	valuesTbl, ok := valuesVal.(*lua.LTable)
+	if !ok || valuesVal == lua.LNil {
+		L.ArgError(2, "upsert requires a 'values' table")
+		return 0
+	}
+	values := LuaTableToMap(L, valuesTbl)
+	if len(values) == 0 {
+		L.ArgError(2, "upsert 'values' cannot be empty")
+		return 0
+	}
+
+	// Parse conflict_columns (required).
+	ccVal := L.GetField(optsTbl, "conflict_columns")
+	ccTbl, ok := ccVal.(*lua.LTable)
+	if !ok || ccVal == lua.LNil {
+		L.ArgError(2, "upsert requires a 'conflict_columns' table")
+		return 0
+	}
+	var conflictColumns []string
+	ccTbl.ForEach(func(k, v lua.LValue) {
+		if _, isInt := k.(lua.LNumber); isInt {
+			s, isStr := v.(lua.LString)
+			if !isStr {
+				L.ArgError(2, "conflict_columns values must be strings")
+				return
+			}
+			conflictColumns = append(conflictColumns, string(s))
+		}
+	})
+	if len(conflictColumns) == 0 {
+		L.ArgError(2, "conflict_columns cannot be empty")
+		return 0
+	}
+
+	// Parse update (optional).
+	var updateMap map[string]any
+	updateVal := L.GetField(optsTbl, "update")
+	if updateVal != lua.LNil {
+		if updateTbl, ok := updateVal.(*lua.LTable); ok {
+			updateMap = LuaTableToMap(L, updateTbl)
+		}
+	}
+
+	// Parse do_nothing (optional).
+	doNothing := false
+	dnVal := L.GetField(optsTbl, "do_nothing")
+	if dnVal != lua.LNil {
+		doNothing = lua.LVAsBool(dnVal)
+	}
+
+	// Auto-set updated_at in values if missing.
+	now := time.Now().UTC().Format(time.RFC3339)
+	if _, exists := values["updated_at"]; !exists {
+		values["updated_at"] = now
+	}
+
+	// Auto-set updated_at in explicit update if present and not DoNothing.
+	if updateMap != nil && !doNothing {
+		if _, exists := updateMap["updated_at"]; !exists {
+			updateMap["updated_at"] = now
+		}
+	}
+
+	ctx := L.Context()
+	if ctx == nil {
+		L.RaiseError("db.upsert: no context set on Lua state (VM setup error)")
+		return 0
+	}
+
+	_, err = db.QUpsert(ctx, api.currentExec, api.dialect, db.UpsertParams{
+		Table:           prefixed,
+		Values:          values,
+		ConflictColumns: conflictColumns,
+		Update:          updateMap,
+		DoNothing:       doNothing,
 	})
 	if err != nil {
 		L.Push(lua.LNil)

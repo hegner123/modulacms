@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -2739,6 +2740,643 @@ func TestConditionsInCountAndExists(t *testing.T) {
 		}
 		if !exists {
 			t.Fatal("expected true for name LIKE alp%")
+		}
+	})
+}
+
+// ===== Aggregate Expression Tests =====
+
+func TestBuildSelectQuery_Aggregates(t *testing.T) {
+	tests := []struct {
+		name     string
+		params   SelectParams
+		dialect  Dialect
+		wantSQL  string
+		wantArgs []any
+	}{
+		{
+			name: "COUNT(*) only no plain columns",
+			params: SelectParams{
+				Table:      "test_items",
+				Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*"}},
+				Limit:      -1,
+			},
+			dialect:  DialectSQLite,
+			wantSQL:  `SELECT COUNT(*) FROM "test_items"`,
+			wantArgs: nil,
+		},
+		{
+			name: "COUNT(*) with alias",
+			params: SelectParams{
+				Table:      "test_items",
+				Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*", Alias: "total"}},
+				Limit:      -1,
+			},
+			dialect:  DialectSQLite,
+			wantSQL:  `SELECT COUNT(*) AS "total" FROM "test_items"`,
+			wantArgs: nil,
+		},
+		{
+			name: "mixed columns and aggregates",
+			params: SelectParams{
+				Table:      "test_items",
+				Columns:    []string{"status"},
+				Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*"}},
+				Limit:      -1,
+			},
+			dialect:  DialectSQLite,
+			wantSQL:  `SELECT "status", COUNT(*) FROM "test_items"`,
+			wantArgs: nil,
+		},
+		{
+			name: "SUM with column arg",
+			params: SelectParams{
+				Table:      "test_items",
+				Aggregates: []AggregateColumn{{Func: "SUM", Arg: "priority"}},
+				Limit:      -1,
+			},
+			dialect:  DialectSQLite,
+			wantSQL:  `SELECT SUM("priority") FROM "test_items"`,
+			wantArgs: nil,
+		},
+		{
+			name: "multiple aggregates",
+			params: SelectParams{
+				Table: "test_items",
+				Aggregates: []AggregateColumn{
+					{Func: "COUNT", Arg: "*"},
+					{Func: "AVG", Arg: "priority"},
+				},
+				Limit: -1,
+			},
+			dialect:  DialectSQLite,
+			wantSQL:  `SELECT COUNT(*), AVG("priority") FROM "test_items"`,
+			wantArgs: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			query, args, err := buildSelectQuery(tt.dialect, tt.params)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if query != tt.wantSQL {
+				t.Errorf("query = %q, want %q", query, tt.wantSQL)
+			}
+			if len(args) != len(tt.wantArgs) {
+				t.Errorf("args len = %d, want %d", len(args), len(tt.wantArgs))
+			}
+		})
+	}
+}
+
+func TestBuildSelectQuery_AggregateValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		params  SelectParams
+		wantErr string
+	}{
+		{
+			name: "bad function name",
+			params: SelectParams{
+				Table:      "test_items",
+				Aggregates: []AggregateColumn{{Func: "INVALID", Arg: "*"}},
+			},
+			wantErr: "invalid aggregate function",
+		},
+		{
+			name: "star with SUM",
+			params: SelectParams{
+				Table:      "test_items",
+				Aggregates: []AggregateColumn{{Func: "SUM", Arg: "*"}},
+			},
+			wantErr: "does not support *",
+		},
+		{
+			name: "invalid arg",
+			params: SelectParams{
+				Table:      "test_items",
+				Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "bad col!"}},
+			},
+			wantErr: "invalid aggregate argument",
+		},
+		{
+			name: "column cap exceeded",
+			params: SelectParams{
+				Table:      "test_items",
+				Columns:    make([]string, 60),
+				Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*"}, {Func: "SUM", Arg: "priority"}, {Func: "AVG", Arg: "priority"}, {Func: "MIN", Arg: "priority"}, {Func: "MAX", Arg: "priority"}},
+			},
+			wantErr: "too many select columns",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, err := buildSelectQuery(DialectSQLite, tt.params)
+			if err == nil {
+				t.Fatalf("expected error containing %q, got nil", tt.wantErr)
+			}
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Errorf("error = %q, want containing %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestBuildSelectQuery_AggregatesWithGroupByAndHaving(t *testing.T) {
+	params := SelectParams{
+		Table:      "test_items",
+		Columns:    []string{"status"},
+		Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*", Alias: "total"}},
+		GroupBy:    []string{"status"},
+		Where:      map[string]any{"status": "active"},
+		Limit:      -1,
+	}
+
+	query, args, err := buildSelectQuery(DialectSQLite, params)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !strings.Contains(query, `COUNT(*) AS "total"`) {
+		t.Errorf("query missing aggregate: %q", query)
+	}
+	if !strings.Contains(query, `GROUP BY "status"`) {
+		t.Errorf("query missing GROUP BY: %q", query)
+	}
+	if !strings.Contains(query, `WHERE`) {
+		t.Errorf("query missing WHERE: %q", query)
+	}
+	if len(args) != 1 || args[0] != "active" {
+		t.Errorf("args = %v, want [active]", args)
+	}
+}
+
+// ===== UPSERT TESTS =====
+
+func setupUpsertTestDB(t *testing.T) *sql.DB {
+	t.Helper()
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	t.Cleanup(func() {
+		if cerr := db.Close(); cerr != nil {
+			t.Errorf("close db: %v", cerr)
+		}
+	})
+
+	_, err = db.Exec(`CREATE TABLE upsert_items (
+		id TEXT PRIMARY KEY NOT NULL,
+		name TEXT NOT NULL,
+		status TEXT NOT NULL DEFAULT 'active',
+		description TEXT,
+		UNIQUE(name, status)
+	)`)
+	if err != nil {
+		t.Fatalf("create table: %v", err)
+	}
+	return db
+}
+
+func TestQUpsert(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("insert_new_row", func(t *testing.T) {
+		db := setupUpsertTestDB(t)
+
+		_, err := QUpsert(ctx, db, DialectSQLite, UpsertParams{
+			Table:           "upsert_items",
+			Values:          map[string]any{"id": "1", "name": "alpha", "status": "active"},
+			ConflictColumns: []string{"id"},
+		})
+		if err != nil {
+			t.Fatalf("upsert: %v", err)
+		}
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{Table: "upsert_items"})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 1 {
+			t.Fatalf("expected 1 row, got %d", len(rows))
+		}
+		if rows[0]["name"] != "alpha" {
+			t.Errorf("name = %v, want alpha", rows[0]["name"])
+		}
+	})
+
+	t.Run("update_on_conflict", func(t *testing.T) {
+		db := setupUpsertTestDB(t)
+
+		// Insert initial row
+		_, err := QInsert(ctx, db, DialectSQLite, InsertParams{
+			Table:  "upsert_items",
+			Values: map[string]any{"id": "1", "name": "alpha", "status": "draft"},
+		})
+		if err != nil {
+			t.Fatalf("insert: %v", err)
+		}
+
+		// Upsert with conflict — auto-derive should update name and status
+		_, err = QUpsert(ctx, db, DialectSQLite, UpsertParams{
+			Table:           "upsert_items",
+			Values:          map[string]any{"id": "1", "name": "beta", "status": "active"},
+			ConflictColumns: []string{"id"},
+		})
+		if err != nil {
+			t.Fatalf("upsert: %v", err)
+		}
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{Table: "upsert_items"})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 1 {
+			t.Fatalf("expected 1 row, got %d", len(rows))
+		}
+		if rows[0]["name"] != "beta" {
+			t.Errorf("name = %v, want beta", rows[0]["name"])
+		}
+		if rows[0]["status"] != "active" {
+			t.Errorf("status = %v, want active", rows[0]["status"])
+		}
+	})
+
+	t.Run("explicit_update", func(t *testing.T) {
+		db := setupUpsertTestDB(t)
+
+		// Insert initial row
+		_, err := QInsert(ctx, db, DialectSQLite, InsertParams{
+			Table:  "upsert_items",
+			Values: map[string]any{"id": "1", "name": "alpha", "status": "draft", "description": "original"},
+		})
+		if err != nil {
+			t.Fatalf("insert: %v", err)
+		}
+
+		// Upsert with explicit update — only name should change
+		_, err = QUpsert(ctx, db, DialectSQLite, UpsertParams{
+			Table:           "upsert_items",
+			Values:          map[string]any{"id": "1", "name": "beta", "status": "active", "description": "new"},
+			ConflictColumns: []string{"id"},
+			Update:          map[string]any{"name": "gamma"},
+		})
+		if err != nil {
+			t.Fatalf("upsert: %v", err)
+		}
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{Table: "upsert_items"})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 1 {
+			t.Fatalf("expected 1 row, got %d", len(rows))
+		}
+		if rows[0]["name"] != "gamma" {
+			t.Errorf("name = %v, want gamma", rows[0]["name"])
+		}
+		if rows[0]["status"] != "draft" {
+			t.Errorf("status = %v, want draft (should not be updated)", rows[0]["status"])
+		}
+		if rows[0]["description"] != "original" {
+			t.Errorf("description = %v, want original (should not be updated)", rows[0]["description"])
+		}
+	})
+
+	t.Run("do_nothing_on_conflict", func(t *testing.T) {
+		db := setupUpsertTestDB(t)
+
+		// Insert initial row
+		_, err := QInsert(ctx, db, DialectSQLite, InsertParams{
+			Table:  "upsert_items",
+			Values: map[string]any{"id": "1", "name": "alpha", "status": "draft"},
+		})
+		if err != nil {
+			t.Fatalf("insert: %v", err)
+		}
+
+		// Upsert with DoNothing — existing row should be unchanged
+		_, err = QUpsert(ctx, db, DialectSQLite, UpsertParams{
+			Table:           "upsert_items",
+			Values:          map[string]any{"id": "1", "name": "beta", "status": "active"},
+			ConflictColumns: []string{"id"},
+			DoNothing:       true,
+		})
+		if err != nil {
+			t.Fatalf("upsert: %v", err)
+		}
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{Table: "upsert_items"})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 1 {
+			t.Fatalf("expected 1 row, got %d", len(rows))
+		}
+		if rows[0]["name"] != "alpha" {
+			t.Errorf("name = %v, want alpha (should not change)", rows[0]["name"])
+		}
+	})
+
+	t.Run("do_nothing_new_row", func(t *testing.T) {
+		db := setupUpsertTestDB(t)
+
+		// DoNothing with no conflict — row should be inserted
+		_, err := QUpsert(ctx, db, DialectSQLite, UpsertParams{
+			Table:           "upsert_items",
+			Values:          map[string]any{"id": "1", "name": "alpha", "status": "active"},
+			ConflictColumns: []string{"id"},
+			DoNothing:       true,
+		})
+		if err != nil {
+			t.Fatalf("upsert: %v", err)
+		}
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{Table: "upsert_items"})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 1 {
+			t.Fatalf("expected 1 row, got %d", len(rows))
+		}
+	})
+
+	t.Run("nil_value_in_update", func(t *testing.T) {
+		db := setupUpsertTestDB(t)
+
+		// Insert initial row with description
+		_, err := QInsert(ctx, db, DialectSQLite, InsertParams{
+			Table:  "upsert_items",
+			Values: map[string]any{"id": "1", "name": "alpha", "status": "active", "description": "has desc"},
+		})
+		if err != nil {
+			t.Fatalf("insert: %v", err)
+		}
+
+		// Upsert with explicit nil to set description to NULL
+		_, err = QUpsert(ctx, db, DialectSQLite, UpsertParams{
+			Table:           "upsert_items",
+			Values:          map[string]any{"id": "1", "name": "alpha", "status": "active", "description": "new"},
+			ConflictColumns: []string{"id"},
+			Update:          map[string]any{"description": nil},
+		})
+		if err != nil {
+			t.Fatalf("upsert: %v", err)
+		}
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{Table: "upsert_items"})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 1 {
+			t.Fatalf("expected 1 row, got %d", len(rows))
+		}
+		if rows[0]["description"] != nil {
+			t.Errorf("description = %v, want nil", rows[0]["description"])
+		}
+	})
+
+	t.Run("multi_column_conflict", func(t *testing.T) {
+		db := setupUpsertTestDB(t)
+
+		// Insert initial row — conflict on (name, status) composite unique
+		_, err := QInsert(ctx, db, DialectSQLite, InsertParams{
+			Table:  "upsert_items",
+			Values: map[string]any{"id": "1", "name": "alpha", "status": "active", "description": "original"},
+		})
+		if err != nil {
+			t.Fatalf("insert: %v", err)
+		}
+
+		// Upsert with composite conflict columns
+		_, err = QUpsert(ctx, db, DialectSQLite, UpsertParams{
+			Table:           "upsert_items",
+			Values:          map[string]any{"id": "2", "name": "alpha", "status": "active", "description": "updated"},
+			ConflictColumns: []string{"name", "status"},
+		})
+		if err != nil {
+			t.Fatalf("upsert: %v", err)
+		}
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{Table: "upsert_items"})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 1 {
+			t.Fatalf("expected 1 row (conflict resolved), got %d", len(rows))
+		}
+		if rows[0]["description"] != "updated" {
+			t.Errorf("description = %v, want updated", rows[0]["description"])
+		}
+	})
+}
+
+func TestQUpsert_validation(t *testing.T) {
+	tests := []struct {
+		name    string
+		params  UpsertParams
+		wantErr string
+	}{
+		{
+			name:    "empty_values",
+			params:  UpsertParams{Table: "t", Values: map[string]any{}, ConflictColumns: []string{"id"}},
+			wantErr: "non-empty values",
+		},
+		{
+			name:    "empty_conflict_columns",
+			params:  UpsertParams{Table: "t", Values: map[string]any{"id": "1"}, ConflictColumns: []string{}},
+			wantErr: "non-empty conflict_columns",
+		},
+		{
+			name:    "conflict_not_in_values",
+			params:  UpsertParams{Table: "t", Values: map[string]any{"id": "1"}, ConflictColumns: []string{"name"}},
+			wantErr: "not found in values",
+		},
+		{
+			name:    "invalid_table",
+			params:  UpsertParams{Table: "DROP", Values: map[string]any{"id": "1"}, ConflictColumns: []string{"id"}},
+			wantErr: "SQL keyword",
+		},
+		{
+			name:    "invalid_column",
+			params:  UpsertParams{Table: "t", Values: map[string]any{"1bad": "v"}, ConflictColumns: []string{"1bad"}},
+			wantErr: "invalid column",
+		},
+		{
+			name: "do_nothing_with_update",
+			params: UpsertParams{
+				Table: "t", Values: map[string]any{"id": "1", "name": "a"},
+				ConflictColumns: []string{"id"}, DoNothing: true,
+				Update: map[string]any{"name": "b"},
+			},
+			wantErr: "mutually exclusive",
+		},
+		{
+			name: "empty_explicit_update",
+			params: UpsertParams{
+				Table: "t", Values: map[string]any{"id": "1", "name": "a"},
+				ConflictColumns: []string{"id"}, Update: map[string]any{},
+			},
+			wantErr: "empty",
+		},
+		{
+			name: "update_key_in_conflict_columns",
+			params: UpsertParams{
+				Table: "t", Values: map[string]any{"id": "1", "name": "a"},
+				ConflictColumns: []string{"id"}, Update: map[string]any{"id": "2"},
+			},
+			wantErr: "conflict column",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, err := buildUpsertQuery(DialectSQLite, tt.params)
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Errorf("error = %q, want substring %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestBuildUpsertQuery_sql(t *testing.T) {
+	t.Run("sqlite_auto_derive", func(t *testing.T) {
+		query, args, err := buildUpsertQuery(DialectSQLite, UpsertParams{
+			Table:           "items",
+			Values:          map[string]any{"id": "1", "name": "a", "status": "b"},
+			ConflictColumns: []string{"id"},
+		})
+		if err != nil {
+			t.Fatalf("build: %v", err)
+		}
+		if !strings.Contains(query, `INSERT INTO "items"`) {
+			t.Errorf("missing INSERT INTO: %q", query)
+		}
+		if !strings.Contains(query, `ON CONFLICT ("id") DO UPDATE SET`) {
+			t.Errorf("missing ON CONFLICT: %q", query)
+		}
+		if !strings.Contains(query, `"name" = excluded."name"`) {
+			t.Errorf("missing excluded reference for name: %q", query)
+		}
+		if !strings.Contains(query, `"status" = excluded."status"`) {
+			t.Errorf("missing excluded reference for status: %q", query)
+		}
+		if len(args) != 3 {
+			t.Errorf("args count = %d, want 3", len(args))
+		}
+	})
+
+	t.Run("postgres_auto_derive", func(t *testing.T) {
+		query, args, err := buildUpsertQuery(DialectPostgres, UpsertParams{
+			Table:           "items",
+			Values:          map[string]any{"id": "1", "name": "a", "status": "b"},
+			ConflictColumns: []string{"id"},
+		})
+		if err != nil {
+			t.Fatalf("build: %v", err)
+		}
+		// Verify $N placeholders
+		if !strings.Contains(query, "$1") || !strings.Contains(query, "$2") || !strings.Contains(query, "$3") {
+			t.Errorf("missing $N placeholders: %q", query)
+		}
+		// Verify uppercase EXCLUDED
+		if !strings.Contains(query, "EXCLUDED.") {
+			t.Errorf("missing uppercase EXCLUDED: %q", query)
+		}
+		if strings.Contains(query, "excluded.") {
+			t.Errorf("should use uppercase EXCLUDED, not lowercase: %q", query)
+		}
+		if len(args) != 3 {
+			t.Errorf("args count = %d, want 3", len(args))
+		}
+	})
+
+	t.Run("postgres_explicit", func(t *testing.T) {
+		query, args, err := buildUpsertQuery(DialectPostgres, UpsertParams{
+			Table:           "items",
+			Values:          map[string]any{"id": "1", "name": "a"},
+			ConflictColumns: []string{"id"},
+			Update:          map[string]any{"name": "b"},
+		})
+		if err != nil {
+			t.Fatalf("build: %v", err)
+		}
+		// INSERT args use $1, $2; UPDATE arg should use $3
+		if !strings.Contains(query, "$1") || !strings.Contains(query, "$2") {
+			t.Errorf("missing INSERT placeholders: %q", query)
+		}
+		if !strings.Contains(query, "$3") {
+			t.Errorf("missing continued placeholder $3 for UPDATE: %q", query)
+		}
+		if len(args) != 3 {
+			t.Errorf("args count = %d, want 3 (2 insert + 1 update)", len(args))
+		}
+		if args[2] != "b" {
+			t.Errorf("args[2] = %v, want 'b' (explicit update value)", args[2])
+		}
+	})
+
+	t.Run("mysql_auto_derive", func(t *testing.T) {
+		query, _, err := buildUpsertQuery(DialectMySQL, UpsertParams{
+			Table:           "items",
+			Values:          map[string]any{"id": "1", "name": "a"},
+			ConflictColumns: []string{"id"},
+		})
+		if err != nil {
+			t.Fatalf("build: %v", err)
+		}
+		if !strings.Contains(query, "ON DUPLICATE KEY UPDATE") {
+			t.Errorf("missing ON DUPLICATE KEY UPDATE: %q", query)
+		}
+		if !strings.Contains(query, "VALUES(`name`)") {
+			t.Errorf("missing VALUES() reference: %q", query)
+		}
+		// MySQL uses backticks
+		if !strings.Contains(query, "`items`") {
+			t.Errorf("missing backtick quoting: %q", query)
+		}
+	})
+
+	t.Run("mysql_do_nothing", func(t *testing.T) {
+		query, _, err := buildUpsertQuery(DialectMySQL, UpsertParams{
+			Table:           "items",
+			Values:          map[string]any{"id": "1", "name": "a"},
+			ConflictColumns: []string{"id"},
+			DoNothing:       true,
+		})
+		if err != nil {
+			t.Fatalf("build: %v", err)
+		}
+		// Should NOT use INSERT IGNORE
+		if strings.Contains(query, "INSERT IGNORE") {
+			t.Errorf("should not use INSERT IGNORE: %q", query)
+		}
+		// Should use no-op assignment
+		if !strings.Contains(query, "ON DUPLICATE KEY UPDATE") {
+			t.Errorf("missing ON DUPLICATE KEY UPDATE: %q", query)
+		}
+		if !strings.Contains(query, "`id` = `id`") {
+			t.Errorf("missing no-op assignment: %q", query)
+		}
+	})
+
+	t.Run("all_cols_are_conflict_cols", func(t *testing.T) {
+		_, _, err := buildUpsertQuery(DialectSQLite, UpsertParams{
+			Table:           "items",
+			Values:          map[string]any{"id": "1"},
+			ConflictColumns: []string{"id"},
+		})
+		if err == nil {
+			t.Fatal("expected error for all-conflict-columns auto-derive, got nil")
+		}
+		if !strings.Contains(err.Error(), "DoNothing") {
+			t.Errorf("error = %q, want mention of DoNothing", err.Error())
 		}
 	})
 }

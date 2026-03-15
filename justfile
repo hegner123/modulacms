@@ -138,6 +138,10 @@ watch:
     PACKAGE_NAME=$(head -n 1 go.mod | cut -d ' ' -f2)
     docker run -it --rm -w /go/src/${PACKAGE_NAME} -v $(pwd):/go/src/${PACKAGE_NAME} -p {{service_port}}:{{service_port}} cosmtrek/air
 
+# [Docs] Copy documentation to the website repo
+doc-copy:
+    cp -R documentation/ /Users/home/Documents/Code/Go_dev/cms/modulacms.com/documentation/ && echo "success"
+
 # [Docs] Check documentation staleness against upstream (or explicit range)
 doc-check *RANGE:
     @.githooks/doc-check {{RANGE}}

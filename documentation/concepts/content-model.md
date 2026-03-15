@@ -40,7 +40,7 @@ The `Type` field categorizes the datatype. Types prefixed with underscore (`_`) 
 | `_nested_root` | Assigned at runtime during tree composition. When a `_reference` node's subtree is fetched, the fetcher replaces the subtree root's original type with `_nested_root` so the tree builder's root-finding logic (`IsRootType`) works recursively without modification. The `_nested_root` type persists in the delivered JSON output. |
 | `_system_log` | Synthetic node injected when a reference cannot be resolved during composition. Contains error details. |
 | `_collection` | Marks content as a queryable collection. Signals to clients that children support filtering and pagination via the query API. |
-| `_global` | Singleton site-wide content (menus, footers, settings). Not tied to a route — delivered via the `/globals` endpoint. |
+| `_global` | Singleton site-wide content (menus, footers, settings). Not tied to a route -- delivered via the `/globals` endpoint. |
 | `_plugin` | Plugin-provided content. Actual types use the `_plugin_{name}` namespace (e.g., `_plugin_analytics`), registered by the plugin system during initialization. |
 
 **User-defined types** (pass-through, no engine behavior):

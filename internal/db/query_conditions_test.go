@@ -1062,3 +1062,135 @@ func TestCondition_PostgresPlaceholderSequence(t *testing.T) {
 		}
 	}
 }
+
+// ===== AggregateCondition Tests =====
+
+func TestAggregateCondition_Build(t *testing.T) {
+	tests := []struct {
+		name      string
+		cond      AggregateCondition
+		dialect   Dialect
+		argOffset int
+		wantSQL   string
+		wantArgs  []any
+		wantNext  int
+		wantErr   string
+	}{
+		{
+			name: "COUNT(*) > 5 sqlite",
+			cond: AggregateCondition{
+				Agg:   AggregateColumn{Func: "COUNT", Arg: "*"},
+				Op:    OpGt,
+				Value: 5,
+			},
+			dialect:   DialectSQLite,
+			argOffset: 1,
+			wantSQL:   `COUNT(*) > ?`,
+			wantArgs:  []any{5},
+			wantNext:  2,
+		},
+		{
+			name: "SUM(amount) >= 100 postgres",
+			cond: AggregateCondition{
+				Agg:   AggregateColumn{Func: "SUM", Arg: "amount"},
+				Op:    OpGte,
+				Value: 100,
+			},
+			dialect:   DialectPostgres,
+			argOffset: 1,
+			wantSQL:   `SUM("amount") >= $1`,
+			wantArgs:  []any{100},
+			wantNext:  2,
+		},
+		{
+			name: "OpLike rejected",
+			cond: AggregateCondition{
+				Agg:   AggregateColumn{Func: "COUNT", Arg: "*"},
+				Op:    OpLike,
+				Value: "x",
+			},
+			dialect:   DialectSQLite,
+			argOffset: 1,
+			wantErr:   "LIKE",
+		},
+		{
+			name: "nil value rejected",
+			cond: AggregateCondition{
+				Agg:   AggregateColumn{Func: "COUNT", Arg: "*"},
+				Op:    OpGt,
+				Value: nil,
+			},
+			dialect:   DialectSQLite,
+			argOffset: 1,
+			wantErr:   "non-nil value",
+		},
+		{
+			name: "invalid func rejected",
+			cond: AggregateCondition{
+				Agg:   AggregateColumn{Func: "INVALID", Arg: "*"},
+				Op:    OpGt,
+				Value: 1,
+			},
+			dialect:   DialectSQLite,
+			argOffset: 1,
+			wantErr:   "invalid aggregate function",
+		},
+		{
+			name: "star with SUM rejected",
+			cond: AggregateCondition{
+				Agg:   AggregateColumn{Func: "SUM", Arg: "*"},
+				Op:    OpGt,
+				Value: 1,
+			},
+			dialect:   DialectSQLite,
+			argOffset: 1,
+			wantErr:   "does not support *",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := NewBuildContext()
+			sql, args, next, err := tt.cond.Build(ctx, tt.dialect, tt.argOffset)
+
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatalf("expected error containing %q, got nil", tt.wantErr)
+				}
+				if !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("expected error containing %q, got %q", tt.wantErr, err.Error())
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if sql != tt.wantSQL {
+				t.Errorf("sql = %q, want %q", sql, tt.wantSQL)
+			}
+			if len(args) != len(tt.wantArgs) {
+				t.Fatalf("args len = %d, want %d", len(args), len(tt.wantArgs))
+			}
+			for i, a := range args {
+				if a != tt.wantArgs[i] {
+					t.Errorf("args[%d] = %v, want %v", i, a, tt.wantArgs[i])
+				}
+			}
+			if next != tt.wantNext {
+				t.Errorf("nextOffset = %d, want %d", next, tt.wantNext)
+			}
+		})
+	}
+}
+
+func TestAggregateCondition_HasValueBinding(t *testing.T) {
+	got := HasValueBinding(AggregateCondition{
+		Agg:   AggregateColumn{Func: "COUNT", Arg: "*"},
+		Op:    OpGt,
+		Value: 5,
+	})
+	if !got {
+		t.Error("HasValueBinding(AggregateCondition{...}) = false, want true")
+	}
+}

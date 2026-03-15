@@ -197,6 +197,73 @@ var validOnDeleteActions = []string{"CASCADE", "SET NULL", "RESTRICT"}
 // maxColumns is the maximum number of columns allowed in a CREATE TABLE.
 const maxColumns = 64
 
+// maxSelectColumns is the maximum number of columns + aggregates allowed in a SELECT.
+const maxSelectColumns = 64
+
+// ===== AGGREGATE COLUMN TYPE =====
+
+// AggregateColumn represents an aggregate function call in a SELECT clause.
+type AggregateColumn struct {
+	Func  string // COUNT, SUM, AVG, MIN, MAX (validated against allowlist)
+	Arg   string // "*" or a valid column name
+	Alias string // optional AS alias (validated as identifier)
+}
+
+// validAggregateFuncs is the allowlist of permitted aggregate function names.
+var validAggregateFuncs = map[string]bool{
+	"COUNT": true,
+	"SUM":   true,
+	"AVG":   true,
+	"MIN":   true,
+	"MAX":   true,
+}
+
+// ValidateAggregate validates that an AggregateColumn is safe to use in queries.
+func ValidateAggregate(a AggregateColumn) error {
+	upperFunc := strings.ToUpper(a.Func)
+	if !validAggregateFuncs[upperFunc] {
+		return fmt.Errorf("invalid aggregate function %q: must be one of COUNT, SUM, AVG, MIN, MAX", a.Func)
+	}
+	if a.Arg == "*" {
+		if upperFunc != "COUNT" {
+			return fmt.Errorf("aggregate %s does not support * as argument; only COUNT(*) is valid", upperFunc)
+		}
+	} else {
+		if err := ValidColumnName(a.Arg); err != nil {
+			return fmt.Errorf("invalid aggregate argument %q: %w", a.Arg, err)
+		}
+	}
+	if a.Alias != "" {
+		if err := ValidColumnName(a.Alias); err != nil {
+			return fmt.Errorf("invalid aggregate alias %q: %w", a.Alias, err)
+		}
+	}
+	return nil
+}
+
+// buildAggregateExpr renders an AggregateColumn as a SQL fragment.
+// Returns e.g. `COUNT(*)`, `SUM("amount")`, `AVG("price") AS "avg_price"`.
+// Does not take argOffset or return args — aggregates are pure structural SQL.
+func buildAggregateExpr(d Dialect, a AggregateColumn) (string, error) {
+	if err := ValidateAggregate(a); err != nil {
+		return "", err
+	}
+	upperFunc := strings.ToUpper(a.Func)
+
+	var argSQL string
+	if a.Arg == "*" {
+		argSQL = "*"
+	} else {
+		argSQL = quoteIdent(d, a.Arg)
+	}
+
+	expr := upperFunc + "(" + argSQL + ")"
+	if a.Alias != "" {
+		expr += " AS " + quoteIdent(d, a.Alias)
+	}
+	return expr, nil
+}
+
 // ===== DDL FUNCTIONS =====
 
 // DDLCreateTable executes a CREATE TABLE statement with dialect-aware type mapping,
@@ -415,19 +482,20 @@ type Row map[string]any
 
 // SelectParams configures a SELECT query.
 type SelectParams struct {
-	Table    string
-	Columns  []string         // nil = SELECT *
-	Where    map[string]any   // AND conditions; nil values produce IS NULL; ColumnOp values use operators
-	WhereOr  []map[string]any // OR groups; each inner map is AND-joined, groups are OR-joined
-	Joins    []JoinClause     // JOIN clauses (INNER, LEFT, RIGHT)
-	OrderBy  string           // empty = no ORDER BY (legacy; use Orders for multi-column)
-	Desc     bool             // only used when OrderBy is set (legacy; use Orders for multi-column)
-	Orders   []OrderByClause  // multi-column ORDER BY; takes precedence over OrderBy/Desc when non-empty
-	GroupBy  []string         // GROUP BY column names
-	Having   map[string]any   // HAVING conditions (same ColumnOp system as Where); requires GroupBy
-	Distinct bool             // SELECT DISTINCT
-	Limit    int64            // 0 = default (maxLimit); negative = no limit; positive = capped at maxLimit
-	Offset   int64            // 0 = no offset
+	Table      string
+	Columns    []string           // nil = SELECT *
+	Aggregates []AggregateColumn  // aggregate expressions; appended after Columns in SELECT
+	Where      map[string]any     // AND conditions; nil values produce IS NULL; ColumnOp values use operators
+	WhereOr    []map[string]any   // OR groups; each inner map is AND-joined, groups are OR-joined
+	Joins      []JoinClause       // JOIN clauses (INNER, LEFT, RIGHT)
+	OrderBy    string             // empty = no ORDER BY (legacy; use Orders for multi-column)
+	Desc       bool               // only used when OrderBy is set (legacy; use Orders for multi-column)
+	Orders     []OrderByClause    // multi-column ORDER BY; takes precedence over OrderBy/Desc when non-empty
+	GroupBy    []string           // GROUP BY column names
+	Having     map[string]any     // HAVING conditions (same ColumnOp system as Where); requires GroupBy
+	Distinct   bool               // SELECT DISTINCT
+	Limit      int64              // 0 = default (maxLimit); negative = no limit; positive = capped at maxLimit
+	Offset     int64              // 0 = no offset
 }
 
 // InsertParams configures an INSERT query.
@@ -667,6 +735,212 @@ func QInsert(ctx context.Context, exec Executor, d Dialect, p InsertParams) (sql
 	return exec.ExecContext(ctx, query, args...)
 }
 
+// UpsertParams configures an INSERT ... ON CONFLICT DO UPDATE query.
+type UpsertParams struct {
+	Table           string
+	Values          map[string]any // columns and values to insert (required, non-empty)
+	ConflictColumns []string       // conflict target columns (required, non-empty, must all exist in Values)
+	Update          map[string]any // SET on conflict; nil = auto-derive from Values minus ConflictColumns
+	DoNothing       bool           // ON CONFLICT DO NOTHING; mutually exclusive with Update
+}
+
+// buildUpsertQuery constructs a validated INSERT ... ON CONFLICT DO UPDATE query string with args.
+func buildUpsertQuery(d Dialect, p UpsertParams) (string, []any, error) {
+	// Validation
+	if err := ValidTableName(p.Table); err != nil {
+		return "", nil, fmt.Errorf("invalid table: %w", err)
+	}
+	if len(p.Values) == 0 {
+		return "", nil, fmt.Errorf("upsert requires non-empty values")
+	}
+	for k := range p.Values {
+		if err := ValidColumnName(k); err != nil {
+			return "", nil, fmt.Errorf("invalid column %q: %w", k, err)
+		}
+	}
+	if len(p.ConflictColumns) == 0 {
+		return "", nil, fmt.Errorf("upsert requires non-empty conflict_columns")
+	}
+	for _, c := range p.ConflictColumns {
+		if err := ValidColumnName(c); err != nil {
+			return "", nil, fmt.Errorf("invalid conflict column %q: %w", c, err)
+		}
+		if _, ok := p.Values[c]; !ok {
+			return "", nil, fmt.Errorf("conflict column %q not found in values", c)
+		}
+	}
+	if p.DoNothing && p.Update != nil {
+		return "", nil, fmt.Errorf("do_nothing and update are mutually exclusive")
+	}
+	if p.Update != nil {
+		if len(p.Update) == 0 {
+			return "", nil, fmt.Errorf("explicit update map cannot be empty")
+		}
+		for k := range p.Update {
+			if err := ValidColumnName(k); err != nil {
+				return "", nil, fmt.Errorf("invalid update column %q: %w", k, err)
+			}
+			if slices.Contains(p.ConflictColumns, k) {
+				return "", nil, fmt.Errorf("update column %q cannot also be a conflict column", k)
+			}
+		}
+	}
+
+	// Build INSERT portion
+	keys := sortedKeys(p.Values)
+	quoted := make([]string, len(keys))
+	phs := make([]string, len(keys))
+	args := make([]any, 0, len(keys))
+	argIdx := 1
+
+	for i, k := range keys {
+		quoted[i] = quoteIdent(d, k)
+		phs[i] = placeholder(d, argIdx)
+		args = append(args, p.Values[k])
+		argIdx++
+	}
+
+	var sb strings.Builder
+	sb.WriteString("INSERT INTO ")
+	sb.WriteString(quoteIdent(d, p.Table))
+	sb.WriteString(" (")
+	sb.WriteString(strings.Join(quoted, ", "))
+	sb.WriteString(") VALUES (")
+	sb.WriteString(strings.Join(phs, ", "))
+	sb.WriteString(")")
+
+	// Conflict clause
+	conflictSet := make(map[string]bool, len(p.ConflictColumns))
+	for _, c := range p.ConflictColumns {
+		conflictSet[c] = true
+	}
+
+	sortedConflict := make([]string, len(p.ConflictColumns))
+	copy(sortedConflict, p.ConflictColumns)
+	sort.Strings(sortedConflict)
+
+	if p.DoNothing {
+		switch d {
+		case DialectMySQL:
+			// MySQL: no-op assignment preserves error semantics (INSERT IGNORE swallows all errors)
+			sb.WriteString(" ON DUPLICATE KEY UPDATE ")
+			sb.WriteString(quoteIdent(d, sortedConflict[0]))
+			sb.WriteString(" = ")
+			sb.WriteString(quoteIdent(d, sortedConflict[0]))
+		default:
+			// SQLite/Postgres
+			sb.WriteString(" ON CONFLICT (")
+			quotedConflict := make([]string, len(sortedConflict))
+			for i, c := range sortedConflict {
+				quotedConflict[i] = quoteIdent(d, c)
+			}
+			sb.WriteString(strings.Join(quotedConflict, ", "))
+			sb.WriteString(") DO NOTHING")
+		}
+	} else if p.Update != nil {
+		// Explicit update
+		updateKeys := sortedKeys(p.Update)
+		setClauses := make([]string, 0, len(updateKeys))
+
+		switch d {
+		case DialectMySQL:
+			sb.WriteString(" ON DUPLICATE KEY UPDATE ")
+			for _, k := range updateKeys {
+				if p.Update[k] == nil {
+					setClauses = append(setClauses, fmt.Sprintf("%s = NULL", quoteIdent(d, k)))
+				} else {
+					setClauses = append(setClauses, fmt.Sprintf("%s = %s", quoteIdent(d, k), placeholder(d, argIdx)))
+					args = append(args, p.Update[k])
+					argIdx++
+				}
+			}
+		default:
+			// SQLite/Postgres
+			quotedConflict := make([]string, len(sortedConflict))
+			for i, c := range sortedConflict {
+				quotedConflict[i] = quoteIdent(d, c)
+			}
+			sb.WriteString(" ON CONFLICT (")
+			sb.WriteString(strings.Join(quotedConflict, ", "))
+			sb.WriteString(") DO UPDATE SET ")
+			for _, k := range updateKeys {
+				if p.Update[k] == nil {
+					setClauses = append(setClauses, fmt.Sprintf("%s = NULL", quoteIdent(d, k)))
+				} else {
+					setClauses = append(setClauses, fmt.Sprintf("%s = %s", quoteIdent(d, k), placeholder(d, argIdx)))
+					args = append(args, p.Update[k])
+					argIdx++
+				}
+			}
+		}
+		sb.WriteString(strings.Join(setClauses, ", "))
+	} else {
+		// Auto-derive: Values keys minus ConflictColumns
+		updateCols := make([]string, 0, len(keys))
+		for _, k := range keys {
+			if !conflictSet[k] {
+				updateCols = append(updateCols, k)
+			}
+		}
+		if len(updateCols) == 0 {
+			return "", nil, fmt.Errorf("all insert columns are conflict columns; use DoNothing instead")
+		}
+
+		switch d {
+		case DialectMySQL:
+			// MySQL: VALUES(col) deprecated in 8.0.20+ but works in all versions and MariaDB
+			sb.WriteString(" ON DUPLICATE KEY UPDATE ")
+			setClauses := make([]string, len(updateCols))
+			for i, k := range updateCols {
+				qk := quoteIdent(d, k)
+				setClauses[i] = fmt.Sprintf("%s = VALUES(%s)", qk, qk)
+			}
+			sb.WriteString(strings.Join(setClauses, ", "))
+		case DialectPostgres:
+			// Postgres: uppercase EXCLUDED (codebase convention)
+			quotedConflict := make([]string, len(sortedConflict))
+			for i, c := range sortedConflict {
+				quotedConflict[i] = quoteIdent(d, c)
+			}
+			sb.WriteString(" ON CONFLICT (")
+			sb.WriteString(strings.Join(quotedConflict, ", "))
+			sb.WriteString(") DO UPDATE SET ")
+			setClauses := make([]string, len(updateCols))
+			for i, k := range updateCols {
+				qk := quoteIdent(d, k)
+				setClauses[i] = fmt.Sprintf("%s = EXCLUDED.%s", qk, qk)
+			}
+			sb.WriteString(strings.Join(setClauses, ", "))
+		default:
+			// SQLite: lowercase excluded
+			quotedConflict := make([]string, len(sortedConflict))
+			for i, c := range sortedConflict {
+				quotedConflict[i] = quoteIdent(d, c)
+			}
+			sb.WriteString(" ON CONFLICT (")
+			sb.WriteString(strings.Join(quotedConflict, ", "))
+			sb.WriteString(") DO UPDATE SET ")
+			setClauses := make([]string, len(updateCols))
+			for i, k := range updateCols {
+				qk := quoteIdent(d, k)
+				setClauses[i] = fmt.Sprintf("%s = excluded.%s", qk, qk)
+			}
+			sb.WriteString(strings.Join(setClauses, ", "))
+		}
+	}
+
+	return sb.String(), args, nil
+}
+
+// QUpsert executes an INSERT ... ON CONFLICT DO UPDATE query.
+func QUpsert(ctx context.Context, exec Executor, d Dialect, p UpsertParams) (sql.Result, error) {
+	query, args, err := buildUpsertQuery(d, p)
+	if err != nil {
+		return nil, err
+	}
+	return exec.ExecContext(ctx, query, args...)
+}
+
 // QUpdate executes an UPDATE query. Where or WhereOr must be non-empty to prevent accidental full-table updates.
 func QUpdate(ctx context.Context, exec Executor, d Dialect, p UpdateParams) (sql.Result, error) {
 	if err := ValidTableName(p.Table); err != nil {
@@ -797,18 +1071,30 @@ func buildSelectQuery(d Dialect, p SelectParams) (query string, args []any, err 
 		selectKw = "SELECT DISTINCT"
 	}
 
-	// Columns
+	// Column count cap
+	if len(p.Columns)+len(p.Aggregates) > maxSelectColumns {
+		return "", nil, fmt.Errorf("too many select columns: %d (max %d)", len(p.Columns)+len(p.Aggregates), maxSelectColumns)
+	}
+
+	// Columns + Aggregates
 	cols := "*"
-	if len(p.Columns) > 0 {
-		quoted := make([]string, len(p.Columns))
-		for i, c := range p.Columns {
+	if len(p.Columns) > 0 || len(p.Aggregates) > 0 {
+		var parts []string
+		for _, c := range p.Columns {
 			q, qerr := quoteQualifiedIdent(d, c)
 			if qerr != nil {
 				return "", nil, fmt.Errorf("invalid column %q: %w", c, qerr)
 			}
-			quoted[i] = q
+			parts = append(parts, q)
 		}
-		cols = strings.Join(quoted, ", ")
+		for _, a := range p.Aggregates {
+			expr, aerr := buildAggregateExpr(d, a)
+			if aerr != nil {
+				return "", nil, fmt.Errorf("invalid aggregate: %w", aerr)
+			}
+			parts = append(parts, expr)
+		}
+		cols = strings.Join(parts, ", ")
 	}
 
 	query = fmt.Sprintf(`%s %s FROM %s`, selectKw, cols, quoteIdent(d, p.Table))

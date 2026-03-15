@@ -22,9 +22,12 @@ type OrderByColumn struct {
 // FilteredSelectParams configures a SELECT query using the Condition system.
 type FilteredSelectParams struct {
 	Table       string
-	Columns     []string        // nil = SELECT *
-	Filter      Condition       // required
-	OrderByCols []OrderByColumn // empty = no ORDER BY
+	Columns     []string           // nil = SELECT *
+	Aggregates  []AggregateColumn  // aggregate expressions; appended after Columns in SELECT
+	Filter      Condition          // required unless Aggregates or GroupBy are present
+	GroupBy     []string           // GROUP BY column names (validated)
+	Having      Condition          // HAVING condition; requires GroupBy
+	OrderByCols []OrderByColumn    // empty = no ORDER BY
 	Distinct    bool
 	Limit       int64 // 0 = default (maxLimit); negative = no limit
 	Offset      int64
@@ -290,14 +293,29 @@ func buildFilteredSelectQuery(d Dialect, p FilteredSelectParams) (string, []any,
 	if err := ValidTableName(p.Table); err != nil {
 		return "", nil, fmt.Errorf("invalid table: %w", err)
 	}
-	if p.Filter == nil {
+
+	// Filter is required unless aggregates or GroupBy are present.
+	hasAggregate := len(p.Aggregates) > 0 || len(p.GroupBy) > 0
+	if p.Filter == nil && !hasAggregate {
 		return "", nil, fmt.Errorf("select requires a non-nil filter condition")
 	}
-	if err := ValidateCondition(p.Filter); err != nil {
-		return "", nil, fmt.Errorf("invalid filter: %w", err)
+	if p.Filter != nil {
+		if err := ValidateCondition(p.Filter); err != nil {
+			return "", nil, fmt.Errorf("invalid filter: %w", err)
+		}
 	}
 	if len(p.OrderByCols) > MaxOrderByCols {
 		return "", nil, fmt.Errorf("too many order_by columns: %d (max %d)", len(p.OrderByCols), MaxOrderByCols)
+	}
+
+	// Column count cap
+	if len(p.Columns)+len(p.Aggregates) > maxSelectColumns {
+		return "", nil, fmt.Errorf("too many select columns: %d (max %d)", len(p.Columns)+len(p.Aggregates), maxSelectColumns)
+	}
+
+	// HAVING requires GROUP BY
+	if p.Having != nil && len(p.GroupBy) == 0 {
+		return "", nil, fmt.Errorf("having requires group_by")
 	}
 
 	// SELECT [DISTINCT] columns
@@ -307,26 +325,66 @@ func buildFilteredSelectQuery(d Dialect, p FilteredSelectParams) (string, []any,
 	}
 
 	cols := "*"
-	if len(p.Columns) > 0 {
-		quoted := make([]string, len(p.Columns))
-		for i, c := range p.Columns {
+	if len(p.Columns) > 0 || len(p.Aggregates) > 0 {
+		var parts []string
+		for _, c := range p.Columns {
 			if err := ValidColumnName(c); err != nil {
 				return "", nil, fmt.Errorf("invalid column %q: %w", c, err)
 			}
-			quoted[i] = quoteIdent(d, c)
+			parts = append(parts, quoteIdent(d, c))
 		}
-		cols = strings.Join(quoted, ", ")
+		for _, a := range p.Aggregates {
+			expr, aerr := buildAggregateExpr(d, a)
+			if aerr != nil {
+				return "", nil, fmt.Errorf("invalid aggregate: %w", aerr)
+			}
+			parts = append(parts, expr)
+		}
+		cols = strings.Join(parts, ", ")
 	}
 
 	query := fmt.Sprintf(`%s %s FROM %s`, selectKw, cols, quoteIdent(d, p.Table))
 
-	// WHERE
-	bctx := NewBuildContext()
-	whereSQL, args, _, err := p.Filter.Build(bctx, d, 1)
-	if err != nil {
-		return "", nil, fmt.Errorf("filter build: %w", err)
+	// WHERE (optional when aggregates/GroupBy are present)
+	var args []any
+	nextOffset := 1
+	if p.Filter != nil {
+		bctx := NewBuildContext()
+		whereSQL, whereArgs, noff, err := p.Filter.Build(bctx, d, 1)
+		if err != nil {
+			return "", nil, fmt.Errorf("filter build: %w", err)
+		}
+		query += " WHERE " + whereSQL
+		args = whereArgs
+		nextOffset = noff
 	}
-	query += " WHERE " + whereSQL
+
+	// GROUP BY
+	if len(p.GroupBy) > 0 {
+		groupParts := make([]string, len(p.GroupBy))
+		for i, c := range p.GroupBy {
+			if err := ValidColumnName(c); err != nil {
+				return "", nil, fmt.Errorf("invalid group_by column %q: %w", c, err)
+			}
+			groupParts[i] = quoteIdent(d, c)
+		}
+		query += " GROUP BY " + strings.Join(groupParts, ", ")
+	}
+
+	// HAVING
+	if p.Having != nil {
+		if err := ValidateCondition(p.Having); err != nil {
+			return "", nil, fmt.Errorf("invalid having: %w", err)
+		}
+		bctx := NewBuildContext()
+		havingSQL, havingArgs, noff, err := p.Having.Build(bctx, d, nextOffset)
+		if err != nil {
+			return "", nil, fmt.Errorf("having build: %w", err)
+		}
+		query += " HAVING " + havingSQL
+		args = append(args, havingArgs...)
+		nextOffset = noff
+	}
 
 	// ORDER BY
 	if len(p.OrderByCols) > 0 {

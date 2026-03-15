@@ -2966,3 +2966,601 @@ func TestDBAPI_QueryOne_WithConditionsAndColumns(t *testing.T) {
 		t.Errorf("expected 'High', got %q", result.String())
 	}
 }
+
+// ===== AGGREGATE TESTS =====
+
+func TestDBAPI_AggregateConstructors(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "agg_ctor_test"
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	t.Run("agg_count returns sentinel table", func(t *testing.T) {
+		code := `
+			local a = db.agg_count("*", "total")
+			return a.__agg, a.__arg, a.__alias
+		`
+		if err := L.DoString(code); err != nil {
+			t.Fatalf("failed: %v", err)
+		}
+		fn := L.Get(-3)
+		arg := L.Get(-2)
+		alias := L.Get(-1)
+		if fn.String() != "COUNT" {
+			t.Errorf("expected COUNT, got %q", fn.String())
+		}
+		if arg.String() != "*" {
+			t.Errorf("expected *, got %q", arg.String())
+		}
+		if alias.String() != "total" {
+			t.Errorf("expected total, got %q", alias.String())
+		}
+		L.SetTop(0)
+	})
+
+	t.Run("agg_sum returns sentinel table", func(t *testing.T) {
+		code := `
+			local a = db.agg_sum("amount")
+			return a.__agg, a.__arg, a.__alias
+		`
+		if err := L.DoString(code); err != nil {
+			t.Fatalf("failed: %v", err)
+		}
+		fn := L.Get(-3)
+		arg := L.Get(-2)
+		alias := L.Get(-1)
+		if fn.String() != "SUM" {
+			t.Errorf("expected SUM, got %q", fn.String())
+		}
+		if arg.String() != "amount" {
+			t.Errorf("expected amount, got %q", arg.String())
+		}
+		if alias.String() != "" {
+			t.Errorf("expected empty alias, got %q", alias.String())
+		}
+		L.SetTop(0)
+	})
+
+	t.Run("all five constructors exist", func(t *testing.T) {
+		code := `
+			local names = {"agg_count", "agg_sum", "agg_avg", "agg_min", "agg_max"}
+			for _, name in ipairs(names) do
+				if type(db[name]) ~= "function" then
+					error(name .. " is not a function")
+				end
+			end
+			return true
+		`
+		if err := L.DoString(code); err != nil {
+			t.Fatalf("failed: %v", err)
+		}
+		L.SetTop(0)
+	})
+}
+
+func TestDBAPI_AggregateQuery_GroupBy(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "agg_gb_test"
+	createTestTable(t, conn, pluginName)
+	seedTestRow(t, conn, pluginName, "id1", "Task 1", "active", 1)
+	seedTestRow(t, conn, pluginName, "id2", "Task 2", "active", 2)
+	seedTestRow(t, conn, pluginName, "id3", "Task 3", "done", 3)
+	seedTestRow(t, conn, pluginName, "id4", "Task 4", "done", 4)
+	seedTestRow(t, conn, pluginName, "id5", "Task 5", "active", 5)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	t.Run("full round-trip with GROUP BY and COUNT", func(t *testing.T) {
+		code := `
+			local rows = db.query("tasks", {
+				columns = {"status", db.agg_count("*", "total")},
+				group_by = {"status"}
+			})
+			if type(rows) ~= "table" then
+				error("expected table, got " .. type(rows))
+			end
+			-- Should have 2 groups: active (3) and done (2)
+			if #rows ~= 2 then
+				error("expected 2 groups, got " .. #rows)
+			end
+			-- Find the active group.
+			for _, row in ipairs(rows) do
+				if row.status == "active" and row.total ~= 3 then
+					error("expected active count=3, got " .. tostring(row.total))
+				end
+				if row.status == "done" and row.total ~= 2 then
+					error("expected done count=2, got " .. tostring(row.total))
+				end
+			end
+			return #rows
+		`
+		if err := L.DoString(code); err != nil {
+			t.Fatalf("aggregate GROUP BY query failed: %v", err)
+		}
+		result := L.Get(-1)
+		if n, ok := result.(lua.LNumber); !ok || float64(n) != 2 {
+			t.Errorf("expected 2 groups, got %v", result)
+		}
+		L.SetTop(0)
+	})
+
+	t.Run("GROUP BY without WHERE works", func(t *testing.T) {
+		// No where clause — should route through filtered path with nil Filter.
+		code := `
+			local rows = db.query("tasks", {
+				columns = {"status", db.agg_count("*", "cnt")},
+				group_by = {"status"}
+			})
+			return #rows
+		`
+		if err := L.DoString(code); err != nil {
+			t.Fatalf("GROUP BY without WHERE failed: %v", err)
+		}
+		result := L.Get(-1)
+		if n, ok := result.(lua.LNumber); !ok || float64(n) != 2 {
+			t.Errorf("expected 2 groups, got %v", result)
+		}
+		L.SetTop(0)
+	})
+}
+
+func TestDBAPI_AggregateQuery_Having(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "agg_hav_test"
+	createTestTable(t, conn, pluginName)
+	seedTestRow(t, conn, pluginName, "id1", "Task 1", "active", 1)
+	seedTestRow(t, conn, pluginName, "id2", "Task 2", "active", 2)
+	seedTestRow(t, conn, pluginName, "id3", "Task 3", "done", 3)
+	seedTestRow(t, conn, pluginName, "id4", "Task 4", "done", 4)
+	seedTestRow(t, conn, pluginName, "id5", "Task 5", "active", 5)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	t.Run("HAVING filters groups", func(t *testing.T) {
+		// Only groups with count > 2 should remain (active=3, done=2 → only active passes)
+		code := `
+			local rows = db.query("tasks", {
+				columns = {"status", db.agg_count("*", "total")},
+				group_by = {"status"},
+				where = {{"status", "IN", {"active", "done"}}},
+				having = {db.agg_count("*"), ">", 2}
+			})
+			if #rows ~= 1 then
+				error("expected 1 group with count>2, got " .. #rows)
+			end
+			if rows[1].status ~= "active" then
+				error("expected active group, got " .. tostring(rows[1].status))
+			end
+			return rows[1].total
+		`
+		if err := L.DoString(code); err != nil {
+			t.Fatalf("HAVING query failed: %v", err)
+		}
+		result := L.Get(-1)
+		if n, ok := result.(lua.LNumber); !ok || float64(n) != 3 {
+			t.Errorf("expected count 3, got %v", result)
+		}
+		L.SetTop(0)
+	})
+}
+
+func TestDBAPI_AggregateValidation(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "agg_val_test"
+	createTestTable(t, conn, pluginName)
+	seedTestRow(t, conn, pluginName, "id1", "Task 1", "active", 1)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	t.Run("bad function name returns error", func(t *testing.T) {
+		code := `
+			local tbl = {__agg = "INVALID", __arg = "*", __alias = ""}
+			local rows, err = db.query("tasks", {
+				columns = {"status", tbl},
+				group_by = {"status"}
+			})
+			return err
+		`
+		if err := L.DoString(code); err != nil {
+			t.Fatalf("unexpected Lua error: %v", err)
+		}
+		result := L.Get(-1)
+		if result == lua.LNil {
+			t.Fatal("expected error message, got nil")
+		}
+		if !strings.Contains(result.String(), "invalid aggregate function") {
+			t.Errorf("expected 'invalid aggregate function' in error, got %q", result.String())
+		}
+		L.SetTop(0)
+	})
+
+	t.Run("star with SUM returns error", func(t *testing.T) {
+		code := `
+			local rows, err = db.query("tasks", {
+				columns = {db.agg_sum("*")},
+				group_by = {"status"}
+			})
+			return err
+		`
+		if err := L.DoString(code); err != nil {
+			t.Fatalf("unexpected Lua error: %v", err)
+		}
+		result := L.Get(-1)
+		if result == lua.LNil {
+			t.Fatal("expected error message, got nil")
+		}
+		if !strings.Contains(result.String(), "does not support *") {
+			t.Errorf("expected 'does not support *' in error, got %q", result.String())
+		}
+		L.SetTop(0)
+	})
+}
+
+func TestDBAPI_ExistingCountNotOverwritten(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "count_safe_test"
+	createTestTable(t, conn, pluginName)
+	seedTestRow(t, conn, pluginName, "id1", "Task 1", "active", 1)
+	seedTestRow(t, conn, pluginName, "id2", "Task 2", "active", 2)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	// db.count should still work as the row-counting function, not an aggregate constructor.
+	code := `
+		local n = db.count("tasks")
+		return n
+	`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("db.count failed: %v", err)
+	}
+	result := L.Get(-1)
+	if n, ok := result.(lua.LNumber); !ok || float64(n) != 2 {
+		t.Errorf("expected db.count to return 2, got %v", result)
+	}
+}
+
+func TestDBAPI_AggregateArgPrefixing(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "agg_prefix_test"
+	createTestTable(t, conn, pluginName)
+	seedTestRow(t, conn, pluginName, "id1", "Task 1", "active", 5)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	t.Run("unqualified arg passes through", func(t *testing.T) {
+		code := `
+			local rows = db.query("tasks", {
+				columns = {db.agg_sum("priority", "total_priority")},
+				group_by = {"status"}
+			})
+			if #rows ~= 1 then
+				error("expected 1 group, got " .. #rows)
+			end
+			return rows[1].total_priority
+		`
+		if err := L.DoString(code); err != nil {
+			t.Fatalf("failed: %v", err)
+		}
+		result := L.Get(-1)
+		if n, ok := result.(lua.LNumber); !ok || float64(n) != 5 {
+			t.Errorf("expected 5, got %v", result)
+		}
+		L.SetTop(0)
+	})
+
+	t.Run("star never prefixed", func(t *testing.T) {
+		code := `
+			local rows = db.query("tasks", {
+				columns = {db.agg_count("*", "cnt")},
+				group_by = {"status"}
+			})
+			return rows[1].cnt
+		`
+		if err := L.DoString(code); err != nil {
+			t.Fatalf("failed: %v", err)
+		}
+		result := L.Get(-1)
+		if n, ok := result.(lua.LNumber); !ok || float64(n) != 1 {
+			t.Errorf("expected 1, got %v", result)
+		}
+		L.SetTop(0)
+	})
+}
+
+func TestDBAPI_MixedColumnsAndAggregates(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "mix_col_test"
+	createTestTable(t, conn, pluginName)
+	seedTestRow(t, conn, pluginName, "id1", "Task 1", "active", 10)
+	seedTestRow(t, conn, pluginName, "id2", "Task 2", "active", 20)
+	seedTestRow(t, conn, pluginName, "id3", "Task 3", "done", 30)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	code := `
+		local rows = db.query("tasks", {
+			columns = {"status", db.agg_count("*", "cnt"), db.agg_sum("priority", "total_pri")},
+			group_by = {"status"}
+		})
+		for _, row in ipairs(rows) do
+			if row.status == "active" then
+				if row.cnt ~= 2 then error("expected active cnt=2, got " .. tostring(row.cnt)) end
+				if row.total_pri ~= 30 then error("expected active total_pri=30, got " .. tostring(row.total_pri)) end
+			end
+		end
+		return #rows
+	`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("mixed columns query failed: %v", err)
+	}
+	result := L.Get(-1)
+	if n, ok := result.(lua.LNumber); !ok || float64(n) != 2 {
+		t.Errorf("expected 2 groups, got %v", result)
+	}
+}
+
+// ===== UPSERT TESTS =====
+
+func TestDBAPI_Upsert_InsertsNewRow(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "upsert_insert_test"
+	createTestTable(t, conn, pluginName)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	code := `db.upsert("tasks", {
+		values = {id = "u1", title = "Hello", status = "active", priority = 1, created_at = "2020-01-01T00:00:00Z"},
+		conflict_columns = {"id"},
+	})`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("db.upsert failed: %v", err)
+	}
+
+	fullName := tablePrefix(pluginName) + "tasks"
+	if countRows(t, conn, fullName) != 1 {
+		t.Fatal("expected 1 row after upsert")
+	}
+
+	ctx := context.Background()
+	row, err := db.QSelectOne(ctx, conn, db.DialectSQLite, db.SelectParams{Table: fullName})
+	if err != nil {
+		t.Fatalf("select failed: %v", err)
+	}
+	if fmt.Sprintf("%v", row["title"]) != "Hello" {
+		t.Errorf("title = %v, want Hello", row["title"])
+	}
+}
+
+func TestDBAPI_Upsert_UpdatesOnConflict(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "upsert_update_test"
+	createTestTable(t, conn, pluginName)
+	seedTestRow(t, conn, pluginName, "u1", "Original", "draft", 0)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	code := `db.upsert("tasks", {
+		values = {id = "u1", title = "Updated", status = "active", priority = 5, created_at = "2020-01-01T00:00:00Z"},
+		conflict_columns = {"id"},
+	})`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("db.upsert failed: %v", err)
+	}
+
+	fullName := tablePrefix(pluginName) + "tasks"
+	if countRows(t, conn, fullName) != 1 {
+		t.Fatal("expected 1 row (update, not insert)")
+	}
+
+	ctx := context.Background()
+	row, err := db.QSelectOne(ctx, conn, db.DialectSQLite, db.SelectParams{Table: fullName})
+	if err != nil {
+		t.Fatalf("select failed: %v", err)
+	}
+	if fmt.Sprintf("%v", row["title"]) != "Updated" {
+		t.Errorf("title = %v, want Updated", row["title"])
+	}
+	if fmt.Sprintf("%v", row["status"]) != "active" {
+		t.Errorf("status = %v, want active", row["status"])
+	}
+}
+
+func TestDBAPI_Upsert_AutoSetsTimestamps(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "upsert_ts_test"
+	createTestTable(t, conn, pluginName)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	code := `db.upsert("tasks", {
+		values = {id = "u1", title = "TS", status = "active", priority = 0, created_at = "2020-01-01T00:00:00Z"},
+		conflict_columns = {"id"},
+	})`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("db.upsert failed: %v", err)
+	}
+
+	fullName := tablePrefix(pluginName) + "tasks"
+	ctx := context.Background()
+	row, err := db.QSelectOne(ctx, conn, db.DialectSQLite, db.SelectParams{Table: fullName})
+	if err != nil {
+		t.Fatalf("select failed: %v", err)
+	}
+
+	// updated_at should be auto-set (recent)
+	updatedAt := fmt.Sprintf("%v", row["updated_at"])
+	ts, parseErr := time.Parse(time.RFC3339, updatedAt)
+	if parseErr != nil {
+		t.Fatalf("updated_at is not valid RFC3339: %q", updatedAt)
+	}
+	if time.Since(ts) > 10*time.Second {
+		t.Errorf("updated_at should be recent, got %v", ts)
+	}
+
+	// created_at should NOT be auto-set (should be the explicit value)
+	createdAt := fmt.Sprintf("%v", row["created_at"])
+	if createdAt != "2020-01-01T00:00:00Z" {
+		t.Errorf("created_at = %v, want 2020-01-01T00:00:00Z (should not be auto-set)", createdAt)
+	}
+}
+
+func TestDBAPI_Upsert_AutoSetsUpdatedAtInUpdate(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "upsert_upd_ts_test"
+	createTestTable(t, conn, pluginName)
+	seedTestRow(t, conn, pluginName, "u1", "Original", "draft", 0)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	code := `db.upsert("tasks", {
+		values = {id = "u1", title = "New", status = "active", priority = 1, created_at = "2020-01-01T00:00:00Z"},
+		conflict_columns = {"id"},
+		update = {title = "Explicit"},
+	})`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("db.upsert failed: %v", err)
+	}
+
+	fullName := tablePrefix(pluginName) + "tasks"
+	ctx := context.Background()
+	row, err := db.QSelectOne(ctx, conn, db.DialectSQLite, db.SelectParams{Table: fullName})
+	if err != nil {
+		t.Fatalf("select failed: %v", err)
+	}
+	if fmt.Sprintf("%v", row["title"]) != "Explicit" {
+		t.Errorf("title = %v, want Explicit", row["title"])
+	}
+}
+
+func TestDBAPI_Upsert_DoNothing(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "upsert_donothing_test"
+	createTestTable(t, conn, pluginName)
+	seedTestRow(t, conn, pluginName, "u1", "Original", "draft", 0)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	code := `db.upsert("tasks", {
+		values = {id = "u1", title = "Ignored", status = "active", priority = 5, created_at = "2020-01-01T00:00:00Z"},
+		conflict_columns = {"id"},
+		do_nothing = true,
+	})`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("db.upsert failed: %v", err)
+	}
+
+	fullName := tablePrefix(pluginName) + "tasks"
+	ctx := context.Background()
+	row, err := db.QSelectOne(ctx, conn, db.DialectSQLite, db.SelectParams{Table: fullName})
+	if err != nil {
+		t.Fatalf("select failed: %v", err)
+	}
+	if fmt.Sprintf("%v", row["title"]) != "Original" {
+		t.Errorf("title = %v, want Original (should not change with do_nothing)", row["title"])
+	}
+}
+
+func TestDBAPI_Upsert_RequiresConflictColumns(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "upsert_req_cc_test"
+	createTestTable(t, conn, pluginName)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	code := `db.upsert("tasks", {
+		values = {id = "u1", title = "Hello", status = "active", priority = 0, created_at = "2020-01-01T00:00:00Z"},
+	})`
+	err := L.DoString(code)
+	if err == nil {
+		t.Fatal("expected error for missing conflict_columns")
+	}
+	if !strings.Contains(err.Error(), "conflict_columns") {
+		t.Errorf("error = %v, want mention of conflict_columns", err)
+	}
+}
+
+func TestDBAPI_Upsert_RequiresValues(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "upsert_req_val_test"
+	createTestTable(t, conn, pluginName)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	code := `db.upsert("tasks", {
+		conflict_columns = {"id"},
+	})`
+	err := L.DoString(code)
+	if err == nil {
+		t.Fatal("expected error for missing values")
+	}
+	if !strings.Contains(err.Error(), "values") {
+		t.Errorf("error = %v, want mention of values", err)
+	}
+}
+
+func TestDBAPI_Upsert_NamespacePrefixed(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+	pluginName := "upsert_ns_test"
+	createTestTable(t, conn, pluginName)
+
+	L, _, cancel := newDBTestState(t, conn, pluginName)
+	defer L.Close()
+	defer cancel()
+
+	code := `db.upsert("tasks", {
+		values = {id = "u1", title = "NS", status = "active", priority = 0, created_at = "2020-01-01T00:00:00Z"},
+		conflict_columns = {"id"},
+	})`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("db.upsert failed: %v", err)
+	}
+
+	// Verify the row exists in the namespaced table
+	fullName := tablePrefix(pluginName) + "tasks"
+	if countRows(t, conn, fullName) != 1 {
+		t.Fatal("expected 1 row in namespaced table")
+	}
+}

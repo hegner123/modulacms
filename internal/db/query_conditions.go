@@ -287,6 +287,48 @@ func (c Not) Build(ctx BuildContext, d Dialect, argOffset int) (string, []any, i
 	return "NOT (" + sql + ")", args, nextOffset, nil
 }
 
+// AggregateCondition represents a comparison on an aggregate expression:
+// e.g. COUNT(*) > ? or SUM("amount") >= ?.
+// Primarily used in HAVING clauses.
+type AggregateCondition struct {
+	Agg   AggregateColumn
+	Op    CompareOp // reuses CompareOp; OpLike is rejected
+	Value any       // must be non-nil
+}
+
+// validAggregateOps is the subset of CompareOp that are valid for aggregate conditions.
+// OpLike is excluded because LIKE is nonsensical for aggregate numeric results.
+var validAggregateOps = map[CompareOp]bool{
+	OpEq: true, OpNeq: true, OpGt: true, OpLt: true,
+	OpGte: true, OpLte: true,
+}
+
+func (c AggregateCondition) Build(ctx BuildContext, d Dialect, argOffset int) (string, []any, int, error) {
+	if err := ctx.incrementNode(); err != nil {
+		return "", nil, 0, err
+	}
+	if err := ValidateAggregate(c.Agg); err != nil {
+		return "", nil, 0, fmt.Errorf("aggregate condition: %w", err)
+	}
+	if !validAggregateOps[c.Op] {
+		return "", nil, 0, fmt.Errorf("invalid aggregate condition operator %q: LIKE is not valid for aggregate conditions", c.Op)
+	}
+	if c.Value == nil {
+		return "", nil, 0, fmt.Errorf("aggregate condition requires a non-nil value")
+	}
+
+	upperFunc := strings.ToUpper(c.Agg.Func)
+	var argSQL string
+	if c.Agg.Arg == "*" {
+		argSQL = "*"
+	} else {
+		argSQL = quoteIdent(d, c.Agg.Arg)
+	}
+
+	sql := fmt.Sprintf("%s(%s) %s %s", upperFunc, argSQL, string(c.Op), placeholder(d, argOffset))
+	return sql, []any{c.Value}, argOffset + 1, nil
+}
+
 // ValidateCondition walks the condition tree and returns an error if any
 // safety limit is exceeded, any column name is invalid, or any operator
 // is not in the allowlist. This is the authoritative pre-flight check
@@ -314,6 +356,8 @@ func HasValueBinding(c Condition) bool {
 	case InCondition:
 		return true
 	case BetweenCondition:
+		return true
+	case AggregateCondition:
 		return true
 	case IsNullCondition:
 		return false

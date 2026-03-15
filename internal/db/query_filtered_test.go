@@ -1020,3 +1020,313 @@ func TestFilteredSelect_PostgresSQL(t *testing.T) {
 		t.Errorf("args = %v", args)
 	}
 }
+
+// ===== Filtered Aggregate Tests =====
+
+func TestBuildFilteredSelectQuery_Aggregates(t *testing.T) {
+	tests := []struct {
+		name     string
+		params   FilteredSelectParams
+		dialect  Dialect
+		wantSQL  string
+		wantArgs []any
+	}{
+		{
+			name: "COUNT(*) only no plain columns",
+			params: FilteredSelectParams{
+				Table:      "test_items",
+				Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*"}},
+				Limit:      -1,
+			},
+			dialect:  DialectSQLite,
+			wantSQL:  `SELECT COUNT(*) FROM "test_items"`,
+			wantArgs: nil,
+		},
+		{
+			name: "COUNT(*) with alias",
+			params: FilteredSelectParams{
+				Table:      "test_items",
+				Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*", Alias: "total"}},
+				Limit:      -1,
+			},
+			dialect:  DialectSQLite,
+			wantSQL:  `SELECT COUNT(*) AS "total" FROM "test_items"`,
+			wantArgs: nil,
+		},
+		{
+			name: "mixed columns and aggregates",
+			params: FilteredSelectParams{
+				Table:      "test_items",
+				Columns:    []string{"status"},
+				Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*"}},
+				Filter:     Compare{Column: "priority", Op: OpGt, Value: 0},
+				Limit:      -1,
+			},
+			dialect:  DialectSQLite,
+			wantSQL:  `SELECT "status", COUNT(*) FROM "test_items" WHERE "priority" > ?`,
+			wantArgs: []any{0},
+		},
+		{
+			name: "SUM with column arg",
+			params: FilteredSelectParams{
+				Table:      "test_items",
+				Aggregates: []AggregateColumn{{Func: "SUM", Arg: "priority"}},
+				Limit:      -1,
+			},
+			dialect:  DialectSQLite,
+			wantSQL:  `SELECT SUM("priority") FROM "test_items"`,
+			wantArgs: nil,
+		},
+		{
+			name: "multiple aggregates",
+			params: FilteredSelectParams{
+				Table: "test_items",
+				Aggregates: []AggregateColumn{
+					{Func: "COUNT", Arg: "*"},
+					{Func: "AVG", Arg: "priority"},
+				},
+				Limit: -1,
+			},
+			dialect:  DialectSQLite,
+			wantSQL:  `SELECT COUNT(*), AVG("priority") FROM "test_items"`,
+			wantArgs: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			query, args, err := buildFilteredSelectQuery(tt.dialect, tt.params)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if query != tt.wantSQL {
+				t.Errorf("query = %q, want %q", query, tt.wantSQL)
+			}
+			if len(args) != len(tt.wantArgs) {
+				t.Fatalf("args len = %d, want %d", len(args), len(tt.wantArgs))
+			}
+			for i, a := range args {
+				if a != tt.wantArgs[i] {
+					t.Errorf("args[%d] = %v, want %v", i, a, tt.wantArgs[i])
+				}
+			}
+		})
+	}
+}
+
+func TestBuildFilteredSelectQuery_GroupBy(t *testing.T) {
+	t.Run("valid GROUP BY", func(t *testing.T) {
+		query, _, err := buildFilteredSelectQuery(DialectSQLite, FilteredSelectParams{
+			Table:      "test_items",
+			Columns:    []string{"status"},
+			Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*"}},
+			GroupBy:    []string{"status"},
+			Limit:      -1,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !strings.Contains(query, `GROUP BY "status"`) {
+			t.Errorf("query missing GROUP BY: %q", query)
+		}
+	})
+
+	t.Run("invalid GROUP BY column name", func(t *testing.T) {
+		_, _, err := buildFilteredSelectQuery(DialectSQLite, FilteredSelectParams{
+			Table:      "test_items",
+			Columns:    []string{"status"},
+			Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*"}},
+			GroupBy:    []string{"DROP"},
+			Limit:      -1,
+		})
+		if err == nil {
+			t.Fatal("expected error for invalid group_by column")
+		}
+		if !strings.Contains(err.Error(), "invalid group_by column") {
+			t.Errorf("error = %q", err.Error())
+		}
+	})
+}
+
+func TestBuildFilteredSelectQuery_Having(t *testing.T) {
+	t.Run("valid HAVING with AggregateCondition", func(t *testing.T) {
+		query, args, err := buildFilteredSelectQuery(DialectSQLite, FilteredSelectParams{
+			Table:      "test_items",
+			Columns:    []string{"status"},
+			Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*"}},
+			GroupBy:    []string{"status"},
+			Having:     AggregateCondition{Agg: AggregateColumn{Func: "COUNT", Arg: "*"}, Op: OpGt, Value: 5},
+			Limit:      -1,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !strings.Contains(query, `HAVING COUNT(*) > ?`) {
+			t.Errorf("query missing HAVING: %q", query)
+		}
+		if len(args) != 1 || args[0] != 5 {
+			t.Errorf("args = %v, want [5]", args)
+		}
+	})
+
+	t.Run("HAVING without GroupBy rejected", func(t *testing.T) {
+		_, _, err := buildFilteredSelectQuery(DialectSQLite, FilteredSelectParams{
+			Table:      "test_items",
+			Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*"}},
+			Having:     AggregateCondition{Agg: AggregateColumn{Func: "COUNT", Arg: "*"}, Op: OpGt, Value: 5},
+			Limit:      -1,
+		})
+		if err == nil {
+			t.Fatal("expected error for HAVING without GROUP BY")
+		}
+		if !strings.Contains(err.Error(), "having requires group_by") {
+			t.Errorf("error = %q", err.Error())
+		}
+	})
+}
+
+func TestBuildFilteredSelectQuery_NilFilter_WithAggregates(t *testing.T) {
+	t.Run("nil filter accepted with aggregates", func(t *testing.T) {
+		_, _, err := buildFilteredSelectQuery(DialectSQLite, FilteredSelectParams{
+			Table:      "test_items",
+			Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*"}},
+			Limit:      -1,
+		})
+		if err != nil {
+			t.Fatalf("expected nil filter to be accepted with aggregates, got: %v", err)
+		}
+	})
+
+	t.Run("nil filter accepted with GroupBy", func(t *testing.T) {
+		_, _, err := buildFilteredSelectQuery(DialectSQLite, FilteredSelectParams{
+			Table:   "test_items",
+			Columns: []string{"status"},
+			GroupBy: []string{"status"},
+			Limit:   -1,
+		})
+		if err != nil {
+			t.Fatalf("expected nil filter to be accepted with GroupBy, got: %v", err)
+		}
+	})
+
+	t.Run("nil filter rejected without aggregates or GroupBy", func(t *testing.T) {
+		_, _, err := buildFilteredSelectQuery(DialectSQLite, FilteredSelectParams{
+			Table: "test_items",
+		})
+		if err == nil {
+			t.Fatal("expected error for nil filter without aggregates")
+		}
+		if !strings.Contains(err.Error(), "non-nil filter") {
+			t.Errorf("error = %q", err.Error())
+		}
+	})
+}
+
+func TestBuildFilteredSelectQuery_ColumnCap(t *testing.T) {
+	// Create enough columns + aggregates to exceed maxSelectColumns (64)
+	cols := make([]string, 60)
+	for i := range cols {
+		cols[i] = fmt.Sprintf("col_%d", i)
+	}
+	aggs := []AggregateColumn{
+		{Func: "COUNT", Arg: "*"},
+		{Func: "SUM", Arg: "priority"},
+		{Func: "AVG", Arg: "priority"},
+		{Func: "MIN", Arg: "priority"},
+		{Func: "MAX", Arg: "priority"},
+	}
+
+	_, _, err := buildFilteredSelectQuery(DialectSQLite, FilteredSelectParams{
+		Table:      "test_items",
+		Columns:    cols,
+		Aggregates: aggs,
+	})
+	if err == nil {
+		t.Fatal("expected error for too many select columns")
+	}
+	if !strings.Contains(err.Error(), "too many select columns") {
+		t.Errorf("error = %q", err.Error())
+	}
+}
+
+func TestBuildFilteredSelectQuery_Having_PostgresPlaceholders(t *testing.T) {
+	query, args, err := buildFilteredSelectQuery(DialectPostgres, FilteredSelectParams{
+		Table:      "test_items",
+		Columns:    []string{"status"},
+		Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*", Alias: "cnt"}},
+		Filter:     Compare{Column: "priority", Op: OpGt, Value: 0},
+		GroupBy:    []string{"status"},
+		Having:     AggregateCondition{Agg: AggregateColumn{Func: "COUNT", Arg: "*"}, Op: OpGte, Value: 2},
+		Limit:      -1,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// WHERE uses $1 for priority, HAVING uses $2 for count threshold
+	if !strings.Contains(query, `$1`) {
+		t.Errorf("query missing $1 in WHERE: %q", query)
+	}
+	if !strings.Contains(query, `$2`) {
+		t.Errorf("query missing $2 in HAVING: %q", query)
+	}
+	if len(args) != 2 {
+		t.Fatalf("args len = %d, want 2", len(args))
+	}
+	if args[0] != 0 {
+		t.Errorf("args[0] = %v, want 0 (WHERE value)", args[0])
+	}
+	if args[1] != 2 {
+		t.Errorf("args[1] = %v, want 2 (HAVING value)", args[1])
+	}
+
+	// Verify full query structure
+	want := `SELECT "status", COUNT(*) AS "cnt" FROM "test_items" WHERE "priority" > $1 GROUP BY "status" HAVING COUNT(*) >= $2`
+	if query != want {
+		t.Errorf("query = %q, want %q", query, want)
+	}
+}
+
+func TestQSelectFiltered_GroupByAggregate(t *testing.T) {
+	db := setupFilteredTestDB(t)
+	ctx := context.Background()
+
+	// Seed data has: active(3 rows), draft(1), deleted(1)
+	rows, err := QSelectFiltered(ctx, db, DialectSQLite, FilteredSelectParams{
+		Table:      "test_items",
+		Columns:    []string{"status"},
+		Aggregates: []AggregateColumn{{Func: "COUNT", Arg: "*", Alias: "cnt"}},
+		GroupBy:    []string{"status"},
+		OrderByCols: []OrderByColumn{
+			{Column: "status", Desc: false},
+		},
+		Limit: -1,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Expect 3 groups: active, deleted, draft
+	if len(rows) != 3 {
+		t.Fatalf("expected 3 grouped rows, got %d", len(rows))
+	}
+
+	// Verify one of the groups has the expected count
+	// active has 3 rows (alpha, gamma, epsilon)
+	foundActive := false
+	for _, row := range rows {
+		if row["status"] == "active" {
+			cnt, ok := row["cnt"].(int64)
+			if !ok {
+				t.Fatalf("expected cnt to be int64, got %T", row["cnt"])
+			}
+			if cnt != 3 {
+				t.Errorf("expected active count=3, got %d", cnt)
+			}
+			foundActive = true
+		}
+	}
+	if !foundActive {
+		t.Error("expected to find 'active' group in results")
+	}
+}
