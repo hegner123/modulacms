@@ -111,6 +111,20 @@ func TestBM25(t *testing.T) {
 	}
 }
 
+func TestBM25RareTermShortDocVsCommonTermLongDoc(t *testing.T) {
+	t.Parallel()
+
+	// Rare term (df=1) in short document (50 words) should score higher
+	// than common term (df=50) in long document (500 words)
+	rareShortScore := BM25(1, 1, 50, 100, 100, 1.2, 0.75)
+	commonLongScore := BM25(1, 50, 500, 100, 100, 1.2, 0.75)
+
+	if rareShortScore <= commonLongScore {
+		t.Errorf("rare term in short doc (%f) should score higher than common term in long doc (%f)",
+			rareShortScore, commonLongScore)
+	}
+}
+
 func TestProximityBonus(t *testing.T) {
 	tests := []struct {
 		name       string

@@ -361,14 +361,15 @@ func (idx *Index) Search(query string, opts SearchOptions) SearchResponse {
 
 // SearchPrefix returns up to 20 terms from the index that start with the
 // given prefix. Uses binary search over sorted terms for efficiency.
+// Acquires a write lock because ensureSorted may rebuild the sorted terms cache.
 func (idx *Index) SearchPrefix(prefix string) []string {
-	idx.mu.RLock()
-	defer idx.mu.RUnlock()
+	idx.mu.Lock()
+	defer idx.mu.Unlock()
 	return idx.searchPrefixUnlocked(prefix)
 }
 
 // searchPrefixUnlocked performs prefix search without acquiring a lock.
-// The caller must hold at least a read lock.
+// The caller must hold a write lock (ensureSorted may mutate sortedTerms).
 func (idx *Index) searchPrefixUnlocked(prefix string) []string {
 	idx.ensureSorted()
 
@@ -402,8 +403,8 @@ func (idx *Index) SearchWithPrefix(query string, opts SearchOptions) SearchRespo
 		return SearchResponse{Query: query}
 	}
 
-	idx.mu.RLock()
-	defer idx.mu.RUnlock()
+	idx.mu.Lock()
+	defer idx.mu.Unlock()
 
 	// Split: all terms except the last are exact, the last is a prefix.
 	exactTerms := allTerms[:len(allTerms)-1]

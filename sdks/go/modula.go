@@ -277,6 +277,11 @@ type Client struct {
 	// Query provides advanced content querying with filters and projections.
 	Query *QueryResource
 
+	// --- Search ---
+
+	// Search provides full-text search over published content (no auth required).
+	Search *SearchResource
+
 	// --- Content Versions ---
 
 	// ContentVersions provides version history browsing and restoration for content items.
@@ -412,6 +417,9 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 		// Content Query
 		Query: &QueryResource{http: h},
+
+		// Search
+		Search: &SearchResource{http: h},
 
 		// Content Versions
 		ContentVersions: &ContentVersionsResource{http: h},

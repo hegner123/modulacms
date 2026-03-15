@@ -145,3 +145,67 @@ func TestSaveLoadEmpty(t *testing.T) {
 		t.Errorf("loaded empty Stats().Terms = %d, want 0", stats.Terms)
 	}
 }
+
+func TestSaveLoadSearchRoundTrip(t *testing.T) {
+	idx := NewIndex(DefaultConfig())
+
+	idx.Add(SearchDocument{
+		ID:            "doc1",
+		ContentDataID: "cd1",
+		DatatypeName:  "page",
+		Fields:        map[string]string{"title": "Getting Started Guide", "body": "Welcome to the platform"},
+	})
+	idx.Add(SearchDocument{
+		ID:            "doc2",
+		ContentDataID: "cd2",
+		DatatypeName:  "page",
+		Fields:        map[string]string{"title": "Advanced Configuration", "body": "Configure your application"},
+	})
+	idx.Add(SearchDocument{
+		ID:            "doc3",
+		ContentDataID: "cd3",
+		DatatypeName:  "article",
+		Fields:        map[string]string{"title": "Troubleshooting", "body": "Common problems and solutions"},
+	})
+
+	// Search before save
+	origResp := idx.Search("configuration", SearchOptions{})
+	if origResp.Total == 0 {
+		t.Fatal("original index should find 'configuration'")
+	}
+
+	path := filepath.Join(t.TempDir(), "roundtrip.idx")
+	if err := idx.Save(path); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	loaded, err := Load(path, DefaultConfig())
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	// Search after load must produce same results
+	loadedResp := loaded.Search("configuration", SearchOptions{})
+	if loadedResp.Total != origResp.Total {
+		t.Errorf("loaded search total = %d, want %d", loadedResp.Total, origResp.Total)
+	}
+	if len(loadedResp.Results) != len(origResp.Results) {
+		t.Fatalf("loaded search results count = %d, want %d", len(loadedResp.Results), len(origResp.Results))
+	}
+	for i := range origResp.Results {
+		if loadedResp.Results[i].ContentDataID != origResp.Results[i].ContentDataID {
+			t.Errorf("result[%d] ContentDataID = %s, want %s",
+				i, loadedResp.Results[i].ContentDataID, origResp.Results[i].ContentDataID)
+		}
+	}
+}
+
+func TestLoadNonexistentFile(t *testing.T) {
+	_, err := Load("/nonexistent/path/does/not/exist.idx", DefaultConfig())
+	if err == nil {
+		t.Fatal("Load of nonexistent file should return error")
+	}
+	if !strings.Contains(err.Error(), "open") {
+		t.Errorf("error should mention 'open', got: %v", err)
+	}
+}

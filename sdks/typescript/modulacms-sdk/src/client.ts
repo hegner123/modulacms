@@ -55,6 +55,51 @@ export interface GetPageOptions<T = unknown> {
 }
 
 /**
+ * Options for {@link ModulaClient.search}.
+ * All fields are optional; zero values are omitted from the request.
+ */
+export interface SearchOptions {
+  /** Filter results to a specific datatype name (e.g. "blog_post"). */
+  type?: string;
+  /** Filter results to a specific locale code (e.g. "en", "fr"). */
+  locale?: string;
+  /** Maximum number of results to return. Server default is 20. */
+  limit?: number;
+  /** Number of results to skip for pagination. */
+  offset?: number;
+  /** Enable prefix matching on the last query term for search-as-you-type. */
+  prefix?: boolean;
+}
+
+/**
+ * A single search hit with relevance score and snippet.
+ */
+export interface SearchResult {
+  id: string;
+  content_data_id: string;
+  route_slug: string;
+  route_title: string;
+  datatype_name: string;
+  datatype_label: string;
+  section?: string;
+  section_anchor?: string;
+  score: number;
+  snippet: string;
+  published_at: string;
+}
+
+/**
+ * The envelope returned by a search query.
+ */
+export interface SearchResponse {
+  query: string;
+  results: SearchResult[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/**
  * Client for the ModulaCMS content delivery API.
  * Provides read-only access to content trees, routes, media, and schema definitions.
  *
@@ -402,5 +447,36 @@ export class ModulaClient {
       }
     }
     return this.request<QueryResult>(`/api/v1/query/${encodeURIComponent(datatype)}`, p);
+  }
+
+  /**
+   * Execute a full-text search against published content.
+   *
+   * This is a public endpoint that requires no authentication. The search index
+   * covers published content only.
+   *
+   * @param query - The search query string. Required.
+   * @param options - Optional filtering and pagination parameters.
+   * @returns The search response with results, total count, and pagination info.
+   * @throws {@link ModulaError} On non-2xx response.
+   *
+   * @example
+   * const results = await cms.search("installation guide");
+   *
+   * // With options:
+   * const results = await cms.search("guide", {
+   *   type: "doc_page",
+   *   limit: 10,
+   *   prefix: true,
+   * });
+   */
+  async search(query: string, options?: SearchOptions): Promise<SearchResponse> {
+    const params: Record<string, string> = { q: query };
+    if (options?.type) params.type = options.type;
+    if (options?.locale) params.locale = options.locale;
+    if (options?.limit !== undefined) params.limit = String(options.limit);
+    if (options?.offset !== undefined) params.offset = String(options.offset);
+    if (options?.prefix !== undefined) params.prefix = String(options.prefix);
+    return this.request<SearchResponse>("/api/v1/search", params);
   }
 }

@@ -130,6 +130,35 @@ func TestTokenizeAndFilter(t *testing.T) {
 	}
 }
 
+func TestTokenizeAndFilterStopWords(t *testing.T) {
+	tests := []struct {
+		name          string
+		input         string
+		expectedTerms []string
+	}{
+		{
+			name:          "apostrophe splits and stop word 'a' filtered",
+			input:         "it's a test",
+			expectedTerms: []string{"s", "test"},
+			// "it" and "a" are both default stop words
+		},
+		{
+			name:          "stop word 'is' filtered",
+			input:         "C++ is great",
+			expectedTerms: []string{"c", "great"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			terms, _ := TokenizeAndFilter(tt.input, defaultStopWords)
+			if !reflect.DeepEqual(terms, tt.expectedTerms) {
+				t.Errorf("TokenizeAndFilter(%q) terms = %v, want %v", tt.input, terms, tt.expectedTerms)
+			}
+		})
+	}
+}
+
 func TestTokenizeWithOffsets(t *testing.T) {
 	tests := []struct {
 		name     string

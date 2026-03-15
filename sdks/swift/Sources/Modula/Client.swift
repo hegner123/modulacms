@@ -74,6 +74,9 @@ public final class ModulaClient: Sendable {
     // Content query
     public let query: QueryResource
 
+    // Search
+    public let search: SearchResource
+
     // Composite resources
     public let contentComposite: ContentCompositeResource
     public let userComposite: UserCompositeResource
@@ -165,6 +168,9 @@ public final class ModulaClient: Sendable {
 
         // Content query
         query = QueryResource(http: http)
+
+        // Search
+        search = SearchResource(http: http)
 
         // RBAC
         rolePermissions = RolePermissionsResource(http: http)
