@@ -298,6 +298,7 @@ type Media struct {
 	AuthorID     *UserID   `json:"author_id"`
 	DateCreated  Timestamp `json:"date_created"`
 	DateModified Timestamp `json:"date_modified"`
+	DownloadURL  string    `json:"download_url"`
 }
 
 // UpdateMediaParams contains fields for updating metadata on an existing media asset.

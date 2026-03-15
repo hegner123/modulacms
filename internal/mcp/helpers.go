@@ -7,6 +7,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/service"
 	modula "github.com/hegner123/modulacms/sdks/go"
 )
@@ -68,6 +69,27 @@ func jsonResult(v any) (*mcp.CallToolResult, error) {
 		return nil, fmt.Errorf("marshal result: %w", err)
 	}
 	return mcp.NewToolResultText(string(b)), nil
+}
+
+// mcpMediaResponse wraps db.Media with a download_url field for MCP responses.
+type mcpMediaResponse struct {
+	db.Media
+	DownloadURL string `json:"download_url"`
+}
+
+func toMCPMediaResponse(m db.Media) mcpMediaResponse {
+	return mcpMediaResponse{
+		Media:       m,
+		DownloadURL: "/api/v1/media/" + string(m.MediaID) + "/download",
+	}
+}
+
+func toMCPMediaList(items []db.Media) []mcpMediaResponse {
+	resp := make([]mcpMediaResponse, len(items))
+	for i, m := range items {
+		resp[i] = toMCPMediaResponse(m)
+	}
+	return resp
 }
 
 // optionalIDPtr extracts an optional string parameter and converts it to a pointer of the given ID type.

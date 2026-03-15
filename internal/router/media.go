@@ -82,7 +82,7 @@ func apiGetMedia(w http.ResponseWriter, r *http.Request, svc *service.Registry) 
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(record)
+	json.NewEncoder(w).Encode(toMediaResponse(*record))
 }
 
 func apiListMedia(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
@@ -94,7 +94,7 @@ func apiListMedia(w http.ResponseWriter, r *http.Request, svc *service.Registry)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(mediaList)
+	json.NewEncoder(w).Encode(toMediaListResponse(*mediaList))
 }
 
 // apiCreateMedia handles POST requests to upload and create a new media item.
@@ -133,7 +133,7 @@ func apiCreateMedia(w http.ResponseWriter, r *http.Request, svc *service.Registr
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(row)
+	json.NewEncoder(w).Encode(toMediaResponse(*row))
 }
 
 func apiUpdateMedia(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
@@ -358,8 +358,8 @@ func apiListMediaPaginated(w http.ResponseWriter, r *http.Request, svc *service.
 		return
 	}
 
-	response := db.PaginatedResponse[db.Media]{
-		Data:   *items,
+	response := db.PaginatedResponse[MediaResponse]{
+		Data:   toMediaListResponse(*items),
 		Total:  *total,
 		Limit:  params.Limit,
 		Offset: params.Offset,

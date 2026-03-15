@@ -38,6 +38,8 @@ export type Media = {
   date_created: string
   /** ISO 8601 last-modification timestamp. */
   date_modified: string
+  /** Relative URL for downloading the file with the correct display filename. */
+  download_url: string
 }
 
 /**

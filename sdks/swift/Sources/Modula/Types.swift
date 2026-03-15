@@ -543,6 +543,7 @@ public struct Media: Codable, Sendable {
     public let authorID: UserID?
     public let dateCreated: Timestamp
     public let dateModified: Timestamp
+    public let downloadURL: String
 
     enum CodingKeys: String, CodingKey {
         case mediaID = "media_id"
@@ -561,6 +562,7 @@ public struct Media: Codable, Sendable {
         case authorID = "author_id"
         case dateCreated = "date_created"
         case dateModified = "date_modified"
+        case downloadURL = "download_url"
     }
 }
 

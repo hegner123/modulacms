@@ -660,12 +660,12 @@ func (b *svcMediaBackend) ListMedia(ctx context.Context, limit, offset int64) (j
 	if err != nil {
 		return nil, err
 	}
-	resp := db.PaginatedResponse[db.Media]{
+	resp := db.PaginatedResponse[mcpMediaResponse]{
 		Limit:  limit,
 		Offset: offset,
 	}
 	if items != nil {
-		resp.Data = *items
+		resp.Data = toMCPMediaList(*items)
 	}
 	if total != nil {
 		resp.Total = *total
@@ -678,7 +678,7 @@ func (b *svcMediaBackend) GetMedia(ctx context.Context, id string) (json.RawMess
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(result)
+	return json.Marshal(toMCPMediaResponse(*result))
 }
 
 func (b *svcMediaBackend) UpdateMedia(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {

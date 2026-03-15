@@ -330,6 +330,9 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	})))
 
 	// Media
+	mux.Handle("GET /api/v1/media/{id}/download", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiDownloadMedia(w, r, svc)
+	})))
 	mux.Handle("/api/v1/media", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediasHandler(w, r, svc)
 	})))
