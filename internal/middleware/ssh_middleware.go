@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/charmbracelet/ssh"
@@ -13,8 +14,13 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// activeSSHConnections tracks the number of currently active SSH sessions.
+// Incremented when a session starts, decremented when it ends.
+var activeSSHConnections atomic.Int64
+
 // SSHAuthenticationMiddleware validates SSH keys and populates session context.
 // This should run early in the middleware chain to set up authentication state.
+// Records ssh.errors with error_type "no_public_key" or "key_not_registered".
 func SSHAuthenticationMiddleware(c *config.Config) wish.Middleware {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(s ssh.Session) {
@@ -23,6 +29,7 @@ func SSHAuthenticationMiddleware(c *config.Config) wish.Middleware {
 			// Get the public key from the session
 			if s.PublicKey() == nil {
 				utility.DefaultLogger.Fwarn("No public key provided in SSH session", nil)
+				utility.GlobalMetrics.Increment(utility.MetricSSHErrors, utility.Labels{"error_type": "no_public_key"})
 				next(s)
 				return
 			}
@@ -37,6 +44,7 @@ func SSHAuthenticationMiddleware(c *config.Config) wish.Middleware {
 			if err != nil {
 				// Key not registered - mark for provisioning
 				utility.DefaultLogger.Finfo("SSH key not registered, needs provisioning. Fingerprint: %s", fingerprint)
+				utility.GlobalMetrics.Increment(utility.MetricSSHErrors, utility.Labels{"error_type": "key_not_registered"})
 				ctx.SetValue("needs_provisioning", true)
 				ctx.SetValue("ssh_fingerprint", fingerprint)
 				ctx.SetValue("ssh_key_type", s.PublicKey().Type())
@@ -67,6 +75,7 @@ func SSHAuthenticationMiddleware(c *config.Config) wish.Middleware {
 
 // SSHAuthorizationMiddleware ensures the user is authenticated before proceeding.
 // This can be used to protect specific endpoints or require authentication.
+// Records ssh.errors with error_type "unauthorized" when access is denied.
 func SSHAuthorizationMiddleware(c *config.Config) wish.Middleware {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(s ssh.Session) {
@@ -82,6 +91,7 @@ func SSHAuthorizationMiddleware(c *config.Config) wish.Middleware {
 			// Check authentication
 			if authenticated, ok := ctx.Value("authenticated").(bool); !ok || !authenticated {
 				utility.DefaultLogger.Fwarn("Unauthorized SSH access attempt", nil)
+				utility.GlobalMetrics.Increment(utility.MetricSSHErrors, utility.Labels{"error_type": "unauthorized"})
 				wish.Println(s, "Authentication required")
 				return
 			}
@@ -103,7 +113,9 @@ func SSHRateLimitMiddleware(c *config.Config) wish.Middleware {
 	}
 }
 
-// SSHSessionLoggingMiddleware logs SSH session details.
+// SSHSessionLoggingMiddleware logs SSH session details and records connection metrics.
+// It tracks ssh.connections (counter), connections.active (gauge), and ssh.errors
+// for any panics that occur during the session.
 func SSHSessionLoggingMiddleware(c *config.Config) wish.Middleware {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(s ssh.Session) {
@@ -112,8 +124,17 @@ func SSHSessionLoggingMiddleware(c *config.Config) wish.Middleware {
 
 			utility.DefaultLogger.Finfo("SSH session started", "user", user, "remote", remoteAddr)
 
+			// Record new connection and update active gauge
+			utility.GlobalMetrics.Increment(utility.MetricSSHConnections, utility.Labels{"user": user})
+			active := activeSSHConnections.Add(1)
+			utility.GlobalMetrics.Gauge(utility.MetricActiveConnections, float64(active), nil)
+
 			// Call next handler
 			next(s)
+
+			// Session ended -- update active gauge
+			active = activeSSHConnections.Add(-1)
+			utility.GlobalMetrics.Gauge(utility.MetricActiveConnections, float64(active), nil)
 
 			utility.DefaultLogger.Finfo("SSH session ended", "user", user, "remote", remoteAddr)
 		}

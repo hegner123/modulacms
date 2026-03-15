@@ -11,6 +11,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	config "github.com/hegner123/modulacms/internal/config"
+	_ "github.com/hegner123/modulacms/internal/db/dbmetrics" // registers instrumented drivers
 	utility "github.com/hegner123/modulacms/internal/utility"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -37,7 +38,7 @@ func (d Database) GetDb(verbose *bool) DbDriver {
 	}
 
 	// Open database connection
-	db, err := sql.Open("sqlite3", d.Src)
+	db, err := sql.Open("sqlite3-metrics", d.Src)
 	if err != nil {
 		errWithContext := fmt.Errorf("failed to open SQLite database: %w", err)
 		utility.DefaultLogger.Error("Database connection error", errWithContext, "path", d.Src)
@@ -88,7 +89,7 @@ func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 	utility.DefaultLogger.Info("Preparing MySQL connection", "dsn", sanitizedDsn)
 
 	// Open database connection
-	db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("mysql-metrics", dsn)
 	if err != nil {
 		errWithContext := fmt.Errorf("failed to open MySQL database: %w", err)
 		utility.DefaultLogger.Error("Database connection error", errWithContext, "host", d.Config.Db_URL)
@@ -139,7 +140,7 @@ func (d PsqlDatabase) GetDb(verbose *bool) DbDriver {
 	utility.DefaultLogger.Info("Preparing PostgreSQL connection", "connection", sanitizedConnStr)
 
 	// Open database connection
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open("postgres-metrics", connStr)
 	if err != nil {
 		errWithContext := fmt.Errorf("failed to open PostgreSQL database: %w", err)
 		utility.DefaultLogger.Error("Database connection error", errWithContext, "host", d.Config.Db_URL)
@@ -308,9 +309,9 @@ func OpenPool(cfg config.Config, pc PoolConfig) (*sql.DB, error) {
 		return nil, fmt.Errorf("buildDSN: %w", err)
 	}
 
-	pool, err := sql.Open(driverName, dsn)
+	pool, err := sql.Open(driverName+"-metrics", dsn)
 	if err != nil {
-		return nil, fmt.Errorf("sql.Open(%s): %w", driverName, err)
+		return nil, fmt.Errorf("sql.Open(%s-metrics): %w", driverName, err)
 	}
 
 	pool.SetMaxOpenConns(pc.MaxOpenConns)

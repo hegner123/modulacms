@@ -31,6 +31,7 @@ func writeServiceError(w http.ResponseWriter, err error) {
 	case service.IsConflict(err):
 		http.Error(w, err.Error(), http.StatusConflict)
 	default:
+		utility.CaptureError(err, map[string]any{"handler": "http", "status": 500})
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

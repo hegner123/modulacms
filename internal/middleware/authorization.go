@@ -118,8 +118,16 @@ func (pc *PermissionCache) Load(driver db.RBACRepository) error {
 // Returns nil if the role is not in the cache.
 func (pc *PermissionCache) PermissionsForRole(roleID types.RoleID) PermissionSet {
 	pc.mu.RLock()
-	defer pc.mu.RUnlock()
-	return pc.cache[roleID]
+	ps, ok := pc.cache[roleID]
+	pc.mu.RUnlock()
+
+	if ok {
+		utility.GlobalMetrics.Increment(utility.MetricCacheHits, utility.Labels{"cache": "permissions"})
+	} else {
+		utility.GlobalMetrics.Increment(utility.MetricCacheMisses, utility.Labels{"cache": "permissions"})
+	}
+
+	return ps
 }
 
 // IsAdmin returns true if the given role is the admin role.

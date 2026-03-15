@@ -264,7 +264,7 @@ Examples:
 				"middleware", "session-logging → authentication → authorization → TUI → wish-logging")
 
 			if sshErr := sshServer.ListenAndServe(); sshErr != nil && !errors.Is(sshErr, ssh.ErrServerClosed) {
-				utility.DefaultLogger.Error("SSH server error", sshErr)
+				utility.CaptureError(sshErr, map[string]any{"server": "ssh"})
 				done <- syscall.SIGTERM
 			}
 		}()
@@ -421,7 +421,7 @@ Examples:
 					filepath.Join(certDir, "localhost.key"),
 				)
 				if httpsErr != nil && !errors.Is(httpsErr, http.ErrServerClosed) {
-					utility.DefaultLogger.Error("HTTPS server error", httpsErr)
+					utility.CaptureError(httpsErr, map[string]any{"server": "https"})
 					done <- syscall.SIGTERM
 				}
 			}()
@@ -433,7 +433,7 @@ Examples:
 			utility.DefaultLogger.Debug("HTTP server listener binding", "address", httpServer.Addr, "handler", "full middleware chain → stdlib ServeMux")
 			httpErr := httpServer.ListenAndServe()
 			if httpErr != nil && !errors.Is(httpErr, http.ErrServerClosed) {
-				utility.DefaultLogger.Error("HTTP server error", httpErr)
+				utility.CaptureError(httpErr, map[string]any{"server": "http"})
 				done <- syscall.SIGTERM
 			}
 		}()

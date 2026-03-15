@@ -108,6 +108,10 @@ func initObservability(ctx context.Context, cfg *config.Config) func() {
 	utility.GlobalObservability = obsClient
 	obsClient.Start(ctx)
 
+	// Start runtime metrics collector (heap alloc, goroutine count) on the
+	// same context so it shuts down together with the observability client.
+	utility.StartRuntimeMetrics(ctx, 15*time.Second)
+
 	utility.DefaultLogger.Info("Eyes wide open — observability is live",
 		"provider", cfg.Observability_Provider)
 	utility.DefaultLogger.Debug("Observability client connected and flushing",

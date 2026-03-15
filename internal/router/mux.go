@@ -15,6 +15,7 @@ import (
 	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/search"
 	"github.com/hegner123/modulacms/internal/service"
+	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/time/rate"
 )
 
@@ -500,6 +501,14 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	mux.Handle("GET /api/v1/admin/config", configAuthChain(middleware.RequirePermission("config:read")(ConfigGetHandler(svc))))
 	mux.Handle("PATCH /api/v1/admin/config", configAuthChain(middleware.RequirePermission("config:update")(ConfigUpdateHandler(svc))))
 	mux.Handle("GET /api/v1/admin/config/meta", configAuthChain(middleware.RequirePermission("config:read")(ConfigMetaHandler())))
+
+	// Metrics endpoint (admin, config:read permission)
+	mux.Handle("GET /api/v1/admin/metrics", configAuthChain(middleware.RequirePermission("config:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		snapshot := utility.GlobalMetrics.GetSnapshot()
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(snapshot)
+	}))))
 
 	// Plugin HTTP bridge routes and admin endpoints
 	if bridge != nil {

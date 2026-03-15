@@ -322,7 +322,8 @@ func DDLCreateTable(ctx context.Context, exec Executor, d Dialect, p DDLCreateTa
 
 	sb.WriteString("\n)")
 
-	_, err := exec.ExecContext(ctx, sb.String())
+	ddlQuery := sb.String()
+	_, err := exec.ExecContext(ctx, ddlQuery)
 	if err != nil {
 		return fmt.Errorf("create table %q: %w", p.Table, err)
 	}
@@ -380,7 +381,8 @@ func DDLCreateIndex(ctx context.Context, exec Executor, d Dialect, p DDLCreateIn
 	sb.WriteString(strings.Join(quotedCols, ", "))
 	sb.WriteString(")")
 
-	_, err := exec.ExecContext(ctx, sb.String())
+	idxQuery := sb.String()
+	_, err := exec.ExecContext(ctx, idxQuery)
 	if err != nil {
 		// MySQL lacks IF NOT EXISTS for indexes; treat "already exists" as success
 		if d == DialectMySQL && p.IfNotExists && strings.Contains(err.Error(), "Duplicate key name") {
@@ -483,19 +485,19 @@ type Row map[string]any
 // SelectParams configures a SELECT query.
 type SelectParams struct {
 	Table      string
-	Columns    []string           // nil = SELECT *
-	Aggregates []AggregateColumn  // aggregate expressions; appended after Columns in SELECT
-	Where      map[string]any     // AND conditions; nil values produce IS NULL; ColumnOp values use operators
-	WhereOr    []map[string]any   // OR groups; each inner map is AND-joined, groups are OR-joined
-	Joins      []JoinClause       // JOIN clauses (INNER, LEFT, RIGHT)
-	OrderBy    string             // empty = no ORDER BY (legacy; use Orders for multi-column)
-	Desc       bool               // only used when OrderBy is set (legacy; use Orders for multi-column)
-	Orders     []OrderByClause    // multi-column ORDER BY; takes precedence over OrderBy/Desc when non-empty
-	GroupBy    []string           // GROUP BY column names
-	Having     map[string]any     // HAVING conditions (same ColumnOp system as Where); requires GroupBy
-	Distinct   bool               // SELECT DISTINCT
-	Limit      int64              // 0 = default (maxLimit); negative = no limit; positive = capped at maxLimit
-	Offset     int64              // 0 = no offset
+	Columns    []string          // nil = SELECT *
+	Aggregates []AggregateColumn // aggregate expressions; appended after Columns in SELECT
+	Where      map[string]any    // AND conditions; nil values produce IS NULL; ColumnOp values use operators
+	WhereOr    []map[string]any  // OR groups; each inner map is AND-joined, groups are OR-joined
+	Joins      []JoinClause      // JOIN clauses (INNER, LEFT, RIGHT)
+	OrderBy    string            // empty = no ORDER BY (legacy; use Orders for multi-column)
+	Desc       bool              // only used when OrderBy is set (legacy; use Orders for multi-column)
+	Orders     []OrderByClause   // multi-column ORDER BY; takes precedence over OrderBy/Desc when non-empty
+	GroupBy    []string          // GROUP BY column names
+	Having     map[string]any    // HAVING conditions (same ColumnOp system as Where); requires GroupBy
+	Distinct   bool              // SELECT DISTINCT
+	Limit      int64             // 0 = default (maxLimit); negative = no limit; positive = capped at maxLimit
+	Offset     int64             // 0 = no offset
 }
 
 // InsertParams configures an INSERT query.
@@ -1017,9 +1019,9 @@ func QCount(ctx context.Context, exec Executor, d Dialect, table string, where m
 	}
 	query += whereClause
 
-	rows, err := exec.QueryContext(ctx, query, args...)
-	if err != nil {
-		return 0, fmt.Errorf("count query failed: %w", err)
+	rows, qErr := exec.QueryContext(ctx, query, args...)
+	if qErr != nil {
+		return 0, fmt.Errorf("count query failed: %w", qErr)
 	}
 	defer rows.Close()
 
@@ -1048,9 +1050,9 @@ func QExists(ctx context.Context, exec Executor, d Dialect, table string, where 
 	}
 	query += whereClause + " LIMIT 1"
 
-	rows, err := exec.QueryContext(ctx, query, args...)
-	if err != nil {
-		return false, fmt.Errorf("exists query failed: %w", err)
+	rows, qErr := exec.QueryContext(ctx, query, args...)
+	if qErr != nil {
+		return false, fmt.Errorf("exists query failed: %w", qErr)
 	}
 	defer rows.Close()
 

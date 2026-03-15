@@ -23,14 +23,16 @@ func DefaultMiddlewareChain(mgr *config.Manager, pc *PermissionCache) func(http.
 		}
 	}
 	return Chain(
-		RequestIDMiddleware(),             // 1. Request ID generation
-		ClientIPMiddleware(),              // 2. Client IP resolution
-		UserAgentMiddleware(),             // 3. User-Agent + Client Hints parsing
-		HTTPLoggingMiddleware(),           // 4. Request/response logging
-		CorsMiddleware(cfg),               // 5. CORS headers
-		HTTPAuthenticationMiddleware(cfg), // 6. Session authentication
-		HTTPPublicEndpointMiddleware(cfg), // 7. Public endpoint protection
-		PermissionInjector(pc),            // 8. Permission set injection
+		RecoveryMiddleware(),              // 1. Panic recovery + error capture
+		RequestIDMiddleware(),             // 2. Request ID generation
+		ClientIPMiddleware(),              // 3. Client IP resolution
+		UserAgentMiddleware(),             // 4. User-Agent + Client Hints parsing
+		HTTPLoggingMiddleware(),           // 5. Request/response logging
+		HTTPMetricsMiddleware(),           // 6. Request metrics recording
+		CorsMiddleware(cfg),               // 7. CORS headers
+		HTTPAuthenticationMiddleware(cfg), // 8. Session authentication
+		HTTPPublicEndpointMiddleware(cfg), // 9. Public endpoint protection
+		PermissionInjector(pc),            // 10. Permission set injection
 	)
 }
 

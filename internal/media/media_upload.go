@@ -146,7 +146,7 @@ func rollbackS3Uploads(s3Session *s3.S3, bucketName string, keys []string) {
 			Key:    aws.String(key),
 		})
 		if err != nil {
-			utility.DefaultLogger.Error(fmt.Sprintf("rollback failed for key %s", key), err)
+			utility.CaptureError(err, map[string]any{"operation": "media_rollback", "key": key})
 		} else {
 			utility.DefaultLogger.Info(fmt.Sprintf("rolled back S3 upload: %s", key))
 		}

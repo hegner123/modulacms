@@ -22,12 +22,12 @@ type OrderByColumn struct {
 // FilteredSelectParams configures a SELECT query using the Condition system.
 type FilteredSelectParams struct {
 	Table       string
-	Columns     []string           // nil = SELECT *
-	Aggregates  []AggregateColumn  // aggregate expressions; appended after Columns in SELECT
-	Filter      Condition          // required unless Aggregates or GroupBy are present
-	GroupBy     []string           // GROUP BY column names (validated)
-	Having      Condition          // HAVING condition; requires GroupBy
-	OrderByCols []OrderByColumn    // empty = no ORDER BY
+	Columns     []string          // nil = SELECT *
+	Aggregates  []AggregateColumn // aggregate expressions; appended after Columns in SELECT
+	Filter      Condition         // required unless Aggregates or GroupBy are present
+	GroupBy     []string          // GROUP BY column names (validated)
+	Having      Condition         // HAVING condition; requires GroupBy
+	OrderByCols []OrderByColumn   // empty = no ORDER BY
 	Distinct    bool
 	Limit       int64 // 0 = default (maxLimit); negative = no limit
 	Offset      int64
@@ -153,6 +153,7 @@ func QDeleteFiltered(ctx context.Context, exec Executor, d Dialect, p FilteredDe
 	}
 
 	query := fmt.Sprintf(`DELETE FROM %s WHERE %s`, quoteIdent(d, p.Table), whereSQL)
+
 	return exec.ExecContext(ctx, query, whereArgs...)
 }
 
@@ -175,9 +176,10 @@ func QCountFiltered(ctx context.Context, exec Executor, d Dialect, table string,
 	}
 
 	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE %s`, quoteIdent(d, table), whereSQL)
-	rows, err := exec.QueryContext(ctx, query, whereArgs...)
-	if err != nil {
-		return 0, fmt.Errorf("count query failed: %w", err)
+
+	rows, qErr := exec.QueryContext(ctx, query, whereArgs...)
+	if qErr != nil {
+		return 0, fmt.Errorf("count query failed: %w", qErr)
 	}
 	defer rows.Close()
 
@@ -212,9 +214,10 @@ func QExistsFiltered(ctx context.Context, exec Executor, d Dialect, table string
 	}
 
 	query := fmt.Sprintf(`SELECT 1 FROM %s WHERE %s LIMIT 1`, quoteIdent(d, table), whereSQL)
-	rows, err := exec.QueryContext(ctx, query, whereArgs...)
-	if err != nil {
-		return false, fmt.Errorf("exists query failed: %w", err)
+
+	rows, qErr := exec.QueryContext(ctx, query, whereArgs...)
+	if qErr != nil {
+		return false, fmt.Errorf("exists query failed: %w", qErr)
 	}
 	defer rows.Close()
 
@@ -504,7 +507,8 @@ func execBulkInsertBatch(ctx context.Context, exec Executor, d Dialect, table st
 		sb.WriteByte(')')
 	}
 
-	return exec.ExecContext(ctx, sb.String(), args...)
+	query := sb.String()
+	return exec.ExecContext(ctx, query, args...)
 }
 
 // compositeResult implements sql.Result with an accumulated RowsAffected count.
@@ -519,4 +523,3 @@ func (r compositeResult) LastInsertId() (int64, error) {
 func (r compositeResult) RowsAffected() (int64, error) {
 	return r.rowsAffected, nil
 }
-
