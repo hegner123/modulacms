@@ -34,7 +34,7 @@ Quick reference for all resources available on the `*modula.Client` struct. Reso
 
 | Resource | Type | Key Methods | Description |
 |----------|------|-------------|-------------|
-| `Media` | `*Resource[Media, any, UpdateMediaParams, MediaID]` | Get, Update, Delete, List, ListPaginated, Count | Media file metadata. Create via MediaUpload. |
+| `Media` | `*Resource[Media, any, UpdateMediaParams, MediaID]` | Get, Update, Delete, List, ListPaginated, Count | Media file metadata. Create via MediaUpload. Responses include `DownloadURL` field (`/api/v1/media/{id}/download`). |
 | `MediaDimensions` | `*Resource[MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams, MediaDimensionID]` | CRUD, ListPaginated, Count | Image dimension presets. |
 | `MediaUpload` | `*MediaUploadResource` | Upload, UploadWithProgress | Multipart file upload with optional progress tracking. |
 | `MediaAdmin` | `*MediaAdminResource` | Health, Cleanup | Media storage health check and orphan cleanup. |

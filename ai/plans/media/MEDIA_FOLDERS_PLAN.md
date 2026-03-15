@@ -19,13 +19,14 @@ Database-backed virtual folders for the media library. Folders are first-class e
 | S3 keys | No change (stay flat/ULID-based) | Folder renames are O(1) DB ops, no S3 key mutations |
 | Folder ID type | `MediaFolderID` (ULID) | Consistent with all other entity IDs |
 | Ordering | Alphabetical by `name` | Simple, predictable, no reorder query complexity |
-| Folder deletion | `ON DELETE RESTRICT` on `parent_id` | Refuse delete of non-empty folders; matches file manager behavior |
+| Folder deletion | `ON DELETE RESTRICT` on `parent_id` | Refuse delete of non-empty folders; matches file manager behavior. Recursive delete (move contents to root, then delete folder tree bottom-up) is intentionally excluded from V1 -- add as a future convenience if users request it |
 | Media orphaning | `ON DELETE SET NULL` on `media.folder_id` | Deleting an empty folder never deletes media files |
-| Name uniqueness | Application-level enforcement | `UNIQUE(parent_id, name)` breaks on NULL across databases; enforce before insert |
+| Name uniqueness | Application-level enforcement with mutex | `UNIQUE(parent_id, name)` breaks on NULL across databases; enforce before insert under `sync.Mutex` to prevent races |
 | Breadcrumbs | App-side parent walk with depth guard | Avoids recursive CTE portability issues; practical depths are <10 |
 | Audit trail | All folder mutations audited | Consistent with every other entity in the system |
 | Permissions | Reuse `media:*` | Folders are organizational, not a separate resource; avoids permission bloat |
 | S3 prefix alignment | No | Keeps folder renames free; nobody should browse the bucket directly |
+| Webhook events | No dedicated folder events | Folder CRUD does not fire webhook events. Folders are organizational metadata, not content mutations. `media.updated` fires when media changes folder via move |
 
 ## Schema
 
@@ -35,7 +36,6 @@ Database-backed virtual folders for the media library. Folders are first-class e
 media_folders
   folder_id     TEXT/VARCHAR(26) PK NOT NULL  -- ULID
   name          TEXT NOT NULL                 -- display name
-  slug          TEXT NOT NULL                 -- URL-safe, auto-generated from name, used for breadcrumb paths
   parent_id     TEXT/VARCHAR(26) NULL         -- FK self-ref, NULL = root, ON DELETE RESTRICT
   date_created  TIMESTAMP
   date_modified TIMESTAMP
@@ -43,9 +43,8 @@ media_folders
 
 **Constraints:**
 - `parent_id` FK references `media_folders(folder_id)` with `ON DELETE RESTRICT` -- must empty a folder before deleting it
-- Name uniqueness within a parent is enforced at the application layer before insert/update (not via DB constraint, due to NULL parent_id inconsistency across SQLite/MySQL/PostgreSQL)
-- `slug` is auto-generated from `name` via `strings.ReplaceAll(strings.ToLower(name), " ", "-")` (or similar sanitizer)
-- Max nesting depth enforced at application layer: 10 levels (prevents UI issues and runaway parent walks)
+- Name uniqueness within a parent is enforced at the application layer before insert/update, protected by a `sync.Mutex` to prevent concurrent duplicate creation (not via DB constraint, due to NULL parent_id inconsistency across SQLite/MySQL/PostgreSQL)
+- Max nesting depth enforced at application layer: 10 levels (prevents UI issues and runaway parent walks). Enforced on both create and move (update `parent_id`) operations
 
 ### `media` table (alter)
 
@@ -63,36 +62,43 @@ folder_id TEXT/VARCHAR(26) NULL REFERENCES media_folders(folder_id) ON DELETE SE
 
 ### Phase 1: Database Layer -- `media_folders` table
 
-**Schema directory:** `sql/schema/36_media_folders/`
+**Schema directory:** `sql/schema/37_media_folders/`
 
 1. Create 6 SQL files (schema + queries for SQLite, MySQL, PostgreSQL)
    - Standard CRUD: Create, Get, List, Update, Delete, Count
    - Extra queries:
      - `ListMediaFoldersByParent(parent_id)` -- children of a folder (NULL = root)
-     - `GetMediaFolderBySlugAndParent(slug, parent_id)` -- for uniqueness check before insert
+     - `GetMediaFolderByNameAndParent(name, parent_id)` -- for uniqueness check before insert
 2. Add `MediaFolderID` typed ID to `internal/db/types/types_ids.go`
 3. Add `NullableMediaFolderID` for the nullable FK on media
 4. Add sqlc overrides in `tools/sqlcgen/definitions.go`
 5. Add dbgen entity definition in `tools/dbgen/definitions.go`
    - All CRUD methods use `(context.Context, audited.AuditContext, Params)` signatures
 6. Run `just sqlc` and `just dbgen`
-7. Add methods to `DbDriver` interface in `internal/db/db.go`
+7. Add `MediaFolderRepository` as a new embedded interface in `DbDriver` in `internal/db/db.go` (follows the established pattern of one interface per entity group)
 8. Add to `CreateAllTables` / `DropAllTables`:
    - **CreateAllTables:** `CreateMediaFolderTable()` must run **before** `CreateMediaTable()` (FK dependency)
    - **DropAllTables:** `DropMediaTable()` must run **before** `DropMediaFolderTable()` (reverse order)
-9. Add breadcrumb helper in `internal/db/media_folder_custom.go`:
-   - `GetMediaFolderBreadcrumb(folder_id) ([]MediaFolder, error)` -- app-side walk: loop `GetMediaFolder(parent_id)` up to root, with depth guard (max 10 iterations, return error on circular reference)
-   - `ValidateMediaFolderName(name, parent_id) error` -- check uniqueness within parent before insert/update
-10. Write tests
+9. Add `DBTable` constant, `allTables` entry, `TableStructMap` entry, and `CastToTypedSlice` case for `media_folders` in `internal/db/consts.go`
+10. Add breadcrumb helper in `internal/db/media_folder_custom.go`:
+    - `GetMediaFolderBreadcrumb(folder_id) ([]MediaFolder, error)` -- app-side walk: loop `GetMediaFolder(parent_id)` up to root, with depth guard (max 10 iterations, return error on circular reference)
+    - `ValidateMediaFolderName(name, parent_id) error` -- check name uniqueness within parent before insert/update, protected by `sync.Mutex`
+    - `ValidateMediaFolderMove(folderID, newParentID) error` -- walk from `newParentID` up to root; if `folderID` is encountered in the ancestor chain, return error (prevents cycles). Also enforces max depth: count ancestors of `newParentID` + descendants of `folderID`, reject if total exceeds 10
+11. Add stub implementations for all new `MediaFolderRepository` methods in `internal/remote/driver.go`
+12. Write tests
 
 ### Phase 2: Add `folder_id` to `media` table
 
 1. Add `folder_id` column to all 3 media schemas (`sql/schema/14_media/`)
 2. Update media queries:
    - `ListMediaByFolder(folder_id)` -- media in a specific folder
+   - `ListMediaByFolderPaginated(folder_id, limit, offset)` -- paginated variant for folder-filtered listings
    - `ListMediaUnfiled()` -- media with NULL folder_id (root level)
+   - `ListMediaUnfiledPaginated(limit, offset)` -- paginated variant for root-level media
+   - `CountMediaByFolder(folder_id)` -- count for pagination total
+   - `CountMediaUnfiled()` -- count for root-level pagination
    - `MoveMediaToFolder(media_id, folder_id)` -- reassign folder (single item, audited)
-3. No bulk move query -- use app-side loop within a transaction for batch moves (avoids array syntax portability issues across SQLite/MySQL/PostgreSQL)
+3. No bulk move query -- use app-side loop within a transaction for batch moves (avoids array syntax portability issues across SQLite/MySQL/PostgreSQL). Maximum batch size: 100 items per request. Reject larger batches with 400 Bad Request
 4. Update sqlc overrides for `media.folder_id` -> `types.NullableMediaFolderID`
 5. Update `CreateMediaParams` / `UpdateMediaParams` to include `folder_id`
 6. Run `just sqlc` and `just dbgen`
@@ -109,9 +115,9 @@ folder_id TEXT/VARCHAR(26) NULL REFERENCES media_folders(folder_id) ON DELETE SE
 GET    /api/v1/media-folders              -- list root folders (or ?parent_id= for children)
 GET    /api/v1/media-folders/{id}         -- get folder details
 POST   /api/v1/media-folders              -- create folder (audited)
-PUT    /api/v1/media-folders/{id}         -- rename/move folder (audited)
+PUT    /api/v1/media-folders/{id}         -- rename/move folder (audited, validates cycle detection and max depth on parent_id change)
 DELETE /api/v1/media-folders/{id}         -- delete folder (audited, fails if non-empty)
-GET    /api/v1/media-folders/{id}/media   -- list media in folder
+GET    /api/v1/media-folders/{id}/media   -- list media in folder (supports ?limit=&offset= pagination)
 GET    /api/v1/media-folders/tree         -- full folder tree (app-side assembly)
 ```
 
@@ -169,7 +175,7 @@ Replace URL-derived virtual tree with DB-driven folder tree.
    - Left panel: collapsible folder tree (similar to file manager)
    - Click folder to filter grid to that folder's contents
    - Context menu (action buttons): create subfolder, rename, delete
-   - Drag-and-drop media into folders: requires SortableJS (or similar JS library) for drag events, HTMX request on drop. This is a non-trivial UI component -- implement as a `mcms-media-tree` web component.
+   - Drag-and-drop media into folders: use the HTML Drag and Drop API (native, no external JS dependency) for drag events, HTMX request on drop. Implement as a `mcms-media-tree` Light DOM web component. Must handle: `dragstart`/`dragover`/`drop` events on media cards and folder nodes, visual drop target highlighting, HTMX `POST /admin/media/{id}/move` on successful drop. Keyboard accessibility: provide a "Move to folder" action button as an alternative to drag-and-drop.
 
 2. **Folder breadcrumb** on media list:
    - Shows current path: `All Media / Products / Hero Images`
@@ -238,29 +244,9 @@ New file `mcp/tools_media_folders.go`:
 
 ### Fresh installs
 
-Handled by `CreateAllTables`. `CreateMediaFolderTable()` runs before `CreateMediaTable()`. No special action needed.
+Handled by `CreateAllTables`. `CreateMediaFolderTable()` runs before `CreateMediaTable()`. The `folder_id` column is included in the media schema from the start. No special action needed.
 
-### Existing installations
-
-On startup, the auto-setup check detects missing tables and columns:
-
-1. `CREATE TABLE IF NOT EXISTS media_folders (...)` -- idempotent, safe to run on existing DBs
-2. `ALTER TABLE media ADD COLUMN folder_id ...` -- only if column does not exist
-3. Create index on `media.folder_id` for query performance
-
-All existing media starts unfiled (`folder_id = NULL`, appears at root).
-
-### Optional: Import folders from URL structure
-
-A one-time CLI command or TUI action that:
-1. Scans all media URLs for common path prefixes
-2. Creates DB folders matching the prefix structure
-3. Assigns each media item to its matching folder
-4. Reports results (folders created, media assigned, unmatched items)
-
-This is a convenience tool, not a migration requirement. Users can also organize manually.
-
-No data loss. No S3 changes. Fully backward compatible.
+No existing installations exist (greenfield, no active users). Migration from pre-folder schemas is not required.
 
 ## Backup & Restore
 
@@ -273,12 +259,12 @@ No data loss. No S3 changes. Fully backward compatible.
 
 | Area | Files | New/Modified |
 |------|-------|-------------|
-| SQL schema | 6 | New: `sql/schema/36_media_folders/` |
+| SQL schema | 6 | New: `sql/schema/37_media_folders/` |
 | SQL schema | 6 | Modified: `sql/schema/14_media/` (add folder_id) |
 | Types | 1 | Modified: `internal/db/types/types_ids.go` |
 | Codegen defs | 2 | Modified: `tools/sqlcgen/definitions.go`, `tools/dbgen/definitions.go` |
 | Generated | ~8 | Regenerated: `internal/db-*/`, `internal/db/media_gen.go` |
-| DbDriver | 2 | Modified: `internal/db/db.go`, `internal/db/wipe.go` |
+| DbDriver | 3 | Modified: `internal/db/db.go`, `internal/db/wipe.go`, `internal/db/consts.go` |
 | Custom queries | 1 | New: `internal/db/media_folder_custom.go` |
 | Batch move | 1 | New or modified: `internal/db/media_custom.go` |
 | API handlers | 1 | New: `internal/router/media_folders.go` |

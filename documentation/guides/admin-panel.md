@@ -101,7 +101,7 @@ Upload, view, edit, and delete media assets. The media screen integrates with S3
 - List all media with thumbnails
 - View media details (metadata, URLs, srcset)
 - Upload new media files
-- Edit metadata (display name, alt text, caption, focal point)
+- Edit metadata (display name, alt text, caption, description)
 - Delete media (removes S3 objects and database record)
 
 | Action | Required Permission |
@@ -257,6 +257,8 @@ The admin panel uses Light DOM web components with the `mcms-` prefix for intera
 | `mcms-confirm` | Confirmation dialog for destructive actions |
 | `mcms-search` | Search input with filtering |
 | `mcms-file-input` | File upload input with preview |
+| `mcms-scroll` | Scrollable container with overflow handling |
+| `mcms-validation-wizard` | Multi-step form validation wizard |
 
 These components are embedded in the binary and served from `/admin/static/`. Static assets are served with aggressive cache headers (`Cache-Control: public, max-age=31536000, immutable`).
 

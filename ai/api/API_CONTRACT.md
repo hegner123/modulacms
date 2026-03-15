@@ -239,17 +239,20 @@ Returns 404 if the slug does not match an admin route.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/media` | List all |
+| GET | `/api/v1/media` | List all (responses include computed `download_url`) |
 | GET | `/api/v1/media/?q={ulid}` | Get by ID |
-| POST | `/api/v1/media` | Create metadata |
+| GET | `/api/v1/media/full` | List all with author names |
+| GET | `/api/v1/media/{id}/download` | Download file (302 redirect to pre-signed S3 URL with Content-Disposition: attachment) |
+| GET | `/api/v1/media/references?q={ulid}` | Scan for content fields referencing a media asset |
+| GET | `/api/v1/media/health` | Check for orphaned files in S3 bucket (requires `media:admin`) |
+| POST | `/api/v1/media` | Upload file (multipart) or create metadata |
 | PUT | `/api/v1/media/` | Update metadata |
 | DELETE | `/api/v1/media/?q={ulid}` | Delete |
+| DELETE | `/api/v1/media/cleanup` | Delete orphaned files from S3 (requires `media:admin`) |
 
 ### Media Upload
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/v1/mediaupload/` | Upload file to S3 storage |
+Upload a file by sending a multipart form POST to `/api/v1/media`.
 
 Content-Type: `multipart/form-data`. Form field: `file` (max 10 MB).
 

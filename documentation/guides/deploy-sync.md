@@ -68,6 +68,18 @@ curl -X POST http://source-cms:8080/api/v1/deploy/export \
   -o payload.json
 ```
 
+To include plugin table data in the export, set `include_plugins` to `true`:
+
+```bash
+curl -X POST http://source-cms:8080/api/v1/deploy/export \
+  -H "Cookie: session=YOUR_SESSION_COOKIE" \
+  -H "Content-Type: application/json" \
+  -d '{"include_plugins": true}' \
+  -o payload.json
+```
+
+Plugin tables are tables created by Lua plugins at runtime (named `plugin_<name>_<table>`). System plugin tables (`plugin_routes`, `plugin_hooks`, `plugin_requests`) are excluded automatically. You can combine `tables` and `include_plugins` in the same request.
+
 The response is the raw sync payload JSON. Save it to a file for import.
 
 ## Dry Run Import
@@ -87,7 +99,7 @@ Response:
 {
   "success": true,
   "dry_run": true,
-  "strategy": "upsert",
+  "strategy": "overwrite",
   "tables_affected": ["datatypes", "fields", "content_data", "content_fields", "routes"],
   "row_counts": {
     "datatypes": 5,
@@ -123,7 +135,7 @@ Response:
 {
   "success": true,
   "dry_run": false,
-  "strategy": "upsert",
+  "strategy": "overwrite",
   "tables_affected": ["datatypes", "fields", "content_data", "content_fields", "routes"],
   "row_counts": {
     "datatypes": 5,
@@ -146,7 +158,7 @@ Response:
 |-------|-------------|
 | `success` | Whether the import completed without errors |
 | `dry_run` | Whether this was a preview (true) or actual write (false) |
-| `strategy` | Merge strategy used (e.g., `upsert`, `replace`) |
+| `strategy` | Merge strategy used (`overwrite`) |
 | `tables_affected` | List of database tables that were modified |
 | `row_counts` | Number of rows written per table |
 | `backup_path` | Path to the pre-import backup file (empty for dry runs) |
@@ -263,7 +275,8 @@ All deploy endpoints require authentication and `deploy:*` permissions.
 ## Notes
 
 - **Automatic backup.** Before writing, the import endpoint creates a backup of the affected tables. The backup path is included in the sync result for manual recovery if needed.
-- **ULID-based identity.** Records are matched by their ULID primary keys. Existing records with the same ID are updated (upserted); new IDs are inserted. This means re-importing the same payload is idempotent.
+- **Overwrite strategy.** Import truncates each table and re-inserts all rows from the payload. This is a full replacement, not a merge.
 - **Table dependencies.** When exporting specific tables, include dependency tables. For example, `content_data` requires `datatypes` and `routes` to satisfy foreign key constraints on the target.
+- **Plugin tables.** When `include_plugins` is set, registered plugin tables (prefixed `plugin_`) are included in the export. On import, plugin tables that do not exist on the destination (plugin not installed) are skipped with a warning. Plugin tables with a schema mismatch (different columns) are also skipped with a warning.
 - **Cross-version compatibility.** The health check reports the server version. Schema differences between versions may cause import errors. Keep source and target instances on the same major version.
 - **Permissions.** Deploy operations require the `deploy:read` and `deploy:create` permissions, which are only assigned to the admin role by default.

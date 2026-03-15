@@ -440,7 +440,7 @@ Key patterns:
 - **templ** compiles `.templ` files to type-safe Go code. Run `just admin generate` to regenerate. Generated `*_templ.go` files are committed (like sqlc).
 - **HTMX** drives all interactions. `HX-Request` header distinguishes partial vs full page renders. `HX-Trigger` for toast notifications.
 - **CSRF** uses double-submit cookie pattern. Cookie `csrf_token` set on GET, validated on POST via `X-CSRF-Token` header or `_csrf` form field.
-- **Light DOM Web Components** (`mcms-*`) for dialog, data-table, field-renderer, media-picker, tree-nav, toast, confirm, search.
+- **Light DOM Web Components** (`mcms-*`) for dialog, data-table, field-renderer, media-picker, tree-nav, toast, confirm, search, file-input, scroll, validation-wizard.
 - **Import cycle resolution**: `handlers` owns Render/CSRFTokenFromContext, `admin` owns CSRFContextKey. `PaginationPageData` lives in `partials` to avoid cycle between handlers and pages.
 - **Route registration** in `mux.go` via `registerAdminRoutes()` with `mutating()` and `viewing()` middleware helpers.
 

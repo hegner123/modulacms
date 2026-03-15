@@ -153,7 +153,10 @@ Here is Claude's plan:
    signal: AbortSignal         // aborted on disconnectedCallback — pass to fetch or listen for cleanup
  }
 
- /** JSON-serializable value. Prevents passing functions, symbols, or circular structures. */
+ /**
+  * JSON-serializable value. Prevents passing functions, symbols, or circular structures.
+  * Note: Date objects are NOT JsonValue — call .toISOString() before passing dates as request bodies.
+  */
  type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
 
  /**
@@ -201,6 +204,11 @@ Here is Claude's plan:
  resetConfig() clears the module-scoped closure. Exported for:
  - Test isolation (call in afterEach to prevent cross-test leakage)
  - Multi-tenant scenarios where the host app switches between tenants with different API keys
+
+ WARNING: configure() and resetConfig() are NOT safe to call while plugin elements are mounted
+ and actively making API calls. The window between resetConfig() and configure(newKey) is a race:
+ any fetch that fires during the gap silently falls back to cookie auth. Call resetConfig() +
+ configure() only before mounting new plugin elements, never while existing elements are active.
 
  PluginApiClient.raw() behavior: raw() does NOT throw on non-2xx responses — it returns the raw Response
  object. The caller is responsible for checking response.ok. This differs from get/post/put/patch/del
@@ -265,14 +273,17 @@ Here is Claude's plan:
 
  Tests (jsdom environment)
 
- | File                   | Coverage                                                                                             |
- |------------------------|------------------------------------------------------------------------------------------------------|
- | define-plugin.test.ts  | Registration, lifecycle sequencing, async setup/mount, double-init guard, disconnect during async, signal aborted on disconnect, re-append after disconnect is no-op, data-mcms-plugin attribute set, CSS containment applied |
- | context.test.ts        | Attribute reading, required attr validation (throws on missing base-url/plugin-name), API client path prefixing, configure() auth header vs cookie credentials, navigation events, AbortSignal cancellation, AbortSignal.any composition with per-request signal, patch method |
- | configure.test.ts      | Module-level configure(), resetConfig() clears key, cookie fallback when no key, reset between tests |
- | theme.test.ts          | CSS property injection/removal, default theme, JSON attribute merge, theme-changed event              |
- | errors.test.ts         | Error event dispatch, fallback UI rendering, type guards, destroy-error cleanup                       |
- | json.test.ts           | JsonValue type acceptance (primitives, arrays, objects), rejection of non-serializable values at type level |
+ Test files are co-located with source in src/ (matching admin-sdk convention). The vitest.config.ts
+ include pattern is: ["src/**/*.test.ts"].
+
+ | File                        | Coverage                                                                                             |
+ |-----------------------------|------------------------------------------------------------------------------------------------------|
+ | src/define-plugin.test.ts   | Registration, lifecycle sequencing, async setup/mount, double-init guard, disconnect during async, signal aborted on disconnect, re-append after disconnect is no-op, data-mcms-plugin attribute set, CSS containment applied |
+ | src/context.test.ts         | Attribute reading, required attr validation (throws on missing base-url/plugin-name), API client path prefixing, configure() auth header vs cookie credentials, navigation events, AbortSignal cancellation, AbortSignal.any composition with per-request signal, patch method |
+ | src/configure.test.ts       | Module-level configure(), resetConfig() clears key, cookie fallback when no key, reset between tests |
+ | src/theme.test.ts           | CSS property injection/removal, default theme, JSON attribute merge, theme-changed event              |
+ | src/errors.test.ts          | Error event dispatch, fallback UI rendering, type guards, destroy-error cleanup                       |
+ | src/json.test.ts            | JsonValue type acceptance (primitives, arrays, objects), rejection of non-serializable values at type level |
 
  Mock fetch with vi.stubGlobal. Helper mountPlugin(tag, attrs) to create + append + return cleanup.
 
@@ -300,7 +311,8 @@ Here is Claude's plan:
 
  Extract UI metadata in ExtractManifest
 
- File: internal/plugin/manager.go (after the dependencies extraction block in ExtractManifest)
+ File: internal/plugin/manager.go (after all existing extraction blocks in ExtractManifest —
+ dependencies, capabilities, core_access, screens, and interfaces — approximately after line 1207)
 
  Read optional ui table from plugin_info:
  - ui.tag → string (required if ui table present)
@@ -313,6 +325,9 @@ Here is Claude's plan:
  File: internal/plugin/manager.go (extend ValidateManifest)
 
  When info.UI != nil:
+ - Tag must match the plugin name via deterministic derivation: compute expected tag as
+   "mcms-" + strings.ReplaceAll(info.Name, "_", "-"). If info.UI.Tag != expectedTag, return
+   error: `ui.tag %q does not match plugin name %q (expected %q)`.
  - Tag must start with a lowercase ASCII letter
  - Tag must contain at least one hyphen (Web Components requirement)
  - Tag must be lowercase alphanumeric + hyphens only
@@ -322,9 +337,18 @@ Here is Claude's plan:
  - Bundle is opaque metadata (string). Go does NOT validate the path, resolve it, or use it to
    read/serve files. It is surfaced in API responses for consuming admin panels to display.
    No path traversal check is needed because Go never acts on this value.
- - Route warning: After a plugin reaches StateRunning (end of loadPlugin in manager.go, after
-   line `inst.State = StateRunning`), if inst.Info.UI is non-nil and the Manager's HTTPBridge
-   is non-nil, filter bridge.ListRoutes() for routes where PluginName matches. If zero routes
+
+ JS detection guard: During plugin installation (InstallPlugin), after ExtractManifest succeeds,
+ if the plugin's registered HTTP routes serve JavaScript content (Content-Type contains
+ "javascript" or route paths end in .js) but info.UI is nil, reject installation with error:
+ `plugin %q serves JavaScript via HTTP routes but does not declare a ui table in plugin_info —
+ add a ui table with tag and bundle fields, or remove the JS-serving routes`.
+ This prevents plugins from silently serving unbundled/undeclared UI code that bypasses the
+ SDK's lifecycle, theme, and security conventions.
+ - Route warning: After a plugin reaches StateRunning (in loadPlugin in manager.go, after
+   line `inst.State = StateRunning` at approximately line 863, before the loadOrder append),
+   if inst.Info.UI is non-nil and m.bridge is non-nil, filter m.bridge.ListRoutes() for
+   routes where PluginName matches. If zero routes
    found, log a warning via utility.DefaultLogger.Warn:
    `plugin %q declares UI tag %q but has no registered HTTP routes to serve the bundle`
    This does not block loading — the plugin may register routes dynamically or rely on external
@@ -348,8 +372,12 @@ Here is Claude's plan:
 
  Both test suites reference this single file:
  - Go tests: os.ReadFile("../../testdata/tag-validation-cases.json") from internal/plugin/
- - TypeScript tests: fs.readFileSync("../../../../testdata/tag-validation-cases.json") from plugin-sdk/src/
-   (src/ → plugin-sdk/ → typescript/ → sdks/ → project root)
+ - TypeScript tests: resolve via import.meta.dirname (NOT hardcoded relative traversal).
+   In the test file, build the path as:
+   path.resolve(import.meta.dirname, "../../../../testdata/tag-validation-cases.json")
+   This resolves relative to the test file's directory (src/), not vitest's cwd, making it
+   resilient to working directory changes. vitest's cwd is the package root (plugin-sdk/),
+   but import.meta.dirname is always the directory of the source file.
 
  Format: array of { tag: string, valid: boolean, reason?: string }. Both test suites iterate
  this file to verify identical validation behavior. When adding a new rule, add test cases to this
@@ -380,9 +408,11 @@ Here is Claude's plan:
    { "tag": "missing-glyph",       "valid": false, "reason": "reserved HTML custom element name" }
  ]
 
- CI enforcement: .github/workflows/sdks.yml adds a step that runs both Go and TypeScript tag
- validation tests whenever testdata/tag-validation-cases.json is modified. The Go CI workflow
- (.github/workflows/go.yml) also runs these tests on changes to testdata/.
+ CI enforcement: .github/workflows/sdks.yml must add 'testdata/**' to its paths trigger (both
+ push and pull_request sections) so that changes to testdata/tag-validation-cases.json trigger
+ the TypeScript tag validation tests. Without this, the shared fixture's purpose (keeping Go and
+ TypeScript in sync) fails silently. The Go CI workflow (.github/workflows/go.yml) already covers
+ testdata/ changes since it does not ignore the project root.
 
  Surface UI in API responses
 
@@ -413,6 +443,8 @@ Here is Claude's plan:
  - TestValidateManifest_UITagStartsWithDigit — validation rejects tag starting with non-letter
  - TestValidateManifest_UITagReservedName — validation rejects reserved HTML element names
  - TestValidateManifest_UITagSharedFixture — iterates testdata/tag-validation-cases.json
+ - TestValidateManifest_UITagNameMismatch — tag does not match derived name, rejected
+ - TestValidateManifest_UITagNameMatch — tag matches derived name, accepted
 
  File: internal/plugin/cli_commands_test.go
 
@@ -487,9 +519,14 @@ Here is Claude's plan:
     Plugin authors must scope their selectors (BEM with tag name, or data-mcms-plugin attribute).
     Future plugin marketplace can enforce scoping via automated linting.
 
- 10. Tag uniqueness: Element tags are derived from plugin names (e.g., plugin "task_tracker" uses tag
-     "mcms-task-tracker"). Plugin names are unique at the database level (enforced on install), so
-     cross-plugin tag collisions cannot occur through normal installation.
+ 10. Tag-name binding: The manifest's ui.tag MUST match the plugin name via deterministic derivation:
+     replace underscores with hyphens and prepend "mcms-" (e.g., plugin "task_tracker" → tag
+     "mcms-task-tracker"). ValidateManifest computes the expected tag from info.Name and rejects the
+     manifest if ui.tag does not match. This guarantees tag uniqueness because plugin names are unique
+     at the database level (enforced on install). Cross-plugin tag collisions cannot occur through
+     normal installation. If a plugin author manually bypasses this validation (e.g., editing the
+     manifest after validation), the browser's customElements.define() will throw at runtime — that
+     is on them.
 
  11. Bundle URL discovery: The Go API returns ui.bundle as opaque metadata. The actual served URL
      depends on Lua HTTP routes registered by the plugin, which are exposed at install time for
@@ -522,9 +559,9 @@ Here is Claude's plan:
 
  Steps 3-4 and 5-6 can run concurrently (after step 1 completes).
 
- No justfile changes needed — existing `just sdk-build` runs `pnpm build` at the workspace root,
+ No justfile changes needed — existing `just sdk ts build` runs `pnpm build` at the workspace root,
  which picks up new workspace packages automatically once pnpm-workspace.yaml is updated (step 2).
- Similarly, `just sdk-test` and `just sdk-install` work unchanged.
+ Similarly, `just sdk ts test` and `just sdk ts install` work unchanged.
 
  Verification
 

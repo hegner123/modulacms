@@ -311,11 +311,16 @@ The `ordered=true` variant reads each route's root content node "Order" field va
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/media` | List all media items |
+| GET | `/api/v1/media` | List all media items (responses include computed `download_url` field) |
 | GET | `/api/v1/media/?q={ulid}` | Get media item by ID |
+| GET | `/api/v1/media/full` | List all media items with author names |
+| GET | `/api/v1/media/{id}/download` | Download file (302 redirect to pre-signed S3 URL with Content-Disposition: attachment) |
+| GET | `/api/v1/media/references?q={ulid}` | Scan for content fields referencing a media asset |
+| GET | `/api/v1/media/health` | Check for orphaned files in S3 bucket (requires `media:admin`) |
 | POST | `/api/v1/media` | Create media metadata |
 | PUT | `/api/v1/media/` | Update media metadata |
 | DELETE | `/api/v1/media/?q={ulid}` | Delete media item |
+| DELETE | `/api/v1/media/cleanup` | Delete orphaned files from S3 (requires `media:admin`) |
 
 ### Media Upload
 

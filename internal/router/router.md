@@ -304,6 +304,34 @@ Uses typed errors from media package: DuplicateMediaError, FileTooLargeError.
 
 Returns paginated media list with total count. Response uses PaginatedResponse generic struct with Data array, Total count, Limit, Offset fields.
 
+### MediaFullHandler
+
+Endpoint at /api/v1/media/full supporting GET. Returns media list with author names included via `apiListMediaFull`.
+
+### apiDownloadMedia
+
+Endpoint at /api/v1/media/{id}/download supporting GET. Generates a pre-signed S3 URL with Content-Disposition: attachment header and redirects (302) the client to it. The CMS never proxies file bytes.
+
+Helper functions: `filenameFromMedia` (priority: display_name > name > URL segment), `extractS3Key` (strips public URL prefix to recover S3 object key), `sanitizeFilename` (removes unsafe characters for Content-Disposition headers).
+
+Defined in `media_download.go`.
+
+### MediaReferencesHandler
+
+Endpoint at /api/v1/media/references?q={ulid} supporting GET. Scans content fields for references to a media asset. Returns `MediaReferenceScanResponse` containing an array of `MediaReferenceInfo` (content ID, field ID, datatype name, field name).
+
+### MediaHealthHandler
+
+Endpoint at /api/v1/media/health supporting GET (requires `media:admin`). Checks for orphaned files in the S3 media bucket that have no corresponding database record.
+
+### MediaCleanupHandler
+
+Endpoint at /api/v1/media/cleanup supporting DELETE (requires `media:admin`). Deletes orphaned files from the S3 media bucket.
+
+### MediaResponse (media_response.go)
+
+`MediaResponse` wraps `db.Media` with a computed `download_url` field pointing to `/api/v1/media/{id}/download`. All media API responses use this wrapper via `toMediaResponse` and `toMediaListResponse` helpers.
+
 ## Media Dimension Handlers
 
 ### MediaDimensionsHandler

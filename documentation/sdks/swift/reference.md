@@ -17,7 +17,7 @@ Generic `Resource<Entity, CreateParams, UpdateParams, ID>` instances. Each provi
 | `contentRelations` | `ContentRelation` | `CreateContentRelationParams` | `UpdateContentRelationParams` | `ContentRelationID` |
 | `datatypes` | `Datatype` | `CreateDatatypeParams` | `UpdateDatatypeParams` | `DatatypeID` |
 | `fields` | `Field` | `CreateFieldParams` | `UpdateFieldParams` | `FieldID` |
-| `media` | `Media` | `NoCreate` | `UpdateMediaParams` | `MediaID` |
+| `media` | `Media` (includes `downloadURL`) | `NoCreate` | `UpdateMediaParams` | `MediaID` |
 | `mediaDimensions` | `MediaDimension` | `CreateMediaDimensionParams` | `UpdateMediaDimensionParams` | `MediaDimensionID` |
 | `routes` | `Route` | `CreateRouteParams` | `UpdateRouteParams` | `RouteID` |
 | `roles` | `Role` | `CreateRoleParams` | `UpdateRoleParams` | `RoleID` |
