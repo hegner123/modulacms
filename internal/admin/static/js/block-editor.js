@@ -498,8 +498,12 @@ var domPatchMethods = {
     if (!block) return;
     const oldParentId = block.parentId;
     const newParentId = block.prevSiblingId;
+    this._history.pushUndo(this._state);
     const result = indentBlock(this._state, blockId);
-    if (!result) return;
+    if (!result) {
+      this._history.discardLastUndo();
+      return;
+    }
     this._devValidate();
     const blockWrapper = this._wrapperRegistry.get(blockId);
     const newParentWrapper = this._wrapperRegistry.get(newParentId);
@@ -543,8 +547,12 @@ var domPatchMethods = {
       youngerSiblingIds.push(walkId);
       walkId = this._state.blocks[walkId].nextSiblingId;
     }
+    this._history.pushUndo(this._state);
     const result = outdentBlock(this._state, blockId);
-    if (!result) return;
+    if (!result) {
+      this._history.discardLastUndo();
+      return;
+    }
     this._devValidate();
     const blockWrapper = this._wrapperRegistry.get(blockId);
     const oldParentWrapper = this._wrapperRegistry.get(oldParentId);
@@ -593,6 +601,7 @@ var domPatchMethods = {
     if (!blockId) return;
     const block = this._state.blocks[blockId];
     if (!block) return;
+    this._history.pushUndo(this._state);
     const cloneId = duplicateBlock(this._state, blockId);
     if (!cloneId) return;
     this._devValidate();
@@ -628,8 +637,12 @@ var domPatchMethods = {
     if (!block) return;
     const prevSiblingId = block.prevSiblingId;
     if (!prevSiblingId) return;
+    this._history.pushUndo(this._state);
     const result = moveBlockUp(this._state, blockId);
-    if (!result) return;
+    if (!result) {
+      this._history.discardLastUndo();
+      return;
+    }
     this._devValidate();
     const blockWrapper = this._wrapperRegistry.get(blockId);
     const prevWrapper = this._wrapperRegistry.get(prevSiblingId);
@@ -654,8 +667,12 @@ var domPatchMethods = {
     if (!block) return;
     const nextSiblingId = block.nextSiblingId;
     if (!nextSiblingId) return;
+    this._history.pushUndo(this._state);
     const result = moveBlockDown(this._state, blockId);
-    if (!result) return;
+    if (!result) {
+      this._history.discardLastUndo();
+      return;
+    }
     this._devValidate();
     const blockWrapper = this._wrapperRegistry.get(blockId);
     const nextWrapper = this._wrapperRegistry.get(nextSiblingId);
@@ -683,6 +700,7 @@ var domPatchMethods = {
     if (!afterBlockId) return;
     const afterBlock = this._state.blocks[afterBlockId];
     if (!afterBlock) return;
+    this._history.pushUndo(this._state);
     const id = addBlock(this._state, type || "text", afterBlockId);
     this._devValidate();
     const block = this._state.blocks[id];
@@ -1015,6 +1033,7 @@ var dragMethods = {
     const { blockId } = this._drag;
     const { blockId: targetId, position } = dropTarget;
     const oldParentId = this._state.blocks[blockId]?.parentId;
+    this._history.pushUndo(this._state);
     moveBlock(this._state, blockId, targetId, position);
     this._devValidate();
     const blockWrapper = this._wrapperRegistry.get(blockId);
@@ -1435,6 +1454,7 @@ var pickerMethods = {
     if (idx < 0 || idx >= selectableItems.length) return;
     var item = selectableItems[idx];
     var datatype = { id: item.id, label: item.label, type: item.type };
+    this._history.pushUndo(this._state);
     var id = addBlockFromDatatype(
       this._state,
       datatype,
@@ -1450,6 +1470,132 @@ var pickerMethods = {
       composed: true,
       detail: { action: "add", blockId: id }
     }));
+  }
+};
+
+// internal/admin/static/js/block-editor-src/history.js
+var History = class {
+  constructor(maxSize) {
+    this._maxSize = maxSize || 50;
+    this._undoStack = [];
+    this._redoStack = [];
+    this._fieldBatchTimer = null;
+    this._inFieldBatch = false;
+  }
+  _cloneState(state) {
+    var blocks = {};
+    var keys = Object.keys(state.blocks);
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      var block = state.blocks[key];
+      blocks[key] = {
+        ...block,
+        fields: block.fields ? block.fields.map(function(f) {
+          return { ...f };
+        }) : void 0
+      };
+    }
+    return { blocks, rootId: state.rootId };
+  }
+  pushUndo(state) {
+    clearTimeout(this._fieldBatchTimer);
+    this._inFieldBatch = false;
+    var entry = {
+      snapshot: this._cloneState(state),
+      selectedBlockId: state.selectedBlockId
+    };
+    this._undoStack.push(entry);
+    this._redoStack = [];
+    if (this._undoStack.length > this._maxSize) {
+      this._undoStack.shift();
+    }
+  }
+  discardLastUndo() {
+    this._undoStack.pop();
+  }
+  pushFieldChange(state) {
+    if (this._inFieldBatch) return;
+    this.pushUndo(state);
+    this._inFieldBatch = true;
+    var self = this;
+    this._fieldBatchTimer = setTimeout(function() {
+      self._inFieldBatch = false;
+    }, 500);
+  }
+  get inFieldBatch() {
+    return this._inFieldBatch;
+  }
+  popUndo(currentState) {
+    if (this._undoStack.length === 0) return null;
+    var redoEntry = {
+      snapshot: this._cloneState(currentState),
+      selectedBlockId: currentState.selectedBlockId
+    };
+    this._redoStack.push(redoEntry);
+    return this._undoStack.pop();
+  }
+  popRedo(currentState) {
+    if (this._redoStack.length === 0) return null;
+    var undoEntry = {
+      snapshot: this._cloneState(currentState),
+      selectedBlockId: currentState.selectedBlockId
+    };
+    this._undoStack.push(undoEntry);
+    return this._redoStack.pop();
+  }
+  get canUndo() {
+    return this._undoStack.length > 0;
+  }
+  get canRedo() {
+    return this._redoStack.length > 0;
+  }
+  clear() {
+    this._undoStack = [];
+    this._redoStack = [];
+    clearTimeout(this._fieldBatchTimer);
+    this._inFieldBatch = false;
+  }
+  remapIds(idMap) {
+    var clientIds = Object.keys(idMap);
+    var stacks = [this._undoStack, this._redoStack];
+    for (var s = 0; s < stacks.length; s++) {
+      var stack = stacks[s];
+      for (var e = 0; e < stack.length; e++) {
+        var entry = stack[e];
+        var snapshot = entry.snapshot;
+        for (var c = 0; c < clientIds.length; c++) {
+          var clientId = clientIds[c];
+          if (snapshot.blocks[clientId] !== void 0) {
+            var block = snapshot.blocks[clientId];
+            delete snapshot.blocks[clientId];
+            block.id = idMap[clientId];
+            snapshot.blocks[idMap[clientId]] = block;
+          }
+        }
+        var blockKeys = Object.keys(snapshot.blocks);
+        for (var b = 0; b < blockKeys.length; b++) {
+          var blk = snapshot.blocks[blockKeys[b]];
+          if (blk.parentId && idMap[blk.parentId] !== void 0) {
+            blk.parentId = idMap[blk.parentId];
+          }
+          if (blk.firstChildId && idMap[blk.firstChildId] !== void 0) {
+            blk.firstChildId = idMap[blk.firstChildId];
+          }
+          if (blk.nextSiblingId && idMap[blk.nextSiblingId] !== void 0) {
+            blk.nextSiblingId = idMap[blk.nextSiblingId];
+          }
+          if (blk.prevSiblingId && idMap[blk.prevSiblingId] !== void 0) {
+            blk.prevSiblingId = idMap[blk.prevSiblingId];
+          }
+        }
+        if (snapshot.rootId && idMap[snapshot.rootId] !== void 0) {
+          snapshot.rootId = idMap[snapshot.rootId];
+        }
+        if (entry.selectedBlockId && idMap[entry.selectedBlockId] !== void 0) {
+          entry.selectedBlockId = idMap[entry.selectedBlockId];
+        }
+      }
+    }
   }
 };
 
@@ -1483,6 +1629,7 @@ if (isBrowser) {
       this._pickerSelectedIndex = 0;
       this._pickerData = null;
       this._rootDatatypeId = null;
+      this._history = new History(50);
     }
     get dev() {
       return this.hasAttribute("data-dev");
@@ -1492,6 +1639,7 @@ if (isBrowser) {
     }
     set state(newState) {
       this._state = newState;
+      if (this._history) this._history.clear();
       this._state.dirty = false;
       this._elementRegistry.clear();
       this._wrapperRegistry.clear();
@@ -1519,6 +1667,7 @@ if (isBrowser) {
       if (!block?.fields) return;
       const field = block.fields.find((f) => f.fieldId === fieldId);
       if (field) {
+        if (!this._history.inFieldBatch) this._history.pushFieldChange(this._state);
         field.value = value;
         this._state.dirty = true;
         this._updateSaveButton();
@@ -1545,6 +1694,7 @@ if (isBrowser) {
     disconnectedCallback() {
       window.removeEventListener("beforeunload", this._beforeUnloadHandler);
       window.removeEventListener("keydown", this._escapeHandler);
+      if (this._history) this._history.clear();
     }
     attributeChangedCallback(name, oldValue, newValue) {
       if (name === "data-state" && this.isConnected) {
@@ -1556,6 +1706,7 @@ if (isBrowser) {
       const stateAttr = this.getAttribute("data-state");
       if (stateAttr === null || stateAttr === "") {
         this._state = createState();
+        if (this._history) this._history.clear();
         this._render();
         return;
       }
@@ -1589,6 +1740,7 @@ if (isBrowser) {
         return;
       }
       this._state = newState;
+      if (this._history) this._history.clear();
       this._rootDatatypeId = this.getAttribute("data-root-datatype-id") || null;
       this._elementRegistry.clear();
       this._wrapperRegistry.clear();
@@ -1891,6 +2043,7 @@ if (isBrowser) {
       }
     }
     _doAddBlock(type) {
+      this._history.pushUndo(this._state);
       const id = addBlock(this._state, type);
       this._devValidate();
       const block = this._state.blocks[id];
@@ -1925,6 +2078,7 @@ if (isBrowser) {
     _executeDeleteBlock(blockId) {
       const block = this._state.blocks[blockId];
       if (!block) return;
+      this._history.pushUndo(this._state);
       const parentId = block.parentId;
       const removedIds = removeBlock(this._state, blockId);
       this._devValidate();
@@ -1994,6 +2148,16 @@ if (isBrowser) {
         return;
       }
       if (!this._state) return;
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "z") {
+        e.preventDefault();
+        if (!this._drag) this._undo();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.shiftKey && (e.key === "z" || e.key === "Z") || e.key === "y")) {
+        e.preventDefault();
+        if (!this._drag) this._redo();
+        return;
+      }
       var blockId = this._state.selectedBlockId;
       var noMod = !e.ctrlKey && !e.metaKey && !e.altKey;
       if (e.key === "Tab") {
@@ -2139,6 +2303,54 @@ if (isBrowser) {
       if (this._state?.dirty) {
         e.preventDefault();
         e.returnValue = "You have unsaved changes.";
+      }
+    }
+    // ---- Undo / Redo ----
+    _undo() {
+      if (!this._history.canUndo) return;
+      var entry = this._history.popUndo(this._state);
+      this._restoreSnapshot(entry);
+    }
+    _redo() {
+      if (!this._history.canRedo) return;
+      var entry = this._history.popRedo(this._state);
+      this._restoreSnapshot(entry);
+    }
+    _restoreSnapshot(entry) {
+      this._state.blocks = entry.snapshot.blocks;
+      this._state.rootId = entry.snapshot.rootId;
+      this._state.selectedBlockId = null;
+      this._state.dirty = true;
+      this._render();
+      if (entry.selectedBlockId && this._state.blocks[entry.selectedBlockId]) {
+        this._selectBlock(entry.selectedBlockId);
+      }
+      this.dispatchEvent(new CustomEvent("block-editor:change", {
+        bubbles: true,
+        composed: true,
+        detail: { action: "undo-redo" }
+      }));
+    }
+    remapIds(idMap) {
+      var clientIds = Object.keys(idMap);
+      for (var i = 0; i < clientIds.length; i++) {
+        var clientId = clientIds[i];
+        if (this._elementRegistry.has(clientId)) {
+          var el = this._elementRegistry.get(clientId);
+          this._elementRegistry.delete(clientId);
+          this._elementRegistry.set(idMap[clientId], el);
+          el.dataset.blockId = idMap[clientId];
+        }
+        if (this._wrapperRegistry.has(clientId)) {
+          var wrapper = this._wrapperRegistry.get(clientId);
+          this._wrapperRegistry.delete(clientId);
+          this._wrapperRegistry.set(idMap[clientId], wrapper);
+          wrapper.dataset.blockId = idMap[clientId];
+        }
+      }
+      this._history.remapIds(idMap);
+      if (this._state.selectedBlockId && idMap[this._state.selectedBlockId] !== void 0) {
+        this._state.selectedBlockId = idMap[this._state.selectedBlockId];
       }
     }
   }

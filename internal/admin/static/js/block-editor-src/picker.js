@@ -277,6 +277,7 @@ export var pickerMethods = {
                 var item = selectableItems[idx];
                 var datatype = { id: item.id, label: item.label, type: item.type };
 
+                this._history.pushUndo(this._state);
                 var id = addBlockFromDatatype(
                         this._state,
                         datatype,

@@ -26,8 +26,9 @@ export const domPatchMethods = {
                 // The previous sibling will become the new parent
                 const newParentId = block.prevSiblingId;
 
+                this._history.pushUndo(this._state);
                 const result = indentBlock(this._state, blockId);
-                if (!result) return;
+                if (!result) { this._history.discardLastUndo(); return; }
 
                 this._devValidate();
 
@@ -92,8 +93,9 @@ export const domPatchMethods = {
                         walkId = this._state.blocks[walkId].nextSiblingId;
                 }
 
+                this._history.pushUndo(this._state);
                 const result = outdentBlock(this._state, blockId);
-                if (!result) return;
+                if (!result) { this._history.discardLastUndo(); return; }
 
                 this._devValidate();
 
@@ -161,6 +163,7 @@ export const domPatchMethods = {
                 const block = this._state.blocks[blockId];
                 if (!block) return;
 
+                this._history.pushUndo(this._state);
                 const cloneId = duplicateBlock(this._state, blockId);
                 if (!cloneId) return;
 
@@ -207,8 +210,9 @@ export const domPatchMethods = {
                 const prevSiblingId = block.prevSiblingId;
                 if (!prevSiblingId) return;
 
+                this._history.pushUndo(this._state);
                 const result = moveBlockUp(this._state, blockId);
-                if (!result) return;
+                if (!result) { this._history.discardLastUndo(); return; }
 
                 this._devValidate();
 
@@ -242,8 +246,9 @@ export const domPatchMethods = {
                 const nextSiblingId = block.nextSiblingId;
                 if (!nextSiblingId) return;
 
+                this._history.pushUndo(this._state);
                 const result = moveBlockDown(this._state, blockId);
-                if (!result) return;
+                if (!result) { this._history.discardLastUndo(); return; }
 
                 this._devValidate();
 
@@ -279,6 +284,7 @@ export const domPatchMethods = {
                 const afterBlock = this._state.blocks[afterBlockId];
                 if (!afterBlock) return;
 
+                this._history.pushUndo(this._state);
                 const id = addBlock(this._state, type || 'text', afterBlockId);
                 this._devValidate();
 

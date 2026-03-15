@@ -358,6 +358,9 @@ export const dragMethods = {
                 // Remember the old parent before state mutation so we can clean up empty children containers
                 const oldParentId = this._state.blocks[blockId]?.parentId;
 
+                // Snapshot for undo before state mutation
+                this._history.pushUndo(this._state);
+
                 // Mutate state
                 moveBlock(this._state, blockId, targetId, position);
                 this._devValidate();

@@ -20,6 +20,7 @@ import { validateState } from './validate.js';
 import { domPatchMethods } from './dom-patches.js';
 import { dragMethods } from './drag.js';
 import { pickerMethods } from './picker.js';
+import { History } from './history.js';
 
 // ============================================================
 // Re-exports — pure functions available for testing outside browser
@@ -83,6 +84,7 @@ if (isBrowser) {
                         this._pickerSelectedIndex = 0;
                         this._pickerData = null;
                         this._rootDatatypeId = null;
+                        this._history = new History(50);
                 }
 
                 get dev() {
@@ -95,6 +97,7 @@ if (isBrowser) {
 
                 set state(newState) {
                         this._state = newState;
+                        if (this._history) this._history.clear();
                         this._state.dirty = false;
                         this._elementRegistry.clear();
                         this._wrapperRegistry.clear();
@@ -127,6 +130,7 @@ if (isBrowser) {
                         if (!block?.fields) return;
                         const field = block.fields.find(f => f.fieldId === fieldId);
                         if (field) {
+                                if (!this._history.inFieldBatch) this._history.pushFieldChange(this._state);
                                 field.value = value;
                                 this._state.dirty = true;
                                 this._updateSaveButton();
@@ -157,6 +161,7 @@ if (isBrowser) {
                 disconnectedCallback() {
                         window.removeEventListener('beforeunload', this._beforeUnloadHandler);
                         window.removeEventListener('keydown', this._escapeHandler);
+                        if (this._history) this._history.clear();
                 }
 
                 attributeChangedCallback(name, oldValue, newValue) {
@@ -173,6 +178,7 @@ if (isBrowser) {
                         // No attribute or empty string — start empty
                         if (stateAttr === null || stateAttr === '') {
                                 this._state = createState();
+                                if (this._history) this._history.clear();
                                 this._render();
                                 return;
                         }
@@ -213,6 +219,7 @@ if (isBrowser) {
                         }
 
                         this._state = newState;
+                        if (this._history) this._history.clear();
                         this._rootDatatypeId = this.getAttribute('data-root-datatype-id') || null;
                         this._elementRegistry.clear();
                         this._wrapperRegistry.clear();
@@ -603,6 +610,7 @@ if (isBrowser) {
                 }
 
                 _doAddBlock(type) {
+                        this._history.pushUndo(this._state);
                         const id = addBlock(this._state, type);
                         this._devValidate();
 
@@ -644,6 +652,8 @@ if (isBrowser) {
                 _executeDeleteBlock(blockId) {
                         const block = this._state.blocks[blockId];
                         if (!block) return;
+
+                        this._history.pushUndo(this._state);
 
                         const parentId = block.parentId;
 
@@ -732,6 +742,18 @@ if (isBrowser) {
                                 return;
                         }
                         if (!this._state) return;
+
+                        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') {
+                                e.preventDefault();
+                                if (!this._drag) this._undo();
+                                return;
+                        }
+                        if ((e.ctrlKey || e.metaKey) && ((e.shiftKey && (e.key === 'z' || e.key === 'Z')) || e.key === 'y')) {
+                                e.preventDefault();
+                                if (!this._drag) this._redo();
+                                return;
+                        }
+
                         var blockId = this._state.selectedBlockId;
                         var noMod = !e.ctrlKey && !e.metaKey && !e.altKey;
 
@@ -916,6 +938,59 @@ if (isBrowser) {
                         if (this._state?.dirty) {
                                 e.preventDefault();
                                 e.returnValue = 'You have unsaved changes.';
+                        }
+                }
+
+                // ---- Undo / Redo ----
+
+                _undo() {
+                        if (!this._history.canUndo) return;
+                        var entry = this._history.popUndo(this._state);
+                        this._restoreSnapshot(entry);
+                }
+
+                _redo() {
+                        if (!this._history.canRedo) return;
+                        var entry = this._history.popRedo(this._state);
+                        this._restoreSnapshot(entry);
+                }
+
+                _restoreSnapshot(entry) {
+                        this._state.blocks = entry.snapshot.blocks;
+                        this._state.rootId = entry.snapshot.rootId;
+                        this._state.selectedBlockId = null;
+                        this._state.dirty = true;
+                        this._render();
+                        if (entry.selectedBlockId && this._state.blocks[entry.selectedBlockId]) {
+                                this._selectBlock(entry.selectedBlockId);
+                        }
+                        this.dispatchEvent(new CustomEvent('block-editor:change', {
+                                bubbles: true,
+                                composed: true,
+                                detail: { action: 'undo-redo' },
+                        }));
+                }
+
+                remapIds(idMap) {
+                        var clientIds = Object.keys(idMap);
+                        for (var i = 0; i < clientIds.length; i++) {
+                                var clientId = clientIds[i];
+                                if (this._elementRegistry.has(clientId)) {
+                                        var el = this._elementRegistry.get(clientId);
+                                        this._elementRegistry.delete(clientId);
+                                        this._elementRegistry.set(idMap[clientId], el);
+                                        el.dataset.blockId = idMap[clientId];
+                                }
+                                if (this._wrapperRegistry.has(clientId)) {
+                                        var wrapper = this._wrapperRegistry.get(clientId);
+                                        this._wrapperRegistry.delete(clientId);
+                                        this._wrapperRegistry.set(idMap[clientId], wrapper);
+                                        wrapper.dataset.blockId = idMap[clientId];
+                                }
+                        }
+                        this._history.remapIds(idMap);
+                        if (this._state.selectedBlockId && idMap[this._state.selectedBlockId] !== undefined) {
+                                this._state.selectedBlockId = idMap[this._state.selectedBlockId];
                         }
                 }
         }
