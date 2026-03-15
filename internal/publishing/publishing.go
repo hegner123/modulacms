@@ -270,7 +270,7 @@ func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, 
 	// 9. Async: prune old versions if retention cap exceeded.
 	go PruneExcessVersions(d, rootID, locale, retentionCap)
 
-	// 10. Dispatch webhook event.
+	// 10. Dispatch webhook events.
 	if dispatcher != nil {
 		dispatcher.Dispatch(ctx, "content.published", map[string]any{
 			"content_data_id":    rootID.String(),
@@ -279,6 +279,14 @@ func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, 
 			"locale":             locale,
 			"published_by":       userID.String(),
 		})
+		if locale != "" {
+			dispatcher.Dispatch(ctx, "locale.published", map[string]any{
+				"content_data_id":    rootID.String(),
+				"content_version_id": version.ContentVersionID.String(),
+				"locale":             locale,
+				"published_by":       userID.String(),
+			})
+		}
 	}
 
 	// 11. Update search index.

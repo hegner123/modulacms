@@ -12,6 +12,7 @@ import (
 	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/tree/ops"
 	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/webhooks"
 )
 
 // ContentService manages public content CRUD, content fields, tree operations
@@ -258,6 +259,14 @@ func (s *ContentService) Update(ctx context.Context, ac audited.AuditContext, pa
 	if err != nil {
 		return nil, fmt.Errorf("update: re-fetch: %w", err)
 	}
+
+	if s.dispatcher != nil {
+		s.dispatcher.Dispatch(ctx, webhooks.EventContentUpdated, map[string]any{
+			"content_data_id": params.ContentDataID.String(),
+			"status":          string(params.Status),
+		})
+	}
+
 	return updated, nil
 }
 
@@ -279,6 +288,13 @@ func (s *ContentService) Delete(ctx context.Context, ac audited.AuditContext, id
 	if err := s.driver.DeleteContentData(ctx, ac, id); err != nil {
 		return nil, fmt.Errorf("delete content data: %w", err)
 	}
+
+	if s.dispatcher != nil {
+		s.dispatcher.Dispatch(ctx, webhooks.EventContentDeleted, map[string]any{
+			"content_data_id": id.String(),
+		})
+	}
+
 	return []types.ContentID{id}, nil
 }
 

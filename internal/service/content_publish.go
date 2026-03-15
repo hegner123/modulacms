@@ -9,6 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/publishing"
+	"github.com/hegner123/modulacms/internal/webhooks"
 )
 
 // Publish builds a snapshot of the content tree, stores it as a versioned
@@ -59,5 +60,13 @@ func (s *ContentService) Schedule(ctx context.Context, contentID types.ContentID
 	if err != nil {
 		return fmt.Errorf("schedule content: %w", err)
 	}
+
+	if s.dispatcher != nil {
+		s.dispatcher.Dispatch(ctx, webhooks.EventContentScheduled, map[string]any{
+			"content_data_id": contentID.String(),
+			"publish_at":      publishAt.UTC().Format(time.RFC3339),
+		})
+	}
+
 	return nil
 }

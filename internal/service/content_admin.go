@@ -12,6 +12,7 @@ import (
 	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/tree/ops"
 	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/webhooks"
 )
 
 // AdminContentService manages public content CRUD, content fields, tree operations
@@ -258,6 +259,14 @@ func (s *AdminContentService) Update(ctx context.Context, ac audited.AuditContex
 	if err != nil {
 		return nil, fmt.Errorf("admin update: re-fetch: %w", err)
 	}
+
+	if s.dispatcher != nil {
+		s.dispatcher.Dispatch(ctx, webhooks.EventAdminContentUpdated, map[string]any{
+			"admin_content_data_id": params.AdminContentDataID.String(),
+			"status":                string(params.Status),
+		})
+	}
+
 	return updated, nil
 }
 
@@ -279,6 +288,13 @@ func (s *AdminContentService) Delete(ctx context.Context, ac audited.AuditContex
 	if err := s.driver.DeleteAdminContentData(ctx, ac, id); err != nil {
 		return nil, fmt.Errorf("delete admin content data: %w", err)
 	}
+
+	if s.dispatcher != nil {
+		s.dispatcher.Dispatch(ctx, webhooks.EventAdminContentDeleted, map[string]any{
+			"admin_content_data_id": id.String(),
+		})
+	}
+
 	return []types.AdminContentID{id}, nil
 }
 

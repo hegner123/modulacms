@@ -9,6 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/publishing"
+	"github.com/hegner123/modulacms/internal/webhooks"
 )
 
 // ListVersions returns all content versions for a given content data item.
@@ -68,6 +69,16 @@ func (s *ContentService) CreateVersion(ctx context.Context, ac audited.AuditCont
 	if cfgErr == nil {
 		retentionCap := cfg.VersionMaxPerContent()
 		go publishing.PruneExcessVersions(s.driver, contentID, "", retentionCap)
+	}
+
+	if s.dispatcher != nil {
+		s.dispatcher.Dispatch(ctx, webhooks.EventVersionCreated, map[string]any{
+			"content_data_id":    contentID.String(),
+			"content_version_id": version.ContentVersionID.String(),
+			"version_number":     version.VersionNumber,
+			"locale":             locale,
+			"trigger":            "manual",
+		})
 	}
 
 	return version, nil
