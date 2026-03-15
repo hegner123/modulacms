@@ -19,6 +19,7 @@ func NewSDKBackends(client *modula.Client) *Backends {
 		Schema:       &sdkSchemaBackend{client: client},
 		AdminSchema:  &sdkAdminSchemaBackend{client: client},
 		Media:        &sdkMediaBackend{client: client},
+		MediaFolders: &sdkMediaFolderBackend{client: client},
 		Routes:       &sdkRouteBackend{client: client},
 		AdminRoutes:  &sdkAdminRouteBackend{client: client},
 		Users:        &sdkUserBackend{client: client},
@@ -656,6 +657,94 @@ func (b *sdkMediaBackend) UpdateMediaDimension(ctx context.Context, params json.
 
 func (b *sdkMediaBackend) DeleteMediaDimension(ctx context.Context, id string) error {
 	return b.client.MediaDimensions.Delete(ctx, modula.MediaDimensionID(id))
+}
+
+// ---------------------------------------------------------------------------
+// MediaFolderBackend
+// ---------------------------------------------------------------------------
+
+type sdkMediaFolderBackend struct {
+	client *modula.Client
+}
+
+func (b *sdkMediaFolderBackend) ListMediaFolders(ctx context.Context, parentID string) (json.RawMessage, error) {
+	// The SDK Resource.List doesn't support query param filtering, so we fetch
+	// all folders and filter client-side. Folder counts are typically small.
+	all, err := b.client.MediaFoldersData.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if parentID == "" {
+		// Return root folders (no parent)
+		roots := make([]modula.MediaFolder, 0)
+		for _, f := range all {
+			if f.ParentID == nil {
+				roots = append(roots, f)
+			}
+		}
+		return json.Marshal(roots)
+	}
+	// Return children of the given parent
+	pid := modula.MediaFolderID(parentID)
+	children := make([]modula.MediaFolder, 0)
+	for _, f := range all {
+		if f.ParentID != nil && *f.ParentID == pid {
+			children = append(children, f)
+		}
+	}
+	return json.Marshal(children)
+}
+
+func (b *sdkMediaFolderBackend) GetMediaFolder(ctx context.Context, id string) (json.RawMessage, error) {
+	result, err := b.client.MediaFoldersData.Get(ctx, modula.MediaFolderID(id))
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+func (b *sdkMediaFolderBackend) CreateMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	var p modula.CreateMediaFolderParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal create media folder params: %w", err)
+	}
+	result, err := b.client.MediaFoldersData.Create(ctx, p)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+func (b *sdkMediaFolderBackend) UpdateMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	var p modula.UpdateMediaFolderParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal update media folder params: %w", err)
+	}
+	result, err := b.client.MediaFoldersData.Update(ctx, p)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+func (b *sdkMediaFolderBackend) DeleteMediaFolder(ctx context.Context, id string) (json.RawMessage, error) {
+	err := b.client.MediaFoldersData.Delete(ctx, modula.MediaFolderID(id))
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(map[string]string{"status": "deleted"})
+}
+
+func (b *sdkMediaFolderBackend) MoveMediaToFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	var p modula.MoveMediaParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal move media params: %w", err)
+	}
+	result, err := b.client.MediaFolders.MoveMedia(ctx, p)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
 }
 
 // ---------------------------------------------------------------------------

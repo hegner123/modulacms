@@ -45,6 +45,9 @@ export type FieldID = Brand<string, 'FieldID'>
 /** Unique identifier for a media asset. */
 export type MediaID = Brand<string, 'MediaID'>
 
+/** Unique identifier for a media folder. */
+export type MediaFolderID = Brand<string, 'MediaFolderID'>
+
 /** Unique identifier for a user role. */
 export type RoleID = Brand<string, 'RoleID'>
 

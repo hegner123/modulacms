@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func registerMediaTools(srv *server.MCPServer, backend MediaBackend) {
+func registerMediaTools(srv *server.MCPServer, backend MediaBackend, folderBackend MediaFolderBackend) {
 	srv.AddTool(
 		mcp.NewTool("list_media",
 			mcp.WithDescription("List media assets with pagination. Media files must be uploaded through the CMS web interface or API directly. This MCP server can view and update media metadata but cannot upload new files."),
@@ -54,11 +55,12 @@ func registerMediaTools(srv *server.MCPServer, backend MediaBackend) {
 	// upload_media
 	srv.AddTool(
 		mcp.NewTool("upload_media",
-			mcp.WithDescription("Upload a media file from a local file path. Returns the created media entity."),
+			mcp.WithDescription("Upload a media file from a local file path. Returns the created media entity. Optionally place the uploaded file into a media folder."),
 			mcp.WithString("file_path", mcp.Required(), mcp.Description("Absolute path to the file to upload")),
 			mcp.WithString("filename", mcp.Description("Override filename (defaults to base name of file_path)")),
+			mcp.WithString("folder_id", mcp.Description("Media folder ID (ULID) to place the uploaded file into")),
 		),
-		handleUploadMedia(backend),
+		handleUploadMedia(backend, folderBackend),
 	)
 
 	// media_health
@@ -195,7 +197,7 @@ func handleDeleteMedia(backend MediaBackend) server.ToolHandlerFunc {
 	}
 }
 
-func handleUploadMedia(backend MediaBackend) server.ToolHandlerFunc {
+func handleUploadMedia(backend MediaBackend, folderBackend MediaFolderBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		filePath, err := req.RequireString("file_path")
 		if err != nil {
@@ -214,6 +216,41 @@ func handleUploadMedia(backend MediaBackend) server.ToolHandlerFunc {
 		if err != nil {
 			return errResult(err), nil
 		}
+
+		// If folder_id was provided, move the uploaded media into that folder.
+		folderID := req.GetString("folder_id", "")
+		if folderID != "" {
+			// Extract the media_id from the upload response.
+			var uploaded struct {
+				MediaID string `json:"media_id"`
+			}
+			if jsonErr := json.Unmarshal(data, &uploaded); jsonErr == nil && uploaded.MediaID != "" {
+				moveParams, marshalErr := marshalParams(map[string]any{
+					"media_ids": []string{uploaded.MediaID},
+					"folder_id": &folderID,
+				})
+				if marshalErr == nil {
+					moveData, moveErr := folderBackend.MoveMediaToFolder(ctx, moveParams)
+					if moveErr != nil {
+						return errResult(moveErr), nil
+					}
+					// Return a combined response with the media and move result.
+					var moveResult map[string]any
+					json.Unmarshal(moveData, &moveResult) //nolint: best-effort parse for combined response
+					var mediaResult map[string]any
+					json.Unmarshal(data, &mediaResult) //nolint: best-effort parse for combined response
+					if mediaResult != nil {
+						mediaResult["folder_id"] = folderID
+						mediaResult["move_result"] = moveResult
+						combined, combErr := json.Marshal(mediaResult)
+						if combErr == nil {
+							return rawJSONResult(combined), nil
+						}
+					}
+				}
+			}
+		}
+
 		return rawJSONResult(data), nil
 	}
 }

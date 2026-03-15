@@ -1,0 +1,188 @@
+package partials
+
+import (
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+// MediaFolderNode is a tree node used for rendering the folder hierarchy.
+type MediaFolderNode struct {
+    Folder   db.MediaFolder
+    Children []MediaFolderNode
+}
+
+templ MediaFolderTree(folders []db.MediaFolder, activeFolderID string, csrfToken string) {
+    <div id="media-folder-sidebar" class="media-folder-sidebar">
+        <div class="media-folder-header">
+            <h3>Folders</h3>
+            <button
+                class="btn btn-ghost btn-sm"
+                onclick="document.getElementById('new-folder-dialog').showModal()"
+                title="New Folder"
+            >+</button>
+        </div>
+        <div class="media-folder-tree-list">
+            <a
+                href="/admin/media"
+                hx-get="/admin/media"
+                hx-target="#media-grid"
+                hx-push-url="true"
+                class={ "media-folder-item media-folder-root", templ.KV("active", activeFolderID == "") }
+            >
+                All Media
+            </a>
+            if len(folders) > 0 {
+                @mediaFolderNodes(buildMediaFolderTree(folders), activeFolderID)
+            }
+        </div>
+        @mediaFolderCreateDialog(csrfToken, "")
+        <script>
+            document.getElementById('media-folder-sidebar')?.addEventListener('click', function(e) {
+                var link = e.target.closest('[data-folder-id]');
+                var el = document.getElementById('upload-folder-id');
+                if (!el) return;
+                if (link) {
+                    el.value = link.getAttribute('data-folder-id');
+                } else if (e.target.closest('.media-folder-root')) {
+                    el.value = '';
+                }
+            });
+        </script>
+    </div>
+}
+
+templ mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) {
+    for _, node := range nodes {
+        <div class="media-folder-node" data-folder-id={ node.Folder.FolderID.String() }>
+            <div class={ "media-folder-item", templ.KV("active", node.Folder.FolderID.String() == activeFolderID) }>
+                if len(node.Children) > 0 {
+                    <button
+                        class="media-folder-toggle"
+                        onclick="this.closest('.media-folder-node').classList.toggle('expanded')"
+                        aria-label="Toggle folder"
+                    >
+                        <span class="toggle-icon"></span>
+                    </button>
+                } else {
+                    <span class="media-folder-toggle-spacer"></span>
+                }
+                <a
+                    href={ templ.SafeURL("/admin/media?folder_id=" + node.Folder.FolderID.String()) }
+                    hx-get={ "/admin/media?folder_id=" + node.Folder.FolderID.String() }
+                    hx-target="#media-grid"
+                    hx-push-url="true"
+                    class="media-folder-link"
+                    data-folder-id={ node.Folder.FolderID.String() }
+                    draggable="false"
+                >
+                    { node.Folder.Name }
+                </a>
+                <div class="media-folder-actions">
+                    <button
+                        class="btn-icon btn-icon-sm media-folder-rename-btn"
+                        data-folder-id={ node.Folder.FolderID.String() }
+                        data-folder-name={ node.Folder.Name }
+                        title="Rename"
+                    >
+                        <i data-lucide="pencil" class="icon-sm"></i>
+                    </button>
+                    <button
+                        class="btn-icon btn-icon-sm"
+                        hx-delete={ "/admin/media-folders/" + node.Folder.FolderID.String() }
+                        hx-target="#media-folder-sidebar"
+                        hx-swap="outerHTML"
+                        hx-confirm="Delete this folder? It must be empty."
+                        title="Delete"
+                    >
+                        <i data-lucide="trash-2" class="icon-sm"></i>
+                    </button>
+                </div>
+            </div>
+            if len(node.Children) > 0 {
+                <div class="media-folder-children">
+                    @mediaFolderNodes(node.Children, activeFolderID)
+                </div>
+            }
+        </div>
+    }
+}
+
+templ mediaFolderCreateDialog(csrfToken string, parentID string) {
+    <dialog id="new-folder-dialog" class="dialog" aria-labelledby="new-folder-dialog-title">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h2 id="new-folder-dialog-title">New Folder</h2>
+                <button class="dialog-close" aria-label="Close dialog" onclick="document.getElementById('new-folder-dialog').close()">&times;</button>
+            </div>
+            <form
+                hx-post="/admin/media-folders"
+                hx-target="#media-folder-sidebar"
+                hx-swap="outerHTML"
+                class="folder-form"
+            >
+                @CSRFField(csrfToken)
+                <input type="hidden" name="parent_id" value={ parentID }/>
+                @FormField("name", "Folder Name", "", "")
+                <div class="form-actions">
+                    <button type="button" class="btn btn-ghost" onclick="document.getElementById('new-folder-dialog').close()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+}
+
+templ MediaFolderBreadcrumb(breadcrumb []db.MediaFolder, currentFolder *db.MediaFolder) {
+    <nav class="media-breadcrumb" aria-label="Folder path">
+        <a
+            href="/admin/media"
+            hx-get="/admin/media"
+            hx-target="#media-grid"
+            hx-push-url="true"
+            class="breadcrumb-item"
+        >
+            All Media
+        </a>
+        for _, folder := range breadcrumb {
+            <span class="breadcrumb-sep">/</span>
+            <a
+                href={ templ.SafeURL("/admin/media?folder_id=" + folder.FolderID.String()) }
+                hx-get={ "/admin/media?folder_id=" + folder.FolderID.String() }
+                hx-target="#media-grid"
+                hx-push-url="true"
+                class="breadcrumb-item"
+            >
+                { folder.Name }
+            </a>
+        }
+        if currentFolder != nil {
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-item breadcrumb-current">{ currentFolder.Name }</span>
+        }
+    </nav>
+}
+
+templ MediaFolderSelect(folders []db.MediaFolder, currentFolderID string, mediaID string, csrfToken string) {
+    <div class="form-field">
+        <label for="folder_id">Folder</label>
+        <div class="folder-select-row">
+            <select
+                id="folder_id"
+                name="folder_id"
+                hx-post={ "/admin/media/move/" + mediaID }
+                hx-swap="none"
+                hx-include="[name='_csrf']"
+                class="form-control"
+            >
+                <option value="" if currentFolderID == "" { selected }>No folder (root)</option>
+                for _, folder := range folders {
+                    <option
+                        value={ folder.FolderID.String() }
+                        if folder.FolderID.String() == currentFolderID { selected }
+                    >
+                        { folder.Name }
+                    </option>
+                }
+            </select>
+        </div>
+    </div>
+}

@@ -1122,48 +1122,52 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 	// When a specific table fails, verify the exact count of tables that
 	// should remain (all tables from that point onward in the drop sequence).
 	//
-	// Drop order (32 drops total):
-	//  0: pipelines (IF EXISTS)
-	//  1: plugins (IF EXISTS)
-	//  2: role_permissions (IF EXISTS)
-	//  3: admin_content_relations (IF EXISTS)
-	//  4: content_relations (IF EXISTS)
-	//  5: admin_content_versions (IF EXISTS)
-	//  6: content_versions (IF EXISTS)
-	//  7: admin_content_fields
-	//  8: content_fields
-	//  9: admin_content_data
-	// 10: content_data
-	// 11: admin_fields
-	// 12: fields
-	// 13: admin_datatypes
-	// 14: datatypes
-	// 15: routes
-	// 16: admin_routes
-	// 17: media
-	// 18: tables
-	// 19: sessions
-	// 20: user_ssh_keys
-	// 21: user_oauth
-	// 22: tokens
-	// 23: users
-	// 24: media_dimensions
-	// 25: field_types
-	// 26: admin_field_types
-	// 27: locales
-	// 28: roles
-	// 29: permissions
-	// 30: backup_sets (IF EXISTS)
-	// 31: backup_verifications (IF EXISTS)
-	// 32: backups (IF EXISTS)
-	// 33: change_events (IF EXISTS)
+	// Drop order (35 drops total):
+	//  0: webhook_deliveries (IF EXISTS)
+	//  1: webhooks (IF EXISTS)
+	//  2: pipelines (IF EXISTS)
+	//  3: plugins (IF EXISTS)
+	//  4: role_permissions (IF EXISTS)
+	//  5: admin_content_relations (IF EXISTS)
+	//  6: content_relations (IF EXISTS)
+	//  7: admin_content_versions (IF EXISTS)
+	//  8: content_versions (IF EXISTS)
+	//  9: admin_content_fields
+	// 10: content_fields
+	// 11: admin_content_data
+	// 12: content_data
+	// 13: admin_fields
+	// 14: fields
+	// 15: admin_datatypes
+	// 16: datatypes
+	// 17: routes
+	// 18: admin_routes
+	// 19: media
+	// 20: media_folders
+	// 21: tables
+	// 22: sessions
+	// 23: user_ssh_keys
+	// 24: user_oauth
+	// 25: tokens
+	// 26: users
+	// 27: media_dimensions
+	// 28: field_types
+	// 29: admin_field_types
+	// 30: locales
+	// 31: roles
+	// 32: permissions
+	// 33: backup_sets (IF EXISTS)
+	// 34: backup_verifications (IF EXISTS)
+	// 35: backups (IF EXISTS)
+	// 36: change_events (IF EXISTS)
 
-	// CreateAllTables creates 30 tables. DropAllTables tries to drop 34
-	// (11 IF EXISTS drops: pipelines, plugins, role_permissions,
-	// admin_content_relations, content_relations, admin_content_versions,
-	// content_versions, backup_sets, backup_verifications, backups,
-	// change_events -- so they never error on missing tables).
-	// The 30 created tables minus the pre-dropped one minus the ones
+	// CreateAllTables creates 31 tables. DropAllTables tries to drop 37
+	// (13 IF EXISTS drops: webhook_deliveries, webhooks, pipelines, plugins,
+	// role_permissions, admin_content_relations, content_relations,
+	// admin_content_versions, content_versions, backup_sets,
+	// backup_verifications, backups, change_events -- so they never error
+	// on missing tables).
+	// The 31 created tables minus the pre-dropped one minus the ones
 	// successfully dropped before the error = remaining count.
 
 	tests := []struct {
@@ -1174,15 +1178,15 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 	}{
 		{
 			// Pre-drop first strict table (admin_content_fields).
-			// Pipelines, plugins, role_permissions, admin_content_relations,
-			// content_relations, admin_content_versions, and content_versions
-			// (IF EXISTS) drop first (7 drops; 2 version tables actually removed).
+			// webhook_deliveries, webhooks, pipelines, plugins, role_permissions,
+			// admin_content_relations, content_relations, admin_content_versions,
+			// and content_versions (IF EXISTS) drop first (9 drops; 4 actually removed).
 			// Error fires at admin_content_fields.
-			// Remaining = 30 created - 1 pre-dropped - 2 version tables dropped - 5 non-existent skipped = 24
+			// Remaining = 31 created - 1 pre-dropped - 4 tables dropped - 5 non-existent skipped = 25
 			name:          "fail_at_first_table",
 			preDropTable:  "admin_content_fields",
 			dropIndex:     0,
-			wantRemaining: 24,
+			wantRemaining: 25,
 		},
 		{
 			// Pre-drop users (position 23 in drop order). Positions 0-22

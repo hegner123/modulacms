@@ -4,7 +4,7 @@
  * @module entities/media
  */
 
-import type { MediaID, URL, UserID } from '../ids.js'
+import type { MediaFolderID, MediaID, URL, UserID } from '../ids.js'
 
 /**
  * A media asset (image, video, document, etc.) stored in the CMS.
@@ -34,6 +34,8 @@ export type Media = {
   srcset: string | null
   /** ID of the user who uploaded this asset, or `null`. */
   author_id: UserID | null
+  /** ID of the folder containing this asset, or `null` for root. */
+  folder_id: MediaFolderID | null
   /** ISO 8601 creation timestamp. */
   date_created: string
   /** ISO 8601 last-modification timestamp. */

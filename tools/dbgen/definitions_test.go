@@ -165,7 +165,8 @@ func TestEntities_ExtraQueriesHaveAtLeastOneParam(t *testing.T) {
 	// This list tracks intentionally paramless queries so new ones
 	// are added consciously.
 	allowParamless := map[string]bool{
-		"ListActiveWebhooks": true,
+		"ListActiveWebhooks":    true,
+		"ListMediaFoldersAtRoot": true,
 	}
 	for _, e := range Entities {
 		for i, eq := range e.ExtraQueries {

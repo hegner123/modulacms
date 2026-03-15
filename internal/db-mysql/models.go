@@ -291,22 +291,23 @@ type Locale struct {
 }
 
 type Media struct {
-	MediaID      types.MediaID         `json:"media_id"`
-	Name         sql.NullString        `json:"name"`
-	DisplayName  sql.NullString        `json:"display_name"`
-	Alt          sql.NullString        `json:"alt"`
-	Caption      sql.NullString        `json:"caption"`
-	Description  sql.NullString        `json:"description"`
-	Class        sql.NullString        `json:"class"`
-	Mimetype     sql.NullString        `json:"mimetype"`
-	Dimensions   sql.NullString        `json:"dimensions"`
-	URL          types.URL             `json:"url"`
-	Srcset       sql.NullString        `json:"srcset"`
-	FocalX       types.NullableFloat64 `json:"focal_x"`
-	FocalY       types.NullableFloat64 `json:"focal_y"`
-	AuthorID     types.NullableUserID  `json:"author_id"`
-	DateCreated  types.Timestamp       `json:"date_created"`
-	DateModified types.Timestamp       `json:"date_modified"`
+	MediaID      types.MediaID               `json:"media_id"`
+	Name         sql.NullString              `json:"name"`
+	DisplayName  sql.NullString              `json:"display_name"`
+	Alt          sql.NullString              `json:"alt"`
+	Caption      sql.NullString              `json:"caption"`
+	Description  sql.NullString              `json:"description"`
+	Class        sql.NullString              `json:"class"`
+	Mimetype     sql.NullString              `json:"mimetype"`
+	Dimensions   sql.NullString              `json:"dimensions"`
+	URL          types.URL                   `json:"url"`
+	Srcset       sql.NullString              `json:"srcset"`
+	FocalX       types.NullableFloat64       `json:"focal_x"`
+	FocalY       types.NullableFloat64       `json:"focal_y"`
+	AuthorID     types.NullableUserID        `json:"author_id"`
+	FolderID     types.NullableMediaFolderID `json:"folder_id"`
+	DateCreated  types.Timestamp             `json:"date_created"`
+	DateModified types.Timestamp             `json:"date_modified"`
 }
 
 type MediaDimensions struct {
@@ -315,6 +316,14 @@ type MediaDimensions struct {
 	Width       types.NullableInt64 `json:"width"`
 	Height      types.NullableInt64 `json:"height"`
 	AspectRatio sql.NullString      `json:"aspect_ratio"`
+}
+
+type MediaFolders struct {
+	FolderID     types.MediaFolderID         `json:"folder_id"`
+	Name         string                      `json:"name"`
+	ParentID     types.NullableMediaFolderID `json:"parent_id"`
+	DateCreated  types.Timestamp             `json:"date_created"`
+	DateModified types.Timestamp             `json:"date_modified"`
 }
 
 type Permissions struct {

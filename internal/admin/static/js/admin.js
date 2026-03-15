@@ -408,6 +408,7 @@ const componentFiles = [
     '/admin/static/js/components/mcms-file-input.js',
     '/admin/static/js/components/mcms-scroll.js',
     '/admin/static/js/components/mcms-validation-wizard.js',
+    '/admin/static/js/components/mcms-media-tree.js',
 ];
 
 for (const src of componentFiles) {

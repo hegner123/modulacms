@@ -17,11 +17,15 @@ CREATE TABLE IF NOT EXISTS media (
     author_id TEXT
     REFERENCES users
     ON DELETE SET NULL,
+    folder_id TEXT NULL
+    REFERENCES media_folders(folder_id)
+    ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_media_author ON media(author_id);
+CREATE INDEX IF NOT EXISTS idx_media_folder ON media(folder_id);
 
 CREATE TRIGGER IF NOT EXISTS update_media_modified
     AFTER UPDATE ON media

@@ -261,6 +261,15 @@
     grid-template-columns: 1fr;
   }
 
+  .media-layout-with-folders {
+    grid-template-columns: 1fr;
+  }
+
+  .media-folder-sidebar {
+    max-height: none;
+    position: static;
+  }
+
   .content-layout {
     grid-template-columns: 1fr;
   }

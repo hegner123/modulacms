@@ -242,6 +242,8 @@ Examples:
 			wish.WithAddress(net.JoinHostPort(cfg.SSH_Host, cfg.SSH_Port)),
 			wish.WithHostKeyPath(".ssh/id_ed25519"),
 			wish.WithPublicKeyAuth(middleware.PublicKeyHandler(cfg)),
+			// NOTE: wish.WithMiddleware executes in REVERSE order:
+			//   wish.WithMiddleware(5, 4, 3, 2, 1) runs as 1 → 2 → 3 → 4 → 5
 			wish.WithMiddleware(
 				middleware.SSHSessionLoggingMiddleware(cfg),
 				middleware.SSHAuthenticationMiddleware(cfg),

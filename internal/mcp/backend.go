@@ -101,6 +101,16 @@ type MediaBackend interface {
 	DeleteMediaDimension(ctx context.Context, id string) error
 }
 
+// MediaFolderBackend abstracts media folder operations.
+type MediaFolderBackend interface {
+	ListMediaFolders(ctx context.Context, parentID string) (json.RawMessage, error)
+	GetMediaFolder(ctx context.Context, id string) (json.RawMessage, error)
+	CreateMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	UpdateMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	DeleteMediaFolder(ctx context.Context, id string) (json.RawMessage, error)
+	MoveMediaToFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+}
+
 // RouteBackend abstracts public route operations.
 type RouteBackend interface {
 	ListRoutes(ctx context.Context) (json.RawMessage, error)
@@ -248,6 +258,7 @@ type Backends struct {
 	Schema       SchemaBackend
 	AdminSchema  AdminSchemaBackend
 	Media        MediaBackend
+	MediaFolders MediaFolderBackend
 	Routes       RouteBackend
 	AdminRoutes  AdminRouteBackend
 	Users        UserBackend

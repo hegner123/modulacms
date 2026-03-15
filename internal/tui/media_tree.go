@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 // MediaNodeKind discriminates folder and file nodes in the media tree.
@@ -12,14 +13,15 @@ type MediaNodeKind int
 
 const (
 	MediaNodeFile   MediaNodeKind = iota // actual media item (leaf)
-	MediaNodeFolder                      // virtual folder from shared path prefix
+	MediaNodeFolder                      // database-backed folder
 )
 
-// MediaTreeNode represents a node in the URL-path-grouped media tree.
+// MediaTreeNode represents a node in the media folder tree.
 type MediaTreeNode struct {
 	Kind        MediaNodeKind
-	Label       string // folder segment name or filename
-	Path        string // full path for sorting and grouping
+	Label       string               // folder name or filename
+	Path        string               // full path for sorting and grouping (legacy compat)
+	FolderID    types.MediaFolderID  // non-zero for MediaNodeFolder
 	Depth       int
 	Expand      bool
 	Media       *db.Media // non-nil only for MediaNodeFile
@@ -47,9 +49,98 @@ func appendMediaChildNode(parent, child *MediaTreeNode) {
 	child.PrevSibling = last
 }
 
-// BuildMediaTree converts a flat media list into a URL-path-grouped folder tree.
+// BuildMediaTree builds a media tree from database-backed folders and media items.
+// Folders are organized by ParentID; media items are placed under their FolderID.
+// Unfiled media (FolderID not valid) appears at root level.
+// Folders are sorted alphabetically by Name; media items are sorted by Name within each folder.
+func BuildMediaTree(folders []db.MediaFolder, items []db.Media) []*MediaTreeNode {
+	if len(items) == 0 && len(folders) == 0 {
+		return nil
+	}
+
+	// Index folder nodes by FolderID for parent lookup.
+	folderNodes := make(map[types.MediaFolderID]*MediaTreeNode, len(folders))
+	var rootFolders []*MediaTreeNode
+
+	// Sort folders alphabetically by name for deterministic ordering.
+	sortedFolders := make([]db.MediaFolder, len(folders))
+	copy(sortedFolders, folders)
+	sort.Slice(sortedFolders, func(i, j int) bool {
+		return strings.ToLower(sortedFolders[i].Name) < strings.ToLower(sortedFolders[j].Name)
+	})
+
+	// First pass: create all folder nodes.
+	for i := range sortedFolders {
+		f := sortedFolders[i]
+		node := &MediaTreeNode{
+			Kind:     MediaNodeFolder,
+			Label:    f.Name,
+			Path:     f.Name,
+			FolderID: f.FolderID,
+			Expand:   true,
+		}
+		folderNodes[f.FolderID] = node
+	}
+
+	// Second pass: link folders to parents.
+	for i := range sortedFolders {
+		f := sortedFolders[i]
+		node := folderNodes[f.FolderID]
+		if f.ParentID.Valid && !f.ParentID.ID.IsZero() {
+			if parent, ok := folderNodes[f.ParentID.ID]; ok {
+				node.Depth = parent.Depth + 1
+				appendMediaChildNode(parent, node)
+				continue
+			}
+		}
+		// Root-level folder (no parent or parent not found).
+		rootFolders = append(rootFolders, node)
+	}
+
+	// Sort media items alphabetically by name for stable ordering.
+	sortedItems := make([]db.Media, len(items))
+	copy(sortedItems, items)
+	sort.Slice(sortedItems, func(i, j int) bool {
+		nameI := mediaItemSortName(sortedItems[i])
+		nameJ := mediaItemSortName(sortedItems[j])
+		return strings.ToLower(nameI) < strings.ToLower(nameJ)
+	})
+
+	// Place media items under their folder or at root.
+	var rootFiles []*MediaTreeNode
+	for i := range sortedItems {
+		m := sortedItems[i]
+		name := mediaItemDisplayName(m)
+		fileNode := &MediaTreeNode{
+			Kind:  MediaNodeFile,
+			Label: name,
+			Path:  string(m.URL),
+			Media: &m,
+		}
+
+		if m.FolderID.Valid && !m.FolderID.ID.IsZero() {
+			if parent, ok := folderNodes[m.FolderID.ID]; ok {
+				fileNode.Depth = parent.Depth + 1
+				appendMediaChildNode(parent, fileNode)
+				continue
+			}
+		}
+		// Unfiled media goes to root.
+		rootFiles = append(rootFiles, fileNode)
+	}
+
+	// Combine: folders first, then unfiled media at root.
+	roots := make([]*MediaTreeNode, 0, len(rootFolders)+len(rootFiles))
+	roots = append(roots, rootFolders...)
+	roots = append(roots, rootFiles...)
+
+	return roots
+}
+
+// BuildMediaTreeLegacy converts a flat media list into a URL-path-grouped folder tree.
 // Items are grouped by shared path prefixes extracted from their URL field.
-func BuildMediaTree(items []db.Media) []*MediaTreeNode {
+// Retained for import functionality that uses URL-based grouping.
+func BuildMediaTreeLegacy(items []db.Media) []*MediaTreeNode {
 	if len(items) == 0 {
 		return nil
 	}
@@ -70,10 +161,6 @@ func BuildMediaTree(items []db.Media) []*MediaTreeNode {
 	})
 
 	// Build tree using a trie-like approach: track folder nodes by path prefix.
-	type folderEntry struct {
-		node *MediaTreeNode
-		path string
-	}
 	var roots []*MediaTreeNode
 	folders := make(map[string]*MediaTreeNode)
 
@@ -163,6 +250,53 @@ func flattenMediaNode(node *MediaTreeNode, result *[]*MediaTreeNode) {
 	}
 }
 
+// FilterMediaTree filters media items by query and returns a new tree that preserves
+// ancestor folders of matching items. Folders that contain no matching descendants are removed.
+func FilterMediaTree(folders []db.MediaFolder, items []db.Media, query string) ([]db.MediaFolder, []db.Media) {
+	if query == "" {
+		return folders, items
+	}
+
+	filteredItems := FilterMediaList(items, query)
+	if len(filteredItems) == 0 {
+		return nil, nil
+	}
+
+	// Collect all folder IDs that contain matching media (directly or as ancestors).
+	neededFolders := make(map[types.MediaFolderID]bool)
+	folderIndex := make(map[types.MediaFolderID]db.MediaFolder, len(folders))
+	for _, f := range folders {
+		folderIndex[f.FolderID] = f
+	}
+
+	for _, item := range filteredItems {
+		if item.FolderID.Valid && !item.FolderID.ID.IsZero() {
+			// Walk up the folder chain to mark all ancestors as needed.
+			fid := item.FolderID.ID
+			for !fid.IsZero() {
+				if neededFolders[fid] {
+					break // already traversed this branch
+				}
+				neededFolders[fid] = true
+				if f, ok := folderIndex[fid]; ok && f.ParentID.Valid && !f.ParentID.ID.IsZero() {
+					fid = f.ParentID.ID
+				} else {
+					break
+				}
+			}
+		}
+	}
+
+	var filteredFolders []db.MediaFolder
+	for _, f := range folders {
+		if neededFolders[f.FolderID] {
+			filteredFolders = append(filteredFolders, f)
+		}
+	}
+
+	return filteredFolders, filteredItems
+}
+
 // FilterMediaList returns the subset of items matching query (case-insensitive)
 // against name, display name, mimetype, and URL path.
 func FilterMediaList(items []db.Media, query string) []db.Media {
@@ -193,6 +327,28 @@ func matchesMediaQuery(item db.Media, query string) bool {
 		return true
 	}
 	return false
+}
+
+// mediaItemSortName returns the best name for sorting a media item.
+func mediaItemSortName(m db.Media) string {
+	if m.DisplayName.Valid && m.DisplayName.String != "" {
+		return m.DisplayName.String
+	}
+	if m.Name.Valid && m.Name.String != "" {
+		return m.Name.String
+	}
+	return string(m.URL)
+}
+
+// mediaItemDisplayName returns the best display name for a media item.
+func mediaItemDisplayName(m db.Media) string {
+	if m.DisplayName.Valid && m.DisplayName.String != "" {
+		return m.DisplayName.String
+	}
+	if m.Name.Valid && m.Name.String != "" {
+		return m.Name.String
+	}
+	return mediaFileName(string(m.URL))
 }
 
 // splitMediaPath extracts path segments from a URL, stripping scheme and host.

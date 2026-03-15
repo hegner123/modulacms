@@ -20,7 +20,8 @@ func newServer(backends *Backends) *server.MCPServer {
 
 	registerContentTools(srv, backends.Content)
 	registerSchemaTools(srv, backends.Schema)
-	registerMediaTools(srv, backends.Media)
+	registerMediaTools(srv, backends.Media, backends.MediaFolders)
+	registerMediaFolderTools(srv, backends.MediaFolders)
 	registerRouteTools(srv, backends.Routes)
 	registerUserTools(srv, backends.Users)
 	registerRBACTools(srv, backends.RBAC)

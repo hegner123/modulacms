@@ -40,8 +40,9 @@ type UpdateRoleParams struct {
 // MapStringRole converts Roles to StringRoles for TUI display.
 func MapStringRole(a Roles) StringRoles {
 	return StringRoles{
-		RoleID: a.RoleID.String(),
-		Label:  a.Label,
+		RoleID:          a.RoleID.String(),
+		Label:           a.Label,
+		SystemProtected: fmt.Sprintf("%t", a.SystemProtected),
 	}
 }
 

@@ -91,7 +91,7 @@ func (m Model) screenForPage(page Page) Screen {
 	case QUICKSTARTPAGE:
 		return NewQuickstartScreen()
 	case MEDIA:
-		return NewMediaScreen(nil)
+		return NewMediaScreen(nil, nil)
 	case USERSADMIN:
 		return NewUsersScreen(nil, nil)
 	case FIELDTYPES:

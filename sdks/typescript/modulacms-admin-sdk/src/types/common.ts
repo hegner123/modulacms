@@ -23,6 +23,7 @@ export type {
   DatatypeID,
   FieldID,
   MediaID,
+  MediaFolderID,
   RoleID,
   PermissionID,
   RolePermissionID,

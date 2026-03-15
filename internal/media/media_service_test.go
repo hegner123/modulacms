@@ -187,7 +187,7 @@ func TestProcessMediaUpload(t *testing.T) {
 			ctx := context.Background()
 			ac := testAuditCtx()
 
-			result, err := ProcessMediaUpload(ctx, ac, file, tt.header, tt.store, tt.uploadOriginal, noopRollbackS3, tt.pipeline, MaxUploadSize)
+			result, err := ProcessMediaUpload(ctx, ac, file, tt.header, tt.store, tt.uploadOriginal, noopRollbackS3, tt.pipeline, MaxUploadSize, types.NullableMediaFolderID{})
 
 			if tt.wantErr {
 				if err == nil {
@@ -245,7 +245,7 @@ func TestProcessMediaUpload_AuditContextUserID(t *testing.T) {
 	file := newTestFile(validPNG)
 	header := newTestHeader("test.png", int64(len(validPNG)))
 
-	_, err := ProcessMediaUpload(context.Background(), ac, file, header, capturingStore, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize)
+	_, err := ProcessMediaUpload(context.Background(), ac, file, header, capturingStore, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize, types.NullableMediaFolderID{})
 	// Pipeline writes to temp which is fine; we only care about the params check
 	if err != nil {
 		// The result may error from the pipeline in a temp dir, but we can still verify params were captured
@@ -357,7 +357,7 @@ func TestProcessMediaUpload_AcceptsAllValidMIMETypes(t *testing.T) {
 			header := newTestHeader(tt.filename, int64(len(tt.fileData)))
 
 			result, err := ProcessMediaUpload(
-				context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize,
+				context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize, types.NullableMediaFolderID{},
 			)
 			if err != nil {
 				t.Fatalf("expected no error for %s, got: %v", tt.name, err)
@@ -408,7 +408,7 @@ func TestProcessMediaUpload_ReadError(t *testing.T) {
 	store := &mockStore{getByNameErr: errors.New("not found")}
 
 	_, err := ProcessMediaUpload(
-		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize,
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize, types.NullableMediaFolderID{},
 	)
 	if err == nil {
 		t.Fatal("expected error from Read failure, got nil")
@@ -442,7 +442,7 @@ func TestProcessMediaUpload_SeekError(t *testing.T) {
 	store := &mockStore{getByNameErr: errors.New("not found")}
 
 	_, err := ProcessMediaUpload(
-		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize,
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize, types.NullableMediaFolderID{},
 	)
 	if err == nil {
 		t.Fatal("expected error from Seek failure, got nil")
@@ -472,7 +472,7 @@ func TestProcessMediaUpload_EmptyUserID(t *testing.T) {
 	header := newTestHeader("test.png", int64(len(validPNG)))
 
 	// We don't care about the pipeline result here, just the captured params
-	_, _ = ProcessMediaUpload(context.Background(), ac, file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize)
+	_, _ = ProcessMediaUpload(context.Background(), ac, file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize, types.NullableMediaFolderID{})
 
 	if capturedParams.AuthorID.Valid {
 		t.Errorf("expected AuthorID.Valid=false for empty UserID, got true (ID=%s)", capturedParams.AuthorID.ID)
@@ -507,7 +507,7 @@ func TestProcessMediaUpload_FilenamePassedToStore(t *testing.T) {
 	file := newTestFile(validPNG)
 	header := newTestHeader(expectedFilename, int64(len(validPNG)))
 
-	_, _ = ProcessMediaUpload(context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize)
+	_, _ = ProcessMediaUpload(context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize, types.NullableMediaFolderID{})
 
 	if getByNameArg != expectedFilename {
 		t.Errorf("GetMediaByName called with %q, want %q", getByNameArg, expectedFilename)
@@ -559,7 +559,7 @@ func TestProcessMediaUpload_ExactSizeBoundary(t *testing.T) {
 	header := newTestHeader("boundary.png", MaxUploadSize)
 
 	result, err := ProcessMediaUpload(
-		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize,
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline, MaxUploadSize, types.NullableMediaFolderID{},
 	)
 	if err != nil {
 		t.Fatalf("file at exact MaxUploadSize should be accepted, got error: %v", err)
@@ -596,7 +596,7 @@ func TestProcessMediaUpload_PipelineReceivesCorrectPaths(t *testing.T) {
 	header := newTestHeader("pipeline-test.png", int64(len(validPNG)))
 
 	_, err := ProcessMediaUpload(
-		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, pipeline, MaxUploadSize,
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, pipeline, MaxUploadSize, types.NullableMediaFolderID{},
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -632,7 +632,7 @@ func TestProcessMediaUpload_DBCreateFailureRollsBackS3(t *testing.T) {
 	header := newTestHeader("test.png", int64(len(validPNG)))
 
 	_, err := ProcessMediaUpload(
-		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, rollback, noopPipeline, MaxUploadSize,
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, rollback, noopPipeline, MaxUploadSize, types.NullableMediaFolderID{},
 	)
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -671,7 +671,7 @@ func TestProcessMediaUpload_PipelineFailureRollsBackS3AndDB(t *testing.T) {
 		func(srcFile string, dstPath string) error {
 			return errors.New("optimization failed")
 		},
-		MaxUploadSize,
+		MaxUploadSize, types.NullableMediaFolderID{},
 	)
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -710,7 +710,7 @@ func TestProcessMediaUpload_NonImageSkipsPipeline(t *testing.T) {
 	header := newTestHeader("readme.txt", int64(len(textData)))
 
 	result, err := ProcessMediaUpload(
-		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, pipeline, MaxUploadSize,
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, pipeline, MaxUploadSize, types.NullableMediaFolderID{},
 	)
 	if err != nil {
 		t.Fatalf("expected no error for non-image upload, got: %v", err)
@@ -749,7 +749,7 @@ func TestProcessMediaUpload_ImageRunsPipeline(t *testing.T) {
 	header := newTestHeader("photo.png", int64(len(validPNG)))
 
 	result, err := ProcessMediaUpload(
-		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, pipeline, MaxUploadSize,
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, pipeline, MaxUploadSize, types.NullableMediaFolderID{},
 	)
 	if err != nil {
 		t.Fatalf("expected no error for image upload, got: %v", err)

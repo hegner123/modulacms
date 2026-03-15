@@ -1,5 +1,7 @@
 package db
 
+import "fmt"
+
 // GenericHeaders returns the column header names for the given table.
 func GenericHeaders(t DBTable) []string {
 	switch t {
@@ -7,29 +9,64 @@ func GenericHeaders(t DBTable) []string {
 		return []string{
 			"admin_content_data_id",
 			"parent_id",
+			"first_child_id",
+			"next_sibling_id",
+			"prev_sibling_id",
+			"root_id",
 			"admin_route_id",
 			"admin_datatype_id",
 			"author_id",
+			"status",
 			"date_created",
 			"date_modified",
+			"published_at",
+			"published_by",
+			"publish_at",
+			"revision",
 			"history",
 		}
 	case Admin_content_fields:
 		return []string{
 			"admin_content_field_id",
 			"admin_route_id",
+			"root_id",
 			"admin_content_data_id",
 			"admin_field_id",
 			"admin_field_value",
+			"locale",
 			"author_id",
 			"date_created",
 			"date_modified",
 			"history",
 		}
+	case Admin_content_relations:
+		return []string{
+			"admin_content_relation_id",
+			"source_content_id",
+			"target_content_id",
+			"admin_field_id",
+			"sort_order",
+			"date_created",
+		}
+	case Admin_content_versions:
+		return []string{
+			"admin_content_version_id",
+			"admin_content_data_id",
+			"version_number",
+			"locale",
+			"snapshot",
+			"trigger",
+			"label",
+			"published",
+			"published_by",
+			"date_created",
+		}
 	case Admin_datatype:
 		return []string{
 			"admin_datatype_id",
 			"parent_id",
+			"sort_order",
+			"name",
 			"label",
 			"type",
 			"author_id",
@@ -41,13 +78,25 @@ func GenericHeaders(t DBTable) []string {
 		return []string{
 			"admin_field_id",
 			"parent_id",
+			"sort_order",
+			"name",
 			"label",
 			"data",
+			"validation",
+			"ui_config",
 			"type",
+			"translatable",
+			"roles",
 			"author_id",
 			"date_created",
 			"date_modified",
 			"history",
+		}
+	case Admin_field_types:
+		return []string{
+			"admin_field_type_id",
+			"type",
+			"label",
 		}
 	case Admin_route:
 		return []string{
@@ -60,32 +109,130 @@ func GenericHeaders(t DBTable) []string {
 			"date_modified",
 			"history",
 		}
+	case BackupT:
+		return []string{
+			"backup_id",
+			"node_id",
+			"backup_type",
+			"status",
+			"started_at",
+			"completed_at",
+			"duration_ms",
+			"record_count",
+			"size_bytes",
+			"replication_lsn",
+			"hlc_timestamp",
+			"storage_path",
+			"checksum",
+			"triggered_by",
+			"error_message",
+			"metadata",
+		}
+	case Backup_set:
+		return []string{
+			"backup_set_id",
+			"date_created",
+			"hlc_timestamp",
+			"status",
+			"backup_ids",
+			"node_count",
+			"completed_count",
+			"error_message",
+		}
+	case Backup_verification:
+		return []string{
+			"verification_id",
+			"backup_id",
+			"verified_at",
+			"verified_by",
+			"restore_tested",
+			"checksum_valid",
+			"record_count_match",
+			"status",
+			"error_message",
+			"duration_ms",
+		}
+	case Change_event:
+		return []string{
+			"event_id",
+			"hlc_timestamp",
+			"wall_timestamp",
+			"node_id",
+			"table_name",
+			"record_id",
+			"operation",
+			"action",
+			"user_id",
+			"old_values",
+			"new_values",
+			"metadata",
+			"request_id",
+			"ip",
+			"synced_at",
+			"consumed_at",
+		}
 	case Content_data:
 		return []string{
 			"content_data_id",
 			"parent_id",
+			"first_child_id",
+			"next_sibling_id",
+			"prev_sibling_id",
+			"root_id",
 			"route_id",
 			"datatype_id",
 			"author_id",
+			"status",
 			"date_created",
 			"date_modified",
+			"published_at",
+			"published_by",
+			"publish_at",
+			"revision",
 			"history",
 		}
 	case Content_fields:
 		return []string{
 			"content_field_id",
 			"route_id",
+			"root_id",
 			"content_data_id",
 			"field_id",
 			"field_value",
+			"locale",
+			"author_id",
 			"date_created",
 			"date_modified",
 			"history",
+		}
+	case Content_relations:
+		return []string{
+			"content_relation_id",
+			"source_content_id",
+			"target_content_id",
+			"field_id",
+			"sort_order",
+			"date_created",
+		}
+	case Content_versions:
+		return []string{
+			"content_version_id",
+			"content_data_id",
+			"version_number",
+			"locale",
+			"snapshot",
+			"trigger",
+			"label",
+			"published",
+			"published_by",
+			"date_created",
 		}
 	case Datatype:
 		return []string{
 			"datatype_id",
 			"parent_id",
+			"sort_order",
+			"name",
 			"label",
 			"type",
 			"author_id",
@@ -97,13 +244,45 @@ func GenericHeaders(t DBTable) []string {
 		return []string{
 			"field_id",
 			"parent_id",
+			"sort_order",
+			"name",
 			"label",
 			"data",
+			"validation",
+			"ui_config",
 			"type",
+			"translatable",
+			"roles",
 			"author_id",
 			"date_created",
 			"date_modified",
 			"history",
+		}
+	case Field_plugin_config:
+		return []string{
+			"field_id",
+			"plugin_name",
+			"plugin_interface",
+			"plugin_version",
+			"date_created",
+			"date_modified",
+		}
+	case Field_types:
+		return []string{
+			"field_type_id",
+			"type",
+			"label",
+		}
+	case LocaleT:
+		return []string{
+			"locale_id",
+			"code",
+			"label",
+			"is_default",
+			"is_enabled",
+			"fallback_code",
+			"sort_order",
+			"date_created",
 		}
 	case MediaT:
 		return []string{
@@ -118,7 +297,18 @@ func GenericHeaders(t DBTable) []string {
 			"dimensions",
 			"url",
 			"srcset",
+			"focal_x",
+			"focal_y",
 			"author_id",
+			"folder_id",
+			"date_created",
+			"date_modified",
+		}
+	case Media_folder:
+		return []string{
+			"folder_id",
+			"name",
+			"parent_id",
 			"date_created",
 			"date_modified",
 		}
@@ -133,15 +323,33 @@ func GenericHeaders(t DBTable) []string {
 	case Permission:
 		return []string{
 			"permission_id",
-			"table_id",
-			"mode",
 			"label",
+		}
+	case PipelineT:
+		return []string{
+			"pipeline_id",
+			"plugin_id",
+			"table_name",
+			"operation",
+			"plugin_name",
+			"handler",
+			"priority",
+			"enabled",
+			"config",
+			"date_created",
+			"date_modified",
 		}
 	case Role:
 		return []string{
 			"role_id",
 			"label",
-			"permissions",
+			"system_protected",
+		}
+	case Role_permissions:
+		return []string{
+			"id",
+			"role_id",
+			"permission_id",
 		}
 	case Route:
 		return []string{
@@ -203,6 +411,41 @@ func GenericHeaders(t DBTable) []string {
 			"token_expires_at",
 			"date_created",
 		}
+	case User_ssh_keys:
+		return []string{
+			"ssh_key_id",
+			"user_id",
+			"public_key",
+			"key_type",
+			"fingerprint",
+			"label",
+			"date_created",
+			"last_used",
+		}
+	case WebhookT:
+		return []string{
+			"webhook_id",
+			"name",
+			"url",
+			"is_active",
+			"author_id",
+			"date_created",
+			"date_modified",
+		}
+	case Webhook_deliveries:
+		return []string{
+			"delivery_id",
+			"webhook_id",
+			"event",
+			"payload",
+			"status",
+			"attempts",
+			"last_status_code",
+			"last_error",
+			"next_retry_at",
+			"created_at",
+			"completed_at",
+		}
 	}
 	return nil
 }
@@ -223,11 +466,20 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			r := []string{
 				s.AdminContentDataID,
 				s.ParentID,
+				s.FirstChildID,
+				s.NextSiblingID,
+				s.PrevSiblingID,
+				s.RootID,
 				s.AdminRouteID,
 				s.AdminDatatypeID,
 				s.AuthorID,
+				s.Status,
 				s.DateCreated,
 				s.DateModified,
+				s.PublishedAt,
+				s.PublishedBy,
+				s.PublishAt,
+				s.Revision,
 				s.History,
 			}
 			collection = append(collection, r)
@@ -246,9 +498,11 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			r := []string{
 				s.AdminContentFieldID,
 				s.AdminRouteID,
+				s.RootID,
 				s.AdminContentDataID,
 				s.AdminFieldID,
 				s.AdminFieldValue,
+				s.Locale,
 				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
@@ -257,6 +511,31 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			collection = append(collection, r)
 		}
 		return collection, nil
+	case Admin_content_relations:
+		a, err := d.ListAdminContentRelations()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringAdminContentRelation(row)
+			r := []string{
+				s.AdminContentRelationID,
+				s.SourceContentID,
+				s.TargetContentID,
+				s.AdminFieldID,
+				s.SortOrder,
+				s.DateCreated,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case Admin_content_versions:
+		// No parameterless ListAdminContentVersions method exists;
+		// versions are queried by content data ID.
+		return nil, fmt.Errorf("table %q requires content data ID parameter for listing", t)
 	case Admin_datatype:
 		a, err := d.ListAdminDatatypes()
 		if err != nil {
@@ -270,6 +549,8 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			r := []string{
 				s.AdminDatatypeID,
 				s.ParentID,
+				s.SortOrder,
+				s.Name,
 				s.Label,
 				s.Type,
 				s.AuthorID,
@@ -293,13 +574,37 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			r := []string{
 				s.AdminFieldID,
 				s.ParentID,
+				s.SortOrder,
+				s.Name,
 				s.Label,
 				s.Data,
+				s.Validation,
+				s.UIConfig,
 				s.Type,
+				s.Translatable,
+				s.Roles,
 				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
 				s.History,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case Admin_field_types:
+		a, err := d.ListAdminFieldTypes()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringAdminFieldType(row)
+			r := []string{
+				s.AdminFieldTypeID,
+				s.Type,
+				s.Label,
 			}
 			collection = append(collection, r)
 		}
@@ -327,6 +632,74 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			collection = append(collection, r)
 		}
 		return collection, nil
+	case BackupT:
+		a, err := d.ListBackups(ListBackupsParams{Limit: 1000, Offset: 0})
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringBackup(row)
+			r := []string{
+				s.BackupID,
+				s.NodeID,
+				s.BackupType,
+				s.Status,
+				s.StartedAt,
+				s.CompletedAt,
+				s.DurationMs,
+				s.RecordCount,
+				s.SizeBytes,
+				s.ReplicationLsn,
+				s.HlcTimestamp,
+				s.StoragePath,
+				s.Checksum,
+				s.TriggeredBy,
+				s.ErrorMessage,
+				s.Metadata,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case Backup_set:
+		// No parameterless ListBackupSets method exists.
+		return nil, fmt.Errorf("table %q has no parameterless list method", t)
+	case Backup_verification:
+		// No parameterless ListBackupVerifications method exists.
+		return nil, fmt.Errorf("table %q has no parameterless list method", t)
+	case Change_event:
+		a, err := d.ListChangeEvents(ListChangeEventsParams{Limit: 1000, Offset: 0})
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringChangeEvent(row)
+			r := []string{
+				s.EventID,
+				s.HlcTimestamp,
+				s.WallTimestamp,
+				s.NodeID,
+				s.TableName,
+				s.RecordID,
+				s.Operation,
+				s.Action,
+				s.UserID,
+				s.OldValues,
+				s.NewValues,
+				s.Metadata,
+				s.RequestID,
+				s.IP,
+				s.SyncedAt,
+				s.ConsumedAt,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
 	case Content_data:
 		a, err := d.ListContentData()
 		if err != nil {
@@ -340,11 +713,20 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			r := []string{
 				s.ContentDataID,
 				s.ParentID,
+				s.FirstChildID,
+				s.NextSiblingID,
+				s.PrevSiblingID,
+				s.RootID,
 				s.RouteID,
 				s.DatatypeID,
 				s.AuthorID,
+				s.Status,
 				s.DateCreated,
 				s.DateModified,
+				s.PublishedAt,
+				s.PublishedBy,
+				s.PublishAt,
+				s.Revision,
 				s.History,
 			}
 			collection = append(collection, r)
@@ -363,9 +745,12 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			r := []string{
 				s.ContentFieldID,
 				s.RouteID,
+				s.RootID,
 				s.ContentDataID,
 				s.FieldID,
 				s.FieldValue,
+				s.Locale,
+				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
 				s.History,
@@ -373,6 +758,31 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			collection = append(collection, r)
 		}
 		return collection, nil
+	case Content_relations:
+		a, err := d.ListContentRelations()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringContentRelation(row)
+			r := []string{
+				s.ContentRelationID,
+				s.SourceContentID,
+				s.TargetContentID,
+				s.FieldID,
+				s.SortOrder,
+				s.DateCreated,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case Content_versions:
+		// No parameterless ListContentVersions method exists;
+		// versions are queried by content data ID.
+		return nil, fmt.Errorf("table %q requires content data ID parameter for listing", t)
 	case Datatype:
 		a, err := d.ListDatatypes()
 		if err != nil {
@@ -386,6 +796,8 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			r := []string{
 				s.DatatypeID,
 				s.ParentID,
+				s.SortOrder,
+				s.Name,
 				s.Label,
 				s.Type,
 				s.AuthorID,
@@ -409,13 +821,63 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			r := []string{
 				s.FieldID,
 				s.ParentID,
+				s.SortOrder,
+				s.Name,
 				s.Label,
 				s.Data,
+				s.Validation,
+				s.UIConfig,
 				s.Type,
+				s.Translatable,
+				s.Roles,
 				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
 				s.History,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case Field_plugin_config:
+		// No parameterless ListFieldPluginConfig method exists.
+		return nil, fmt.Errorf("table %q has no parameterless list method", t)
+	case Field_types:
+		a, err := d.ListFieldTypes()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringFieldType(row)
+			r := []string{
+				s.FieldTypeID,
+				s.Type,
+				s.Label,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case LocaleT:
+		a, err := d.ListLocales()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringLocale(row)
+			r := []string{
+				s.LocaleID,
+				s.Code,
+				s.Label,
+				s.IsDefault,
+				s.IsEnabled,
+				s.FallbackCode,
+				s.SortOrder,
+				s.DateCreated,
 			}
 			collection = append(collection, r)
 		}
@@ -442,7 +904,30 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 				s.Dimensions,
 				s.URL,
 				s.Srcset,
+				s.FocalX,
+				s.FocalY,
 				s.AuthorID,
+				s.FolderID,
+				s.DateCreated,
+				s.DateModified,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case Media_folder:
+		a, err := d.ListMediaFolders()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringMediaFolder(row)
+			r := []string{
+				s.FolderID,
+				s.Name,
+				s.ParentID,
 				s.DateCreated,
 				s.DateModified,
 			}
@@ -486,6 +971,32 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			collection = append(collection, r)
 		}
 		return collection, nil
+	case PipelineT:
+		a, err := d.ListPipelines()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringPipeline(row)
+			r := []string{
+				s.PipelineID,
+				s.PluginID,
+				s.TableName,
+				s.Operation,
+				s.PluginName,
+				s.Handler,
+				s.Priority,
+				s.Enabled,
+				s.Config,
+				s.DateCreated,
+				s.DateModified,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
 	case Role:
 		a, err := d.ListRoles()
 		if err != nil {
@@ -495,9 +1006,29 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 		for i := range len(*a) {
 			rows := *a
 			row := rows[i]
+			s := MapStringRole(row)
 			r := []string{
-				row.RoleID.String(),
-				row.Label,
+				s.RoleID,
+				s.Label,
+				s.SystemProtected,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case Role_permissions:
+		a, err := d.ListRolePermissions()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringRolePermission(row)
+			r := []string{
+				s.ID,
+				s.RoleID,
+				s.PermissionID,
 			}
 			collection = append(collection, r)
 		}
@@ -630,6 +1161,57 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 				s.RefreshToken,
 				s.TokenExpiresAt,
 				s.DateCreated,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case User_ssh_keys:
+		// ListUserSshKeys requires a user ID parameter; list all not supported.
+		return nil, fmt.Errorf("table %q requires user ID parameter for listing", t)
+	case WebhookT:
+		a, err := d.ListWebhooks()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringWebhook(row)
+			r := []string{
+				s.WebhookID,
+				s.Name,
+				s.URL,
+				s.IsActive,
+				s.AuthorID,
+				s.DateCreated,
+				s.DateModified,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case Webhook_deliveries:
+		a, err := d.ListWebhookDeliveries()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringWebhookDelivery(row)
+			r := []string{
+				s.DeliveryID,
+				s.WebhookID,
+				s.Event,
+				s.Payload,
+				s.Status,
+				s.Attempts,
+				s.LastStatusCode,
+				s.LastError,
+				s.NextRetryAt,
+				s.CreatedAt,
+				s.CompletedAt,
 			}
 			collection = append(collection, r)
 		}

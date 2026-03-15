@@ -213,6 +213,17 @@ func (id MediaDimensionID) String() string { return string(id) }
 // IsZero reports whether the media dimension ID is empty (unset).
 func (id MediaDimensionID) IsZero() bool { return id == "" }
 
+// MediaFolderID identifies a media folder for organizing assets.
+// Folders create a hierarchical structure for media items, with each folder
+// optionally nested under a parent folder.
+type MediaFolderID string
+
+// String returns the raw ULID string for this media folder ID.
+func (id MediaFolderID) String() string { return string(id) }
+
+// IsZero reports whether the media folder ID is empty (unset).
+func (id MediaFolderID) IsZero() bool { return id == "" }
+
 // --- Auth and RBAC IDs ---
 //
 // These IDs reference authentication and authorization entities. ModulaCMS uses

@@ -17,11 +17,16 @@ CREATE TABLE IF NOT EXISTS media (
         CONSTRAINT fk_users_author_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,
+    folder_id TEXT NULL
+        CONSTRAINT fk_media_folders_folder_id
+            REFERENCES media_folders(folder_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_media_author ON media(author_id);
+CREATE INDEX IF NOT EXISTS idx_media_folder ON media(folder_id);
 
 CREATE OR REPLACE FUNCTION update_media_modified()
 RETURNS TRIGGER AS $$

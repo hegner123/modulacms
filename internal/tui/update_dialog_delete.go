@@ -770,6 +770,23 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 			OverlayClearCmd(),
 			FocusSetCmd(PAGEFOCUS),
 		)
+	case DIALOGDELETEMEDIAFOLDER:
+		if ctx, ok := m.DCtx.Active.(*DeleteMediaFolderContext); ok {
+			folderID := ctx.FolderID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				func() tea.Msg {
+					return DeleteMediaFolderRequestMsg{FolderID: folderID}
+				},
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
 	case DIALOGPLUGINCONFIRM:
 		m.DCtx.Active = nil
 		return m, tea.Batch(

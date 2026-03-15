@@ -97,6 +97,7 @@ type DbDriver interface {
 	PluginRepository
 	LocaleRepository
 	WebhookRepository
+	MediaFolderRepository
 	FieldPluginConfigRepository
 }
 
@@ -232,6 +233,11 @@ func (d Database) CreateAllTables() error {
 	}
 
 	err = d.CreateTableTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateMediaFolderTable()
 	if err != nil {
 		return err
 	}
@@ -905,7 +911,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 21. Register all 28 Modula tables in the tables registry
+	// 21. Register all 29 Modula tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
 		"change_events",
@@ -915,6 +921,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		"permissions",
 		"roles",
 		"media_dimensions",
+		"media_folders",
 		"field_types",
 		"admin_field_types",
 		"users",
@@ -1264,14 +1271,14 @@ func (d Database) ValidateBootstrapData() error {
 		errors = append(errors, "admin_field_types table: expected ≥1 records, validation failed")
 	}
 
-	// Validate tables table (should have EXACTLY 26 records - all core tables)
+	// Validate tables table (should have EXACTLY 27 records - all core tables)
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 26 {
+	if err != nil || tableCount == nil || *tableCount != 27 {
 		actual := int64(0)
 		if tableCount != nil {
 			actual = *tableCount
 		}
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 27 records (table registry), got %d", actual))
 	}
 
 	// If any validation failed, return combined error
@@ -1281,7 +1288,7 @@ func (d Database) ValidateBootstrapData() error {
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 28 tables contain expected records")
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 29 tables contain expected records")
 	return nil
 }
 
@@ -1360,6 +1367,11 @@ func (d MysqlDatabase) CreateAllTables() error {
 	}
 
 	err = d.CreateTableTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateMediaFolderTable()
 	if err != nil {
 		return err
 	}
@@ -2032,7 +2044,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 21. Register all 28 Modula tables in the tables registry
+	// 21. Register all 29 Modula tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
 		"change_events",
@@ -2042,6 +2054,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		"permissions",
 		"roles",
 		"media_dimensions",
+		"media_folders",
 		"field_types",
 		"admin_field_types",
 		"users",
@@ -2448,6 +2461,11 @@ func (d PsqlDatabase) CreateAllTables() error {
 	}
 
 	err = d.CreateTableTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateMediaFolderTable()
 	if err != nil {
 		return err
 	}
@@ -3120,7 +3138,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 21. Register all 28 Modula tables in the tables registry
+	// 21. Register all 29 Modula tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
 		"change_events",
@@ -3130,6 +3148,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		"permissions",
 		"roles",
 		"media_dimensions",
+		"media_folders",
 		"field_types",
 		"admin_field_types",
 		"users",

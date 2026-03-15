@@ -24,16 +24,20 @@ func makeMediaWithName(url, name, displayName string) db.Media {
 	}
 }
 
-func TestBuildMediaTree_Empty(t *testing.T) {
-	result := BuildMediaTree(nil)
+// =============================================================================
+// DB-BACKED FOLDER TREE TESTS
+// =============================================================================
+
+func TestBuildMediaTree_EmptyBoth(t *testing.T) {
+	result := BuildMediaTree(nil, nil)
 	if result != nil {
 		t.Fatalf("expected nil for empty input, got %d nodes", len(result))
 	}
 }
 
-func TestBuildMediaTree_SingleFile(t *testing.T) {
+func TestBuildMediaTree_UnfiledMediaAtRoot(t *testing.T) {
 	items := []db.Media{makeMedia("https://example.com/photo.jpg")}
-	roots := BuildMediaTree(items)
+	roots := BuildMediaTree(nil, items)
 
 	if len(roots) != 1 {
 		t.Fatalf("expected 1 root, got %d", len(roots))
@@ -41,24 +45,24 @@ func TestBuildMediaTree_SingleFile(t *testing.T) {
 	if roots[0].Kind != MediaNodeFile {
 		t.Errorf("expected MediaNodeFile, got %d", roots[0].Kind)
 	}
-	if roots[0].Label != "photo.jpg" {
-		t.Errorf("expected label 'photo.jpg', got %q", roots[0].Label)
-	}
 	if roots[0].Media == nil {
 		t.Error("expected non-nil Media pointer")
 	}
 }
 
-func TestBuildMediaTree_SharedPrefix(t *testing.T) {
-	items := []db.Media{
-		makeMedia("https://cdn.example.com/images/a.jpg"),
-		makeMedia("https://cdn.example.com/images/b.jpg"),
+func TestBuildMediaTree_FolderWithMedia(t *testing.T) {
+	folderID := types.NewMediaFolderID()
+	folders := []db.MediaFolder{
+		{FolderID: folderID, Name: "images"},
 	}
-	roots := BuildMediaTree(items)
+	items := []db.Media{
+		makeMediaInFolderForTree("a.jpg", folderID),
+		makeMediaInFolderForTree("b.jpg", folderID),
+	}
+	roots := BuildMediaTree(folders, items)
 
-	// Should have one root: "images/" folder
 	if len(roots) != 1 {
-		t.Fatalf("expected 1 root folder, got %d roots", len(roots))
+		t.Fatalf("expected 1 root folder, got %d", len(roots))
 	}
 	root := roots[0]
 	if root.Kind != MediaNodeFolder {
@@ -66,6 +70,9 @@ func TestBuildMediaTree_SharedPrefix(t *testing.T) {
 	}
 	if root.Label != "images" {
 		t.Errorf("expected label 'images', got %q", root.Label)
+	}
+	if root.FolderID != folderID {
+		t.Errorf("expected FolderID %s, got %s", folderID, root.FolderID)
 	}
 
 	// Folder should have 2 file children
@@ -84,10 +91,19 @@ func TestBuildMediaTree_SharedPrefix(t *testing.T) {
 }
 
 func TestBuildMediaTree_NestedFolders(t *testing.T) {
-	items := []db.Media{
-		makeMedia("https://cdn.example.com/a/b/c/file.jpg"),
+	parentID := types.NewMediaFolderID()
+	childID := types.NewMediaFolderID()
+	grandchildID := types.NewMediaFolderID()
+
+	folders := []db.MediaFolder{
+		{FolderID: parentID, Name: "a"},
+		{FolderID: childID, Name: "b", ParentID: types.NullableMediaFolderID{ID: parentID, Valid: true}},
+		{FolderID: grandchildID, Name: "c", ParentID: types.NullableMediaFolderID{ID: childID, Valid: true}},
 	}
-	roots := BuildMediaTree(items)
+	items := []db.Media{
+		makeMediaInFolderForTree("file.jpg", grandchildID),
+	}
+	roots := BuildMediaTree(folders, items)
 
 	if len(roots) != 1 {
 		t.Fatalf("expected 1 root, got %d", len(roots))
@@ -106,46 +122,129 @@ func TestBuildMediaTree_NestedFolders(t *testing.T) {
 		t.Fatalf("expected folder 'c' as child of 'b'")
 	}
 	f := c.FirstChild
-	if f == nil || f.Kind != MediaNodeFile || f.Label != "file.jpg" {
-		t.Fatalf("expected file 'file.jpg' as child of 'c'")
+	if f == nil || f.Kind != MediaNodeFile {
+		t.Fatalf("expected file as child of 'c'")
 	}
 }
 
-func TestBuildMediaTree_MixedDepths(t *testing.T) {
+func TestBuildMediaTree_MixedFolderAndUnfiled(t *testing.T) {
+	folderID := types.NewMediaFolderID()
+	folders := []db.MediaFolder{
+		{FolderID: folderID, Name: "images"},
+	}
 	items := []db.Media{
 		makeMedia("https://cdn.example.com/root.jpg"),
-		makeMedia("https://cdn.example.com/images/nested.jpg"),
+		makeMediaInFolderForTree("nested.jpg", folderID),
 	}
-	roots := BuildMediaTree(items)
+	roots := BuildMediaTree(folders, items)
 
+	// Should have: images/ folder + root.jpg file at root = 2
 	if len(roots) != 2 {
-		t.Fatalf("expected 2 roots (images/ folder + root.jpg), got %d", len(roots))
+		t.Fatalf("expected 2 roots, got %d", len(roots))
 	}
 
 	// Verify we have one folder and one file at root level
-	var folders, files int
+	var folderCount, fileCount int
 	for _, r := range roots {
 		if r.Kind == MediaNodeFolder {
-			folders++
+			folderCount++
 		}
 		if r.Kind == MediaNodeFile {
-			files++
+			fileCount++
 		}
 	}
-	if folders != 1 {
-		t.Errorf("expected 1 folder at root, got %d", folders)
+	if folderCount != 1 {
+		t.Errorf("expected 1 folder at root, got %d", folderCount)
 	}
-	if files != 1 {
-		t.Errorf("expected 1 file at root, got %d", files)
+	if fileCount != 1 {
+		t.Errorf("expected 1 file at root, got %d", fileCount)
 	}
 }
 
-func TestFlattenMediaTree_RespectsExpand(t *testing.T) {
+func TestBuildMediaTree_FoldersSortedAlphabetically(t *testing.T) {
+	id1 := types.NewMediaFolderID()
+	id2 := types.NewMediaFolderID()
+	id3 := types.NewMediaFolderID()
+	folders := []db.MediaFolder{
+		{FolderID: id3, Name: "zebra"},
+		{FolderID: id1, Name: "alpha"},
+		{FolderID: id2, Name: "middle"},
+	}
+	roots := BuildMediaTree(folders, nil)
+
+	if len(roots) != 3 {
+		t.Fatalf("expected 3 roots, got %d", len(roots))
+	}
+	if roots[0].Label != "alpha" {
+		t.Errorf("expected first folder 'alpha', got %q", roots[0].Label)
+	}
+	if roots[1].Label != "middle" {
+		t.Errorf("expected second folder 'middle', got %q", roots[1].Label)
+	}
+	if roots[2].Label != "zebra" {
+		t.Errorf("expected third folder 'zebra', got %q", roots[2].Label)
+	}
+}
+
+// =============================================================================
+// LEGACY URL-BASED TREE TESTS
+// =============================================================================
+
+func TestBuildMediaTreeLegacy_Empty(t *testing.T) {
+	result := BuildMediaTreeLegacy(nil)
+	if result != nil {
+		t.Fatalf("expected nil for empty input, got %d nodes", len(result))
+	}
+}
+
+func TestBuildMediaTreeLegacy_SingleFile(t *testing.T) {
+	items := []db.Media{makeMedia("https://example.com/photo.jpg")}
+	roots := BuildMediaTreeLegacy(items)
+
+	if len(roots) != 1 {
+		t.Fatalf("expected 1 root, got %d", len(roots))
+	}
+	if roots[0].Kind != MediaNodeFile {
+		t.Errorf("expected MediaNodeFile, got %d", roots[0].Kind)
+	}
+	if roots[0].Label != "photo.jpg" {
+		t.Errorf("expected label 'photo.jpg', got %q", roots[0].Label)
+	}
+}
+
+func TestBuildMediaTreeLegacy_SharedPrefix(t *testing.T) {
 	items := []db.Media{
 		makeMedia("https://cdn.example.com/images/a.jpg"),
 		makeMedia("https://cdn.example.com/images/b.jpg"),
 	}
-	roots := BuildMediaTree(items)
+	roots := BuildMediaTreeLegacy(items)
+
+	if len(roots) != 1 {
+		t.Fatalf("expected 1 root folder, got %d roots", len(roots))
+	}
+	root := roots[0]
+	if root.Kind != MediaNodeFolder {
+		t.Fatalf("expected folder at root, got kind %d", root.Kind)
+	}
+	if root.Label != "images" {
+		t.Errorf("expected label 'images', got %q", root.Label)
+	}
+}
+
+// =============================================================================
+// FLATTEN TESTS
+// =============================================================================
+
+func TestFlattenMediaTree_RespectsExpand(t *testing.T) {
+	folderID := types.NewMediaFolderID()
+	folders := []db.MediaFolder{
+		{FolderID: folderID, Name: "images"},
+	}
+	items := []db.Media{
+		makeMediaInFolderForTree("a.jpg", folderID),
+		makeMediaInFolderForTree("b.jpg", folderID),
+	}
+	roots := BuildMediaTree(folders, items)
 
 	// With expand=true (default): folder + 2 files = 3
 	flat := FlattenMediaTree(roots)
@@ -163,6 +262,10 @@ func TestFlattenMediaTree_RespectsExpand(t *testing.T) {
 		t.Error("collapsed: expected folder node")
 	}
 }
+
+// =============================================================================
+// FILTER TESTS
+// =============================================================================
 
 func TestFilterMediaList_MatchesName(t *testing.T) {
 	items := []db.Media{
@@ -225,4 +328,46 @@ func TestFilterMediaList_EmptyQuery(t *testing.T) {
 	if len(result) != 2 {
 		t.Fatalf("empty query should return all items, got %d", len(result))
 	}
+}
+
+func TestFilterMediaTree_PreservesAncestorFolders(t *testing.T) {
+	parentID := types.NewMediaFolderID()
+	childID := types.NewMediaFolderID()
+	otherID := types.NewMediaFolderID()
+
+	folders := []db.MediaFolder{
+		{FolderID: parentID, Name: "parent"},
+		{FolderID: childID, Name: "child", ParentID: types.NullableMediaFolderID{ID: parentID, Valid: true}},
+		{FolderID: otherID, Name: "other"},
+	}
+	items := []db.Media{
+		makeMediaInFolderWithName("sunset.jpg", "sunset", childID),
+		makeMediaInFolderWithName("portrait.jpg", "portrait", otherID),
+	}
+
+	filteredFolders, filteredItems := FilterMediaTree(folders, items, "sunset")
+
+	if len(filteredItems) != 1 {
+		t.Fatalf("expected 1 matching item, got %d", len(filteredItems))
+	}
+	// Should preserve parent and child folders, but not other
+	if len(filteredFolders) != 2 {
+		t.Fatalf("expected 2 ancestor folders (parent + child), got %d", len(filteredFolders))
+	}
+}
+
+// =============================================================================
+// TEST HELPERS
+// =============================================================================
+
+func makeMediaInFolderForTree(name string, folderID types.MediaFolderID) db.Media {
+	m := makeMediaWithName("https://cdn.example.com/"+name, name, "")
+	m.FolderID = types.NullableMediaFolderID{ID: folderID, Valid: true}
+	return m
+}
+
+func makeMediaInFolderWithName(url, name string, folderID types.MediaFolderID) db.Media {
+	m := makeMediaWithName("https://cdn.example.com/"+url, name, "")
+	m.FolderID = types.NullableMediaFolderID{ID: folderID, Valid: true}
+	return m
 }

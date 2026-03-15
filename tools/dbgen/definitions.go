@@ -70,6 +70,7 @@ var Entities = []Entity{
 			{AppName: "FocalX", Type: "types.NullableFloat64", JSONTag: "focal_x", InCreate: true, InUpdate: true, StringConvert: "sprintfFloat64"},
 			{AppName: "FocalY", Type: "types.NullableFloat64", JSONTag: "focal_y", InCreate: true, InUpdate: true, StringConvert: "sprintfFloat64"},
 			{AppName: "AuthorID", Type: "types.NullableUserID", JSONTag: "author_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "FolderID", Type: "types.NullableMediaFolderID", JSONTag: "folder_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "DateCreated", Type: "types.Timestamp", JSONTag: "date_created", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "DateModified", Type: "types.Timestamp", JSONTag: "date_modified", InCreate: true, InUpdate: true, StringConvert: "toString"},
 		},
@@ -1000,5 +1001,67 @@ var Entities = []Entity{
 			},
 		},
 		OutputFile: "webhook_delivery_gen.go",
+	},
+
+	// MediaFolders — virtual folder organization for the media library.
+	// Simple entity: no complex type conversions, no audited commands needed at the sqlc level
+	// (auditing is handled by the custom wrapper layer).
+	{
+		Name:                  "MediaFolder",
+		Singular:              "MediaFolder",
+		Plural:                "MediaFolders",
+		SqlcTypeName:          "MediaFolders",
+		TableName:             "media_folders",
+		IDType:                "types.MediaFolderID",
+		IDField:               "FolderID",
+		NewIDFunc:             "types.NewMediaFolderID()",
+		HasPaginated:          true,
+		SqlcListName:          "ListMediaFolders",
+		SqlcListPaginatedName: "ListMediaFoldersPaginated",
+		UpdateSuccessField:    "s.Name",
+		SkipMappers:           false,
+		SkipAuditedCommands:   false,
+		StringTypeName:        "StringMediaFolder",
+		Fields: []Field{
+			{AppName: "FolderID", Type: "types.MediaFolderID", JSONTag: "folder_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "toString"},
+			{AppName: "Name", Type: "string", JSONTag: "name", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "ParentID", Type: "types.NullableMediaFolderID", JSONTag: "parent_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "DateCreated", Type: "types.Timestamp", JSONTag: "date_created", InCreate: true, InUpdate: false, StringConvert: "toString"},
+			{AppName: "DateModified", Type: "types.Timestamp", JSONTag: "date_modified", InCreate: true, InUpdate: true, StringConvert: "toString"},
+		},
+		ExtraQueries: []ExtraQuery{
+			{
+				MethodName:  "ListMediaFoldersByParent",
+				SqlcName:    "ListMediaFoldersByParent",
+				ReturnsList: true,
+				Params: []ExtraQueryParam{
+					{ParamName: "parentID", ParamType: "types.MediaFolderID", SqlcField: "ParentID", WrapExpr: "types.NullableMediaFolderID{ID: %s, Valid: true}"},
+				},
+			},
+			{
+				MethodName:  "ListMediaFoldersAtRoot",
+				SqlcName:    "ListMediaFoldersAtRoot",
+				ReturnsList: true,
+				Params:      []ExtraQueryParam{},
+			},
+			{
+				MethodName:  "GetMediaFolderByNameAndParent",
+				SqlcName:    "GetMediaFolderByNameAndParent",
+				ReturnsList: false,
+				Params: []ExtraQueryParam{
+					{ParamName: "parentID", ParamType: "types.MediaFolderID", SqlcField: "ParentID", WrapExpr: "types.NullableMediaFolderID{ID: %s, Valid: true}"},
+					{ParamName: "name", ParamType: "string", SqlcField: "Name"},
+				},
+			},
+			{
+				MethodName:  "GetMediaFolderByNameAtRoot",
+				SqlcName:    "GetMediaFolderByNameAtRoot",
+				ReturnsList: false,
+				Params: []ExtraQueryParam{
+					{ParamName: "name", ParamType: "string", SqlcField: "Name"},
+				},
+			},
+		},
+		OutputFile: "media_folder_gen.go",
 	},
 }

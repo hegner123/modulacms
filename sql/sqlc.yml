@@ -73,6 +73,7 @@ sql:
           locale_id: "LocaleID"
           webhook_id: "WebhookID"
           delivery_id: "DeliveryID"
+          folder_id: "FolderID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -104,6 +105,7 @@ sql:
           user_ssh_key: UserSshKeys
           webhook: Webhooks
           webhook_delivery: WebhookDeliveries
+          media_folder: MediaFolders
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -284,6 +286,9 @@ sql:
           - column: "admin_content_data.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          - column: "media_folders.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -523,6 +528,12 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
           - column: "admin_content_versions.date_created"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # MEDIA FOLDERS
+          - column: "media_folders.folder_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaFolderID"}
+          - column: "media.folder_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
           # PUBLISH METADATA on content_data / admin_content_data
           - column: "content_data.published_at"
             nullable: true
@@ -609,6 +620,7 @@ sql:
           locale_id: "LocaleID"
           webhook_id: "WebhookID"
           delivery_id: "DeliveryID"
+          folder_id: "FolderID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -640,6 +652,7 @@ sql:
           user_ssh_key: UserSshKeys
           webhook: Webhooks
           webhook_delivery: WebhookDeliveries
+          media_folder: MediaFolders
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -820,6 +833,9 @@ sql:
           - column: "admin_content_data.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          - column: "media_folders.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -1059,6 +1075,12 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
           - column: "admin_content_versions.date_created"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # MEDIA FOLDERS
+          - column: "media_folders.folder_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaFolderID"}
+          - column: "media.folder_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
           # PUBLISH METADATA on content_data / admin_content_data
           - column: "content_data.published_at"
             nullable: true
@@ -1145,6 +1167,7 @@ sql:
           locale_id: "LocaleID"
           webhook_id: "WebhookID"
           delivery_id: "DeliveryID"
+          folder_id: "FolderID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -1176,6 +1199,7 @@ sql:
           user_ssh_key: UserSshKeys
           webhook: Webhooks
           webhook_delivery: WebhookDeliveries
+          media_folder: MediaFolders
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -1356,6 +1380,9 @@ sql:
           - column: "admin_content_data.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          - column: "media_folders.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -1595,6 +1622,12 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
           - column: "admin_content_versions.date_created"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # MEDIA FOLDERS
+          - column: "media_folders.folder_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaFolderID"}
+          - column: "media.folder_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
           # PUBLISH METADATA on content_data / admin_content_data
           - column: "content_data.published_at"
             nullable: true

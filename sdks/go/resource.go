@@ -125,6 +125,17 @@ func (r *Resource[E, C, U, ID]) Count(ctx context.Context) (int64, error) {
 	return result.Count, nil
 }
 
+// ListWithParams performs a list request with custom query parameters and
+// decodes the response into the provided result pointer. This is useful when
+// the server supports query-parameter filtering on a list endpoint (e.g.
+// `?parent_id=...` to list children of a specific parent).
+func (r *Resource[E, C, U, ID]) ListWithParams(ctx context.Context, params url.Values, result any) error {
+	if err := r.http.get(ctx, r.path, params, result); err != nil {
+		return fmt.Errorf("list %s: %w", r.path, err)
+	}
+	return nil
+}
+
 // RawList returns the raw JSON response body for a list request, allowing
 // the caller to perform custom decoding. This is useful when you need access
 // to the original JSON structure or when the standard type parameters do not

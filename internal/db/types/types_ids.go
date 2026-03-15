@@ -2268,3 +2268,76 @@ func (id *WebhookDeliveryID) UnmarshalJSON(data []byte) error {
 	*id = WebhookDeliveryID(s)
 	return id.Validate()
 }
+
+// MediaFolderID uniquely identifies a media folder.
+type MediaFolderID string
+
+// NewMediaFolderID generates a new ULID-based MediaFolderID.
+func NewMediaFolderID() MediaFolderID { return MediaFolderID(NewULID().String()) }
+
+// String returns the string representation of the MediaFolderID.
+func (id MediaFolderID) String() string { return string(id) }
+
+// IsZero returns true if the MediaFolderID is empty.
+func (id MediaFolderID) IsZero() bool { return id == "" }
+
+// Validate checks if the MediaFolderID is a valid ULID.
+func (id MediaFolderID) Validate() error { return validateULID(string(id), "MediaFolderID") }
+
+// ULID parses the MediaFolderID as a ulid.ULID.
+func (id MediaFolderID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the MediaFolderID.
+func (id MediaFolderID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseMediaFolderID parses and validates a string as a MediaFolderID.
+func ParseMediaFolderID(s string) (MediaFolderID, error) {
+	id := MediaFolderID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id MediaFolderID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("MediaFolderID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *MediaFolderID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("MediaFolderID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = MediaFolderID(v)
+	case []byte:
+		*id = MediaFolderID(string(v))
+	default:
+		return fmt.Errorf("MediaFolderID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id MediaFolderID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *MediaFolderID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("MediaFolderID: %w", err)
+	}
+	*id = MediaFolderID(s)
+	return id.Validate()
+}

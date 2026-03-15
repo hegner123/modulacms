@@ -46,7 +46,7 @@ import { createLocalesResource } from './resources/locales.js'
 import { createWebhooksResource } from './resources/webhooks.js'
 import { createQueryResource } from './resources/query.js'
 
-import type { RequestOptions, AdminRouteID, FieldTypeID, AdminFieldTypeID, Slug, WebhookID, WebhookDeliveryID } from './types/common.js'
+import type { RequestOptions, PaginationParams, PaginatedResponse, AdminRouteID, FieldTypeID, AdminFieldTypeID, Slug, WebhookID, WebhookDeliveryID } from './types/common.js'
 import type { MediaUploadOptions } from './resources/media-upload.js'
 import type { AdminRoute, CreateAdminRouteParams, UpdateAdminRouteParams } from './types/admin.js'
 import type { CrudResource } from './resource.js'
@@ -74,6 +74,7 @@ export type {
   DatatypeID,
   FieldID,
   MediaID,
+  MediaFolderID,
   RoleID,
   PermissionID,
   RolePermissionID,
@@ -207,6 +208,14 @@ export type {
   UserReassignDeleteParams,
   UserReassignDeleteResponse,
 } from './types/users.js'
+export type {
+  MediaFolder,
+  CreateMediaFolderParams,
+  UpdateMediaFolderParams,
+  MediaFolderTreeNode,
+  MoveMediaParams,
+  MoveMediaResponse,
+} from './types/media-folders.js'
 export type { Route, CreateRouteParams, UpdateRouteParams } from './types/routing.js'
 export type { Table, CreateTableParams, UpdateTableParams } from './types/tables.js'
 export type { ImportFormat, ImportResponse } from './types/import.js'
@@ -380,6 +389,13 @@ import type {
   UserReassignDeleteParams,
   UserReassignDeleteResponse,
 } from './types/users.js'
+import type {
+  MediaFolder,
+  MediaFolderTreeNode,
+  MoveMediaParams,
+  MoveMediaResponse,
+} from './types/media-folders.js'
+import type { CreateMediaFolderParams, UpdateMediaFolderParams } from './types/media-folders.js'
 import type { Route, CreateRouteParams, UpdateRouteParams } from './types/routing.js'
 import type { Table, CreateTableParams, UpdateTableParams } from './types/tables.js'
 import type {
@@ -392,6 +408,7 @@ import type {
   DatatypeID,
   FieldID,
   MediaID,
+  MediaFolderID,
   RoleID,
   PermissionID,
   RolePermissionID,
@@ -590,6 +607,15 @@ export type ModulaCMSAdminClient = {
   }
   /** Media dimension presets for responsive rendering. */
   mediaDimensions: CrudResource<MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams>
+  /** Media folders for organizing media assets. */
+  mediaFolders: CrudResource<MediaFolder, CreateMediaFolderParams, UpdateMediaFolderParams, MediaFolderID> & {
+    /** List media items in a folder (paginated). */
+    listMedia: (id: MediaFolderID, params?: PaginationParams, opts?: RequestOptions) => Promise<PaginatedResponse<Media>>
+    /** Get the full folder tree. */
+    tree: (opts?: RequestOptions) => Promise<MediaFolderTreeNode[]>
+    /** Batch move media items to a folder (or root). */
+    moveMedia: (params: MoveMediaParams, opts?: RequestOptions) => Promise<MoveMediaResponse>
+  }
   /** User accounts. */
   users: CrudResource<User, CreateUserParams, UpdateUserParams, UserID> & {
     /** List all users with their role labels joined. */
@@ -941,6 +967,23 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
       },
     },
     mediaDimensions: createResource<MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams>(http, 'mediadimensions'),
+    mediaFolders: {
+      ...createResource<MediaFolder, CreateMediaFolderParams, UpdateMediaFolderParams, MediaFolderID>(http, 'media-folders'),
+      listMedia(id: MediaFolderID, params?: PaginationParams, opts?: RequestOptions): Promise<PaginatedResponse<Media>> {
+        const q: Record<string, string> = {}
+        if (params) {
+          q['limit'] = String(params.limit)
+          q['offset'] = String(params.offset)
+        }
+        return http.get<PaginatedResponse<Media>>('/media-folders/' + encodeURIComponent(String(id)) + '/media', q, opts)
+      },
+      tree(opts?: RequestOptions): Promise<MediaFolderTreeNode[]> {
+        return http.get<MediaFolderTreeNode[]>('/media-folders/tree', undefined, opts)
+      },
+      moveMedia(params: MoveMediaParams, opts?: RequestOptions): Promise<MoveMediaResponse> {
+        return http.post<MoveMediaResponse>('/media/move', params as unknown as Record<string, unknown>, opts)
+      },
+    },
     users: {
       ...createResource<User, CreateUserParams, UpdateUserParams, UserID>(http, 'users'),
       listFull(opts?: RequestOptions): Promise<UserWithRoleLabel[]> {

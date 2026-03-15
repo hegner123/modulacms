@@ -435,6 +435,38 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case MediaDeletedMsg:
 		return m.UpdateDialog(msg)
 
+	// Media folder dialog + CRUD messages.
+	case ShowCreateMediaFolderDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowRenameMediaFolderDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowDeleteMediaFolderDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowMoveMediaToFolderDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowMoveMediaToFolderPickerMsg:
+		return m.UpdateDialog(msg)
+	case MediaFolderNameDialogCancelMsg:
+		return m.UpdateDialog(msg)
+	case MoveMediaFolderDialogCancelMsg:
+		return m.UpdateDialog(msg)
+	case CreateMediaFolderRequestMsg:
+		return m.UpdateDialog(msg)
+	case RenameMediaFolderRequestMsg:
+		return m.UpdateDialog(msg)
+	case DeleteMediaFolderRequestMsg:
+		return m.UpdateDialog(msg)
+	case MoveMediaToFolderRequestMsg:
+		return m.UpdateDialog(msg)
+	case MediaFolderCreatedMsg:
+		return m.UpdateDialog(msg)
+	case MediaFolderRenamedMsg:
+		return m.UpdateDialog(msg)
+	case MediaFolderDeletedMsg:
+		return m.UpdateDialog(msg)
+	case MediaMovedToFolderMsg:
+		return m.UpdateDialog(msg)
+
 	// Webhook dialog show messages → UpdateDialog.
 	case ShowWebhookFormDialogMsg:
 		return m.UpdateDialog(msg)

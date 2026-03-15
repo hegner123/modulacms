@@ -176,7 +176,7 @@ If errors occur during import, the `errors` array contains details:
   "errors": [
     {
       "table": "content_data",
-      "phase": "insert",
+      "phase": "import",
       "message": "foreign key constraint failed: route_id references missing route",
       "row_id": "01JNRWBM4FNRZ7R5N9X4C6K8DM"
     }
@@ -187,7 +187,7 @@ If errors occur during import, the `errors` array contains details:
 | Field | Description |
 |-------|-------------|
 | `table` | Database table where the error occurred |
-| `phase` | Stage of sync that failed (`validate`, `insert`, `update`) |
+| `phase` | Stage of sync that failed (`validate`, `import`, `verify`) |
 | `message` | Description of the error |
 | `row_id` | ULID of the specific row that failed (when applicable) |
 

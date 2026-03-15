@@ -118,6 +118,12 @@ func (s *MediaScreen) renderMediaSummary() string {
 		lines = append(lines, fmt.Sprintf(" Srcset    %s", media.Srcset.String))
 	}
 
+	// Show folder info if media is in a folder
+	if media.FolderID.Valid && !media.FolderID.ID.IsZero() {
+		folderName := s.folderNameByID(media.FolderID.ID)
+		lines = append(lines, fmt.Sprintf(" Folder    %s", folderName))
+	}
+
 	return strings.Join(lines, "\n")
 }
 
@@ -138,6 +144,7 @@ func (s *MediaScreen) renderMediaMetadata() string {
 		fmt.Sprintf(" Focal X   %s", mediaNullFloat(media.FocalX)),
 		fmt.Sprintf(" Focal Y   %s", mediaNullFloat(media.FocalY)),
 		fmt.Sprintf(" Class     %s", mediaNullStr(media.Class)),
+		fmt.Sprintf(" Folder    %s", mediaNullFolderID(media.FolderID)),
 		"",
 		fmt.Sprintf(" Author    %s", mediaNullUserID(media.AuthorID)),
 		fmt.Sprintf(" Created   %s", media.DateCreated.String()),
@@ -166,9 +173,26 @@ func mediaNullFloat(nf types.NullableFloat64) string {
 	return "(none)"
 }
 
+func mediaNullFolderID(nid types.NullableMediaFolderID) string {
+	if nid.Valid {
+		return string(nid.ID)
+	}
+	return "null"
+}
+
 func mediaNullUserID(nid types.NullableUserID) string {
 	if nid.Valid {
 		return string(nid.ID)
 	}
 	return "(none)"
+}
+
+// folderNameByID looks up a folder name from the screen's FolderList.
+func (s *MediaScreen) folderNameByID(id types.MediaFolderID) string {
+	for _, f := range s.FolderList {
+		if f.FolderID == id {
+			return f.Name
+		}
+	}
+	return string(id)
 }

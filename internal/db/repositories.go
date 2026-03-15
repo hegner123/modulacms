@@ -329,6 +329,8 @@ type AdminRouteRepository interface {
 type MediaRepository interface {
 	// Media
 	CountMedia() (*int64, error)
+	CountMediaByFolder(types.NullableMediaFolderID) (*int64, error)
+	CountMediaUnfiled() (*int64, error)
 	CreateMedia(context.Context, audited.AuditContext, CreateMediaParams) (*Media, error)
 	CreateMediaTable() error
 	DeleteMedia(context.Context, audited.AuditContext, types.MediaID) error
@@ -336,7 +338,12 @@ type MediaRepository interface {
 	GetMediaByName(string) (*Media, error)
 	GetMediaByURL(types.URL) (*Media, error)
 	ListMedia() (*[]Media, error)
+	ListMediaByFolder(types.NullableMediaFolderID) (*[]Media, error)
+	ListMediaByFolderPaginated(ListMediaByFolderPaginatedParams) (*[]Media, error)
 	ListMediaPaginated(PaginationParams) (*[]Media, error)
+	ListMediaUnfiled() (*[]Media, error)
+	ListMediaUnfiledPaginated(PaginationParams) (*[]Media, error)
+	MoveMediaToFolder(context.Context, audited.AuditContext, MoveMediaToFolderParams) error
 	UpdateMedia(context.Context, audited.AuditContext, UpdateMediaParams) (*string, error)
 
 	// MediaDimensions
@@ -570,6 +577,25 @@ type WebhookRepository interface {
 	ListPendingRetries(types.Timestamp, int64) (*[]WebhookDelivery, error)
 	UpdateWebhookDeliveryStatus(context.Context, UpdateWebhookDeliveryStatusParams) error
 	PruneOldDeliveries(context.Context, types.Timestamp) error
+}
+
+// MediaFolderRepository manages media folder hierarchy for organizing media assets.
+type MediaFolderRepository interface {
+	CountMediaFolders() (*int64, error)
+	CreateMediaFolder(context.Context, audited.AuditContext, CreateMediaFolderParams) (*MediaFolder, error)
+	CreateMediaFolderTable() error
+	DeleteMediaFolder(context.Context, audited.AuditContext, types.MediaFolderID) error
+	GetMediaFolder(types.MediaFolderID) (*MediaFolder, error)
+	GetMediaFolderBreadcrumb(types.MediaFolderID) ([]MediaFolder, error)
+	GetMediaFolderByNameAndParent(types.MediaFolderID, string) (*MediaFolder, error)
+	GetMediaFolderByNameAtRoot(string) (*MediaFolder, error)
+	ListMediaFolders() (*[]MediaFolder, error)
+	ListMediaFoldersByParent(types.MediaFolderID) (*[]MediaFolder, error)
+	ListMediaFoldersAtRoot() (*[]MediaFolder, error)
+	ListMediaFoldersPaginated(PaginationParams) (*[]MediaFolder, error)
+	UpdateMediaFolder(context.Context, audited.AuditContext, UpdateMediaFolderParams) (*string, error)
+	ValidateMediaFolderName(string, types.NullableMediaFolderID) error
+	ValidateMediaFolderMove(types.MediaFolderID, types.NullableMediaFolderID) error
 }
 
 // FieldPluginConfigRepository manages the field_plugin_config extension table

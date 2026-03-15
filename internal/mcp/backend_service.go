@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -24,6 +25,7 @@ func NewServiceBackends(svc *service.Registry, ac audited.AuditContext) *Backend
 		Schema:       &svcSchemaBackend{svc: svc, ac: ac},
 		AdminSchema:  &svcAdminSchemaBackend{svc: svc, ac: ac},
 		Media:        &svcMediaBackend{svc: svc, ac: ac},
+		MediaFolders: &svcMediaFolderBackend{svc: svc, ac: ac},
 		Routes:       &svcRouteBackend{svc: svc, ac: ac},
 		AdminRoutes:  &svcAdminRouteBackend{svc: svc, ac: ac},
 		Users:        &svcUserBackend{svc: svc, ac: ac},
@@ -763,6 +765,272 @@ func (b *svcMediaBackend) UpdateMediaDimension(ctx context.Context, params json.
 
 func (b *svcMediaBackend) DeleteMediaDimension(ctx context.Context, id string) error {
 	return b.svc.Media.DeleteMediaDimension(ctx, b.ac, id)
+}
+
+// ---------------------------------------------------------------------------
+// MediaFolderBackend
+// ---------------------------------------------------------------------------
+
+type svcMediaFolderBackend struct {
+	svc *service.Registry
+	ac  audited.AuditContext
+}
+
+func (b *svcMediaFolderBackend) ListMediaFolders(ctx context.Context, parentID string) (json.RawMessage, error) {
+	d := b.svc.Driver()
+	if parentID != "" {
+		pid := types.MediaFolderID(parentID)
+		if err := pid.Validate(); err != nil {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "parent_id", Message: fmt.Sprintf("invalid: %v", err)}}}
+		}
+		folders, err := d.ListMediaFoldersByParent(pid)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(folders)
+	}
+	folders, err := d.ListMediaFoldersAtRoot()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(folders)
+}
+
+func (b *svcMediaFolderBackend) GetMediaFolder(ctx context.Context, id string) (json.RawMessage, error) {
+	d := b.svc.Driver()
+	fid := types.MediaFolderID(id)
+	if err := fid.Validate(); err != nil {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "id", Message: fmt.Sprintf("invalid: %v", err)}}}
+	}
+	folder, err := d.GetMediaFolder(fid)
+	if err != nil {
+		return nil, &service.NotFoundError{Resource: "media_folder", ID: id}
+	}
+	return json.Marshal(folder)
+}
+
+func (b *svcMediaFolderBackend) CreateMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	d := b.svc.Driver()
+
+	var p struct {
+		Name     string  `json:"name"`
+		ParentID *string `json:"parent_id"`
+	}
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal create media folder params: %w", err)
+	}
+	if p.Name == "" {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "name", Message: "required"}}}
+	}
+
+	var parentID types.NullableMediaFolderID
+	if p.ParentID != nil && *p.ParentID != "" {
+		pid := types.MediaFolderID(*p.ParentID)
+		if err := pid.Validate(); err != nil {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "parent_id", Message: fmt.Sprintf("invalid: %v", err)}}}
+		}
+		if _, err := d.GetMediaFolder(pid); err != nil {
+			return nil, &service.NotFoundError{Resource: "parent_folder", ID: *p.ParentID}
+		}
+		parentID = types.NullableMediaFolderID{ID: pid, Valid: true}
+
+		breadcrumb, err := d.GetMediaFolderBreadcrumb(pid)
+		if err != nil {
+			return nil, fmt.Errorf("check folder depth: %w", err)
+		}
+		if len(breadcrumb)+1 > 10 {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "parent_id", Message: "creating this folder would exceed maximum folder depth of 10"}}}
+		}
+	}
+
+	if err := d.ValidateMediaFolderName(p.Name, parentID); err != nil {
+		return nil, &service.ConflictError{Resource: "media_folder", Detail: err.Error()}
+	}
+
+	now := types.NewTimestamp(time.Now().UTC())
+	folder, err := d.CreateMediaFolder(ctx, b.ac, db.CreateMediaFolderParams{
+		Name:         p.Name,
+		ParentID:     parentID,
+		DateCreated:  now,
+		DateModified: now,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(folder)
+}
+
+func (b *svcMediaFolderBackend) UpdateMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	d := b.svc.Driver()
+
+	var p struct {
+		FolderID string  `json:"folder_id"`
+		Name     *string `json:"name"`
+		ParentID *string `json:"parent_id"`
+	}
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal update media folder params: %w", err)
+	}
+
+	fid := types.MediaFolderID(p.FolderID)
+	if err := fid.Validate(); err != nil {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "folder_id", Message: fmt.Sprintf("invalid: %v", err)}}}
+	}
+
+	existing, err := d.GetMediaFolder(fid)
+	if err != nil {
+		return nil, &service.NotFoundError{Resource: "media_folder", ID: p.FolderID}
+	}
+
+	name := existing.Name
+	parentID := existing.ParentID
+
+	if p.Name != nil {
+		if *p.Name == "" {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "name", Message: "cannot be empty"}}}
+		}
+		name = *p.Name
+	}
+
+	parentChanged := false
+	if p.ParentID != nil {
+		parentChanged = true
+		if *p.ParentID == "" {
+			parentID = types.NullableMediaFolderID{}
+		} else {
+			pid := types.MediaFolderID(*p.ParentID)
+			if err := pid.Validate(); err != nil {
+				return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "parent_id", Message: fmt.Sprintf("invalid: %v", err)}}}
+			}
+			parentID = types.NullableMediaFolderID{ID: pid, Valid: true}
+		}
+	}
+
+	if parentChanged {
+		if err := d.ValidateMediaFolderMove(fid, parentID); err != nil {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "parent_id", Message: err.Error()}}}
+		}
+	}
+
+	nameChanged := p.Name != nil && name != existing.Name
+	if nameChanged || parentChanged {
+		if err := d.ValidateMediaFolderName(name, parentID); err != nil {
+			return nil, &service.ConflictError{Resource: "media_folder", Detail: err.Error()}
+		}
+	}
+
+	_, err = d.UpdateMediaFolder(ctx, b.ac, db.UpdateMediaFolderParams{
+		FolderID:     fid,
+		Name:         name,
+		ParentID:     parentID,
+		DateModified: types.NewTimestamp(time.Now().UTC()),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	updated, err := d.GetMediaFolder(fid)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(updated)
+}
+
+func (b *svcMediaFolderBackend) DeleteMediaFolder(ctx context.Context, id string) (json.RawMessage, error) {
+	d := b.svc.Driver()
+
+	fid := types.MediaFolderID(id)
+	if err := fid.Validate(); err != nil {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "id", Message: fmt.Sprintf("invalid: %v", err)}}}
+	}
+
+	if _, err := d.GetMediaFolder(fid); err != nil {
+		return nil, &service.NotFoundError{Resource: "media_folder", ID: id}
+	}
+
+	children, err := d.ListMediaFoldersByParent(fid)
+	if err != nil {
+		return nil, err
+	}
+	childCount := 0
+	if children != nil {
+		childCount = len(*children)
+	}
+
+	folderNullable := types.NullableMediaFolderID{ID: fid, Valid: true}
+	mediaCount, err := d.CountMediaByFolder(folderNullable)
+	if err != nil {
+		return nil, err
+	}
+
+	mc := int64(0)
+	if mediaCount != nil {
+		mc = *mediaCount
+	}
+
+	if childCount > 0 || mc > 0 {
+		return json.Marshal(map[string]any{
+			"error":         fmt.Sprintf("cannot delete folder: contains %d child folder(s) and %d media item(s)", childCount, mc),
+			"child_folders": childCount,
+			"media_items":   mc,
+		})
+	}
+
+	if err := d.DeleteMediaFolder(ctx, b.ac, fid); err != nil {
+		return nil, err
+	}
+	return json.Marshal(map[string]string{"status": "deleted"})
+}
+
+func (b *svcMediaFolderBackend) MoveMediaToFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	d := b.svc.Driver()
+
+	var p struct {
+		MediaIDs []string `json:"media_ids"`
+		FolderID *string  `json:"folder_id"`
+	}
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal move media params: %w", err)
+	}
+
+	if len(p.MediaIDs) == 0 {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "media_ids", Message: "required and cannot be empty"}}}
+	}
+	if len(p.MediaIDs) > 100 {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "media_ids", Message: "batch size cannot exceed 100 items"}}}
+	}
+
+	var folderID types.NullableMediaFolderID
+	if p.FolderID != nil && *p.FolderID != "" {
+		fid := types.MediaFolderID(*p.FolderID)
+		if err := fid.Validate(); err != nil {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "folder_id", Message: fmt.Sprintf("invalid: %v", err)}}}
+		}
+		if _, err := d.GetMediaFolder(fid); err != nil {
+			return nil, &service.NotFoundError{Resource: "media_folder", ID: *p.FolderID}
+		}
+		folderID = types.NullableMediaFolderID{ID: fid, Valid: true}
+	}
+
+	now := types.NewTimestamp(time.Now().UTC())
+	moved := 0
+	for _, idStr := range p.MediaIDs {
+		mid := types.MediaID(idStr)
+		if err := mid.Validate(); err != nil {
+			continue
+		}
+		err := d.MoveMediaToFolder(ctx, b.ac, db.MoveMediaToFolderParams{
+			FolderID:     folderID,
+			DateModified: now,
+			MediaID:      mid,
+		})
+		if err != nil {
+			continue
+		}
+		moved++
+	}
+
+	return json.Marshal(map[string]int{"moved": moved})
 }
 
 // ---------------------------------------------------------------------------

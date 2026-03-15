@@ -21,6 +21,8 @@ public final class ModulaClient: Sendable {
     public let fields: Resource<Field, CreateFieldParams, UpdateFieldParams, FieldID>
     public let media: Resource<Media, NoCreate, UpdateMediaParams, MediaID>
     public let mediaDimensions: Resource<MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams, MediaDimensionID>
+    public let mediaFoldersData: Resource<MediaFolder, CreateMediaFolderParams, UpdateMediaFolderParams, MediaFolderID>
+    public let mediaFolders: MediaFoldersResource
     public let routes: Resource<Route, CreateRouteParams, UpdateRouteParams, RouteID>
     public let roles: Resource<Role, CreateRoleParams, UpdateRoleParams, RoleID>
     public let permissions: Resource<Permission, CreatePermissionParams, UpdatePermissionParams, PermissionID>
@@ -124,6 +126,8 @@ public final class ModulaClient: Sendable {
         fields = Resource(path: "/api/v1/fields", http: http)
         media = Resource(path: "/api/v1/media", http: http)
         mediaDimensions = Resource(path: "/api/v1/mediadimensions", http: http)
+        mediaFoldersData = Resource(path: "/api/v1/media-folders", http: http)
+        mediaFolders = MediaFoldersResource(http: http)
         routes = Resource(path: "/api/v1/routes", http: http)
         roles = Resource(path: "/api/v1/roles", http: http)
         permissions = Resource(path: "/api/v1/permissions", http: http)

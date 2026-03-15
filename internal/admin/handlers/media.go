@@ -13,32 +13,73 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-// MediaListHandler renders the media grid with pagination.
+// MediaListHandler renders the media grid with pagination and folder support.
 // When ?picker=true is set, returns a minimal grid without the full page layout
 // for use in the media picker modal.
+// When ?folder_id=<id> is set, filters media to that folder.
 func MediaListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limit, offset := ParsePagination(r)
+		d := svc.Driver()
 
-		items, total, err := svc.Media.ListMediaPaginated(r.Context(), limit, offset)
-		if err != nil {
-			utility.DefaultLogger.Error("failed to list media", err)
-			http.Error(w, "Failed to load media", http.StatusInternalServerError)
-			return
-		}
+		folderIDStr := r.URL.Query().Get("folder_id")
+		picker := r.URL.Query().Get("picker") == "true"
 
 		var mediaItems []db.Media
-		if items != nil {
-			mediaItems = *items
+		var total int64
+
+		if folderIDStr != "" {
+			// Filter by folder
+			folderID := types.MediaFolderID(folderIDStr)
+			folderNullable := types.NullableMediaFolderID{ID: folderID, Valid: true}
+
+			items, err := d.ListMediaByFolderPaginated(db.ListMediaByFolderPaginatedParams{
+				FolderID: folderNullable,
+				Limit:    limit,
+				Offset:   offset,
+			})
+			if err != nil {
+				utility.DefaultLogger.Error("failed to list media by folder", err)
+				http.Error(w, "Failed to load media", http.StatusInternalServerError)
+				return
+			}
+			if items != nil {
+				mediaItems = *items
+			}
+
+			count, err := d.CountMediaByFolder(folderNullable)
+			if err != nil {
+				utility.DefaultLogger.Error("failed to count media by folder", err)
+				http.Error(w, "Failed to load media", http.StatusInternalServerError)
+				return
+			}
+			if count != nil {
+				total = *count
+			}
+		} else {
+			// All media
+			items, count, err := svc.Media.ListMediaPaginated(r.Context(), limit, offset)
+			if err != nil {
+				utility.DefaultLogger.Error("failed to list media", err)
+				http.Error(w, "Failed to load media", http.StatusInternalServerError)
+				return
+			}
+			if items != nil {
+				mediaItems = *items
+			}
+			if count != nil {
+				total = *count
+			}
 		}
 
-		picker := r.URL.Query().Get("picker") == "true"
 		baseURL := "/admin/media"
 		if picker {
 			baseURL = "/admin/media?picker=true"
+		} else if folderIDStr != "" {
+			baseURL = "/admin/media?folder_id=" + folderIDStr
 		}
 
-		pd := NewPaginationData(*total, limit, offset, "#media-grid", baseURL)
+		pd := NewPaginationData(total, limit, offset, "#media-grid", baseURL)
 		pg := partials.PaginationPageData{
 			Current:    pd.Current,
 			TotalPages: pd.TotalPages,
@@ -47,11 +88,33 @@ func MediaListHandler(svc *service.Registry) http.HandlerFunc {
 			BaseURL:    pd.BaseURL,
 		}
 
+		// Load folders for the sidebar
+		allFolders, folderErr := d.ListMediaFolders()
+		var folders []db.MediaFolder
+		if folderErr == nil && allFolders != nil {
+			folders = *allFolders
+		}
+
+		// Build breadcrumb for current folder
+		var breadcrumb []db.MediaFolder
+		var currentFolder *db.MediaFolder
+		if folderIDStr != "" {
+			folderID := types.MediaFolderID(folderIDStr)
+			bc, err := d.GetMediaFolderBreadcrumb(folderID)
+			if err == nil {
+				breadcrumb = bc
+			}
+			folder, err := d.GetMediaFolder(folderID)
+			if err == nil {
+				currentFolder = folder
+			}
+		}
+
 		if IsNavHTMX(r) {
 			csrfToken := CSRFTokenFromContext(r.Context())
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Media"}`)
-			RenderWithOOB(w, r, pages.MediaListContent(mediaItems, pg),
-				OOBSwap{TargetID: "admin-dialogs", Component: pages.MediaUploadDialog(csrfToken)})
+			RenderWithOOB(w, r, pages.MediaListContent(mediaItems, pg, folders, folderIDStr, breadcrumb, currentFolder, csrfToken),
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.MediaUploadDialog(csrfToken, folderIDStr)})
 			return
 		}
 
@@ -61,7 +124,7 @@ func MediaListHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		layout := NewAdminData(r, "Media")
-		Render(w, r, pages.MediaList(layout, mediaItems, pg))
+		Render(w, r, pages.MediaList(layout, mediaItems, pg, folders, folderIDStr, breadcrumb, currentFolder))
 	}
 }
 
@@ -74,6 +137,8 @@ func MediaDetailHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
+		d := svc.Driver()
+
 		record, err := svc.Media.GetMedia(r.Context(), types.MediaID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to get media", err)
@@ -81,14 +146,39 @@ func MediaDetailHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
+		// Load all folders for the folder selector
+		allFolders, folderErr := d.ListMediaFolders()
+		var folders []db.MediaFolder
+		if folderErr == nil && allFolders != nil {
+			folders = *allFolders
+		}
+
+		// Get current folder info for breadcrumb
+		var breadcrumb []db.MediaFolder
+		var currentFolder *db.MediaFolder
+		currentFolderID := ""
+		if record.FolderID.Valid {
+			currentFolderID = record.FolderID.ID.String()
+			bc, bcErr := d.GetMediaFolderBreadcrumb(record.FolderID.ID)
+			if bcErr == nil {
+				breadcrumb = bc
+			}
+			folder, fErr := d.GetMediaFolder(record.FolderID.ID)
+			if fErr == nil {
+				currentFolder = folder
+			}
+		}
+
 		layout := NewAdminData(r, "Media Detail")
 		csrfToken := CSRFTokenFromContext(r.Context())
-		RenderNav(w, r, "Media Detail", pages.MediaDetailContent(*record, csrfToken), pages.MediaDetail(layout, *record, csrfToken))
+		RenderNav(w, r, "Media Detail",
+			pages.MediaDetailContent(*record, csrfToken, folders, currentFolderID, breadcrumb, currentFolder),
+			pages.MediaDetail(layout, *record, csrfToken, folders, currentFolderID, breadcrumb, currentFolder))
 	}
 }
 
 // MediaUploadHandler handles multipart file uploads via the service layer.
-// S3 storage must be configured — placeholder DB-only records are no longer created.
+// S3 storage must be configured -- placeholder DB-only records are no longer created.
 func MediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, cfgErr := svc.Config()
@@ -136,6 +226,12 @@ func MediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 			displayName = filename[:dotIdx]
 		}
 
+		folderIDStr := r.FormValue("folder_id")
+		var folderID types.NullableMediaFolderID
+		if folderIDStr != "" {
+			folderID = types.NullableMediaFolderID{ID: types.MediaFolderID(folderIDStr), Valid: true}
+		}
+
 		created, err := svc.Media.Upload(r.Context(), ac, service.UploadMediaParams{
 			File:        file,
 			Header:      header,
@@ -143,6 +239,7 @@ func MediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 			Alt:         r.FormValue("alt"),
 			Description: r.FormValue("description"),
 			DisplayName: displayName,
+			FolderID:    folderID,
 		})
 		if err != nil {
 			if service.IsValidation(err) || service.IsConflict(err) {

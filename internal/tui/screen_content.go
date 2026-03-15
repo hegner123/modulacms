@@ -118,21 +118,27 @@ func (s *ContentScreen) KeyHints(km config.KeyMap) []KeyHint {
 		}
 	}
 	if s.inTreePhase() {
-		return []KeyHint{
+		hints := []KeyHint{
 			{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
-			{km.HintString(config.ActionSelect), "expand"},
-			{km.HintString(config.ActionExpand) + "/" + km.HintString(config.ActionCollapse), "+/-"},
-			{km.HintString(config.ActionEdit), "edit"},
-			{km.HintString(config.ActionNew), "new"},
-			{km.HintString(config.ActionDelete), "del"},
-			{km.HintString(config.ActionCopy), "copy"},
-			{km.HintString(config.ActionMove), "move"},
-			{km.HintString(config.ActionPublish), "publish"},
-			{km.HintString(config.ActionReorderUp) + "/" + km.HintString(config.ActionReorderDown), "reorder"},
-			{km.HintString(config.ActionVersions), "versions"},
-			{km.HintString(config.ActionBack), "back"},
-			{km.HintString(config.ActionQuit), "quit"},
 		}
+		// Only show expand hint when current node has children.
+		if node := s.Root.NodeAtIndex(s.Cursor); node != nil && node.FirstChild != nil {
+			hints = append(hints, KeyHint{km.HintString(config.ActionSelect), "expand"})
+		}
+		hints = append(hints,
+			KeyHint{km.HintString(config.ActionExpand) + "/" + km.HintString(config.ActionCollapse), "+/-"},
+			KeyHint{km.HintString(config.ActionEdit), "edit"},
+			KeyHint{km.HintString(config.ActionNew), "new"},
+			KeyHint{km.HintString(config.ActionDelete), "del"},
+			KeyHint{km.HintString(config.ActionCopy), "copy"},
+			KeyHint{km.HintString(config.ActionMove), "move"},
+			KeyHint{km.HintString(config.ActionPublish), "publish"},
+			KeyHint{km.HintString(config.ActionReorderUp) + "/" + km.HintString(config.ActionReorderDown), "reorder"},
+			KeyHint{km.HintString(config.ActionVersions), "versions"},
+			KeyHint{km.HintString(config.ActionBack), "back"},
+			KeyHint{km.HintString(config.ActionQuit), "quit"},
+		)
+		return hints
 	}
 	// Select phase
 	return []KeyHint{

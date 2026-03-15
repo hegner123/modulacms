@@ -4869,3 +4869,93 @@ func (r *RemoteDriver) DeleteFieldPluginConfig(_ context.Context, _ types.FieldI
 func (r *RemoteDriver) DeleteAdminFieldPluginConfig(_ context.Context, _ types.FieldID) error {
 	return ErrNotSupported{Method: "DeleteAdminFieldPluginConfig"}
 }
+
+// MediaFolderRepository stubs — not supported in remote mode.
+
+func (r *RemoteDriver) CountMediaFolders() (*int64, error) {
+	return nil, ErrNotSupported{Method: "CountMediaFolders"}
+}
+
+func (r *RemoteDriver) CreateMediaFolder(_ context.Context, _ audited.AuditContext, _ db.CreateMediaFolderParams) (*db.MediaFolder, error) {
+	return nil, ErrNotSupported{Method: "CreateMediaFolder"}
+}
+
+func (r *RemoteDriver) CreateMediaFolderTable() error {
+	return ErrNotSupported{Method: "CreateMediaFolderTable"}
+}
+
+func (r *RemoteDriver) DeleteMediaFolder(_ context.Context, _ audited.AuditContext, _ types.MediaFolderID) error {
+	return ErrNotSupported{Method: "DeleteMediaFolder"}
+}
+
+func (r *RemoteDriver) GetMediaFolder(_ types.MediaFolderID) (*db.MediaFolder, error) {
+	return nil, ErrNotSupported{Method: "GetMediaFolder"}
+}
+
+func (r *RemoteDriver) GetMediaFolderBreadcrumb(_ types.MediaFolderID) ([]db.MediaFolder, error) {
+	return nil, ErrNotSupported{Method: "GetMediaFolderBreadcrumb"}
+}
+
+func (r *RemoteDriver) GetMediaFolderByNameAndParent(_ types.MediaFolderID, _ string) (*db.MediaFolder, error) {
+	return nil, ErrNotSupported{Method: "GetMediaFolderByNameAndParent"}
+}
+
+func (r *RemoteDriver) GetMediaFolderByNameAtRoot(_ string) (*db.MediaFolder, error) {
+	return nil, ErrNotSupported{Method: "GetMediaFolderByNameAtRoot"}
+}
+
+func (r *RemoteDriver) ListMediaFolders() (*[]db.MediaFolder, error) {
+	return nil, ErrNotSupported{Method: "ListMediaFolders"}
+}
+
+func (r *RemoteDriver) ListMediaFoldersByParent(_ types.MediaFolderID) (*[]db.MediaFolder, error) {
+	return nil, ErrNotSupported{Method: "ListMediaFoldersByParent"}
+}
+
+func (r *RemoteDriver) ListMediaFoldersAtRoot() (*[]db.MediaFolder, error) {
+	return nil, ErrNotSupported{Method: "ListMediaFoldersAtRoot"}
+}
+
+func (r *RemoteDriver) ListMediaFoldersPaginated(_ db.PaginationParams) (*[]db.MediaFolder, error) {
+	return nil, ErrNotSupported{Method: "ListMediaFoldersPaginated"}
+}
+
+func (r *RemoteDriver) UpdateMediaFolder(_ context.Context, _ audited.AuditContext, _ db.UpdateMediaFolderParams) (*string, error) {
+	return nil, ErrNotSupported{Method: "UpdateMediaFolder"}
+}
+
+func (r *RemoteDriver) ValidateMediaFolderName(_ string, _ types.NullableMediaFolderID) error {
+	return ErrNotSupported{Method: "ValidateMediaFolderName"}
+}
+
+func (r *RemoteDriver) ValidateMediaFolderMove(_ types.MediaFolderID, _ types.NullableMediaFolderID) error {
+	return ErrNotSupported{Method: "ValidateMediaFolderMove"}
+}
+
+func (r *RemoteDriver) CountMediaByFolder(_ types.NullableMediaFolderID) (*int64, error) {
+	return nil, ErrNotSupported{Method: "CountMediaByFolder"}
+}
+
+func (r *RemoteDriver) CountMediaUnfiled() (*int64, error) {
+	return nil, ErrNotSupported{Method: "CountMediaUnfiled"}
+}
+
+func (r *RemoteDriver) ListMediaByFolder(_ types.NullableMediaFolderID) (*[]db.Media, error) {
+	return nil, ErrNotSupported{Method: "ListMediaByFolder"}
+}
+
+func (r *RemoteDriver) ListMediaByFolderPaginated(_ db.ListMediaByFolderPaginatedParams) (*[]db.Media, error) {
+	return nil, ErrNotSupported{Method: "ListMediaByFolderPaginated"}
+}
+
+func (r *RemoteDriver) ListMediaUnfiled() (*[]db.Media, error) {
+	return nil, ErrNotSupported{Method: "ListMediaUnfiled"}
+}
+
+func (r *RemoteDriver) ListMediaUnfiledPaginated(_ db.PaginationParams) (*[]db.Media, error) {
+	return nil, ErrNotSupported{Method: "ListMediaUnfiledPaginated"}
+}
+
+func (r *RemoteDriver) MoveMediaToFolder(_ context.Context, _ audited.AuditContext, _ db.MoveMediaToFolderParams) error {
+	return ErrNotSupported{Method: "MoveMediaToFolder"}
+}

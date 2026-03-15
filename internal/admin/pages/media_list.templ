@@ -6,7 +6,7 @@ import (
     "github.com/hegner123/modulacms/internal/db"
 )
 
-templ MediaListContent(items []db.Media, pg partials.PaginationPageData) {
+templ MediaListContent(items []db.Media, pg partials.PaginationPageData, folders []db.MediaFolder, activeFolderID string, breadcrumb []db.MediaFolder, currentFolder *db.MediaFolder, csrfToken string) {
     <div class="page-header">
         <h1>Media</h1>
         <button
@@ -16,15 +16,23 @@ templ MediaListContent(items []db.Media, pg partials.PaginationPageData) {
             Upload Media
         </button>
     </div>
-    <div id="media-grid" class="media-grid">
-        @MediaGridItems(items)
-    </div>
-    <div id="pagination">
-        @partials.Pagination(pg.Current, pg.TotalPages, pg.Target, pg.BaseURL, pg.Limit)
+    <div class="media-layout-with-folders">
+        @partials.MediaFolderTree(folders, activeFolderID, csrfToken)
+        <div class="media-main-content">
+            if activeFolderID != "" {
+                @partials.MediaFolderBreadcrumb(breadcrumb, currentFolder)
+            }
+            <div id="media-grid" class="media-grid">
+                @MediaGridItems(items)
+            </div>
+            <div id="pagination">
+                @partials.Pagination(pg.Current, pg.TotalPages, pg.Target, pg.BaseURL, pg.Limit)
+            </div>
+        </div>
     </div>
 }
 
-templ MediaUploadDialog(csrfToken string) {
+templ MediaUploadDialog(csrfToken string, activeFolderID string) {
     <dialog id="upload-dialog" class="dialog" aria-labelledby="upload-dialog-title">
         <div class="dialog-content">
             <div class="dialog-header">
@@ -39,6 +47,7 @@ templ MediaUploadDialog(csrfToken string) {
                 class="upload-form"
             >
                 @partials.CSRFField(csrfToken)
+                <input type="hidden" id="upload-folder-id" name="folder_id" value={ activeFolderID }/>
                 <mcms-file-input name="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" required label="File"></mcms-file-input>
                 <div class="form-field">
                     <label for="alt">Alt Text</label>
@@ -58,9 +67,9 @@ templ MediaUploadDialog(csrfToken string) {
     </dialog>
 }
 
-templ MediaList(layout layouts.AdminData, items []db.Media, pg partials.PaginationPageData) {
-    @layouts.Admin(layout.WithDialogs(MediaUploadDialog(layout.CSRFToken))) {
-        @MediaListContent(items, pg)
+templ MediaList(layout layouts.AdminData, items []db.Media, pg partials.PaginationPageData, folders []db.MediaFolder, activeFolderID string, breadcrumb []db.MediaFolder, currentFolder *db.MediaFolder) {
+    @layouts.Admin(layout.WithDialogs(MediaUploadDialog(layout.CSRFToken, activeFolderID))) {
+        @MediaListContent(items, pg, folders, activeFolderID, breadcrumb, currentFolder, layout.CSRFToken)
     }
 }
 
@@ -107,6 +116,8 @@ templ MediaGridItems(items []db.Media) {
         <div
             id={ "media-item-" + item.MediaID.String() }
             class="media-grid-item"
+            draggable="true"
+            data-media-id={ item.MediaID.String() }
         >
             <a
                 href={ templ.SafeURL("/admin/media/" + item.MediaID.String()) }

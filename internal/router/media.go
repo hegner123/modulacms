@@ -86,6 +86,50 @@ func apiGetMedia(w http.ResponseWriter, r *http.Request, svc *service.Registry) 
 }
 
 func apiListMedia(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	// Support folder_id filter: "unfiled" returns media with no folder,
+	// a valid ULID returns media in that folder, absent returns all media.
+	folderFilter := r.URL.Query().Get("folder_id")
+	if folderFilter != "" {
+		d := svc.Driver()
+		if folderFilter == "unfiled" {
+			items, err := d.ListMediaUnfiled()
+			if err != nil {
+				utility.DefaultLogger.Error("list unfiled media", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			mediaItems := make([]db.Media, 0)
+			if items != nil {
+				mediaItems = *items
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(toMediaListResponse(mediaItems))
+			return
+		}
+
+		fid := types.MediaFolderID(folderFilter)
+		if err := fid.Validate(); err != nil {
+			http.Error(w, fmt.Sprintf("invalid folder_id: %v", err), http.StatusBadRequest)
+			return
+		}
+		folderNullable := types.NullableMediaFolderID{ID: fid, Valid: true}
+		items, err := d.ListMediaByFolder(folderNullable)
+		if err != nil {
+			utility.DefaultLogger.Error("list media by folder", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		mediaItems := make([]db.Media, 0)
+		if items != nil {
+			mediaItems = *items
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(toMediaListResponse(mediaItems))
+		return
+	}
+
 	mediaList, err := svc.Media.ListMedia(r.Context())
 	if err != nil {
 		service.HandleServiceError(w, r, err)
@@ -131,14 +175,40 @@ func apiCreateMedia(w http.ResponseWriter, r *http.Request, svc *service.Registr
 		return
 	}
 
+	// If folder_id was provided, move the newly uploaded media into that folder.
+	if folderIDStr := r.PostFormValue("folder_id"); folderIDStr != "" {
+		fid := types.MediaFolderID(folderIDStr)
+		if err := fid.Validate(); err == nil {
+			moveErr := svc.Driver().MoveMediaToFolder(r.Context(), ac, db.MoveMediaToFolderParams{
+				FolderID:     types.NullableMediaFolderID{ID: fid, Valid: true},
+				DateModified: row.DateModified,
+				MediaID:      row.MediaID,
+			})
+			if moveErr != nil {
+				utility.DefaultLogger.Error("move uploaded media to folder", moveErr)
+				// Upload succeeded, folder move failed — still return the created media
+			} else {
+				// Re-fetch to reflect updated folder_id
+				updated, getErr := svc.Media.GetMedia(r.Context(), row.MediaID)
+				if getErr == nil {
+					row = updated
+				}
+			}
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(toMediaResponse(*row))
 }
 
 func apiUpdateMedia(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
-	var params service.UpdateMediaMetadataParams
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+	// Decode into a struct that includes folder_id alongside metadata fields.
+	var req struct {
+		service.UpdateMediaMetadataParams
+		FolderID *string `json:"folder_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -150,10 +220,41 @@ func apiUpdateMedia(w http.ResponseWriter, r *http.Request, svc *service.Registr
 	}
 	ac := middleware.AuditContextFromRequest(r, *c)
 
-	updated, err := svc.Media.UpdateMediaMetadata(r.Context(), ac, params)
+	updated, err := svc.Media.UpdateMediaMetadata(r.Context(), ac, req.UpdateMediaMetadataParams)
 	if err != nil {
 		service.HandleServiceError(w, r, err)
 		return
+	}
+
+	// If folder_id was provided, move the media to the specified folder.
+	if req.FolderID != nil {
+		var folderNullable types.NullableMediaFolderID
+		if *req.FolderID != "" {
+			fid := types.MediaFolderID(*req.FolderID)
+			if err := fid.Validate(); err != nil {
+				http.Error(w, fmt.Sprintf("invalid folder_id: %v", err), http.StatusBadRequest)
+				return
+			}
+			folderNullable = types.NullableMediaFolderID{ID: fid, Valid: true}
+		}
+		// Empty string means move to root (unfiled)
+
+		moveErr := svc.Driver().MoveMediaToFolder(r.Context(), ac, db.MoveMediaToFolderParams{
+			FolderID:     folderNullable,
+			DateModified: updated.DateModified,
+			MediaID:      updated.MediaID,
+		})
+		if moveErr != nil {
+			utility.DefaultLogger.Error("move media to folder during update", moveErr)
+			http.Error(w, fmt.Sprintf("metadata updated but folder move failed: %v", moveErr), http.StatusInternalServerError)
+			return
+		}
+
+		// Re-fetch to reflect updated folder_id
+		refreshed, getErr := svc.Media.GetMedia(r.Context(), updated.MediaID)
+		if getErr == nil {
+			updated = refreshed
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -351,6 +452,77 @@ func cleanMediaReferences(d db.DbDriver, r *http.Request, c config.Config, mID t
 
 func apiListMediaPaginated(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	params := ParsePaginationParams(r)
+
+	// Support folder_id filter with pagination.
+	folderFilter := r.URL.Query().Get("folder_id")
+	if folderFilter != "" {
+		d := svc.Driver()
+		if folderFilter == "unfiled" {
+			items, err := d.ListMediaUnfiledPaginated(db.PaginationParams{Limit: params.Limit, Offset: params.Offset})
+			if err != nil {
+				utility.DefaultLogger.Error("list unfiled media paginated", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			total, err := d.CountMediaUnfiled()
+			if err != nil {
+				utility.DefaultLogger.Error("count unfiled media", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			mediaItems := make([]db.Media, 0)
+			if items != nil {
+				mediaItems = *items
+			}
+			response := db.PaginatedResponse[MediaResponse]{
+				Data:   toMediaListResponse(mediaItems),
+				Total:  *total,
+				Limit:  params.Limit,
+				Offset: params.Offset,
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
+		fid := types.MediaFolderID(folderFilter)
+		if err := fid.Validate(); err != nil {
+			http.Error(w, fmt.Sprintf("invalid folder_id: %v", err), http.StatusBadRequest)
+			return
+		}
+		folderNullable := types.NullableMediaFolderID{ID: fid, Valid: true}
+		items, err := d.ListMediaByFolderPaginated(db.ListMediaByFolderPaginatedParams{
+			FolderID: folderNullable,
+			Limit:    params.Limit,
+			Offset:   params.Offset,
+		})
+		if err != nil {
+			utility.DefaultLogger.Error("list media by folder paginated", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		total, err := d.CountMediaByFolder(folderNullable)
+		if err != nil {
+			utility.DefaultLogger.Error("count media by folder", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		mediaItems := make([]db.Media, 0)
+		if items != nil {
+			mediaItems = *items
+		}
+		response := db.PaginatedResponse[MediaResponse]{
+			Data:   toMediaListResponse(mediaItems),
+			Total:  *total,
+			Limit:  params.Limit,
+			Offset: params.Offset,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
 
 	items, total, err := svc.Media.ListMediaPaginated(r.Context(), params.Limit, params.Offset)
 	if err != nil {

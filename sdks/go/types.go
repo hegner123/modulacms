@@ -295,10 +295,11 @@ type Media struct {
 	Srcset       *string   `json:"srcset"`
 	FocalX       *float64  `json:"focal_x"`
 	FocalY       *float64  `json:"focal_y"`
-	AuthorID     *UserID   `json:"author_id"`
-	DateCreated  Timestamp `json:"date_created"`
-	DateModified Timestamp `json:"date_modified"`
-	DownloadURL  string    `json:"download_url"`
+	AuthorID     *UserID        `json:"author_id"`
+	FolderID     *MediaFolderID `json:"folder_id"`
+	DateCreated  Timestamp      `json:"date_created"`
+	DateModified Timestamp      `json:"date_modified"`
+	DownloadURL  string         `json:"download_url"`
 }
 
 // UpdateMediaParams contains fields for updating metadata on an existing media asset.
@@ -350,6 +351,53 @@ type UpdateMediaDimensionParams struct {
 	Width       *int64           `json:"width"`
 	Height      *int64           `json:"height"`
 	AspectRatio *string          `json:"aspect_ratio"`
+}
+
+// ---------------------------------------------------------------------------
+// Media Folder
+// ---------------------------------------------------------------------------
+
+// MediaFolder represents a folder for organizing media assets.
+// Folders form a tree hierarchy via ParentID, with root folders having a nil ParentID.
+type MediaFolder struct {
+	FolderID     MediaFolderID  `json:"folder_id"`
+	Name         string         `json:"name"`
+	ParentID     *MediaFolderID `json:"parent_id"`
+	DateCreated  Timestamp      `json:"date_created"`
+	DateModified Timestamp      `json:"date_modified"`
+}
+
+// CreateMediaFolderParams contains parameters for creating a new media folder.
+// Name is required. ParentID determines placement in the folder hierarchy;
+// nil creates a root-level folder.
+type CreateMediaFolderParams struct {
+	Name     string         `json:"name"`
+	ParentID *MediaFolderID `json:"parent_id"`
+}
+
+// UpdateMediaFolderParams contains parameters for renaming or moving a media folder.
+// FolderID identifies the folder to update.
+type UpdateMediaFolderParams struct {
+	FolderID MediaFolderID  `json:"folder_id"`
+	Name     string         `json:"name"`
+	ParentID *MediaFolderID `json:"parent_id"`
+}
+
+// MediaFolderTreeNode represents a folder in the folder tree with its children.
+type MediaFolderTreeNode struct {
+	MediaFolder
+	Children []MediaFolderTreeNode `json:"children"`
+}
+
+// MoveMediaParams contains parameters for batch-moving media items to a folder.
+type MoveMediaParams struct {
+	MediaIDs []MediaID      `json:"media_ids"`
+	FolderID *MediaFolderID `json:"folder_id"`
+}
+
+// MoveMediaResponse contains the result of a batch media move operation.
+type MoveMediaResponse struct {
+	Moved int `json:"moved"`
 }
 
 // ---------------------------------------------------------------------------

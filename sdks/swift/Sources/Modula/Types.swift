@@ -541,6 +541,7 @@ public struct Media: Codable, Sendable {
     public let focalX: Double?
     public let focalY: Double?
     public let authorID: UserID?
+    public let folderID: MediaFolderID?
     public let dateCreated: Timestamp
     public let dateModified: Timestamp
     public let downloadURL: String
@@ -560,6 +561,7 @@ public struct Media: Codable, Sendable {
         case focalX = "focal_x"
         case focalY = "focal_y"
         case authorID = "author_id"
+        case folderID = "folder_id"
         case dateCreated = "date_created"
         case dateModified = "date_modified"
         case downloadURL = "download_url"
@@ -684,6 +686,104 @@ public struct UpdateMediaDimensionParams: Encodable, Sendable {
         case height
         case aspectRatio = "aspect_ratio"
     }
+}
+
+// MARK: - Media Folder
+
+public struct MediaFolder: Codable, Sendable {
+    public let folderID: MediaFolderID
+    public let name: String
+    public let parentID: MediaFolderID?
+    public let dateCreated: Timestamp
+    public let dateModified: Timestamp
+
+    enum CodingKeys: String, CodingKey {
+        case folderID = "folder_id"
+        case name
+        case parentID = "parent_id"
+        case dateCreated = "date_created"
+        case dateModified = "date_modified"
+    }
+}
+
+public struct CreateMediaFolderParams: Encodable, Sendable {
+    public let name: String
+    public let parentID: MediaFolderID?
+
+    public init(
+        name: String,
+        parentID: MediaFolderID? = nil
+    ) {
+        self.name = name
+        self.parentID = parentID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case parentID = "parent_id"
+    }
+}
+
+public struct UpdateMediaFolderParams: Encodable, Sendable {
+    public let folderID: MediaFolderID
+    public let name: String
+    public let parentID: MediaFolderID?
+
+    public init(
+        folderID: MediaFolderID,
+        name: String,
+        parentID: MediaFolderID? = nil
+    ) {
+        self.folderID = folderID
+        self.name = name
+        self.parentID = parentID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case folderID = "folder_id"
+        case name
+        case parentID = "parent_id"
+    }
+}
+
+public struct MediaFolderTreeNode: Codable, Sendable {
+    public let folderID: MediaFolderID
+    public let name: String
+    public let parentID: MediaFolderID?
+    public let dateCreated: Timestamp
+    public let dateModified: Timestamp
+    public let children: [MediaFolderTreeNode]
+
+    enum CodingKeys: String, CodingKey {
+        case folderID = "folder_id"
+        case name
+        case parentID = "parent_id"
+        case dateCreated = "date_created"
+        case dateModified = "date_modified"
+        case children
+    }
+}
+
+public struct MoveMediaParams: Encodable, Sendable {
+    public let mediaIDs: [MediaID]
+    public let folderID: MediaFolderID?
+
+    public init(
+        mediaIDs: [MediaID],
+        folderID: MediaFolderID? = nil
+    ) {
+        self.mediaIDs = mediaIDs
+        self.folderID = folderID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case mediaIDs = "media_ids"
+        case folderID = "folder_id"
+    }
+}
+
+public struct MoveMediaResponse: Codable, Sendable {
+    public let moved: Int
 }
 
 // MARK: - Route

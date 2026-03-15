@@ -209,3 +209,52 @@ func countPermissions(perms map[types.PermissionID]bool) int {
 	}
 	return len(perms)
 }
+
+// buildMediaFolderTree assembles a flat list of folders into a nested tree structure.
+func buildMediaFolderTree(folders []db.MediaFolder) []MediaFolderNode {
+	if len(folders) == 0 {
+		return nil
+	}
+
+	folderByID := make(map[types.MediaFolderID]db.MediaFolder, len(folders))
+	for _, f := range folders {
+		folderByID[f.FolderID] = f
+	}
+
+	childrenOf := make(map[types.MediaFolderID][]types.MediaFolderID)
+	var rootIDs []types.MediaFolderID
+
+	for _, f := range folders {
+		if !f.ParentID.Valid {
+			rootIDs = append(rootIDs, f.FolderID)
+		} else {
+			pid := types.MediaFolderID(f.ParentID.ID)
+			childrenOf[pid] = append(childrenOf[pid], f.FolderID)
+		}
+	}
+
+	var buildNode func(id types.MediaFolderID) MediaFolderNode
+	buildNode = func(id types.MediaFolderID) MediaFolderNode {
+		f := folderByID[id]
+		node := MediaFolderNode{
+			Folder:   f,
+			Children: make([]MediaFolderNode, 0, len(childrenOf[id])),
+		}
+		for _, childID := range childrenOf[id] {
+			node.Children = append(node.Children, buildNode(childID))
+		}
+		return node
+	}
+
+	roots := make([]MediaFolderNode, 0, len(rootIDs))
+	for _, rid := range rootIDs {
+		roots = append(roots, buildNode(rid))
+	}
+	return roots
+}
+
+// escapeJS escapes a string for safe inclusion in JavaScript string literals.
+func escapeJS(s string) string {
+	r := strings.NewReplacer(`\`, `\\`, `'`, `\'`, `"`, `\"`, "\n", `\n`, "\r", `\r`)
+	return r.Replace(s)
+}

@@ -6,7 +6,7 @@ import (
     "github.com/hegner123/modulacms/internal/db"
 )
 
-templ MediaDetailContent(media db.Media, csrfToken string) {
+templ MediaDetailContent(media db.Media, csrfToken string, folders []db.MediaFolder, currentFolderID string, breadcrumb []db.MediaFolder, currentFolder *db.MediaFolder) {
     <div class="page-header">
         <div class="page-header-left">
             <a
@@ -31,6 +31,9 @@ templ MediaDetailContent(media db.Media, csrfToken string) {
             <button type="submit" form="media-form" class="btn btn-primary">Save</button>
         </div>
     </div>
+    if currentFolderID != "" {
+        @partials.MediaFolderBreadcrumb(breadcrumb, currentFolder)
+    }
     <div class="media-detail-layout">
         <div class="media-detail-preview">
             if isImage(nullStr(media.Mimetype)) {
@@ -73,6 +76,10 @@ templ MediaDetailContent(media db.Media, csrfToken string) {
                 </form>
             </div>
             <div class="sidebar-section">
+                <h3>Folder</h3>
+                @partials.MediaFolderSelect(folders, currentFolderID, media.MediaID.String(), csrfToken)
+            </div>
+            <div class="sidebar-section">
                 <h3>Details</h3>
                 <dl class="detail-list">
                     <dt>Filename</dt>
@@ -102,8 +109,8 @@ templ MediaDetailContent(media db.Media, csrfToken string) {
     </div>
 }
 
-templ MediaDetail(layout layouts.AdminData, media db.Media, csrfToken string) {
+templ MediaDetail(layout layouts.AdminData, media db.Media, csrfToken string, folders []db.MediaFolder, currentFolderID string, breadcrumb []db.MediaFolder, currentFolder *db.MediaFolder) {
     @layouts.Admin(layout) {
-        @MediaDetailContent(media, csrfToken)
+        @MediaDetailContent(media, csrfToken, folders, currentFolderID, breadcrumb, currentFolder)
     }
 }

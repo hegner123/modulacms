@@ -480,6 +480,22 @@ Handles POST /api/v1/admin/plugins/routes/approve. Admin-only. Approves one or m
 
 Handles POST /api/v1/admin/plugins/routes/revoke. Admin-only. Revokes approval for one or more plugin routes. Same request body format and body size limit as approve handler. Idempotent: revoking an already-revoked route is a no-op.
 
+## Search Handlers
+
+### SearchHandler
+
+Handles GET /api/v1/search for full-text content search. Requires search to be enabled (searchSvc non-nil); returns 404 if disabled.
+
+Query parameters: q (required search query), type (filter by content type), locale (filter by locale), limit (max results, default 20), offset (pagination offset), prefix (enable prefix matching, default true; set to "false" for exact matching).
+
+Uses searchSvc.SearchWithPrefix by default, or searchSvc.Search when prefix=false. Returns search.SearchResponse JSON. Returns 400 Bad Request if q parameter is missing.
+
+### SearchRebuildHandler
+
+Handles POST /api/v1/admin/search/rebuild to re-index all documents. Requires `search:update` permission. Returns 404 if search is disabled.
+
+Calls searchSvc.Rebuild() then searchSvc.Stats(). Returns JSON with status, documents count, terms count, and mem_bytes.
+
 ## Utilities
 
 ### respond

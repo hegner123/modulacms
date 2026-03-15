@@ -68,7 +68,7 @@ type SyncResult struct {
 // Every error includes the table and phase so the user knows exactly what failed and where.
 type SyncError struct {
 	Table   string `json:"table"`
-	Phase   string `json:"phase"` // "export", "validate", "truncate", "insert", "verify"
+	Phase   string `json:"phase"` // "validate", "import", "verify"
 	Message string `json:"message"`
 	RowID   string `json:"row_id,omitempty"`
 }

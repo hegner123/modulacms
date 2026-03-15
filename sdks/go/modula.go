@@ -241,6 +241,14 @@ type Client struct {
 	// UsersFull provides extended user operations including role details.
 	UsersFull *UsersFullResource
 
+	// --- Media folders ---
+
+	// MediaFoldersData provides standard CRUD for media folders.
+	MediaFoldersData *Resource[MediaFolder, CreateMediaFolderParams, UpdateMediaFolderParams, MediaFolderID]
+
+	// MediaFolders provides specialized media folder operations (tree, list media, move).
+	MediaFolders *MediaFoldersResource
+
 	// --- Media admin ---
 
 	// MediaAdmin provides administrative media operations (listing with filters, bulk actions).
@@ -397,6 +405,10 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 		// Users full
 		UsersFull: &UsersFullResource{http: h},
+
+		// Media folders
+		MediaFoldersData: newResource[MediaFolder, CreateMediaFolderParams, UpdateMediaFolderParams, MediaFolderID](h, "/api/v1/media-folders"),
+		MediaFolders:     &MediaFoldersResource{http: h},
 
 		// Media admin
 		MediaAdmin: &MediaAdminResource{http: h},

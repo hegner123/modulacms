@@ -348,8 +348,34 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	mux.Handle("DELETE /api/v1/media/cleanup", middleware.RequirePermission("media:admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediaCleanupHandler(w, r, svc)
 	})))
+	mux.Handle("POST /api/v1/media/move", middleware.RequirePermission("media:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiBatchMoveMedia(w, r, svc)
+	})))
 	mux.Handle("/api/v1/media/", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediaHandler(w, r, svc)
+	})))
+
+	// Media folders (tree must be registered before {id} to avoid path parameter matching "tree")
+	mux.Handle("GET /api/v1/media-folders", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiListMediaFolders(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/media-folders/tree", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiMediaFolderTree(w, r, svc)
+	})))
+	mux.Handle("POST /api/v1/media-folders", middleware.RequirePermission("media:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiCreateMediaFolder(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/media-folders/{id}", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiGetMediaFolder(w, r, svc)
+	})))
+	mux.Handle("PUT /api/v1/media-folders/{id}", middleware.RequirePermission("media:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiUpdateMediaFolder(w, r, svc)
+	})))
+	mux.Handle("DELETE /api/v1/media-folders/{id}", middleware.RequirePermission("media:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiDeleteMediaFolder(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/media-folders/{id}/media", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiMediaFolderMedia(w, r, svc)
 	})))
 
 	// Media dimensions
@@ -780,6 +806,12 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/media", mutating("media:create", adminhandlers.MediaUploadHandler(svc)))
 	mux.Handle("POST /admin/media/{id}", mutating("media:update", adminhandlers.MediaUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/media/{id}", mutating("media:delete", adminhandlers.MediaDeleteHandler(svc)))
+
+	// Media folders
+	mux.Handle("POST /admin/media-folders", mutating("media:create", adminhandlers.MediaFolderCreateHandler(svc)))
+	mux.Handle("POST /admin/media-folders/{id}", mutating("media:update", adminhandlers.MediaFolderUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/media-folders/{id}", mutating("media:delete", adminhandlers.MediaFolderDeleteHandler(svc)))
+	mux.Handle("POST /admin/media/move/{id}", mutating("media:update", adminhandlers.MediaMoveToFolderHandler(svc)))
 
 	// Routes
 	mux.Handle("GET /admin/routes", viewing("routes", adminhandlers.RoutesListHandler(svc)))

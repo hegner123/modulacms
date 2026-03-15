@@ -17,13 +17,17 @@ CREATE TABLE IF NOT EXISTS media (
     focal_x FLOAT NULL,
     focal_y FLOAT NULL,
     author_id VARCHAR(26) NOT NULL,
+    folder_id VARCHAR(26) NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT url
         UNIQUE (url),
     CONSTRAINT fk_media_users_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
-            ON UPDATE CASCADE
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_media_media_folders_folder_id
+        FOREIGN KEY (folder_id) REFERENCES media_folders (folder_id)
+            ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 
@@ -63,9 +67,11 @@ INSERT INTO media (
     focal_x,
     focal_y,
     author_id,
+    folder_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -98,6 +104,7 @@ SET name = ?,
     focal_x = ?,
     focal_y = ?,
     author_id = ?,
+    folder_id = ?,
     date_created = ?,
     date_modified = ?
 WHERE media_id = ?;
@@ -110,3 +117,24 @@ WHERE media_id = ?;
 SELECT * FROM media
 ORDER BY name
 LIMIT ? OFFSET ?;
+
+-- name: ListMediaByFolder :many
+SELECT * FROM media WHERE folder_id = ? ORDER BY date_created DESC;
+
+-- name: ListMediaByFolderPaginated :many
+SELECT * FROM media WHERE folder_id = ? ORDER BY date_created DESC LIMIT ? OFFSET ?;
+
+-- name: ListMediaUnfiled :many
+SELECT * FROM media WHERE folder_id IS NULL ORDER BY date_created DESC;
+
+-- name: ListMediaUnfiledPaginated :many
+SELECT * FROM media WHERE folder_id IS NULL ORDER BY date_created DESC LIMIT ? OFFSET ?;
+
+-- name: CountMediaByFolder :one
+SELECT COUNT(*) FROM media WHERE folder_id = ?;
+
+-- name: CountMediaUnfiled :one
+SELECT COUNT(*) FROM media WHERE folder_id IS NULL;
+
+-- name: MoveMediaToFolder :exec
+UPDATE media SET folder_id = ?, date_modified = ? WHERE media_id = ?;

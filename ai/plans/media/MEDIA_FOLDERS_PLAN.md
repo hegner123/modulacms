@@ -67,25 +67,28 @@ folder_id TEXT/VARCHAR(26) NULL REFERENCES media_folders(folder_id) ON DELETE SE
 1. Create 6 SQL files (schema + queries for SQLite, MySQL, PostgreSQL)
    - Standard CRUD: Create, Get, List, Update, Delete, Count
    - Extra queries:
-     - `ListMediaFoldersByParent(parent_id)` -- children of a folder (NULL = root)
-     - `GetMediaFolderByNameAndParent(name, parent_id)` -- for uniqueness check before insert
+     - `ListMediaFoldersByParent(parent_id)` -- children of a non-root folder (`WHERE parent_id = ?`)
+     - `ListMediaFoldersAtRoot()` -- root-level folders (`WHERE parent_id IS NULL`)
+     - `GetMediaFolderByNameAndParent(name, parent_id)` -- uniqueness check for non-root folders (`WHERE parent_id = ? AND name = ?`)
+     - `GetMediaFolderByNameAtRoot(name)` -- uniqueness check for root folders (`WHERE parent_id IS NULL AND name = ?`)
 2. Add `MediaFolderID` typed ID to `internal/db/types/types_ids.go`
-3. Add `NullableMediaFolderID` for the nullable FK on media
+3. Add `NullableMediaFolderID` to `internal/db/types/types_nullable_ids.go` for the nullable FK on media
 4. Add sqlc overrides in `tools/sqlcgen/definitions.go`
 5. Add dbgen entity definition in `tools/dbgen/definitions.go`
    - All CRUD methods use `(context.Context, audited.AuditContext, Params)` signatures
 6. Run `just sqlc` and `just dbgen`
-7. Add `MediaFolderRepository` as a new embedded interface in `DbDriver` in `internal/db/db.go` (follows the established pattern of one interface per entity group)
+7. Add `MediaFolderRepository` as a new embedded interface in `DbDriver` in `internal/db/db.go`, with interface definition in `internal/db/repositories.go` (note: existing `MediaRepository` groups Media + MediaDimension methods; folders get their own interface since they are a distinct entity group with independent CRUD)
 8. Add to `CreateAllTables` / `DropAllTables`:
    - **CreateAllTables:** `CreateMediaFolderTable()` must run **before** `CreateMediaTable()` (FK dependency)
-   - **DropAllTables:** `DropMediaTable()` must run **before** `DropMediaFolderTable()` (reverse order)
+   - **DropAllTables:** Insert `DropMediaFolderTable()` immediately after the existing `DropMediaTable()` and `DropMediaDimensionTable()` calls (same tier) in all three receiver variants (Database, MysqlDatabase, PsqlDatabase). Media table must drop before media_folders due to FK dependency
 9. Add `DBTable` constant, `allTables` entry, `TableStructMap` entry, and `CastToTypedSlice` case for `media_folders` in `internal/db/consts.go`
 10. Add breadcrumb helper in `internal/db/media_folder_custom.go`:
     - `GetMediaFolderBreadcrumb(folder_id) ([]MediaFolder, error)` -- app-side walk: loop `GetMediaFolder(parent_id)` up to root, with depth guard (max 10 iterations, return error on circular reference)
-    - `ValidateMediaFolderName(name, parent_id) error` -- check name uniqueness within parent before insert/update, protected by `sync.Mutex`
-    - `ValidateMediaFolderMove(folderID, newParentID) error` -- walk from `newParentID` up to root; if `folderID` is encountered in the ancestor chain, return error (prevents cycles). Also enforces max depth: count ancestors of `newParentID` + descendants of `folderID`, reject if total exceeds 10
-11. Add stub implementations for all new `MediaFolderRepository` methods in `internal/remote/driver.go`
-12. Write tests
+    - `ValidateMediaFolderName(name, parent_id) error` -- check name uniqueness within parent before insert/update, protected by `sync.Mutex`. Calls `GetMediaFolderByNameAtRoot` when `parent_id` is empty, `GetMediaFolderByNameAndParent` otherwise. Also validates: reject empty names, names longer than 255 characters, names containing `/`, `\`, or null bytes, and names that are exactly `.` or `..`. Trim leading and trailing whitespace before validation
+    - `ValidateMediaFolderMove(folderID, newParentID) error` -- walk from `newParentID` up to root; if `folderID` is encountered in the ancestor chain, return error (prevents cycles). Also enforces max depth: depth of `newParentID` (number of ancestors to root, 0 for root) + 1 + `maxSubtreeDepth(folderID)` must not exceed 10. Implement `maxSubtreeDepth(folderID) (int, error)` as a helper that recursively walks `ListMediaFoldersByParent` to find the deepest leaf
+11. Do NOT run `just drivergen` yet -- Phase 2 step 9 replicates both `media_folder_custom.go` and `media_custom.go` in a single pass
+12. Add stub implementations for all new `MediaFolderRepository` methods in `internal/remote/driver.go`
+13. Write tests
 
 ### Phase 2: Add `folder_id` to `media` table
 
@@ -97,15 +100,16 @@ folder_id TEXT/VARCHAR(26) NULL REFERENCES media_folders(folder_id) ON DELETE SE
    - `ListMediaUnfiledPaginated(limit, offset)` -- paginated variant for root-level media
    - `CountMediaByFolder(folder_id)` -- count for pagination total
    - `CountMediaUnfiled()` -- count for root-level pagination
-   - `MoveMediaToFolder(media_id, folder_id)` -- reassign folder (single item, audited)
+   - `MoveMediaToFolder(media_id, folder_id)` -- dedicated query that updates only `folder_id` and `date_modified` (single item). The `MoveMediaBatch` wrapper calls this in a loop via `audited.Update()`, recording a `media.updated` change_event per item
 3. No bulk move query -- use app-side loop within a transaction for batch moves (avoids array syntax portability issues across SQLite/MySQL/PostgreSQL). Maximum batch size: 100 items per request. Reject larger batches with 400 Bad Request
 4. Update sqlc overrides for `media.folder_id` -> `types.NullableMediaFolderID`
 5. Update `CreateMediaParams` / `UpdateMediaParams` to include `folder_id`
 6. Run `just sqlc` and `just dbgen`
 7. Update `DbDriver` interface with new media queries
-8. Add `MoveMediaBatch` in `internal/db/media_custom.go`:
+8. Create `internal/db/media_custom.go` (new file -- no existing media custom wrapper exists) with `MoveMediaBatch`:
    - Wraps individual `MoveMediaToFolder` calls in a transaction
    - Returns on first error, rolls back entire batch
+9. Run `just drivergen` to replicate `media_custom.go` and `media_folder_custom.go` methods to MySQL/PostgreSQL variants
 
 ### Phase 3: REST API
 
@@ -116,7 +120,7 @@ GET    /api/v1/media-folders              -- list root folders (or ?parent_id= f
 GET    /api/v1/media-folders/{id}         -- get folder details
 POST   /api/v1/media-folders              -- create folder (audited)
 PUT    /api/v1/media-folders/{id}         -- rename/move folder (audited, validates cycle detection and max depth on parent_id change)
-DELETE /api/v1/media-folders/{id}         -- delete folder (audited, fails if non-empty)
+DELETE /api/v1/media-folders/{id}         -- delete folder (audited, fails if non-empty: check BOTH child folders via ListMediaFoldersByParent AND media items via CountMediaByFolder; reject if either is non-zero)
 GET    /api/v1/media-folders/{id}/media   -- list media in folder (supports ?limit=&offset= pagination)
 GET    /api/v1/media-folders/tree         -- full folder tree (app-side assembly)
 ```
@@ -127,9 +131,9 @@ GET    /api/v1/media-folders/tree         -- full folder tree (app-side assembly
 - `PUT /api/v1/media/{id}` -- accept `folder_id` for move
 - `POST /api/v1/media/move` -- batch move media to folder (transactional)
 
-**Public content delivery:**
+**Public folder filtering:**
 
-- `GET /api/v1/delivery/media?folder_id=` -- folder-based filtering for galleries/collections
+- Add `?folder_id=` query parameter to the existing `GET /api/v1/media` endpoint for folder-based filtering in galleries/collections. Do NOT create a separate unauthenticated route for `media-folders/{id}/media`.
 
 **Permissions:** Reuse existing `media:create`, `media:update`, `media:delete` for folder operations. Folders are organizational metadata, not a separate resource.
 
@@ -144,10 +148,10 @@ Replace URL-derived virtual tree with DB-driven folder tree.
 1. **Update `media_tree.go`:**
    - New `MediaTreeNode` source: DB folders instead of URL parsing
    - `BuildMediaTree` takes `(folders []db.MediaFolder, items []db.Media)` instead of just items
-   - Folders from DB become `MediaNodeFolder` nodes with a `FolderID` field
+   - Add `FolderID` field to `MediaTreeNode` struct. Folders from DB become `MediaNodeFolder` nodes with this new field set
    - Media items become `MediaNodeFile` children under their folder
    - Unfiled media (NULL folder_id) appears at root level
-   - Keep `splitMediaPath` / URL-parsing code as a fallback for the import tool (Phase migration)
+   - Keep `splitMediaPath` / URL-parsing code -- it is used by the existing TUI import functionality and must remain functional
 
 2. **Update `screen_media.go`:**
    - Fetch folders alongside media on `MediaFetchMsg`
@@ -175,7 +179,7 @@ Replace URL-derived virtual tree with DB-driven folder tree.
    - Left panel: collapsible folder tree (similar to file manager)
    - Click folder to filter grid to that folder's contents
    - Context menu (action buttons): create subfolder, rename, delete
-   - Drag-and-drop media into folders: use the HTML Drag and Drop API (native, no external JS dependency) for drag events, HTMX request on drop. Implement as a `mcms-media-tree` Light DOM web component. Must handle: `dragstart`/`dragover`/`drop` events on media cards and folder nodes, visual drop target highlighting, HTMX `POST /admin/media/{id}/move` on successful drop. Keyboard accessibility: provide a "Move to folder" action button as an alternative to drag-and-drop.
+   - Drag-and-drop media into folders: use the HTML Drag and Drop API (native, no external JS dependency) for drag events, HTMX request on drop. Implement as a `mcms-media-tree` Light DOM web component. Must handle: `dragstart`/`dragover`/`drop` events on media cards and folder nodes, visual drop target highlighting, HTMX `POST /admin/media/{id}/move` on successful drop. Single-item drag only (no multi-select). On drop failure, show an HTMX toast notification with the error message and do not visually move the card. Keyboard accessibility: provide a "Move to folder" action button as an alternative to drag-and-drop.
 
 2. **Folder breadcrumb** on media list:
    - Shows current path: `All Media / Products / Hero Images`
@@ -204,7 +208,7 @@ Replace URL-derived virtual tree with DB-driven folder tree.
 
 ### Phase 6: MCP Tools
 
-New file `mcp/tools_media_folders.go`:
+New file `internal/mcp/tools_media_folders.go`:
 
 - `list_media_folders` -- list folders (optionally filtered by parent)
 - `get_media_folder` -- get folder details + children
@@ -213,6 +217,8 @@ New file `mcp/tools_media_folders.go`:
 - `delete_media_folder` -- delete (fails if non-empty, returns error with child count)
 - `move_media_to_folder` -- move media item(s) to a folder
 - Update `upload_media` tool to accept optional `folder_id`
+
+Register all new tools in `internal/mcp/backend_service.go` by adding entries to the tool registration map, following the pattern of existing media tools.
 
 ### Phase 7: SDKs
 
@@ -248,12 +254,14 @@ Handled by `CreateAllTables`. `CreateMediaFolderTable()` runs before `CreateMedi
 
 No existing installations exist (greenfield, no active users). Migration from pre-folder schemas is not required.
 
-## Backup & Restore
+## Backup & Deploy
 
-- Add `media_folders` to the backup export pipeline (`internal/backup/`)
-- Add `media_folders` to the backup import/restore pipeline
-- Restore order: `media_folders` before `media` (FK dependency)
-- Deploy sync (`internal/deploy/`): include `media_folders` in export/import/push/pull operations
+Backup (`internal/backup/`) uses full SQL database dumps (`mysqldump`/`pg_dump`/file copy for SQLite) -- no per-table changes needed. The new `media_folders` table is automatically included in full backups.
+
+Deploy sync (`internal/deploy/`) uses per-table export/import. Note: `media` is NOT currently in `DefaultTableSet` or `tableListFuncs`. Add `media_folders` to `tableListFuncs` as an opt-in table only (do NOT add to `DefaultTableSet`):
+- Add `media_folders` entry to `tableListFuncs` map in `internal/deploy/export.go`
+- Add `media_folders` case to import pipeline in `internal/deploy/import.go`
+- Restore/import order: `media_folders` before `media` (FK dependency)
 
 ## Files Changed (estimated)
 
@@ -261,12 +269,12 @@ No existing installations exist (greenfield, no active users). Migration from pr
 |------|-------|-------------|
 | SQL schema | 6 | New: `sql/schema/37_media_folders/` |
 | SQL schema | 6 | Modified: `sql/schema/14_media/` (add folder_id) |
-| Types | 1 | Modified: `internal/db/types/types_ids.go` |
+| Types | 2 | Modified: `internal/db/types/types_ids.go`, `internal/db/types/types_nullable_ids.go` |
 | Codegen defs | 2 | Modified: `tools/sqlcgen/definitions.go`, `tools/dbgen/definitions.go` |
 | Generated | ~8 | Regenerated: `internal/db-*/`, `internal/db/media_gen.go` |
-| DbDriver | 3 | Modified: `internal/db/db.go`, `internal/db/wipe.go`, `internal/db/consts.go` |
+| DbDriver | 4 | Modified: `internal/db/db.go`, `internal/db/repositories.go`, `internal/db/wipe.go`, `internal/db/consts.go` |
 | Custom queries | 1 | New: `internal/db/media_folder_custom.go` |
-| Batch move | 1 | New or modified: `internal/db/media_custom.go` |
+| Batch move | 1 | New: `internal/db/media_custom.go` |
 | API handlers | 1 | New: `internal/router/media_folders.go` |
 | API handlers | 1 | Modified: `internal/router/media.go` |
 | Routes | 1 | Modified: `internal/router/mux.go` |
@@ -275,8 +283,7 @@ No existing installations exist (greenfield, no active users). Migration from pr
 | Admin templates | 2-3 | Modified/New in `internal/admin/pages/`, `partials/` |
 | Admin handlers | 1 | New: `internal/admin/handlers/media_folders.go` |
 | Admin JS | 1 | New: `internal/admin/static/js/mcms-media-tree.js` (drag-and-drop web component) |
-| MCP | 1 | New: `mcp/tools_media_folders.go` |
-| Backup | 2 | Modified: `internal/backup/` (export + import) |
-| Deploy | 1 | Modified: `internal/deploy/` (sync operations) |
+| MCP | 1 | New: `internal/mcp/tools_media_folders.go` |
+| Deploy | 2 | Modified: `internal/deploy/export.go`, `internal/deploy/import.go` |
 | SDKs | ~6 | Modified across TypeScript, Go, Swift |
 | Tests | 2-3 | New test files |

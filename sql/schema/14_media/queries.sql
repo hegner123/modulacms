@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS media(
     author_id TEXT NOT NULL
     REFERENCES users
     ON DELETE SET NULL,
+    folder_id TEXT NULL
+    REFERENCES media_folders(folder_id)
+    ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -61,9 +64,11 @@ INSERT INTO media (
     focal_x,
     focal_y,
     author_id,
+    folder_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -98,6 +103,7 @@ SET name = ?,
     focal_x = ?,
     focal_y = ?,
     author_id = ?,
+    folder_id = ?,
     date_created = ?,
     date_modified = ?
 WHERE media_id = ?;
@@ -110,3 +116,24 @@ WHERE media_id = ?;
 SELECT * FROM media
 ORDER BY name
 LIMIT ? OFFSET ?;
+
+-- name: ListMediaByFolder :many
+SELECT * FROM media WHERE folder_id = ? ORDER BY date_created DESC;
+
+-- name: ListMediaByFolderPaginated :many
+SELECT * FROM media WHERE folder_id = ? ORDER BY date_created DESC LIMIT ? OFFSET ?;
+
+-- name: ListMediaUnfiled :many
+SELECT * FROM media WHERE folder_id IS NULL ORDER BY date_created DESC;
+
+-- name: ListMediaUnfiledPaginated :many
+SELECT * FROM media WHERE folder_id IS NULL ORDER BY date_created DESC LIMIT ? OFFSET ?;
+
+-- name: CountMediaByFolder :one
+SELECT COUNT(*) FROM media WHERE folder_id = ?;
+
+-- name: CountMediaUnfiled :one
+SELECT COUNT(*) FROM media WHERE folder_id IS NULL;
+
+-- name: MoveMediaToFolder :exec
+UPDATE media SET folder_id = ?, date_modified = ? WHERE media_id = ?;

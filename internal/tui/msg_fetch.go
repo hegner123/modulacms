@@ -143,14 +143,16 @@ type RouteSelectedMsg struct {
 // MediaFetchMsg requests fetching all media items.
 type MediaFetchMsg struct{}
 
-// MediaFetchResultsMsg returns fetched media items.
+// MediaFetchResultsMsg returns fetched media items and folders.
 type MediaFetchResultsMsg struct {
-	Data []db.Media
+	Data    []db.Media
+	Folders []db.MediaFolder
 }
 
-// MediaListSet sets the media items list.
+// MediaListSet sets the media items list and folders.
 type MediaListSet struct {
-	MediaList []db.Media
+	MediaList  []db.Media
+	FolderList []db.MediaFolder
 }
 
 // RootContentSummaryFetchMsg requests fetching root content summary.

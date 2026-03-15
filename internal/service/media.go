@@ -44,6 +44,7 @@ type UploadMediaParams struct {
 	Caption     string
 	Description string
 	DisplayName string
+	FolderID    types.NullableMediaFolderID
 }
 
 // UpdateMediaMetadataParams holds inputs for updating media metadata.
@@ -144,7 +145,7 @@ func (m *MediaService) Upload(ctx context.Context, ac audited.AuditContext, para
 		return media.HandleMediaUpload(srcFile, dstPath, *cfg)
 	}
 
-	row, err := media.ProcessMediaUpload(ctx, ac, params.File, params.Header, m.driver, uploadOriginal, rollbackS3, pipeline, cfg.MaxUploadSize())
+	row, err := media.ProcessMediaUpload(ctx, ac, params.File, params.Header, m.driver, uploadOriginal, rollbackS3, pipeline, cfg.MaxUploadSize(), params.FolderID)
 	if err != nil {
 		var dupErr media.DuplicateMediaError
 		var sizeErr media.FileTooLargeError

@@ -21,6 +21,10 @@ CREATE TABLE IF NOT EXISTS media (
         CONSTRAINT fk_users_author_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,
+    folder_id TEXT NULL
+        CONSTRAINT fk_media_folders_folder_id
+            REFERENCES media_folders(folder_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -61,6 +65,7 @@ INSERT INTO media (
     focal_x,
     focal_y,
     author_id,
+    folder_id,
     date_created,
     date_modified
 ) VALUES (
@@ -79,7 +84,8 @@ INSERT INTO media (
     $13,
     $14,
     $15,
-    $16
+    $16,
+    $17
 )
 RETURNING *;
 
@@ -98,9 +104,10 @@ SET name = $1,
     focal_x = $11,
     focal_y = $12,
     author_id = $13,
-    date_created = $14,
-    date_modified = $15
-WHERE media_id = $16;
+    folder_id = $14,
+    date_created = $15,
+    date_modified = $16
+WHERE media_id = $17;
 
 -- name: DeleteMedia :exec
 DELETE FROM media
@@ -110,3 +117,24 @@ WHERE media_id = $1;
 SELECT * FROM media
 ORDER BY name
 LIMIT $1 OFFSET $2;
+
+-- name: ListMediaByFolder :many
+SELECT * FROM media WHERE folder_id = $1 ORDER BY date_created DESC;
+
+-- name: ListMediaByFolderPaginated :many
+SELECT * FROM media WHERE folder_id = $1 ORDER BY date_created DESC LIMIT $2 OFFSET $3;
+
+-- name: ListMediaUnfiled :many
+SELECT * FROM media WHERE folder_id IS NULL ORDER BY date_created DESC;
+
+-- name: ListMediaUnfiledPaginated :many
+SELECT * FROM media WHERE folder_id IS NULL ORDER BY date_created DESC LIMIT $1 OFFSET $2;
+
+-- name: CountMediaByFolder :one
+SELECT COUNT(*) FROM media WHERE folder_id = $1;
+
+-- name: CountMediaUnfiled :one
+SELECT COUNT(*) FROM media WHERE folder_id IS NULL;
+
+-- name: MoveMediaToFolder :exec
+UPDATE media SET folder_id = $1, date_modified = $2 WHERE media_id = $3;

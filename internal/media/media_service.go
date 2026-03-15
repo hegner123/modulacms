@@ -96,6 +96,7 @@ func ProcessMediaUpload(
 	rollbackS3 RollbackS3Func,
 	pipeline UploadPipelineFunc,
 	maxUploadSize int64,
+	folderID types.NullableMediaFolderID,
 ) (*db.Media, error) {
 	// Step 1: Validate size
 	if header.Size > maxUploadSize {
@@ -159,6 +160,7 @@ func ProcessMediaUpload(
 		Mimetype:     db.NewNullString(contentType),
 		URL:          types.URL(originalURL),
 		AuthorID:     types.NullableUserID{ID: ac.UserID, Valid: ac.UserID != ""},
+		FolderID:     folderID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	}

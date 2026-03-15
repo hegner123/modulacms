@@ -109,6 +109,11 @@ public struct MediaDimensionID: ResourceID {
     public init(_ rawValue: String) { self.rawValue = rawValue }
 }
 
+public struct MediaFolderID: ResourceID {
+    public let rawValue: String
+    public init(_ rawValue: String) { self.rawValue = rawValue }
+}
+
 // MARK: - Auth IDs
 
 public struct UserID: ResourceID {

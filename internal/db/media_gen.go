@@ -20,61 +20,64 @@ import (
 
 // Media represents a media record in the database.
 type Media struct {
-	MediaID      types.MediaID         `json:"media_id"`
-	Name         NullString            `json:"name"`
-	DisplayName  NullString            `json:"display_name"`
-	Alt          NullString            `json:"alt"`
-	Caption      NullString            `json:"caption"`
-	Description  NullString            `json:"description"`
-	Class        NullString            `json:"class"`
-	Mimetype     NullString            `json:"mimetype"`
-	Dimensions   NullString            `json:"dimensions"`
-	URL          types.URL             `json:"url"`
-	Srcset       NullString            `json:"srcset"`
-	FocalX       types.NullableFloat64 `json:"focal_x"`
-	FocalY       types.NullableFloat64 `json:"focal_y"`
-	AuthorID     types.NullableUserID  `json:"author_id"`
-	DateCreated  types.Timestamp       `json:"date_created"`
-	DateModified types.Timestamp       `json:"date_modified"`
+	MediaID      types.MediaID               `json:"media_id"`
+	Name         NullString                  `json:"name"`
+	DisplayName  NullString                  `json:"display_name"`
+	Alt          NullString                  `json:"alt"`
+	Caption      NullString                  `json:"caption"`
+	Description  NullString                  `json:"description"`
+	Class        NullString                  `json:"class"`
+	Mimetype     NullString                  `json:"mimetype"`
+	Dimensions   NullString                  `json:"dimensions"`
+	URL          types.URL                   `json:"url"`
+	Srcset       NullString                  `json:"srcset"`
+	FocalX       types.NullableFloat64       `json:"focal_x"`
+	FocalY       types.NullableFloat64       `json:"focal_y"`
+	AuthorID     types.NullableUserID        `json:"author_id"`
+	FolderID     types.NullableMediaFolderID `json:"folder_id"`
+	DateCreated  types.Timestamp             `json:"date_created"`
+	DateModified types.Timestamp             `json:"date_modified"`
 }
 
 // CreateMediaParams contains parameters for creating a new media.
 type CreateMediaParams struct {
-	Name         NullString            `json:"name"`
-	DisplayName  NullString            `json:"display_name"`
-	Alt          NullString            `json:"alt"`
-	Caption      NullString            `json:"caption"`
-	Description  NullString            `json:"description"`
-	Class        NullString            `json:"class"`
-	Mimetype     NullString            `json:"mimetype"`
-	Dimensions   NullString            `json:"dimensions"`
-	URL          types.URL             `json:"url"`
-	Srcset       NullString            `json:"srcset"`
-	FocalX       types.NullableFloat64 `json:"focal_x"`
-	FocalY       types.NullableFloat64 `json:"focal_y"`
-	AuthorID     types.NullableUserID  `json:"author_id"`
-	DateCreated  types.Timestamp       `json:"date_created"`
-	DateModified types.Timestamp       `json:"date_modified"`
+	Name         NullString                  `json:"name"`
+	DisplayName  NullString                  `json:"display_name"`
+	Alt          NullString                  `json:"alt"`
+	Caption      NullString                  `json:"caption"`
+	Description  NullString                  `json:"description"`
+	Class        NullString                  `json:"class"`
+	Mimetype     NullString                  `json:"mimetype"`
+	Dimensions   NullString                  `json:"dimensions"`
+	URL          types.URL                   `json:"url"`
+	Srcset       NullString                  `json:"srcset"`
+	FocalX       types.NullableFloat64       `json:"focal_x"`
+	FocalY       types.NullableFloat64       `json:"focal_y"`
+	AuthorID     types.NullableUserID        `json:"author_id"`
+	FolderID     types.NullableMediaFolderID `json:"folder_id"`
+	DateCreated  types.Timestamp             `json:"date_created"`
+	DateModified types.Timestamp             `json:"date_modified"`
 }
 
 // UpdateMediaParams contains parameters for updating an existing media.
 type UpdateMediaParams struct {
-	Name         NullString            `json:"name"`
-	DisplayName  NullString            `json:"display_name"`
-	Alt          NullString            `json:"alt"`
-	Caption      NullString            `json:"caption"`
-	Description  NullString            `json:"description"`
-	Class        NullString            `json:"class"`
-	Mimetype     NullString            `json:"mimetype"`
-	Dimensions   NullString            `json:"dimensions"`
-	URL          types.URL             `json:"url"`
-	Srcset       NullString            `json:"srcset"`
-	FocalX       types.NullableFloat64 `json:"focal_x"`
-	FocalY       types.NullableFloat64 `json:"focal_y"`
-	AuthorID     types.NullableUserID  `json:"author_id"`
-	DateCreated  types.Timestamp       `json:"date_created"`
-	DateModified types.Timestamp       `json:"date_modified"`
-	MediaID      types.MediaID         `json:"media_id"`
+	Name         NullString                  `json:"name"`
+	DisplayName  NullString                  `json:"display_name"`
+	Alt          NullString                  `json:"alt"`
+	Caption      NullString                  `json:"caption"`
+	Description  NullString                  `json:"description"`
+	Class        NullString                  `json:"class"`
+	Mimetype     NullString                  `json:"mimetype"`
+	Dimensions   NullString                  `json:"dimensions"`
+	URL          types.URL                   `json:"url"`
+	Srcset       NullString                  `json:"srcset"`
+	FocalX       types.NullableFloat64       `json:"focal_x"`
+	FocalY       types.NullableFloat64       `json:"focal_y"`
+	AuthorID     types.NullableUserID        `json:"author_id"`
+	FolderID     types.NullableMediaFolderID `json:"folder_id"`
+	DateCreated  types.Timestamp             `json:"date_created"`
+	DateModified types.Timestamp             `json:"date_modified"`
+	MediaID      types.MediaID               `json:"media_id"`
 }
 
 // MapStringMedia converts Media to StringMedia for TUI display.
@@ -94,6 +97,7 @@ func MapStringMedia(a Media) StringMedia {
 		FocalX:       fmt.Sprintf("%v", a.FocalX.Float64),
 		FocalY:       fmt.Sprintf("%v", a.FocalY.Float64),
 		AuthorID:     a.AuthorID.String(),
+		FolderID:     a.FolderID.String(),
 		DateCreated:  a.DateCreated.String(),
 		DateModified: a.DateModified.String(),
 	}
@@ -122,6 +126,7 @@ func (d Database) MapMedia(a mdb.Media) Media {
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
+		FolderID:     a.FolderID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 	}
@@ -144,6 +149,7 @@ func (d Database) MapCreateMediaParams(a CreateMediaParams) mdb.CreateMediaParam
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
+		FolderID:     a.FolderID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 	}
@@ -165,6 +171,7 @@ func (d Database) MapUpdateMediaParams(a UpdateMediaParams) mdb.UpdateMediaParam
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
+		FolderID:     a.FolderID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 		MediaID:      a.MediaID,
@@ -306,6 +313,7 @@ func (d MysqlDatabase) MapMedia(a mdbm.Media) Media {
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
+		FolderID:     a.FolderID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 	}
@@ -328,6 +336,7 @@ func (d MysqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbm.CreateMedi
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
+		FolderID:     a.FolderID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 	}
@@ -349,6 +358,7 @@ func (d MysqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbm.UpdateMedi
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
+		FolderID:     a.FolderID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 		MediaID:      a.MediaID,
@@ -490,6 +500,7 @@ func (d PsqlDatabase) MapMedia(a mdbp.Media) Media {
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
+		FolderID:     a.FolderID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 	}
@@ -512,6 +523,7 @@ func (d PsqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbp.CreateMedia
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
+		FolderID:     a.FolderID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 	}
@@ -533,6 +545,7 @@ func (d PsqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbp.UpdateMedia
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
+		FolderID:     a.FolderID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 		MediaID:      a.MediaID,
@@ -703,6 +716,7 @@ func (c NewMediaCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Media, e
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,
+		FolderID:     c.params.FolderID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,
 	})
@@ -768,6 +782,7 @@ func (c UpdateMediaCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,
+		FolderID:     c.params.FolderID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,
 		MediaID:      c.params.MediaID,
@@ -875,6 +890,7 @@ func (c NewMediaCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Me
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,
+		FolderID:     c.params.FolderID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,
 	}
@@ -944,6 +960,7 @@ func (c UpdateMediaCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,
+		FolderID:     c.params.FolderID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,
 		MediaID:      c.params.MediaID,
@@ -1051,6 +1068,7 @@ func (c NewMediaCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Med
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,
+		FolderID:     c.params.FolderID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,
 	})
@@ -1116,6 +1134,7 @@ func (c UpdateMediaCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error 
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,
+		FolderID:     c.params.FolderID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,
 		MediaID:      c.params.MediaID,

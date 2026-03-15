@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 // Media grid: 2 columns
@@ -28,19 +29,23 @@ var mediaGrid = Grid{
 // MediaScreen implements Screen for the media library page.
 type MediaScreen struct {
 	GridScreen
-	MediaList    []db.Media       // full list from DB
-	FilteredList []db.Media       // displayed subset (== MediaList when no filter)
-	MediaTree    []*MediaTreeNode // tree built from FilteredList
-	FlatList     []*MediaTreeNode // flattened for cursor navigation
-	Searching    bool             // true when search input is active
+	MediaList    []db.Media        // full list from DB
+	FolderList   []db.MediaFolder  // all folders from DB
+	FilteredList []db.Media        // displayed subset (== MediaList when no filter)
+	MediaTree    []*MediaTreeNode  // tree built from FilteredList + folders
+	FlatList     []*MediaTreeNode  // flattened for cursor navigation
+	Searching    bool              // true when search input is active
 	SearchInput  textinput.Model
 	SearchQuery  string // persisted query (set on enter)
 }
 
 // NewMediaScreen creates a MediaScreen with the provided media list.
-func NewMediaScreen(mediaList []db.Media) *MediaScreen {
+func NewMediaScreen(mediaList []db.Media, folderList []db.MediaFolder) *MediaScreen {
 	if mediaList == nil {
 		mediaList = []db.Media{}
+	}
+	if folderList == nil {
+		folderList = []db.MediaFolder{}
 	}
 
 	ti := textinput.New()
@@ -53,6 +58,7 @@ func NewMediaScreen(mediaList []db.Media) *MediaScreen {
 			FocusIndex: 0,
 		},
 		MediaList:    mediaList,
+		FolderList:   folderList,
 		FilteredList: mediaList,
 		SearchInput:  ti,
 	}
@@ -63,7 +69,12 @@ func NewMediaScreen(mediaList []db.Media) *MediaScreen {
 func (s *MediaScreen) PageIndex() PageIndex { return MEDIA }
 
 func (s *MediaScreen) rebuildTree() {
-	s.MediaTree = BuildMediaTree(s.FilteredList)
+	if s.SearchQuery != "" {
+		filteredFolders, filteredItems := FilterMediaTree(s.FolderList, s.FilteredList, s.SearchQuery)
+		s.MediaTree = BuildMediaTree(filteredFolders, filteredItems)
+	} else {
+		s.MediaTree = BuildMediaTree(s.FolderList, s.FilteredList)
+	}
 	s.FlatList = FlattenMediaTree(s.MediaTree)
 	s.CursorMax = len(s.FlatList) - 1
 	if s.CursorMax < 0 {
@@ -86,6 +97,32 @@ func (s *MediaScreen) selectedMedia() *db.Media {
 	return nil
 }
 
+// selectedNode returns the currently selected tree node, or nil.
+func (s *MediaScreen) selectedNode() *MediaTreeNode {
+	if len(s.FlatList) == 0 || s.Cursor >= len(s.FlatList) {
+		return nil
+	}
+	return s.FlatList[s.Cursor]
+}
+
+// selectedFolderID returns the folder context for the current cursor position.
+// If cursor is on a folder, returns that folder's ID.
+// If cursor is on a file inside a folder, returns the parent folder's ID.
+// Returns zero ID if at root level with no folder context.
+func (s *MediaScreen) selectedFolderID() types.NullableMediaFolderID {
+	node := s.selectedNode()
+	if node == nil {
+		return types.NullableMediaFolderID{}
+	}
+	if node.Kind == MediaNodeFolder && !node.FolderID.IsZero() {
+		return types.NullableMediaFolderID{ID: node.FolderID, Valid: true}
+	}
+	if node.Kind == MediaNodeFile && node.Media != nil {
+		return node.Media.FolderID
+	}
+	return types.NullableMediaFolderID{}
+}
+
 func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -99,6 +136,9 @@ func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 				s.Searching = false
 				s.SearchQuery = s.SearchInput.Value()
 				s.SearchInput.Blur()
+				s.FilteredList = FilterMediaList(s.MediaList, s.SearchQuery)
+				s.Cursor = 0
+				s.rebuildTree()
 				return s, nil
 			case "esc":
 				s.Searching = false
@@ -153,8 +193,27 @@ func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			return s, nil
 		}
 
-		// Upload new media (open file picker — requires local filesystem)
-		if km.Matches(key, config.ActionNew) {
+		// Create new folder (n key)
+		if km.Matches(key, config.ActionNew) && s.FocusIndex == 0 {
+			node := s.selectedNode()
+			if node != nil && node.Kind == MediaNodeFolder && !node.FolderID.IsZero() {
+				// Create subfolder under selected folder
+				return s, func() tea.Msg {
+					return ShowCreateMediaFolderDialogMsg{
+						ParentID: types.NullableMediaFolderID{ID: node.FolderID, Valid: true},
+					}
+				}
+			}
+			// Create root folder
+			return s, func() tea.Msg {
+				return ShowCreateMediaFolderDialogMsg{
+					ParentID: types.NullableMediaFolderID{},
+				}
+			}
+		}
+
+		// Upload new media (open file picker) -- uses ActionNew when not on tree panel
+		if km.Matches(key, config.ActionNew) && s.FocusIndex != 0 {
 			if ctx.IsSSH {
 				dialog := NewDialog(
 					"Upload Not Available",
@@ -172,8 +231,47 @@ func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			}
 		}
 
-		// Delete selected media
+		// Rename folder (e key on a folder node)
+		if km.Matches(key, config.ActionEdit) && s.FocusIndex == 0 {
+			node := s.selectedNode()
+			if node != nil && node.Kind == MediaNodeFolder && !node.FolderID.IsZero() {
+				return s, func() tea.Msg {
+					return ShowRenameMediaFolderDialogMsg{
+						FolderID:    node.FolderID,
+						CurrentName: node.Label,
+					}
+				}
+			}
+		}
+
+		// Delete selected item (d key)
 		if km.Matches(key, config.ActionDelete) {
+			node := s.selectedNode()
+			if node == nil {
+				return s, nil
+			}
+			if node.Kind == MediaNodeFolder && !node.FolderID.IsZero() {
+				return s, func() tea.Msg {
+					return ShowDeleteMediaFolderDialogMsg{
+						FolderID: node.FolderID,
+						Name:     node.Label,
+					}
+				}
+			}
+			if node.Kind == MediaNodeFile && node.Media != nil {
+				media := node.Media
+				label := media.MediaID.String()
+				if media.DisplayName.Valid && media.DisplayName.String != "" {
+					label = media.DisplayName.String
+				} else if media.Name.Valid && media.Name.String != "" {
+					label = media.Name.String
+				}
+				return s, ShowDeleteMediaDialogCmd(media.MediaID, label)
+			}
+		}
+
+		// Move media to folder (m key on a file node)
+		if km.Matches(key, config.ActionMove) && s.FocusIndex == 0 {
 			media := s.selectedMedia()
 			if media != nil {
 				label := media.MediaID.String()
@@ -182,7 +280,12 @@ func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 				} else if media.Name.Valid && media.Name.String != "" {
 					label = media.Name.String
 				}
-				return s, ShowDeleteMediaDialogCmd(media.MediaID, label)
+				return s, func() tea.Msg {
+					return ShowMoveMediaToFolderDialogMsg{
+						MediaID: media.MediaID,
+						Label:   label,
+					}
+				}
 			}
 		}
 
@@ -204,13 +307,23 @@ func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			if err != nil {
 				return FetchErrMsg{Error: err}
 			}
-			if media == nil {
-				return MediaFetchResultsMsg{Data: []db.Media{}}
+			folders, err := d.ListMediaFolders()
+			if err != nil {
+				return FetchErrMsg{Error: err}
 			}
-			return MediaFetchResultsMsg{Data: *media}
+			var mediaData []db.Media
+			if media != nil {
+				mediaData = *media
+			}
+			var folderData []db.MediaFolder
+			if folders != nil {
+				folderData = *folders
+			}
+			return MediaFetchResultsMsg{Data: mediaData, Folders: folderData}
 		}
 	case MediaFetchResultsMsg:
 		s.MediaList = msg.Data
+		s.FolderList = msg.Folders
 		s.FilteredList = FilterMediaList(s.MediaList, s.SearchQuery)
 		s.Cursor = 0
 		s.rebuildTree()
@@ -219,6 +332,7 @@ func (s *MediaScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	// Data refresh (from CMS operations)
 	case MediaListSet:
 		s.MediaList = msg.MediaList
+		s.FolderList = msg.FolderList
 		s.FilteredList = FilterMediaList(s.MediaList, s.SearchQuery)
 		s.rebuildTree()
 		return s, nil
@@ -235,11 +349,24 @@ func (s *MediaScreen) KeyHints(km config.KeyMap) []KeyHint {
 			{"esc", "clear"},
 		}
 	}
+	node := s.selectedNode()
+	if node != nil && node.Kind == MediaNodeFolder {
+		return []KeyHint{
+			{km.HintString(config.ActionSearch), "search"},
+			{km.HintString(config.ActionNew), "new folder"},
+			{km.HintString(config.ActionEdit), "rename"},
+			{km.HintString(config.ActionDelete), "del folder"},
+			{"enter", "expand"},
+			{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
+			{km.HintString(config.ActionNextPanel), "panel"},
+			{km.HintString(config.ActionBack), "back"},
+		}
+	}
 	return []KeyHint{
 		{km.HintString(config.ActionSearch), "search"},
-		{km.HintString(config.ActionNew), "upload"},
+		{km.HintString(config.ActionNew), "new folder"},
+		{km.HintString(config.ActionMove), "move"},
 		{km.HintString(config.ActionDelete), "del"},
-		{"enter", "expand"},
 		{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionBack), "back"},

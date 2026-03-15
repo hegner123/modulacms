@@ -630,6 +630,126 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			OverlayClearCmd(),
 			FocusSetCmd(PAGEFOCUS),
 		)
+
+	// --- Media folder dialog messages ---
+	case ShowCreateMediaFolderDialogMsg:
+		dialog := NewCreateFolderDialog(msg.ParentID)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowRenameMediaFolderDialogMsg:
+		dialog := NewRenameFolderDialog(msg.FolderID, msg.CurrentName)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteMediaFolderDialogMsg:
+		dialog := NewDialog("Delete Folder",
+			fmt.Sprintf("Delete folder '%s'?\nFolder must be empty (no files or subfolders).", msg.Name),
+			true, DIALOGDELETEMEDIAFOLDER)
+		dialog.SetButtons("Delete", "Cancel")
+		m.DCtx.Active = &DeleteMediaFolderContext{
+			FolderID: msg.FolderID,
+			Name:     msg.Name,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowMoveMediaToFolderDialogMsg:
+		// Need to fetch current folders to build the picker list.
+		// Use DB from model to get folder list synchronously in a command.
+		d := m.DB
+		if d == nil {
+			dialog := NewDialog("Error", "Database not connected.", false, DIALOGGENERIC)
+			return m, tea.Batch(
+				OverlaySetCmd(&dialog),
+				FocusSetCmd(DIALOGFOCUS),
+			)
+		}
+		mediaID := msg.MediaID
+		label := msg.Label
+		return m, func() tea.Msg {
+			folders, err := d.ListMediaFolders()
+			if err != nil {
+				return ActionResultMsg{
+					Title:   "Error",
+					Message: fmt.Sprintf("Failed to load folders: %v", err),
+				}
+			}
+			var folderData []db.MediaFolder
+			if folders != nil {
+				folderData = *folders
+			}
+			return ShowMoveMediaToFolderPickerMsg{
+				MediaID: mediaID,
+				Label:   label,
+				Folders: folderData,
+			}
+		}
+	case ShowMoveMediaToFolderPickerMsg:
+		dialog := NewMoveMediaFolderDialog(msg.MediaID, msg.Label, msg.Folders)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case MediaFolderNameDialogCancelMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case MoveMediaFolderDialogCancelMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case CreateMediaFolderRequestMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			m.HandleCreateMediaFolder(msg),
+		)
+	case RenameMediaFolderRequestMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			m.HandleRenameMediaFolder(msg),
+		)
+	case MoveMediaToFolderRequestMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			m.HandleMoveMediaToFolder(msg),
+		)
+	case MediaFolderCreatedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Folder created: %s", msg.Name)),
+			MediaFetchCmd(),
+		)
+	case MediaFolderRenamedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Folder renamed to: %s", msg.NewName)),
+			MediaFetchCmd(),
+		)
+	case MediaFolderDeletedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Folder deleted: %s", msg.FolderID)),
+			MediaFetchCmd(),
+		)
+	case MediaMovedToFolderMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Media moved: %s", msg.MediaID)),
+			MediaFetchCmd(),
+		)
+
 	case DialogAcceptMsg:
 		return m.handleDialogAccept(msg)
 	case DialogCancelMsg:

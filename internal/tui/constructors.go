@@ -505,9 +505,9 @@ func RestoreBackupFromPathCmd(path string) tea.Cmd {
 // MediaFetchCmd creates a command to fetch all media items.
 func MediaFetchCmd() tea.Cmd { return func() tea.Msg { return MediaFetchMsg{} } }
 
-// MediaListSetCmd creates a command to set the media list.
-func MediaListSetCmd(media []db.Media) tea.Cmd {
-	return func() tea.Msg { return MediaListSet{MediaList: media} }
+// MediaListSetCmd creates a command to set the media list and folders.
+func MediaListSetCmd(media []db.Media, folders []db.MediaFolder) tea.Cmd {
+	return func() tea.Msg { return MediaListSet{MediaList: media, FolderList: folders} }
 }
 
 // MediaUploadCmd creates a command to upload a media file.
