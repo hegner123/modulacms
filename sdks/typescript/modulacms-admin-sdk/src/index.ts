@@ -231,6 +231,7 @@ export type {
 export type {
   PluginListItem,
   PluginInfo,
+  PluginUIInfo,
   DriftEntry,
   PluginActionResponse,
   PluginStateResponse,

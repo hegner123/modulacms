@@ -7,12 +7,14 @@ on:
       - 'sdks/typescript/**'
       - 'sdks/go/**'
       - 'sdks/swift/**'
+      - 'testdata/**'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'sdks/typescript/**'
       - 'sdks/go/**'
       - 'sdks/swift/**'
+      - 'testdata/**'
 
 jobs:
   typescript-sdk:

@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -1361,5 +1362,196 @@ func TestErrPoolExhausted_Is(t *testing.T) {
 	err := fmt.Errorf("wrapped: %w", ErrPoolExhausted)
 	if !errors.Is(err, ErrPoolExhausted) {
 		t.Error("errors.Is failed for wrapped ErrPoolExhausted")
+	}
+}
+
+// -- UI metadata extraction tests --
+
+func TestExtractManifest_WithUI(t *testing.T) {
+	dir := t.TempDir()
+	writePluginFile(t, dir, "my_plugin", `
+plugin_info = {
+    name        = "my_plugin",
+    version     = "1.0.0",
+    description = "Plugin with UI metadata",
+    ui = {
+        tag       = "mcms-my-plugin",
+        bundle    = "/static/my-plugin.js",
+        has_admin = true,
+    },
+}
+`)
+
+	info, err := ExtractManifest(filepath.Join(dir, "my_plugin", "init.lua"))
+	if err != nil {
+		t.Fatalf("ExtractManifest: %s", err)
+	}
+
+	if info.UI == nil {
+		t.Fatal("expected UI to be non-nil")
+	}
+	if info.UI.Tag != "mcms-my-plugin" {
+		t.Errorf("UI.Tag = %q, want %q", info.UI.Tag, "mcms-my-plugin")
+	}
+	if info.UI.Bundle != "/static/my-plugin.js" {
+		t.Errorf("UI.Bundle = %q, want %q", info.UI.Bundle, "/static/my-plugin.js")
+	}
+	if !info.UI.HasAdmin {
+		t.Error("UI.HasAdmin = false, want true")
+	}
+}
+
+func TestExtractManifest_UIWithoutTag(t *testing.T) {
+	dir := t.TempDir()
+	writePluginFile(t, dir, "no_tag", `
+plugin_info = {
+    name        = "no_tag",
+    version     = "1.0.0",
+    description = "Plugin with UI table but empty tag",
+    ui = {
+        bundle = "/static/no-tag.js",
+    },
+}
+`)
+
+	info, err := ExtractManifest(filepath.Join(dir, "no_tag", "init.lua"))
+	if err != nil {
+		t.Fatalf("ExtractManifest: %s", err)
+	}
+
+	if info.UI != nil {
+		t.Errorf("expected UI to be nil when tag is empty, got %+v", info.UI)
+	}
+}
+
+// -- UI tag validation tests --
+
+func TestValidateManifest_UITagNoHyphen(t *testing.T) {
+	info := &PluginInfo{
+		Name:        "test",
+		Version:     "1.0.0",
+		Description: "Test",
+		UI:          &PluginUIInfo{Tag: "nohyphen"},
+	}
+	err := ValidateManifest(info)
+	if err == nil {
+		t.Fatal("expected error for tag without hyphen, got nil")
+	}
+	// The tag-name binding check fires first since "nohyphen" != "mcms-test".
+	if !strings.Contains(err.Error(), "does not match") {
+		t.Errorf("error = %q, want to contain %q", err.Error(), "does not match")
+	}
+}
+
+func TestValidateManifest_UITagStartsWithDigit(t *testing.T) {
+	info := &PluginInfo{
+		Name:        "test",
+		Version:     "1.0.0",
+		Description: "Test",
+		UI:          &PluginUIInfo{Tag: "1-bad"},
+	}
+	err := ValidateManifest(info)
+	if err == nil {
+		t.Fatal("expected error for tag starting with digit, got nil")
+	}
+	// Tag-name binding fires first since "1-bad" != "mcms-test".
+	if !strings.Contains(err.Error(), "does not match") {
+		t.Errorf("error = %q, want to contain %q", err.Error(), "does not match")
+	}
+}
+
+func TestValidateManifest_UITagReservedName(t *testing.T) {
+	// font-face would be the expected tag for a plugin named "font_face",
+	// but it's a reserved HTML custom element name.
+	// First, test that the name-binding check would pass but the reserved check catches it.
+	info := &PluginInfo{
+		Name:        "ont_face", // "mcms-" + "ont-face" != "font-face", so use direct validateUITag
+		Version:     "1.0.0",
+		Description: "Test",
+		UI:          &PluginUIInfo{Tag: "font-face"},
+	}
+	err := ValidateManifest(info)
+	if err == nil {
+		t.Fatal("expected error for reserved tag, got nil")
+	}
+	// Name binding fires first: "font-face" != "mcms-ont-face"
+	if !strings.Contains(err.Error(), "does not match") {
+		t.Errorf("error = %q, want to contain %q", err.Error(), "does not match")
+	}
+
+	// Test validateUITag directly for the reserved name check.
+	err = validateUITag("font-face")
+	if err == nil {
+		t.Fatal("expected error for reserved tag from validateUITag, got nil")
+	}
+	if !strings.Contains(err.Error(), "reserved") {
+		t.Errorf("error = %q, want to contain %q", err.Error(), "reserved")
+	}
+}
+
+func TestValidateManifest_UITagNameMismatch(t *testing.T) {
+	info := &PluginInfo{
+		Name:        "my_plugin",
+		Version:     "1.0.0",
+		Description: "Test",
+		UI:          &PluginUIInfo{Tag: "wrong-tag"},
+	}
+	err := ValidateManifest(info)
+	if err == nil {
+		t.Fatal("expected error for tag/name mismatch, got nil")
+	}
+	if !strings.Contains(err.Error(), "does not match plugin name") {
+		t.Errorf("error = %q, want to contain %q", err.Error(), "does not match plugin name")
+	}
+	if !strings.Contains(err.Error(), "mcms-my-plugin") {
+		t.Errorf("error = %q, want to contain expected tag %q", err.Error(), "mcms-my-plugin")
+	}
+}
+
+func TestValidateManifest_UITagNameMatch(t *testing.T) {
+	info := &PluginInfo{
+		Name:        "my_plugin",
+		Version:     "1.0.0",
+		Description: "Test",
+		UI:          &PluginUIInfo{Tag: "mcms-my-plugin"},
+	}
+	err := ValidateManifest(info)
+	if err != nil {
+		t.Errorf("unexpected error for matching tag: %s", err)
+	}
+}
+
+func TestValidateManifest_UITagSharedFixture(t *testing.T) {
+	// Load the shared test fixture used by both Go and TypeScript tests.
+	fixtureData, err := os.ReadFile("../../testdata/tag-validation-cases.json")
+	if err != nil {
+		t.Fatalf("reading shared fixture: %s", err)
+	}
+
+	type tagCase struct {
+		Tag    string `json:"tag"`
+		Valid  bool   `json:"valid"`
+		Reason string `json:"reason"`
+	}
+
+	var cases []tagCase
+	if err := json.Unmarshal(fixtureData, &cases); err != nil {
+		t.Fatalf("parsing shared fixture: %s", err)
+	}
+
+	if len(cases) == 0 {
+		t.Fatal("shared fixture is empty")
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.Tag+"_"+tc.Reason, func(t *testing.T) {
+			err := validateUITag(tc.Tag)
+			if tc.Valid && err != nil {
+				t.Errorf("validateUITag(%q) returned error %q, expected valid (%s)", tc.Tag, err, tc.Reason)
+			}
+			if !tc.Valid && err == nil {
+				t.Errorf("validateUITag(%q) returned nil, expected error (%s)", tc.Tag, tc.Reason)
+			}
+		})
 	}
 }

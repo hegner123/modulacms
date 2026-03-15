@@ -34,7 +34,8 @@ Here is Claude's plan:
 
  Files to modify:
 
- - sdks/typescript/pnpm-workspace.yaml — add 'plugin-sdk' entry
+ - sdks/typescript/pnpm-workspace.yaml — add `- 'plugin-sdk'` as a new line in the packages list
+   (entries use bare directory names relative to the workspace root, not full paths)
 
  package.json
 
@@ -55,21 +56,30 @@ Here is Claude's plan:
  Only jsdom needs to be added as a package-level devDependency. Use the same version constraint
  style as the workspace root (e.g., "jsdom": "^26.0.0" or latest stable).
 
- Browser compatibility target: Custom Elements v1 (Chrome 67+, Firefox 63+, Safari 10.1+)
- for the core custom element lifecycle. However, AbortSignal.any() (used for signal composition)
- requires Chrome 116+, Firefox 124+, Safari 17.4+. This narrows the effective minimum. If broader
- support is needed, implement a manual AbortController-based composition that listens for abort on
- both signals instead of using AbortSignal.any().
- No polyfills included; consumers targeting older browsers must provide their own.
+ Browser compatibility target: Custom Elements v1. Use AbortSignal.any() for signal composition
+ (do NOT implement a manual AbortController polyfill). This sets the effective minimum browsers to
+ Chrome 116+, Firefox 124+, Safari 17.4+. No polyfills included; consumers targeting older browsers
+ must provide their own.
  Target bundle size: <5 KB minified+gzipped (zero dependencies, no framework).
 
  tsconfig.json / tsup.config.ts
 
- Identical to admin-sdk. Extends ../tsconfig.base.json (already has "lib": ["ES2022", "DOM"]).
+ Read sdks/typescript/modulacms-admin-sdk/tsconfig.json and sdks/typescript/modulacms-admin-sdk/tsup.config.ts
+ and replicate their content exactly for the plugin-sdk package. The tsconfig extends ../tsconfig.base.json
+ (already has "lib": ["ES2022", "DOM"]).
 
  vitest.config.ts
 
- Same as admin-sdk but with environment: "jsdom" for DOM API access (HTMLElement, customElements, document).
+ ```ts
+ import { defineConfig } from "vitest/config";
+
+ export default defineConfig({
+   test: {
+     environment: "jsdom",
+     include: ["src/**/*.test.ts"],
+   },
+ });
+ ```
 
  Core API: definePlugin(definition)
 
@@ -97,6 +107,8 @@ Here is Claude's plan:
  Custom Element Lifecycle (Light DOM, no Shadow DOM)
 
  - connectedCallback → read attributes → validate required attributes → build context → inject theme → setup(ctx, el) → mount(ctx, el)
+   If setup() throws or rejects, do NOT call mount(). Dispatch mcms-error event and render the
+   [role="alert"] fallback (see Error Handling below). mount() is only called after setup() resolves.
  - disconnectedCallback → destroy(el) → clear theme properties → clear innerHTML → release refs
  - Guard against double-init with _initialized flag
  - Check this.isConnected after each await (handles disconnect during async setup)
@@ -144,7 +156,8 @@ Here is Claude's plan:
  type PluginContext = {
    pluginName: string
    baseUrl: string
-   api: PluginApiClient        // scoped fetch: paths prefixed with /api/v1/plugins/<name>
+   api: PluginApiClient        // scoped fetch: consumer passes relative paths (e.g., "tasks" or "/tasks"),
+                               // the client normalizes to /api/v1/plugins/<name>/<path> (strips leading slash if present)
    auth: PluginAuth | null     // from auth-* attributes, null if absent
    theme: ThemeTokens          // OKLCH color tokens + spacing + radii + typography
    onNavigate: (handler: (path: string) => void) => () => void  // subscribe
@@ -220,8 +233,17 @@ Here is Claude's plan:
  from DOM), while per-request signals add additional cancellation triggers (e.g., user-initiated cancel).
  raw() does not compose signals — the caller manages their own signal via RequestInit.
 
- Navigation via CustomEvents: auto-namespaced per plugin name. Event names use the pattern
- mcms-navigate:<plugin-name> (outbound, bubbles) and mcms-navigate-to:<plugin-name> (inbound from host).
+ Navigation via CustomEvents: auto-namespaced per plugin name.
+
+ navigate(path) dispatches a CustomEvent on the host element with:
+ - type: "mcms-navigate:<plugin-name>"
+ - bubbles: true, composed: true
+ - detail: { path } (the path string is in event.detail.path)
+
+ onNavigate(handler) listens for "mcms-navigate-to:<plugin-name>" events on the host element.
+ Host applications dispatch this event on the plugin's custom element to trigger inbound navigation.
+ The handler receives event.detail.path as its argument. onNavigate returns an unsubscribe function.
+
  Plugin names are unique (enforced on install), so no cross-plugin event leakage.
  The context factory reads plugin-name from the host element attribute and bakes it into event dispatch/listen.
 
@@ -253,7 +275,11 @@ Here is Claude's plan:
  Error Handling
 
  - Required attribute missing → throw PluginError("Missing required attribute '<name>' on <tag>. Plugin cannot initialize.")
- - Setup/mount errors → dispatch mcms-error CustomEvent (bubbles, composed) + render minimal [role="alert"] fallback + console.error
+ - Setup/mount errors → console.error the error, dispatch mcms-error CustomEvent (bubbles, composed,
+   detail: { error, pluginName }), then set el.innerHTML to:
+   `<div role="alert" style="color: red; padding: 1em;">Plugin error: ${error.message}</div>`
+   No additional CSS. Only errors thrown during setup/mount render this fallback — errors during
+   normal operation after successful mount are the plugin author's responsibility.
  - Destroy errors → log + dispatch event, but still clean up DOM
  - API errors → throw PluginApiError with _tag, status, message
  - Exported type guards: isPluginError(), isPluginApiError()
@@ -545,6 +571,17 @@ Here is Claude's plan:
  14. Bundle path is opaque: The ui.bundle field in the Go manifest is informational metadata.
      Go never reads, resolves, or serves the file at this path. No path validation is performed
      because the value has no security-relevant use on the server side.
+
+ Non-goals (do NOT implement)
+
+ - No retry logic in the API client
+ - No request interceptors or middleware hooks
+ - No SSR/Node.js detection or fallbacks — this SDK is browser-only
+ - No Shadow DOM — Light DOM only
+ - No AbortSignal.any() polyfill — use the native API directly
+ - No top-level factory function (no createPlugin() or similar — definePlugin() is the only entry point)
+ - No runtime type validation of API responses
+ - No framework adapters (React, Vue, Angular wrappers)
 
  ---
  Implementation Order

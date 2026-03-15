@@ -23,6 +23,7 @@ func PluginListHandler(mgr *Manager) http.Handler {
 			State         string `json:"state"`
 			CBState       string `json:"circuit_breaker_state,omitempty"`
 			ManifestDrift bool   `json:"manifest_drift,omitempty"`
+			HasAdminUI    bool   `json:"has_admin_ui,omitempty"`
 		}
 
 		result := make([]pluginJSON, 0, len(plugins))
@@ -36,6 +37,9 @@ func PluginListHandler(mgr *Manager) http.Handler {
 			}
 			if inst.CB != nil {
 				p.CBState = inst.CB.State().String()
+			}
+			if inst.Info.UI != nil && inst.Info.UI.HasAdmin {
+				p.HasAdminUI = true
 			}
 			result = append(result, p)
 		}
@@ -63,6 +67,12 @@ func PluginInfoHandler(mgr *Manager) http.Handler {
 			return
 		}
 
+		type pluginUIJSON struct {
+			Tag      string `json:"tag"`
+			Bundle   string `json:"bundle,omitempty"`
+			HasAdmin bool   `json:"has_admin"`
+		}
+
 		type infoJSON struct {
 			Name            string                 `json:"name"`
 			Version         string                 `json:"version"`
@@ -79,6 +89,7 @@ func PluginInfoHandler(mgr *Manager) http.Handler {
 			SchemaDrift     []DriftEntry           `json:"schema_drift,omitempty"`
 			ManifestDrift   bool                   `json:"manifest_drift,omitempty"`
 			CapabilityDrift []CapabilityDriftEntry `json:"capability_drift,omitempty"`
+			UI              *pluginUIJSON          `json:"ui,omitempty"`
 		}
 
 		info := infoJSON{
@@ -103,6 +114,14 @@ func PluginInfoHandler(mgr *Manager) http.Handler {
 		if inst.Pool != nil {
 			info.VMsAvailable = inst.Pool.AvailableCount()
 			info.VMsTotal = inst.Pool.PoolSize()
+		}
+
+		if inst.Info.UI != nil {
+			info.UI = &pluginUIJSON{
+				Tag:      inst.Info.UI.Tag,
+				Bundle:   inst.Info.UI.Bundle,
+				HasAdmin: inst.Info.UI.HasAdmin,
+			}
 		}
 
 		w.Header().Set("Content-Type", "application/json")

@@ -3,3 +3,4 @@ packages:
   - 'tree'
   - 'modulacms-sdk'
   - 'modulacms-admin-sdk'
+  - 'plugin-sdk'

@@ -68,6 +68,14 @@ type CapabilityDriftEntry struct {
 // PluginCoreAccess maps table names to allowed operations.
 type PluginCoreAccess map[string][]string
 
+// PluginUIInfo holds optional web UI metadata declared in the plugin manifest.
+// No JSON tags -- serialization is handled by handler-local structs in cli_commands.go.
+type PluginUIInfo struct {
+	Tag      string // custom element tag (e.g., "mcms-task-tracker")
+	Bundle   string // opaque metadata: informational path to JS bundle (not validated, resolved, or served by Go)
+	HasAdmin bool   // whether plugin provides admin UI
+}
+
 // PluginInfo holds the metadata extracted from a plugin's plugin_info global.
 type PluginInfo struct {
 	Name          string
@@ -95,6 +103,9 @@ type PluginInfo struct {
 
 	// Interfaces lists field interface definitions from the manifest.
 	Interfaces []InterfaceDefinition
+
+	// UI holds optional web UI metadata. Nil if the plugin has no UI declaration.
+	UI *PluginUIInfo
 }
 
 // PluginInstance represents a loaded plugin with its state and resources.
@@ -861,6 +872,27 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 
 	// Mark plugin as running.
 	inst.State = StateRunning
+
+	// Warn if the plugin declares UI metadata but has no HTTP routes to serve
+	// the bundle. This does not block loading -- the plugin may register routes
+	// dynamically or rely on external serving.
+	if inst.Info.UI != nil && m.bridge != nil {
+		routes := m.bridge.ListRoutes()
+		hasRoute := false
+		for _, r := range routes {
+			if r.PluginName == pluginName {
+				hasRoute = true
+				break
+			}
+		}
+		if !hasRoute {
+			utility.DefaultLogger.Warn(
+				fmt.Sprintf("plugin %q declares UI tag %q but has no registered HTTP routes to serve the bundle", pluginName, inst.Info.UI.Tag),
+				nil,
+			)
+		}
+	}
+
 	m.loadOrder = append(m.loadOrder, pluginName)
 
 	utility.DefaultLogger.Info(
@@ -1206,6 +1238,23 @@ func ExtractManifest(initPath string) (*PluginInfo, error) {
 		})
 	}
 
+	// Extract UI metadata (optional table with tag, bundle, has_admin).
+	uiVal := L.GetField(infoTbl, "ui")
+	if uiTbl, ok := uiVal.(*lua.LTable); ok {
+		tag := luaTableString(L, uiTbl, "tag")
+		if tag != "" {
+			ui := &PluginUIInfo{
+				Tag:    tag,
+				Bundle: luaTableString(L, uiTbl, "bundle"),
+			}
+			hasAdminVal := L.GetField(uiTbl, "has_admin")
+			if b, ok := hasAdminVal.(lua.LBool); ok {
+				ui.HasAdmin = bool(b)
+			}
+			info.UI = ui
+		}
+	}
+
 	// Check whether on_init() is defined before the deferred L.Close() runs.
 	if L.GetGlobal("on_init").Type() == lua.LTFunction {
 		info.HasOnInit = true
@@ -1245,6 +1294,77 @@ func ValidateManifest(info *PluginInfo) error {
 	// with plugin "a" prefix "plugin_a_" in ambiguous ways).
 	if strings.HasSuffix(info.Name, "_") {
 		return fmt.Errorf("name %q has trailing underscore (collision prevention)", info.Name)
+	}
+
+	// Validate UI metadata when present.
+	if info.UI != nil {
+		// Tag-name binding: the tag must match the plugin name via deterministic
+		// derivation. This guarantees tag uniqueness because plugin names are unique
+		// at the database level (enforced on install).
+		expectedTag := "mcms-" + strings.ReplaceAll(info.Name, "_", "-")
+		if info.UI.Tag != expectedTag {
+			return fmt.Errorf("ui.tag %q does not match plugin name %q (expected %q)", info.UI.Tag, info.Name, expectedTag)
+		}
+		if err := validateUITag(info.UI.Tag); err != nil {
+			return fmt.Errorf("ui.tag: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// reservedHTMLCustomElements lists the HTML custom element names that are
+// reserved by the spec and must not be used as plugin UI tags.
+var reservedHTMLCustomElements = map[string]bool{
+	"annotation-xml":   true,
+	"color-profile":    true,
+	"font-face":        true,
+	"font-face-src":    true,
+	"font-face-name":   true,
+	"font-face-format": true,
+	"font-face-uri":    true,
+	"missing-glyph":    true,
+}
+
+// validateUITag checks that a tag string is a valid HTML custom element name.
+// Rules: starts with lowercase ASCII letter, contains at least one hyphen,
+// only lowercase alphanumeric + hyphens, max 64 characters, not a reserved name.
+// Character-by-character validation -- no regex.
+func validateUITag(tag string) error {
+	if tag == "" {
+		return fmt.Errorf("tag is empty")
+	}
+	if len(tag) > 64 {
+		return fmt.Errorf("tag %q exceeds 64 characters", tag)
+	}
+
+	// First character must be a lowercase ASCII letter.
+	first := tag[0]
+	if first < 'a' || first > 'z' {
+		return fmt.Errorf("tag %q must start with a lowercase ASCII letter", tag)
+	}
+
+	hasHyphen := false
+	for i := range len(tag) {
+		c := tag[i]
+		switch {
+		case c >= 'a' && c <= 'z':
+			// lowercase letter -- OK
+		case c >= '0' && c <= '9':
+			// digit -- OK
+		case c == '-':
+			hasHyphen = true
+		default:
+			return fmt.Errorf("tag %q contains invalid character %q at position %d (must be lowercase alphanumeric or hyphen)", tag, string(rune(c)), i)
+		}
+	}
+
+	if !hasHyphen {
+		return fmt.Errorf("tag %q must contain at least one hyphen", tag)
+	}
+
+	if reservedHTMLCustomElements[tag] {
+		return fmt.Errorf("tag %q is a reserved HTML custom element name", tag)
 	}
 
 	return nil

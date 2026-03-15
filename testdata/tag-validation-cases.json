@@ -1,0 +1,23 @@
+[
+  { "tag": "mcms-tasks",          "valid": true,  "reason": "valid: lowercase with hyphen" },
+  { "tag": "my-plugin",           "valid": true,  "reason": "valid: simple two-part tag" },
+  { "tag": "a-b",                 "valid": true,  "reason": "valid: minimal tag" },
+  { "tag": "mcms-task-tracker-2", "valid": true,  "reason": "valid: digits allowed after first char" },
+  { "tag": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "valid": true, "reason": "valid: exactly 64 characters" },
+  { "tag": "nohyphen",            "valid": false, "reason": "no hyphen" },
+  { "tag": "1-starts-with-digit", "valid": false, "reason": "starts with digit, not lowercase letter" },
+  { "tag": "-starts-with-hyphen", "valid": false, "reason": "starts with hyphen, not lowercase letter" },
+  { "tag": "My-Plugin",           "valid": false, "reason": "uppercase characters not allowed" },
+  { "tag": "my_plugin",           "valid": false, "reason": "underscores not allowed" },
+  { "tag": "my plugin",           "valid": false, "reason": "spaces not allowed" },
+  { "tag": "",                    "valid": false, "reason": "empty string" },
+  { "tag": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "valid": false, "reason": "65 characters, exceeds max 64" },
+  { "tag": "annotation-xml",      "valid": false, "reason": "reserved HTML custom element name" },
+  { "tag": "color-profile",       "valid": false, "reason": "reserved HTML custom element name" },
+  { "tag": "font-face",           "valid": false, "reason": "reserved HTML custom element name" },
+  { "tag": "font-face-src",       "valid": false, "reason": "reserved HTML custom element name" },
+  { "tag": "font-face-name",      "valid": false, "reason": "reserved HTML custom element name" },
+  { "tag": "font-face-format",    "valid": false, "reason": "reserved HTML custom element name" },
+  { "tag": "font-face-uri",       "valid": false, "reason": "reserved HTML custom element name" },
+  { "tag": "missing-glyph",       "valid": false, "reason": "reserved HTML custom element name" }
+]

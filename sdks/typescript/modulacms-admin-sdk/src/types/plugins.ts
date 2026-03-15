@@ -8,6 +8,13 @@
 // Plugin list / info
 // ---------------------------------------------------------------------------
 
+/** UI metadata for a plugin that provides an admin panel. */
+export type PluginUIInfo = {
+  tag: string
+  bundle?: string
+  has_admin: boolean
+}
+
 /** Summary item returned by the plugin list endpoint. */
 export type PluginListItem = {
   name: string
@@ -15,6 +22,7 @@ export type PluginListItem = {
   description: string
   state: string
   circuit_breaker_state?: string
+  has_admin_ui?: boolean
 }
 
 /** Schema drift entry describing a missing or extra column. */
@@ -39,6 +47,7 @@ export type PluginInfo = {
   vms_total: number
   dependencies?: string[]
   schema_drift?: DriftEntry[]
+  ui?: PluginUIInfo
 }
 
 // ---------------------------------------------------------------------------

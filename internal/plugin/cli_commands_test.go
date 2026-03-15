@@ -63,6 +63,25 @@ func addTestPlugin(mgr *Manager, name string, state PluginState, pool *VMPool) {
 	mgr.plugins[name] = inst
 }
 
+// addTestPluginWithUI inserts a plugin instance with UI metadata.
+func addTestPluginWithUI(mgr *Manager, name string, state PluginState, pool *VMPool, ui *PluginUIInfo) {
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
+
+	inst := &PluginInstance{
+		Info: PluginInfo{
+			Name:        name,
+			Version:     "1.0.0",
+			Description: "Test plugin " + name,
+			UI:          ui,
+		},
+		State: state,
+		Pool:  pool,
+		CB:    NewCircuitBreaker(name, 3, 60*time.Second),
+	}
+	mgr.plugins[name] = inst
+}
+
 // -- PluginListHandler tests --
 
 func TestPluginListHandler_EmptyList(t *testing.T) {
@@ -442,5 +461,139 @@ func TestPluginListHandler_ContentType(t *testing.T) {
 	ct := w.Header().Get("Content-Type")
 	if ct != "application/json" {
 		t.Errorf("Content-Type = %q, want %q", ct, "application/json")
+	}
+}
+
+// -- PluginInfoHandler with UI metadata --
+
+func TestPluginInfoHandler_WithUI(t *testing.T) {
+	mgr, cleanup := newTestManager(t)
+	defer cleanup()
+
+	pool := newTestPool(2)
+	defer pool.Close()
+	addTestPluginWithUI(mgr, "ui_plugin", StateRunning, pool, &PluginUIInfo{
+		Tag:      "mcms-ui-plugin",
+		Bundle:   "/static/ui-plugin.js",
+		HasAdmin: true,
+	})
+
+	req := httptest.NewRequest("GET", "/api/v1/admin/plugins/ui_plugin", nil)
+	req.SetPathValue("name", "ui_plugin")
+	w := httptest.NewRecorder()
+
+	PluginInfoHandler(mgr).ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	var body map[string]any
+	if err := json.NewDecoder(w.Body).Decode(&body); err != nil {
+		t.Fatalf("decoding response: %v", err)
+	}
+
+	uiRaw, ok := body["ui"]
+	if !ok {
+		t.Fatal("expected ui field in response")
+	}
+	ui, ok := uiRaw.(map[string]any)
+	if !ok {
+		t.Fatalf("expected ui to be an object, got %T", uiRaw)
+	}
+
+	if ui["tag"] != "mcms-ui-plugin" {
+		t.Errorf("ui.tag = %v, want %q", ui["tag"], "mcms-ui-plugin")
+	}
+	if ui["bundle"] != "/static/ui-plugin.js" {
+		t.Errorf("ui.bundle = %v, want %q", ui["bundle"], "/static/ui-plugin.js")
+	}
+	if ui["has_admin"] != true {
+		t.Errorf("ui.has_admin = %v, want true", ui["has_admin"])
+	}
+}
+
+func TestPluginInfoHandler_WithoutUI(t *testing.T) {
+	mgr, cleanup := newTestManager(t)
+	defer cleanup()
+
+	pool := newTestPool(2)
+	defer pool.Close()
+	addTestPlugin(mgr, "no_ui_plugin", StateRunning, pool)
+
+	req := httptest.NewRequest("GET", "/api/v1/admin/plugins/no_ui_plugin", nil)
+	req.SetPathValue("name", "no_ui_plugin")
+	w := httptest.NewRecorder()
+
+	PluginInfoHandler(mgr).ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	var body map[string]any
+	if err := json.NewDecoder(w.Body).Decode(&body); err != nil {
+		t.Fatalf("decoding response: %v", err)
+	}
+
+	if _, ok := body["ui"]; ok {
+		t.Error("expected ui field to be absent when plugin has no UI, but it was present")
+	}
+}
+
+// -- PluginListHandler with UI metadata --
+
+func TestPluginListHandler_HasAdminUI(t *testing.T) {
+	mgr, cleanup := newTestManager(t)
+	defer cleanup()
+
+	addTestPluginWithUI(mgr, "admin_ui", StateRunning, nil, &PluginUIInfo{
+		Tag:      "mcms-admin-ui",
+		HasAdmin: true,
+	})
+	addTestPlugin(mgr, "no_ui", StateRunning, nil)
+
+	req := httptest.NewRequest("GET", "/api/v1/admin/plugins", nil)
+	w := httptest.NewRecorder()
+
+	PluginListHandler(mgr).ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	var body map[string]any
+	if err := json.NewDecoder(w.Body).Decode(&body); err != nil {
+		t.Fatalf("decoding response: %v", err)
+	}
+
+	plugins, ok := body["plugins"].([]any)
+	if !ok {
+		t.Fatal("expected plugins array")
+	}
+	if len(plugins) != 2 {
+		t.Fatalf("expected 2 plugins, got %d", len(plugins))
+	}
+
+	// Find each plugin and verify has_admin_ui.
+	for _, p := range plugins {
+		pm, ok := p.(map[string]any)
+		if !ok {
+			t.Fatalf("expected plugin to be an object, got %T", p)
+		}
+		name := pm["name"].(string)
+		switch name {
+		case "admin_ui":
+			if pm["has_admin_ui"] != true {
+				t.Errorf("admin_ui: has_admin_ui = %v, want true", pm["has_admin_ui"])
+			}
+		case "no_ui":
+			// has_admin_ui should be absent (omitempty) or false.
+			if val, ok := pm["has_admin_ui"]; ok && val == true {
+				t.Errorf("no_ui: has_admin_ui should be absent or false, got %v", val)
+			}
+		default:
+			t.Errorf("unexpected plugin name: %q", name)
+		}
 	}
 }
