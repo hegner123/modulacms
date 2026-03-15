@@ -276,7 +276,7 @@ All deploy endpoints require authentication and `deploy:*` permissions.
 
 - **Automatic backup.** Before writing, the import endpoint creates a backup of the affected tables. The backup path is included in the sync result for manual recovery if needed.
 - **Overwrite strategy.** Import truncates each table and re-inserts all rows from the payload. This is a full replacement, not a merge.
-- **Table dependencies.** When exporting specific tables, include dependency tables. For example, `content_data` requires `datatypes` and `routes` to satisfy foreign key constraints on the target.
+- **Table dependencies.** When exporting specific tables, include dependency tables. For example, `content_data` requires `datatypes` and `routes` to satisfy foreign key constraints on the target. The `media_folders` table has a `parent_id` self-reference, so folder rows must be imported in dependency order (parents before children); the sync system handles this automatically.
 - **Plugin tables.** When `include_plugins` is set, registered plugin tables (prefixed `plugin_`) are included in the export. On import, plugin tables that do not exist on the destination (plugin not installed) are skipped with a warning. Plugin tables with a schema mismatch (different columns) are also skipped with a warning.
 - **Cross-version compatibility.** The health check reports the server version. Schema differences between versions may cause import errors. Keep source and target instances on the same major version.
 - **Permissions.** Deploy operations require the `deploy:read` and `deploy:create` permissions, which are only assigned to the admin role by default.

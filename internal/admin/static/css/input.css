@@ -1,0 +1,46 @@
+/* Tailwind CSS v4 entry point for ModulaCMS admin panel.
+ * Compiled output: tailwind.css (committed, go:embed'd).
+ * Regenerate: just admin generate
+ */
+@import "tailwindcss";
+
+/* Scan admin templates and web components for utility classes */
+@source "../../pages";
+@source "../../partials";
+@source "../../components";
+@source "../../layouts";
+@source "../js/components";
+
+/* Bridge project design tokens into Tailwind's theme system.
+ * Utilities like bg-surface, text-muted, border-default use
+ * the project's established palette. Tailwind's built-in colors
+ * (slate, blue, red, etc.) remain available alongside these.
+ */
+@theme {
+  /* Surface colors */
+  --color-page: #0a0a0a;
+  --color-surface: #141414;
+  --color-surface-hover: #1a1a1a;
+  --color-overlay: rgba(0, 0, 0, 0.6);
+
+  /* Border */
+  --color-border: #262626;
+
+  /* Text */
+  --color-muted: #a1a1aa;
+  --color-dim: #71717a;
+
+  /* Semantic action colors */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-success: #22c55e;
+  --color-success-hover: #16a34a;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  /* Fonts */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "SF Mono", "Fira Code", "Fira Mono", monospace;
+}

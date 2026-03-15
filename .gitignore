@@ -112,3 +112,6 @@ build/
 
 # Test Dbs
 testdb/
+
+# Tailwind UI reference samples
+tailwind-ui

@@ -24,10 +24,10 @@ Schema directories in `sql/schema/` are numbered sequentially. List the existing
 ls -1 sql/schema/
 ```
 
-If the highest is `22_joins/`, your new table is `23_comments/`.
+If the highest is `37_media_folders/`, your new table is `38_comments/`.
 
 ```bash
-mkdir sql/schema/23_comments
+mkdir sql/schema/38_comments
 ```
 
 ## Step 2: Create Schema Files
@@ -35,7 +35,7 @@ mkdir sql/schema/23_comments
 Each migration directory contains six files -- three schema files and three query files:
 
 ```
-23_comments/
+38_comments/
   schema.sql           # SQLite
   schema_mysql.sql     # MySQL
   schema_psql.sql      # PostgreSQL

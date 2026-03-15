@@ -346,6 +346,52 @@ The upload pipeline validates that no file with the same name already exists, op
 | PUT | `/api/v1/mediadimensions/` | Update dimension preset |
 | DELETE | `/api/v1/mediadimensions/?q={ulid}` | Delete dimension preset |
 
+### Media Folders
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| GET | `/api/v1/media-folders` | `media:read` | List root folders (or children via `?parent_id={ulid}`) |
+| GET | `/api/v1/media-folders/tree` | `media:read` | Get full folder hierarchy as nested tree |
+| POST | `/api/v1/media-folders` | `media:create` | Create folder |
+| GET | `/api/v1/media-folders/{id}` | `media:read` | Get folder by ID |
+| PUT | `/api/v1/media-folders/{id}` | `media:update` | Update folder |
+| DELETE | `/api/v1/media-folders/{id}` | `media:delete` | Delete folder (rejects if non-empty) |
+| GET | `/api/v1/media-folders/{id}/media` | `media:read` | List media in folder (supports pagination) |
+| POST | `/api/v1/media/move` | `media:update` | Batch move media items to a folder or to root |
+
+**Create a folder:**
+
+```bash
+curl -X POST http://localhost:8080/api/v1/media-folders \
+  -H "Cookie: session=YOUR_SESSION_COOKIE" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Photos", "parent_id": ""}'
+```
+
+Response (201): The created media folder record.
+
+**Get folder tree:**
+
+```bash
+curl http://localhost:8080/api/v1/media-folders/tree \
+  -H "Cookie: session=YOUR_SESSION_COOKIE"
+```
+
+Returns a nested JSON array where each node contains `folder_id`, `name`, `parent_id`, `date_created`, `date_modified`, and a `children` array.
+
+**Move media to a folder:**
+
+```bash
+curl -X POST http://localhost:8080/api/v1/media/move \
+  -H "Cookie: session=YOUR_SESSION_COOKIE" \
+  -H "Content-Type: application/json" \
+  -d '{"media_ids": ["01HXK4N2F8...", "01HXK4N2F9..."], "folder_id": "01HXK4N2FA..."}'
+```
+
+Set `folder_id` to `null` or omit it to move media items back to root. Maximum batch size is 100 items.
+
+Folder creation enforces a maximum depth of 10 levels and unique names within each parent folder. Deletion returns 409 Conflict if the folder contains child folders or media items.
+
 ## Users and Access Control
 
 ### Users

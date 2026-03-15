@@ -211,17 +211,40 @@ CREATE TABLE media (
     dimensions TEXT,
     url TEXT UNIQUE,
     srcset TEXT,
+    folder_id TEXT DEFAULT NULL REFERENCES media_folders ON DELETE SET NULL,
+    focal_x REAL,
+    focal_y REAL,
     author_id TEXT NOT NULL REFERENCES users ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-Columns: media_id is ULID primary key, name is filename, display_name is human-readable label, alt is image alt text, caption and description provide metadata, class supports CSS classification, mimetype stores MIME type, dimensions stores image dimensions, url is S3 object URL with unique constraint, srcset stores responsive image URLs, author_id tracks uploader.
+Columns: media_id is ULID primary key, name is filename, display_name is human-readable label, alt is image alt text, caption and description provide metadata, class supports CSS classification, mimetype stores MIME type, dimensions stores image dimensions, url is S3 object URL with unique constraint, srcset stores responsive image URLs, folder_id is optional reference to a media_folders record for organization, focal_x and focal_y store focal point coordinates as floating-point values for image cropping, author_id tracks uploader.
 
-Foreign keys: author_id references users.user_id.
+Foreign keys: author_id references users.user_id, folder_id references media_folders.id with SET NULL on delete.
 
-Indexes: idx_media_author on author_id.
+Indexes: idx_media_author on author_id, idx_media_folder on folder_id.
+
+### media_folders
+
+Media folder hierarchy for organizing media assets into nested directories.
+
+```sql
+CREATE TABLE media_folders (
+    id TEXT PRIMARY KEY CHECK (length(id) = 26),
+    name TEXT NOT NULL,
+    parent_id TEXT DEFAULT NULL REFERENCES media_folders ON DELETE CASCADE,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+Columns: id is a 26-char ULID primary key, name is the folder display name, parent_id allows nested folder hierarchy with self-reference, created_at and updated_at track timestamps.
+
+Foreign keys: parent_id self-references media_folders.id with CASCADE on delete.
+
+Indexes: idx_media_folders_parent on parent_id.
 
 ### media_dimension
 

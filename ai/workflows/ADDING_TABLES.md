@@ -66,18 +66,18 @@ Schema migrations are numbered sequentially in the `sql/schema/` directory.
 ls -1 /Users/home/Documents/Code/Go_dev/modulacms/sql/schema/
 ```
 
-Find the highest-numbered directory and increment by one.
+Find the highest-numbered directory and increment by one. If the highest is `37_media_folders/`, your new table is `38_comments/`.
 
 ### Choose a Descriptive Name
 
 The directory name should be: `{number}_{table_name_plural}`
 
-**Example:** `34_comments/`
+**Example:** `38_comments/`
 
 ### Create the Directory
 
 ```bash
-mkdir /Users/home/Documents/Code/Go_dev/modulacms/sql/schema/34_comments
+mkdir /Users/home/Documents/Code/Go_dev/modulacms/sql/schema/38_comments
 ```
 
 ---
@@ -89,7 +89,7 @@ You must create **three schema files** and **three query files** for each databa
 ### Required Files
 
 ```
-34_comments/
+38_comments/
 ├── schema.sql          # SQLite schema
 ├── schema_mysql.sql    # MySQL schema
 ├── schema_psql.sql     # PostgreSQL schema
@@ -100,7 +100,7 @@ You must create **three schema files** and **three query files** for each databa
 
 ### 2.1 SQLite Schema (schema.sql)
 
-**File:** `sql/schema/34_comments/schema.sql`
+**File:** `sql/schema/38_comments/schema.sql`
 
 ```sql
 CREATE TABLE IF NOT EXISTS comments (
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS comments (
 
 ### 2.2 MySQL Schema (schema_mysql.sql)
 
-**File:** `sql/schema/34_comments/schema_mysql.sql`
+**File:** `sql/schema/38_comments/schema_mysql.sql`
 
 ```sql
 CREATE TABLE IF NOT EXISTS comments (
@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS comments (
 
 ### 2.3 PostgreSQL Schema (schema_psql.sql)
 
-**File:** `sql/schema/34_comments/schema_psql.sql`
+**File:** `sql/schema/38_comments/schema_psql.sql`
 
 ```sql
 CREATE TABLE IF NOT EXISTS comments (
@@ -206,7 +206,7 @@ For our `comments` example with `Singular: "Comment"`, the query names would be 
 
 ### 3.1 SQLite Queries (queries.sql)
 
-**File:** `sql/schema/34_comments/queries.sql`
+**File:** `sql/schema/38_comments/queries.sql`
 
 ```sql
 -- name: DropCommentTable :exec
@@ -275,7 +275,7 @@ WHERE comment_id = ?;
 
 ### 3.2 MySQL Queries (queries_mysql.sql)
 
-**File:** `sql/schema/34_comments/queries_mysql.sql`
+**File:** `sql/schema/38_comments/queries_mysql.sql`
 
 ```sql
 -- name: DropCommentTable :exec
@@ -341,7 +341,7 @@ WHERE comment_id = ?;
 
 ### 3.3 PostgreSQL Queries (queries_psql.sql)
 
-**File:** `sql/schema/34_comments/queries_psql.sql`
+**File:** `sql/schema/38_comments/queries_psql.sql`
 
 ```sql
 -- name: DropCommentTable :exec
@@ -904,7 +904,7 @@ For reference, here is the full sequence of commands from start to finish:
 
 ```bash
 # 1. Create schema directory
-mkdir sql/schema/34_comments
+mkdir sql/schema/38_comments
 
 # 2. Create 6 SQL files (schema + queries for each DB)
 # (create files as shown in Steps 2-3)

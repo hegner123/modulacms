@@ -258,6 +258,21 @@ Content-Type: `multipart/form-data`. Form field: `file` (max 10 MB).
 
 Process: validate no duplicate filename, optimize images, upload to S3, create media record.
 
+### Media Folders
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/media-folders` | List root folders (or children via `?parent_id={ulid}`) |
+| GET | `/api/v1/media-folders/tree` | Get full folder hierarchy as nested tree |
+| POST | `/api/v1/media-folders` | Create folder |
+| GET | `/api/v1/media-folders/{id}` | Get folder by ID |
+| PUT | `/api/v1/media-folders/{id}` | Update folder |
+| DELETE | `/api/v1/media-folders/{id}` | Delete folder (rejects if non-empty) |
+| GET | `/api/v1/media-folders/{id}/media` | List media in folder (supports pagination) |
+| POST | `/api/v1/media/move` | Batch move media to folder (or root) |
+
+All media folder endpoints use `media:*` permissions (`media:read`, `media:create`, `media:update`, `media:delete`).
+
 ### Media Dimensions
 
 | Method | Path | Description |

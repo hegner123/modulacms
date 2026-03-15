@@ -332,6 +332,72 @@ Endpoint at /api/v1/media/cleanup supporting DELETE (requires `media:admin`). De
 
 `MediaResponse` wraps `db.Media` with a computed `download_url` field pointing to `/api/v1/media/{id}/download`. All media API responses use this wrapper via `toMediaResponse` and `toMediaListResponse` helpers.
 
+## Media Folder Handlers
+
+### apiListMediaFolders
+
+Handles GET /api/v1/media-folders. Returns root folders by default. When optional query parameter parent_id is provided, returns children of that folder instead. Requires media:read permission.
+
+Validates parent_id as MediaFolderID if present. Returns JSON array of MediaFolder records. Returns 400 Bad Request if parent_id invalid, 500 Internal Server Error if database error.
+
+### apiMediaFolderTree
+
+Handles GET /api/v1/media-folders/tree. Returns the full folder hierarchy as a nested tree structure. Requires media:read permission.
+
+Fetches all folders via ListMediaFolders, then assembles them into a tree using buildFolderTree. Each node contains folder_id, name, parent_id, date_created, date_modified, and a children array of nested nodes. Returns empty array if no folders exist.
+
+### apiCreateMediaFolder
+
+Handles POST /api/v1/media-folders. Creates a new media folder. Requires media:create permission.
+
+Request body: JSON with name (required) and parent_id (optional). Validates name is non-empty after trimming. If parent_id provided, validates it as MediaFolderID, verifies parent exists, and checks folder depth does not exceed 10 levels. Validates name uniqueness within the parent folder.
+
+Returns created MediaFolder with 201 Created. Returns 400 Bad Request if name empty or parent_id invalid, 404 if parent not found, 409 Conflict if duplicate name within parent.
+
+### apiGetMediaFolder
+
+Handles GET /api/v1/media-folders/{id}. Returns a single media folder by ID. Requires media:read permission.
+
+Extracts folder ID from URL path. Returns JSON MediaFolder record. Returns 400 Bad Request if ID invalid, 404 Not Found if folder does not exist.
+
+### apiUpdateMediaFolder
+
+Handles PUT /api/v1/media-folders/{id}. Updates an existing media folder. Requires media:update permission.
+
+Request body: JSON with optional name and parent_id fields. Setting parent_id to empty string moves folder to root. Validates folder move does not create circular reference via ValidateMediaFolderMove. Validates name uniqueness within new parent if name or parent changed.
+
+Returns updated MediaFolder with 200 OK. Returns 400 Bad Request if name empty or parent_id invalid, 404 Not Found if folder does not exist, 409 Conflict if duplicate name within parent.
+
+### apiDeleteMediaFolder
+
+Handles DELETE /api/v1/media-folders/{id}. Deletes a media folder. Requires media:delete permission.
+
+Rejects deletion if folder contains child folders or media items. Returns 204 No Content on success. Returns 400 Bad Request if ID invalid, 404 Not Found if folder does not exist, 409 Conflict with JSON body containing error message, child_folders count, and media_items count if folder is not empty.
+
+### apiMediaFolderMedia
+
+Handles GET /api/v1/media-folders/{id}/media. Returns media items within a folder. Requires media:read permission.
+
+Supports optional pagination via limit and offset query parameters. Without pagination, returns full list. With pagination, returns PaginatedResponse with Data array of MediaResponse, Total count, Limit, and Offset. Returns 400 Bad Request if folder ID invalid, 404 Not Found if folder does not exist.
+
+### apiBatchMoveMedia
+
+Handles POST /api/v1/media/move. Moves multiple media items to a folder or to root. Requires media:update permission.
+
+Request body: JSON with media_ids array (required, max 100) and folder_id (optional, null or empty to move to root). Validates all media IDs upfront before moving. Returns JSON with moved count. Skips individual items that fail to move without aborting the batch.
+
+### Admin Panel Media Folder Handlers
+
+Admin panel routes for media folder CRUD operations. These are server-rendered HTMX handlers.
+
+POST /admin/media-folders creates a media folder. Requires media:create permission.
+
+POST /admin/media-folders/{id} updates a media folder. Requires media:update permission.
+
+DELETE /admin/media-folders/{id} deletes a media folder. Requires media:delete permission.
+
+POST /admin/media/move/{id} moves a media item to a different folder. Requires media:update permission.
+
 ## Media Dimension Handlers
 
 ### MediaDimensionsHandler

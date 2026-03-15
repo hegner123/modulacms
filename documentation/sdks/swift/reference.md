@@ -67,6 +67,7 @@ Same `Resource` interface as above, operating on admin-scoped entities.
 | `query` | `QueryResource` | `query(datatype:params:)` |
 | `contentComposite` | `ContentCompositeResource` | `createWithFields`, `deleteRecursive` |
 | `userComposite` | `UserCompositeResource` | `reassignDelete` |
+| `mediaFolders` | `MediaFoldersResource` | `tree`, `listMedia`, `moveMedia` |
 | `mediaComposite` | `MediaCompositeResource` | `getReferences`, `deleteWithCleanup` |
 | `datatypeComposite` | `DatatypeCompositeResource` | `deleteCascade` |
 | `config` | `ConfigResource` | `get(category:)`, `update(updates:)`, `meta` |
@@ -127,6 +128,7 @@ Every `ResourceID` type provides:
 |------|-------|
 | `MediaID` | Media items |
 | `MediaDimensionID` | Media dimension presets |
+| `MediaFolderID` | Media folders |
 
 ### Auth IDs
 

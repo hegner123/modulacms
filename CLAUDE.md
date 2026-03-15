@@ -110,6 +110,30 @@ The `sdks/go/` directory contains the Go SDK (`package modulacms`).
 | `sessions.go` | Session management |
 | `import.go` | CMS data import |
 | `content_batch.go` | Batch content updates |
+| `media_folders.go` | Media folder CRUD with tree and move |
+| `admin_datatypes_extra.go` | Admin datatype extra operations |
+| `content_composite.go` | Composite content operations |
+| `content_heal.go` | Content healing operations |
+| `content_reorder.go` | Content reorder operations |
+| `content_tree.go` | Content tree operations |
+| `content_versions.go` | Content version history |
+| `datatype_composite.go` | Composite datatype operations |
+| `datatypes_extra.go` | Datatype extra operations |
+| `deploy.go` | Deploy sync operations |
+| `fields_extra.go` | Field extra operations |
+| `globals.go` | Global client state |
+| `health.go` | Health check endpoint |
+| `locales.go` | Locale management |
+| `media_admin.go` | Admin media operations |
+| `media_composite.go` | Composite media operations |
+| `plugins.go` | Plugin management |
+| `publishing.go` | Content publishing |
+| `query.go` | Content query builder |
+| `role_permissions.go` | Role permission management |
+| `search.go` | Content search |
+| `user_composite.go` | Composite user operations |
+| `users_full.go` | Full user details with roles |
+| `webhooks.go` | Webhook management |
 
 Import path: `import modulacms "github.com/hegner123/modulacms/sdks/go"`
 
@@ -128,7 +152,7 @@ The `sdks/swift/` directory contains the Swift SDK as a single SPM package.
 | `Resource.swift` | Generic `Resource<E, C, U, ID>` CRUD |
 | `HTTPClient.swift` | Internal URLSession transport (30s timeout, no cookies) |
 | `Types.swift` | All entity structs + Create/Update params (explicit CodingKeys) |
-| `IDs.swift` | ResourceID protocol + 30 branded types (26 IDs + 4 value types) |
+| `IDs.swift` | ResourceID protocol + 33 branded types (29 IDs + 4 value types) |
 | `Enums.swift` | ContentStatus, FieldType, RouteType |
 | `Errors.swift` | APIError, isNotFound(), isUnauthorized() |
 | `Pagination.swift` | PaginationParams, PaginatedResponse<T> |
@@ -141,6 +165,26 @@ The `sdks/swift/` directory contains the Swift SDK as a single SPM package.
 | `SessionsResource.swift` | Session management |
 | `ImportResource.swift` | Import from various CMS formats |
 | `ContentBatchResource.swift` | Batch content updates |
+| `MediaFoldersResource.swift` | Media folder CRUD with tree and move |
+| `ConfigResource.swift` | Server configuration |
+| `ContentCompositeResource.swift` | Composite content operations |
+| `ContentHealResource.swift` | Content healing |
+| `ContentReorderResource.swift` | Content reorder |
+| `ContentTreeResource.swift` | Content tree operations |
+| `DatatypeCompositeResource.swift` | Composite datatype operations |
+| `DeployResource.swift` | Deploy sync operations |
+| `LocaleResource.swift` | Locale management |
+| `MediaCompositeResource.swift` | Composite media operations |
+| `PluginHooksResource.swift` | Plugin hook management |
+| `PluginRoutesResource.swift` | Plugin route management |
+| `PluginsResource.swift` | Plugin management |
+| `PublishingResource.swift` | Content publishing |
+| `QueryResource.swift` | Content query builder |
+| `RolePermissionsResource.swift` | Role permission management |
+| `SearchResource.swift` | Content search |
+| `SortOrderResource.swift` | Content sort ordering |
+| `UserCompositeResource.swift` | Composite user operations |
+| `WebhookResource.swift` | Webhook management |
 
 Platforms: iOS 16+, macOS 13+, tvOS 16+, watchOS 9+. Swift 5.9+, zero dependencies.
 
@@ -378,7 +422,7 @@ Client -> Middleware Chain (Recovery, RequestID, ClientIP, UserAgent, Logging, H
 ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `modula.config.json`'s `db_driver` field. The architecture:
 
 1. **sqlc generates** per-database Go code from SQL queries in `sql/schema/` into `internal/db-sqlite/`, `internal/db-mysql/`, `internal/db-psql/`
-2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 23 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`) that each implement it
+2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 24 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`) that each implement it
 3. **Wrapper methods** in `internal/db/*.go` (e.g., `datatype.go`, `content_data.go`, `media.go`) convert between sqlc-generated types and application-level types, handling NULL conversions and type width differences (SQLite uses int64, MySQL/PostgreSQL use int32)
 4. **`db.DefaultDriver`** is set at startup based on config and injected into handlers
 
@@ -443,18 +487,42 @@ Key patterns:
 - **templ** compiles `.templ` files to type-safe Go code. Run `just admin generate` to regenerate. Generated `*_templ.go` files are committed (like sqlc).
 - **HTMX** drives all interactions. `HX-Request` header distinguishes partial vs full page renders. `HX-Trigger` for toast notifications.
 - **CSRF** uses double-submit cookie pattern. Cookie `csrf_token` set on GET, validated on POST via `X-CSRF-Token` header or `_csrf` form field.
-- **Light DOM Web Components** (`mcms-*`) for dialog, data-table, field-renderer, media-picker, tree-nav, toast, confirm, search, file-input, scroll, validation-wizard.
+- **Light DOM Web Components** (`mcms-*`) for dialog, data-table, field-renderer, media-picker, tree-nav, toast, confirm, search, file-input, scroll, validation-wizard, media-tree.
 - **Import cycle resolution**: `handlers` owns Render/CSRFTokenFromContext, `admin` owns CSRFContextKey. `PaginationPageData` lives in `partials` to avoid cycle between handlers and pages.
 - **Route registration** in `mux.go` via `registerAdminRoutes()` with `mutating()` and `viewing()` middleware helpers.
 
 ```bash
-just admin generate      # Regenerate templ Go code
-just admin watch         # Watch .templ files for changes
+just admin generate      # Regenerate templ Go code + build Tailwind CSS
+just admin watch         # Watch .templ files + Tailwind CSS for changes (parallel)
 just admin verify        # Verify generated files are up-to-date (CI)
 just admin bundle        # Bundle block editor JS via esbuild
 just admin bundle-watch  # Watch and rebundle block editor JS
 just admin bundle-verify # Verify bundle is up-to-date (CI)
 ```
+
+#### Tailwind CSS Migration (In Progress)
+
+The admin panel is migrating from hand-written semantic CSS to Tailwind CSS v4 with utility-first classes. This is an incremental migration -- existing CSS and Tailwind coexist.
+
+**Architecture:**
+- `internal/admin/static/css/input.css` -- Tailwind entry point with `@theme` bridging project design tokens
+- `internal/admin/static/css/tailwind.css` -- Compiled output (committed, go:embed'd). **Do not edit directly.**
+- Existing CSS files (tokens.css, layout.css, components.css, etc.) remain during migration
+- Tailwind uses CSS `@layer` -- existing unlayered CSS always wins over Tailwind layers, so migration is safe
+- `package.json` at project root exists solely for the `tailwindcss` dev dependency. `node_modules/` is gitignored.
+
+**CSS load order (in base.templ):**
+1. `tailwind.css` -- Tailwind base, components, utilities (CSS layers, lowest priority)
+2. `tokens.css` -- Design tokens and reset (unlayered, overrides Tailwind)
+3. `layout.css` -> `components.css` -> `web-components.css` -> `pages.css` -> `block-editor.css` -> `utilities.css`
+
+**Migration rules:**
+- New pages and components should use Tailwind utility classes
+- Existing pages migrate to Tailwind when touched
+- Web components (`mcms-*`) migrate last since they are self-contained
+- The `tailwind-ui/` directory (gitignored) holds Tailwind UI reference HTML samples
+- Once a page is fully migrated, remove its old CSS rules from the hand-written files
+- After modifying `input.css` or any templ file's classes, run `just admin generate`
 
 ### HTTP Router (internal/router/)
 
@@ -468,7 +536,7 @@ Loaded from `modula.config.json` at project root. Key fields: `db_driver`, `port
 
 ## SQL Schema Organization
 
-Schemas live in `sql/schema/` as 37 numbered directories (0-36). Each directory contains six files:
+Schemas live in `sql/schema/` as 38 numbered directories (0-37). Each directory contains six files:
 
 ```
 sql/schema/{N}_{name}/
@@ -499,7 +567,7 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `internal/admin/handlers/` | Admin page handlers (render, auth, CRUD for all resources) |
 | `internal/admin/layouts/` | templ layouts (base, admin, auth) and AdminData type |
 | `internal/admin/pages/` | templ full-page components (~28 pages) |
-| `internal/admin/partials/` | templ HTMX swap targets (~27 partials) |
+| `internal/admin/partials/` | templ HTMX swap targets (~28 partials) |
 | `internal/admin/components/` | templ shared UI: sidebar, topbar, icon, status_badge |
 | `internal/admin/static/` | CSS, JS, HTMX, web components (go:embed) |
 | `internal/tui/` | Bubbletea TUI (130+ files, Elm Architecture) |

@@ -87,6 +87,8 @@ Represents a navigable page with index and label.
 - **ContentFormDialogModel** — Dynamic content form from datatype field definitions
 - **UserFormDialogModel** — User CRUD form
 - **WebhookFormDialogModel** — Webhook CRUD form
+- **MediaFolderNameDialogModel** — Text input dialog for creating/renaming media folders
+- **MoveMediaFolderDialogModel** — Selection dialog for moving media to a different folder
 
 ## Command Constructors
 

@@ -38,6 +38,7 @@ Quick reference for all resources available on the `*modula.Client` struct. Reso
 | `MediaDimensions` | `*Resource[MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams, MediaDimensionID]` | CRUD, ListPaginated, Count | Image dimension presets. |
 | `MediaUpload` | `*MediaUploadResource` | Upload, UploadWithProgress | Multipart file upload with optional progress tracking. |
 | `MediaAdmin` | `*MediaAdminResource` | Health, Cleanup | Media storage health check and orphan cleanup. |
+| `MediaFolders` | `*MediaFoldersResource` | Tree, ListMedia, MoveMedia | Media folder hierarchy management. |
 | `MediaComposite` | `*MediaCompositeResource` | GetReferences, DeleteWithCleanup | Reference scanning and safe delete with cleanup. |
 
 ## Auth and User Resources
@@ -139,6 +140,7 @@ All entity IDs are distinct `string`-based types. Each provides `String() string
 | `AdminDatatypeFieldID` | AdminDatatypeFields |
 | `MediaID` | Media |
 | `MediaDimensionID` | MediaDimensions |
+| `MediaFolderID` | MediaFolders |
 | `UserID` | Users |
 | `RoleID` | Roles |
 | `SessionID` | Sessions |

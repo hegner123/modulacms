@@ -48,7 +48,7 @@ Methods for managing database connections and executing raw queries.
 
 ### CreateAllTables
 
-Creates all 26 database tables in dependency order. Tier 0: permissions, roles, media_dimensions. Tier 1: users. Tier 2: tokens, oauth, ssh_keys, sessions, tables, media, routes, datatypes. Tier 3: fields. Tier 4: content_data. Tier 5: content_fields, content_relations. Returns error if any table creation fails.
+Creates all 27 database tables in dependency order. Tier 0: permissions, roles, media_dimensions. Tier 1: users. Tier 2: tokens, oauth, ssh_keys, sessions, tables, media, routes, datatypes. Tier 3: fields. Tier 4: content_data. Tier 5: content_fields, content_relations. Returns error if any table creation fails.
 
 ### CreateBootstrapData
 
@@ -104,7 +104,7 @@ Determines table creation order based on foreign key dependencies. Returns error
 
 String type representing table names. Used for type-safe table references.
 
-Constants: `Admin_content_data`, `Admin_content_fields`, `Admin_datatype`, `Admin_field`, `Admin_route`, `Content_data`, `Content_fields`, `Datatype`, `Field`, `MediaT`, `Media_dimension`, `Permission`, `Role`, `Route`, `Session`, `Table`, `Token`, `User`, `User_oauth`.
+Constants: `Admin_content_data`, `Admin_content_fields`, `Admin_datatype`, `Admin_field`, `Admin_route`, `Content_data`, `Content_fields`, `Datatype`, `Field`, `MediaT`, `Media_dimension`, `Media_folder`, `Permission`, `Role`, `Route`, `Session`, `Table`, `Token`, `User`, `User_oauth`.
 
 ### TableStructMap
 
@@ -825,6 +825,70 @@ Retrieves all media dimension records. Returns slice pointer or error.
 ### UpdateMediaDimension
 
 Updates media dimension with audit trail. Accepts context, audit context, and UpdateMediaDimensionParams. Returns updated ID string pointer or error. Records change event.
+
+## MediaFolder Methods
+
+CRUD operations for media_folders table. Manages hierarchical folder structure for organizing media assets.
+
+### CountMediaFolders
+
+Returns total count of media folder records. Returns pointer to int64 or error.
+
+### CreateMediaFolder
+
+Inserts new media folder with audit context. Accepts context, audit context, and CreateMediaFolderParams. Returns created MediaFolder pointer or error. Records change event.
+
+### CreateMediaFolderTable
+
+Creates media_folders table with schema. Returns error if creation fails.
+
+### DeleteMediaFolder
+
+Deletes media folder by ID with audit trail. Accepts context, audit context, and MediaFolderID. Returns error if deletion fails. Records change event.
+
+### GetMediaFolder
+
+Retrieves single media folder by ID. Accepts MediaFolderID. Returns MediaFolder pointer or error.
+
+### GetMediaFolderBreadcrumb
+
+Retrieves ancestor chain from a folder to root. Accepts MediaFolderID. Returns slice of MediaFolder or error. Used for breadcrumb navigation.
+
+### GetMediaFolderByNameAndParent
+
+Retrieves media folder by name within a specific parent folder. Accepts parent MediaFolderID and name string. Returns MediaFolder pointer or error.
+
+### GetMediaFolderByNameAtRoot
+
+Retrieves media folder by name at the root level (no parent). Accepts name string. Returns MediaFolder pointer or error.
+
+### ListMediaFolders
+
+Retrieves all media folder records. Returns slice pointer or error.
+
+### ListMediaFoldersByParent
+
+Retrieves media folders that are children of a specific parent folder. Accepts parent MediaFolderID. Returns slice pointer or error.
+
+### ListMediaFoldersAtRoot
+
+Retrieves media folders with no parent (root-level folders). Returns slice pointer or error.
+
+### ListMediaFoldersPaginated
+
+Retrieves media folders with pagination. Accepts PaginationParams with limit and offset. Returns slice pointer or error.
+
+### UpdateMediaFolder
+
+Updates media folder with audit trail. Accepts context, audit context, and UpdateMediaFolderParams. Returns updated ID string pointer or error. Records change event.
+
+### ValidateMediaFolderName
+
+Validates that a folder name is unique within its parent scope. Accepts name string and NullableMediaFolderID for parent. Returns error if name conflicts with existing folder.
+
+### ValidateMediaFolderMove
+
+Validates that moving a folder to a new parent would not create a circular reference. Accepts folder MediaFolderID and target parent NullableMediaFolderID. Returns error if move would create a cycle.
 
 ## Permission Methods
 

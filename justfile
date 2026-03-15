@@ -252,9 +252,9 @@ admin action:
     #!/usr/bin/env bash
     set -euo pipefail
     case "{{action}}" in
-        generate)      templ generate ;;
-        watch)         templ generate --watch ;;
-        verify)        templ generate && git diff --exit-code internal/admin/ ;;
+        generate)      templ generate && tailwindcss -i internal/admin/static/css/input.css -o internal/admin/static/css/tailwind.css --minify ;;
+        watch)         templ generate --watch & tailwindcss -i internal/admin/static/css/input.css -o internal/admin/static/css/tailwind.css --watch ;;
+        verify)        templ generate && tailwindcss -i internal/admin/static/css/input.css -o internal/admin/static/css/tailwind.css --minify && git diff --exit-code internal/admin/ ;;
         bundle)        esbuild internal/admin/static/js/block-editor-src/index.js --bundle --format=esm --banner:js="// AUTO-GENERATED — DO NOT EDIT. Source: block-editor-src/. Regenerate: just admin bundle" --outfile=internal/admin/static/js/block-editor.js ;;
         bundle-watch)  esbuild internal/admin/static/js/block-editor-src/index.js --bundle --format=esm --banner:js="// AUTO-GENERATED — DO NOT EDIT. Source: block-editor-src/. Regenerate: just admin bundle" --outfile=internal/admin/static/js/block-editor.js --watch ;;
         bundle-verify) just admin bundle && git diff --exit-code internal/admin/static/js/block-editor.js ;;

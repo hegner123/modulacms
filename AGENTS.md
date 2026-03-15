@@ -185,7 +185,7 @@ sdks/
   go/                         # Go SDK (modulacms package)
   swift/                      # Swift SDK (SPM package, Apple platforms)
 sql/
-  schema/                     # 37 numbered directories (0-36), each with 6 files (3 schema + 3 queries per DB engine)
+  schema/                     # 38 numbered directories (0-37), each with 6 files (3 schema + 3 queries per DB engine)
   sqlc.yml                    # sqlc configuration (generated — do not hand-edit)
   all_schema*.sql             # Combined schemas for fresh installs
 tools/
@@ -207,7 +207,7 @@ deploy/                       # Docker compose files and deployment configs
 ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `config.json`'s `db_driver` field:
 
 1. **sqlc generates** per-database Go code from SQL queries in `sql/schema/` into `internal/db-sqlite/` (package `mdb`), `internal/db-mysql/` (package `mdbm`), `internal/db-psql/` (package `mdbp`)
-2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 23 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`)
+2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 24 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`)
 3. **Wrapper methods** in `internal/db/*.go` convert between sqlc types and application types, handling NULL conversions and type width differences (SQLite uses int64, MySQL/PostgreSQL use int32)
 4. **`db.DefaultDriver`** is set at startup based on config and injected into handlers
 
@@ -363,7 +363,7 @@ Regenerate with `just admin generate`. Watch mode: `just admin watch`.
 ### Static Assets
 
 - **Build tags**: `//go:build !dev` embeds `static/*` into binary; `-tags dev` serves from disk
-- **Web components**: Light DOM components prefixed `mcms-*` (dialog, data-table, field-renderer, media-picker, tree-nav, toast, confirm, search)
+- **Web components**: Light DOM components prefixed `mcms-*` (dialog, data-table, field-renderer, media-picker, media-tree, tree-nav, toast, confirm, search)
 - **Block editor**: Source in `static/js/block-editor-src/`, bundled via esbuild to `static/js/block-editor.js`
 - **CSS**: tokens → layout → components → web-components → pages → block-editor → utilities
 
@@ -396,7 +396,7 @@ Focus system: `PAGEFOCUS`, `TABLEFOCUS`, `FORMFOCUS`, `DIALOGFOCUS` — determin
 
 ## SQL Schema
 
-Schemas live in `sql/schema/` as 37 numbered directories (0-36). Each directory contains up to 6 files:
+Schemas live in `sql/schema/` as 38 numbered directories (0-37). Each directory contains up to 6 files:
 
 ```
 sql/schema/{N}_{name}/

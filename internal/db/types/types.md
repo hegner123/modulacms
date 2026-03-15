@@ -112,6 +112,12 @@ Uniquely identifies a media dimension preset. Represents configured image sizes 
 
 Methods: `NewMediaDimensionID`, `String`, `IsZero`, `Validate`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
 
+### MediaFolderID
+
+Uniquely identifies a media folder. Represents a folder in the hierarchical media organization structure.
+
+Methods: `NewMediaFolderID`, `String`, `IsZero`, `Validate`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
 ### SessionID
 
 Uniquely identifies a session. Represents an active user session with authentication state.
@@ -277,6 +283,12 @@ Methods: `Validate`, `String`, `IsZero`, `Value`, `Scan`, `MarshalJSON`, `Unmars
 ### NullableMediaID
 
 Nullable foreign key to media table. Used for optional media attachments.
+
+Methods: `Validate`, `String`, `IsZero`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to NullableDatatypeID.
+
+### NullableMediaFolderID
+
+Nullable foreign key to media_folders table. Used for optional folder assignment on media assets and parent references in folder hierarchy.
 
 Methods: `Validate`, `String`, `IsZero`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to NullableDatatypeID.
 

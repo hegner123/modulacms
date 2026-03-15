@@ -53,6 +53,8 @@ Screens use a 12-column grid (`grid.go`, `grid_screen.go`) with proportional cel
 
 Media items are grouped into a URL-path-derived folder tree (`media_tree.go`). Folders are collapsible, and an inline search (`/`) live-filters items by name, display name, mimetype, or URL path. Tree is rebuilt from filtered results so folder structure reflects only matches.
 
+Folder management is supported via dedicated dialogs: folders can be created, renamed, and deleted, and media items can be moved between folders. `MediaFolderNameDialogModel` handles folder creation and renaming via a text input, while `MoveMediaFolderDialogModel` presents a folder selection list for relocating media.
+
 ## Keybinding: ActionSearch
 
 `config.ActionSearch` (default `/`) activates inline search on screens that support it. Currently used by Media screen.

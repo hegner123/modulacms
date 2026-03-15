@@ -53,6 +53,7 @@ Every CRUD resource provides these standard methods:
 | `fieldTypes` | `FieldTypeInfo` | `FieldTypeID` | -- |
 | `routes` | `Route` | `RouteID` | -- |
 | `media` | `Media` | `MediaID` | `health`, `cleanup`, `getReferences`, `deleteWithCleanup` |
+| `mediaFolders` | `MediaFolder` | `MediaFolderID` | `tree`, `listMedia`, `moveMedia` |
 | `mediaDimensions` | `MediaDimension` | -- | -- |
 | `users` | `User` | `UserID` | `listFull`, `getFull`, `reassignDelete` |
 | `roles` | `Role` | `RoleID` | -- |
@@ -96,9 +97,9 @@ Every CRUD resource provides these standard methods:
 
 ### From `@modulacms/types`
 
-**IDs:** `UserID`, `ContentID`, `ContentFieldID`, `ContentRelationID`, `ContentVersionID`, `DatatypeID`, `FieldID`, `MediaID`, `RoleID`, `PermissionID`, `RolePermissionID`, `FieldTypeID`, `RouteID`, `SessionID`, `UserOauthID`, `AdminContentID`, `AdminContentFieldID`, `AdminContentRelationID`, `AdminContentVersionID`, `AdminDatatypeID`, `AdminFieldID`, `AdminRouteID`, `AdminFieldTypeID`, `LocaleID`, `WebhookID`, `WebhookDeliveryID`, `Slug`, `Email`, `URL`
+**IDs:** `UserID`, `ContentID`, `ContentFieldID`, `ContentRelationID`, `ContentVersionID`, `DatatypeID`, `FieldID`, `MediaID`, `MediaFolderID`, `RoleID`, `PermissionID`, `RolePermissionID`, `FieldTypeID`, `RouteID`, `SessionID`, `UserOauthID`, `AdminContentID`, `AdminContentFieldID`, `AdminContentRelationID`, `AdminContentVersionID`, `AdminDatatypeID`, `AdminFieldID`, `AdminRouteID`, `AdminFieldTypeID`, `LocaleID`, `WebhookID`, `WebhookDeliveryID`, `Slug`, `Email`, `URL`
 
-**Entities:** `ContentData`, `ContentField`, `ContentRelation`, `ContentVersion`, `AdminContentVersion`, `Datatype`, `Field`, `FieldTypeInfo`, `AdminFieldTypeInfo`, `Route`, `Media` (includes `download_url` field), `MediaDimension`, `Locale`, `Webhook`, `WebhookDelivery`
+**Entities:** `ContentData`, `ContentField`, `ContentRelation`, `ContentVersion`, `AdminContentVersion`, `Datatype`, `Field`, `FieldTypeInfo`, `AdminFieldTypeInfo`, `Route`, `Media` (includes `download_url` field), `MediaDimension`, `MediaFolder`, `Locale`, `Webhook`, `WebhookDelivery`
 
 **Content tree:** `ContentTree`, `ContentNode`, `NodeDatatype`, `NodeField`
 

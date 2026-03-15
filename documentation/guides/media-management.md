@@ -12,6 +12,44 @@ ModulaCMS stores media assets in S3-compatible object storage. When you upload a
 
 **Focal point** -- Normalized coordinates (`focal_x`, `focal_y`) ranging from 0.0 to 1.0 that define the center of interest in an image. When set, the optimization pipeline crops around this point instead of the image center. You can set the focal point before or after upload; re-uploading is not required.
 
+## Media Folders
+
+Media assets can be organized into a hierarchical folder structure. Folders support arbitrary nesting through parent-child relationships, letting you build a directory tree that mirrors your project's organizational needs (e.g., `branding/logos/`, `blog/2026/march/`).
+
+### Folder Hierarchy
+
+Each folder has an optional `parent_id` that references another folder. A folder with no parent sits at the root level. You can nest folders to any depth by setting the `parent_id` to an existing folder's ID.
+
+### API Endpoints
+
+All endpoints are prefixed with `/api/v1` and require `media:read`, `media:create`, `media:update`, or `media:delete` permissions as appropriate.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/media-folders` | List all media folders |
+| POST | `/media-folders` | Create a new folder |
+| GET | `/media-folders/` | Get a single folder (`?q=FOLDER_ID`) |
+| PUT | `/media-folders/` | Update a folder |
+| DELETE | `/media-folders/` | Delete a folder (`?q=FOLDER_ID`) |
+| GET | `/media-folders/tree` | Get the full folder tree (nested structure) |
+| GET | `/media-folders/{id}/media` | List media assets within a folder |
+
+### Moving Media Between Folders
+
+To move a media asset into a folder, update the media record's `folder_id` field:
+
+```bash
+curl -X PUT http://localhost:8080/api/v1/media/ \
+  -H "Cookie: session=YOUR_SESSION_COOKIE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "media_id": "01JMKX5V6QNPZ3R8W4T2YH9B0D",
+    "folder_id": "01JNRWHSA1LQWZ3X5D8F2G9JKT"
+  }'
+```
+
+Set `folder_id` to `null` or omit it to move a media asset back to the root level.
+
 ## Configuration
 
 Set these fields in `modula.config.json` to connect to your S3-compatible storage provider:

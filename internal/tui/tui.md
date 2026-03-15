@@ -124,6 +124,14 @@ Dynamic content form with fields generated from datatype definitions.
 
 User CRUD form with username, name, email, role fields.
 
+### MediaFolderNameDialogModel
+
+Text input dialog for creating/renaming media folders.
+
+### MoveMediaFolderDialogModel
+
+Selection dialog for moving media to a different folder.
+
 ## Overlay Compositing
 
 Dialogs render as overlays composited on top of the base screen content using Composite(base, overlay). The modal_overlay.go handles centering and layer composition.

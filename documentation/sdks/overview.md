@@ -19,6 +19,7 @@ ModulaCMS provides official SDKs for Go, TypeScript, and Swift. All three SDKs s
 | Deploy operations | Yes | Yes | Yes |
 | Webhook management | Yes | Yes | Yes |
 | Locale / i18n | Yes | Yes | Yes |
+| Media folder management | Yes | Yes | Yes |
 
 | Property | Go | TypeScript | Swift |
 |----------|:--:|:----------:|:-----:|
