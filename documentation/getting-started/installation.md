@@ -1,6 +1,19 @@
 # Installation
 
-ModulaCMS compiles to a single binary. Install it to your PATH and use it to create and manage projects from any directory. The project registry at `~/.modula/configs.json` tracks all your projects and environments, so you can switch between them without navigating to each project directory.
+Install ModulaCMS from source and configure it for your environment.
+
+## Quick Start
+
+```bash
+git clone https://github.com/hegner123/modulacms.git
+cd modulacms && just build
+cp out/bin/modula-x86 /usr/local/bin/modula
+mkdir ~/mysite && cd ~/mysite
+modula init
+modula serve
+```
+
+For full details on each step, read on.
 
 ## System Requirements
 
@@ -12,11 +25,9 @@ ModulaCMS compiles to a single binary. Install it to your PATH and use it to cre
 | OS | Linux or macOS |
 | Build runner | `just` ([installation](https://github.com/casey/just#installation)) |
 
-CGO is required because the SQLite driver (`mattn/go-sqlite3`) is a C library. Even if you plan to use MySQL or PostgreSQL, the binary still compiles with the SQLite driver.
+> **Good to know**: CGO is required because the SQLite driver (`mattn/go-sqlite3`) is a C library. Even if you use MySQL or PostgreSQL, the binary still compiles with the SQLite driver.
 
-## Installing the Binary
-
-### Build from Source
+## Build from Source
 
 ```bash
 git clone https://github.com/hegner123/modulacms.git
@@ -54,7 +65,7 @@ just check  # compile-check without producing a binary
 | `just clean` | Remove build artifacts |
 | `just vendor` | Update vendored dependencies |
 
-## Creating a Project
+## Create a Project
 
 Once `modula` is in your PATH, create a project anywhere:
 
@@ -65,10 +76,10 @@ modula init
 
 `modula init` does two things:
 
-1. **Runs the install wizard** -- same as `modula install`. Prompts for database driver, connection details, ports, and admin credentials. Creates `modula.config.json`, initializes the database, and seeds bootstrap data.
-2. **Registers the project** -- adds an entry to `~/.modula/configs.json` with the project name (defaults to the directory name) and environment `local` pointing to the new `modula.config.json`. Sets it as the default project if it's the first one registered.
+1. **Runs the install wizard** -- prompts for database driver, connection details, ports, and admin credentials. Creates `modula.config.json`, initializes the database, and seeds bootstrap data.
+2. **Registers the project** -- adds an entry to `~/.modula/configs.json` with the project name (defaults to the directory name) and environment `local` pointing to the new config file. Sets it as the default project if it's the first one registered.
 
-For automated/CI setups:
+For automated or CI setups:
 
 ```bash
 modula init --yes --admin-password your-password
@@ -80,23 +91,22 @@ To use a custom project name instead of the directory name:
 modula init --name my-site --admin-password pw
 ```
 
-### What Init Creates
+### What init creates
 
-1. **`modula.config.json`** with your chosen settings.
-2. **Database tables** for all CMS entities.
-3. **Bootstrap data** including three roles (admin, editor, viewer), 72 permissions, and a system admin user.
-4. **Validation** of the database setup.
-5. **Registry entry** in `~/.modula/configs.json` mapping the project name to this directory's config.
+1. `modula.config.json` with your chosen settings.
+2. Database tables for all CMS entities.
+3. Bootstrap data: three roles (admin, editor, viewer), 72 permissions, and a system admin user.
+4. A registry entry in `~/.modula/configs.json` mapping the project name to this directory's config.
 
-The system admin credentials are printed to the log:
+ModulaCMS prints the system admin credentials to the log:
 
 ```
 Generated system admin password  email=system@modulacms.local  password=<random-string>
 ```
 
-### Install Without Registration
+### Install without registration
 
-`modula install` runs the same wizard without the registry step. Use this when you don't need the project registered (e.g., Docker containers, ephemeral environments):
+`modula install` runs the same wizard without the registry step. Use this for Docker containers or ephemeral environments:
 
 ```bash
 modula install --yes --admin-password your-password
@@ -106,7 +116,7 @@ modula install --yes --admin-password your-password
 
 The registry at `~/.modula/configs.json` maps project names to environments, each pointing to a `modula.config.json` path. `modula init` populates this automatically. You can also manage it manually.
 
-### Manual Registration
+### Register manually
 
 ```bash
 modula connect set mysite local ~/projects/mysite/modula.config.json
@@ -114,14 +124,14 @@ modula connect set mysite local ~/projects/mysite/modula.config.json
 
 This creates a project named "mysite" with a "local" environment. The first environment added becomes the default.
 
-### Set Defaults
+### Set defaults
 
 ```bash
 modula connect default mysite              # default project
 modula connect default mysite local        # default env for a project
 ```
 
-### Use From Anywhere
+### Connect from anywhere
 
 ```bash
 modula connect                             # default project, default env
@@ -129,9 +139,9 @@ modula connect mysite                      # specific project, default env
 modula connect mysite staging              # specific project + env
 ```
 
-The `connect` command resolves the config path from the registry, changes to the project directory, and launches the TUI. If the config has `remote_url` set, it connects over HTTPS via the SDK. Otherwise, it opens a local database connection.
+The `connect` command resolves the config path from the registry, changes to the project directory, and launches the TUI. If the config has `remote_url` set, it connects over HTTPS via the SDK instead of opening a local database connection.
 
-### Manage the Registry
+### Manage the registry
 
 ```bash
 modula connect list                        # show all projects + envs
@@ -140,9 +150,7 @@ modula connect remove mysite               # remove entire project
 modula connect remove mysite --env staging # remove one environment
 ```
 
-### Auto-Detection
-
-If no project is specified and no default is set, `modula connect` checks for a `modula.config.json` in the current working directory as a fallback.
+> **Good to know**: If no project is specified and no default is set, `modula connect` checks for a `modula.config.json` in the current working directory as a fallback.
 
 ## Multiple Environments
 
@@ -177,21 +185,21 @@ modula connect set mysite prod ~/projects/mysite/prod.json
 }
 ```
 
-When connecting with a remote config, the TUI operates over the REST API instead of a direct database connection. All features work the same way -- the `RemoteDriver` implements the same `DbDriver` interface.
+When you connect with a remote config, the TUI operates over the REST API. All features work the same way whether you connect locally or remotely.
 
 ## Docker
 
-ModulaCMS provides Docker Compose configurations for different database backends. All compose files are in `deploy/docker/`.
+ModulaCMS provides Docker Compose configurations for different database backends. All compose files live in `deploy/docker/`.
 
-### Full Stack (All Databases + MinIO)
+### Full stack (all databases + MinIO)
 
 ```bash
 just dc full up
 ```
 
-Starts ModulaCMS with PostgreSQL, MySQL, MinIO (S3-compatible storage), and builds the CMS container.
+Starts ModulaCMS with PostgreSQL, MySQL, MinIO (S3-compatible storage), and the CMS container.
 
-### Single Database Stacks
+### Single database stacks
 
 ```bash
 just dc sqlite up     # SQLite (minimal, no external database)
@@ -199,7 +207,7 @@ just dc mysql up      # MySQL
 just dc postgres up   # PostgreSQL
 ```
 
-### Docker Stack Management
+### Docker stack management
 
 | Command | Description |
 |---------|-------------|
@@ -212,9 +220,9 @@ just dc postgres up   # PostgreSQL
 
 Replace `<backend>` with `full`, `sqlite`, `mysql`, or `postgres`.
 
-### Infrastructure Only
+### Infrastructure only
 
-To start just the database and storage containers without the CMS (useful when running the binary locally):
+Start the database and storage containers without the CMS (useful when running the binary locally):
 
 ```bash
 just docker-infra
@@ -222,9 +230,9 @@ just docker-infra
 
 ## Database Setup
 
-### SQLite (Default)
+### SQLite (default)
 
-SQLite requires no setup. On first run, ModulaCMS creates a `modula.db` file in the working directory:
+SQLite requires no setup. ModulaCMS creates a `modula.db` file in the working directory on first run:
 
 ```json
 {
@@ -260,13 +268,13 @@ SQLite requires no setup. On first run, ModulaCMS creates a `modula.db` file in 
 
 ## TLS Certificates
 
-For local HTTPS development, generate self-signed certificates:
+Generate self-signed certificates for local HTTPS development:
 
 ```bash
 modula cert generate
 ```
 
-This creates `localhost.crt` and `localhost.key` in the certificate directory. In production, ModulaCMS uses Let's Encrypt autocert for automatic certificate provisioning when the `environment` is not set to `local` or `docker`.
+This creates `localhost.crt` and `localhost.key` in the certificate directory. In production, ModulaCMS uses Let's Encrypt autocert for automatic certificate provisioning when `environment` is not set to `local` or `docker`.
 
 ## CLI Reference
 
@@ -294,16 +302,19 @@ This creates `localhost.crt` and `localhost.key` in the certificate directory. I
 | `plugin` | Plugin management (list, init, validate, info, reload, enable, disable) |
 | `deploy` | Deployment operations |
 
-Global flags:
+### Global flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--config` | `modula.config.json` | Path to configuration file |
 | `-v`, `--verbose` | `false` | Enable debug logging |
 
-## Notes
+> **Good to know**: PostgreSQL backups require `pg_dump` in your PATH and MySQL backups require `mysqldump`. SQLite backups need no external tools.
 
-- **Backup tools.** PostgreSQL backups require `pg_dump` in your PATH. MySQL backups require `mysqldump`. SQLite backups need no external tools.
-- **S3 storage is optional.** Media uploads require an S3-compatible storage provider (AWS S3, MinIO, etc.), but the CMS starts without it -- media upload endpoints return errors until storage is configured.
-- **OAuth is optional.** The CMS functions with local authentication only. OAuth (Google, GitHub, Azure) can be configured later.
-- **Remote connections.** The `connect` command with a remote config uses the Go SDK over HTTPS. All TUI features work identically whether connected locally or remotely.
+> **Good to know**: S3 storage is optional. Media upload endpoints return errors until you configure storage, but the CMS starts without it.
+
+## Next steps
+
+- [Your First Project](first-project.md) -- the three-step path from init to connected
+- [Configuration](configuration.md) -- all `modula.config.json` fields and options
+- [Content Modeling](../building-content/content-modeling.md) -- design datatypes and fields for your content

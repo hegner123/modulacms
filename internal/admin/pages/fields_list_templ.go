@@ -35,7 +35,7 @@ func FieldsListContent(items []db.Fields, pg partials.PaginationPageData) templ.
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"page-header\"><h1>Fields</h1><button class=\"btn btn-primary\" onclick=\"document.getElementById('create-field-dialog').showModal()\">New Field</button></div><div class=\"table-container\"><table class=\"data-table\"><thead><tr><th>Name</th><th>Label</th><th>Type</th><th>Modified</th><th>Actions</th></tr></thead> <tbody id=\"fields-table-body\" hx-get=\"/admin/schema/fields\" hx-trigger=\"refreshTable from:body\" hx-swap=\"innerHTML\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Fields</h1><p class=\"mt-2 text-sm text-gray-400\">Define content properties that can be assigned to datatypes.</p></div><div class=\"mt-4 sm:mt-0 sm:ml-16 sm:flex-none\"><button class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\" data-action=\"new\" onclick=\"document.getElementById('create-field-dialog').showModal()\">New Field</button></div></div><div class=\"mt-8 flow-root\"><div class=\"-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8\"><div class=\"inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Name</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Label</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Type</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Modified</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Actions</th></tr></thead> <tbody id=\"fields-table-body\" class=\"divide-y divide-white/5\" hx-get=\"/admin/schema/fields\" hx-trigger=\"refreshTable from:body\" hx-swap=\"innerHTML\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -54,79 +54,79 @@ func FieldsListContent(items []db.Fields, pg partials.PaginationPageData) templ.
 			}
 		} else {
 			for _, f := range items {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<tr class=\"clickable-row\" data-href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<tr class=\"cursor-pointer hover:bg-white/5 transition-colors\" data-clickable-row data-href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var2 string
 				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/fields/" + f.FieldID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 40, Col: 106}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 50, Col: 173}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\"><td>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\"><td class=\"whitespace-nowrap px-4 py-4 text-sm text-white\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(f.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 41, Col: 40}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 51, Col: 107}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</td><td>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm text-gray-400\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(f.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 42, Col: 41}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 52, Col: 111}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</td><td><span class=\"badge\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><span class=\"inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(f.Type.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 43, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 53, Col: 249}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</span></td><td>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</span></td><td class=\"whitespace-nowrap px-4 py-4 text-sm text-gray-400\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(f.DateModified.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 44, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 54, Col: 127}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</td><td><div class=\"table-actions\"><button class=\"btn btn-sm btn-danger\" hx-delete=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><div class=\"flex items-center gap-2\"><button class=\"text-sm text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]\" hx-delete=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/fields/" + f.FieldID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 48, Col: 100}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/fields_list.templ`, Line: 58, Col: 112}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -138,7 +138,7 @@ func FieldsListContent(items []db.Fields, pg partials.PaginationPageData) templ.
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</tbody></table></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</tbody></table></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -171,7 +171,7 @@ func FieldCreateDialog(csrfToken string) templ.Component {
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<dialog id=\"create-field-dialog\" class=\"admin-dialog\" aria-labelledby=\"create-field-dialog-title\"><div class=\"dialog-content\"><div class=\"dialog-header\"><h2 id=\"create-field-dialog-title\">New Field</h2><button class=\"btn btn-ghost dialog-close\" aria-label=\"Close dialog\" onclick=\"this.closest('dialog').close()\">&times;</button></div><form hx-post=\"/admin/schema/fields\" hx-target=\"#create-field-form\" hx-swap=\"innerHTML\" id=\"create-field-form\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<dialog id=\"create-field-dialog\" class=\"rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60\" aria-labelledby=\"create-field-dialog-title\"><div class=\"px-5 py-4\"><div class=\"flex items-center justify-between border-b border-white/10 pb-4 mb-4\"><h2 id=\"create-field-dialog-title\" class=\"text-lg font-semibold text-white\">New Field</h2><button class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" aria-label=\"Close dialog\" onclick=\"this.closest('dialog').close()\">&times;</button></div><form hx-post=\"/admin/schema/fields\" hx-target=\"#create-field-form\" hx-swap=\"innerHTML\" id=\"create-field-form\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -187,7 +187,7 @@ func FieldCreateDialog(csrfToken string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"form-field\"><label for=\"type\">Type</label> <select id=\"type\" name=\"type\"><option value=\"\">Select a type</option> <option value=\"text\">Text</option> <option value=\"textarea\">Textarea</option> <option value=\"richtext\">Rich Text</option> <option value=\"number\">Number</option> <option value=\"boolean\">Boolean</option> <option value=\"date\">Date</option> <option value=\"datetime\">Datetime</option> <option value=\"select\">Select</option> <option value=\"media\">Media</option> <option value=\"relation\">Relation</option> <option value=\"json\">JSON</option> <option value=\"slug\">Slug</option> <option value=\"email\">Email</option> <option value=\"url\">URL</option></select></div><div class=\"dialog-actions\"><button type=\"button\" class=\"btn btn-ghost\" onclick=\"this.closest('dialog').close()\">Cancel</button> <button type=\"submit\" class=\"btn btn-primary\">Create</button></div></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"flex flex-col gap-1 mb-4\"><label for=\"type\" class=\"text-sm font-medium text-gray-400\">Type</label> <select id=\"type\" name=\"type\" class=\"rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]\"><option value=\"\">Select a type</option> <option value=\"text\">Text</option> <option value=\"textarea\">Textarea</option> <option value=\"richtext\">Rich Text</option> <option value=\"number\">Number</option> <option value=\"boolean\">Boolean</option> <option value=\"date\">Date</option> <option value=\"datetime\">Datetime</option> <option value=\"select\">Select</option> <option value=\"media\">Media</option> <option value=\"relation\">Relation</option> <option value=\"json\">JSON</option> <option value=\"slug\">Slug</option> <option value=\"email\">Email</option> <option value=\"url\">URL</option></select></div><div class=\"flex justify-end gap-3 border-t border-white/10 pt-4 mt-4\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create</button></div></form></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

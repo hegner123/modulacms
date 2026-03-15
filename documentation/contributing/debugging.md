@@ -1,8 +1,8 @@
 # Debugging
 
-This guide covers practical debugging techniques for ModulaCMS, organized by the area of the application you are investigating: database operations, TUI state, tree structures, HTTP servers, and performance.
+Debug database operations, TUI state, tree structures, and performance issues in ModulaCMS.
 
-## Logging
+## Use Structured Logging
 
 ModulaCMS uses structured logging throughout the application. The logger outputs to stderr with timestamps and caller information.
 
@@ -28,16 +28,16 @@ utility.DefaultLogger.Info(fmt.Sprintf("User %d authenticated via %s", userID, p
 
 ### Enable Debug Output
 
-Set the environment variable to enable debug-level logging:
+Set the `MODULACMS_DEBUG` environment variable to enable debug-level logging:
 
 ```bash
 export MODULACMS_DEBUG=true
 ./modulacms-x86
 ```
 
-## Debugging Database Issues
+## Diagnose Database Issues
 
-### Query Failures
+### Reproduce Query Failures
 
 When a query returns unexpected results or fails, log the parameters before execution, then test the same query directly in the database:
 
@@ -52,9 +52,9 @@ mysql -u root -p -e "SELECT * FROM content_data WHERE route_id = 1"
 psql -U postgres -c "SELECT * FROM content_data WHERE route_id = 1"
 ```
 
-If the query works in the database but fails in Go, check the sqlc-generated code in the relevant `internal/db-*` package to verify parameter types and return types match.
+If the query works in the database but fails in Go, check the sqlc-generated code to verify parameter types and return types match.
 
-### Foreign Key Violations
+### Fix Foreign Key Violations
 
 ```
 Error: FOREIGN KEY constraint failed
@@ -85,9 +85,9 @@ FROM pg_constraint
 WHERE contype = 'f' AND conrelid = 'content_data'::regclass;
 ```
 
-### NULL Value Issues
+### Handle NULL Values
 
-SQLite returns `sql.NullString` and `sql.NullInt64` types. Always check `.Valid` before using the value:
+SQLite returns `sql.NullString` and `sql.NullInt64` types. Check `.Valid` before using the value:
 
 ```go
 if node.Instance.ParentID.Valid {
@@ -98,20 +98,20 @@ if node.Instance.ParentID.Valid {
 }
 ```
 
-A common mistake is reading `.Int64` without checking `.Valid` -- the value will be 0 for NULL, which is a valid ID in some contexts.
+> **Good to know**: Reading `.Int64` without checking `.Valid` returns 0 for NULL, which can look like a valid ID in some contexts.
 
-### Driver-Specific Behavior
+### Investigate Driver-Specific Behavior
 
 A query that works in SQLite may fail in MySQL or PostgreSQL due to:
 - Different placeholder syntax (`?` vs `$1, $2`)
 - Different NULL handling
 - Different type widths (`int64` vs `int32`)
 
-When investigating driver-specific issues, check the sqlc-generated code for each backend to confirm the query syntax is correct.
+Check the sqlc-generated code for each backend to confirm the query syntax is correct.
 
-## Debugging TUI State
+## Diagnose TUI State Issues
 
-### Message Flow
+### Trace Message Flow
 
 The TUI follows the Elm Architecture: messages trigger state changes in Update, which are reflected in View. When the TUI stops responding or shows incorrect state, add logging to the Update function:
 
@@ -125,17 +125,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 ```
 
-### Common TUI Problems
+### Fix Common TUI Problems
 
-**Screen is blank or frozen:** Check that the SSH session has an active PTY. The TUI requires a terminal -- non-interactive SSH sessions will fail. Also verify that terminal dimensions are captured (Width and Height are non-zero).
+**Screen is blank or frozen:** Check that the SSH session has an active PTY. The TUI requires a terminal -- non-interactive SSH sessions fail. Also verify that terminal dimensions are non-zero.
 
-**Commands stop executing:** If `Update()` returns `nil` for `tea.Cmd` when it should return a command, the message loop stalls. Every asynchronous operation must return a `tea.Cmd` that eventually produces a `tea.Msg`.
+**Commands stop executing:** If `Update()` returns `nil` for `tea.Cmd` when it should return a command, the message loop stalls. Every asynchronous operation must return a `tea.Cmd` that produces a `tea.Msg`.
 
 **State inconsistency:** Add validation after state changes to catch cursor out-of-bounds, nil TreeRoot, or other invalid states early.
 
-## Debugging Tree Operations
+## Diagnose Tree Problems
 
-### Orphaned Nodes
+### Find Orphaned Nodes
 
 ```
 WARN Orphaned node detected node_id=789 parent_id=999
@@ -153,7 +153,7 @@ WHERE cd.parent_id IS NOT NULL
 
 Fix by setting the orphaned node's parent to NULL (making it a root), or by correcting the parent_id to a valid node.
 
-### Circular References
+### Break Circular References
 
 ```
 ERROR Circular reference detected node_id=123 parent_id=456
@@ -185,7 +185,7 @@ Break the cycle by setting one node's parent_id to NULL:
 UPDATE content_data SET parent_id = NULL WHERE content_data_id = 123;
 ```
 
-### Missing Root Node
+### Fix Missing Root Node
 
 ```
 Error: no root node found
@@ -197,7 +197,7 @@ The content tree for a route has no node with a NULL parent_id. Every route need
 SELECT * FROM content_data WHERE route_id = 1 AND parent_id IS NULL;
 ```
 
-## Using Delve
+## Debug with Delve
 
 Install the Go debugger:
 
@@ -234,7 +234,7 @@ Useful commands inside Delve:
 | `goroutines` | List all goroutines |
 | `condition 1 var == value` | Conditional breakpoint |
 
-## Performance Profiling
+## Profile Performance
 
 ### CPU Profiling
 
@@ -268,7 +268,7 @@ utility.DefaultLogger.Info("Memory stats",
     "goroutines", runtime.NumGoroutine())
 ```
 
-### Goroutine Leak Detection
+### Detect Goroutine Leaks
 
 If goroutine count grows continuously, use `runtime.NumGoroutine()` to track it, or enable the pprof HTTP endpoint:
 
@@ -282,7 +282,7 @@ go func() {
 
 Then inspect goroutines at `http://localhost:6060/debug/pprof/goroutine?debug=2`.
 
-## Quick Debugging Checklist
+## Follow the Debugging Checklist
 
 When stuck on an issue:
 

@@ -49,6 +49,7 @@ class McmsDataTable extends HTMLElement {
         var headers = this.querySelectorAll('th[data-sort]');
         for (var i = 0; i < headers.length; i++) {
             headers[i].removeAttribute('data-direction');
+            // DUAL: data-direction + class (sort-asc/sort-desc used by CSS)
             headers[i].classList.remove('sort-asc', 'sort-desc');
         }
 
@@ -62,6 +63,7 @@ class McmsDataTable extends HTMLElement {
         }));
     }
 
+    // DUAL: data-direction + class (sort-asc/sort-desc used by CSS)
     _applySortClass(th, direction) {
         th.classList.remove('sort-asc', 'sort-desc');
         if (direction === 'asc') {
@@ -84,10 +86,11 @@ class McmsDataTable extends HTMLElement {
         if (!headerRow) return;
 
         var headerTh = document.createElement('th');
-        headerTh.className = 'select-column';
+        headerTh.className = 'w-10 px-4 py-3';
         var headerCheckbox = document.createElement('input');
         headerCheckbox.type = 'checkbox';
-        headerCheckbox.className = 'select-all-checkbox';
+        headerCheckbox.className = 'rounded border-[var(--color-border)]';
+        headerCheckbox.setAttribute('data-role', 'select-all');
         headerCheckbox.setAttribute('aria-label', 'Select all rows');
         headerCheckbox.addEventListener('change', this._boundOnHeaderCheckbox);
         headerTh.appendChild(headerCheckbox);
@@ -105,10 +108,11 @@ class McmsDataTable extends HTMLElement {
 
     _addRowCheckbox(row) {
         var td = document.createElement('td');
-        td.className = 'select-column';
+        td.className = 'w-10 px-4 py-3';
         var checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.className = 'row-checkbox';
+        checkbox.className = 'rounded border-[var(--color-border)]';
+        checkbox.setAttribute('data-role', 'row-checkbox');
         checkbox.setAttribute('aria-label', 'Select row');
 
         var rowId = row.getAttribute('data-id') || '';
@@ -121,7 +125,7 @@ class McmsDataTable extends HTMLElement {
 
     _onHeaderCheckbox(e) {
         var checked = e.target.checked;
-        var rowCheckboxes = this.querySelectorAll('.row-checkbox');
+        var rowCheckboxes = this.querySelectorAll('[data-role="row-checkbox"]');
         for (var i = 0; i < rowCheckboxes.length; i++) {
             rowCheckboxes[i].checked = checked;
         }
@@ -130,8 +134,8 @@ class McmsDataTable extends HTMLElement {
 
     _onRowCheckbox() {
         // Update header checkbox state
-        var rowCheckboxes = this.querySelectorAll('.row-checkbox');
-        var headerCheckbox = this.querySelector('.select-all-checkbox');
+        var rowCheckboxes = this.querySelectorAll('[data-role="row-checkbox"]');
+        var headerCheckbox = this.querySelector('[data-role="select-all"]');
         if (!headerCheckbox) return;
 
         var allChecked = true;
@@ -151,7 +155,7 @@ class McmsDataTable extends HTMLElement {
 
     _emitSelectEvent() {
         var selected = [];
-        var rowCheckboxes = this.querySelectorAll('.row-checkbox');
+        var rowCheckboxes = this.querySelectorAll('[data-role="row-checkbox"]');
         for (var i = 0; i < rowCheckboxes.length; i++) {
             if (rowCheckboxes[i].checked) {
                 var rowId = rowCheckboxes[i].getAttribute('data-row-id');
@@ -174,7 +178,7 @@ class McmsDataTable extends HTMLElement {
                 var addedNodes = mutations[m].addedNodes;
                 for (var n = 0; n < addedNodes.length; n++) {
                     var node = addedNodes[n];
-                    if (node.nodeType === 1 && node.tagName === 'TR' && !node.querySelector('.row-checkbox')) {
+                    if (node.nodeType === 1 && node.tagName === 'TR' && !node.querySelector('[data-role="row-checkbox"]')) {
                         self._addRowCheckbox(node);
                     }
                 }
@@ -193,7 +197,7 @@ class McmsDataTable extends HTMLElement {
     // Public API: get currently selected row IDs
     getSelected() {
         var selected = [];
-        var rowCheckboxes = this.querySelectorAll('.row-checkbox:checked');
+        var rowCheckboxes = this.querySelectorAll('[data-role="row-checkbox"]:checked');
         for (var i = 0; i < rowCheckboxes.length; i++) {
             var rowId = rowCheckboxes[i].getAttribute('data-row-id');
             if (rowId) {
@@ -205,7 +209,7 @@ class McmsDataTable extends HTMLElement {
 
     // Public API: clear all selections
     clearSelection() {
-        var all = this.querySelectorAll('.row-checkbox, .select-all-checkbox');
+        var all = this.querySelectorAll('[data-role="row-checkbox"], [data-role="select-all"]');
         for (var i = 0; i < all.length; i++) {
             all[i].checked = false;
             all[i].indeterminate = false;

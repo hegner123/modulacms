@@ -1,6 +1,6 @@
 # Reference
 
-Quick reference for all resources available on the `*modula.Client` struct. Resources are grouped by category. Generic `Resource[E,C,U,ID]` types provide `List`, `Get`, `Create`, `Update`, `Delete`, `ListPaginated`, `Count`, and `RawList` methods unless noted otherwise.
+Quick reference for all resources, branded ID types, enums, and utility functions in the Go SDK.
 
 ## Content Resources
 
@@ -59,7 +59,9 @@ Quick reference for all resources available on the `*modula.Client` struct. Reso
 
 ## Admin Resources
 
-Admin resources mirror their public counterparts but operate on draft/working content before publishing. They share the same method signatures.
+Admin resources mirror their public counterparts but operate on admin content. They share the same method signatures.
+
+> **Good to know**: Generic `Resource[E,C,U,ID]` types provide `List`, `Get`, `Create`, `Update`, `Delete`, `ListPaginated`, `Count`, and `RawList` methods unless noted otherwise.
 
 | Resource | Type | Key Methods | Description |
 |----------|------|-------------|-------------|

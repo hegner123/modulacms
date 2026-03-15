@@ -248,11 +248,20 @@ func (s *SchemaService) UpdateDatatype(ctx context.Context, ac audited.AuditCont
 	}
 
 	// Preserve immutable fields.
-	params.ParentID = existing.ParentID
-	params.SortOrder = existing.SortOrder
 	params.AuthorID = existing.AuthorID
 	params.DateCreated = existing.DateCreated
 	params.DateModified = nowUTC()
+
+	// If parent changed, recalculate sort order under the new parent.
+	if params.ParentID != existing.ParentID {
+		maxSort, sortErr := s.store.GetMaxDatatypeSortOrder(params.ParentID)
+		if sortErr != nil {
+			maxSort = -1
+		}
+		params.SortOrder = maxSort + 1
+	} else {
+		params.SortOrder = existing.SortOrder
+	}
 
 	if _, err = s.store.UpdateDatatype(ctx, ac, params); err != nil {
 		return nil, &InternalError{Err: fmt.Errorf("update datatype: %w", err)}

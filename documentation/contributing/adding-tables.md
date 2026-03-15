@@ -1,8 +1,8 @@
 # Adding Database Tables
 
-ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably. Every new table must work with all three backends. This guide walks through the full workflow -- from schema design to working Go code -- using a hypothetical "comments" table as the example.
+Add a new database table that works across all three backends (SQLite, MySQL, PostgreSQL) using the "comments" table as an example.
 
-## Overview
+## Steps at a Glance
 
 Adding a table involves these steps:
 
@@ -16,7 +16,7 @@ Adding a table involves these steps:
 8. Implement methods on all three driver structs
 9. Write tests
 
-## Step 1: Determine the Migration Number
+## Step 1: Find the Next Migration Number
 
 Schema directories in `sql/schema/` are numbered sequentially. List the existing ones to find the next available number:
 
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS comments (
 
 ## Step 3: Write sqlc Query Annotations
 
-sqlc annotations define how SQL queries become Go functions. Write one query file per database.
+sqlc annotations define how SQL queries map to Go functions. Write one query file per database.
 
 ### SQLite Queries (queries.sql)
 
@@ -171,7 +171,7 @@ RETURNING *;
 
 ## Step 4: Update Combined Schema Files
 
-ModulaCMS uses combined schema files for fresh installations. Add your table's CREATE statement to the end of each:
+Fresh installations use combined schema files. Add your table's CREATE statement to the end of each:
 
 - `sql/all_schema.sql` (SQLite)
 - `sql/all_schema_mysql.sql` (MySQL)
@@ -192,27 +192,21 @@ cd sql/schema
 just sqlc
 ```
 
-This runs `sqlc generate` and produces type-safe Go code in three packages:
+This produces type-safe Go code in three packages (`internal/db-sqlite/`, `internal/db-mysql/`, `internal/db-psql/`). Each package gets updated struct definitions and query function files.
 
-- `internal/db-sqlite/` (package `mdb`)
-- `internal/db-mysql/` (package `mdbm`)
-- `internal/db-psql/` (package `mdbp`)
+> **Good to know**: Never edit files in these three directories by hand -- they are overwritten on each generation.
 
-Each package gets updated `models.go` (struct definitions) and query function files. Never edit these files by hand -- they are overwritten on each generation.
+## Step 6: Create Application-Level Types
 
-## Step 6: Create Application-Level Data Structures
+sqlc generates database-specific types with `sql.Null*` fields. Create a new file in `internal/db/` (e.g., `comment.go`) with application-level types:
 
-sqlc generates database-specific types with `sql.Null*` fields. You need application-level types with clean Go types that your handlers and business logic use.
-
-Create a new file in `internal/db/` (e.g., `comment.go`) containing:
-
-- **Entity struct** -- Clean types (string, int64) instead of sql.Null* types
+- **Entity struct** -- Clean types (string, int64) instead of `sql.Null*` types
 - **CreateParams and UpdateParams** -- Input structs for create and update operations
 - **Mapping functions** -- Convert between sqlc-generated types and your entity struct for each database driver
 
-The mapping functions handle NULL conversions using helpers like `NullStringToString` and `StringToNullString` from the convert utilities. MySQL and PostgreSQL use `int32` where SQLite uses `int64`, so the mappers handle type width conversion as well.
+The mapping functions handle NULL conversions using helpers from `convert.go`. MySQL and PostgreSQL use `int32` where SQLite uses `int64`, so the mappers handle type width conversion as well.
 
-## Step 7: Add to the DbDriver Interface
+## Step 7: Add Methods to the DbDriver Interface
 
 Add your new query methods to the `DbDriver` interface in `internal/db/db.go`:
 
@@ -232,7 +226,7 @@ type DbDriver interface {
 
 ## Step 8: Implement on All Three Drivers
 
-Implement the interface methods on each driver struct: `Database` (SQLite), `MysqlDatabase`, and `PsqlDatabase`. Each implementation:
+Implement the interface methods on each driver struct (`Database`, `MysqlDatabase`, `PsqlDatabase`). Each implementation:
 
 1. Creates a `Queries` instance from the sqlc-generated package
 2. Maps application params to sqlc params
@@ -294,12 +288,12 @@ Run the tests:
 just test
 ```
 
-## Common Pitfalls
+## Avoid Common Pitfalls
 
-**Forgetting a database backend.** Every schema, query, and driver implementation must exist for all three databases. A table that works in SQLite but is missing from MySQL will fail in production.
+**Forgetting a database backend.** Every schema, query, and driver implementation must exist for all three databases. A table that works in SQLite but is missing from MySQL fails in production.
 
-**Not updating combined schemas.** The combined schema files (`all_schema*.sql`) are used for fresh installations. If your table is only in the migration directory, new installs will be missing it.
+**Not updating combined schemas.** The combined schema files (`all_schema*.sql`) are used for fresh installations. If your table is only in the migration directory, new installs won't have it.
 
-**SQL dialect differences.** MySQL uses `?` for placeholders and does not support `RETURNING`. PostgreSQL uses `$1, $2, $3` and supports `RETURNING`. Test your queries against all three backends.
+**SQL dialect differences.** MySQL uses `?` for placeholders and does not support `RETURNING`. PostgreSQL uses `$1, $2, $3` and supports `RETURNING`. Test queries against all three backends.
 
 **Type width mismatches.** SQLite uses `int64` for all integer types. MySQL and PostgreSQL generated code uses `int32` for `INT`/`INTEGER` columns. Your mapping functions must handle the conversion.

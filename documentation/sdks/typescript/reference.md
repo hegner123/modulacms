@@ -1,6 +1,6 @@
 # Reference
 
-Quick reference for all resources, methods, and types across the TypeScript SDK packages.
+Quick reference for all resources, methods, and types in the TypeScript SDK packages.
 
 ## Read-Only SDK (`@modulacms/sdk`)
 
@@ -159,4 +159,4 @@ Every CRUD resource provides these standard methods:
 (read-only)      (full CRUD)
 ```
 
-Both SDKs depend on `@modulacms/types` for shared entity types, branded IDs, and enums. The two SDKs are independent of each other -- install whichever one your application needs, or both.
+Both SDKs depend on `@modulacms/types` for shared entity types, branded IDs, and enums. The two SDKs are independent of each other -- install whichever your application needs, or both.

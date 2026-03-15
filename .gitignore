@@ -115,3 +115,6 @@ testdb/
 
 # Tailwind UI reference samples
 tailwind-ui
+
+# Documentation tone/voice reference
+documentation/tone/

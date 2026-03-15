@@ -1,29 +1,6 @@
 // ModulaCMS Admin — HTMX config and glue code
 
 // ========================================
-// Theme: persist light/dark preference
-// ========================================
-(function initTheme() {
-    const saved = localStorage.getItem('mcms-theme');
-    if (saved === 'light') {
-        document.documentElement.classList.add('light');
-    } else if (saved === 'dark') {
-        document.documentElement.classList.remove('light');
-    }
-    // If no preference saved, default is dark (no .light class)
-})();
-
-function toggleTheme() {
-    const isLight = document.documentElement.classList.toggle('light');
-    localStorage.setItem('mcms-theme', isLight ? 'light' : 'dark');
-    // Update toggle button icon
-    const btn = document.querySelector('.theme-toggle');
-    if (btn) {
-        btn.textContent = isLight ? '\u263E' : '\u2600'; // ☾ / ☀
-    }
-}
-
-// ========================================
 // Richtext: fetch global toolbar config
 // ========================================
 (function() {
@@ -177,7 +154,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 function focusSearch() {
-    const input = document.querySelector('mcms-search input, .search-input, input[type="search"]');
+    const input = document.querySelector('mcms-search input, [data-search-input], input[type="search"]');
     if (input) {
         input.focus();
         input.select();
@@ -185,7 +162,7 @@ function focusSearch() {
 }
 
 function clickNewButton() {
-    const btn = document.querySelector('[data-shortcut="new"], .page-header .btn-primary');
+    const btn = document.querySelector('[data-shortcut="new"], [data-page-header] [data-action="new"]');
     if (btn) btn.click();
 }
 
@@ -231,7 +208,7 @@ function toggleShortcutsHelp() {
 function focusBlockEditor() {
     var editor = document.querySelector('block-editor');
     if (!editor) return;
-    var container = editor.querySelector('.editor-container');
+    var container = editor.querySelector('[data-editor-container]');
     if (container) container.focus();
 }
 
@@ -259,17 +236,29 @@ function escapeHtml(text) {
 // Mobile Sidebar Toggle
 // ========================================
 function toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
+    const sidebar = document.querySelector('[data-sidebar]');
+    const overlay = document.querySelector('[data-sidebar-overlay]');
     if (!sidebar) return;
 
-    const isOpen = sidebar.classList.toggle('open');
-    if (overlay) overlay.classList.toggle('open', isOpen);
+    const isOpen = sidebar.dataset.state === 'open' ? '' : 'open';
+    sidebar.dataset.state = isOpen;
+    // On mobile: show sidebar as fixed overlay
+    if (isOpen) {
+        sidebar.classList.remove('hidden');
+        sidebar.classList.add('fixed', 'inset-y-0', 'left-0', 'z-50', 'flex');
+    } else {
+        sidebar.classList.add('hidden');
+        sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'flex');
+    }
+    if (overlay) {
+        overlay.dataset.state = isOpen;
+        overlay.classList.toggle('hidden', !isOpen);
+    }
 }
 
 // Close sidebar when clicking overlay
 document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('sidebar-overlay')) {
+    if (e.target.hasAttribute('data-sidebar-overlay')) {
         toggleSidebar();
     }
 });
@@ -289,21 +278,23 @@ document.body.addEventListener('htmx:afterSwap', initLucideIcons);
 // Roles Sidebar: active state toggle
 // ========================================
 document.addEventListener('click', function(e) {
-    var item = e.target.closest('.roles-sidebar-item');
+    var item = e.target.closest('[data-roles-sidebar-item]');
     if (!item) return;
-    var nav = item.closest('.roles-sidebar-nav');
+    var nav = item.closest('[data-roles-sidebar-nav]');
     if (!nav) return;
-    nav.querySelectorAll('.roles-sidebar-item').forEach(function(el) {
-        el.classList.remove('active');
+    nav.querySelectorAll('[data-roles-sidebar-item]').forEach(function(el) {
+        delete el.dataset.active;
+        el.classList.remove('active'); // DUAL: data-active + class
     });
-    item.classList.add('active');
+    item.dataset.active = '';
+    item.classList.add('active'); // DUAL: data-active + class
 });
 
 // ========================================
 // Permissions Matrix: toggle-all logic
 // ========================================
 function initPermMatrixToggles() {
-    document.querySelectorAll('.perm-matrix').forEach(function(table) {
+    document.querySelectorAll('[data-perm-matrix]').forEach(function(table) {
         // Set initial state of toggle checkboxes
         table.querySelectorAll('[data-toggle-col]').forEach(function(toggle) {
             updateColToggle(table, toggle);
@@ -348,8 +339,8 @@ function updateRowToggle(table, toggle) {
 
 document.addEventListener('change', function(e) {
     var target = e.target;
-    if (!target.closest('.perm-matrix')) return;
-    var table = target.closest('.perm-matrix');
+    if (!target.closest('[data-perm-matrix]')) return;
+    var table = target.closest('[data-perm-matrix]');
 
     // Column toggle clicked
     var col = target.getAttribute('data-toggle-col');
@@ -423,7 +414,7 @@ for (const src of componentFiles) {
 // ========================================
 function updateSidebarActive(path) {
     if (!path) return;
-    document.querySelectorAll('.sidebar-link').forEach(function(link) {
+    document.querySelectorAll('[data-sidebar-link]').forEach(function(link) {
         var href = link.getAttribute('hx-get') || link.getAttribute('href');
         if (!href) return;
         var active = false;
@@ -433,9 +424,11 @@ function updateSidebarActive(path) {
             active = (path.length === href.length || path.charAt(href.length) === '/');
         }
         if (active) {
-            link.classList.add('active');
+            link.dataset.active = '';
+            link.classList.add('active'); // DUAL: data-active + class
         } else {
-            link.classList.remove('active');
+            delete link.dataset.active;
+            link.classList.remove('active'); // DUAL: data-active + class
         }
     });
 }
@@ -462,11 +455,16 @@ document.body.addEventListener('pageTitle', function(e) {
 // ========================================
 document.body.addEventListener('htmx:afterSwap', function(e) {
     if (e.detail.target && e.detail.target.id === 'main-content') {
-        var sidebar = document.querySelector('.sidebar');
-        var overlay = document.querySelector('.sidebar-overlay');
-        if (sidebar && sidebar.classList.contains('open')) {
-            sidebar.classList.remove('open');
-            if (overlay) overlay.classList.remove('open');
+        var sidebar = document.querySelector('[data-sidebar]');
+        var overlay = document.querySelector('[data-sidebar-overlay]');
+        if (sidebar && sidebar.dataset.state === 'open') {
+            sidebar.dataset.state = '';
+            sidebar.classList.add('hidden');
+            sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'flex');
+            if (overlay) {
+                overlay.dataset.state = '';
+                overlay.classList.add('hidden');
+            }
         }
     }
 });
@@ -475,15 +473,20 @@ document.body.addEventListener('htmx:afterSwap', function(e) {
 // Split button dropdown toggle
 // ========================================
 document.addEventListener('click', function(e) {
-    var toggle = e.target.closest('.btn-split-toggle');
+    var toggle = e.target.closest('[data-split-toggle]');
     if (toggle) {
-        var split = toggle.closest('.btn-split');
-        if (split) split.classList.toggle('open');
+        var split = toggle.closest('[data-split-button]');
+        if (split) {
+            var wasOpen = split.dataset.state === 'open';
+            split.dataset.state = wasOpen ? '' : 'open';
+            split.classList.toggle('open', !wasOpen); // DUAL: data-state + class
+        }
         return;
     }
     // Close any open split menus when clicking elsewhere
-    document.querySelectorAll('.btn-split.open').forEach(function(el) {
-        el.classList.remove('open');
+    document.querySelectorAll('[data-split-button][data-state="open"]').forEach(function(el) {
+        el.dataset.state = '';
+        el.classList.remove('open'); // DUAL: data-state + class
     });
 });
 
@@ -496,8 +499,8 @@ document.addEventListener('click', function(e) {
         if (moved) return;
         var dialog = document.getElementById('version-history-dialog');
         if (!dialog) return;
-        var form = dialog.querySelector('.version-restore-form');
-        var actions = dialog.querySelector('.dialog-actions');
+        var form = dialog.querySelector('[data-version-restore-form]');
+        var actions = dialog.querySelector('[data-dialog-actions]');
         if (form && actions) {
             actions.insertBefore(form, actions.firstChild);
             moved = true;
@@ -513,14 +516,16 @@ document.addEventListener('click', function(e) {
 // Version list: click to select, restore button
 // ========================================
 document.addEventListener('click', function(e) {
-    var item = e.target.closest('.version-item[data-version-id]');
+    var item = e.target.closest('[data-version-item][data-version-id]');
     if (!item) return;
-    var list = item.closest('.version-list');
+    var list = item.closest('[data-version-list]');
     if (!list) return;
-    list.querySelectorAll('.version-item').forEach(function(el) {
-        el.classList.remove('selected');
+    list.querySelectorAll('[data-version-item]').forEach(function(el) {
+        delete el.dataset.selected;
+        el.classList.remove('selected'); // DUAL: data-selected + class
     });
-    item.classList.add('selected');
+    item.dataset.selected = '';
+    item.classList.add('selected'); // DUAL: data-selected + class
     var dialog = document.getElementById('version-history-dialog');
     if (!dialog) return;
     var hiddenInput = dialog.querySelector('#version-restore-id');
@@ -534,7 +539,7 @@ document.addEventListener('click', function(e) {
 // ========================================
 document.addEventListener('click', function(e) {
     if (e.target.closest('button, a, input, select, textarea')) return;
-    var row = e.target.closest('tr.clickable-row[data-href]');
+    var row = e.target.closest('tr[data-clickable-row][data-href]');
     if (!row) return;
     var href = row.getAttribute('data-href');
     if (!href) return;

@@ -1,6 +1,6 @@
 # TypeScript SDK -- Getting Started
 
-The ModulaCMS TypeScript SDK ships as three npm packages in a pnpm workspace monorepo:
+Install and configure the ModulaCMS TypeScript SDK for content delivery or admin operations.
 
 | Package | npm Name | Purpose |
 |---------|----------|---------|
@@ -8,7 +8,7 @@ The ModulaCMS TypeScript SDK ships as three npm packages in a pnpm workspace mon
 | `modulacms-sdk/` | `@modulacms/sdk` | Read-only content delivery for frontend apps |
 | `modulacms-admin-sdk/` | `@modulacms/admin-sdk` | Full admin CRUD for management tools and CI/CD |
 
-Both SDKs depend on `@modulacms/types` via `workspace:*`. When you install either SDK from npm, `@modulacms/types` is installed automatically as a dependency.
+Both SDKs depend on `@modulacms/types`. Installing either SDK from npm pulls in `@modulacms/types` automatically.
 
 ## Installation
 
@@ -24,7 +24,7 @@ Install the admin SDK for full CRUD operations:
 npm install @modulacms/admin-sdk
 ```
 
-Both packages ship as dual ESM + CJS builds. TypeScript 5.7+ is recommended. Node 22+ for server-side use; any modern browser for client-side.
+> **Good to know**: Both packages ship as dual ESM + CJS builds. TypeScript 5.7+ recommended. Node 22+ for server-side use; any modern browser for client-side.
 
 ## Creating a Read-Only Client
 
@@ -81,11 +81,11 @@ const me = await client.auth.me()
 | `credentials` | `RequestCredentials` | No | `'include'` | Fetch `credentials` mode for cookie handling. |
 | `allowInsecure` | `boolean` | No | `false` | Allow `http://` URLs. Required for local development. |
 
-`createAdminClient` validates the config at construction time:
+`createAdminClient` validates the config at construction time and throws if:
 
-- Throws if `baseUrl` is not a valid URL.
-- Throws if `baseUrl` uses `http://` without `allowInsecure: true`.
-- Throws if `apiKey` is an empty string (omit it instead).
+- `baseUrl` is not a valid URL.
+- `baseUrl` uses `http://` without `allowInsecure: true`.
+- `apiKey` is an empty string (omit it instead).
 
 ## Local Development
 

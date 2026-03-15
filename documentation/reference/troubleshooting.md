@@ -1,8 +1,8 @@
 # Troubleshooting
 
-Common errors and their solutions, organized by category. Search this page for the error message you are seeing.
+Find solutions to common errors by searching for the error message you're seeing.
 
-## Build and Compilation
+## Build and Compilation Errors
 
 ### cgo: C compiler "gcc" not found
 
@@ -32,14 +32,14 @@ sudo yum groupinstall "Development Tools"
 
 ### cannot find package "github.com/mattn/go-sqlite3"
 
-The vendor directory is out of sync or missing.
+The vendor directory is out of sync or missing. Restore it:
 
 ```bash
 go mod vendor
 go build ./cmd
 ```
 
-If the vendor directory is corrupted:
+If the vendor directory is corrupted, delete and recreate it:
 
 ```bash
 rm -rf vendor/
@@ -76,11 +76,11 @@ ls go.mod  # should exist
 go test ./...
 ```
 
-## Database Connection
+## Database Connection Errors
 
 ### failed to open SQLite database: unable to open database file
 
-The database file path is invalid, the directory does not exist, or permissions are wrong.
+The database file path is invalid, the directory doesn't exist, or permissions are wrong.
 
 ```bash
 # Check that the directory exists
@@ -131,7 +131,7 @@ PostgreSQL requires SSL but the connection string has it disabled (or vice versa
 
 For development, append `?sslmode=disable` to your connection string or configure it in the database initialization code. For production, configure SSL certificates.
 
-## sqlc Generation
+## sqlc Generation Errors
 
 ### sqlc: unknown driver "sqlite"
 
@@ -144,7 +144,7 @@ sqlc version
 
 ### query parameter references column that is not in the query
 
-The SQL query is missing a parameter that the sqlc annotation expects. Ensure the query includes a WHERE clause or other parameter usage:
+The SQL query is missing a parameter that the sqlc annotation expects. Add a WHERE clause or other parameter usage:
 
 ```sql
 -- Wrong: no parameter
@@ -185,11 +185,11 @@ Or use the just target which handles the directory change:
 just sqlc
 ```
 
-## Foreign Key Constraints
+## Foreign Key Constraint Errors
 
 ### FOREIGN KEY constraint failed
 
-You are inserting or updating a record that references a parent record that does not exist.
+You're inserting or updating a record that references a parent record that doesn't exist.
 
 Check that the referenced records exist before the operation:
 
@@ -202,7 +202,7 @@ Create parent records before child records. When creating content, the route, da
 
 ### Cannot delete or update a parent row
 
-You are trying to delete a record that has child records referencing it.
+You're trying to delete a record that has child records referencing it.
 
 Delete child records first, or ensure the schema uses `ON DELETE CASCADE`:
 
@@ -213,7 +213,7 @@ DELETE FROM content_fields WHERE content_data_id = 123;
 DELETE FROM content_data WHERE content_data_id = 123;
 ```
 
-## Server Startup
+## Server Startup Errors
 
 ### bind: address already in use
 
@@ -239,7 +239,7 @@ Or change the port in `modula.config.json`:
 
 ### Certificate Directory path is invalid
 
-The certificate directory specified in `cert_dir` does not exist.
+The certificate directory specified in `cert_dir` doesn't exist.
 
 ```bash
 mkdir -p ./certs
@@ -254,14 +254,14 @@ For local development, generate self-signed certificates:
 
 ### ssh: no host key available
 
-The SSH host key does not exist.
+The SSH host key doesn't exist. Generate one:
 
 ```bash
 mkdir -p .ssh
 ssh-keygen -t ed25519 -f .ssh/id_ed25519 -N ""
 ```
 
-## TUI Problems
+## TUI Errors
 
 ### Screen is blank or frozen
 
@@ -274,7 +274,7 @@ Check the log output for panic messages. Ensure you are connecting with an inter
 
 ### Garbled output or visible escape codes
 
-The terminal does not support ANSI colors. Check your TERM environment variable:
+The terminal doesn't support ANSI colors. Check your TERM environment variable:
 
 ```bash
 echo $TERM
@@ -284,9 +284,9 @@ export TERM=xterm-256color
 
 ### TUI stops responding to input
 
-The Update function is returning nil for `tea.Cmd` when it should return a command. Every asynchronous operation must return a command that eventually produces a message. Check the Update function for code paths that handle messages but return `nil` as the command.
+The Update function returns nil for `tea.Cmd` when it should return a command. Every asynchronous operation must return a command that eventually produces a message. Check the Update function for code paths that return `nil` as the command.
 
-## Tree Loading
+## Tree Loading Errors
 
 ### Circular reference detected
 
@@ -299,7 +299,7 @@ UPDATE content_data SET parent_id = NULL WHERE content_data_id = 123;
 
 ### Orphaned nodes detected
 
-A node's parent_id references a record that does not exist. Find orphaned nodes:
+A node's parent references a record that doesn't exist. Find orphaned nodes:
 
 ```sql
 SELECT cd.content_data_id, cd.parent_id
@@ -309,7 +309,7 @@ WHERE cd.parent_id IS NOT NULL
   AND parent.content_data_id IS NULL;
 ```
 
-Fix by correcting the parent_id or setting it to NULL.
+Fix by correcting the parent or setting it to NULL.
 
 ### Tree loads slowly
 
@@ -320,11 +320,11 @@ CREATE INDEX idx_content_data_route ON content_data(route_id);
 CREATE INDEX idx_content_data_parent ON content_data(parent_id);
 ```
 
-## Authentication and OAuth
+## Authentication and OAuth Errors
 
 ### Missing code parameter (OAuth callback)
 
-The OAuth provider did not return an authorization code. The user may have cancelled the flow, or the provider configuration is incorrect.
+The OAuth provider didn't return an authorization code. The user may have cancelled the flow, or the provider configuration is incorrect.
 
 Verify the OAuth callback URL registered with your provider matches exactly: `http://localhost:8080/api/v1/auth/oauth/callback` (including scheme and port).
 
@@ -334,21 +334,19 @@ Invalid client credentials or incorrect token endpoint URL. Verify `oauth_client
 
 ### sessions don't match
 
-The session cookie is invalid, corrupted, or expired.
+The session cookie is invalid, corrupted, or expired. Clear the browser cookie and log in again.
 
-Check session expiration in the database:
+To check session expiration in the database:
 
 ```sql
 SELECT session_id, user_id, expires_at FROM sessions WHERE user_id = 123;
 ```
 
-Clear the browser cookie and log in again.
-
 ## Runtime Errors
 
 ### nil pointer dereference
 
-Accessing a field or method on a nil pointer. Common in tree operations where a node's parent, child, or sibling may be nil. Always check for nil before dereferencing.
+Accessing a field or method on a nil pointer. Common in tree operations where a node's parent, child, or sibling may be nil. Check for nil before dereferencing.
 
 ### too many open files
 
@@ -358,15 +356,13 @@ The file descriptor limit is too low. Increase it:
 ulimit -n 4096
 ```
 
-For a permanent fix on Linux, edit `/etc/security/limits.conf`. Ensure all database connections and HTTP response bodies are closed with `defer`.
+For a permanent fix on Linux, edit `/etc/security/limits.conf`. Close all database connections and HTTP response bodies with `defer`.
 
 ### too many SQL variables
 
 SQLite limits queries to 999 variables. Batch large operations into groups of 900 or fewer.
 
-## Quick Reference
-
-Most common errors and their one-line fixes:
+## Quick Reference Table
 
 | Error | Fix |
 |-------|-----|
@@ -378,7 +374,7 @@ Most common errors and their one-line fixes:
 | sqlc generation fails | Run `just sqlc` from the project root |
 | Nil pointer panic | Add nil check before accessing the value |
 
-### Emergency Commands
+### Emergency Recovery Commands
 
 ```bash
 # Kill a hung process

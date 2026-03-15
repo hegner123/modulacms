@@ -41,7 +41,7 @@ func Auth(title string, csrfToken string, version string) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"auth-layout\"><div class=\"auth-card\"><div class=\"auth-brand\"><h1>ModulaCMS</h1></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex min-h-screen items-center justify-center bg-[var(--color-bg)] p-6\"><div class=\"w-full max-w-sm rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6\"><div class=\"mb-6 text-center\"><h1 class=\"text-2xl font-bold text-[var(--color-text)]\">ModulaCMS</h1></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

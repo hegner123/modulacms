@@ -1086,7 +1086,7 @@ var dragMethods = {
   // ---- Auto-scroll ----
   _startAutoScroll() {
     if (this._autoScrollRaf !== null) return;
-    const editorContainer = this.querySelector(".editor-container");
+    const editorContainer = this.querySelector("[data-editor-container]");
     if (!editorContainer) return;
     const EDGE_ZONE = 40;
     const MAX_SPEED = 12;
@@ -1274,7 +1274,7 @@ var pickerMethods = {
       document.removeEventListener("keydown", this._pickerEscHandler, true);
       this._pickerEscHandler = null;
     }
-    var container = this.querySelector(".editor-container");
+    var container = this.querySelector("[data-editor-container]");
     if (container) container.focus();
   },
   _renderPicker: function() {
@@ -1754,6 +1754,7 @@ if (isBrowser) {
       this._wrapperRegistry.clear();
       const container = document.createElement("div");
       container.className = "editor-container";
+      container.setAttribute("data-editor-container", "");
       const header = this._renderHeader();
       container.appendChild(header);
       const blockList = document.createElement("div");
@@ -1992,6 +1993,7 @@ if (isBrowser) {
       this.innerHTML = "";
       const container = document.createElement("div");
       container.className = "editor-container";
+      container.setAttribute("data-editor-container", "");
       const errorDiv = document.createElement("div");
       errorDiv.className = "error-container";
       const msgEl = document.createElement("div");

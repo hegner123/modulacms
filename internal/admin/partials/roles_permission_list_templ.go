@@ -30,7 +30,7 @@ func RolesPermissionList(matrix PermissionMatrix) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if matrix.AdminPerm.Exists {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"perm-matrix-admin\"><label class=\"permission-checkbox\"><input type=\"checkbox\" name=\"permissions\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"rounded-md bg-white/5 p-4 ring-1 ring-white/10 ring-inset\"><label class=\"flex items-center gap-3 text-sm cursor-pointer\"><input type=\"checkbox\" name=\"permissions\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -53,18 +53,18 @@ func RolesPermissionList(matrix PermissionMatrix) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "> <span class=\"permission-label\"><strong>Super Admin</strong></span></label></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "> <span class=\"font-semibold text-white\">Super Admin</span></label></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if len(matrix.Rows) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"perm-matrix-wrap\"><table class=\"perm-matrix\"><thead><tr><th class=\"perm-matrix-resource\">Resource</th><th class=\"perm-matrix-cell\"></th>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"overflow-x-auto rounded-md ring-1 ring-white/10\"><table class=\"w-full text-sm\" data-perm-matrix><thead><tr class=\"border-b border-white/10\"><th class=\"px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400\">Resource</th><th class=\"px-2 py-3 text-center\"></th>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, col := range matrix.Columns {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<th class=\"perm-matrix-op\"><label class=\"perm-matrix-col-toggle\"><input type=\"checkbox\" data-toggle-col=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<th class=\"px-2 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-400\"><label class=\"flex flex-col items-center gap-1 cursor-pointer\"><input type=\"checkbox\" data-toggle-col=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -95,25 +95,25 @@ func RolesPermissionList(matrix PermissionMatrix) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</tr></thead> <tbody class=\"divide-y divide-white/5\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, row := range matrix.Rows {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<tr><td class=\"perm-matrix-resource\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<tr><td class=\"whitespace-nowrap px-4 py-3 text-sm text-white\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(row.DisplayName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/roles_permission_list.templ`, Line: 37, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/roles_permission_list.templ`, Line: 37, Col: 83}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</td><td class=\"perm-matrix-cell\"><label class=\"perm-matrix-row-toggle\"><input type=\"checkbox\" data-toggle-row=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</td><td class=\"px-2 py-3 text-center\"><label class=\"cursor-pointer\"><input type=\"checkbox\" data-toggle-row=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -131,7 +131,7 @@ func RolesPermissionList(matrix PermissionMatrix) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				for _, col := range matrix.Columns {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<td class=\"perm-matrix-cell\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<td class=\"px-2 py-3 text-center\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -190,7 +190,7 @@ func RolesPermissionList(matrix PermissionMatrix) templ.Component {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span class=\"perm-matrix-na\">&mdash;</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span class=\"text-gray-500\">&mdash;</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -210,7 +210,7 @@ func RolesPermissionList(matrix PermissionMatrix) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<p class=\"empty-text\">No permissions available.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<p class=\"text-sm text-gray-400\">No permissions available.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

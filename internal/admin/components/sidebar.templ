@@ -3,8 +3,9 @@ package components
 import "github.com/hegner123/modulacms/internal/middleware"
 
 templ Sidebar(currentPath string, perms middleware.PermissionSet) {
-	<nav class="sidebar">
-		<ul class="sidebar-nav">
+	<nav class="hidden w-52 shrink-0 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface)] lg:flex"
+		 data-sidebar data-state="">
+		<ul role="list" class="flex flex-1 flex-col gap-y-0.5 px-2 py-2">
 			for _, item := range NavItems {
 				if CanSee(item, perms) {
 					<li>
@@ -13,7 +14,11 @@ templ Sidebar(currentPath string, perms middleware.PermissionSet) {
 						   hx-target="#main-content"
 						   hx-push-url="true"
 						   hx-swap="innerHTML show:window:top"
-						   class={ "sidebar-link", templ.KV("active", IsActive(currentPath, item.Href)) }>
+						   data-sidebar-link
+						   data-active?={ IsActive(currentPath, item.Href) }
+						   class={ "group flex items-center gap-x-3 rounded-md px-4 py-2 text-sm font-medium no-underline transition-colors",
+								   templ.KV("bg-[var(--color-primary-100)] text-[var(--color-text)] font-medium", IsActive(currentPath, item.Href)),
+								   templ.KV("text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] hover:no-underline", !IsActive(currentPath, item.Href)) }>
 							@Icon(item.Icon)
 							<span>{ item.Label }</span>
 						</a>

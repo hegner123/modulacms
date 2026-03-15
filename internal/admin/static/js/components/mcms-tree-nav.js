@@ -12,7 +12,7 @@ class McmsTreeNav extends HTMLElement {
     }
 
     connectedCallback() {
-        this.classList.add('tree-nav');
+        this.classList.add('block', 'relative');
         this._initTree();
         this._initDragDrop();
     }
@@ -45,9 +45,10 @@ class McmsTreeNav extends HTMLElement {
 
     _processNode(li) {
         // Skip if already processed
-        if (li.querySelector('.tree-node-label')) return;
+        if (li.querySelector('[data-tree-label]')) return;
 
-        li.classList.add('tree-node');
+        li.setAttribute('data-tree-node', '');
+        li.classList.add('tree-node'); // DUAL: data-tree-node + class
 
         // Get the node ID
         var nodeId = li.getAttribute('data-id') || '';
@@ -85,7 +86,8 @@ class McmsTreeNav extends HTMLElement {
 
         // Build the toggle button
         var toggle = document.createElement('span');
-        toggle.className = 'tree-node-toggle';
+        toggle.className = 'flex items-center justify-center w-5 h-5 rounded cursor-pointer text-[var(--color-text-muted)] hover:text-[var(--color-text)] bg-transparent border-none text-xs';
+        toggle.setAttribute('data-tree-toggle', '');
 
         var hasChildren = childUl !== null;
         var hasUnloadedChildren = li.hasAttribute('data-has-children') && !li.hasAttribute('data-loaded');
@@ -100,7 +102,8 @@ class McmsTreeNav extends HTMLElement {
 
         // Build the label
         var label = document.createElement('span');
-        label.className = 'tree-node-label';
+        label.className = 'flex-1 px-2 py-1 rounded text-sm text-[var(--color-text-muted)] cursor-pointer hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] no-underline';
+        label.setAttribute('data-tree-label', '');
         if (anchor) {
             // Preserve the anchor element
             label.appendChild(anchor);
@@ -122,9 +125,9 @@ class McmsTreeNav extends HTMLElement {
 
     _onTreeClick(e) {
         // Handle toggle clicks
-        var toggle = e.target.closest('.tree-node-toggle');
+        var toggle = e.target.closest('[data-tree-toggle]');
         if (toggle) {
-            var li = toggle.closest('.tree-node');
+            var li = toggle.closest('[data-tree-node]');
             if (li) {
                 this._toggleNode(li, toggle);
             }
@@ -132,9 +135,9 @@ class McmsTreeNav extends HTMLElement {
         }
 
         // Handle label clicks -- set active
-        var label = e.target.closest('.tree-node-label');
+        var label = e.target.closest('[data-tree-label]');
         if (label) {
-            var nodeLi = label.closest('.tree-node');
+            var nodeLi = label.closest('[data-tree-node]');
             if (nodeLi) {
                 var id = nodeLi.getAttribute('data-id');
                 if (id) {
@@ -178,7 +181,8 @@ class McmsTreeNav extends HTMLElement {
 
         // Show loading state
         toggle.textContent = '\u2026'; // ellipsis
-        toggle.classList.add('loading');
+        toggle.setAttribute('data-loading', '');
+        toggle.classList.add('loading'); // DUAL: data-loading + class
 
         var url = '/admin/content/tree/' + encodeURIComponent(nodeId) + '/children';
         var self = this;
@@ -223,11 +227,13 @@ class McmsTreeNav extends HTMLElement {
                 li.removeChild(tempTarget);
                 li.setAttribute('data-loaded', 'true');
 
-                toggle.classList.remove('loading');
+                toggle.removeAttribute('data-loading');
+                toggle.classList.remove('loading'); // DUAL: data-loading + class
                 toggle.textContent = '\u25BC';
                 toggle.setAttribute('aria-expanded', 'true');
             }).catch(function() {
-                toggle.classList.remove('loading');
+                toggle.removeAttribute('data-loading');
+                toggle.classList.remove('loading'); // DUAL: data-loading + class
                 toggle.textContent = '\u25B6';
                 if (tempTarget.parentNode) {
                     li.removeChild(tempTarget);
@@ -238,15 +244,17 @@ class McmsTreeNav extends HTMLElement {
 
     _setActiveNode(id) {
         // Clear existing active
-        var active = this.querySelectorAll('.tree-node.active');
+        var active = this.querySelectorAll('[data-tree-node][data-node-active]');
         for (var i = 0; i < active.length; i++) {
-            active[i].classList.remove('active');
+            active[i].removeAttribute('data-node-active');
+            active[i].classList.remove('active'); // DUAL: data-node-active + class
         }
 
         // Set new active
         var node = this.querySelector('li[data-id="' + id + '"]');
         if (node) {
-            node.classList.add('active');
+            node.setAttribute('data-node-active', '');
+            node.classList.add('active'); // DUAL: data-node-active + class
         }
         this.setAttribute('data-active', id);
     }
@@ -256,17 +264,17 @@ class McmsTreeNav extends HTMLElement {
     _initDragDrop() {
         // Create the drop indicator element
         this._dropIndicator = document.createElement('div');
-        this._dropIndicator.className = 'tree-drop-indicator';
+        this._dropIndicator.className = 'h-0.5 bg-[var(--color-primary)] rounded-full pointer-events-none';
         this._dropIndicator.style.display = 'none';
 
         this.addEventListener('pointerdown', this._boundPointerDown);
     }
 
     _onPointerDown(e) {
-        var label = e.target.closest('.tree-node-label');
+        var label = e.target.closest('[data-tree-label]');
         if (!label) return;
 
-        var li = label.closest('.tree-node');
+        var li = label.closest('[data-tree-node]');
         if (!li) return;
 
         // Only start drag with primary button
@@ -299,7 +307,8 @@ class McmsTreeNav extends HTMLElement {
         if (!this._dragState.dragging) {
             if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
             this._dragState.dragging = true;
-            this._dragState.sourceNode.classList.add('dragging');
+            this._dragState.sourceNode.setAttribute('data-dragging', '');
+            this._dragState.sourceNode.classList.add('dragging'); // DUAL: data-dragging + class
             // Append the indicator to the tree
             if (!this._dropIndicator.parentNode) {
                 this.appendChild(this._dropIndicator);
@@ -313,7 +322,8 @@ class McmsTreeNav extends HTMLElement {
     _updateDropTarget(clientX, clientY) {
         // Remove previous highlight
         if (this._dragState.dropTarget) {
-            this._dragState.dropTarget.classList.remove('drop-target');
+            this._dragState.dropTarget.removeAttribute('data-drop-target');
+            this._dragState.dropTarget.classList.remove('drop-target'); // DUAL: data-drop-target + class
         }
         this._dropIndicator.style.display = 'none';
         this._dragState.dropTarget = null;
@@ -324,11 +334,11 @@ class McmsTreeNav extends HTMLElement {
         var targetLi = null;
         for (var i = 0; i < elements.length; i++) {
             var el = elements[i];
-            if (el.classList && el.classList.contains('tree-node') && el !== this._dragState.sourceNode) {
+            if (el.hasAttribute && el.hasAttribute('data-tree-node') && el !== this._dragState.sourceNode) {
                 targetLi = el;
                 break;
             }
-            var closest = el.closest ? el.closest('.tree-node') : null;
+            var closest = el.closest ? el.closest('[data-tree-node]') : null;
             if (closest && closest !== this._dragState.sourceNode && this.contains(closest)) {
                 targetLi = closest;
                 break;
@@ -343,7 +353,7 @@ class McmsTreeNav extends HTMLElement {
         var rect = targetLi.getBoundingClientRect();
         var relY = clientY - rect.top;
         var height = rect.height;
-        var labelEl = targetLi.querySelector(':scope > .tree-node-label');
+        var labelEl = targetLi.querySelector(':scope > [data-tree-label]');
         var labelRect = labelEl ? labelEl.getBoundingClientRect() : rect;
 
         // Determine position based on pointer location within the node
@@ -360,7 +370,8 @@ class McmsTreeNav extends HTMLElement {
         } else {
             // Middle: drop inside (move to new parent)
             this._dragState.dropPosition = 'inside';
-            targetLi.classList.add('drop-target');
+            targetLi.setAttribute('data-drop-target', '');
+            targetLi.classList.add('drop-target'); // DUAL: data-drop-target + class
         }
 
         this._dragState.dropTarget = targetLi;
@@ -390,9 +401,11 @@ class McmsTreeNav extends HTMLElement {
         this._dragState = null;
 
         // Clean up visual state
-        state.sourceNode.classList.remove('dragging');
+        state.sourceNode.removeAttribute('data-dragging');
+        state.sourceNode.classList.remove('dragging'); // DUAL: data-dragging + class
         if (state.dropTarget) {
-            state.dropTarget.classList.remove('drop-target');
+            state.dropTarget.removeAttribute('data-drop-target');
+            state.dropTarget.classList.remove('drop-target'); // DUAL: data-drop-target + class
         }
         this._dropIndicator.style.display = 'none';
 
@@ -438,9 +451,9 @@ class McmsTreeNav extends HTMLElement {
                 // If parent had no other children, clean up the empty <ul>
                 if (sourceParent.tagName === 'UL' && sourceParent.children.length === 0) {
                     var grandparent = sourceParent.parentNode;
-                    if (grandparent && grandparent.classList.contains('tree-node')) {
+                    if (grandparent && grandparent.hasAttribute('data-tree-node')) {
                         grandparent.removeChild(sourceParent);
-                        var gToggle = grandparent.querySelector(':scope > .tree-node-toggle');
+                        var gToggle = grandparent.querySelector(':scope > [data-tree-toggle]');
                         if (gToggle) {
                             gToggle.style.visibility = 'hidden';
                             gToggle.textContent = '';
@@ -453,7 +466,7 @@ class McmsTreeNav extends HTMLElement {
                     childUl = document.createElement('ul');
                     targetNode.appendChild(childUl);
                     // Update toggle
-                    var tToggle = targetNode.querySelector(':scope > .tree-node-toggle');
+                    var tToggle = targetNode.querySelector(':scope > [data-tree-toggle]');
                     if (tToggle) {
                         tToggle.style.visibility = '';
                         tToggle.textContent = '\u25BC';
@@ -484,7 +497,7 @@ class McmsTreeNav extends HTMLElement {
 
         if (sourceParent !== targetParent) {
             // Different parents -- treat as a move
-            var newParentLi = targetParent.closest('.tree-node');
+            var newParentLi = targetParent.closest('[data-tree-node]');
             var newParentId = newParentLi ? newParentLi.getAttribute('data-id') || '' : '';
             // Calculate target position among siblings
             var siblings = targetParent.querySelectorAll(':scope > li');
@@ -500,7 +513,7 @@ class McmsTreeNav extends HTMLElement {
         }
 
         // Same parent -- reorder
-        var parentLi = sourceParent.closest('.tree-node');
+        var parentLi = sourceParent.closest('[data-tree-node]');
         var parentId = parentLi ? parentLi.getAttribute('data-id') || '' : '';
 
         // Compute new ordered list after the move
@@ -605,7 +618,7 @@ class McmsTreeNav extends HTMLElement {
                     if (existingUl) {
                         parentLi.removeChild(existingUl);
                     }
-                    var toggle = parentLi.querySelector(':scope > .tree-node-toggle');
+                    var toggle = parentLi.querySelector(':scope > [data-tree-toggle]');
                     if (toggle) {
                         // Trigger a reload
                         parentLi.setAttribute('data-has-children', 'true');

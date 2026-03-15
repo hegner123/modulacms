@@ -1,10 +1,10 @@
 # Swift SDK -- Error Handling
 
-All SDK methods are `async throws`. Errors fall into two categories: API errors (the server responded with a non-2xx status) and network errors (the request never completed).
+Handle API errors and network failures from the Swift SDK's `async throws` methods.
 
 ## APIError
 
-When the server returns a non-2xx HTTP status, the SDK throws an `APIError`:
+The SDK throws `APIError` for non-2xx HTTP responses:
 
 ```swift
 public struct APIError: Error, LocalizedError, Sendable {
@@ -99,7 +99,7 @@ do {
 
 ## Network Errors vs API Errors
 
-Errors that are not `APIError` are typically `URLError` from the networking layer.
+Non-`APIError` errors are typically `URLError` from the networking layer.
 
 ```swift
 do {
@@ -138,7 +138,7 @@ The default `URLSession` configuration uses:
 - 30 seconds for request timeout (`timeoutIntervalForRequest`)
 - 300 seconds for resource timeout (`timeoutIntervalForResource`)
 
-A timeout throws `URLError(.timedOut)`:
+Timeouts throw `URLError(.timedOut)`:
 
 ```swift
 do {
@@ -165,7 +165,7 @@ let client = try ModulaClient(config: ClientConfig(
 
 ## Cancellation
 
-Swift structured concurrency propagates cancellation to in-flight URL requests. When a `Task` is cancelled, the underlying `URLSession.data(for:)` call throws `CancellationError` or `URLError(.cancelled)`.
+Swift structured concurrency propagates cancellation to in-flight URL requests. Cancelling a `Task` causes the underlying `URLSession.data(for:)` call to throw `CancellationError` or `URLError(.cancelled)`.
 
 ```swift
 let task = Task {
@@ -184,7 +184,7 @@ task.cancel()
 
 ## Decoding Errors
 
-If the server returns a 2xx status but the response body does not match the expected type, the SDK throws a `DecodingError`:
+When the server returns a 2xx status but the response body doesn't match the expected type, the SDK throws `DecodingError`:
 
 ```swift
 do {
@@ -227,7 +227,7 @@ do {
 
 ## Retry Strategy
 
-The SDK does not include built-in retry logic. Implement retries in your application layer:
+The SDK doesn't include built-in retry logic. Implement retries in your application layer:
 
 ```swift
 func withRetry<T>(

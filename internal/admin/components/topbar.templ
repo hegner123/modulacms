@@ -3,25 +3,21 @@ package components
 import "github.com/hegner123/modulacms/internal/db"
 
 templ Topbar(user *db.Users) {
-    <header class="topbar">
-        <div class="topbar-left">
-            <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
-                &#9776;
-            </button>
-            <a href="/admin/" class="topbar-brand">ModulaCMS</a>
-        </div>
-        <div class="topbar-right">
-            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle light/dark mode">
-                &#9728;
-            </button>
-            if user != nil {
-                <div class="topbar-user">
-                    <span class="topbar-username">{ user.Username }</span>
-                </div>
-                <form method="POST" action="/admin/logout" class="topbar-logout">
-                    <button type="submit" class="btn btn-ghost btn-sm">Logout</button>
-                </form>
-            }
-        </div>
-    </header>
+	<header class="flex h-14 shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 sm:px-6">
+		<div class="flex items-center gap-x-4">
+			<button class="-m-2.5 p-2.5 text-[var(--color-text-muted)] hover:text-[var(--color-text)] lg:hidden"
+					data-sidebar-toggle onclick="toggleSidebar()" aria-label="Toggle sidebar">
+				<i data-lucide="menu" class="size-5"></i>
+			</button>
+			<a href="/admin/" class="text-lg font-bold text-[var(--color-text)] no-underline hover:no-underline">ModulaCMS</a>
+		</div>
+		<div class="flex items-center gap-x-4">
+			if user != nil {
+				<span class="text-sm font-medium text-[var(--color-text-muted)]">{ user.Username }</span>
+				<form method="POST" action="/admin/logout">
+					<button type="submit" class="btn btn-ghost btn-sm">Logout</button>
+				</form>
+			}
+		</div>
+	</header>
 }

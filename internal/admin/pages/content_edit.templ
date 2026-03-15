@@ -20,94 +20,97 @@ type ContentMeta struct {
 }
 
 templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFieldRow, csrfToken string, treeJSON string, meta ContentMeta) {
-	<div class="content-edit-header">
-		<div class="content-edit-nav">
+	<!-- Page Header -->
+	<div class="border-b border-white/10 pb-5">
+		<div class="flex items-center gap-x-3">
 			<a
 				href="/admin/content"
-				class="btn btn-ghost btn-sm"
+				class="text-sm text-gray-400 hover:text-white"
 				hx-get="/admin/content"
 				hx-target="#main-content"
 				hx-push-url="true"
 			>
 				&larr; Back
 			</a>
-			if meta.DatatypeLabel != "" {
-				<h1>{ meta.DatatypeLabel }</h1>
-			}
 		</div>
-		<div class="content-edit-meta">
-			@components.StatusBadge(string(content.Status))
-		</div>
-		<div class="content-edit-actions">
-			if meta.HasPublishPerm {
-				<div class="btn-split">
-					if meta.I18nEnabled && meta.ActiveLocale != "" {
-						<button
-							class="btn btn-primary btn-sm btn-split-main"
-							hx-post={ "/admin/content/" + content.ContentDataID.String() + "/publish?locale=" + meta.ActiveLocale }
-							hx-target="#main-content"
-							hx-swap="innerHTML"
-							hx-confirm="Publish this content? This creates a public snapshot."
-						>
-							Publish
-						</button>
-					} else {
-						<button
-							class="btn btn-primary btn-sm btn-split-main"
-							hx-post={ "/admin/content/" + content.ContentDataID.String() + "/publish" }
-							hx-target="#main-content"
-							hx-swap="innerHTML"
-							hx-confirm="Publish this content? This creates a public snapshot."
-						>
-							Publish
-						</button>
-					}
-					<button type="button" class="btn btn-primary btn-sm btn-split-toggle" aria-label="More options">
-						&#9662;
-					</button>
-					<div class="btn-split-menu">
+		<div class="mt-2 flex items-center justify-between">
+			<div class="flex items-center gap-x-3">
+				if meta.DatatypeLabel != "" {
+					<h1 class="text-lg font-semibold text-white">{ meta.DatatypeLabel }</h1>
+				}
+				@components.StatusBadge(string(content.Status))
+			</div>
+			<div class="flex items-center gap-x-3">
+				if meta.HasPublishPerm {
+					<div class="btn-split" data-split-button data-state="">
 						if meta.I18nEnabled && meta.ActiveLocale != "" {
 							<button
-								class="btn-split-menu-item"
-								hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish?locale=" + meta.ActiveLocale }
+								class="inline-flex items-center justify-center rounded-l-md bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--color-primary-hover)]"
+								hx-post={ "/admin/content/" + content.ContentDataID.String() + "/publish?locale=" + meta.ActiveLocale }
 								hx-target="#main-content"
 								hx-swap="innerHTML"
-								hx-confirm="Save as draft? This will unpublish the content."
+								hx-confirm="Publish this content? This creates a public snapshot."
 							>
-								Save as Draft
+								Publish
 							</button>
 						} else {
 							<button
-								class="btn-split-menu-item"
-								hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish" }
+								class="inline-flex items-center justify-center rounded-l-md bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--color-primary-hover)]"
+								hx-post={ "/admin/content/" + content.ContentDataID.String() + "/publish" }
 								hx-target="#main-content"
 								hx-swap="innerHTML"
-								hx-confirm="Save as draft? This will unpublish the content."
+								hx-confirm="Publish this content? This creates a public snapshot."
 							>
-								Save as Draft
+								Publish
 							</button>
 						}
+						<button type="button" class="inline-flex items-center justify-center rounded-r-md border-l border-white/20 bg-[var(--color-primary)] px-2 py-1.5 text-xs text-white transition-colors hover:bg-[var(--color-primary-hover)]" data-split-toggle aria-label="More options">
+							&#9662;
+						</button>
+						<div class="btn-split-menu">
+							if meta.I18nEnabled && meta.ActiveLocale != "" {
+								<button
+									class="btn-split-menu-item"
+									hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish?locale=" + meta.ActiveLocale }
+									hx-target="#main-content"
+									hx-swap="innerHTML"
+									hx-confirm="Save as draft? This will unpublish the content."
+								>
+									Save as Draft
+								</button>
+							} else {
+								<button
+									class="btn-split-menu-item"
+									hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish" }
+									hx-target="#main-content"
+									hx-swap="innerHTML"
+									hx-confirm="Save as draft? This will unpublish the content."
+								>
+									Save as Draft
+								</button>
+							}
+						</div>
 					</div>
-				</div>
-			}
-			<button
-				type="button"
-				class="btn btn-ghost btn-sm"
-				data-opens-dialog="version-history-dialog"
-				hx-get={ "/admin/content/" + content.ContentDataID.String() + "/versions" }
-				hx-target="#version-list-panel"
-				hx-swap="innerHTML"
-				hx-trigger="click"
-			>
-				Versions
-			</button>
-			<button
-				type="button"
-				class="btn btn-danger btn-sm"
-				data-opens-dialog="delete-content-dialog"
-			>
-				Delete
-			</button>
+				}
+				<button
+					type="button"
+					class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20"
+					data-opens-dialog="version-history-dialog"
+					hx-get={ "/admin/content/" + content.ContentDataID.String() + "/versions" }
+					hx-target="#version-list-panel"
+					hx-swap="innerHTML"
+					hx-trigger="click"
+				>
+					Versions
+				</button>
+				<button
+					type="button"
+					class="rounded-md bg-red-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-red-400"
+					data-opens-dialog="delete-content-dialog"
+				>
+					Delete
+				</button>
+			</div>
 		</div>
 	</div>
 	<mcms-dialog
@@ -122,36 +125,36 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 	</mcms-dialog>
 	<!-- Locale Tab Bar (i18n) -->
 	if meta.I18nEnabled && len(meta.EnabledLocales) > 0 {
-		<div class="locale-tabs" id="locale-tabs">
+		<div class="mt-4 flex items-center gap-x-1 border-b border-white/10" id="locale-tabs">
 			for _, locale := range meta.EnabledLocales {
 				if locale.Code == meta.ActiveLocale {
 					<button
-						class="locale-tab active"
+						class="border-b-2 border-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-primary)]"
 						hx-get={ "/admin/content/" + content.ContentDataID.String() + "?locale=" + locale.Code }
 						hx-target="#main-content"
 						hx-push-url="true"
 					>
 						{ locale.Code }
 						if locale.IsDefault {
-							<span class="badge badge-info">default</span>
+							<span class="ml-1 inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-blue-400/20 ring-inset">default</span>
 						}
 					</button>
 				} else {
 					<button
-						class="locale-tab"
+						class="border-b-2 border-transparent px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:text-white"
 						hx-get={ "/admin/content/" + content.ContentDataID.String() + "?locale=" + locale.Code }
 						hx-target="#main-content"
 						hx-push-url="true"
 					>
 						{ locale.Code }
 						if locale.IsDefault {
-							<span class="badge badge-info">default</span>
+							<span class="ml-1 inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-blue-400/20 ring-inset">default</span>
 						}
 					</button>
 				}
 			}
 			<button
-				class="btn btn-ghost btn-sm"
+				class="rounded-md px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
 				hx-post={ "/api/v1/admin/contentdata/" + content.ContentDataID.String() + "/translations" }
 				hx-target="#locale-tabs"
 				hx-swap="outerHTML"
@@ -162,7 +165,7 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 	}
 	<mcms-dialog id="version-history-dialog" title="Version History" cancel-label="Close">
 		<div id="version-list-panel">
-			<p class="text-muted">Loading...</p>
+			<p class="text-sm text-gray-400">Loading...</p>
 		</div>
 		<form
 			id="version-restore-form"
@@ -170,15 +173,15 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 			hx-target="#main-content"
 			hx-swap="innerHTML"
 			hx-confirm="Restore this version? Current field values will be overwritten."
-			class="version-restore-form"
+			class="flex items-center gap-x-2 border-t border-white/10 pt-3" data-version-restore-form
 		>
 			<input type="hidden" name="_csrf" value={ csrfToken }/>
 			<input type="hidden" name="version_id" id="version-restore-id" value=""/>
-			<button type="submit" class="btn btn-primary btn-sm" disabled>Restore</button>
+			<button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]" disabled>Restore</button>
 		</form>
 	</mcms-dialog>
 	<!-- Block Editor: adaptive 5/7 layout -->
-	<div class="content-editor-layout" id="content-editor-layout">
+	<div class="content-editor-layout mt-6" id="content-editor-layout">
 		<section class="content-editor-tree">
 			<block-editor
 				id="content-block-editor"
@@ -189,9 +192,9 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 				data-state={ treeJSON }
 			></block-editor>
 		</section>
-		<section class="content-editor-panel" id="block-field-panel">
-			<div class="content-editor-panel-header">
-				<h2 id="panel-title">{ meta.DatatypeLabel }</h2>
+		<section class="content-editor-panel rounded-xl border border-white/10 bg-white/5 p-6" id="block-field-panel">
+			<div class="mb-4 border-b border-white/10 pb-4">
+				<h2 id="panel-title" class="text-sm font-semibold text-white">{ meta.DatatypeLabel }</h2>
 			</div>
 			<div id="panel-content">
 				if len(fields) > 0 {
@@ -207,7 +210,7 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 						></mcms-field-renderer>
 					}
 				} else {
-					<p class="text-muted">No fields for this content type.</p>
+					<p class="text-sm text-gray-400">No fields for this content type.</p>
 				}
 			</div>
 		</section>
@@ -221,10 +224,10 @@ templ ContentEdit(layout layouts.AdminData, content db.ContentData, fields []db.
 }
 
 templ ContentFieldEditor(field db.ContentFieldWithFieldRow) {
-	<div class="form-field" data-field-id={ field.ContentFieldID.String() } data-field-type={ string(field.FType) }>
-		<label for={ "field-" + field.ContentFieldID.String() }>
+	<div class="flex flex-col gap-y-1" data-field-id={ field.ContentFieldID.String() } data-field-type={ string(field.FType) }>
+		<label for={ "field-" + field.ContentFieldID.String() } class="flex items-center gap-x-2 text-sm font-medium text-white">
 			{ field.FLabel }
-			<span class="badge">{ string(field.FType) }</span>
+			<span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">{ string(field.FType) }</span>
 		</label>
 		if string(field.FType) == "text" || string(field.FType) == "string" {
 			<input
@@ -232,12 +235,14 @@ templ ContentFieldEditor(field db.ContentFieldWithFieldRow) {
 				id={ "field-" + field.ContentFieldID.String() }
 				name={ "field_" + field.FieldID.ID.String() }
 				value={ field.FieldValue }
+				class="mt-2 block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6"
 			/>
 		} else if string(field.FType) == "textarea" || string(field.FType) == "richtext" {
 			<textarea
 				id={ "field-" + field.ContentFieldID.String() }
 				name={ "field_" + field.FieldID.ID.String() }
 				rows="6"
+				class="mt-2 block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6"
 			>{ field.FieldValue }</textarea>
 		} else if string(field.FType) == "number" {
 			<input
@@ -245,19 +250,21 @@ templ ContentFieldEditor(field db.ContentFieldWithFieldRow) {
 				id={ "field-" + field.ContentFieldID.String() }
 				name={ "field_" + field.FieldID.ID.String() }
 				value={ field.FieldValue }
+				class="mt-2 block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6"
 			/>
 		} else if string(field.FType) == "boolean" {
-			<label class="checkbox-label">
+			<label class="mt-2 flex items-center gap-x-2 text-sm text-gray-300">
 				<input
 					type="checkbox"
 					id={ "field-" + field.ContentFieldID.String() }
 					name={ "field_" + field.FieldID.ID.String() }
 					checked?={ field.FieldValue == "true" || field.FieldValue == "1" }
+					class="rounded border-white/10 bg-white/5"
 				/>
 				{ field.FLabel }
 			</label>
 		} else if string(field.FType) == "media" || string(field.FType) == "image" {
-			<div class="media-field">
+			<div class="mt-2 flex items-center gap-x-2">
 				<input
 					type="hidden"
 					id={ "field-" + field.ContentFieldID.String() }
@@ -266,14 +273,14 @@ templ ContentFieldEditor(field db.ContentFieldWithFieldRow) {
 				/>
 				<button
 					type="button"
-					class="btn btn-ghost"
+					class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20"
 					hx-get="/admin/media?picker=true"
 					hx-target={ "#media-picker-" + field.ContentFieldID.String() }
 					hx-swap="innerHTML"
 				>
 					Select Media
 				</button>
-				<div id={ "media-picker-" + field.ContentFieldID.String() } class="media-picker-container"></div>
+				<div id={ "media-picker-" + field.ContentFieldID.String() }></div>
 			</div>
 		} else {
 			<input
@@ -281,6 +288,7 @@ templ ContentFieldEditor(field db.ContentFieldWithFieldRow) {
 				id={ "field-" + field.ContentFieldID.String() }
 				name={ "field_" + field.FieldID.ID.String() }
 				value={ field.FieldValue }
+				class="mt-2 block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6"
 			/>
 		}
 	</div>

@@ -1,10 +1,10 @@
 # Error Handling
 
-All failed API calls from the Go SDK return an `*ApiError`. This guide covers the error type, classification helpers, and patterns for handling errors in your application.
+Handle API errors from the Go SDK using the `*ApiError` type, classification helpers, and recovery patterns.
 
 ## The ApiError Type
 
-Every non-2xx HTTP response is returned as an `*ApiError`:
+The SDK wraps every non-2xx HTTP response in an `*ApiError`:
 
 ```go
 type ApiError struct {
@@ -21,7 +21,7 @@ modula: 404 content not found
 modula: 401 Unauthorized
 ```
 
-`Message` is extracted from the JSON response body's `"message"` or `"error"` field. If the response is not JSON or lacks these fields, `Message` is empty and `Error()` falls back to the standard HTTP status text.
+The SDK extracts `Message` from the JSON response body's `"message"` or `"error"` field. If the response is not JSON or lacks these fields, `Message` is empty and `Error()` falls back to the standard HTTP status text.
 
 ## Extracting ApiError
 
@@ -39,7 +39,7 @@ if err != nil {
 }
 ```
 
-Errors may be wrapped with additional context by the SDK (e.g., `"query blog-posts: modula: 404 Not Found"`), so always use `errors.As` rather than type assertion.
+The SDK wraps errors with additional context (e.g., `"query blog-posts: modula: 404 Not Found"`), so always use `errors.As` rather than type assertion.
 
 ## Classification Helpers
 
@@ -51,7 +51,7 @@ The SDK provides four convenience functions that check the error type and status
 func IsNotFound(err error) bool
 ```
 
-Reports whether the error is an `*ApiError` with HTTP status 404. Use after `Get` or `Delete` calls:
+Returns `true` if the error is an `*ApiError` with HTTP status 404. Use after `Get` or `Delete` calls:
 
 ```go
 item, err := client.ContentData.Get(ctx, id)
@@ -70,7 +70,7 @@ if err != nil {
 func IsUnauthorized(err error) bool
 ```
 
-Reports whether the error is an `*ApiError` with HTTP status 401. Indicates a missing, expired, or invalid API key or session:
+Returns `true` if the error is an `*ApiError` with HTTP status 401. Indicates a missing, expired, or invalid API key or session:
 
 ```go
 me, err := client.Auth.Me(ctx)
@@ -86,7 +86,7 @@ if modula.IsUnauthorized(err) {
 func IsDuplicateMedia(err error) bool
 ```
 
-Reports whether the error is an `*ApiError` with HTTP status 409 (Conflict). Occurs when a media upload is rejected because a file with the same content hash already exists:
+Returns `true` if the error is an `*ApiError` with HTTP status 409 (Conflict). The server returns this when a media upload duplicates an existing file:
 
 ```go
 media, err := client.MediaUpload.Upload(ctx, file, "photo.jpg", nil)
@@ -103,7 +103,7 @@ if modula.IsDuplicateMedia(err) {
 func IsInvalidMediaPath(err error) bool
 ```
 
-Reports whether the error is an `*ApiError` with HTTP status 400 whose body mentions path traversal or invalid path characters. Occurs when a media upload path contains `..` segments or disallowed characters:
+Returns `true` if the error is an `*ApiError` with HTTP status 400 whose body mentions path traversal or invalid path characters. The server returns this when a media upload path contains `..` segments or disallowed characters:
 
 ```go
 media, err := client.MediaUpload.Upload(ctx, file, "photo.jpg", &modula.MediaUploadOptions{
@@ -165,7 +165,7 @@ func getWithRetry(ctx context.Context, client *modula.Client, id modula.ContentI
 
 ### Pattern: Context Cancellation
 
-All SDK methods accept a `context.Context`. Cancelled contexts return `context.Canceled`; deadline-exceeded contexts return `context.DeadlineExceeded`. These are not `*ApiError` values:
+All SDK methods accept a `context.Context`. A cancelled context returns `context.Canceled`; a deadline-exceeded context returns `context.DeadlineExceeded`. These are not `*ApiError` values:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

@@ -1,6 +1,6 @@
 # Local Development with HTTPS
 
-ModulaCMS runs three concurrent servers (HTTP, HTTPS, SSH) locally. This guide covers setting up HTTPS for local development so you can test cookies with `Secure` flag, OAuth flows, and other features that require TLS.
+Set up HTTPS for local development to test secure cookies, OAuth flows, and other TLS-dependent features.
 
 ## Quick Start
 
@@ -167,7 +167,7 @@ openssl req -x509 -newkey rsa:4096 -nodes \
 mkcert -key-file certs/localhost.key -cert-file certs/localhost.crt modulacms.local "*.modulacms.local"
 ```
 
-ModulaCMS expects the certificate files to be named `localhost.crt` and `localhost.key` in the `cert_dir` directory regardless of the domain.
+> **Good to know**: ModulaCMS expects the certificate files to be named `localhost.crt` and `localhost.key` in the `cert_dir` directory regardless of the domain.
 
 ### 3. Update modula.config.json
 

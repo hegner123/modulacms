@@ -2,20 +2,25 @@ package partials
 
 templ Pagination(current int, totalPages int, target string, baseURL string, limit int64) {
 	if totalPages > 1 {
-		<nav class="pagination">
-			for _, page := range pages(totalPages) {
-				if page == current {
-					<span class="pagination-current">{ IntToStr(page) }</span>
-				} else {
-					<a hx-get={ urlForPage(baseURL, page, limit) }
-					   hx-target={ target }
-					   hx-swap="innerHTML"
-					   hx-push-url="true"
-					   class="pagination-link">
-						{ IntToStr(page) }
-					</a>
+		<nav class="flex items-center justify-between border-t border-white/10 px-4 py-3 sm:px-6">
+			<div class="hidden sm:block">
+				<p class="text-sm text-gray-400">Showing page <span class="font-medium text-white">{ IntToStr(current) }</span> of <span class="font-medium text-white">{ IntToStr(totalPages) }</span></p>
+			</div>
+			<div class="flex flex-1 justify-between gap-x-3 sm:justify-end">
+				for _, page := range pages(totalPages) {
+					if page == current {
+						<span class="inline-flex items-center rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-semibold text-white">{ IntToStr(page) }</span>
+					} else {
+						<a hx-get={ urlForPage(baseURL, page, limit) }
+						   hx-target={ target }
+						   hx-swap="innerHTML"
+						   hx-push-url="true"
+						   class="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white">
+							{ IntToStr(page) }
+						</a>
+					}
 				}
-			}
+			</div>
 		</nav>
 	}
 }

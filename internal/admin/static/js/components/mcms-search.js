@@ -10,7 +10,7 @@ class McmsSearch extends HTMLElement {
         input.name = name;
         input.placeholder = placeholder;
         input.value = value;
-        input.className = 'search-input';
+        input.className = 'w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]';
 
         // Copy HTMX attributes from host
         for (const attr of this.attributes) {

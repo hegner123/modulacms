@@ -43,37 +43,37 @@ func Login(csrfToken string, version string, nextURL string, errMsg string) temp
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h2>Sign In</h2>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h2 class=\"text-center text-2xl/9 font-bold tracking-tight text-white\">Sign in to your account</h2>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if errMsg != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"alert alert-error\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"mt-6 rounded-md bg-red-400/10 p-4\"><div class=\"flex\"><div class=\"shrink-0\"><i data-lucide=\"alert-circle\" class=\"size-5 text-red-400\"></i></div><div class=\"ml-3\"><p class=\"text-sm text-red-400\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(errMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/login.templ`, Line: 9, Col: 42}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/login.templ`, Line: 15, Col: 46}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</p></div></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " <form method=\"POST\" action=\"/admin/login\" class=\"auth-form\"><div class=\"form-field\"><label for=\"email\">Email</label> <input type=\"email\" id=\"email\" name=\"email\" required autofocus placeholder=\"you@example.com\"></div><div class=\"form-field\"><label for=\"password\">Password</label> <input type=\"password\" id=\"password\" name=\"password\" required placeholder=\"Password\"></div><input type=\"hidden\" name=\"next\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " <form method=\"POST\" action=\"/admin/login\" class=\"mt-6 space-y-6\" id=\"login-form\"><div><label for=\"email\" class=\"block text-sm/6 font-medium text-white\">Email address</label><div class=\"mt-2\"><input type=\"email\" id=\"email\" name=\"email\" required autofocus autocomplete=\"email\" placeholder=\"you@example.com\" class=\"block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6\"></div></div><div><div class=\"flex items-center justify-between\"><label for=\"password\" class=\"block text-sm/6 font-medium text-white\">Password</label> <a href=\"/admin/forgot-password\" class=\"text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]\">Forgot password?</a></div><div class=\"mt-2\"><input type=\"password\" id=\"password\" name=\"password\" required autocomplete=\"current-password\" class=\"block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6\"></div></div><input type=\"hidden\" name=\"next\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(nextURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/login.templ`, Line: 20, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/login.templ`, Line: 38, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -86,13 +86,13 @@ func Login(csrfToken string, version string, nextURL string, errMsg string) temp
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(csrfToken)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/login.templ`, Line: 21, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/login.templ`, Line: 39, Col: 54}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"> <button type=\"submit\" class=\"btn btn-primary btn-full\">Sign In</button></form><div class=\"auth-links\"><a href=\"/admin/forgot-password\">Forgot your password?</a></div><div id=\"login-loading\" class=\"login-loading hidden\"><div class=\"spinner-brand spinner-brand-lg\"></div></div><script>\n\t\t\tdocument.querySelector('.auth-form').addEventListener('submit', function(e) {\n\t\t\t\tvar form = e.target;\n\t\t\t\tvar overlay = document.getElementById('login-loading');\n\t\t\t\te.preventDefault();\n\t\t\t\toverlay.classList.remove('hidden');\n\t\t\t\tsetTimeout(function() { form.submit(); }, 750);\n\t\t\t});\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"> <button type=\"submit\" class=\"flex w-full justify-center rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]\">Sign in</button></form><div id=\"login-loading\" class=\"fixed inset-0 z-[200] flex hidden items-center justify-center bg-gray-950/75\"><div class=\"spinner-brand spinner-brand-lg\"></div></div><script>\n\t\t\tdocument.getElementById('login-form').addEventListener('submit', function(e) {\n\t\t\t\tvar form = e.target;\n\t\t\t\tvar overlay = document.getElementById('login-loading');\n\t\t\t\te.preventDefault();\n\t\t\t\toverlay.classList.remove('hidden');\n\t\t\t\tsetTimeout(function() { form.submit(); }, 750);\n\t\t\t});\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

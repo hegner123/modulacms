@@ -1,7 +1,9 @@
 package partials
 
 templ EmptyState(message string) {
-	<div class="empty-state">
-		<p>{ message }</p>
+	<div class="text-center py-12">
+		<i data-lucide="folder" class="mx-auto size-12 text-gray-500"></i>
+		<h3 class="mt-2 text-sm font-semibold text-white">No items</h3>
+		<p class="mt-1 text-sm text-gray-400">{ message }</p>
 	</div>
 }

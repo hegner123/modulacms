@@ -7,14 +7,14 @@ import (
 
 templ RolesTableRows(roles []db.Roles, permissions []db.Permissions, rolePermMap map[types.RoleID]map[types.PermissionID]bool) {
     for _, role := range roles {
-        <div id={ "role-card-" + role.RoleID.String() } class="role-card">
-            <div class="role-card-header">
-                <h3>{ role.Label }</h3>
-                <div class="role-card-meta">
+        <div id={ "role-card-" + role.RoleID.String() } class="rounded-md bg-white/5 p-4 ring-1 ring-white/10 ring-inset">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-white">{ role.Label }</h3>
+                <div class="flex items-center gap-2">
                     if role.SystemProtected {
-                        <span class="badge badge-info">System</span>
+                        <span class="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-blue-400/20 ring-inset">System</span>
                     }
-                    <span class="badge">
+                    <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">
                         { IntToStr(countPermissions(rolePermMap[role.RoleID])) } permissions
                     </span>
                 </div>
@@ -29,17 +29,29 @@ templ RolesTableRows(roles []db.Roles, permissions []db.Permissions, rolePermMap
 templ RoleForm(label string, errs map[string]string, csrfToken string) {
     @CSRFField(csrfToken)
     if errs != nil && errs["_"] != "" {
-        <div class="alert alert-error">{ errs["_"] }</div>
+        <div class="rounded-md bg-red-400/10 p-4">
+            <div class="flex">
+                <div class="shrink-0">
+                    <i data-lucide="alert-circle" class="size-5 text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-400">{ errs["_"] }</p>
+                </div>
+            </div>
+        </div>
     }
-    <div class={ "form-field", templ.KV("has-error", errs != nil && errs["label"] != "") }>
-        <label for="label">Label</label>
-        <input type="text" id="label" name="label" value={ label } placeholder="Role name" required/>
+    <div>
+        <label for="label" class="block text-sm/6 font-medium text-white">Label</label>
+        <div class="mt-2">
+            <input type="text" id="label" name="label" value={ label } placeholder="Role name" required
+                class={ "block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6", templ.KV("ring-red-500", errs != nil && errs["label"] != ""), templ.KV("ring-white/10", errs == nil || errs["label"] == "") }/>
+        </div>
         if errs != nil && errs["label"] != "" {
-            <span class="field-error">{ errs["label"] }</span>
+            <p class="mt-2 text-sm text-red-400">{ errs["label"] }</p>
         }
     </div>
-    <div class="form-actions">
-        <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Create Role</button>
+    <div class="flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3">
+        <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('dialog').close()">Cancel</button>
+        <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create Role</button>
     </div>
 }

@@ -35,7 +35,7 @@ func SessionsListContent(items []db.Sessions) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"page-header\"><h1>Active Sessions</h1></div><table class=\"table\"><thead><tr><th>Session ID</th><th>User</th><th>IP Address</th><th>User Agent</th><th>Created</th><th>Expires</th><th>Actions</th></tr></thead> <tbody id=\"sessions-table-body\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Active Sessions</h1><p class=\"mt-2 text-sm text-gray-400\">View and manage currently active user sessions.</p></div></div><div class=\"mt-8 flow-root\"><div class=\"-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8\"><div class=\"inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Session ID</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">User</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">IP Address</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">User Agent</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Created</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Expires</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Actions</th></tr></thead> <tbody id=\"sessions-table-body\" class=\"divide-y divide-white/5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -43,7 +43,7 @@ func SessionsListContent(items []db.Sessions) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</tbody></table>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</tbody></table></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

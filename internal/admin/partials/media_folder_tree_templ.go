@@ -39,11 +39,11 @@ func MediaFolderTree(folders []db.MediaFolder, activeFolderID string, csrfToken 
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"media-folder-sidebar\" class=\"media-folder-sidebar\"><div class=\"media-folder-header\"><h3>Folders</h3><button class=\"btn btn-ghost btn-sm\" onclick=\"document.getElementById('new-folder-dialog').showModal()\" title=\"New Folder\">+</button></div><div class=\"media-folder-tree-list\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"media-folder-sidebar\" class=\"shrink-0 overflow-y-auto border-r border-white/10 bg-[var(--color-surface)] p-4\"><div class=\"mb-3 flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-white\">Folders</h3><button class=\"rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-white hover:bg-white/20\" onclick=\"document.getElementById('new-folder-dialog').showModal()\" title=\"New Folder\"><i data-lucide=\"plus\" class=\"size-3.5\"></i></button></div><div class=\"space-y-0.5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 = []any{"media-folder-item media-folder-root", templ.KV("active", activeFolderID == "")}
+		var templ_7745c5c3_Var2 = []any{"flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors", templ.KV("bg-[var(--color-primary)] text-white", activeFolderID == ""), templ.KV("text-gray-400 hover:bg-white/5 hover:text-white", activeFolderID != "")}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -61,7 +61,7 @@ func MediaFolderTree(folders []db.MediaFolder, activeFolderID string, csrfToken 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\">All Media</a> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" data-folder-root><i data-lucide=\"image\" class=\"size-4\"></i> All Media</a> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -79,7 +79,7 @@ func MediaFolderTree(folders []db.MediaFolder, activeFolderID string, csrfToken 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script>\n            document.getElementById('media-folder-sidebar')?.addEventListener('click', function(e) {\n                var link = e.target.closest('[data-folder-id]');\n                var el = document.getElementById('upload-folder-id');\n                if (!el) return;\n                if (link) {\n                    el.value = link.getAttribute('data-folder-id');\n                } else if (e.target.closest('.media-folder-root')) {\n                    el.value = '';\n                }\n            });\n        </script></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script>\n            document.getElementById('media-folder-sidebar')?.addEventListener('click', function(e) {\n                var link = e.target.closest('[data-folder-id]');\n                var el = document.getElementById('upload-folder-id');\n                if (!el) return;\n                if (link) {\n                    el.value = link.getAttribute('data-folder-id');\n                } else if (e.target.closest('[data-folder-root]')) {\n                    el.value = '';\n                }\n            });\n        </script></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -109,14 +109,14 @@ func mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) templ.Comp
 		}
 		ctx = templ.ClearChildren(ctx)
 		for _, node := range nodes {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"media-folder-node\" data-folder-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"ml-2\" data-folder-node data-folder-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(node.Folder.FolderID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 55, Col: 85}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 59, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -126,7 +126,7 @@ func mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) templ.Comp
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var6 = []any{"media-folder-item", templ.KV("active", node.Folder.FolderID.String() == activeFolderID)}
+			var templ_7745c5c3_Var6 = []any{"group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors", templ.KV("bg-[var(--color-primary)] text-white", node.Folder.FolderID.String() == activeFolderID), templ.KV("text-gray-400 hover:bg-white/5 hover:text-white", node.Folder.FolderID.String() != activeFolderID)}
 			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var6...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -149,12 +149,12 @@ func mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) templ.Comp
 				return templ_7745c5c3_Err
 			}
 			if len(node.Children) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<button class=\"media-folder-toggle\" onclick=\"this.closest('.media-folder-node').classList.toggle('expanded')\" aria-label=\"Toggle folder\"><span class=\"toggle-icon\"></span></button> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<button class=\"shrink-0 text-gray-500 hover:text-white\" onclick=\"var n=this.closest('[data-folder-node]');n.classList.toggle('expanded');n.toggleAttribute('data-expanded')\" aria-label=\"Toggle folder\"><span class=\"toggle-icon\"></span></button> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span class=\"media-folder-toggle-spacer\"></span> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span class=\"w-4 shrink-0\"></span> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -166,7 +166,7 @@ func mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) templ.Comp
 			var templ_7745c5c3_Var8 templ.SafeURL
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/admin/media?folder_id=" + node.Folder.FolderID.String()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 69, Col: 99}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 73, Col: 99}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -179,20 +179,20 @@ func mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) templ.Comp
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/media?folder_id=" + node.Folder.FolderID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 70, Col: 86}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 74, Col: 86}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" hx-target=\"#media-grid\" hx-push-url=\"true\" class=\"media-folder-link\" data-folder-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" hx-target=\"#media-grid\" hx-push-url=\"true\" class=\"flex-1 no-underline\" data-folder-link data-folder-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(node.Folder.FolderID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 74, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 79, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -205,20 +205,20 @@ func mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) templ.Comp
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(node.Folder.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 77, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 82, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</a><div class=\"media-folder-actions\"><button class=\"btn-icon btn-icon-sm media-folder-rename-btn\" data-folder-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</a><div class=\"hidden items-center gap-1 group-hover:flex\"><button class=\"rounded p-0.5 text-gray-500 hover:text-white\" data-folder-rename data-folder-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(node.Folder.FolderID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 82, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 88, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -231,31 +231,31 @@ func mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) templ.Comp
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(node.Folder.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 83, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 89, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" title=\"Rename\"><i data-lucide=\"pencil\" class=\"icon-sm\"></i></button> <button class=\"btn-icon btn-icon-sm\" hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" title=\"Rename\"><i data-lucide=\"pencil\" class=\"size-3\"></i></button> <button class=\"rounded p-0.5 text-gray-500 hover:text-red-400\" hx-delete=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/media-folders/" + node.Folder.FolderID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 90, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 96, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" hx-target=\"#media-folder-sidebar\" hx-swap=\"outerHTML\" hx-confirm=\"Delete this folder? It must be empty.\" title=\"Delete\"><i data-lucide=\"trash-2\" class=\"icon-sm\"></i></button></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" hx-target=\"#media-folder-sidebar\" hx-swap=\"outerHTML\" hx-confirm=\"Delete this folder? It must be empty.\" title=\"Delete\"><i data-lucide=\"trash-2\" class=\"size-3\"></i></button></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if len(node.Children) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"media-folder-children\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"ml-1 hidden [.expanded>&]:block\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -298,7 +298,7 @@ func mediaFolderCreateDialog(csrfToken string, parentID string) templ.Component 
 			templ_7745c5c3_Var15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<dialog id=\"new-folder-dialog\" class=\"dialog\" aria-labelledby=\"new-folder-dialog-title\"><div class=\"dialog-content\"><div class=\"dialog-header\"><h2 id=\"new-folder-dialog-title\">New Folder</h2><button class=\"dialog-close\" aria-label=\"Close dialog\" onclick=\"document.getElementById('new-folder-dialog').close()\">&times;</button></div><form hx-post=\"/admin/media-folders\" hx-target=\"#media-folder-sidebar\" hx-swap=\"outerHTML\" class=\"folder-form\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<dialog id=\"new-folder-dialog\" class=\"rounded-xl border border-white/10 bg-[var(--color-surface)] p-0 shadow-xl backdrop:bg-gray-950/75 sm:max-w-lg sm:w-full\" aria-labelledby=\"new-folder-dialog-title\"><div class=\"p-6\"><h3 id=\"new-folder-dialog-title\" class=\"text-base/7 font-semibold text-white\">New Folder</h3><form hx-post=\"/admin/media-folders\" hx-target=\"#media-folder-sidebar\" hx-swap=\"outerHTML\" class=\"mt-4 space-y-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -313,7 +313,7 @@ func mediaFolderCreateDialog(csrfToken string, parentID string) templ.Component 
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(parentID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 123, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 126, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -327,7 +327,7 @@ func mediaFolderCreateDialog(csrfToken string, parentID string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"form-actions\"><button type=\"button\" class=\"btn btn-ghost\" onclick=\"document.getElementById('new-folder-dialog').close()\">Cancel</button> <button type=\"submit\" class=\"btn btn-primary\">Create</button></div></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</form></div><div class=\"flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"document.getElementById('new-folder-dialog').close()\">Cancel</button> <button type=\"submit\" form=\"new-folder-dialog\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\" onclick=\"this.closest('dialog').querySelector('form').requestSubmit()\">Create</button></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -356,19 +356,19 @@ func MediaFolderBreadcrumb(breadcrumb []db.MediaFolder, currentFolder *db.MediaF
 			templ_7745c5c3_Var17 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<nav class=\"media-breadcrumb\" aria-label=\"Folder path\"><a href=\"/admin/media\" hx-get=\"/admin/media\" hx-target=\"#media-grid\" hx-push-url=\"true\" class=\"breadcrumb-item\">All Media</a> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<nav class=\"flex items-center gap-2 text-sm text-gray-400\" aria-label=\"Folder path\"><a href=\"/admin/media\" hx-get=\"/admin/media\" hx-target=\"#media-grid\" hx-push-url=\"true\" class=\"hover:text-white\">All Media</a> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, folder := range breadcrumb {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"breadcrumb-sep\">/</span> <a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"text-gray-500\">/</span> <a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var18 templ.SafeURL
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/admin/media?folder_id=" + folder.FolderID.String()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 148, Col: 90}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 152, Col: 90}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -381,20 +381,20 @@ func MediaFolderBreadcrumb(breadcrumb []db.MediaFolder, currentFolder *db.MediaF
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/media?folder_id=" + folder.FolderID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 149, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 153, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" hx-target=\"#media-grid\" hx-push-url=\"true\" class=\"breadcrumb-item\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" hx-target=\"#media-grid\" hx-push-url=\"true\" class=\"hover:text-white\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(folder.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 154, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 158, Col: 29}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -406,14 +406,14 @@ func MediaFolderBreadcrumb(breadcrumb []db.MediaFolder, currentFolder *db.MediaF
 			}
 		}
 		if currentFolder != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span class=\"breadcrumb-sep\">/</span> <span class=\"breadcrumb-item breadcrumb-current\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span class=\"text-gray-500\">/</span> <span class=\"text-white\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(currentFolder.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 159, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 163, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -453,20 +453,20 @@ func MediaFolderSelect(folders []db.MediaFolder, currentFolderID string, mediaID
 			templ_7745c5c3_Var22 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div class=\"form-field\"><label for=\"folder_id\">Folder</label><div class=\"folder-select-row\"><select id=\"folder_id\" name=\"folder_id\" hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div><label for=\"folder_id\" class=\"block text-sm/6 font-medium text-white\">Folder</label><div class=\"mt-2\"><select id=\"folder_id\" name=\"folder_id\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/media/move/" + mediaID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 171, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 175, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" hx-swap=\"none\" hx-include=\"[name='_csrf']\" class=\"form-control\"><option value=\"\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" hx-swap=\"none\" hx-include=\"[name='_csrf']\" class=\"block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6\"><option value=\"\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -488,7 +488,7 @@ func MediaFolderSelect(folders []db.MediaFolder, currentFolderID string, mediaID
 			var templ_7745c5c3_Var24 string
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(folder.FolderID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 179, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 183, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
@@ -511,7 +511,7 @@ func MediaFolderSelect(folders []db.MediaFolder, currentFolderID string, mediaID
 			var templ_7745c5c3_Var25 string
 			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(folder.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 182, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_folder_tree.templ`, Line: 186, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 			if templ_7745c5c3_Err != nil {

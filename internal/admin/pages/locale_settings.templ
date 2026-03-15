@@ -9,17 +9,20 @@ import (
 )
 
 templ LocaleSettingsContent(locales []db.Locale, csrfToken string, i18nEnabled bool) {
-    <div class="page-header">
-        <div class="page-header-left">
-            <a href="/admin/settings" class="btn btn-ghost"
-               hx-get="/admin/settings"
-               hx-target="#main-content"
-               hx-push-url="true">&larr; Settings</a>
-            <h1>Locale Settings</h1>
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <div class="flex items-center gap-3">
+                <a href="/admin/settings" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20 no-underline hover:no-underline"
+                   hx-get="/admin/settings"
+                   hx-target="#main-content"
+                   hx-push-url="true">&larr; Settings</a>
+                <h1 class="text-base/7 font-semibold text-white">Locale Settings</h1>
+            </div>
+            <p class="mt-2 text-sm text-gray-400">Manage language locales for internationalized content.</p>
         </div>
-        <div class="page-header-right">
+        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
             if i18nEnabled {
-                <button class="btn btn-primary"
+                <button class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
                         onclick="document.getElementById('add-locale-dialog').showModal()">
                     Add Locale
                 </button>
@@ -27,34 +30,42 @@ templ LocaleSettingsContent(locales []db.Locale, csrfToken string, i18nEnabled b
         </div>
     </div>
     if !i18nEnabled {
-        <div class="alert alert-info">
+        <div class="mt-4 rounded-md border border-[var(--color-primary)] bg-[var(--color-primary)]/10 px-4 py-3 text-sm text-[var(--color-primary)]">
             Internationalization (i18n) is not enabled. Enable it in your configuration to manage locales.
         </div>
     }
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Code</th>
-                <th>Label</th>
-                <th>Default</th>
-                <th>Enabled</th>
-                <th>Fallback</th>
-                <th>Sort Order</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="locale-table-body">
-            @partials.LocaleTableRows(locales, csrfToken)
-        </tbody>
-    </table>
+    <div class="mt-8 flow-root">
+        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                <div class="overflow-hidden rounded-lg border border-white/10 shadow-sm">
+                    <table class="min-w-full divide-y divide-white/10">
+                        <thead class="bg-white/5">
+                            <tr>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Code</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Label</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Default</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Enabled</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Fallback</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Sort Order</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="locale-table-body" class="divide-y divide-white/5">
+                            @partials.LocaleTableRows(locales, csrfToken)
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 templ LocaleAddDialog(locales []db.Locale, csrfToken string, i18nEnabled bool) {
-    <dialog id="add-locale-dialog" class="admin-dialog" aria-labelledby="add-locale-dialog-title">
-        <div class="dialog-content">
-            <div class="dialog-header">
-                <h2 id="add-locale-dialog-title">Add Locale</h2>
-                <button class="btn btn-ghost dialog-close" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
+    <dialog id="add-locale-dialog" class="rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60" aria-labelledby="add-locale-dialog-title">
+        <div class="px-5 py-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                <h2 id="add-locale-dialog-title" class="text-lg font-semibold text-white">Add Locale</h2>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
             </div>
             <form hx-post="/admin/settings/locales"
                   hx-target="#locale-table-body"
@@ -63,23 +74,23 @@ templ LocaleAddDialog(locales []db.Locale, csrfToken string, i18nEnabled bool) {
                 @partials.CSRFField(csrfToken)
                 @partials.FormField("code", "Code", "", "")
                 @partials.FormField("label", "Label", "", "")
-                <div class="form-field form-field-checkbox">
-                    <label>
+                <div class="flex items-center gap-2 mb-4">
+                    <label class="flex items-center gap-2 text-sm text-white">
                         <input type="hidden" name="is_default" value="false"/>
-                        <input type="checkbox" name="is_default" value="true"/>
+                        <input type="checkbox" name="is_default" value="true" class="rounded border-white/10"/>
                         Default Locale
                     </label>
                 </div>
-                <div class="form-field form-field-checkbox">
-                    <label>
+                <div class="flex items-center gap-2 mb-4">
+                    <label class="flex items-center gap-2 text-sm text-white">
                         <input type="hidden" name="is_enabled" value="false"/>
-                        <input type="checkbox" name="is_enabled" value="true" checked/>
+                        <input type="checkbox" name="is_enabled" value="true" checked class="rounded border-white/10"/>
                         Enabled
                     </label>
                 </div>
-                <div class="form-field">
-                    <label for="fallback_code">Fallback Locale</label>
-                    <select id="fallback_code" name="fallback_code">
+                <div class="flex flex-col gap-1 mb-4">
+                    <label for="fallback_code" class="text-sm font-medium text-gray-400">Fallback Locale</label>
+                    <select id="fallback_code" name="fallback_code" class="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]">
                         <option value="">None</option>
                         for _, loc := range locales {
                             <option value={ loc.Code }>{ loc.Code } - { loc.Label }</option>
@@ -87,9 +98,9 @@ templ LocaleAddDialog(locales []db.Locale, csrfToken string, i18nEnabled bool) {
                     </select>
                 </div>
                 @partials.FormField("sort_order", "Sort Order", "0", "")
-                <div class="dialog-actions">
-                    <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create</button>
+                <div class="flex justify-end gap-3 border-t border-white/10 pt-4 mt-4">
+                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create</button>
                 </div>
             </form>
         </div>
@@ -97,11 +108,11 @@ templ LocaleAddDialog(locales []db.Locale, csrfToken string, i18nEnabled bool) {
 }
 
 templ LocaleEditDialog(locale db.Locale, allLocales []db.Locale, csrfToken string) {
-    <dialog id={ "edit-locale-" + locale.LocaleID.String() } class="admin-dialog" aria-labelledby={ "edit-locale-title-" + locale.LocaleID.String() }>
-        <div class="dialog-content">
-            <div class="dialog-header">
-                <h2 id={ "edit-locale-title-" + locale.LocaleID.String() }>Edit Locale: { locale.Code }</h2>
-                <button class="btn btn-ghost dialog-close" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
+    <dialog id={ "edit-locale-" + locale.LocaleID.String() } class="rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60" aria-labelledby={ "edit-locale-title-" + locale.LocaleID.String() }>
+        <div class="px-5 py-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                <h2 id={ "edit-locale-title-" + locale.LocaleID.String() } class="text-lg font-semibold text-white">Edit Locale: { locale.Code }</h2>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
             </div>
             <form hx-put={ "/admin/settings/locales/" + locale.LocaleID.String() }
                   hx-target="#locale-table-body"
@@ -110,31 +121,31 @@ templ LocaleEditDialog(locale db.Locale, allLocales []db.Locale, csrfToken strin
                 @partials.CSRFField(csrfToken)
                 @partials.FormField("code", "Code", locale.Code, "")
                 @partials.FormField("label", "Label", locale.Label, "")
-                <div class="form-field form-field-checkbox">
-                    <label>
+                <div class="flex items-center gap-2 mb-4">
+                    <label class="flex items-center gap-2 text-sm text-white">
                         <input type="hidden" name="is_default" value="false"/>
                         if locale.IsDefault {
-                            <input type="checkbox" name="is_default" value="true" checked/>
+                            <input type="checkbox" name="is_default" value="true" checked class="rounded border-white/10"/>
                         } else {
-                            <input type="checkbox" name="is_default" value="true"/>
+                            <input type="checkbox" name="is_default" value="true" class="rounded border-white/10"/>
                         }
                         Default Locale
                     </label>
                 </div>
-                <div class="form-field form-field-checkbox">
-                    <label>
+                <div class="flex items-center gap-2 mb-4">
+                    <label class="flex items-center gap-2 text-sm text-white">
                         <input type="hidden" name="is_enabled" value="false"/>
                         if locale.IsEnabled {
-                            <input type="checkbox" name="is_enabled" value="true" checked/>
+                            <input type="checkbox" name="is_enabled" value="true" checked class="rounded border-white/10"/>
                         } else {
-                            <input type="checkbox" name="is_enabled" value="true"/>
+                            <input type="checkbox" name="is_enabled" value="true" class="rounded border-white/10"/>
                         }
                         Enabled
                     </label>
                 </div>
-                <div class="form-field">
-                    <label for={ "fallback_code_" + locale.LocaleID.String() }>Fallback Locale</label>
-                    <select id={ "fallback_code_" + locale.LocaleID.String() } name="fallback_code">
+                <div class="flex flex-col gap-1 mb-4">
+                    <label for={ "fallback_code_" + locale.LocaleID.String() } class="text-sm font-medium text-gray-400">Fallback Locale</label>
+                    <select id={ "fallback_code_" + locale.LocaleID.String() } name="fallback_code" class="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]">
                         <option value="">None</option>
                         for _, loc := range allLocales {
                             if loc.LocaleID != locale.LocaleID {
@@ -148,9 +159,9 @@ templ LocaleEditDialog(locale db.Locale, allLocales []db.Locale, csrfToken strin
                     </select>
                 </div>
                 @partials.FormField("sort_order", "Sort Order", fmt.Sprintf("%d", locale.SortOrder), "")
-                <div class="dialog-actions">
-                    <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
+                <div class="flex justify-end gap-3 border-t border-white/10 pt-4 mt-4">
+                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Save</button>
                 </div>
             </form>
         </div>

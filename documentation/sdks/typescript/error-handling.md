@@ -1,10 +1,10 @@
 # Error Handling
 
-The TypeScript SDKs use two error types: `ApiError` from `@modulacms/types` (used by the admin SDK) and `ModulaError` from `@modulacms/sdk` (used by the read-only SDK). Both represent server-side HTTP errors. Network failures surface as standard `TypeError` exceptions from the fetch API.
+Handle API errors from the TypeScript SDKs using `ApiError` (admin SDK) and `ModulaError` (read-only SDK), plus standard `TypeError` for network failures.
 
 ## ApiError (Admin SDK)
 
-The admin SDK throws `ApiError` objects for non-2xx HTTP responses:
+The admin SDK throws `ApiError` for non-2xx HTTP responses:
 
 ```typescript
 type ApiError = {
@@ -22,7 +22,7 @@ type ApiError = {
 | `message` | HTTP status text (e.g. `'Not Found'`). |
 | `body` | Parsed JSON response body, if the server returned `application/json`. |
 
-`ApiError` is a plain object, not an `Error` subclass. Use the `isApiError` type guard to narrow caught values:
+`ApiError` is a plain object, not an `Error` subclass. Use `isApiError` to narrow caught values:
 
 ```typescript
 import { isApiError } from '@modulacms/types'
@@ -49,7 +49,7 @@ Returns `true` if `err` is an object with `_tag === 'ApiError'`. Returns `false`
 
 ## ModulaError (Read-Only SDK)
 
-The read-only SDK throws `ModulaError` instances, which extend the standard `Error` class:
+The read-only SDK throws `ModulaError`, which extends the standard `Error` class:
 
 ```typescript
 class ModulaError extends Error {
@@ -127,7 +127,7 @@ async function findContent(id: ContentID): Promise<ContentData | null> {
 
 ### Network Errors
 
-Network failures (DNS resolution, connection refused, TLS errors) throw standard `TypeError` from the fetch API. These are distinct from API errors:
+Network failures (DNS resolution, connection refused, TLS errors) surface as standard `TypeError` from the fetch API:
 
 ```typescript
 try {
@@ -145,7 +145,7 @@ try {
 
 ### Timeout Handling
 
-The admin SDK applies `AbortSignal.timeout(defaultTimeout)` to every request (default 30 seconds). You can pass a custom signal per request:
+The admin SDK attaches `AbortSignal.timeout(defaultTimeout)` to every request (default 30 seconds). You can also pass a custom signal per request:
 
 ```typescript
 const controller = new AbortController()
@@ -160,7 +160,7 @@ try {
 }
 ```
 
-When both the default timeout signal and a custom signal are provided, either one aborting cancels the request.
+When you provide both the default timeout signal and a custom signal, either one aborting cancels the request.
 
 ## Media Upload Errors
 
@@ -188,7 +188,7 @@ try {
 
 ## Void Responses
 
-DELETE operations and some POST operations return `void` on success. On failure, they throw `ApiError` just like other methods:
+DELETE and some POST operations return `void` on success but throw `ApiError` on failure:
 
 ```typescript
 try {

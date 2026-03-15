@@ -439,7 +439,7 @@ export const dragMethods = {
         _startAutoScroll() {
                 if (this._autoScrollRaf !== null) return; // Already running
 
-                const editorContainer = this.querySelector('.editor-container');
+                const editorContainer = this.querySelector('[data-editor-container]');
                 if (!editorContainer) return;
 
                 const EDGE_ZONE = 40; // pixels from edge that triggers scrolling

@@ -1,8 +1,8 @@
 # Testing
 
-ModulaCMS uses Go's built-in testing framework with specific patterns for database testing, TUI component testing, and integration testing. Tests run against SQLite in-memory or file-based databases in the `testdb/` directory.
+Write and run unit tests, database tests, TUI tests, and integration tests for ModulaCMS.
 
-## Running Tests
+## Run Tests
 
 ```bash
 # Run all tests
@@ -32,9 +32,9 @@ just test-integration
 just test-minio-down
 ```
 
-The `just test` target creates and cleans up test databases in `testdb/` and backup files in `backups/` automatically.
+> **Good to know**: The `just test` target creates and cleans up test databases in `testdb/` and backup files in `backups/` automatically.
 
-## Test Organization
+## Organize Test Files
 
 Test files live alongside the code they test, following Go convention:
 
@@ -50,13 +50,11 @@ internal/model/
   build_test.go
 ```
 
-Tests in the same package (e.g., `package db`) can access unexported functions for white-box testing. Tests in a separate `_test` package (e.g., `package db_test`) test only the public API.
+Tests in the same package (e.g., `package db`) can access unexported functions for white-box testing. Tests in a separate `_test` package (e.g., `package db_test`) test only the public API. ModulaCMS primarily uses same-package tests.
 
-ModulaCMS primarily uses same-package tests to access internal helpers and mapping functions.
+## Write Database Tests
 
-## Database Testing
-
-### Test Database Setup
+### Set Up a Test Database
 
 Database tests use a helper that creates a SQLite database, initializes all tables, and returns a `DbDriver`:
 
@@ -97,7 +95,7 @@ func cleanupTestDB(t *testing.T, d DbDriver) {
 }
 ```
 
-Always defer cleanup to prevent "database is locked" errors from unclosed connections:
+Defer cleanup to prevent "database is locked" errors from unclosed connections:
 
 ```go
 func TestSomething(t *testing.T) {
@@ -108,7 +106,7 @@ func TestSomething(t *testing.T) {
 }
 ```
 
-### CRUD Test Pattern
+### Follow the CRUD Test Pattern
 
 ```go
 func TestPermissionCRUD(t *testing.T) {
@@ -159,7 +157,7 @@ func TestPermissionCRUD(t *testing.T) {
 }
 ```
 
-## Table-Driven Tests
+## Write Table-Driven Tests
 
 Use table-driven tests for functions with varied inputs:
 
@@ -195,7 +193,7 @@ func TestStringToInt64(t *testing.T) {
 }
 ```
 
-## TUI Testing
+## Test TUI Components
 
 Test Bubbletea components by creating a model, sending messages, and asserting the resulting state:
 
@@ -250,7 +248,7 @@ func TestViewRendering(t *testing.T) {
 }
 ```
 
-## Integration Testing
+## Write Integration Tests
 
 Test complete feature flows that span multiple database operations:
 
@@ -293,7 +291,7 @@ func TestFeatureFlow(t *testing.T) {
 }
 ```
 
-## Test Coverage
+## Measure Test Coverage
 
 ```bash
 # Generate coverage report
@@ -316,7 +314,7 @@ go test -cover ./internal/db
 | Utilities | 90%+ |
 | TUI code (`internal/tui`) | 50%+ |
 
-## Benchmarking
+## Write Benchmarks
 
 Write benchmarks for performance-critical operations:
 
@@ -335,28 +333,28 @@ go test -bench=. ./internal/model
 go test -bench=. -benchmem ./internal/model
 ```
 
-## Best Practices
+## Follow Best Practices
 
-**Test naming.** Use descriptive names that state what is being tested: `TestCreatePermissionWithValidParams`, not `TestPermission1`.
+**Test naming.** Use descriptive names that state what you're testing: `TestCreatePermissionWithValidParams`, not `TestPermission1`.
 
-**Test independence.** Each test should create its own data. Never depend on test execution order or shared mutable state.
+**Test independence.** Each test creates its own data. Never depend on test execution order or shared mutable state.
 
 **Use `t.Helper()`.** Mark setup and assertion helper functions with `t.Helper()` so failure messages point to the calling test, not the helper.
 
 **Clear error messages.** Include expected and actual values: `t.Errorf("expected %d, got %d", expected, result)`.
 
-**Test edge cases.** Include empty strings, nil values, zero values, maximum values, and invalid inputs in your test cases.
+**Test edge cases.** Include empty strings, nil values, zero values, maximum values, and invalid inputs.
 
-**Clean up resources.** Always `defer` database cleanup. Unclosed connections cause "database is locked" errors in subsequent tests.
+**Clean up resources.** Defer database cleanup. Unclosed connections cause "database is locked" errors in subsequent tests.
 
-**Avoid `t.Parallel()` for database tests.** Tests sharing a database file can interfere with each other. Use parallel execution only for tests with no shared state.
+**Avoid `t.Parallel()` for database tests.** Tests sharing a database file interfere with each other. Use parallel execution only for tests with no shared state.
 
-## Troubleshooting Tests
+## Troubleshoot Test Failures
 
 **"database is locked"** -- A previous test left a connection open. Add `defer cleanupTestDB(t, db)` to every test that creates a database connection.
 
-**"cannot find testdb/test.db"** -- The test directories do not exist. Run `mkdir -p testdb backups` or use `just test` which creates them automatically.
+**"cannot find testdb/test.db"** -- The test directories don't exist. Run `mkdir -p testdb backups` or use `just test` which creates them automatically.
 
 **Tests pass locally but fail in CI** -- Check for absolute paths in test setup. Use relative paths like `./testdb/test.db` and ensure the CI workflow creates the required directories.
 
-**"foreign key constraint failed"** -- The test is referencing a parent record that does not exist. Create all prerequisite records (routes, datatypes, users) before creating dependent records.
+**"foreign key constraint failed"** -- The test references a parent record that doesn't exist. Create all prerequisite records (routes, datatypes, users) before creating dependent records.

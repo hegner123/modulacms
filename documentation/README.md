@@ -1,76 +1,86 @@
 # ModulaCMS Documentation
 
-ModulaCMS is a headless CMS written in Go that ships as a single binary running three concurrent servers: HTTP (REST API and admin panel), HTTPS (with automatic Let's Encrypt certificates), and SSH (a terminal-based management TUI via Charmbracelet Wish). Content is managed through the SSH TUI, the web admin panel, or the REST API, and delivered to frontend clients over HTTP/HTTPS.
+ModulaCMS is a headless CMS that ships as a single Go binary with a REST API, web admin panel, and SSH terminal UI.
 
-## Getting Started
+## Quick Start
 
-Set up ModulaCMS from source and configure it for your environment.
+```bash
+modula init        # Create a project in the current directory
+modula serve       # Start the server
+```
 
-- [Installation](getting-started/installation.md) -- build from source, prerequisites, platform requirements
-- [Quickstart](getting-started/quickstart.md) -- clone to running in five minutes
-- [Configuration](getting-started/configuration.md) -- `modula.config.json` reference, database drivers, S3, OAuth, CORS
+Open [http://localhost:8080/admin/](http://localhost:8080/admin/) for the admin panel, or `ssh localhost -p 2233` for the terminal UI.
+
+## The Journey
+
+### Getting Started
+
+Install ModulaCMS and create your first project.
+
+- [Installation](getting-started/installation.md) -- build options, Docker, database backends
+- [Your First Project](getting-started/first-project.md) -- init, serve, and connect
+- [Configuration](getting-started/configuration.md) -- all `modula.config.json` fields
+
+### Building Content
+
+Define your content model, organize it into trees, and serve it to your frontend.
+
+- [Content Modeling](building-content/content-modeling.md) -- design datatypes and fields
+- [Content Trees](building-content/creating-content.md) -- create, move, and reorder hierarchical content
+- [Routing](building-content/routing.md) -- map URL slugs to content
+- [Media Management](building-content/media.md) -- upload files and serve responsive images
+
+### Custom Admin
+
+Build your own admin experience using the CMS to manage your admin interface.
+
+- [Custom Admin Overview](custom-admin/overview.md)
+
+### Extending
+
+Add custom functionality with Lua plugins.
+
+- [Overview](extending/overview.md) -- what plugins can do
+- [Tutorial](extending/tutorial.md) -- build a bookmarks plugin from scratch
+- [Lua API Reference](extending/lua-api.md) -- every function and parameter
+- [Examples](extending/examples.md) -- complete working plugins
 
 ## Concepts
 
-Core data model and system design. Read these to understand how ModulaCMS structures content.
+Deep dives into how ModulaCMS models data.
 
-- [Content Model](concepts/content-model.md) -- datatypes, fields, content data, content fields, and the admin content system
-- [Tree Structure](concepts/tree-structure.md) -- sibling-pointer trees, O(1) operations, tree assembly algorithm
-- [Publishing Lifecycle](concepts/publishing-lifecycle.md) -- draft/published states, version snapshots, scheduling, restore
-- [RBAC](concepts/rbac.md) -- roles, permissions, the `resource:operation` label format, permission cache
-- [Media Pipeline](concepts/media-pipeline.md) -- upload, image optimization, dimension presets, S3 storage, focal point cropping
-- [Localization](concepts/localization.md) -- locales, translatable fields, fallback chains, locale-aware delivery
-
-## Guides
-
-Step-by-step instructions for common tasks.
-
-- [Content Modeling](guides/content-modeling.md) -- design datatypes and fields for your content
-- [Content Trees](guides/content-trees.md) -- create, move, reorder, and deliver tree-structured content
-- [Authentication](guides/authentication.md) -- password login, OAuth providers, sessions, tokens, SSH keys
-- [Routing](guides/routing.md) -- map URL slugs to content, route types, output formats
-- [Media Management](guides/media-management.md) -- upload files, manage dimensions, focal points, srcset
-- [Admin Panel](guides/admin-panel.md) -- HTMX-based web admin interface
-- [Managing Plugins](guides/plugins.md) -- install, configure, approve, monitor, and troubleshoot plugins
-
-## Plugin Development
-
-Documentation for building plugins. If you are a CMS administrator, the [Managing Plugins](guides/plugins.md) guide covers installation, configuration, and approval.
-
-- [Overview](plugins/overview.md) -- architecture, VM pool design, lifecycle states, how plugins interact with the CMS
-- [Tutorial](plugins/tutorial.md) -- build a bookmarks plugin from scratch, step by step
-- [Lua API Reference](plugins/lua-api.md) -- every function, parameter, and return value for db, http, hooks, log, tui, and require
-- [Configuration](plugins/configuration.md) -- all modula.config.json fields with tuning guidance and example configurations
-- [Security](plugins/security.md) -- sandbox, database isolation, circuit breakers, rate limiting, operation budgets
-- [Approval Workflow](plugins/approval.md) -- route and hook approval via CLI, API, and TUI
-- [Examples](plugins/examples.md) -- complete example plugins: task tracker, content validator, webhook relay, analytics logger, API gateway
+- [Content Model](building-content/content-modeling.md)
+- [Tree Structure](building-content/creating-content.md)
+- [Publishing Lifecycle](building-content/publishing.md)
+- [RBAC](custom-admin/authentication.md)
+- [Media Pipeline](building-content/media.md)
 
 ## SDKs
 
-Client libraries for consuming the ModulaCMS API.
+Client libraries for consuming the ModulaCMS API. See the [SDK overview](sdks/overview.md) for a comparison.
 
-- Go SDK -- `import modulacms "github.com/hegner123/modulacms/sdks/go"` ([source](../sdks/go/))
-- TypeScript SDK -- `@modulacms/sdk` for content delivery, `@modulacms/admin-sdk` for admin CRUD ([source](../sdks/typescript/))
-- Swift SDK -- `ModulaCMS` SPM package for Apple platforms ([source](../sdks/swift/))
+- [Go SDK](sdks/go/getting-started.md) -- `import modulacms "github.com/hegner123/modulacms/sdks/go"`
+- [TypeScript SDK](sdks/typescript/getting-started.md) -- `@modulacms/sdk` and `@modulacms/admin-sdk`
+- [Swift SDK](sdks/swift/getting-started.md) -- SPM package for iOS 16+, macOS 13+
 
 ## API Reference
 
-- [REST API](api/rest-api.md) -- endpoint reference, authentication, pagination, output formats
+- [REST API](api/rest-api.md) -- endpoints, authentication, pagination, output formats
 
 ## Deployment
 
-- [Local Development](deployment/local-development.md) -- run locally with SQLite
-- [Docker](deployment/docker.md) -- containerized stacks for SQLite, MySQL, PostgreSQL
-- [Production](deployment/production.md) -- deploy, health checks, rollback, TLS
+- [Local Development](deployment/local-development.md)
+- [Docker](deployment/docker.md)
+- [Production](deployment/production.md)
 
 ## Reference
 
-- [Glossary](reference/glossary.md) -- terminology used throughout the documentation
-- [Troubleshooting](reference/troubleshooting.md) -- common issues and their solutions
+- [Glossary](reference/glossary.md)
+- [Troubleshooting](reference/troubleshooting.md)
+- [Philosophy](PHILOSOPHY.md) -- performance, flexibility, transparency
 
 ## Contributing
 
-- [Adding Tables](contributing/adding-tables.md) -- add a new database table across all three backends
-- [Adding Features](contributing/adding-features.md) -- end-to-end feature development flow
-- [Testing](contributing/testing.md) -- testing strategies, integration tests, Docker infrastructure
-- [Debugging](contributing/debugging.md) -- logging, TUI debugging, database inspection
+- [Adding Features](contributing/adding-features.md)
+- [Adding Tables](contributing/adding-tables.md)
+- [Testing](contributing/testing.md)

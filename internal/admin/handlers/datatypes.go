@@ -112,7 +112,7 @@ func DatatypesListHandler(svc *service.Registry) http.HandlerFunc {
 			csrfToken := CSRFTokenFromContext(r.Context())
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Datatypes"}`)
 			RenderWithOOB(w, r, pages.DatatypesListContent(list, pg, distinctTypes),
-				OOBSwap{TargetID: "admin-dialogs", Component: pages.DatatypeCreateDialog(csrfToken)})
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.DatatypeCreateDialog(csrfToken, all)})
 			return
 		}
 
@@ -122,7 +122,7 @@ func DatatypesListHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		layout := NewAdminData(r, "Datatypes")
-		Render(w, r, pages.DatatypesList(layout, list, pg, distinctTypes))
+		Render(w, r, pages.DatatypesList(layout, list, pg, distinctTypes, all))
 	}
 }
 
@@ -171,17 +171,24 @@ func DatatypeDetailHandler(svc *service.Registry) http.HandlerFunc {
 			linkedFields = []db.Fields{}
 		}
 
+		// Fetch all datatypes for the parent select dropdown
+		allDatatypes, dtErr := svc.Schema.ListDatatypes(r.Context())
+		if dtErr != nil {
+			utility.DefaultLogger.Error("failed to list datatypes for parent select", dtErr)
+			allDatatypes = []db.Datatypes{}
+		}
+
 		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Datatype: "+dt.Label)
 
 		if IsNavHTMX(r) {
 			safeTitle := "Datatype: " + dt.Label
 			w.Header().Set("HX-Trigger", `{"pageTitle": "`+safeTitle+`"}`)
-			RenderWithOOB(w, r, pages.DatatypeDetailContent(*dt, linkedFields, csrfToken),
+			RenderWithOOB(w, r, pages.DatatypeDetailContent(*dt, linkedFields, allDatatypes, csrfToken),
 				OOBSwap{TargetID: "admin-dialogs", Component: pages.DatatypeAddFieldDialog(dt.DatatypeID.String(), csrfToken)})
 			return
 		}
-		Render(w, r, pages.DatatypeDetail(layout, *dt, linkedFields, csrfToken))
+		Render(w, r, pages.DatatypeDetail(layout, *dt, linkedFields, allDatatypes, csrfToken))
 	}
 }
 
@@ -197,6 +204,12 @@ func DatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 		name := strings.TrimSpace(r.FormValue("name"))
 		label := strings.TrimSpace(r.FormValue("label"))
 		dtype := strings.TrimSpace(r.FormValue("type"))
+		parentIDStr := strings.TrimSpace(r.FormValue("parent_id"))
+
+		var parentID types.NullableDatatypeID
+		if parentIDStr != "" {
+			parentID = types.NullableDatatypeID{ID: types.DatatypeID(parentIDStr), Valid: true}
+		}
 
 		ac, acErr := svc.AuditCtx(r.Context())
 		if acErr != nil {
@@ -206,11 +219,12 @@ func DatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		user := middleware.AuthenticatedUser(r.Context())
-		maxSort, sortErr := svc.Schema.GetMaxDatatypeSortOrder(r.Context(), types.NullableDatatypeID{})
+		maxSort, sortErr := svc.Schema.GetMaxDatatypeSortOrder(r.Context(), parentID)
 		if sortErr != nil {
 			maxSort = -1
 		}
 		_, err := svc.Schema.CreateDatatype(r.Context(), ac, db.CreateDatatypeParams{
+			ParentID:  parentID,
 			SortOrder: maxSort + 1,
 			Name:      name,
 			Label:     label,
@@ -218,6 +232,7 @@ func DatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 			AuthorID:  user.UserID,
 		})
 		if err != nil {
+			allDatatypes, _ := svc.Schema.ListDatatypes(r.Context())
 			var ve *service.ValidationError
 			if errors.As(err, &ve) {
 				errs := make(map[string]string, len(ve.Errors))
@@ -226,13 +241,13 @@ func DatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 				}
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				csrfToken := CSRFTokenFromContext(r.Context())
-				Render(w, r, partials.DatatypeForm(name, label, dtype, errs, csrfToken))
+				Render(w, r, partials.DatatypeForm(name, label, dtype, parentIDStr, allDatatypes, errs, csrfToken))
 				return
 			}
 			utility.DefaultLogger.Error("failed to create datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeForm(name, label, dtype, map[string]string{"_": "Failed to create datatype"}, csrfToken))
+			Render(w, r, partials.DatatypeForm(name, label, dtype, parentIDStr, allDatatypes, map[string]string{"_": "Failed to create datatype"}, csrfToken))
 			return
 		}
 
@@ -264,6 +279,12 @@ func DatatypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		name := strings.TrimSpace(r.FormValue("name"))
 		label := strings.TrimSpace(r.FormValue("label"))
 		dtype := strings.TrimSpace(r.FormValue("type"))
+		parentIDStr := strings.TrimSpace(r.FormValue("parent_id"))
+
+		var parentID types.NullableDatatypeID
+		if parentIDStr != "" {
+			parentID = types.NullableDatatypeID{ID: types.DatatypeID(parentIDStr), Valid: true}
+		}
 
 		ac, acErr := svc.AuditCtx(r.Context())
 		if acErr != nil {
@@ -274,11 +295,13 @@ func DatatypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 
 		_, err := svc.Schema.UpdateDatatype(r.Context(), ac, db.UpdateDatatypeParams{
 			DatatypeID: types.DatatypeID(id),
+			ParentID:   parentID,
 			Name:       name,
 			Label:      label,
 			Type:       dtype,
 		})
 		if err != nil {
+			allDatatypes, _ := svc.Schema.ListDatatypes(r.Context())
 			var ve *service.ValidationError
 			if errors.As(err, &ve) {
 				errs := make(map[string]string, len(ve.Errors))
@@ -287,7 +310,7 @@ func DatatypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 				}
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				csrfToken := CSRFTokenFromContext(r.Context())
-				Render(w, r, partials.DatatypeEditForm(id, name, label, dtype, errs, csrfToken))
+				Render(w, r, partials.DatatypeEditForm(id, name, label, dtype, parentIDStr, allDatatypes, errs, csrfToken))
 				return
 			}
 			var nfe *service.NotFoundError
@@ -298,7 +321,7 @@ func DatatypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to update datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeEditForm(id, name, label, dtype, map[string]string{"_": "Failed to update datatype"}, csrfToken))
+			Render(w, r, partials.DatatypeEditForm(id, name, label, dtype, parentIDStr, allDatatypes, map[string]string{"_": "Failed to update datatype"}, csrfToken))
 			return
 		}
 

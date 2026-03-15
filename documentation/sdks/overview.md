@@ -1,6 +1,6 @@
 # SDK Overview
 
-ModulaCMS provides official SDKs for Go, TypeScript, and Swift. All three SDKs share the same design patterns and cover the same API surface, so you can pick the one that fits your platform and language without losing capability.
+ModulaCMS provides official SDKs for Go, TypeScript, and Swift that share the same design patterns and cover the same API surface.
 
 ## SDK Comparison
 
@@ -41,7 +41,7 @@ ModulaCMS provides official SDKs for Go, TypeScript, and Swift. All three SDKs s
 
 All three SDKs follow these conventions:
 
-**Branded ID types.** Entity IDs are distinct types (e.g., `ContentID`, `UserID`, `DatatypeID`), not raw strings. The compiler catches mistakes like passing a `UserID` where a `ContentID` is expected.
+**Branded ID types.** Entity IDs are distinct types (e.g., `ContentID`, `UserID`, `DatatypeID`), not raw strings. The compiler catches mistakes like passing a `UserID` where a `ContentID` belongs.
 
 **Generic CRUD resources.** Most API resources expose the same set of methods -- List, Get, Create, Update, Delete, ListPaginated, Count -- through a generic resource type parameterized by entity, create params, update params, and ID type.
 

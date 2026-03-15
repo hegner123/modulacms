@@ -6,25 +6,28 @@ import "github.com/hegner123/modulacms/internal/db"
 // Used on the datatype detail page and as an HTMX partial after field mutations.
 templ DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string) {
     if len(fields) == 0 {
-        @EmptyState("No fields. Use the Add Field button to create fields for this datatype.")
+        <div class="px-4 py-10 text-center text-sm text-gray-400">No fields. Use the Add Field button to create fields for this datatype.</div>
     } else {
-        <table class="data-table">
-            <thead>
+        <table class="min-w-full divide-y divide-white/10">
+            <thead class="sr-only">
                 <tr>
                     <th>Name</th>
-                    <th>Label</th>
                     <th>Type</th>
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-white/5">
                 for _, f := range fields {
-                    <tr class="clickable-row" data-href={ "/admin/schema/fields/" + f.FieldID.String() }>
-                        <td>{ f.Name }</td>
-                        <td>{ f.Label }</td>
-                        <td><span class="badge">{ f.Type.String() }</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-danger"
+                    <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/schema/fields/" + f.FieldID.String() }>
+                        <td class="py-3 pr-3 pl-4 text-sm sm:pl-6">
+                            <div class="font-medium text-white">{ f.Name }</div>
+                            <div class="mt-0.5 text-gray-400">{ f.Label }</div>
+                        </td>
+                        <td class="px-3 py-3 text-sm whitespace-nowrap">
+                            <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ f.Type.String() }</span>
+                        </td>
+                        <td class="py-3 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6">
+                            <button class="text-red-400 hover:text-red-300"
                                     hx-delete={ "/admin/schema/fields/" + f.FieldID.String() }
                                     hx-target="closest tr"
                                     hx-swap="outerHTML swap:300ms"

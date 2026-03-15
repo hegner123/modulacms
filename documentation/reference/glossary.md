@@ -1,6 +1,6 @@
 # Glossary
 
-Key terms and concepts in ModulaCMS.
+Definitions of key terms and concepts used throughout ModulaCMS documentation.
 
 ## Content Model
 
@@ -10,34 +10,27 @@ Key terms and concepts in ModulaCMS.
 
 **Datatype** -- A content type definition, analogous to a "model" or "content type" in other CMS platforms. A datatype defines the structure of content by specifying which fields it contains. Examples: "Blog Post", "Product", "Page".
 
-**Field** -- A field definition that describes a single property of a datatype. Fields have a label (e.g., "Title"), a data type (e.g., "string"), and a field type (e.g., "text", "rich_text", "number"). Each field belongs to a datatype via its `parent_id` foreign key referencing the datatypes table.
+**Field** -- A field definition that describes a single property of a datatype. Fields have a label (e.g., "Title"), a data type (e.g., "string"), and a field type (e.g., "text", "rich_text", "number"). Each field belongs to a datatype.
 
-**Content Tree** -- The hierarchical structure of content within a route. Content data records use sibling pointers for efficient navigation and reordering:
-- `parent_id` -- the parent node
-- `first_child_id` -- the leftmost child
-- `next_sibling_id` / `prev_sibling_id` -- doubly-linked sibling list
-
-This structure supports O(1) reordering of siblings without updating every sibling's sort order.
+**Content Tree** -- The hierarchical structure of content within a route. Content nodes can be nested under other nodes, forming a tree. You can reorder siblings and move nodes between parents through the API, TUI, or admin panel.
 
 ## Routing
 
-**Route** -- A named entry point that defines a content tree root. Each route has a slug (e.g., "blog", "products") that maps to a URL path for content delivery. When a client requests `GET /blog`, the server looks up the route with slug "blog", builds its content tree, and returns it.
+**Route** -- A named entry point that maps a slug (e.g., "blog", "products") to a content tree for delivery. Each route has a slug, a title, a status, and an author. When a client requests `GET /blog`, the API looks up the route with slug "blog" and returns its published content tree. Global trees exist independently and are served via `/api/v1/globals`.
 
-**Admin Route** -- A route that manages the admin panel's own content structure. Admin routes use a parallel set of tables (admin_content_data, admin_content_fields, admin_datatypes, admin_fields) to store configuration and UI content separately from public content.
+**Admin Route** -- A route that manages the admin panel's own content structure. Admin routes use a parallel set of tables to store configuration and UI content separately from public content.
 
 **Site** -- In ModulaCMS, the `client_site` and `admin_site` configuration fields define the primary domain and admin domain. Routes serve as the multi-site mechanism: different routes can represent different sections or sites within a single ModulaCMS instance.
 
 ## Identity and IDs
 
-**ULID** -- Universally Unique Lexicographically Sortable Identifier. A 26-character string (e.g., `01HXK4N2F8RJZGP6VTQY3MCSW9`) used as the primary key for all entities in ModulaCMS. ULIDs are time-ordered (sortable by creation time), globally unique, and URL-safe. Each entity type has its own typed ID (ContentID, UserID, DatatypeID, etc.) that prevents accidentally passing one entity's ID where another is expected.
+**ULID** -- Universally Unique Lexicographically Sortable Identifier. A 26-character string (e.g., `01HXK4N2F8RJZGP6VTQY3MCSW9`) used as the primary key for all entities in ModulaCMS. ULIDs are time-ordered (sortable by creation time), globally unique, and URL-safe.
 
 ## Database
 
-**DbDriver** -- The Go interface that abstracts all database operations. ModulaCMS implements this interface three times: once for SQLite, once for MySQL, and once for PostgreSQL. Application code calls DbDriver methods without knowing which database backend is in use. The active driver is selected by the `db_driver` field in `modula.config.json`.
+**Database Backend** -- ModulaCMS supports three database engines interchangeably: SQLite, MySQL, and PostgreSQL. Select the active backend with the `db_driver` field in `modula.config.json`. Application behavior is identical across all three.
 
-**sqlc** -- The code generation tool that compiles annotated SQL queries into type-safe Go functions. SQL queries live in `sql/schema/` directories with separate files for each database dialect. Running `just sqlc` generates Go code in `internal/db-sqlite/`, `internal/db-mysql/`, and `internal/db-psql/`. These generated files should never be edited by hand.
-
-**Audited Commands** -- The pattern used for database mutations that need an audit trail. Audited operations atomically record a `change_event` row alongside the mutation, capturing the operation type, old and new values as JSON, request metadata, and a timestamp. This provides a complete history of changes for compliance and debugging.
+**Audit Trail** -- ModulaCMS records an audit event alongside every content mutation, capturing the operation type, old and new values, request metadata, and a timestamp. This provides a complete history of changes for compliance and debugging.
 
 ## Access Control
 
@@ -48,19 +41,19 @@ Three bootstrap roles are created on first run:
 - **editor** -- 36 permissions covering content, media, routes, datatypes, fields, and field types.
 - **viewer** -- 5 read-only permissions (`content:read`, `media:read`, `routes:read`, `field_types:read`, `admin_field_types:read`).
 
-System-protected roles and permissions cannot be deleted or renamed through the API. The permission cache is held in memory, loaded at startup, and refreshed every 60 seconds.
+System-protected roles and permissions cannot be deleted or renamed through the API.
 
-**Permission Label** -- A string in the format `resource:operation` that identifies a specific permission. Labels are validated character-by-character (no pattern matching). Examples: `content:create`, `roles:update`, `media:delete`.
+**Permission Label** -- A string in the format `resource:operation` that identifies a specific permission. Examples: `content:create`, `roles:update`, `media:delete`.
 
 ## Interfaces
 
-**TUI** -- Terminal User Interface. ModulaCMS runs an SSH server (default port 2233) that presents a Bubbletea-based interactive terminal interface. Users connect with `ssh user@host -p 2233` and manage content, datatypes, fields, routes, users, and media through a keyboard-driven UI. The TUI follows the Elm Architecture: state changes happen in Update, rendering in View, and side effects through Commands.
+**TUI** -- Terminal User Interface. ModulaCMS runs an SSH server (default port 2233) that presents an interactive terminal interface. Connect with `ssh user@host -p 2233` to manage content, datatypes, fields, routes, users, and media through a keyboard-driven UI.
 
-**Admin Panel** -- A server-rendered web interface built with HTMX and templ. Pages are rendered on the server as HTML with HTMX attributes for interactive behavior (partial page updates, form submissions, modal dialogs). No JavaScript framework or SPA is involved. The admin panel uses CSRF double-submit cookies for protection and requires authentication.
+**Admin Panel** -- A server-rendered web interface for managing your CMS. Pages load as complete HTML with interactive updates powered by HTMX -- no JavaScript framework or SPA. The admin panel requires authentication and provides CSRF protection.
 
 **REST API** -- The JSON API at `/api/v1` used by frontend applications, SDKs, and external integrations. All endpoints follow consistent patterns: collection endpoints at `/api/v1/{resource}`, item endpoints at `/api/v1/{resource}/?q={ulid}`, and standard HTTP methods for CRUD operations.
 
-**Content Delivery** -- The public-facing endpoint at `GET /{slug}` that returns content trees in configurable output formats. Supports `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, and `raw` formats via the `?format=` query parameter. This is the endpoint your frontend application calls to fetch content.
+**Content Delivery** -- The public-facing endpoint at `GET /{slug}` that returns content trees in configurable output formats. Your frontend application calls this endpoint to fetch content. Supports `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, and `raw` formats via the `?format=` query parameter.
 
 ## Configuration
 

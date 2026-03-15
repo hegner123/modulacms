@@ -35,7 +35,7 @@ func AdminRoutesListContent(items []db.AdminRoutes, pagination partials.Paginati
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"page-header\"><h1>Admin Routes</h1><a href=\"/admin/routes\" class=\"btn btn-ghost\" hx-get=\"/admin/routes\" hx-target=\"#main-content\" hx-push-url=\"true\">Back to Routes</a></div><p class=\"page-description\">Internal CMS routes managed by the system. These routes are read-only.</p><table class=\"table\"><thead><tr><th>Slug</th><th>Title</th><th>Status</th><th>Modified</th></tr></thead> <tbody id=\"admin-routes-table-body\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Admin Routes</h1><p class=\"mt-2 text-sm text-gray-400\">Internal CMS routes managed by the system. These routes are read-only.</p></div><div class=\"mt-4 sm:mt-0 sm:ml-16 sm:flex-none\"><a href=\"/admin/routes\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20 no-underline hover:no-underline\" hx-get=\"/admin/routes\" hx-target=\"#main-content\" hx-push-url=\"true\">Back to Routes</a></div></div><div class=\"mt-8 flow-root\"><div class=\"-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8\"><div class=\"inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Slug</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Title</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Status</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Modified</th></tr></thead> <tbody id=\"admin-routes-table-body\" class=\"divide-y divide-white/5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -43,7 +43,7 @@ func AdminRoutesListContent(items []db.AdminRoutes, pagination partials.Paginati
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</tbody></table><div id=\"pagination\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</tbody></table></div></div></div></div><div id=\"pagination\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

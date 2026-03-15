@@ -7,25 +7,35 @@ import (
 )
 
 templ MediaListContent(items []db.Media, pg partials.PaginationPageData, folders []db.MediaFolder, activeFolderID string, breadcrumb []db.MediaFolder, currentFolder *db.MediaFolder, csrfToken string) {
-    <div class="page-header">
-        <h1>Media</h1>
-        <button
-            class="btn btn-primary"
-            onclick="document.getElementById('upload-dialog').showModal()"
-        >
-            Upload Media
-        </button>
+    <!-- Page Header -->
+    <div class="border-b border-white/10 pb-5" data-page-header>
+        <div class="flex items-center justify-between">
+            <h1 class="text-lg font-semibold text-white">Media</h1>
+            <button
+                class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
+                data-action="new"
+                onclick="document.getElementById('upload-dialog').showModal()"
+            >
+                <i data-lucide="upload" class="mr-1.5 inline-block h-4 w-4 align-text-bottom"></i>
+                Upload Media
+            </button>
+        </div>
     </div>
-    <div class="media-layout-with-folders">
+    <!-- Folder sidebar + Media grid -->
+    <div class="mt-6 grid grid-cols-[14rem_1fr] gap-x-8">
         @partials.MediaFolderTree(folders, activeFolderID, csrfToken)
-        <div class="media-main-content">
+        <div>
             if activeFolderID != "" {
-                @partials.MediaFolderBreadcrumb(breadcrumb, currentFolder)
+                <div class="mb-4">
+                    @partials.MediaFolderBreadcrumb(breadcrumb, currentFolder)
+                </div>
             }
-            <div id="media-grid" class="media-grid">
-                @MediaGridItems(items)
+            <div id="media-grid">
+                <ul role="list" class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8">
+                    @MediaGridItems(items)
+                </ul>
             </div>
-            <div id="pagination">
+            <div id="pagination" class="mt-6">
                 @partials.Pagination(pg.Current, pg.TotalPages, pg.Target, pg.BaseURL, pg.Limit)
             </div>
         </div>
@@ -33,33 +43,37 @@ templ MediaListContent(items []db.Media, pg partials.PaginationPageData, folders
 }
 
 templ MediaUploadDialog(csrfToken string, activeFolderID string) {
-    <dialog id="upload-dialog" class="dialog" aria-labelledby="upload-dialog-title">
-        <div class="dialog-content">
-            <div class="dialog-header">
-                <h2 id="upload-dialog-title">Upload Media</h2>
-                <button class="dialog-close" aria-label="Close dialog" onclick="document.getElementById('upload-dialog').close()">&times;</button>
+    <dialog id="upload-dialog" class="rounded-xl border border-white/10 bg-gray-900 p-0 shadow-lg backdrop:bg-black/60" aria-labelledby="upload-dialog-title">
+        <div class="w-full max-w-lg">
+            <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
+                <h2 id="upload-dialog-title" class="text-base font-semibold text-white">Upload Media</h2>
+                <button class="text-gray-400 hover:text-white" aria-label="Close dialog" onclick="document.getElementById('upload-dialog').close()">&times;</button>
             </div>
             <form
                 hx-post="/admin/media"
                 hx-target="#upload-result"
                 hx-encoding="multipart/form-data"
                 hx-swap="innerHTML"
-                class="upload-form"
+                class="space-y-4 p-5"
             >
                 @partials.CSRFField(csrfToken)
                 <input type="hidden" id="upload-folder-id" name="folder_id" value={ activeFolderID }/>
                 <mcms-file-input name="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" required label="File"></mcms-file-input>
-                <div class="form-field">
-                    <label for="alt">Alt Text</label>
-                    <input type="text" id="alt" name="alt" placeholder="Describe this media..."/>
+                <div>
+                    <label for="alt" class="block text-sm font-medium text-white">Alt Text</label>
+                    <div class="mt-2">
+                        <input type="text" id="alt" name="alt" placeholder="Describe this media..." class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6"/>
+                    </div>
                 </div>
-                <div class="form-field">
-                    <label for="description">Description</label>
-                    <textarea id="description" name="description" rows="3" placeholder="Optional description..."></textarea>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-white">Description</label>
+                    <div class="mt-2">
+                        <textarea id="description" name="description" rows="3" placeholder="Optional description..." class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6"></textarea>
+                    </div>
                 </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-ghost" onclick="document.getElementById('upload-dialog').close()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Upload</button>
+                <div class="flex justify-end gap-x-3 border-t border-white/10 pt-4">
+                    <button type="button" class="rounded-md px-3 py-2 text-sm font-semibold text-gray-400 hover:text-white" onclick="document.getElementById('upload-dialog').close()">Cancel</button>
+                    <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Upload</button>
                 </div>
             </form>
             <div id="upload-result"></div>
@@ -77,8 +91,10 @@ templ MediaGridPartial(items []db.Media, pg partials.PaginationPageData, picker 
     if picker {
         @MediaPickerItems(items)
     } else {
-        @MediaGridItems(items)
-        <div id="pagination" hx-swap-oob="true">
+        <ul role="list" class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8">
+            @MediaGridItems(items)
+        </ul>
+        <div id="pagination" hx-swap-oob="true" class="mt-6">
             @partials.Pagination(pg.Current, pg.TotalPages, pg.Target, pg.BaseURL, pg.Limit)
         </div>
     }
@@ -90,7 +106,8 @@ templ MediaPickerItems(items []db.Media) {
     }
     for _, item := range items {
         <div
-            class="media-picker-item"
+            class="group cursor-pointer overflow-hidden rounded-lg border border-white/10 bg-white/5 p-1 transition-colors hover:border-[var(--color-primary)]"
+            data-media-picker-item
             data-media-id={ item.MediaID.String() }
             data-media-url={ item.URL.String() }
             data-media-alt={ nullStr(item.Alt) }
@@ -100,9 +117,10 @@ templ MediaPickerItems(items []db.Media) {
                     src={ item.URL.String() }
                     alt={ nullStr(item.Alt) }
                     loading="lazy"
+                    class="h-24 w-full rounded object-cover"
                 />
             } else {
-                <span class="media-file-ext">{ fileExtension(nullStr(item.Name)) }</span>
+                <span class="flex h-24 items-center justify-center text-xs font-bold uppercase text-gray-400">{ fileExtension(nullStr(item.Name)) }</span>
             }
         </div>
     }
@@ -113,9 +131,10 @@ templ MediaGridItems(items []db.Media) {
         @partials.EmptyState("No media found. Upload your first file to get started.")
     }
     for _, item := range items {
-        <div
+        <li
             id={ "media-item-" + item.MediaID.String() }
-            class="media-grid-item"
+            class="group relative"
+            data-media-grid-item
             draggable="true"
             data-media-id={ item.MediaID.String() }
         >
@@ -124,39 +143,38 @@ templ MediaGridItems(items []db.Media) {
                 hx-get={ "/admin/media/" + item.MediaID.String() }
                 hx-target="#main-content"
                 hx-push-url="true"
-                class="media-grid-link"
+                class="block no-underline"
             >
-                if isImage(nullStr(item.Mimetype)) {
-                    <div class="media-thumbnail">
+                <div class="aspect-[10/7] overflow-hidden rounded-lg border border-white/10 bg-white/5 transition-colors group-hover:border-[var(--color-primary)]">
+                    if isImage(nullStr(item.Mimetype)) {
                         <img
                             src={ item.URL.String() }
                             alt={ nullStr(item.Alt) }
                             loading="lazy"
+                            class="pointer-events-none h-full w-full object-cover transition-transform group-hover:scale-105"
                         />
-                    </div>
-                } else {
-                    <div class="media-thumbnail media-thumbnail-file">
-                        <span class="media-file-ext">{ fileExtension(nullStr(item.Name)) }</span>
-                    </div>
-                }
-                <div class="media-grid-info">
-                    <span class="media-grid-name">{ nullStr(item.DisplayName) }</span>
-                    <span class="media-grid-type">{ nullStr(item.Mimetype) }</span>
+                    } else {
+                        <div class="flex h-full w-full items-center justify-center">
+                            <span class="text-lg font-bold uppercase text-gray-400">{ fileExtension(nullStr(item.Name)) }</span>
+                        </div>
+                    }
                 </div>
+                <p class="pointer-events-none mt-2 block truncate text-sm font-medium text-white">{ nullStr(item.DisplayName) }</p>
+                <p class="pointer-events-none block truncate text-sm text-gray-400">{ nullStr(item.Mimetype) }</p>
             </a>
-        </div>
+        </li>
     }
 }
 
 templ MediaUploadResult(media db.Media, errMsg string) {
     if errMsg != "" {
-        <div class="alert alert-error">{ errMsg }</div>
+        <div class="rounded-md border border-red-400/20 bg-red-400/5 px-4 py-3 text-sm text-red-400">{ errMsg }</div>
     } else {
-        <div class="upload-success">
+        <div class="flex items-center gap-x-3 rounded-md border border-green-400/20 bg-green-400/5 px-4 py-3 text-sm text-green-400">
             <p>Upload successful!</p>
             <a
                 href={ templ.SafeURL("/admin/media/" + media.MediaID.String()) }
-                class="btn btn-ghost btn-sm"
+                class="text-sm font-medium text-gray-400 hover:text-white"
             >
                 View Media
             </a>

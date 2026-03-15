@@ -31,7 +31,7 @@ class McmsFieldRenderer extends HTMLElement {
         var label = this.getAttribute('label') || name;
 
         var wrapper = document.createElement('div');
-        wrapper.className = 'form-field field-renderer-wrapper';
+        wrapper.className = 'flex flex-col gap-1';
 
         var labelEl = document.createElement('label');
         labelEl.textContent = label;
@@ -112,7 +112,7 @@ class McmsFieldRenderer extends HTMLElement {
 
         // Toolbar container
         var toolbar = document.createElement('div');
-        toolbar.className = 'field-renderer-richtext-toolbar';
+        toolbar.className = 'flex flex-wrap gap-1 border-b border-[var(--color-border)] pb-2 mb-2';
         wrapper.appendChild(toolbar);
 
         // Textarea for editing
@@ -120,13 +120,13 @@ class McmsFieldRenderer extends HTMLElement {
         textarea.name = name;
         textarea.id = 'field-' + name;
         textarea.rows = 8;
-        textarea.className = 'field-renderer-richtext-input';
+        textarea.className = 'w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] outline-none font-mono';
         textarea.textContent = value;
         wrapper.appendChild(textarea);
 
         // Preview container (hidden initially)
         var preview = document.createElement('div');
-        preview.className = 'field-renderer-richtext-preview';
+        preview.className = 'rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] prose prose-sm max-w-none';
         preview.style.display = 'none';
         wrapper.appendChild(preview);
 
@@ -139,7 +139,7 @@ class McmsFieldRenderer extends HTMLElement {
 
             var btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'btn btn-sm btn-ghost richtext-toolbar-btn';
+            btn.className = 'inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors cursor-pointer border-none';
             btn.setAttribute('data-action', actionName);
             btn.textContent = action.label;
             btn.title = action.title;
@@ -241,7 +241,7 @@ class McmsFieldRenderer extends HTMLElement {
 
     _buildBoolean(wrapper, name, value) {
         var container = document.createElement('div');
-        container.className = 'field-renderer-boolean';
+        container.className = 'flex items-center gap-2';
 
         var input = document.createElement('input');
         input.type = 'checkbox';
@@ -329,7 +329,7 @@ class McmsFieldRenderer extends HTMLElement {
 
     _buildMedia(wrapper, name, value) {
         var container = document.createElement('div');
-        container.className = 'field-renderer-media';
+        container.className = 'flex items-center gap-3';
 
         // Hidden input for storing media ID
         var hidden = document.createElement('input');
@@ -341,7 +341,7 @@ class McmsFieldRenderer extends HTMLElement {
 
         // Thumbnail preview area
         var thumbContainer = document.createElement('div');
-        thumbContainer.className = 'field-renderer-media-thumb';
+        thumbContainer.className = 'w-16 h-16 rounded-md overflow-hidden bg-[var(--color-bg)] border border-[var(--color-border)] flex items-center justify-center';
         var mediaUrl = this.getAttribute('media-url') || '';
         var mediaAlt = this.getAttribute('media-alt') || '';
         if (mediaUrl) {
@@ -351,12 +351,12 @@ class McmsFieldRenderer extends HTMLElement {
             thumbContainer.appendChild(img);
         } else if (value) {
             var placeholder = document.createElement('span');
-            placeholder.className = 'field-renderer-media-id';
+            placeholder.className = 'text-xs text-[var(--color-text-muted)] truncate px-1';
             placeholder.textContent = 'Media: ' + value;
             thumbContainer.appendChild(placeholder);
         } else {
             var empty = document.createElement('span');
-            empty.className = 'field-renderer-media-empty';
+            empty.className = 'text-xs text-[var(--color-text-dim)]';
             empty.textContent = 'No media selected';
             thumbContainer.appendChild(empty);
         }
@@ -365,7 +365,7 @@ class McmsFieldRenderer extends HTMLElement {
         // Choose button
         var chooseBtn = document.createElement('button');
         chooseBtn.type = 'button';
-        chooseBtn.className = 'btn btn-sm';
+        chooseBtn.className = 'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors cursor-pointer border border-[var(--color-border)]';
         chooseBtn.textContent = 'Choose';
         container.appendChild(chooseBtn);
 
@@ -397,7 +397,7 @@ class McmsFieldRenderer extends HTMLElement {
                     thumbContainer.appendChild(newImg);
                 } else if (detail.id) {
                     var idSpan = document.createElement('span');
-                    idSpan.className = 'field-renderer-media-id';
+                    idSpan.className = 'text-xs text-[var(--color-text-muted)] truncate px-1';
                     idSpan.textContent = 'Media: ' + detail.id;
                     thumbContainer.appendChild(idSpan);
                 }
@@ -418,7 +418,7 @@ class McmsFieldRenderer extends HTMLElement {
 
     _buildReference(wrapper, name, value) {
         var container = document.createElement('div');
-        container.className = 'field-renderer-reference';
+        container.className = 'flex items-center gap-3';
 
         // Hidden input for storing content ID
         var hidden = document.createElement('input');
@@ -430,7 +430,7 @@ class McmsFieldRenderer extends HTMLElement {
 
         // Label showing current value
         var refLabel = document.createElement('span');
-        refLabel.className = 'field-renderer-reference-label';
+        refLabel.className = 'text-sm text-[var(--color-text-muted)]';
         var refTitle = this.getAttribute('ref-title') || '';
         if (refTitle) {
             refLabel.textContent = refTitle;
@@ -444,7 +444,7 @@ class McmsFieldRenderer extends HTMLElement {
         // Choose button
         var chooseBtn = document.createElement('button');
         chooseBtn.type = 'button';
-        chooseBtn.className = 'btn btn-sm';
+        chooseBtn.className = 'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors cursor-pointer border border-[var(--color-border)]';
         chooseBtn.textContent = 'Choose';
         container.appendChild(chooseBtn);
 
@@ -459,16 +459,16 @@ class McmsFieldRenderer extends HTMLElement {
             dialog.setAttribute('cancel-label', 'Cancel');
 
             var searchContainer = document.createElement('div');
-            searchContainer.className = 'field-renderer-reference-search';
+            searchContainer.className = 'flex flex-col gap-3';
 
             var searchInput = document.createElement('input');
             searchInput.type = 'text';
             searchInput.placeholder = 'Search content...';
-            searchInput.className = 'field-renderer-reference-search-input';
+            searchInput.className = 'w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]';
             searchContainer.appendChild(searchInput);
 
             var resultsList = document.createElement('div');
-            resultsList.className = 'field-renderer-reference-results';
+            resultsList.className = 'max-h-60 overflow-y-auto rounded-md border border-[var(--color-border)] bg-[var(--color-bg)]';
             searchContainer.appendChild(resultsList);
 
             dialog.appendChild(searchContainer);
@@ -503,9 +503,11 @@ class McmsFieldRenderer extends HTMLElement {
                 // Deselect others
                 var allItems = resultsList.querySelectorAll('[data-content-id]');
                 for (var i = 0; i < allItems.length; i++) {
-                    allItems[i].classList.remove('selected');
+                    allItems[i].removeAttribute('data-selected');
+                    allItems[i].classList.remove('selected'); // DUAL: data-selected + class
                 }
-                item.classList.add('selected');
+                item.setAttribute('data-selected', '');
+                item.classList.add('selected'); // DUAL: data-selected + class
                 selectedContentId = item.getAttribute('data-content-id');
                 selectedTitle = item.textContent.trim();
             });
@@ -654,7 +656,7 @@ class McmsFieldRenderer extends HTMLElement {
         var mode = this.getAttribute('data-plugin-mode') || 'inline';
 
         var container = document.createElement('div');
-        container.className = 'field-renderer-plugin';
+        container.className = 'flex items-center gap-3';
 
         // Hidden input for the field value (opaque string).
         var hidden = document.createElement('input');
@@ -719,14 +721,14 @@ class McmsFieldRenderer extends HTMLElement {
         } else {
             // Overlay mode: show button with current value, open modal on click.
             var display = document.createElement('span');
-            display.className = 'field-renderer-plugin-display';
+            display.className = 'text-sm text-[var(--color-text-muted)]';
             display.textContent = value || '(not set)';
             container.appendChild(display);
 
             var editBtn = document.createElement('button');
             editBtn.type = 'button';
             editBtn.textContent = 'Edit';
-            editBtn.className = 'btn btn-sm';
+            editBtn.className = 'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors cursor-pointer border border-[var(--color-border)]';
             container.appendChild(editBtn);
 
             var self = this;

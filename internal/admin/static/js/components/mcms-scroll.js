@@ -32,7 +32,7 @@ class McmsScroll extends HTMLElement {
 
         // Create viewport
         this._viewport = document.createElement('div');
-        this._viewport.className = 'mcms-scroll-viewport';
+        this._viewport.className = 'overflow-y-scroll h-full scrollbar-none';
 
         // Move children into viewport
         for (var i = 0; i < children.length; i++) {
@@ -41,10 +41,10 @@ class McmsScroll extends HTMLElement {
 
         // Create track and thumb
         this._track = document.createElement('div');
-        this._track.className = 'mcms-scroll-track';
+        this._track.className = 'absolute top-0 right-0 bottom-0 w-2 opacity-0 transition-opacity duration-200';
 
         this._thumb = document.createElement('div');
-        this._thumb.className = 'mcms-scroll-thumb';
+        this._thumb.className = 'absolute w-full rounded-full bg-[var(--color-text-dim)] opacity-50 hover:opacity-75 transition-opacity';
         this._track.appendChild(this._thumb);
 
         // Append to component
@@ -128,7 +128,7 @@ class McmsScroll extends HTMLElement {
 
     _showTrack() {
         if (!this._track) return;
-        this._track.classList.add('scrolling');
+        this._track.classList.add('!opacity-100');
         this._resetHideTimer();
     }
 
@@ -137,7 +137,7 @@ class McmsScroll extends HTMLElement {
         if (this.hasAttribute('visible') || this._hovering || this._dragging) return;
         this._hideTimer = setTimeout(function() {
             if (this._track && !this._dragging && !this._hovering) {
-                this._track.classList.remove('scrolling');
+                this._track.classList.remove('!opacity-100');
             }
         }.bind(this), 1000);
     }
@@ -169,8 +169,8 @@ class McmsScroll extends HTMLElement {
         this._dragging = true;
         this._dragStartY = e.clientY;
         this._dragStartScrollTop = this._viewport.scrollTop;
-        this._thumb.classList.add('dragging');
-        this._track.classList.add('scrolling');
+        this._thumb.classList.add('!opacity-100');
+        this._track.classList.add('!opacity-100');
 
         document.addEventListener('pointermove', this._onPointerMove);
         document.addEventListener('pointerup', this._onPointerUp);
@@ -199,7 +199,7 @@ class McmsScroll extends HTMLElement {
     _onPointerUp() {
         console.log('[mcms-scroll] pointerup');
         this._dragging = false;
-        this._thumb.classList.remove('dragging');
+        this._thumb.classList.remove('!opacity-100');
         document.removeEventListener('pointermove', this._onPointerMove);
         document.removeEventListener('pointerup', this._onPointerUp);
         this._resetHideTimer();

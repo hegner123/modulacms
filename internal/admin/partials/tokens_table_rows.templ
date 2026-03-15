@@ -12,23 +12,23 @@ templ TokensTableRows(items []db.Tokens) {
 	}
 	for _, item := range items {
 		<tr id={ "token-row-" + item.ID }>
-			<td>{ truncateStr(item.ID, 12) }</td>
-			<td>{ item.TokenType }</td>
-			<td><code>{ maskToken(item.Token) }</code></td>
-			<td>{ truncateStr(item.UserID.String(), 12) }</td>
-			<td>{ item.IssuedAt.String() }</td>
-			<td>{ item.ExpiresAt.String() }</td>
-			<td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.ID, 12) }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.TokenType }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300"><code>{ maskToken(item.Token) }</code></td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.UserID.String(), 12) }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.IssuedAt.String() }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.ExpiresAt.String() }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm">
 				if item.Revoked {
-					<span class="badge badge-danger">Revoked</span>
+					<span class="inline-flex items-center rounded-md bg-red-400/10 px-2 py-1 text-xs font-medium text-red-400 ring-1 ring-red-400/20 ring-inset">Revoked</span>
 				} else {
-					<span class="badge badge-success">Active</span>
+					<span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">Active</span>
 				}
 			</td>
-			<td>
+			<td class="whitespace-nowrap px-4 py-4 text-right text-sm">
 				if !item.Revoked {
 					<button
-						class="btn btn-ghost btn-sm btn-danger"
+						class="text-sm font-medium text-red-400 hover:text-red-300"
 						hx-delete={ "/admin/users/tokens/" + item.ID }
 						hx-target={ "#token-row-" + item.ID }
 						hx-swap="outerHTML"

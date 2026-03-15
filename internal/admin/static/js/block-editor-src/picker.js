@@ -38,7 +38,7 @@ export var pickerMethods = {
                         this._pickerEscHandler = null;
                 }
                 // Return focus to editor container
-                var container = this.querySelector('.editor-container');
+                var container = this.querySelector('[data-editor-container]');
                 if (container) container.focus();
         },
 

@@ -1,8 +1,6 @@
 # Production Deployment
 
-ModulaCMS runs as a single binary with built-in HTTP, HTTPS (with automatic Let's Encrypt certificates), and SSH servers. No reverse proxy is required for HTTPS -- the binary handles TLS termination directly.
-
-This guide covers deploying ModulaCMS to a Linux server with automatic CI/CD via GitHub Actions and manual deployment as a fallback.
+Deploy ModulaCMS to a Linux server with automatic Let's Encrypt certificates, CI/CD via GitHub Actions, and systemd service management.
 
 ## Prerequisites
 
@@ -164,12 +162,11 @@ Configure `oauth_client_id`, `oauth_client_secret`, and `oauth_endpoint` fields 
 
 When `environment` is set to anything other than `"local"`, ModulaCMS automatically:
 
-1. Uses `golang.org/x/crypto/acme/autocert` for Let's Encrypt integration
-2. Whitelists domains from `environment_hosts[environment]`, `client_site`, and `admin_site`
-3. Obtains SSL certificates on the first HTTPS request
-4. Stores certificates in `cert_dir`
-5. Renews certificates automatically before expiration
-6. Serves both HTTP (port 80) and HTTPS (port 443) concurrently
+1. Whitelists domains from `environment_hosts[environment]`, `client_site`, and `admin_site`
+2. Obtains SSL certificates from Let's Encrypt on the first HTTPS request
+3. Stores certificates in `cert_dir`
+4. Renews certificates automatically before expiration
+5. Serves both HTTP (port 80) and HTTPS (port 443) concurrently
 
 No reverse proxy or manual certificate renewal is needed.
 
@@ -314,6 +311,6 @@ Alternatively, build directly on the target Linux server.
 - Enable the firewall and only allow necessary ports
 - Monitor logs for unauthorized access attempts
 
-## Optional: Reverse Proxy
+## Reverse Proxy (Optional)
 
-ModulaCMS handles HTTPS natively, so a reverse proxy is not required. If you need one for load balancing, additional security layers, or serving multiple applications on the same server, you can place Caddy or Nginx in front of ModulaCMS. See the `deploy/Caddyfile` in the repository for an example configuration.
+ModulaCMS handles HTTPS natively, so a reverse proxy is not required. If you need one for load balancing, additional security layers, or serving multiple applications on the same server, place Caddy or Nginx in front of ModulaCMS. See the `deploy/Caddyfile` in the repository for an example configuration.

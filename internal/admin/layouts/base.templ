@@ -2,33 +2,21 @@ package layouts
 
 templ Base(title string, csrfToken string, version string) {
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="en" class="h-full bg-[var(--color-bg)]">
     <head>
         <meta charset="UTF-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <meta name="csrf-token" content={ csrfToken }/>
         <link rel="icon" type="image/svg+xml" href="/admin/static/icons/favicon.svg"/>
         <title>{ title } — ModulaCMS</title>
-        <script>
-            // Apply saved theme before CSS loads to prevent flash
-            if (localStorage.getItem('mcms-theme') === 'light') {
-                document.documentElement.classList.add('light');
-            }
-        </script>
         <link rel="stylesheet" href={ "/admin/static/css/tailwind.css?v=" + version }/>
-        <link rel="stylesheet" href={ "/admin/static/css/tokens.css?v=" + version }/>
-        <link rel="stylesheet" href={ "/admin/static/css/layout.css?v=" + version }/>
-        <link rel="stylesheet" href={ "/admin/static/css/components.css?v=" + version }/>
-        <link rel="stylesheet" href={ "/admin/static/css/web-components.css?v=" + version }/>
-        <link rel="stylesheet" href={ "/admin/static/css/pages.css?v=" + version }/>
         <link rel="stylesheet" href={ "/admin/static/css/block-editor.css?v=" + version }/>
-        <link rel="stylesheet" href={ "/admin/static/css/utilities.css?v=" + version }/>
         <script src={ "/admin/static/js/htmx.min.js?v=" + version }></script>
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src={ "/admin/static/js/admin.js?v=" + version } defer></script>
         <script type="module" src={ "/admin/static/js/block-editor.js?v=" + version }></script>
     </head>
-    <body hx-headers='{"X-CSRF-Token": ""}' class="admin-body">
+    <body hx-headers='{"X-CSRF-Token": ""}' class="h-full bg-[var(--color-bg)] text-[var(--color-text)] antialiased">
         { children... }
     </body>
     </html>

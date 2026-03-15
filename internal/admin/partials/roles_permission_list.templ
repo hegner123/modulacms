@@ -2,28 +2,28 @@ package partials
 
 templ RolesPermissionList(matrix PermissionMatrix) {
 	if matrix.AdminPerm.Exists {
-		<div class="perm-matrix-admin">
-			<label class="permission-checkbox">
+		<div class="rounded-md bg-white/5 p-4 ring-1 ring-white/10 ring-inset">
+			<label class="flex items-center gap-3 text-sm cursor-pointer">
 				<input
 					type="checkbox"
 					name="permissions"
 					value={ matrix.AdminPerm.PermissionID.String() }
 					checked?={ matrix.AdminPerm.Active }
 				/>
-				<span class="permission-label"><strong>Super Admin</strong></span>
+				<span class="font-semibold text-white">Super Admin</span>
 			</label>
 		</div>
 	}
 	if len(matrix.Rows) > 0 {
-		<div class="perm-matrix-wrap">
-			<table class="perm-matrix">
+		<div class="overflow-x-auto rounded-md ring-1 ring-white/10">
+			<table class="w-full text-sm" data-perm-matrix>
 				<thead>
-					<tr>
-						<th class="perm-matrix-resource">Resource</th>
-						<th class="perm-matrix-cell"></th>
+					<tr class="border-b border-white/10">
+						<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Resource</th>
+						<th class="px-2 py-3 text-center"></th>
 						for _, col := range matrix.Columns {
-							<th class="perm-matrix-op">
-								<label class="perm-matrix-col-toggle">
+							<th class="px-2 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-400">
+								<label class="flex flex-col items-center gap-1 cursor-pointer">
 									<input type="checkbox" data-toggle-col={ col }/>
 									<span>{ col }</span>
 								</label>
@@ -31,17 +31,17 @@ templ RolesPermissionList(matrix PermissionMatrix) {
 						}
 					</tr>
 				</thead>
-				<tbody>
+				<tbody class="divide-y divide-white/5">
 					for _, row := range matrix.Rows {
 						<tr>
-							<td class="perm-matrix-resource">{ row.DisplayName }</td>
-							<td class="perm-matrix-cell">
-								<label class="perm-matrix-row-toggle">
+							<td class="whitespace-nowrap px-4 py-3 text-sm text-white">{ row.DisplayName }</td>
+							<td class="px-2 py-3 text-center">
+								<label class="cursor-pointer">
 									<input type="checkbox" data-toggle-row={ row.Resource }/>
 								</label>
 							</td>
 							for _, col := range matrix.Columns {
-								<td class="perm-matrix-cell">
+								<td class="px-2 py-3 text-center">
 									if cell, ok := row.Cells[col]; ok && cell.Exists {
 										<input
 											type="checkbox"
@@ -52,7 +52,7 @@ templ RolesPermissionList(matrix PermissionMatrix) {
 											data-operation={ col }
 										/>
 									} else {
-										<span class="perm-matrix-na">&mdash;</span>
+										<span class="text-gray-500">&mdash;</span>
 									}
 								</td>
 							}
@@ -62,6 +62,6 @@ templ RolesPermissionList(matrix PermissionMatrix) {
 			</table>
 		</div>
 	} else {
-		<p class="empty-text">No permissions available.</p>
+		<p class="text-sm text-gray-400">No permissions available.</p>
 	}
 }

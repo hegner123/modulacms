@@ -1,8 +1,28 @@
 package partials
 
 templ Toast(message string, toastType string) {
-	<div class={ "toast", "toast-" + toastType } role="alert">
-		<span class="toast-message">{ message }</span>
-		<button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+	<div class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg bg-[var(--color-surface)] shadow-lg ring-1 ring-white/10" role="alert">
+		<div class="p-4">
+			<div class="flex items-start">
+				<div class="shrink-0">
+					if toastType == "success" {
+						<i data-lucide="check-circle" class="size-5 text-green-400"></i>
+					} else if toastType == "error" {
+						<i data-lucide="alert-circle" class="size-5 text-red-400"></i>
+					} else {
+						<i data-lucide="info" class="size-5 text-blue-400"></i>
+					}
+				</div>
+				<div class="ml-3 w-0 flex-1 pt-0.5">
+					<p class="text-sm font-medium text-white">{ message }</p>
+				</div>
+				<div class="ml-4 flex shrink-0">
+					<button class="inline-flex rounded-md text-gray-400 hover:text-gray-300 focus:outline-none" data-toast-close onclick="this.closest('[role=alert]').remove()">
+						<span class="sr-only">Close</span>
+						<i data-lucide="x" class="size-5"></i>
+					</button>
+				</div>
+			</div>
+		</div>
 	</div>
 }

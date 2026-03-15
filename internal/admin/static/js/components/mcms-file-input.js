@@ -18,7 +18,7 @@ class McmsFileInput extends HTMLElement {
         var label = this.getAttribute('label') || '';
 
         var wrapper = document.createElement('div');
-        wrapper.className = 'form-field';
+        wrapper.className = 'flex flex-col gap-1';
 
         if (label) {
             var labelEl = document.createElement('label');
@@ -30,7 +30,7 @@ class McmsFileInput extends HTMLElement {
         var input = document.createElement('input');
         input.type = 'file';
         input.name = name;
-        input.className = 'file-input-native';
+        input.className = 'sr-only';
         if (accept) input.accept = accept;
         if (multiple) input.multiple = true;
         if (required) input.required = true;
@@ -38,21 +38,21 @@ class McmsFileInput extends HTMLElement {
 
         // Drop zone
         var dropZone = document.createElement('div');
-        dropZone.className = 'file-input-dropzone';
+        dropZone.className = 'flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg)] p-8 text-center text-sm text-[var(--color-text-muted)] transition-colors cursor-pointer';
         dropZone.setAttribute('tabindex', '0');
         dropZone.setAttribute('role', 'button');
         dropZone.setAttribute('aria-label', 'Choose file or drag and drop');
         this._dropZone = dropZone;
 
         var icon = document.createElement('div');
-        icon.className = 'file-input-icon';
+        icon.className = 'mb-2 text-[var(--color-text-dim)]';
         icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
         dropZone.appendChild(icon);
 
         var prompt = document.createElement('div');
-        prompt.className = 'file-input-prompt';
+        prompt.className = 'text-sm text-[var(--color-text-muted)]';
         var browseText = document.createElement('span');
-        browseText.className = 'file-input-browse';
+        browseText.className = 'text-[var(--color-primary)] font-medium cursor-pointer';
         browseText.textContent = 'Choose file';
         prompt.appendChild(browseText);
         prompt.appendChild(document.createTextNode(' or drag and drop'));
@@ -60,7 +60,7 @@ class McmsFileInput extends HTMLElement {
 
         if (accept) {
             var hint = document.createElement('div');
-            hint.className = 'file-input-hint';
+            hint.className = 'mt-1 text-xs text-[var(--color-text-dim)]';
             hint.textContent = accept;
             dropZone.appendChild(hint);
         }
@@ -71,7 +71,7 @@ class McmsFileInput extends HTMLElement {
 
         // File list container
         var fileList = document.createElement('div');
-        fileList.className = 'file-input-list';
+        fileList.className = 'mt-3 space-y-2';
         this._fileList = fileList;
         wrapper.appendChild(fileList);
 
@@ -106,24 +106,32 @@ class McmsFileInput extends HTMLElement {
         dropZone.addEventListener('dragenter', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            // DUAL: data-dragover + class
+            dropZone.dataset.dragover = '';
             dropZone.classList.add('file-input-dragover');
         });
 
         dropZone.addEventListener('dragover', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            // DUAL: data-dragover + class
+            dropZone.dataset.dragover = '';
             dropZone.classList.add('file-input-dragover');
         });
 
         dropZone.addEventListener('dragleave', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            // DUAL: data-dragover + class
+            delete dropZone.dataset.dragover;
             dropZone.classList.remove('file-input-dragover');
         });
 
         dropZone.addEventListener('drop', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            // DUAL: data-dragover + class
+            delete dropZone.dataset.dragover;
             dropZone.classList.remove('file-input-dragover');
 
             var dt = e.dataTransfer;
@@ -174,11 +182,11 @@ class McmsFileInput extends HTMLElement {
     _renderFileItem(file, index) {
         var self = this;
         var item = document.createElement('div');
-        item.className = 'file-input-item';
+        item.className = 'flex items-center gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm';
 
         // Thumbnail or file icon
         var thumb = document.createElement('div');
-        thumb.className = 'file-input-thumb';
+        thumb.className = 'w-10 h-10 rounded overflow-hidden flex items-center justify-center bg-[var(--color-bg)] shrink-0';
 
         if (file.type && file.type.indexOf('image/') === 0) {
             var img = document.createElement('img');
@@ -189,7 +197,7 @@ class McmsFileInput extends HTMLElement {
             thumb.appendChild(img);
         } else {
             var ext = document.createElement('span');
-            ext.className = 'file-input-ext';
+            ext.className = 'text-[0.625rem] font-bold text-[var(--color-text-dim)] uppercase';
             var parts = file.name.split('.');
             ext.textContent = parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'FILE';
             thumb.appendChild(ext);
@@ -198,15 +206,15 @@ class McmsFileInput extends HTMLElement {
 
         // File info
         var info = document.createElement('div');
-        info.className = 'file-input-info';
+        info.className = 'flex flex-col flex-1 min-w-0';
 
         var nameEl = document.createElement('span');
-        nameEl.className = 'file-input-name';
+        nameEl.className = 'text-sm text-[var(--color-text)] truncate';
         nameEl.textContent = file.name;
         info.appendChild(nameEl);
 
         var sizeEl = document.createElement('span');
-        sizeEl.className = 'file-input-size';
+        sizeEl.className = 'text-xs text-[var(--color-text-dim)]';
         sizeEl.textContent = this._formatSize(file.size);
         info.appendChild(sizeEl);
 
@@ -215,7 +223,7 @@ class McmsFileInput extends HTMLElement {
         // Remove button
         var removeBtn = document.createElement('button');
         removeBtn.type = 'button';
-        removeBtn.className = 'file-input-remove';
+        removeBtn.className = 'ml-auto cursor-pointer bg-transparent border-none text-[var(--color-text-muted)] hover:text-[var(--color-danger)] text-lg leading-none';
         removeBtn.setAttribute('aria-label', 'Remove file');
         removeBtn.innerHTML = '&times;';
         removeBtn.addEventListener('click', function() {
@@ -250,7 +258,7 @@ class McmsFileInput extends HTMLElement {
 
     _showError(message) {
         var err = document.createElement('div');
-        err.className = 'file-input-error';
+        err.className = 'text-sm text-[var(--color-danger)] py-1';
         err.textContent = message;
         this._fileList.appendChild(err);
         setTimeout(function() { if (err.parentNode) err.remove(); }, 5000);

@@ -1,6 +1,6 @@
 # Swift SDK -- Getting Started
 
-The Modula Swift SDK provides a type-safe async/await client for the ModulaCMS REST API. It targets Apple platforms with zero external dependencies.
+Install the Modula Swift SDK and make your first async/await API calls from any Apple platform.
 
 ## Platform Requirements
 
@@ -13,7 +13,7 @@ The Modula Swift SDK provides a type-safe async/await client for the ModulaCMS R
 | Swift | 5.9+ |
 | Xcode | 15.0+ |
 
-The SDK uses Swift concurrency (`async`/`await`), `Sendable` conformance throughout, and `URLSession` for networking. No third-party dependencies.
+> **Good to know**: The SDK uses Swift concurrency (`async`/`await`), `Sendable` conformance throughout, and `URLSession` for networking. Zero third-party dependencies.
 
 ## Installation
 
@@ -59,7 +59,7 @@ let client = try ModulaClient(config: ClientConfig(
 | `apiKey` | `String` | No | Bearer token for API authentication. Defaults to empty string. |
 | `urlSession` | `URLSession?` | No | Custom URL session. Defaults to a session with 30s request timeout, 300s resource timeout, and cookies disabled. |
 
-The initializer throws if `baseURL` is empty.
+`ModulaClient(config:)` throws if `baseURL` is empty.
 
 ### Custom URLSession
 
@@ -175,7 +175,7 @@ let results = try await withThrowingTaskGroup(of: ContentData.self) { group in
 
 ### Cancellation
 
-All SDK methods respect Swift's cooperative cancellation. Cancel a parent `Task` and in-flight `URLSession` requests are cancelled automatically.
+All SDK methods respect Swift's cooperative cancellation. Cancelling a parent `Task` automatically cancels in-flight `URLSession` requests.
 
 ```swift
 let task = Task {
@@ -189,7 +189,7 @@ task.cancel()
 
 ## Sendable Safety
 
-`ModulaClient` and all resource types are `Sendable`. The client is safe to share across actors and tasks without additional synchronization.
+`ModulaClient` and all resource types conform to `Sendable`. Share the client across actors and tasks without additional synchronization.
 
 ```swift
 actor ContentManager {

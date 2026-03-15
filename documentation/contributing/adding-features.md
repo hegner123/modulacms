@@ -1,8 +1,8 @@
 # Adding Features
 
-This guide covers the end-to-end workflow for adding a feature to ModulaCMS, from deciding what database changes are needed through deployment. The architecture follows a strict flow: schema design, code generation, business logic, interface, testing, deployment.
+Add a feature to ModulaCMS by following the standard flow from schema design through deployment.
 
-## Decision: Does the Feature Need Database Changes?
+## Determine the Scope
 
 Before writing code, determine the scope:
 
@@ -10,7 +10,7 @@ Before writing code, determine the scope:
 - **Feature introduces a new domain concept** -- Create a new table with the full workflow described in [Adding Tables](adding-tables.md).
 - **Feature uses existing data in a new way** -- Skip directly to business logic. No schema or sqlc changes needed.
 
-## The Development Flow
+## Follow the Development Flow
 
 ```
 Schema Design (if needed)
@@ -38,7 +38,7 @@ Deployment
 
 Not every feature touches every layer. A read-only export feature skips the schema and sqlc steps. A background job skips the TUI and API steps. Follow the flow and skip layers that do not apply.
 
-## Step 1: Schema and Queries
+## Step 1: Write Schema and Queries
 
 If the feature requires database changes, follow the [Adding Tables](adding-tables.md) guide for new tables, or add ALTER TABLE statements to a new migration directory for column additions.
 
@@ -48,54 +48,54 @@ Key points:
 - Update the combined schema files
 - Run `just sqlc` to generate Go code
 
-## Step 2: DbDriver Interface and Implementations
+## Step 2: Update the DbDriver Interface
 
-If new queries were added in Step 1, update the `DbDriver` interface in `internal/db/db.go` with the new methods. Then implement those methods on all three driver structs: `Database` (SQLite), `MysqlDatabase`, and `PsqlDatabase`.
+If new queries were added in Step 1, add the new methods to the `DbDriver` interface in `internal/db/db.go`. Then implement those methods on all three driver structs: `Database` (SQLite), `MysqlDatabase`, and `PsqlDatabase`.
 
 Each implementation maps between sqlc-generated types and application-level types, handling NULL conversions and type width differences between database engines.
 
-## Step 3: Business Logic
+## Step 3: Implement Business Logic
 
 Place domain logic in the appropriate location:
 
 - **Simple CRUD** -- Handled by the driver implementations from Step 2.
-- **Domain rules and validation** -- Functions in `internal/model/`.
-- **HTTP request handling** -- Handler functions in `internal/router/`.
-- **TUI interaction** -- Bubbletea Update functions in `internal/tui/`.
+- **Domain rules and validation** -- `internal/model/`
+- **HTTP request handling** -- `internal/router/`
+- **TUI interaction** -- `internal/tui/`
 
-Define constants, validation functions, and helper methods as needed. Use structured logging via `utility.DefaultLogger` at decision points and error paths.
+Use structured logging at decision points and error paths.
 
-## Step 4: TUI Interface
+## Step 4: Build the TUI Interface
 
 If the feature needs user interaction in the SSH TUI:
 
-1. **Define message types** -- Add new `tea.Msg` structs for the feature's events.
-2. **Add keyboard commands** -- Handle new key bindings in the Update function.
-3. **Create command functions** -- Write `tea.Cmd` functions that perform async operations and return messages.
-4. **Update the View** -- Render the new feature's state in the View function.
+1. **Define message types** for the feature's events.
+2. **Add keyboard commands** in the Update function.
+3. **Create command functions** that perform async operations and return messages.
+4. **Update the View** to render the new feature's state.
 
-For entirely new screens, create a new Bubbletea model file in `internal/tui/`. For additions to existing screens, modify the relevant model's Update and View functions.
+For entirely new screens, create a new model file in `internal/tui/`. For additions to existing screens, modify the relevant model's Update and View functions.
 
-## Step 5: HTTP/API Endpoints
+## Step 5: Add HTTP/API Endpoints
 
 If the feature needs REST API access:
 
-1. **Create handler functions** -- Write `http.HandlerFunc` functions in `internal/router/`.
-2. **Register routes** -- Add route registrations in `internal/router/mux.go` with appropriate permission middleware.
-3. **Add permission labels** -- If the feature needs new permissions, add them to the bootstrap data and permission cache.
+1. **Create handler functions** in `internal/router/`.
+2. **Register routes** in `internal/router/mux.go` with appropriate permission middleware.
+3. **Add permission labels** if the feature needs new permissions -- add them to the bootstrap data.
 
-All admin endpoints should be wrapped with `RequireResourcePermission` or `RequirePermission` middleware.
+> **Good to know**: All admin endpoints must be wrapped with `RequireResourcePermission` or `RequirePermission` middleware.
 
-## Step 6: Admin Panel Pages
+## Step 6: Create Admin Panel Pages
 
 If the feature needs a web admin interface:
 
-1. **Create templ templates** -- Add page templates in `internal/admin/pages/` and partials in `internal/admin/partials/`.
-2. **Create handlers** -- Add admin page handlers in `internal/admin/handlers/`.
-3. **Register routes** -- Add admin route registrations in the `registerAdminRoutes()` function in `mux.go`.
-4. **Regenerate templates** -- Run `just admin-generate` to compile templ files to Go code.
+1. **Create templ templates** in `internal/admin/pages/` and `internal/admin/partials/`.
+2. **Create handlers** in `internal/admin/handlers/`.
+3. **Register routes** in the `registerAdminRoutes()` function.
+4. **Regenerate templates** with `just admin generate`.
 
-## Step 7: Testing
+## Step 7: Write Tests
 
 Every feature needs tests. At minimum:
 
@@ -128,7 +128,7 @@ go test -race ./...
 - `just test` passes
 - `just lint` passes
 
-## Step 8: Deployment
+## Step 8: Deploy the Feature
 
 Build and verify locally before deploying:
 
@@ -177,14 +177,14 @@ Follow [Adding Tables](adding-tables.md) for the full schema-to-code workflow, t
 4. Add logging for monitoring
 5. Test and deploy
 
-## Common Pitfalls
+## Avoid Common Pitfalls
 
-**Forgetting to implement on all three database drivers.** The feature works in SQLite during development but fails with MySQL or PostgreSQL in production. Always implement DbDriver methods on all three structs.
+**Forgetting to implement on all three database drivers.** The feature works in SQLite during development but fails with MySQL or PostgreSQL in production. Implement DbDriver methods on all three structs.
 
 **Not updating combined schema files.** Fresh installations use `all_schema*.sql`. Missing tables cause failures on new deployments.
 
 **SQL dialect differences between databases.** MySQL uses `?` placeholders, PostgreSQL uses `$1, $2, $3`. MySQL does not support `RETURNING`. Test queries against all backends.
 
-**Breaking the TUI message loop.** Returning `nil` for `tea.Cmd` when a command is expected causes the TUI to stop responding. Always return the appropriate command from Update.
+**Breaking the TUI message loop.** Returning `nil` for `tea.Cmd` when a command is expected causes the TUI to stop responding. Return the appropriate command from Update.
 
 **Missing permission guards on API endpoints.** Every admin endpoint must be wrapped with permission middleware. Unguarded endpoints bypass RBAC.

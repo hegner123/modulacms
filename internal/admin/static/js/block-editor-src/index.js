@@ -236,6 +236,7 @@ if (isBrowser) {
 
                         const container = document.createElement('div');
                         container.className = 'editor-container';
+                        container.setAttribute('data-editor-container', '');
 
                         // Header (save button)
                         const header = this._renderHeader();
@@ -551,6 +552,7 @@ if (isBrowser) {
                         this.innerHTML = '';
                         const container = document.createElement('div');
                         container.className = 'editor-container';
+                        container.setAttribute('data-editor-container', '');
 
                         const errorDiv = document.createElement('div');
                         errorDiv.className = 'error-container';

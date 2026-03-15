@@ -12,15 +12,15 @@ templ SessionsTableRows(items []db.Sessions) {
 	}
 	for _, item := range items {
 		<tr id={ "session-row-" + item.SessionID.String() }>
-			<td>{ truncateStr(item.SessionID.String(), 12) }</td>
-			<td>{ truncateStr(item.UserID.String(), 12) }</td>
-			<td>{ nullStrDisplay(item.IpAddress) }</td>
-			<td>{ truncateStr(nullStrDisplay(item.UserAgent), 40) }</td>
-			<td>{ item.DateCreated.String() }</td>
-			<td>{ item.ExpiresAt.String() }</td>
-			<td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.SessionID.String(), 12) }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.UserID.String(), 12) }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ nullStrDisplay(item.IpAddress) }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(nullStrDisplay(item.UserAgent), 40) }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.DateCreated.String() }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.ExpiresAt.String() }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-right text-sm">
 				<button
-					class="btn btn-ghost btn-sm btn-danger"
+					class="text-sm font-medium text-red-400 hover:text-red-300"
 					hx-delete={ "/admin/sessions/" + item.SessionID.String() }
 					hx-target={ "#session-row-" + item.SessionID.String() }
 					hx-swap="outerHTML"

@@ -34,35 +34,35 @@ class McmsDialog extends HTMLElement {
             return;
         }
         if (name === 'title') {
-            var titleEl = this.querySelector('.dialog-title');
+            var titleEl = this.querySelector('[data-dialog-title]');
             if (titleEl) {
                 titleEl.textContent = this.getAttribute('title') || '';
             }
             return;
         }
         if (name === 'confirm-label') {
-            var confirmBtn = this.querySelector('.dialog-confirm-btn');
+            var confirmBtn = this.querySelector('[data-dialog-confirm]');
             if (confirmBtn) {
                 confirmBtn.textContent = this.getAttribute('confirm-label') || 'Confirm';
             }
             return;
         }
         if (name === 'cancel-label') {
-            var cancelBtn = this.querySelector('.dialog-cancel-btn');
+            var cancelBtn = this.querySelector('[data-dialog-cancel]');
             if (cancelBtn) {
                 cancelBtn.textContent = this.getAttribute('cancel-label') || 'Cancel';
             }
             return;
         }
         if (name === 'destructive') {
-            var btn = this.querySelector('.dialog-confirm-btn');
+            var btn = this.querySelector('[data-dialog-confirm]');
             if (btn) {
                 if (this.hasAttribute('destructive')) {
-                    btn.classList.remove('btn-primary');
-                    btn.classList.add('btn-danger');
+                    btn.classList.remove('bg-[var(--color-primary)]', 'hover:bg-[var(--color-primary-hover)]');
+                    btn.classList.add('bg-[var(--color-danger)]', 'hover:bg-[var(--color-danger-hover)]');
                 } else {
-                    btn.classList.remove('btn-danger');
-                    btn.classList.add('btn-primary');
+                    btn.classList.remove('bg-[var(--color-danger)]', 'hover:bg-[var(--color-danger-hover)]');
+                    btn.classList.add('bg-[var(--color-primary)]', 'hover:bg-[var(--color-primary-hover)]');
                 }
             }
         }
@@ -80,7 +80,7 @@ class McmsDialog extends HTMLElement {
 
         // Build the dialog structure
         var backdrop = document.createElement('div');
-        backdrop.className = 'dialog-backdrop';
+        backdrop.className = 'fixed inset-0 z-[100] bg-black/60';
         backdrop.addEventListener('click', function(e) {
             if (e.target === backdrop) {
                 this._cancel();
@@ -88,32 +88,35 @@ class McmsDialog extends HTMLElement {
         }.bind(this));
 
         var panel = document.createElement('div');
-        panel.className = 'dialog-panel';
+        panel.className = 'relative mx-auto mt-[10vh] w-full max-w-lg rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg';
         panel.setAttribute('role', 'dialog');
         panel.setAttribute('aria-modal', 'true');
 
         var titleText = this.getAttribute('title') || '';
         if (titleText) {
             var titleEl = document.createElement('h2');
-            titleEl.className = 'dialog-title';
+            titleEl.className = 'border-b border-[var(--color-border)] px-5 py-4 text-lg font-semibold text-[var(--color-text)]';
+            titleEl.setAttribute('data-dialog-title', '');
             titleEl.textContent = titleText;
             panel.appendChild(titleEl);
         }
 
         var body = document.createElement('div');
-        body.className = 'dialog-body';
+        body.className = 'px-5 py-4';
         for (var i = 0; i < this._originalChildren.length; i++) {
             body.appendChild(this._originalChildren[i]);
         }
         panel.appendChild(body);
 
         var actions = document.createElement('div');
-        actions.className = 'dialog-actions';
+        actions.className = 'flex justify-end gap-3 border-t border-[var(--color-border)] px-5 py-4';
+        actions.setAttribute('data-dialog-actions', '');
 
         var cancelLabel = this.getAttribute('cancel-label') || 'Cancel';
         var cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
-        cancelBtn.className = 'btn dialog-cancel-btn';
+        cancelBtn.className = 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors cursor-pointer border-none';
+        cancelBtn.setAttribute('data-dialog-cancel', '');
         cancelBtn.textContent = cancelLabel;
         cancelBtn.addEventListener('click', this._cancel.bind(this));
         actions.appendChild(cancelBtn);
@@ -122,7 +125,8 @@ class McmsDialog extends HTMLElement {
         var isDestructive = this.hasAttribute('destructive');
         var confirmBtn = document.createElement('button');
         confirmBtn.type = 'button';
-        confirmBtn.className = 'btn dialog-confirm-btn ' + (isDestructive ? 'btn-danger' : 'btn-primary');
+        confirmBtn.className = 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors cursor-pointer border-none ' + (isDestructive ? 'bg-[var(--color-danger)] text-white hover:bg-[var(--color-danger-hover)]' : 'bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]');
+        confirmBtn.setAttribute('data-dialog-confirm', '');
         confirmBtn.textContent = confirmLabel;
         confirmBtn.addEventListener('click', this._confirm.bind(this));
         actions.appendChild(confirmBtn);

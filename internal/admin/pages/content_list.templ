@@ -8,16 +8,22 @@ import (
 )
 
 templ ContentListContent(items []ContentListItem, pg partials.PaginationPageData) {
-    <div class="page-header">
-        <h1>Content</h1>
-        <button
-            class="btn btn-primary"
-            onclick="document.getElementById('create-content-dialog').showModal()"
-        >
-            Create Content
-        </button>
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-base/7 font-semibold text-white">Content</h1>
+            <p class="mt-2 text-sm text-gray-400">Manage your site content entries.</p>
+        </div>
+        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+            <button
+                class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
+                data-action="new"
+                onclick="document.getElementById('create-content-dialog').showModal()"
+            >
+                Create Content
+            </button>
+        </div>
     </div>
-    <div class="content-list-toolbar">
+    <div class="mt-4 flex items-center gap-3">
         <input
             type="search"
             name="search"
@@ -26,55 +32,63 @@ templ ContentListContent(items []ContentListItem, pg partials.PaginationPageData
             hx-target="#content-table-body"
             hx-trigger="input changed delay:300ms"
             hx-push-url="false"
-            class="search-input"
+            class="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] w-64" data-search-input
         />
         <select
             name="status"
             hx-get="/admin/content"
             hx-target="#content-table-body"
             hx-trigger="change"
-            class="select-input"
+            class="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
         >
             <option value="">All Statuses</option>
             <option value="draft">Draft</option>
             <option value="published">Published</option>
         </select>
     </div>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Slug</th>
-                <th>Status</th>
-                <th>Author</th>
-                <th>Modified</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="content-table-body">
-            @ContentTableRows(items)
-        </tbody>
-    </table>
+    <div class="mt-8 flow-root">
+        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                <div class="overflow-hidden rounded-lg border border-white/10 shadow-sm">
+                    <table class="min-w-full divide-y divide-white/10">
+                        <thead class="bg-white/5">
+                            <tr>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Title</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Slug</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Status</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Author</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Modified</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="content-table-body" class="divide-y divide-white/5">
+                            @ContentTableRows(items)
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="pagination">
         @partials.Pagination(pg.Current, pg.TotalPages, pg.Target, pg.BaseURL, pg.Limit)
     </div>
 }
 
 templ ContentCreateDialog(datatypes []db.Datatypes, csrfToken string) {
-    <dialog id="create-content-dialog" class="admin-dialog" aria-labelledby="create-content-dialog-title">
-        <div class="dialog-content">
-            <div class="dialog-header">
-                <h2 id="create-content-dialog-title">Create Content</h2>
-                <button class="btn btn-ghost dialog-close" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
+    <dialog id="create-content-dialog" class="rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60" aria-labelledby="create-content-dialog-title">
+        <div class="px-5 py-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                <h2 id="create-content-dialog-title" class="text-lg font-semibold text-white">Create Content</h2>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
             </div>
             <form hx-post="/admin/content"
                   hx-target="#create-content-form"
                   hx-swap="innerHTML"
                   id="create-content-form">
                 @partials.CSRFField(csrfToken)
-                <div class="form-field">
-                    <label for="datatype_id">Content Type</label>
-                    <select id="datatype_id" name="datatype_id" required>
+                <div class="flex flex-col gap-1 mb-4">
+                    <label for="datatype_id" class="text-sm font-medium text-gray-400">Content Type</label>
+                    <select id="datatype_id" name="datatype_id" required class="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]">
                         <option value="" disabled selected>Select a datatype</option>
                         for _, dt := range datatypes {
                             <option value={ dt.DatatypeID.String() }>{ dt.Label }</option>
@@ -83,9 +97,9 @@ templ ContentCreateDialog(datatypes []db.Datatypes, csrfToken string) {
                 </div>
                 @partials.FormField("slug", "Slug (optional)", "", "")
                 @partials.FormField("title", "Name", "", "")
-                <div class="dialog-actions">
-                    <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create</button>
+                <div class="flex justify-end gap-3 border-t border-white/10 pt-4 mt-4">
+                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create</button>
                 </div>
             </form>
         </div>
@@ -107,18 +121,18 @@ templ ContentTableRows(items []ContentListItem) {
         </tr>
     }
     for _, item := range items {
-        <tr class="clickable-row" data-href={ "/admin/content/" + item.ContentDataID.String() } id={ "content-row-" + item.ContentDataID.String() }>
-            <td>{ item.DisplayName }</td>
-            <td>{ item.Slug }</td>
-            <td>
+        <tr class="cursor-pointer hover:bg-white/5 transition-colors" data-clickable-row data-href={ "/admin/content/" + item.ContentDataID.String() } id={ "content-row-" + item.ContentDataID.String() }>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ item.DisplayName }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ item.Slug }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm">
                 @components.StatusBadge(string(item.Status))
             </td>
-            <td>{ item.AuthorName }</td>
-            <td>{ item.DateModified.String() }</td>
-            <td>
-                <div class="table-actions">
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ item.AuthorName }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ item.DateModified.String() }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm">
+                <div class="flex items-center gap-2">
                     <button
-                        class="btn btn-ghost btn-sm btn-danger"
+                        class="text-sm text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]"
                         hx-delete={ "/admin/content/" + item.ContentDataID.String() }
                         hx-target={ "#content-row-" + item.ContentDataID.String() }
                         hx-swap="outerHTML"

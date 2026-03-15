@@ -7,44 +7,52 @@ import (
 )
 
 templ RolesListContent(roles []db.Roles, defaultMatrix partials.PermissionMatrix, csrfToken string) {
-    <div class="page-header">
-        <h1>Roles</h1>
+    <!-- Page Header -->
+    <div class="border-b border-white/10 pb-5" data-page-header>
+        <h1 class="text-lg font-semibold text-white">Roles</h1>
     </div>
     if len(roles) == 0 {
-        <div class="empty-state">
-            <p>No roles found. Create your first role to get started.</p>
+        <div class="mt-6 flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/5 py-16 text-center">
+            <p class="text-sm text-gray-400">No roles found. Create your first role to get started.</p>
         </div>
     } else {
-        <div class="roles-layout">
-            <aside class="roles-sidebar">
-                <div class="roles-sidebar-header">
-                    <h4>Roles</h4>
+        <!-- Two-Panel Layout: sidebar nav + detail panel -->
+        <div class="mt-6 flex gap-x-8">
+            <!-- Sidebar Nav -->
+            <aside class="w-64 shrink-0 rounded-xl border border-white/10 bg-white/5 p-4">
+                <div class="mb-4 flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-white">Roles</h2>
                     <button
                         hx-get="/admin/users/roles/new"
                         hx-target="#role-detail-panel"
                         hx-swap="innerHTML"
-                        class="btn btn-primary btn-sm"
+                        class="rounded-md bg-[var(--color-primary)] px-2.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
                     >
                         New
                     </button>
                 </div>
-                <nav class="roles-sidebar-nav">
+                <nav data-roles-sidebar-nav class="space-y-1">
                     for i, role := range roles {
                         <a
-                            class={ "roles-sidebar-item", templ.KV("active", i == 0) }
+                            data-roles-sidebar-item
+                            data-active?={ i == 0 }
+                            class={ "flex items-center gap-x-2 rounded-md px-3 py-2 text-sm cursor-pointer transition-colors",
+                                    templ.KV("bg-white/10 text-white font-medium", i == 0),
+                                    templ.KV("text-gray-400 hover:bg-white/5 hover:text-white", i != 0) }
                             hx-get={ "/admin/users/roles/" + role.RoleID.String() }
                             hx-target="#role-detail-panel"
                             hx-swap="innerHTML"
                         >
-                            <span class="roles-sidebar-label">{ role.Label }</span>
+                            <span class="flex-1 truncate">{ role.Label }</span>
                             if role.SystemProtected {
-                                <span class="badge badge-info">System</span>
+                                <span class="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-blue-400/20 ring-inset">System</span>
                             }
                         </a>
                     }
                 </nav>
             </aside>
-            <div id="role-detail-panel" class="role-detail-panel">
+            <!-- Detail Panel -->
+            <div id="role-detail-panel" class="flex-1 rounded-xl border border-white/10 bg-white/5 p-6">
                 @partials.RoleDetail(roles[0], defaultMatrix, csrfToken)
             </div>
         </div>

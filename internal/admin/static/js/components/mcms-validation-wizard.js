@@ -86,11 +86,11 @@ class McmsValidationWizard extends HTMLElement {
     // ========================================
     _build() {
         var container = document.createElement('div');
-        container.className = 'vw-container';
+        container.className = 'flex flex-col gap-4';
 
         // Warning banner
         var warning = document.createElement('div');
-        warning.className = 'vw-warning';
+        warning.className = 'rounded-md border border-[var(--color-danger)] bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]';
         warning.textContent = 'Could not parse existing validation config. Starting with empty rules.';
         warning.hidden = !this._showWarning;
         container.appendChild(warning);
@@ -98,22 +98,23 @@ class McmsValidationWizard extends HTMLElement {
 
         // Rule list section
         var listSection = document.createElement('div');
-        listSection.className = 'vw-section';
+        listSection.className = 'rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]';
 
         var listHeader = document.createElement('div');
-        listHeader.className = 'vw-section-header';
+        listHeader.className = 'flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3';
 
         var listTitle = document.createElement('span');
-        listTitle.className = 'vw-section-title';
+        listTitle.className = 'text-sm font-semibold text-[var(--color-text)]';
         listTitle.textContent = 'Rule Builder';
         listHeader.appendChild(listTitle);
 
         var addBtn = document.createElement('div');
-        addBtn.className = 'vw-add-wrapper';
+        addBtn.className = 'relative';
+        addBtn.setAttribute('data-add-wrapper', '');
 
         var addButton = document.createElement('button');
         addButton.type = 'button';
-        addButton.className = 'btn btn-sm btn-primary';
+        addButton.className = 'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer border-none';
         addButton.textContent = '+ Add';
         addButton.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -127,7 +128,7 @@ class McmsValidationWizard extends HTMLElement {
         listSection.appendChild(listHeader);
 
         var ruleList = document.createElement('div');
-        ruleList.className = 'vw-rule-list';
+        ruleList.className = 'px-4 py-2';
         listSection.appendChild(ruleList);
         this._ruleListEl = ruleList;
 
@@ -135,19 +136,19 @@ class McmsValidationWizard extends HTMLElement {
 
         // Rule editor section
         var editorSection = document.createElement('div');
-        editorSection.className = 'vw-section vw-editor-section';
+        editorSection.className = 'rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]';
         editorSection.hidden = true;
 
         var editorHeader = document.createElement('div');
-        editorHeader.className = 'vw-section-header';
+        editorHeader.className = 'flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3';
         var editorTitle = document.createElement('span');
-        editorTitle.className = 'vw-section-title';
+        editorTitle.className = 'text-sm font-semibold text-[var(--color-text)]';
         editorTitle.textContent = 'Rule Editor';
         editorHeader.appendChild(editorTitle);
         editorSection.appendChild(editorHeader);
 
         var editorContent = document.createElement('div');
-        editorContent.className = 'vw-editor-content';
+        editorContent.className = 'px-4 py-3 flex flex-col gap-3';
         editorSection.appendChild(editorContent);
         this._editorEl = editorContent;
         this._editorSection = editorSection;
@@ -156,19 +157,19 @@ class McmsValidationWizard extends HTMLElement {
 
         // Test panel section
         var testSection = document.createElement('div');
-        testSection.className = 'vw-section';
+        testSection.className = 'rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]';
 
         var testHeader = document.createElement('div');
-        testHeader.className = 'vw-section-header';
+        testHeader.className = 'flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3';
         var testTitle = document.createElement('span');
-        testTitle.className = 'vw-section-title';
+        testTitle.className = 'text-sm font-semibold text-[var(--color-text)]';
         testTitle.textContent = 'Test';
         testHeader.appendChild(testTitle);
         testSection.appendChild(testHeader);
 
         var testInput = document.createElement('input');
         testInput.type = 'text';
-        testInput.className = 'vw-test-input';
+        testInput.className = 'mx-4 mt-3 rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] outline-none';
         testInput.placeholder = 'Enter a test value...';
         testInput.addEventListener('input', function(e) {
             this._testValue = e.target.value;
@@ -180,7 +181,7 @@ class McmsValidationWizard extends HTMLElement {
         testSection.appendChild(testInput);
 
         var testResults = document.createElement('div');
-        testResults.className = 'vw-test-results';
+        testResults.className = 'px-4 py-3 flex flex-col gap-1';
         testSection.appendChild(testResults);
         this._testResultsEl = testResults;
 
@@ -190,10 +191,11 @@ class McmsValidationWizard extends HTMLElement {
 
         // Close dropdowns when clicking outside
         document.addEventListener('click', function(e) {
-            if (!e.target.closest('.vw-add-wrapper')) {
-                var dropdowns = this.querySelectorAll('.vw-dropdown.open');
+            if (!e.target.closest('[data-add-wrapper]')) {
+                var dropdowns = this.querySelectorAll('[data-dropdown][data-open]');
                 for (var i = 0; i < dropdowns.length; i++) {
-                    dropdowns[i].classList.remove('open');
+                    dropdowns[i].removeAttribute('data-open');
+                    dropdowns[i].classList.add('hidden'); // DUAL: data-open + class
                 }
             }
         }.bind(this));
@@ -201,7 +203,8 @@ class McmsValidationWizard extends HTMLElement {
 
     _buildDropdown() {
         var dropdown = document.createElement('div');
-        dropdown.className = 'vw-dropdown';
+        dropdown.className = 'absolute right-0 top-full z-10 mt-1 hidden min-w-[10rem] rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-lg';
+        dropdown.setAttribute('data-dropdown', '');
 
         var ops = [
             { op: 'required', label: 'Required' },
@@ -223,13 +226,13 @@ class McmsValidationWizard extends HTMLElement {
             var item = ops[i];
             if (item.op === '_sep') {
                 var sep = document.createElement('div');
-                sep.className = 'vw-dropdown-sep';
+                sep.className = 'my-1 border-t border-[var(--color-border)]';
                 dropdown.appendChild(sep);
                 continue;
             }
             var btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'vw-dropdown-item';
+            btn.className = 'block w-full text-left px-4 py-1.5 text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] cursor-pointer bg-transparent border-none';
             btn.textContent = item.label;
             btn.dataset.op = item.op;
             btn.addEventListener('click', function(e) {
@@ -237,9 +240,10 @@ class McmsValidationWizard extends HTMLElement {
                 var op = e.target.dataset.op;
                 this._addRule(op);
                 // Close all dropdowns
-                var dropdowns = this.querySelectorAll('.vw-dropdown.open');
+                var dropdowns = this.querySelectorAll('[data-dropdown][data-open]');
                 for (var j = 0; j < dropdowns.length; j++) {
-                    dropdowns[j].classList.remove('open');
+                    dropdowns[j].removeAttribute('data-open');
+                    dropdowns[j].classList.add('hidden'); // DUAL: data-open + class
                 }
             }.bind(this));
             dropdown.appendChild(btn);
@@ -249,14 +253,24 @@ class McmsValidationWizard extends HTMLElement {
     }
 
     _toggleDropdown(wrapper) {
-        var dd = wrapper.querySelector('.vw-dropdown');
+        var dd = wrapper.querySelector('[data-dropdown]');
         if (!dd) return;
         // Close all other dropdowns first
-        var allDd = this.querySelectorAll('.vw-dropdown.open');
+        var allDd = this.querySelectorAll('[data-dropdown][data-open]');
         for (var i = 0; i < allDd.length; i++) {
-            if (allDd[i] !== dd) allDd[i].classList.remove('open');
+            if (allDd[i] !== dd) {
+                allDd[i].removeAttribute('data-open');
+                allDd[i].classList.add('hidden'); // DUAL: data-open + class
+            }
         }
-        dd.classList.toggle('open');
+        var isOpen = dd.hasAttribute('data-open');
+        if (isOpen) {
+            dd.removeAttribute('data-open');
+            dd.classList.add('hidden'); // DUAL: data-open + class
+        } else {
+            dd.setAttribute('data-open', '');
+            dd.classList.remove('hidden'); // DUAL: data-open + class
+        }
     }
 
     // ========================================
@@ -335,7 +349,7 @@ class McmsValidationWizard extends HTMLElement {
         this._ruleListEl.innerHTML = '';
         if (this._rules.length === 0) {
             var empty = document.createElement('div');
-            empty.className = 'vw-empty';
+            empty.className = 'py-6 text-center text-sm text-[var(--color-text-dim)]';
             empty.textContent = 'No rules configured. Click "+ Add" to create a rule.';
             this._ruleListEl.appendChild(empty);
             return;
@@ -356,11 +370,14 @@ class McmsValidationWizard extends HTMLElement {
 
     _renderRuleItem(entry, container) {
         var row = document.createElement('div');
-        row.className = 'vw-rule-item';
-        if (entry._id === this._selectedId) row.classList.add('selected');
+        row.className = 'flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-[var(--color-surface-hover)]';
+        if (entry._id === this._selectedId) {
+            row.setAttribute('data-selected', '');
+            row.classList.add('selected'); // DUAL: data-selected + class
+        }
 
         var label = document.createElement('span');
-        label.className = 'vw-rule-label';
+        label.className = 'flex-1 cursor-pointer text-[var(--color-text)]';
         label.textContent = this._ruleSummary(entry.rule);
         label.addEventListener('click', function() {
             this._selectedId = entry._id;
@@ -370,7 +387,7 @@ class McmsValidationWizard extends HTMLElement {
 
         var del = document.createElement('button');
         del.type = 'button';
-        del.className = 'vw-rule-delete';
+        del.className = 'ml-2 cursor-pointer bg-transparent border-none text-[var(--color-text-muted)] hover:text-[var(--color-danger)] text-lg leading-none';
         del.textContent = '\u00d7';
         del.title = 'Remove rule';
         del.addEventListener('click', function(e) {
@@ -388,14 +405,17 @@ class McmsValidationWizard extends HTMLElement {
         var children = isAllOf ? g.all_of : g.any_of;
 
         var group = document.createElement('div');
-        group.className = 'vw-group';
-        if (entry._id === this._selectedId) group.classList.add('selected');
+        group.className = 'rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] my-1';
+        if (entry._id === this._selectedId) {
+            group.setAttribute('data-selected', '');
+            group.classList.add('selected'); // DUAL: data-selected + class
+        }
 
         var header = document.createElement('div');
-        header.className = 'vw-group-header';
+        header.className = 'flex items-center justify-between px-3 py-2 border-b border-[var(--color-border)]';
 
         var label = document.createElement('span');
-        label.className = 'vw-group-label';
+        label.className = 'text-sm font-medium text-[var(--color-text)] cursor-pointer';
         label.textContent = isAllOf ? 'All must pass' : 'Any must pass';
         label.addEventListener('click', function() {
             this._selectedId = entry._id;
@@ -404,14 +424,15 @@ class McmsValidationWizard extends HTMLElement {
         header.appendChild(label);
 
         var actions = document.createElement('div');
-        actions.className = 'vw-group-actions';
+        actions.className = 'flex items-center gap-1';
 
         var addWrapper = document.createElement('div');
-        addWrapper.className = 'vw-add-wrapper';
+        addWrapper.className = 'relative';
+        addWrapper.setAttribute('data-add-wrapper', '');
 
         var addBtn = document.createElement('button');
         addBtn.type = 'button';
-        addBtn.className = 'btn btn-sm btn-ghost';
+        addBtn.className = 'inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors cursor-pointer border-none';
         addBtn.textContent = '+';
         addBtn.title = 'Add rule to group';
         addBtn.addEventListener('click', function(e) {
@@ -425,7 +446,7 @@ class McmsValidationWizard extends HTMLElement {
 
         var del = document.createElement('button');
         del.type = 'button';
-        del.className = 'vw-rule-delete';
+        del.className = 'ml-2 cursor-pointer bg-transparent border-none text-[var(--color-text-muted)] hover:text-[var(--color-danger)] text-lg leading-none';
         del.textContent = '\u00d7';
         del.title = 'Remove group';
         del.addEventListener('click', function(e) {
@@ -438,10 +459,10 @@ class McmsValidationWizard extends HTMLElement {
         group.appendChild(header);
 
         var body = document.createElement('div');
-        body.className = 'vw-group-body';
+        body.className = 'px-3 py-2';
         if (children.length === 0) {
             var empty = document.createElement('div');
-            empty.className = 'vw-empty vw-empty-sm';
+            empty.className = 'py-3 text-center text-xs text-[var(--color-text-dim)]';
             empty.textContent = 'Empty group. Click "+" to add rules.';
             body.appendChild(empty);
         } else {
@@ -525,7 +546,7 @@ class McmsValidationWizard extends HTMLElement {
         if (entry.group) {
             // Group editor: just show the type
             var p = document.createElement('p');
-            p.className = 'vw-editor-info';
+            p.className = 'text-sm text-[var(--color-text-muted)]';
             var isAllOf = !!entry.group.all_of;
             p.textContent = isAllOf
                 ? 'AND group: all child rules must pass.'
@@ -539,7 +560,7 @@ class McmsValidationWizard extends HTMLElement {
 
         // Op label
         var opLabel = document.createElement('div');
-        opLabel.className = 'vw-editor-op';
+        opLabel.className = 'text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider';
         opLabel.textContent = 'Operation: ' + rule.op;
         this._editorEl.appendChild(opLabel);
 
@@ -596,18 +617,18 @@ class McmsValidationWizard extends HTMLElement {
 
     _buildValueOrClass(rule) {
         var frag = document.createElement('div');
-        frag.className = 'vw-editor-field';
+        frag.className = 'flex flex-col gap-2';
 
         var hasClass = !!rule.class;
 
         // Radio toggle
         var radioRow = document.createElement('div');
-        radioRow.className = 'vw-radio-row';
+        radioRow.className = 'flex gap-4';
 
         var radioName = 'vw-vc-' + this._selectedId;
 
         var valRadio = document.createElement('label');
-        valRadio.className = 'vw-radio-label';
+        valRadio.className = 'flex items-center gap-1.5 text-sm text-[var(--color-text)] cursor-pointer';
         var valInput = document.createElement('input');
         valInput.type = 'radio';
         valInput.name = radioName;
@@ -617,7 +638,7 @@ class McmsValidationWizard extends HTMLElement {
         radioRow.appendChild(valRadio);
 
         var clsRadio = document.createElement('label');
-        clsRadio.className = 'vw-radio-label';
+        clsRadio.className = 'flex items-center gap-1.5 text-sm text-[var(--color-text)] cursor-pointer';
         var clsInput = document.createElement('input');
         clsInput.type = 'radio';
         clsInput.name = radioName;
@@ -630,15 +651,15 @@ class McmsValidationWizard extends HTMLElement {
 
         // Value input
         var valueRow = document.createElement('div');
-        valueRow.className = 'vw-editor-field';
+        valueRow.className = 'flex flex-col gap-1';
         valueRow.hidden = hasClass;
         var valLabel = document.createElement('label');
         valLabel.textContent = 'Value';
-        valLabel.className = 'vw-label';
+        valLabel.className = 'text-xs font-medium text-[var(--color-text-muted)]';
         valueRow.appendChild(valLabel);
         var valField = document.createElement('input');
         valField.type = 'text';
-        valField.className = 'vw-input';
+        valField.className = 'rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none';
         valField.value = rule.value || '';
         valField.addEventListener('input', function(e) {
             rule.value = e.target.value;
@@ -650,14 +671,14 @@ class McmsValidationWizard extends HTMLElement {
 
         // Class select
         var classRow = document.createElement('div');
-        classRow.className = 'vw-editor-field';
+        classRow.className = 'flex flex-col gap-1';
         classRow.hidden = !hasClass;
         var clsLabel = document.createElement('label');
         clsLabel.textContent = 'Class';
-        clsLabel.className = 'vw-label';
+        clsLabel.className = 'text-xs font-medium text-[var(--color-text-muted)]';
         classRow.appendChild(clsLabel);
         var clsSelect = document.createElement('select');
-        clsSelect.className = 'vw-select';
+        clsSelect.className = 'rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none';
         var classes = ['uppercase', 'lowercase', 'digits', 'symbols', 'spaces'];
         for (var i = 0; i < classes.length; i++) {
             var opt = document.createElement('option');
@@ -698,14 +719,14 @@ class McmsValidationWizard extends HTMLElement {
 
     _buildValueInput(rule) {
         var field = document.createElement('div');
-        field.className = 'vw-editor-field';
+        field.className = 'flex flex-col gap-1';
         var label = document.createElement('label');
         label.textContent = 'Value';
-        label.className = 'vw-label';
+        label.className = 'text-xs font-medium text-[var(--color-text-muted)]';
         field.appendChild(label);
         var input = document.createElement('input');
         input.type = 'text';
-        input.className = 'vw-input';
+        input.className = 'rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none';
         input.value = rule.value || '';
         input.addEventListener('input', function(e) {
             rule.value = e.target.value;
@@ -717,14 +738,14 @@ class McmsValidationWizard extends HTMLElement {
 
     _buildCmpSelect(rule) {
         var field = document.createElement('div');
-        field.className = 'vw-editor-field';
+        field.className = 'flex flex-col gap-1';
         var label = document.createElement('label');
         label.textContent = 'Comparison';
-        label.className = 'vw-label';
+        label.className = 'text-xs font-medium text-[var(--color-text-muted)]';
         field.appendChild(label);
 
         var select = document.createElement('select');
-        select.className = 'vw-select';
+        select.className = 'rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none';
         var cmps = [
             { val: 'eq', label: 'equals (=)' },
             { val: 'neq', label: 'not equals (\u2260)' },
@@ -750,14 +771,14 @@ class McmsValidationWizard extends HTMLElement {
 
     _buildNInput(rule, allowDecimals) {
         var field = document.createElement('div');
-        field.className = 'vw-editor-field';
+        field.className = 'flex flex-col gap-1';
         var label = document.createElement('label');
         label.textContent = 'N';
-        label.className = 'vw-label';
+        label.className = 'text-xs font-medium text-[var(--color-text-muted)]';
         field.appendChild(label);
         var input = document.createElement('input');
         input.type = 'number';
-        input.className = 'vw-input';
+        input.className = 'rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none';
         if (!allowDecimals) {
             input.step = '1';
             input.min = '0';
@@ -780,9 +801,9 @@ class McmsValidationWizard extends HTMLElement {
 
     _buildNegate(rule) {
         var field = document.createElement('div');
-        field.className = 'vw-editor-field vw-checkbox-field';
+        field.className = 'flex items-center gap-2';
         var label = document.createElement('label');
-        label.className = 'vw-checkbox-label';
+        label.className = 'flex items-center gap-1.5 text-sm text-[var(--color-text)] cursor-pointer';
         var checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.checked = !!rule.negate;
@@ -798,13 +819,13 @@ class McmsValidationWizard extends HTMLElement {
 
     _buildValuesTextarea(rule) {
         var field = document.createElement('div');
-        field.className = 'vw-editor-field';
+        field.className = 'flex flex-col gap-1';
         var label = document.createElement('label');
         label.textContent = 'Values (one per line)';
-        label.className = 'vw-label';
+        label.className = 'text-xs font-medium text-[var(--color-text-muted)]';
         field.appendChild(label);
         var textarea = document.createElement('textarea');
-        textarea.className = 'vw-textarea';
+        textarea.className = 'rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none font-mono';
         textarea.rows = 4;
         textarea.value = (rule.values || []).join('\n');
         textarea.addEventListener('input', function(e) {
@@ -822,14 +843,14 @@ class McmsValidationWizard extends HTMLElement {
 
     _buildMessageInput(rule) {
         var field = document.createElement('div');
-        field.className = 'vw-editor-field';
+        field.className = 'flex flex-col gap-1';
         var label = document.createElement('label');
         label.textContent = 'Custom message (optional)';
-        label.className = 'vw-label';
+        label.className = 'text-xs font-medium text-[var(--color-text-muted)]';
         field.appendChild(label);
         var input = document.createElement('input');
         input.type = 'text';
-        input.className = 'vw-input';
+        input.className = 'rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-sm text-[var(--color-text)] outline-none';
         input.placeholder = 'Leave empty for auto-generated message';
         input.value = rule.message || '';
         input.addEventListener('input', function(e) {
@@ -857,15 +878,15 @@ class McmsValidationWizard extends HTMLElement {
         for (var i = 0; i < results.length; i++) {
             var r = results[i];
             var row = document.createElement('div');
-            row.className = 'vw-test-row ' + (r.pass ? 'pass' : 'fail');
+            row.className = 'flex items-center gap-2 rounded px-2 py-1 text-sm ' + (r.pass ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]');
 
             var icon = document.createElement('span');
-            icon.className = 'vw-test-icon';
+            icon.className = 'font-bold';
             icon.textContent = r.pass ? '\u2713' : '\u2717';
             row.appendChild(icon);
 
             var msg = document.createElement('span');
-            msg.className = 'vw-test-msg';
+            msg.className = 'flex-1';
             msg.textContent = r.message;
             row.appendChild(msg);
 
@@ -873,7 +894,7 @@ class McmsValidationWizard extends HTMLElement {
 
             if (r.children && r.children.length > 0) {
                 var nested = document.createElement('div');
-                nested.className = 'vw-test-nested';
+                nested.className = 'pl-4 flex flex-col gap-1';
                 this._renderTestEntries(r.children, nested);
                 container.appendChild(nested);
             }

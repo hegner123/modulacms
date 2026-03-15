@@ -5,46 +5,60 @@ package partials
 templ DatatypeCreateFieldForm(datatypeID string, name string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
     @CSRFField(csrfToken)
     if errs["_"] != "" {
-        <div class="form-error">{ errs["_"] }</div>
+        <div class="rounded-md bg-red-400/10 p-4">
+            <div class="flex">
+                <div class="shrink-0">
+                    <i data-lucide="alert-circle" class="size-5 text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-400">{ errs["_"] }</p>
+                </div>
+            </div>
+        </div>
     }
     @FormField("name", "Name", name, errs["name"])
     @FormField("label", "Label", label, errs["label"])
-    <div class={ "form-field", templ.KV("has-error", errs["type"] != "") }>
-        <label for="field_type">Type</label>
-        <select id="field_type" name="type">
-            <option value="">Select a type</option>
-            <option value="text" selected?={ fieldType == "text" }>Text</option>
-            <option value="textarea" selected?={ fieldType == "textarea" }>Textarea</option>
-            <option value="richtext" selected?={ fieldType == "richtext" }>Rich Text</option>
-            <option value="number" selected?={ fieldType == "number" }>Number</option>
-            <option value="boolean" selected?={ fieldType == "boolean" }>Boolean</option>
-            <option value="date" selected?={ fieldType == "date" }>Date</option>
-            <option value="datetime" selected?={ fieldType == "datetime" }>Datetime</option>
-            <option value="select" selected?={ fieldType == "select" }>Select</option>
-            <option value="media" selected?={ fieldType == "media" }>Media</option>
-            <option value="relation" selected?={ fieldType == "relation" }>Relation</option>
-            <option value="json" selected?={ fieldType == "json" }>JSON</option>
-            <option value="slug" selected?={ fieldType == "slug" }>Slug</option>
-            <option value="email" selected?={ fieldType == "email" }>Email</option>
-            <option value="url" selected?={ fieldType == "url" }>URL</option>
-        </select>
+    <div>
+        <label for="field_type" class="block text-sm/6 font-medium text-white">Type</label>
+        <div class="mt-2">
+            <select id="field_type" name="type"
+                class={ "block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6", templ.KV("ring-red-500", errs["type"] != ""), templ.KV("ring-white/10", errs["type"] == "") }>
+                <option value="">Select a type</option>
+                <option value="text" selected?={ fieldType == "text" }>Text</option>
+                <option value="textarea" selected?={ fieldType == "textarea" }>Textarea</option>
+                <option value="richtext" selected?={ fieldType == "richtext" }>Rich Text</option>
+                <option value="number" selected?={ fieldType == "number" }>Number</option>
+                <option value="boolean" selected?={ fieldType == "boolean" }>Boolean</option>
+                <option value="date" selected?={ fieldType == "date" }>Date</option>
+                <option value="datetime" selected?={ fieldType == "datetime" }>Datetime</option>
+                <option value="select" selected?={ fieldType == "select" }>Select</option>
+                <option value="media" selected?={ fieldType == "media" }>Media</option>
+                <option value="relation" selected?={ fieldType == "relation" }>Relation</option>
+                <option value="json" selected?={ fieldType == "json" }>JSON</option>
+                <option value="slug" selected?={ fieldType == "slug" }>Slug</option>
+                <option value="email" selected?={ fieldType == "email" }>Email</option>
+                <option value="url" selected?={ fieldType == "url" }>URL</option>
+            </select>
+        </div>
         if errs["type"] != "" {
-            <span class="field-error">{ errs["type"] }</span>
+            <p class="mt-2 text-sm text-red-400">{ errs["type"] }</p>
         }
     </div>
-    <div class="form-field">
-        <label>Validation</label>
-        <mcms-validation-wizard
-            value={ validation }
-            textarea-id={ "create-field-validation-" + datatypeID }
-        ></mcms-validation-wizard>
-        <textarea id={ "create-field-validation-" + datatypeID } name="validation" rows="4" style="display:none">{ validation }</textarea>
+    <div>
+        <label class="block text-sm/6 font-medium text-white">Validation</label>
+        <div class="mt-2">
+            <mcms-validation-wizard
+                value={ validation }
+                textarea-id={ "create-field-validation-" + datatypeID }
+            ></mcms-validation-wizard>
+            <textarea id={ "create-field-validation-" + datatypeID } name="validation" rows="4" style="display:none" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset sm:text-sm/6">{ validation }</textarea>
+        </div>
         if errs["validation"] != "" {
-            <span class="field-error">{ errs["validation"] }</span>
+            <p class="mt-2 text-sm text-red-400">{ errs["validation"] }</p>
         }
     </div>
-    <div class="dialog-actions">
-        <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Create</button>
+    <div class="flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3">
+        <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('dialog').close()">Cancel</button>
+        <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create</button>
     </div>
 }

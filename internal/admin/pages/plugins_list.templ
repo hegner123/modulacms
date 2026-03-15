@@ -7,26 +7,39 @@ import (
 )
 
 templ PluginsListContent(plugins []service.PluginSummary) {
-	<div class="page-header">
-		<h1>Plugins</h1>
+	<div class="sm:flex sm:items-center">
+		<div class="sm:flex-auto">
+			<h1 class="text-base/7 font-semibold text-white">Plugins</h1>
+			<p class="mt-2 text-sm text-gray-400">Installed plugins and their current status.</p>
+		</div>
 	</div>
 	if len(plugins) == 0 {
-		@partials.EmptyState("No plugins installed. Place plugin directories in the configured plugins path and restart the server.")
+		<div class="mt-8">
+			@partials.EmptyState("No plugins installed. Place plugin directories in the configured plugins path and restart the server.")
+		</div>
 	} else {
-		<table class="table">
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Version</th>
-					<th>Description</th>
-					<th>State</th>
-					<th>Circuit Breaker</th>
-				</tr>
-			</thead>
-			<tbody id="plugins-table-body">
-				@partials.PluginsTableRowsInner(plugins)
-			</tbody>
-		</table>
+		<div class="mt-8 flow-root">
+			<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+				<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+					<div class="overflow-hidden rounded-lg border border-white/10 shadow-sm">
+						<table class="min-w-full divide-y divide-white/10">
+							<thead class="bg-white/5">
+								<tr>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Name</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Version</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Description</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">State</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Circuit Breaker</th>
+								</tr>
+							</thead>
+							<tbody id="plugins-table-body" class="divide-y divide-white/5">
+								@partials.PluginsTableRowsInner(plugins)
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
 	}
 }
 

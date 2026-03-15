@@ -1,6 +1,6 @@
 # Pagination
 
-The Go SDK supports paginated listings for all generic `Resource` types. This guide covers the pagination types, the `ListPaginated` method, iteration patterns, and counting.
+Paginate listings, iterate across pages, and count items using the Go SDK's generic `Resource` types.
 
 ## Types
 
@@ -13,7 +13,7 @@ type PaginationParams struct {
 }
 ```
 
-Both fields are sent as query parameters. A zero `Limit` uses the server default. A zero `Offset` starts from the beginning.
+The SDK sends both fields as query parameters. A zero `Limit` uses the server default. A zero `Offset` starts from the beginning.
 
 ### PaginatedResponse
 

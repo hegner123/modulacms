@@ -1,6 +1,6 @@
 # Read-Only SDK
 
-`@modulacms/sdk` provides a lightweight read-only client for content delivery. Use it in frontend applications (Next.js, Nuxt, SvelteKit, plain SPAs) to fetch published content without write access.
+Fetch published content from frontend applications using the lightweight read-only `@modulacms/sdk` client.
 
 ## ModulaClient
 
@@ -51,7 +51,7 @@ The `Validator<T>` type is a type-narrowing function:
 type Validator<T> = (data: unknown) => data is T
 ```
 
-When provided, `getPage` runs the validator against the parsed response. If validation fails, the method throws. This gives you runtime safety on top of compile-time types.
+When you provide a validator, `getPage` runs it against the parsed response and throws if validation fails. This gives you runtime safety on top of compile-time types.
 
 ```typescript
 interface BlogPage {
@@ -132,7 +132,7 @@ Filter operators: `[eq]`, `[ne]`, `[gt]`, `[gte]`, `[lt]`, `[lte]`, `[like]`, `[
 
 ## Content Tree Structure
 
-The raw content tree returned by `getPage` (without a format override) follows this structure:
+`getPage` returns a content tree in this structure (when you don't specify a format override):
 
 ```typescript
 type ContentTree = {
@@ -204,7 +204,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 ## Error Handling
 
-`ModulaClient` methods throw `ModulaError` on failure. See [Error Handling](error-handling.md) for details.
+All `ModulaClient` methods throw `ModulaError` on failure. See [Error Handling](error-handling.md) for details.
 
 ```typescript
 import { ModulaError } from '@modulacms/sdk'

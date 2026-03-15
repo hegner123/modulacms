@@ -43,7 +43,7 @@ class McmsMediaPicker extends HTMLElement {
 
         // Backdrop
         var backdrop = document.createElement('div');
-        backdrop.className = 'media-picker-backdrop';
+        backdrop.className = 'fixed inset-0 z-[110] bg-black/60';
         backdrop.addEventListener('click', function(e) {
             if (e.target === backdrop) {
                 this._cancel();
@@ -52,26 +52,26 @@ class McmsMediaPicker extends HTMLElement {
 
         // Panel
         var panel = document.createElement('div');
-        panel.className = 'media-picker-panel';
+        panel.className = 'fixed inset-4 z-[110] flex flex-col rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg';
         panel.setAttribute('role', 'dialog');
         panel.setAttribute('aria-modal', 'true');
         panel.setAttribute('aria-label', 'Media picker');
 
         // Header
         var header = document.createElement('div');
-        header.className = 'media-picker-header';
+        header.className = 'flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4';
 
         var headerLeft = document.createElement('div');
-        headerLeft.className = 'media-picker-header-left';
+        headerLeft.className = 'flex items-center gap-3';
 
         var title = document.createElement('h2');
-        title.className = 'media-picker-title';
+        title.className = 'text-lg font-semibold text-[var(--color-text)]';
         title.textContent = 'Select Media';
         headerLeft.appendChild(title);
 
         var uploadBtn = document.createElement('button');
         uploadBtn.type = 'button';
-        uploadBtn.className = 'btn btn-sm btn-primary';
+        uploadBtn.className = 'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer border-none';
         uploadBtn.textContent = 'Upload';
         uploadBtn.addEventListener('click', this._toggleUpload.bind(this));
         headerLeft.appendChild(uploadBtn);
@@ -80,7 +80,7 @@ class McmsMediaPicker extends HTMLElement {
 
         var closeBtn = document.createElement('button');
         closeBtn.type = 'button';
-        closeBtn.className = 'btn btn-ghost btn-sm media-picker-close';
+        closeBtn.className = 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer bg-transparent border-none text-lg';
         closeBtn.textContent = '\u00d7';
         closeBtn.setAttribute('aria-label', 'Close');
         closeBtn.addEventListener('click', this._cancel.bind(this));
@@ -90,12 +90,12 @@ class McmsMediaPicker extends HTMLElement {
 
         // Search
         var searchWrapper = document.createElement('div');
-        searchWrapper.className = 'media-picker-search';
+        searchWrapper.className = 'px-5 py-2';
 
         var searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.placeholder = 'Search media...';
-        searchInput.className = 'media-picker-search-input';
+        searchInput.className = 'w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]';
         searchWrapper.appendChild(searchInput);
         panel.appendChild(searchWrapper);
 
@@ -103,11 +103,11 @@ class McmsMediaPicker extends HTMLElement {
 
         // Upload zone (hidden by default)
         var uploadZone = document.createElement('div');
-        uploadZone.className = 'media-picker-upload';
+        uploadZone.className = 'px-5 py-2';
         uploadZone.hidden = true;
 
         var dropzone = document.createElement('div');
-        dropzone.className = 'media-picker-dropzone';
+        dropzone.className = 'flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg)] p-8 text-center text-sm text-[var(--color-text-muted)] transition-colors cursor-pointer';
         dropzone.textContent = 'Drop a file here or click to browse';
 
         var fileInput = document.createElement('input');
@@ -130,14 +130,17 @@ class McmsMediaPicker extends HTMLElement {
         });
         dropzone.addEventListener('dragover', function(e) {
             e.preventDefault();
-            dropzone.classList.add('dragover');
+            dropzone.setAttribute('data-dragover', '');
+            dropzone.classList.add('dragover'); // DUAL: data-dragover + class
         });
         dropzone.addEventListener('dragleave', function() {
-            dropzone.classList.remove('dragover');
+            dropzone.removeAttribute('data-dragover');
+            dropzone.classList.remove('dragover'); // DUAL: data-dragover + class
         });
         dropzone.addEventListener('drop', function(e) {
             e.preventDefault();
-            dropzone.classList.remove('dragover');
+            dropzone.removeAttribute('data-dragover');
+            dropzone.classList.remove('dragover'); // DUAL: data-dragover + class
             if (e.dataTransfer.files && e.dataTransfer.files[0]) {
                 self._uploadFile(e.dataTransfer.files[0]);
             }
@@ -147,7 +150,7 @@ class McmsMediaPicker extends HTMLElement {
         uploadZone.appendChild(dropzone);
 
         var uploadStatus = document.createElement('div');
-        uploadStatus.className = 'media-picker-upload-status';
+        uploadStatus.className = 'mt-2 text-sm text-[var(--color-text-muted)]';
         uploadZone.appendChild(uploadStatus);
 
         panel.appendChild(uploadZone);
@@ -157,25 +160,25 @@ class McmsMediaPicker extends HTMLElement {
 
         // Grid container
         var grid = document.createElement('div');
-        grid.className = 'media-picker-grid';
+        grid.className = 'grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3 overflow-y-auto p-4 flex-1';
         grid.id = 'media-picker-grid-' + this._uniqueId();
         panel.appendChild(grid);
         this._grid = grid;
 
         // Actions
         var actions = document.createElement('div');
-        actions.className = 'media-picker-actions';
+        actions.className = 'flex justify-end gap-3 border-t border-[var(--color-border)] px-5 py-4';
 
         var cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
-        cancelBtn.className = 'btn';
+        cancelBtn.className = 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors cursor-pointer border-none';
         cancelBtn.textContent = 'Cancel';
         cancelBtn.addEventListener('click', this._cancel.bind(this));
         actions.appendChild(cancelBtn);
 
         var confirmBtn = document.createElement('button');
         confirmBtn.type = 'button';
-        confirmBtn.className = 'btn btn-primary';
+        confirmBtn.className = 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer border-none';
         confirmBtn.textContent = 'Select';
         confirmBtn.addEventListener('click', this._confirmSelection.bind(this));
         actions.appendChild(confirmBtn);
@@ -197,7 +200,7 @@ class McmsMediaPicker extends HTMLElement {
 
         // Delegate clicks on grid items
         grid.addEventListener('click', function(e) {
-            var item = e.target.closest('.media-picker-item');
+            var item = e.target.closest('[data-media-picker-item]');
             if (!item) return;
             self._toggleItem(item);
         });
@@ -218,9 +221,9 @@ class McmsMediaPicker extends HTMLElement {
             }
             // Clear previous selections visually
             if (this._grid) {
-                var items = this._grid.querySelectorAll('.media-picker-item.selected');
+                var items = this._grid.querySelectorAll('[data-media-picker-item][data-selected]');
                 for (var i = 0; i < items.length; i++) {
-                    items[i].classList.remove('selected');
+                    items[i].removeAttribute('data-selected');
                 }
             }
             // Load initial media
@@ -266,18 +269,21 @@ class McmsMediaPicker extends HTMLElement {
 
         if (!isMultiple) {
             // Single select: deselect all others
-            var allItems = this._grid.querySelectorAll('.media-picker-item.selected');
+            var allItems = this._grid.querySelectorAll('[data-media-picker-item][data-selected]');
             for (var i = 0; i < allItems.length; i++) {
-                allItems[i].classList.remove('selected');
+                allItems[i].removeAttribute('data-selected');
+                allItems[i].classList.remove('selected'); // DUAL: data-selected + class
             }
             this._selected = [];
         }
 
-        if (item.classList.contains('selected')) {
-            item.classList.remove('selected');
+        if (item.hasAttribute('data-selected')) {
+            item.removeAttribute('data-selected');
+            item.classList.remove('selected'); // DUAL: data-selected + class
             this._selected = this._selected.filter(function(s) { return s.id !== mediaId; });
         } else {
-            item.classList.add('selected');
+            item.setAttribute('data-selected', '');
+            item.classList.add('selected'); // DUAL: data-selected + class
             this._selected.push({ id: mediaId, url: mediaUrl, alt: mediaAlt });
         }
     }
@@ -287,7 +293,7 @@ class McmsMediaPicker extends HTMLElement {
         this._uploadZone.hidden = !this._uploadZone.hidden;
         if (!this._uploadZone.hidden) {
             this._uploadStatus.textContent = '';
-            this._uploadStatus.className = 'media-picker-upload-status';
+            this._uploadStatus.className = 'mt-2 text-sm text-[var(--color-text-muted)]';
         }
     }
 
@@ -300,9 +306,10 @@ class McmsMediaPicker extends HTMLElement {
         var csrfMeta = document.querySelector('meta[name="csrf-token"]');
         var csrfToken = csrfMeta ? csrfMeta.content : '';
 
-        this._dropzone.classList.add('uploading');
+        this._dropzone.setAttribute('data-uploading', '');
+        this._dropzone.classList.add('uploading'); // DUAL: data-uploading + class
         this._uploadStatus.textContent = 'Uploading...';
-        this._uploadStatus.className = 'media-picker-upload-status';
+        this._uploadStatus.className = 'mt-2 text-sm text-[var(--color-text-muted)]';
 
         fetch('/admin/media', {
             method: 'POST',
@@ -318,7 +325,8 @@ class McmsMediaPicker extends HTMLElement {
             var mediaId = response.headers.get('X-Media-ID');
             var mediaUrl = response.headers.get('X-Media-URL');
             self._pendingSelectId = mediaId;
-            self._dropzone.classList.remove('uploading');
+            self._dropzone.removeAttribute('data-uploading');
+            self._dropzone.classList.remove('uploading'); // DUAL: data-uploading + class
             self._uploadStatus.textContent = 'Upload complete';
             self._uploadZone.hidden = true;
             self._loadMedia('');
@@ -327,7 +335,7 @@ class McmsMediaPicker extends HTMLElement {
             if (mediaId && self._grid) {
                 var onSwap = function() {
                     self._grid.removeEventListener('htmx:afterSwap', onSwap);
-                    var newItem = self._grid.querySelector('.media-picker-item[data-media-id="' + mediaId + '"]');
+                    var newItem = self._grid.querySelector('[data-media-picker-item][data-media-id="' + mediaId + '"]');
                     if (newItem) {
                         self._toggleItem(newItem);
                     }
@@ -337,9 +345,10 @@ class McmsMediaPicker extends HTMLElement {
             }
             return response.text();
         }).catch(function(err) {
-            self._dropzone.classList.remove('uploading');
+            self._dropzone.removeAttribute('data-uploading');
+            self._dropzone.classList.remove('uploading'); // DUAL: data-uploading + class
             self._uploadStatus.textContent = err.message || 'Upload failed';
-            self._uploadStatus.className = 'media-picker-upload-status media-picker-upload-error';
+            self._uploadStatus.className = 'mt-2 text-sm text-[var(--color-danger)]';
         });
     }
 

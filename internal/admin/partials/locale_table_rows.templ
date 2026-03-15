@@ -12,39 +12,39 @@ templ LocaleTableRows(locales []db.Locale, csrfToken string) {
     }
     for _, locale := range locales {
         <tr id={ "locale-row-" + locale.LocaleID.String() }>
-            <td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-white">
                 <strong>{ locale.Code }</strong>
             </td>
-            <td>{ locale.Label }</td>
-            <td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ locale.Label }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm">
                 if locale.IsDefault {
-                    <span class="badge badge-published">Default</span>
+                    <span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">Default</span>
                 }
             </td>
-            <td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm">
                 if locale.IsEnabled {
-                    <span class="badge badge-published">Yes</span>
+                    <span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">Yes</span>
                 } else {
-                    <span class="badge badge-draft">No</span>
+                    <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">No</span>
                 }
             </td>
-            <td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">
                 if locale.FallbackCode != "" {
                     { locale.FallbackCode }
                 } else {
-                    <span class="text-muted">-</span>
+                    <span class="text-gray-500">-</span>
                 }
             </td>
-            <td>{ IntToStr(int(locale.SortOrder)) }</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn btn-ghost btn-sm"
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ IntToStr(int(locale.SortOrder)) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
+                <div class="flex items-center justify-end gap-3">
+                    <button class="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
                             hx-get={ "/admin/settings/locales/" + locale.LocaleID.String() + "/edit" }
                             hx-target="#admin-dialogs"
                             hx-swap="innerHTML">
                         Edit
                     </button>
-                    <button class="btn btn-ghost btn-sm btn-danger"
+                    <button class="text-sm font-medium text-red-400 hover:text-red-300"
                             hx-delete={ "/admin/settings/locales/" + locale.LocaleID.String() }
                             hx-target="#locale-table-body"
                             hx-swap="innerHTML"

@@ -1,11 +1,34 @@
 package partials
 
 templ FormField(name string, label string, value string, fieldErr string) {
-	<div class={ "form-field", templ.KV("has-error", fieldErr != "") }>
-		<label for={ name }>{ label }</label>
-		<input type="text" id={ name } name={ name } value={ value }/>
+	<div>
+		<label for={ name } class="block text-sm/6 font-medium text-white">{ label }</label>
+		<div class="mt-2">
+			<input type="text" id={ name } name={ name } value={ value }
+				class={ "block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6", templ.KV("outline-red-500", fieldErr != ""), templ.KV("outline-white/10", fieldErr == "") }/>
+		</div>
 		if fieldErr != "" {
-			<span class="field-error">{ fieldErr }</span>
+			<p class="mt-2 text-sm text-red-400">{ fieldErr }</p>
+		}
+	</div>
+}
+
+templ FormSelect(name string, label string, value string, options []SelectOption, fieldErr string) {
+	<div>
+		<label for={ name } class="block text-sm/6 font-medium text-white">{ label }</label>
+		<div class="mt-2 grid grid-cols-1">
+			<select id={ name } name={ name }
+				class={ "col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-base text-white outline-1 -outline-offset-1 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6", templ.KV("outline-red-500", fieldErr != ""), templ.KV("outline-white/10", fieldErr == "") }>
+				for _, opt := range options {
+					<option value={ opt.Value } selected?={ opt.Value == value }>{ opt.Label }</option>
+				}
+			</select>
+			<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" class="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4">
+				<path d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" fill-rule="evenodd"/>
+			</svg>
+		</div>
+		if fieldErr != "" {
+			<p class="mt-2 text-sm text-red-400">{ fieldErr }</p>
 		}
 	</div>
 }

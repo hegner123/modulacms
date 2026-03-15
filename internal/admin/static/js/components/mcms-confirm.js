@@ -6,7 +6,7 @@ class McmsConfirm extends HTMLElement {
         const timeout = parseInt(this.getAttribute('timeout') || '3000', 10);
 
         const btn = document.createElement('button');
-        btn.className = 'btn btn-danger btn-sm';
+        btn.className = 'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium bg-[var(--color-danger)] text-white hover:bg-[var(--color-danger-hover)] transition-colors cursor-pointer border-none';
         btn.textContent = label;
         btn.type = 'button';
 
@@ -19,11 +19,11 @@ class McmsConfirm extends HTMLElement {
                 e.stopPropagation();
                 armed = true;
                 btn.textContent = confirmLabel;
-                btn.classList.add('armed');
+                btn.classList.add('animate-pulse');
                 timer = setTimeout(() => {
                     armed = false;
                     btn.textContent = label;
-                    btn.classList.remove('armed');
+                    btn.classList.remove('animate-pulse');
                 }, timeout);
             } else {
                 clearTimeout(timer);

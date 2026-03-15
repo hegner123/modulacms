@@ -1,6 +1,6 @@
 # Swift SDK -- Reference
 
-Quick reference for all resources, types, and enums in the Modula Swift SDK.
+Quick reference for all resources, branded ID types, enums, and utility types in the Modula Swift SDK.
 
 ## Client Resources
 
@@ -317,7 +317,7 @@ let page = try JSON.decoder.decode(MyPageModel.self, from: data)
 
 ## NoCreate
 
-`NoCreate` is an uninhabited enum used as the `CreateParams` type for resources that do not support JSON POST creation (e.g., `Media`, which uses multipart upload). Attempting to call `create(params:)` on such a resource will not compile.
+`NoCreate` is an uninhabited enum used as the `CreateParams` type for resources that don't support JSON POST creation (e.g., `Media`, which uses multipart upload). Calling `create(params:)` on such a resource produces a compile error.
 
 ```swift
 // This does not compile:

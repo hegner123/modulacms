@@ -4,20 +4,22 @@ import "github.com/hegner123/modulacms/internal/admin/components"
 
 templ Admin(data AdminData) {
 	@Base(data.Title, data.CSRFToken, data.Version) {
-		<div class="admin-layout">
+		<div class="flex min-h-screen flex-col">
 			@components.Topbar(data.User)
-			<div class="admin-body-row">
+			<div class="flex flex-1">
 				@components.Sidebar(data.CurrentPath, data.Permissions)
-				<div class="sidebar-overlay"></div>
-				<main id="main-content" class="admin-content">
+				<!-- Mobile sidebar overlay -->
+				<div class="fixed inset-0 z-40 hidden bg-black/60 lg:hidden" data-sidebar-overlay data-state=""
+					 onclick="toggleSidebar()"></div>
+				<main id="main-content" class="min-w-0 flex-1 overflow-y-auto p-6">
 					{ children... }
 				</main>
 			</div>
-			<div id="admin-dialogs">
-				if data.Dialogs != nil {
-					@data.Dialogs
-				}
-			</div>
+		</div>
+		<div id="admin-dialogs">
+			if data.Dialogs != nil {
+				@data.Dialogs
+			}
 		</div>
 		<mcms-toast position="bottom-right" duration="5000"></mcms-toast>
 	}

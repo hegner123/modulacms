@@ -1,10 +1,10 @@
 # Configuration
 
-ModulaCMS is configured through a single `modula.config.json` file. The file is created automatically on first run with development defaults, or you can create it manually. Most fields have sensible defaults; you only need to set the fields relevant to your deployment.
+All settings live in a single `modula.config.json` file, created automatically on first run with development defaults.
 
 ## File Location
 
-By default, ModulaCMS looks for `modula.config.json` in the working directory. Override the path with the `--config` flag:
+ModulaCMS looks for `modula.config.json` in the working directory. Override the path with the `--config` flag:
 
 ```bash
 ./modula-x86 serve --config /etc/modulacms/modula.config.json
@@ -20,7 +20,7 @@ By default, ModulaCMS looks for `modula.config.json` in the working directory. O
 ./modula-x86 config validate
 ```
 
-Validation checks that required fields (`db_driver`, `db_url`, `port`, `ssh_port`) are present and that values like `db_driver` and `output_format` are valid options.
+Validation checks that required fields (`db_driver`, `db_url`, `port`, `ssh_port`) are present and that `db_driver` and `output_format` contain valid values.
 
 ## Server Settings
 
@@ -39,9 +39,9 @@ Validation checks that required fields (`db_driver`, `db_url`, `port`, `ssh_port
 | `max_upload_size` | integer | `10485760` | No | Maximum file upload size in bytes (default 10 MB) |
 | `node_id` | string | (auto-generated) | Yes | Unique node identifier (ULID). Auto-generated if empty. |
 
-The `environment` field controls TLS behavior. When set to `local` or `docker`, the HTTP server binds to `localhost` or `0.0.0.0` respectively, and S3 connections use `http://`. All other values use `https://` for S3 and enable Let's Encrypt autocert for HTTPS.
+The `environment` field controls TLS behavior. `local` binds to `localhost` and uses `http://` for S3. `docker` binds to `0.0.0.0` and also uses `http://`. All other values use `https://` for S3 and enable Let's Encrypt autocert.
 
-The `output_format` field sets the default response structure for content delivery endpoints. Valid values: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, `raw`. When empty, defaults to `raw`.
+The `output_format` field sets the default response structure for content delivery endpoints. Valid values: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, `raw`. Defaults to `raw` when empty. See the [Routing guide](../building-content/routing.md) for details on output formats.
 
 ### Environment Hosts
 
@@ -82,7 +82,7 @@ SQLite uses a file path for `db_url`. MySQL and PostgreSQL use a `host:port` for
 
 ## S3 Storage Settings
 
-S3-compatible storage is used for media assets and backups. Any S3-compatible provider works: AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, Cloudflare R2.
+ModulaCMS stores media assets and backups in S3-compatible storage. Any S3-compatible provider works: AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, Cloudflare R2. See the [Media Management guide](../building-content/media.md) for upload and optimization details.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -97,7 +97,7 @@ S3-compatible storage is used for media assets and backups. Any S3-compatible pr
 | `bucket_force_path_style` | bool | `true` | Use path-style URLs instead of virtual-hosted |
 | `max_upload_size` | integer | `10485760` | Maximum upload size in bytes (10 MB) |
 
-All S3 storage fields are hot-reloadable -- you can change them without restarting the server.
+All S3 storage fields are hot-reloadable. You can change them without restarting the server.
 
 Example for MinIO running locally:
 
@@ -114,9 +114,9 @@ Example for MinIO running locally:
 }
 ```
 
-The scheme (`http://` or `https://`) for the S3 API endpoint is determined by the `environment` field. When set to `http-only` or `docker`, the scheme is `http`; all other environments use `https`. The `bucket_endpoint` value should not include the scheme.
+> **Good to know**: The `environment` field determines the S3 scheme. `http-only` and `docker` use `http://`; all other values use `https://`. Do not include the scheme in `bucket_endpoint`.
 
-When running in Docker, `bucket_endpoint` typically points to a container hostname (e.g., `minio:9000`), which browsers cannot resolve. Set `bucket_public_url` to the externally reachable address so that media URLs in API responses work in the browser.
+> **Good to know**: In Docker, `bucket_endpoint` typically points to a container hostname (e.g., `minio:9000`) that browsers cannot resolve. Set `bucket_public_url` to the externally reachable address so media URLs work in the browser.
 
 ## CORS Settings
 
@@ -151,7 +151,7 @@ All cookie fields are hot-reloadable.
 
 ## OAuth Settings
 
-ModulaCMS supports OAuth with any OpenID Connect-compatible provider (Google, GitHub, Azure AD, etc.). Configure a single provider per instance.
+ModulaCMS supports OAuth with any OpenID Connect-compatible provider (Google, GitHub, Azure AD, etc.). Configure one provider per instance. See the [Authentication guide](../custom-admin/authentication.md) for setup instructions.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -175,11 +175,11 @@ The `oauth_endpoint` object requires three keys:
 }
 ```
 
-All OAuth fields are hot-reloadable. OAuth is optional -- the CMS functions with local authentication when OAuth is not configured.
+All OAuth fields are hot-reloadable. OAuth is optional -- the CMS works with local authentication when OAuth is not configured.
 
 ## Email Settings
 
-Email is used for password reset flows. Four providers are supported: SMTP, SendGrid, AWS SES, and Postmark.
+ModulaCMS uses email for password reset flows. Four providers are supported: SMTP, SendGrid, AWS SES, and Postmark.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -209,11 +209,13 @@ Email is used for password reset flows. Four providers are supported: SMTP, Send
 | `email_aws_access_key_id` | string | `""` | AWS access key (SES only) |
 | `email_aws_secret_access_key` | string | `""` | AWS secret key (SES only) |
 
-All email fields are hot-reloadable. When SES is configured without explicit AWS credentials, the system falls back to the default AWS credential chain (environment variables, IAM role).
+All email fields are hot-reloadable.
+
+> **Good to know**: When you configure SES without explicit AWS credentials, ModulaCMS falls back to the default AWS credential chain (environment variables, IAM role).
 
 ## Plugin System Settings
 
-ModulaCMS has a Lua-based plugin system. Plugins run in sandboxed VMs with configurable resource limits.
+ModulaCMS has a Lua-based plugin system with sandboxed VMs and configurable resource limits. See the [Managing Plugins guide](../extending/overview.md) for setup and the [Plugin Tutorial](../extending/tutorial.md) for building your own.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -234,7 +236,7 @@ ModulaCMS has a Lua-based plugin system. Plugins run in sandboxed VMs with confi
 
 ## Observability Settings
 
-ModulaCMS supports external error tracking and metrics via providers like Sentry, Datadog, and New Relic.
+ModulaCMS supports external error tracking and metrics through Sentry, Datadog, and New Relic.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -273,7 +275,7 @@ When `bucket_backup` is configured, backups can also be stored in S3.
 
 ## Hot Reloading
 
-Many configuration fields can be changed at runtime without restarting the server. The "Restart Required" column in each section above indicates which fields need a restart.
+You can change many configuration fields at runtime without restarting the server. The "Restart Required" column in each section indicates which fields need a restart.
 
 Fields that require a restart:
 - Server ports and bind addresses (`port`, `ssl_port`, `ssh_host`, `ssh_port`)
@@ -294,7 +296,7 @@ Fields that are hot-reloadable (take effect immediately):
 - Update settings
 - Output format and upload size
 
-You can update hot-reloadable fields through the admin panel at `/admin/settings`, through the REST API, or by editing `modula.config.json` directly. When updating via the API or admin panel, changes are saved to `modula.config.json` and applied immediately. Changes made by editing the file directly require the config to be reloaded.
+Update hot-reloadable fields through the admin panel at `/admin/settings`, through the REST API, or by editing `modula.config.json` directly. Changes made via the API or admin panel save to `modula.config.json` and take effect immediately. Changes made by editing the file directly require the config to be reloaded.
 
 ### API-Based Configuration
 
@@ -317,7 +319,7 @@ curl -X PATCH http://localhost:8080/api/v1/admin/config \
   }'
 ```
 
-The API validates proposed changes before applying them. If a change affects a restart-required field, the response includes a warning listing the fields that need a server restart to take effect.
+The API validates changes before applying them. If a change affects a restart-required field, the response includes a warning listing the fields that need a server restart.
 
 The config meta endpoint returns field metadata (categories, descriptions, hot-reloadable status):
 
@@ -330,7 +332,7 @@ Both config endpoints require the `config:read` or `config:update` permission.
 
 ## Sensitive Fields
 
-The following fields are treated as sensitive and are redacted (replaced with `********`) when the configuration is returned through the API or the `config show` command:
+ModulaCMS redacts the following fields (replacing them with `********`) when returning configuration through the API or the `config show` command:
 
 - `auth_salt`
 - `db_password`
@@ -344,11 +346,11 @@ The following fields are treated as sensitive and are redacted (replaced with `*
 - `email_aws_access_key_id`
 - `email_aws_secret_access_key`
 
-When updating configuration via the API, redacted values (`********`) are automatically skipped to prevent accidentally overwriting secrets with the placeholder.
+> **Good to know**: When you update configuration via the API, redacted values (`********`) are skipped automatically to prevent overwriting secrets with the placeholder.
 
 ## Full Default Configuration
 
-The default `modula.config.json` created on first run uses these values:
+`modula init` creates a `modula.config.json` with these defaults:
 
 ```json
 {
@@ -389,4 +391,10 @@ The default `modula.config.json` created on first run uses these values:
 }
 ```
 
-Non-default fields (database credentials, S3 credentials, OAuth endpoints, email credentials) are empty strings or zero values and need to be configured for their respective features.
+Fields not shown here (database credentials, S3 credentials, OAuth endpoints, email credentials) default to empty strings and need to be set for their respective features.
+
+## Next steps
+
+- [Authentication guide](../custom-admin/authentication.md) -- set up OAuth, sessions, and API tokens
+- [Media Management guide](../building-content/media.md) -- configure S3 storage and upload files
+- [Managing Plugins guide](../extending/overview.md) -- enable and configure the plugin system

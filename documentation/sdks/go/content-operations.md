@@ -1,6 +1,6 @@
 # Content Operations
 
-This guide covers reading, writing, and organizing content through the Go SDK: CRUD via generic resources, content tree manipulation, publishing, batch updates, querying, and content delivery.
+Read, write, and organize content through the Go SDK -- CRUD, content trees, publishing, batch updates, querying, and content delivery.
 
 ## CRUD via Generic Resources
 
@@ -36,7 +36,7 @@ fmt.Printf("Created content: %s\n", item.ContentDataID)
 
 ### Setting Field Values
 
-Content fields are stored separately from content data. After creating a content data node, create fields for it:
+After creating a content data node, set its field values:
 
 ```go
 field, err := client.ContentFields.Create(ctx, modula.CreateContentFieldParams{
@@ -89,7 +89,7 @@ fmt.Printf("Deleted %d nodes\n", delResp.Deleted)
 
 ## Content Trees
 
-Content in ModulaCMS is organized as trees. Each route has one content tree, and every piece of content is a node in that tree. The tree uses sibling pointers (`parent_id`, `first_child_id`, `next_sibling_id`, `prev_sibling_id`) for O(1) navigation and reordering.
+Content in ModulaCMS is organized as trees. Each route has its own content tree, and global trees provide site-wide content like navigation and footers without a route.
 
 ### Getting a Tree by Route
 
@@ -103,7 +103,7 @@ for _, node := range nodes {
 }
 ```
 
-Each `ContentTreeNode` contains the content ID, datatype ID, all four sibling pointers, the route ID, title, slug, status, and timestamps.
+Each `ContentTreeNode` contains the content ID, datatype ID, route ID, title, slug, status, and timestamps.
 
 ### Bulk Tree Operations with Save
 
@@ -162,7 +162,9 @@ resp, err := client.ContentReorder.Move(ctx, modula.ContentMoveRequest{
 
 ## Publishing
 
-The `Publishing` resource manages the content lifecycle: draft, published, and scheduled. Two instances exist on the client -- `Publishing` for public content and `AdminPublishing` for admin content -- with identical methods.
+The `Publishing` resource manages the content lifecycle: draft, published, and scheduled.
+
+> **Good to know**: The client exposes two publishing resources -- `Publishing` for public content and `AdminPublishing` for admin content -- with identical methods.
 
 ### Publish
 
@@ -235,7 +237,7 @@ Send multiple content updates in a single request:
 raw, err := client.ContentBatch.Update(ctx, batchPayload)
 ```
 
-The batch payload structure depends on your update needs. The response is returned as `json.RawMessage` for flexibility.
+Structure the batch payload based on your update needs. The SDK returns the response as `json.RawMessage` for flexibility.
 
 ## Content Delivery
 
@@ -292,11 +294,11 @@ for _, item := range result.Data {
 | `Status` | `string` | Filter by content status (`"published"`, `"draft"`). |
 | `Filters` | `map[string]string` | Field-level filters. Keys are field names, values are matched exactly. |
 
-The response includes `Total` for building pagination controls and `Datatype` metadata (name and label) for the queried type.
+Use `Total` from the response for building pagination controls. The response also includes `Datatype` metadata (name and label) for the queried type.
 
 ## Content Healing
 
-Detect and repair broken sibling pointers in content trees:
+Detect and repair structural inconsistencies in content trees:
 
 ```go
 // Dry run first to see what would change.

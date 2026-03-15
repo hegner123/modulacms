@@ -6,41 +6,41 @@ import (
 )
 
 templ VersionList(versions []db.ContentVersion, contentID string, csrfToken string) {
-	<div class="version-list">
-		<div class="version-list-header">
+	<div class="space-y-4" data-version-list>
+		<div class="flex items-center justify-between border-b border-white/10 pb-3">
 			<form
 				hx-post={ "/admin/content/" + contentID + "/versions" }
 				hx-target="#version-list-panel"
 				hx-swap="innerHTML"
-				class="version-create-form"
 			>
 				@CSRFField(csrfToken)
-				<button type="submit" class="btn btn-ghost btn-sm">Save Snapshot</button>
+				<button type="submit" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20">Save Snapshot</button>
 			</form>
 		</div>
 		if len(versions) == 0 {
-			<p class="text-muted">No versions yet.</p>
+			<p class="text-sm text-gray-400">No versions yet.</p>
 		} else {
-			<ul class="version-items">
+			<ul class="space-y-3">
 				for _, v := range versions {
 					<li
-						class="version-item"
+						class="rounded-md bg-white/5 p-4 ring-1 ring-white/10 ring-inset"
+						data-version-item
 						data-version-id={ v.ContentVersionID.String() }
 						data-version-number={ fmt.Sprintf("%d", v.VersionNumber) }
 					>
-						<div class="version-item-header">
-							<span class="version-number">#{ fmt.Sprintf("%d", v.VersionNumber) }</span>
-							<span class="version-hash">{ v.ContentVersionID.String()[:8] }</span>
+						<div class="flex items-center gap-3">
+							<span class="text-sm font-medium text-white">#{ fmt.Sprintf("%d", v.VersionNumber) }</span>
+							<span class="text-xs text-gray-500">{ v.ContentVersionID.String()[:8] }</span>
 							if v.Published {
-								<span class="badge badge-published">live</span>
+								<span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">live</span>
 							}
 						</div>
 						if v.Label != "" {
-							<div class="version-item-label">{ v.Label }</div>
+							<div class="mt-1 text-sm text-gray-300">{ v.Label }</div>
 						}
-						<div class="version-item-meta">
-							<span class="text-muted">{ v.Trigger }</span>
-							<span class="text-muted">{ v.DateCreated.Time.UTC().Format("Jan 2, 2006 15:04") }</span>
+						<div class="mt-2 flex items-center gap-3">
+							<span class="text-xs text-gray-400">{ v.Trigger }</span>
+							<span class="text-xs text-gray-400">{ v.DateCreated.Time.UTC().Format("Jan 2, 2006 15:04") }</span>
 						</div>
 					</li>
 				}

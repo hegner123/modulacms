@@ -673,7 +673,8 @@ block-editor .insert-btn--inside {
   z-index: 50;
 }
 
-.btn-split.open .btn-split-menu {
+.btn-split.open .btn-split-menu,
+[data-split-button][data-state="open"] .btn-split-menu {
   display: block;
 }
 
@@ -748,7 +749,8 @@ block-editor .insert-btn--inside {
   border-color: var(--color-primary);
 }
 
-.version-item.selected {
+.version-item.selected,
+[data-version-item][data-selected] {
   border-color: var(--color-primary);
   background: var(--color-primary-100, rgba(99, 102, 241, 0.1));
 }

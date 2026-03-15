@@ -12,12 +12,12 @@ templ AuditTableRows(events []db.ChangeEvent) {
 	}
 	for _, event := range events {
 		<tr>
-			<td>{ event.WallTimestamp.String() }</td>
-			<td>{ event.TableName }</td>
-			<td>{ truncateStr(event.RecordID, 12) }</td>
-			<td>{ string(event.Operation) }</td>
-			<td>{ string(event.Action) }</td>
-			<td>{ truncateStr(event.UserID.String(), 12) }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ event.WallTimestamp.String() }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ event.TableName }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(event.RecordID, 12) }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ string(event.Operation) }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ string(event.Action) }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(event.UserID.String(), 12) }</td>
 		</tr>
 	}
 }

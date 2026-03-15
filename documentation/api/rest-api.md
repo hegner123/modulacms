@@ -1,13 +1,13 @@
 # REST API Reference
 
-ModulaCMS exposes a JSON REST API at the base path `/api/v1`. Use it to manage content, media, users, roles, and configuration programmatically. All request and response bodies use `application/json` unless noted otherwise.
+ModulaCMS exposes a JSON REST API at the base path `/api/v1` for managing content, media, users, roles, and configuration programmatically.
 
 ## Authentication
 
-Every endpoint except public content delivery and the auth login/register routes requires authentication. The server checks two methods in order:
+Every endpoint except public content delivery and the auth login/register routes requires authentication. The server checks two methods in this order:
 
-1. **Session cookie** -- Set automatically after a successful login or OAuth callback. The cookie name is configured in `modula.config.json`.
-2. **API key** -- When no valid session cookie is present, include a Bearer token in the `Authorization` header. The token must exist in the `tokens` table, must not be revoked, and must not be expired.
+1. **Session cookie** -- Set automatically after a successful login or OAuth callback. You configure the cookie name in `modula.config.json`.
+2. **API key** -- When no valid session cookie is present, include a Bearer token in the `Authorization` header. The token must not be revoked or expired.
 
 ```
 Authorization: Bearer 01HXK4N2F8RJZGP6VTQY3MCSW9
@@ -41,7 +41,7 @@ Authorization: Bearer 01HXK4N2F8RJZGP6VTQY3MCSW9
 
 ## Auth Endpoints
 
-Auth endpoints are rate limited to 10 requests per minute per IP. CORS is enabled on these routes.
+The server rate limits auth endpoints to 10 requests per minute per IP and enables CORS on these routes.
 
 ### Login
 
@@ -62,7 +62,7 @@ Response (200):
 }
 ```
 
-Sets an HTTP-only session cookie. Returns 401 for invalid credentials.
+The server sets an HTTP-only session cookie. Returns 401 for invalid credentials.
 
 ### Logout
 
@@ -102,7 +102,7 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
   -d '{"email": "user@example.com", "username": "newuser", "password": "secure-password"}'
 ```
 
-Creates a new user. Request and response follow the same format as the Users POST endpoint. New users are assigned the `viewer` role by default.
+Creates a new user with the same request/response format as the Users POST endpoint. The server assigns the `viewer` role by default.
 
 ### Password Reset
 
@@ -112,7 +112,7 @@ curl -X POST http://localhost:8080/api/v1/auth/reset \
   -d '{"email": "user@example.com", "password": "new-password"}'
 ```
 
-Updates the user password. Request and response follow the Users PUT format.
+Updates the user password. Uses the same request/response format as Users PUT.
 
 ### OAuth
 
@@ -121,7 +121,7 @@ Updates the user password. Request and response follow the Users PUT format.
 | GET | `/api/v1/auth/oauth/login` | Initiates OAuth flow with PKCE. Redirects to the configured OAuth provider. |
 | GET | `/api/v1/auth/oauth/callback` | OAuth provider redirect target. Validates state, exchanges code for token via PKCE, creates or provisions the user, creates a session, sets the cookie, and redirects to the configured success URL. |
 
-The callback receives `code` and `state` query parameters from the OAuth provider.
+The OAuth provider sends `code` and `state` query parameters to the callback.
 
 ## Health
 
@@ -334,7 +334,7 @@ curl -X POST http://localhost:8080/api/v1/media \
 
 Content-Type: `multipart/form-data`. Form field name: `file`. Maximum upload size: 10 MB (configurable via `max_upload_size` in `modula.config.json`).
 
-The upload pipeline validates that no file with the same name already exists, optimizes images at each configured dimension preset, uploads all variants to S3, and creates the media database record.
+The server validates that no file with the same name already exists, optimizes images at each configured dimension preset, uploads all variants to S3, and creates the media record.
 
 ### Media Dimensions
 
@@ -390,7 +390,7 @@ curl -X POST http://localhost:8080/api/v1/media/move \
 
 Set `folder_id` to `null` or omit it to move media items back to root. Maximum batch size is 100 items.
 
-Folder creation enforces a maximum depth of 10 levels and unique names within each parent folder. Deletion returns 409 Conflict if the folder contains child folders or media items.
+> **Good to know**: The server enforces a maximum folder depth of 10 levels and unique names within each parent. Deleting a folder returns 409 Conflict if it contains child folders or media items.
 
 ## Users and Access Control
 
@@ -414,7 +414,7 @@ Folder creation enforces a maximum depth of 10 levels and unique names within ea
 | PUT | `/api/v1/roles/` | Update role |
 | DELETE | `/api/v1/roles/?q={ulid}` | Delete role |
 
-System-protected roles (admin, editor, viewer) cannot be deleted or renamed.
+> **Good to know**: System-protected roles (admin, editor, viewer) cannot be deleted or renamed.
 
 ### Permissions
 
@@ -426,7 +426,7 @@ System-protected roles (admin, editor, viewer) cannot be deleted or renamed.
 | PUT | `/api/v1/permissions/` | Update permission |
 | DELETE | `/api/v1/permissions/?q={ulid}` | Delete permission |
 
-System-protected permissions cannot be deleted or renamed.
+> **Good to know**: System-protected permissions cannot be deleted or renamed.
 
 ### Role Permissions
 
@@ -471,7 +471,7 @@ Use `/api/v1/auth/login` and `/api/v1/auth/logout` to create and destroy your ow
 
 ### SSH Keys
 
-Users can only manage their own SSH keys. All SSH key endpoints require authentication.
+You can only manage your own SSH keys. All SSH key endpoints require authentication.
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -512,7 +512,7 @@ Response (200):
 ]
 ```
 
-The GET response omits the full public key. DELETE returns 204 No Content. Attempting to delete another user's key returns 403.
+> **Good to know**: GET omits the full public key. DELETE returns 204 No Content. Attempting to delete another user's key returns 403.
 
 ## Database Metadata
 
@@ -557,7 +557,7 @@ The GET response omits the full public key. DELETE returns 204 No Content. Attem
 
 ## Import
 
-Import endpoints parse CMS-specific JSON and create ModulaCMS content from it. All import endpoints accept POST only.
+Import endpoints parse CMS-specific JSON and create ModulaCMS content from it. All import endpoints accept POST.
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -587,7 +587,7 @@ Response (201):
 
 ### GET /{slug}
 
-The public content delivery endpoint. Given a route slug, it builds the full content tree and returns it in the configured output format.
+The public content delivery endpoint. Given a route slug, the server builds the full content tree and returns it in the configured output format.
 
 ```bash
 curl http://localhost:8080/blog
@@ -603,9 +603,4 @@ Valid formats: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, `raw`.
 
 Returns 404 if no route matches the slug.
 
-## Notes
-
-- All handlers use a singleton database connection pool initialized at startup. Handlers do not open or close individual connections.
-- Auth endpoints have CORS middleware and rate limiting (10 requests per minute per IP).
-- The router uses Go 1.22+ pattern routing via `net/http.ServeMux`.
-- Every admin endpoint requires authentication and is gated by role-based permission checks. Public routes (auth, OAuth, content delivery by slug) have no permission guards.
+> **Good to know**: Every admin endpoint requires authentication and role-based permission checks. Public routes (auth, OAuth, content delivery by slug) have no permission guards.

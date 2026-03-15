@@ -7,14 +7,23 @@ import (
 )
 
 templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData, distinctTypes []string) {
-    <div class="page-header">
-        <h1>Datatypes</h1>
-        <button class="btn btn-primary"
-                onclick="document.getElementById('create-datatype-dialog').showModal()">
-            New Datatype
-        </button>
+    <!-- Page heading -->
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-base/7 font-semibold text-white">Datatypes</h1>
+            <p class="mt-2 text-sm text-gray-400">Define the content structures used across your site.</p>
+        </div>
+        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+            <button type="button"
+                    class="block rounded-md bg-indigo-500 px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                    data-action="new"
+                    onclick="document.getElementById('create-datatype-dialog').showModal()">
+                New Datatype
+            </button>
+        </div>
     </div>
-    <div class="content-list-toolbar">
+    <!-- Toolbar -->
+    <div class="mt-4 flex items-center gap-x-3">
         <input
             type="search"
             name="search"
@@ -24,112 +33,130 @@ templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData,
             hx-trigger="input changed delay:300ms"
             hx-include="[name='type'],[name='sort']"
             hx-push-url="false"
-            class="search-input"
+            class="block w-64 rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500"
+            data-search-input
         />
-        <select
-            name="type"
-            hx-get="/admin/schema/datatypes"
-            hx-target="#datatypes-table-body"
-            hx-trigger="change"
-            hx-include="[name='search'],[name='sort']"
-            class="select-input"
-        >
-            <option value="">All Types</option>
-            for _, t := range distinctTypes {
-                <option value={ t }>{ t }</option>
-            }
-        </select>
-        <select
-            name="sort"
-            hx-get="/admin/schema/datatypes"
-            hx-target="#datatypes-table-body"
-            hx-trigger="change"
-            hx-include="[name='search'],[name='type']"
-            class="select-input"
-        >
-            <option value="">Default</option>
-            <option value="name-asc">Name A-Z</option>
-            <option value="name-desc">Name Z-A</option>
-            <option value="type-asc">Type A-Z</option>
-            <option value="type-desc">Type Z-A</option>
-            <option value="modified-desc">Newest</option>
-            <option value="modified-asc">Oldest</option>
-        </select>
-    </div>
-    <div class="table-container">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Label</th>
-                    <th>Type</th>
-                    <th>Modified</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="datatypes-table-body"
-                   hx-get="/admin/schema/datatypes"
-                   hx-trigger="refreshTable from:body"
-                   hx-swap="innerHTML">
-                if len(items) == 0 {
-                    <tr>
-                        <td colspan="5">
-                            @partials.EmptyState("No datatypes found.")
-                        </td>
-                    </tr>
-                } else {
-                    for _, dt := range items {
-                        <tr class="clickable-row" data-href={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }>
-                            <td>{ dt.Name }</td>
-                            <td>{ dt.Label }</td>
-                            <td><span class="badge">{ dt.Type }</span></td>
-                            <td>{ dt.DateModified.Time.UTC().Format("Jan 2, 2006 15:04") }</td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn btn-ghost btn-sm btn-danger"
-                                            hx-delete={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
-                                            hx-target="closest tr"
-                                            hx-swap="outerHTML swap:300ms"
-                                            hx-confirm="Delete this datatype? This cannot be undone.">
-                                        Delete
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    }
+        <div class="grid grid-cols-1">
+            <select
+                name="type"
+                hx-get="/admin/schema/datatypes"
+                hx-target="#datatypes-table-body"
+                hx-trigger="change"
+                hx-include="[name='search'],[name='sort']"
+                class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500"
+            >
+                <option value="">All Types</option>
+                for _, t := range distinctTypes {
+                    <option value={ t }>{ t }</option>
                 }
-            </tbody>
-        </table>
+            </select>
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" class="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4">
+                <path d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" fill-rule="evenodd"/>
+            </svg>
+        </div>
+        <div class="grid grid-cols-1">
+            <select
+                name="sort"
+                hx-get="/admin/schema/datatypes"
+                hx-target="#datatypes-table-body"
+                hx-trigger="change"
+                hx-include="[name='search'],[name='type']"
+                class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500"
+            >
+                <option value="">Default</option>
+                <option value="name-asc">Name A-Z</option>
+                <option value="name-desc">Name Z-A</option>
+                <option value="type-asc">Type A-Z</option>
+                <option value="type-desc">Type Z-A</option>
+                <option value="modified-desc">Newest</option>
+                <option value="modified-asc">Oldest</option>
+            </select>
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" class="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4">
+                <path d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" fill-rule="evenodd"/>
+            </svg>
+        </div>
+    </div>
+    <!-- Table -->
+    <div class="mt-8 flow-root">
+        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                <div class="overflow-hidden shadow-sm -outline-offset-1 outline-white/10 sm:rounded-lg">
+                    <table class="min-w-full divide-y divide-white/15">
+                        <thead class="bg-gray-800/75">
+                            <tr>
+                                <th scope="col" class="py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-200 sm:pl-6">Name</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Label</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Type</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Modified</th>
+                                <th scope="col" class="py-3.5 pr-4 pl-3 sm:pr-6">
+                                    <span class="sr-only">Actions</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="datatypes-table-body"
+                               class="divide-y divide-white/10 bg-gray-800/50"
+                               hx-get="/admin/schema/datatypes"
+                               hx-trigger="refreshTable from:body"
+                               hx-swap="innerHTML">
+                            if len(items) == 0 {
+                                <tr>
+                                    <td colspan="5" class="py-10 text-center text-sm text-gray-400">No datatypes found.</td>
+                                </tr>
+                            } else {
+                                for _, dt := range items {
+                                    <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }>
+                                        <td class="py-4 pr-3 pl-4 text-sm font-medium whitespace-nowrap text-white sm:pl-6">{ dt.Name }</td>
+                                        <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ dt.Label }</td>
+                                        <td class="px-3 py-4 text-sm whitespace-nowrap">
+                                            <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ dt.Type }</span>
+                                        </td>
+                                        <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ dt.DateModified.Time.UTC().Format("Jan 2, 2006 15:04") }</td>
+                                        <td class="py-4 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6">
+                                            <button class="text-red-400 hover:text-red-300"
+                                                    hx-delete={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
+                                                    hx-target="closest tr"
+                                                    hx-swap="outerHTML swap:300ms"
+                                                    hx-confirm="Delete this datatype? This cannot be undone.">
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
     @partials.Pagination(pg.Current, pg.TotalPages, "#datatypes-table-body", "/admin/schema/datatypes", pg.Limit)
 }
 
-templ DatatypeCreateDialog(csrfToken string) {
-    <dialog id="create-datatype-dialog" class="admin-dialog" aria-labelledby="create-datatype-dialog-title">
-        <div class="dialog-content">
-            <div class="dialog-header">
-                <h2 id="create-datatype-dialog-title">New Datatype</h2>
-                <button class="btn btn-ghost dialog-close" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
-            </div>
+templ DatatypeCreateDialog(csrfToken string, allDatatypes []db.Datatypes) {
+    <dialog id="create-datatype-dialog" class="rounded-lg bg-gray-800 p-0 shadow-xl backdrop:bg-gray-900/75 sm:w-full sm:max-w-lg" aria-labelledby="create-datatype-dialog-title">
+        <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <h3 id="create-datatype-dialog-title" class="text-base/7 font-semibold text-white">New Datatype</h3>
             <form hx-post="/admin/schema/datatypes"
                   hx-target="#create-datatype-form"
                   hx-swap="innerHTML"
-                  id="create-datatype-form">
+                  id="create-datatype-form"
+                  class="mt-4 space-y-4">
                 @partials.CSRFField(csrfToken)
                 @partials.FormField("name", "Name", "", "")
                 @partials.FormField("label", "Label", "", "")
                 @partials.FormField("type", "Type", "", "")
-                <div class="dialog-actions">
-                    <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create</button>
+                @partials.FormSelect("parent_id", "Parent", "", partials.DatatypeParentOptions(allDatatypes, ""), "")
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button type="submit" class="inline-flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 sm:ml-3 sm:w-auto">Create</button>
+                    <button type="button" onclick="this.closest('dialog').close()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto">Cancel</button>
                 </div>
             </form>
         </div>
     </dialog>
 }
 
-templ DatatypesList(layout layouts.AdminData, items []db.Datatypes, pg partials.PaginationPageData, distinctTypes []string) {
-    @layouts.Admin(layout.WithDialogs(DatatypeCreateDialog(layout.CSRFToken))) {
+templ DatatypesList(layout layouts.AdminData, items []db.Datatypes, pg partials.PaginationPageData, distinctTypes []string, allDatatypes []db.Datatypes) {
+    @layouts.Admin(layout.WithDialogs(DatatypeCreateDialog(layout.CSRFToken, allDatatypes))) {
         @DatatypesListContent(items, pg, distinctTypes)
     }
 }

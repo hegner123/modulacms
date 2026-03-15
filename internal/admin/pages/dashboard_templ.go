@@ -31,7 +31,7 @@ func DashboardContent() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"page-header\"><h1>Dashboard</h1></div><div class=\"dashboard-grid\"><div class=\"dashboard-card\"><h3>Welcome</h3><p>Welcome to ModulaCMS admin panel.</p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"border-b border-white/10 pb-5\" data-page-header><h1 class=\"text-lg font-semibold text-white\">Dashboard</h1></div><div class=\"mt-6\"><div class=\"rounded-xl border border-white/10 bg-white/5 p-6\"><h2 class=\"text-base font-semibold text-white\">Welcome</h2><p class=\"mt-2 text-sm text-gray-300\">Welcome to ModulaCMS admin panel.</p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

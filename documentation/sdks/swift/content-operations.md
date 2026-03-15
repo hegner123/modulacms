@@ -1,6 +1,6 @@
 # Swift SDK -- Content Operations
 
-This guide covers CRUD operations, content delivery, content trees, media upload, the query API, and SwiftUI integration patterns.
+CRUD operations, content delivery, content trees, media upload, the query API, and SwiftUI integration patterns.
 
 ## Generic Resource CRUD
 
@@ -82,7 +82,7 @@ let total = try await client.datatypes.count()
 
 ### NoCreate Resources
 
-`Media` uses `NoCreate` as its create params type because media is created via multipart upload, not JSON POST. Calling `create(params:)` on `client.media` will not compile.
+`Media` uses `NoCreate` as its create params type because you create media via multipart upload, not JSON POST. Calling `create(params:)` on `client.media` produces a compile error.
 
 ```swift
 // Upload media instead:
@@ -104,7 +104,7 @@ let one = try await client.media.get(id: MediaID("01HXYZ..."))
 let pageData = try await client.content.getPage(slug: "blog/hello-world")
 ```
 
-`getPage` returns raw `Data` because the response format varies based on the `format` parameter.
+`getPage` returns raw `Data` because the response shape varies based on the `format` parameter.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -166,7 +166,7 @@ Each `QueryItem` provides `contentDataID`, `datatypeID`, `authorID`, `status`, d
 
 ## Content Trees
 
-Content in ModulaCMS is organized as trees using sibling pointers (`parentID`, `firstChildID`, `nextSiblingID`, `prevSiblingID`).
+Content in ModulaCMS is organized as hierarchical trees that you can read, save, and restructure.
 
 ### Reading Trees
 
@@ -225,7 +225,7 @@ Key types:
 - `TreeSaveRequest` -- wraps creates, updates, and deletes. `contentID` identifies the root node for route inheritance.
 - `TreeSaveResponse` -- counts of successful operations, the `idMap`, and any per-node `errors`.
 
-Deletes are processed before updates, so removed nodes do not interfere with pointer rewiring.
+> **Good to know**: The server processes deletes before updates, so removed nodes don't interfere with tree restructuring.
 
 ### Composite Content Operations
 
@@ -255,7 +255,7 @@ print("Deleted \(deleteResult.totalDeleted) nodes")
 let responseData = try await client.contentBatch.update(request: yourBatchPayload)
 ```
 
-The `update` method accepts any `Encodable & Sendable` request body and returns raw `Data`. Structure your batch payload according to the ModulaCMS batch API contract.
+The `update` method accepts any `Encodable & Sendable` request body and returns raw `Data`. Structure your batch payload according to the batch API contract.
 
 ## Media Upload
 
@@ -282,7 +282,7 @@ let media = try await client.mediaUpload.upload(
 )
 ```
 
-When `path` is nil, the server defaults to date-based organization (`YYYY/M`).
+> **Good to know**: When `path` is nil, the server organizes files by date (`YYYY/M`).
 
 ### Media Composite Operations
 
@@ -343,7 +343,7 @@ let result = try await client.publishing.restore(req: RestoreRequest(
 try await client.publishing.deleteVersion(versionID: "01HVER...")
 ```
 
-Admin content has a parallel `adminPublishing` resource with identical methods using admin-prefixed types.
+> **Good to know**: Admin content uses the parallel `adminPublishing` resource with identical methods and admin-prefixed types.
 
 ## Authentication
 

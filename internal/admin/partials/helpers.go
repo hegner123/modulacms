@@ -197,6 +197,14 @@ func routeStatusBadgeClass(status int64) string {
 	return "badge-draft"
 }
 
+// routeStatusBadgeClassTW returns Tailwind UI badge classes for a route status.
+func routeStatusBadgeClassTW(status int64) string {
+	if status == 1 {
+		return "bg-green-400/10 text-green-400 ring-green-400/20"
+	}
+	return "bg-gray-400/10 text-gray-400 ring-gray-400/20"
+}
+
 // showEditDialog returns a JavaScript expression string to show a dialog by ID prefix + suffix.
 func showEditDialog(id string) string {
 	return "document.getElementById('edit-route-" + id + "').showModal()"
@@ -257,4 +265,27 @@ func buildMediaFolderTree(folders []db.MediaFolder) []MediaFolderNode {
 func escapeJS(s string) string {
 	r := strings.NewReplacer(`\`, `\\`, `'`, `\'`, `"`, `\"`, "\n", `\n`, "\r", `\r`)
 	return r.Replace(s)
+}
+
+// SelectOption represents a value/label pair for a select dropdown.
+type SelectOption struct {
+	Value string
+	Label string
+}
+
+// DatatypeParentOptions builds select options for the parent datatype dropdown.
+// excludeID is excluded from the list (to prevent self-reference in edit forms).
+func DatatypeParentOptions(datatypes []db.Datatypes, excludeID string) []SelectOption {
+	opts := make([]SelectOption, 0, len(datatypes)+1)
+	opts = append(opts, SelectOption{Value: "", Label: "None (root level)"})
+	for _, dt := range datatypes {
+		if dt.DatatypeID.String() == excludeID {
+			continue
+		}
+		opts = append(opts, SelectOption{
+			Value: dt.DatatypeID.String(),
+			Label: dt.Label,
+		})
+	}
+	return opts
 }

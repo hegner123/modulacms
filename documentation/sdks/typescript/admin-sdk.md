@@ -1,6 +1,6 @@
 # Admin SDK
 
-`@modulacms/admin-sdk` provides full CRUD access to every ModulaCMS API resource. Use it for admin panels, automation scripts, CI/CD pipelines, and data migration tools.
+Use `@modulacms/admin-sdk` for full CRUD access to every ModulaCMS API resource from admin panels, automation scripts, CI/CD pipelines, and data migration tools.
 
 ## Creating a Client
 
@@ -31,7 +31,7 @@ type CrudResource<Entity, CreateParams, UpdateParams, Id = string> = {
 }
 ```
 
-Every CRUD resource provides these seven methods. `listPaginated` returns a `PaginatedResponse<Entity>` envelope with `data`, `total`, `limit`, and `offset` fields. `count` is implemented as a zero-limit paginated request.
+Every CRUD resource provides these seven methods. `listPaginated` returns a `PaginatedResponse<Entity>` envelope with `data`, `total`, `limit`, and `offset` fields.
 
 ### URL Patterns
 
@@ -56,7 +56,7 @@ type RequestOptions = {
 }
 ```
 
-The abort signal is merged with the client's default timeout signal. Either one aborting cancels the request.
+The client merges your abort signal with its default timeout signal. Either one aborting cancels the request.
 
 ## Authentication
 
@@ -88,8 +88,6 @@ const user = await client.auth.register({
 ```
 
 ## Content Data
-
-Content data nodes form a linked-list tree structure with sibling pointers for O(1) reordering.
 
 ```typescript
 // Standard CRUD
@@ -130,7 +128,7 @@ const deleteResult = await client.contentData.deleteRecursive(rootId)
 
 ## Content Tree Save
 
-Atomically apply creates, deletes, and pointer updates in a single HTTP request. This is the preferred method for persisting structural changes from a block editor or tree manipulation UI.
+Apply creates, deletes, and tree structure updates atomically in a single HTTP request. This is the preferred method for persisting structural changes from a block editor or tree manipulation UI.
 
 ```typescript
 const result = await client.contentTree.save({
@@ -446,7 +444,7 @@ await client.import.bulk('contentful', exportData)
 
 ## Content Heal
 
-Scan and repair malformed IDs in the content tree:
+Scan and repair structural inconsistencies in the content tree:
 
 ```typescript
 // Dry run -- preview repairs without changes

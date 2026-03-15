@@ -11,23 +11,27 @@ type MediaFolderNode struct {
 }
 
 templ MediaFolderTree(folders []db.MediaFolder, activeFolderID string, csrfToken string) {
-    <div id="media-folder-sidebar" class="media-folder-sidebar">
-        <div class="media-folder-header">
-            <h3>Folders</h3>
+    <div id="media-folder-sidebar" class="shrink-0 overflow-y-auto border-r border-white/10 bg-[var(--color-surface)] p-4">
+        <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white">Folders</h3>
             <button
-                class="btn btn-ghost btn-sm"
+                class="rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-white hover:bg-white/20"
                 onclick="document.getElementById('new-folder-dialog').showModal()"
                 title="New Folder"
-            >+</button>
+            >
+                <i data-lucide="plus" class="size-3.5"></i>
+            </button>
         </div>
-        <div class="media-folder-tree-list">
+        <div class="space-y-0.5">
             <a
                 href="/admin/media"
                 hx-get="/admin/media"
                 hx-target="#media-grid"
                 hx-push-url="true"
-                class={ "media-folder-item media-folder-root", templ.KV("active", activeFolderID == "") }
+                class={ "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors", templ.KV("bg-[var(--color-primary)] text-white", activeFolderID == ""), templ.KV("text-gray-400 hover:bg-white/5 hover:text-white", activeFolderID != "") }
+                data-folder-root
             >
+                <i data-lucide="image" class="size-4"></i>
                 All Media
             </a>
             if len(folders) > 0 {
@@ -42,7 +46,7 @@ templ MediaFolderTree(folders []db.MediaFolder, activeFolderID string, csrfToken
                 if (!el) return;
                 if (link) {
                     el.value = link.getAttribute('data-folder-id');
-                } else if (e.target.closest('.media-folder-root')) {
+                } else if (e.target.closest('[data-folder-root]')) {
                     el.value = '';
                 }
             });
@@ -52,53 +56,55 @@ templ MediaFolderTree(folders []db.MediaFolder, activeFolderID string, csrfToken
 
 templ mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) {
     for _, node := range nodes {
-        <div class="media-folder-node" data-folder-id={ node.Folder.FolderID.String() }>
-            <div class={ "media-folder-item", templ.KV("active", node.Folder.FolderID.String() == activeFolderID) }>
+        <div class="ml-2" data-folder-node data-folder-id={ node.Folder.FolderID.String() }>
+            <div class={ "group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors", templ.KV("bg-[var(--color-primary)] text-white", node.Folder.FolderID.String() == activeFolderID), templ.KV("text-gray-400 hover:bg-white/5 hover:text-white", node.Folder.FolderID.String() != activeFolderID) }>
                 if len(node.Children) > 0 {
                     <button
-                        class="media-folder-toggle"
-                        onclick="this.closest('.media-folder-node').classList.toggle('expanded')"
+                        class="shrink-0 text-gray-500 hover:text-white"
+                        onclick="var n=this.closest('[data-folder-node]');n.classList.toggle('expanded');n.toggleAttribute('data-expanded')"
                         aria-label="Toggle folder"
                     >
                         <span class="toggle-icon"></span>
                     </button>
                 } else {
-                    <span class="media-folder-toggle-spacer"></span>
+                    <span class="w-4 shrink-0"></span>
                 }
                 <a
                     href={ templ.SafeURL("/admin/media?folder_id=" + node.Folder.FolderID.String()) }
                     hx-get={ "/admin/media?folder_id=" + node.Folder.FolderID.String() }
                     hx-target="#media-grid"
                     hx-push-url="true"
-                    class="media-folder-link"
+                    class="flex-1 no-underline"
+                    data-folder-link
                     data-folder-id={ node.Folder.FolderID.String() }
                     draggable="false"
                 >
                     { node.Folder.Name }
                 </a>
-                <div class="media-folder-actions">
+                <div class="hidden items-center gap-1 group-hover:flex">
                     <button
-                        class="btn-icon btn-icon-sm media-folder-rename-btn"
+                        class="rounded p-0.5 text-gray-500 hover:text-white"
+                        data-folder-rename
                         data-folder-id={ node.Folder.FolderID.String() }
                         data-folder-name={ node.Folder.Name }
                         title="Rename"
                     >
-                        <i data-lucide="pencil" class="icon-sm"></i>
+                        <i data-lucide="pencil" class="size-3"></i>
                     </button>
                     <button
-                        class="btn-icon btn-icon-sm"
+                        class="rounded p-0.5 text-gray-500 hover:text-red-400"
                         hx-delete={ "/admin/media-folders/" + node.Folder.FolderID.String() }
                         hx-target="#media-folder-sidebar"
                         hx-swap="outerHTML"
                         hx-confirm="Delete this folder? It must be empty."
                         title="Delete"
                     >
-                        <i data-lucide="trash-2" class="icon-sm"></i>
+                        <i data-lucide="trash-2" class="size-3"></i>
                     </button>
                 </div>
             </div>
             if len(node.Children) > 0 {
-                <div class="media-folder-children">
+                <div class="ml-1 hidden [.expanded>&]:block">
                     @mediaFolderNodes(node.Children, activeFolderID)
                 </div>
             }
@@ -107,71 +113,69 @@ templ mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) {
 }
 
 templ mediaFolderCreateDialog(csrfToken string, parentID string) {
-    <dialog id="new-folder-dialog" class="dialog" aria-labelledby="new-folder-dialog-title">
-        <div class="dialog-content">
-            <div class="dialog-header">
-                <h2 id="new-folder-dialog-title">New Folder</h2>
-                <button class="dialog-close" aria-label="Close dialog" onclick="document.getElementById('new-folder-dialog').close()">&times;</button>
-            </div>
+    <dialog id="new-folder-dialog" class="rounded-xl border border-white/10 bg-[var(--color-surface)] p-0 shadow-xl backdrop:bg-gray-950/75 sm:max-w-lg sm:w-full" aria-labelledby="new-folder-dialog-title">
+        <div class="p-6">
+            <h3 id="new-folder-dialog-title" class="text-base/7 font-semibold text-white">New Folder</h3>
             <form
                 hx-post="/admin/media-folders"
                 hx-target="#media-folder-sidebar"
                 hx-swap="outerHTML"
-                class="folder-form"
+                class="mt-4 space-y-4"
             >
                 @CSRFField(csrfToken)
                 <input type="hidden" name="parent_id" value={ parentID }/>
                 @FormField("name", "Folder Name", "", "")
-                <div class="form-actions">
-                    <button type="button" class="btn btn-ghost" onclick="document.getElementById('new-folder-dialog').close()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create</button>
-                </div>
             </form>
+        </div>
+        <div class="flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3">
+            <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="document.getElementById('new-folder-dialog').close()">Cancel</button>
+            <button type="submit" form="new-folder-dialog" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
+                onclick="this.closest('dialog').querySelector('form').requestSubmit()">Create</button>
         </div>
     </dialog>
 }
 
 templ MediaFolderBreadcrumb(breadcrumb []db.MediaFolder, currentFolder *db.MediaFolder) {
-    <nav class="media-breadcrumb" aria-label="Folder path">
+    <nav class="flex items-center gap-2 text-sm text-gray-400" aria-label="Folder path">
         <a
             href="/admin/media"
             hx-get="/admin/media"
             hx-target="#media-grid"
             hx-push-url="true"
-            class="breadcrumb-item"
+            class="hover:text-white"
         >
             All Media
         </a>
         for _, folder := range breadcrumb {
-            <span class="breadcrumb-sep">/</span>
+            <span class="text-gray-500">/</span>
             <a
                 href={ templ.SafeURL("/admin/media?folder_id=" + folder.FolderID.String()) }
                 hx-get={ "/admin/media?folder_id=" + folder.FolderID.String() }
                 hx-target="#media-grid"
                 hx-push-url="true"
-                class="breadcrumb-item"
+                class="hover:text-white"
             >
                 { folder.Name }
             </a>
         }
         if currentFolder != nil {
-            <span class="breadcrumb-sep">/</span>
-            <span class="breadcrumb-item breadcrumb-current">{ currentFolder.Name }</span>
+            <span class="text-gray-500">/</span>
+            <span class="text-white">{ currentFolder.Name }</span>
         }
     </nav>
 }
 
 templ MediaFolderSelect(folders []db.MediaFolder, currentFolderID string, mediaID string, csrfToken string) {
-    <div class="form-field">
-        <label for="folder_id">Folder</label>
-        <div class="folder-select-row">
+    <div>
+        <label for="folder_id" class="block text-sm/6 font-medium text-white">Folder</label>
+        <div class="mt-2">
             <select
                 id="folder_id"
                 name="folder_id"
                 hx-post={ "/admin/media/move/" + mediaID }
                 hx-swap="none"
                 hx-include="[name='_csrf']"
-                class="form-control"
+                class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6"
             >
                 <option value="" if currentFolderID == "" { selected }>No folder (root)</option>
                 for _, folder := range folders {

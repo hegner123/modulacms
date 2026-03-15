@@ -1,8 +1,6 @@
 # Docker Deployment
 
-ModulaCMS provides Docker Compose configurations for running the CMS with different database backends. Each configuration includes the CMS binary, the chosen database, and MinIO for S3-compatible media storage.
-
-All Docker commands use `just` as the task runner. The underlying compose files live in `deploy/docker/`.
+Run ModulaCMS in Docker containers with your choice of database backend and MinIO for S3-compatible media storage.
 
 ## Available Stacks
 
@@ -39,7 +37,7 @@ just docker-infra
 
 ## Managing Stacks
 
-The `just dc` command accepts a backend and an action:
+All Docker commands use `just` as the task runner. The `just dc` command accepts a backend and an action:
 
 ```bash
 just dc <backend> <action>
@@ -102,6 +100,8 @@ Docker volumes persist data between container restarts. Understanding when data 
 
 Use `down` during normal development. Use `reset` or `fresh` when you want to start with an empty database. Use `destroy` (full backend only) when you need to clear cached Docker layers.
 
+> **Good to know**: The CMS binary is built inside the Docker image using a multi-stage build with CGO enabled for SQLite support. Configuration inside Docker containers uses the same `modula.config.json` format as bare-metal deployments.
+
 ## Building the CMS Image
 
 Build a standalone CMS image without starting any services:
@@ -142,10 +142,3 @@ just test-minio       # Start MinIO
 just test-integration # Run S3 integration tests
 just test-minio-down  # Stop MinIO
 ```
-
-## Notes
-
-- All Docker stacks require `DOCKER_BUILDKIT=1`, which `just` enables automatically.
-- The CMS binary is built inside the Docker image using a multi-stage build. CGO is enabled for SQLite support.
-- Configuration inside Docker containers uses the same `modula.config.json` format as bare-metal deployments.
-- The `docker-infra` command is useful for running cross-backend database integration tests locally.

@@ -48,6 +48,14 @@ func fileExtension(filename string) string {
 	return "FILE"
 }
 
+// nullableIDValue returns the ID string for a valid NullableDatatypeID, or "" if null.
+func nullableIDValue(n types.NullableDatatypeID) string {
+	if !n.Valid {
+		return ""
+	}
+	return n.ID.String()
+}
+
 // isRoleSelected checks if a role ID appears in the field's roles JSON array.
 func isRoleSelected(rolesJSON types.NullableString, roleID string) bool {
 	if !rolesJSON.Valid {
@@ -64,3 +72,4 @@ func isRoleSelected(rolesJSON types.NullableString, roleID string) bool {
 	}
 	return false
 }
+

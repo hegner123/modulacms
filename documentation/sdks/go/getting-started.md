@@ -1,6 +1,6 @@
 # Go SDK -- Getting Started
 
-The ModulaCMS Go SDK provides typed access to the entire CMS API from any Go application. Zero dependencies, compile-time type safety via branded IDs and generics, and a single client instance that is safe for concurrent use.
+Install the ModulaCMS Go SDK and make your first API calls from any Go application.
 
 ## Installation
 
@@ -14,9 +14,9 @@ Import path:
 import modula "github.com/hegner123/modulacms/sdks/go"
 ```
 
-The package name is `modula`. All types and functions are accessed as `modula.Client`, `modula.NewClient`, etc.
+The package name is `modula`. Access all types and functions as `modula.Client`, `modula.NewClient`, etc.
 
-Requires Go 1.25 or later.
+> **Good to know**: Requires Go 1.25 or later. Zero dependencies -- straightforward to vendor or embed.
 
 ## Creating a Client
 
@@ -114,7 +114,7 @@ client, err := modula.NewClient(modula.ClientConfig{
 })
 ```
 
-API keys are created via the Tokens resource or the admin panel. They inherit the permissions of the user they belong to.
+Create API keys via the Tokens resource or the admin panel. Each key inherits the permissions of the user it belongs to.
 
 ### Session-Based Login
 

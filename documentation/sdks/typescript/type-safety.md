@@ -1,10 +1,10 @@
 # Type Safety
 
-The `@modulacms/types` package provides branded ID types, entity types, enums, and error types shared across both SDKs. You can also import it directly for type-only use in your application.
+Use branded ID types, entity types, and enums from `@modulacms/types` for compile-time safety across both SDKs.
 
 ## Branded ID Types
 
-All entity IDs are branded string types that prevent you from mixing up IDs at the type level. A `UserID` cannot be passed where a `ContentID` is expected, even though both are strings at runtime.
+All entity IDs are branded string types that prevent you from mixing up IDs at the type level. You cannot pass a `UserID` where a `ContentID` belongs, even though both are strings at runtime.
 
 ```typescript
 import type { ContentID, UserID, DatatypeID } from '@modulacms/types'
@@ -27,7 +27,7 @@ type Brand<T, B extends string> = T & { readonly __brand: B }
 type ContentID = Brand<string, 'ContentID'>
 ```
 
-The `__brand` property never exists at runtime. It is purely a compile-time discriminator. To create a branded value, use a type assertion:
+The `__brand` property never exists at runtime -- it serves purely as a compile-time discriminator. Create a branded value with a type assertion:
 
 ```typescript
 const id = '01HXYZ...' as ContentID
@@ -76,7 +76,7 @@ These branded types are not entity identifiers but carry semantic meaning:
 
 ## Entity Types
 
-Entity types represent the data structures returned by the API. They are defined in `@modulacms/types` and re-exported by both SDKs.
+Entity types represent the data structures the API returns. `@modulacms/types` defines them, and both SDKs re-export them.
 
 ### Core Entities
 
@@ -144,7 +144,7 @@ Each entity has corresponding `Create*Params` and `Update*Params` types. These a
 import type { CreateDatatypeParams, UpdateDatatypeParams } from '@modulacms/admin-sdk'
 ```
 
-Update types are full-replacement -- all fields must be provided. Some have special patterns:
+Update types use full-replacement -- provide all fields. Some have special patterns:
 
 - Route updates use a `slug_2` field to carry the current slug for the WHERE clause, allowing renames.
 - User updates have an optional `password` field -- omit it to keep the existing password.
@@ -218,9 +218,7 @@ type PaginatedResponse<T> = {
 
 ## Re-Export Strategy
 
-The admin SDK re-exports shared entity types from `@modulacms/types` through thin re-export files in `src/types/`. The `src/types/common.ts` file gathers and re-exports all types that the admin SDK needs from `@modulacms/types`.
-
-This means you can import shared types from either package:
+The admin SDK re-exports shared entity types from `@modulacms/types`, so you can import shared types from either package:
 
 ```typescript
 // Both work
@@ -228,7 +226,7 @@ import type { ContentData, Datatype } from '@modulacms/types'
 import type { ContentData, Datatype } from '@modulacms/admin-sdk'
 ```
 
-Create and Update param types are defined locally in the admin SDK and are only available from `@modulacms/admin-sdk`.
+Import Create and Update param types from `@modulacms/admin-sdk` -- they are not re-exported to the types package.
 
 ## Using Types Independently
 

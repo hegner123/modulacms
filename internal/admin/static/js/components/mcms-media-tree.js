@@ -6,43 +6,53 @@
 (function() {
     // Drag-and-drop: media items onto folders
     document.addEventListener('dragstart', function(e) {
-        var item = e.target.closest('.media-grid-item[data-media-id]');
+        var item = e.target.closest('[data-media-grid-item][data-media-id]');
         if (!item) return;
         var mediaId = item.getAttribute('data-media-id');
         if (!mediaId) return;
         e.dataTransfer.setData('text/plain', mediaId);
         e.dataTransfer.effectAllowed = 'move';
-        item.classList.add('dragging');
+        item.setAttribute('data-dragging', '');
+        item.classList.add('dragging'); // DUAL: data-dragging + class
     });
 
     document.addEventListener('dragend', function(e) {
-        var item = e.target.closest('.media-grid-item[data-media-id]');
-        if (item) item.classList.remove('dragging');
+        var item = e.target.closest('[data-media-grid-item][data-media-id]');
+        if (item) {
+            item.removeAttribute('data-dragging');
+            item.classList.remove('dragging'); // DUAL: data-dragging + class
+        }
         // Clean up all drop targets
-        var targets = document.querySelectorAll('.media-folder-drop-target');
+        var targets = document.querySelectorAll('[data-drop-target]');
         for (var i = 0; i < targets.length; i++) {
-            targets[i].classList.remove('media-folder-drop-target');
+            targets[i].removeAttribute('data-drop-target');
+            targets[i].classList.remove('media-folder-drop-target'); // DUAL: data-drop-target + class
         }
     });
 
     document.addEventListener('dragover', function(e) {
-        var folderLink = e.target.closest('.media-folder-link[data-folder-id], .media-folder-root');
+        var folderLink = e.target.closest('[data-folder-link], [data-folder-root]');
         if (!folderLink) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        folderLink.classList.add('media-folder-drop-target');
+        folderLink.setAttribute('data-drop-target', '');
+        folderLink.classList.add('media-folder-drop-target'); // DUAL: data-drop-target + class
     });
 
     document.addEventListener('dragleave', function(e) {
-        var folderLink = e.target.closest('.media-folder-link[data-folder-id], .media-folder-root');
-        if (folderLink) folderLink.classList.remove('media-folder-drop-target');
+        var folderLink = e.target.closest('[data-folder-link], [data-folder-root]');
+        if (folderLink) {
+            folderLink.removeAttribute('data-drop-target');
+            folderLink.classList.remove('media-folder-drop-target'); // DUAL: data-drop-target + class
+        }
     });
 
     document.addEventListener('drop', function(e) {
-        var folderLink = e.target.closest('.media-folder-link[data-folder-id], .media-folder-root');
+        var folderLink = e.target.closest('[data-folder-link], [data-folder-root]');
         if (!folderLink) return;
         e.preventDefault();
-        folderLink.classList.remove('media-folder-drop-target');
+        folderLink.removeAttribute('data-drop-target');
+        folderLink.classList.remove('media-folder-drop-target'); // DUAL: data-drop-target + class
 
         var mediaId = e.dataTransfer.getData('text/plain');
         if (!mediaId) return;
@@ -90,7 +100,7 @@
 
     // Folder rename via data-attribute buttons
     document.addEventListener('click', function(e) {
-        var btn = e.target.closest('.media-folder-rename-btn');
+        var btn = e.target.closest('[data-folder-rename]');
         if (!btn) return;
         var folderId = btn.getAttribute('data-folder-id');
         var currentName = btn.getAttribute('data-folder-name');

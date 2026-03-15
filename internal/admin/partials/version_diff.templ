@@ -42,25 +42,27 @@ func parseSnapshotFields(snapshot string) []snapshotField {
 }
 
 templ VersionDiff(versionA db.ContentVersion, versionB db.ContentVersion) {
-	<div class="version-diff">
-		<div class="version-diff-header">
-			<h3>
+	<div class="space-y-4">
+		<div class="border-b border-white/10 pb-3">
+			<h3 class="text-base/7 font-semibold text-white">
 				Comparing Version #{ fmt.Sprintf("%d", versionA.VersionNumber) }
 				vs #{ fmt.Sprintf("%d", versionB.VersionNumber) }
 			</h3>
 		</div>
-		<table class="table version-diff-table">
-			<thead>
-				<tr>
-					<th>Field</th>
-					<th>Version #{ fmt.Sprintf("%d", versionA.VersionNumber) }</th>
-					<th>Version #{ fmt.Sprintf("%d", versionB.VersionNumber) }</th>
-				</tr>
-			</thead>
-			<tbody>
-				@versionDiffRows(versionA.Snapshot, versionB.Snapshot)
-			</tbody>
-		</table>
+		<div class="overflow-x-auto rounded-md ring-1 ring-white/10">
+			<table class="w-full">
+				<thead>
+					<tr class="border-b border-white/10">
+						<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Field</th>
+						<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Version #{ fmt.Sprintf("%d", versionA.VersionNumber) }</th>
+						<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Version #{ fmt.Sprintf("%d", versionB.VersionNumber) }</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-white/5">
+					@versionDiffRows(versionA.Snapshot, versionB.Snapshot)
+				</tbody>
+			</table>
+		</div>
 	</div>
 }
 
@@ -86,22 +88,22 @@ templ versionDiffRows(snapshotA string, snapshotB string) {
 			}
 			changed := !found || a.Value != b.Value
 		}}
-		<tr class={ templ.KV("diff-changed", changed) }>
-			<td>{ a.Label }</td>
-			<td>{ a.Value }</td>
+		<tr class={ templ.KV("bg-yellow-400/10", changed) }>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ a.Label }</td>
+			<td class="px-4 py-4 text-sm text-gray-300">{ a.Value }</td>
 			if found {
-				<td>{ b.Value }</td>
+				<td class="px-4 py-4 text-sm text-gray-300">{ b.Value }</td>
 			} else {
-				<td class="text-muted">(removed)</td>
+				<td class="px-4 py-4 text-sm text-gray-400">(removed)</td>
 			}
 		</tr>
 	}
 	for _, b := range fieldsB {
 		if !matched[b.FieldID] {
-			<tr class="diff-changed">
-				<td>{ b.Label }</td>
-				<td class="text-muted">(not present)</td>
-				<td>{ b.Value }</td>
+			<tr class="bg-yellow-400/10">
+				<td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ b.Label }</td>
+				<td class="px-4 py-4 text-sm text-gray-400">(not present)</td>
+				<td class="px-4 py-4 text-sm text-gray-300">{ b.Value }</td>
 			</tr>
 		}
 	}
