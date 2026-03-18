@@ -1,15 +1,123 @@
-// <mcms-file-input> -- Styled file input with drag-and-drop (Light DOM)
-// Attributes: name, accept, multiple, required, label, max-size (bytes)
-// Dispatches: file-change custom event with { name, files }
+/**
+ * @module mcms-file-input
+ * @description Styled file input component with drag-and-drop support, file previews,
+ * size validation, and a removable file list.
+ *
+ * Renders a visually rich drop zone that replaces the native file input. Supports both
+ * click-to-browse and drag-and-drop workflows. Selected files are displayed in a list
+ * with thumbnails (for images) or file extension badges (for other types), file size,
+ * and a remove button. Files exceeding the optional `max-size` limit are rejected with
+ * a temporary error message.
+ *
+ * The native `<input type="file">` is kept in sync with the displayed file list via
+ * the `DataTransfer` API, ensuring form submissions include the correct files.
+ *
+ * This is a Light DOM web component -- all rendered elements are direct children of the
+ * host element, making them accessible to global CSS and form handling.
+ *
+ * @example
+ * <!-- Single image upload with size limit -->
+ * <mcms-file-input
+ *     name="avatar"
+ *     accept="image/*"
+ *     label="Profile Photo"
+ *     max-size="5242880"
+ * ></mcms-file-input>
+ *
+ * @example
+ * <!-- Multiple file upload -->
+ * <mcms-file-input
+ *     name="attachments"
+ *     accept=".pdf,.doc,.docx"
+ *     multiple
+ *     required
+ *     label="Documents"
+ * ></mcms-file-input>
+ *
+ * @example
+ * <!-- Listen for file changes -->
+ * <mcms-file-input name="media" id="my-input"></mcms-file-input>
+ * <script>
+ *   document.getElementById('my-input').addEventListener('file-change', (e) => {
+ *     console.log('Selected files:', e.detail.files);
+ *     console.log('Input name:', e.detail.name);
+ *   });
+ * </script>
+ */
+
+/**
+ * @event file-change
+ * @description Fired when the set of selected files changes, either through the file
+ * picker, drag-and-drop, or file removal. Bubbles up through the DOM.
+ * @type {CustomEvent}
+ * @property {Object} detail
+ * @property {string} detail.name - The `name` attribute value of this file input.
+ * @property {File[]} detail.files - Array of currently selected `File` objects.
+ */
+
+/**
+ * Styled file input with drag-and-drop, previews, and validation.
+ *
+ * Builds a drop zone with a hidden native `<input type="file">`, a visual file list
+ * showing thumbnails or extension badges, and individual remove buttons. The native
+ * input's `FileList` is kept synchronized via `DataTransfer` so form submissions work
+ * correctly.
+ *
+ * @extends HTMLElement
+ *
+ * @attr {string} name - The form field name for the file input. Default: `"file"`.
+ * @attr {string} accept - Comma-separated list of accepted MIME types and/or file
+ *   extensions (e.g., `"image/*,.pdf"`). Applied to both the native input and
+ *   drag-and-drop filtering.
+ * @attr {boolean} multiple - When present, allows selecting multiple files.
+ * @attr {boolean} required - When present, marks the native input as required.
+ * @attr {string} label - Optional label text displayed above the drop zone.
+ * @attr {string} max-size - Maximum file size in bytes. Files exceeding this limit
+ *   are rejected with a temporary error message. Default: `0` (no limit).
+ *
+ * @fires file-change
+ */
 class McmsFileInput extends HTMLElement {
     constructor() {
         super();
+
+        /**
+         * Array of currently selected File objects.
+         * @type {File[]}
+         * @private
+         */
         this._files = [];
+
+        /**
+         * Reference to the hidden native file input element.
+         * @type {HTMLInputElement|null}
+         * @private
+         */
         this._input = null;
+
+        /**
+         * Reference to the drop zone container element.
+         * @type {HTMLDivElement|null}
+         * @private
+         */
         this._dropZone = null;
+
+        /**
+         * Reference to the file list container where file items are rendered.
+         * @type {HTMLDivElement|null}
+         * @private
+         */
         this._fileList = null;
     }
 
+    /**
+     * Lifecycle callback invoked when the element is inserted into the DOM.
+     *
+     * Reads configuration attributes, builds the drop zone with an upload icon and
+     * browse prompt, creates the hidden native file input, attaches the file list
+     * container, and binds all event handlers for click, keyboard, file selection,
+     * and drag-and-drop interactions.
+     */
     connectedCallback() {
         var name = this.getAttribute('name') || 'file';
         var accept = this.getAttribute('accept') || '';
@@ -22,6 +130,7 @@ class McmsFileInput extends HTMLElement {
 
         if (label) {
             var labelEl = document.createElement('label');
+            labelEl.className = 'block text-sm/6 font-medium text-white';
             labelEl.textContent = label;
             wrapper.appendChild(labelEl);
         }
@@ -80,6 +189,22 @@ class McmsFileInput extends HTMLElement {
         this._bindEvents(dropZone, input);
     }
 
+    /**
+     * Binds all interactive event handlers to the drop zone and file input.
+     *
+     * Attaches click and keyboard handlers to the drop zone for opening the native
+     * file picker, a change handler on the file input, and dragenter/dragover/dragleave/drop
+     * handlers for drag-and-drop support. Drag state is indicated via both a `data-dragover`
+     * attribute and a `file-input-dragover` CSS class (dual approach for CSS/JS targeting).
+     *
+     * Dropped files are filtered against the `accept` attribute and limited to one file
+     * when `multiple` is not set. The filtered files are transferred to the native input
+     * via the `DataTransfer` API.
+     *
+     * @param {HTMLDivElement} dropZone - The drop zone container element.
+     * @param {HTMLInputElement} input - The hidden native file input element.
+     * @private
+     */
     _bindEvents(dropZone, input) {
         var self = this;
 
@@ -153,6 +278,16 @@ class McmsFileInput extends HTMLElement {
         });
     }
 
+    /**
+     * Processes a list of selected files, applying size validation and updating the UI.
+     *
+     * Clears the current file list, validates each file against the `max-size` attribute,
+     * adds valid files to the internal array, renders file items in the list, and
+     * dispatches a `file-change` event with the updated file set.
+     *
+     * @param {FileList} fileListObj - The FileList from the native input or DataTransfer.
+     * @private
+     */
     _handleFiles(fileListObj) {
         var self = this;
         var maxSize = parseInt(this.getAttribute('max-size') || '0', 10);
@@ -179,6 +314,19 @@ class McmsFileInput extends HTMLElement {
         }));
     }
 
+    /**
+     * Renders a single file item in the file list with thumbnail/icon, name, size,
+     * and a remove button.
+     *
+     * For image files, generates a thumbnail using `FileReader.readAsDataURL()`.
+     * For non-image files, displays the file extension in uppercase as a badge.
+     * The remove button calls `_removeFile()` to update the file list.
+     *
+     * @param {File} file - The File object to render.
+     * @param {number} index - The index of this file in the `_files` array, used
+     *   for removal targeting.
+     * @private
+     */
     _renderFileItem(file, index) {
         var self = this;
         var item = document.createElement('div');
@@ -234,6 +382,13 @@ class McmsFileInput extends HTMLElement {
         this._fileList.appendChild(item);
     }
 
+    /**
+     * Removes a file from the selection by index, rebuilds the native input's FileList
+     * via DataTransfer, re-renders the file list, and dispatches a `file-change` event.
+     *
+     * @param {number} index - The index of the file to remove from the `_files` array.
+     * @private
+     */
     _removeFile(index) {
         this._files.splice(index, 1);
 
@@ -256,6 +411,13 @@ class McmsFileInput extends HTMLElement {
         }));
     }
 
+    /**
+     * Displays a temporary error message in the file list area. The message
+     * auto-removes after 5 seconds.
+     *
+     * @param {string} message - The error message text to display.
+     * @private
+     */
     _showError(message) {
         var err = document.createElement('div');
         err.className = 'text-sm text-[var(--color-danger)] py-1';
@@ -264,6 +426,19 @@ class McmsFileInput extends HTMLElement {
         setTimeout(function() { if (err.parentNode) err.remove(); }, 5000);
     }
 
+    /**
+     * Checks whether a file matches the `accept` attribute specification.
+     *
+     * Supports three formats:
+     * - Exact MIME type match (e.g., `"application/pdf"`)
+     * - Wildcard MIME type match (e.g., `"image/*"` matches any `image/` type)
+     * - File extension match (e.g., `".pdf"`, case-insensitive)
+     *
+     * @param {File} file - The file to check.
+     * @param {string} accept - Comma-separated accept string (e.g., `"image/*,.pdf"`).
+     * @returns {boolean} `true` if the file matches at least one accept pattern.
+     * @private
+     */
     _matchesAccept(file, accept) {
         var types = accept.split(',');
         for (var i = 0; i < types.length; i++) {
@@ -285,6 +460,21 @@ class McmsFileInput extends HTMLElement {
         return false;
     }
 
+    /**
+     * Formats a byte count into a human-readable size string.
+     *
+     * Uses binary units (KB = 1024 bytes). Integers are displayed without decimals;
+     * values above 1 KB are shown with one decimal place.
+     *
+     * @param {number} bytes - The byte count to format.
+     * @returns {string} Formatted size string (e.g., `"0 B"`, `"1.5 MB"`, `"256 KB"`).
+     * @private
+     *
+     * @example
+     * this._formatSize(0);        // "0 B"
+     * this._formatSize(1024);     // "1.0 KB"
+     * this._formatSize(5242880);  // "5.0 MB"
+     */
     _formatSize(bytes) {
         if (bytes === 0) return '0 B';
         var units = ['B', 'KB', 'MB', 'GB'];

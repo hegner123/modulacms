@@ -47,18 +47,18 @@ const isBrowser = typeof window !== 'undefined';
 
 if (isBrowser) {
         class BlockEditor extends HTMLElement {
-                static get observedAttributes() {
-                        return ['data-state'];
-                }
-
                 constructor() {
                         super();
 
                         this._state = null;
+                        this._baseline = null; // frozen snapshot for save diffing
                         this._elementRegistry = new Map(); // blockId -> block-item element
                         this._wrapperRegistry = new Map(); // blockId -> block-wrapper element
                         this._collapsedBlocks = new Set(); // blockId set for collapsed blocks
                         this._beforeUnloadHandler = this._onBeforeUnload.bind(this);
+                        this._visibilityHandler = this._onVisibilityChange.bind(this);
+                        this._recoveryTimer = null;
+                        this._recoveryDebounceMs = 30000;
 
                         // Drag state
                         this._drag = null; // active drag session object, or null
@@ -117,6 +117,222 @@ if (isBrowser) {
                         });
                 }
 
+                // ---- Baseline (diff target for saves) ----
+
+                _cloneBlocks(state) {
+                        var blocks = {};
+                        var keys = Object.keys(state.blocks);
+                        for (var i = 0; i < keys.length; i++) {
+                                var key = keys[i];
+                                var block = state.blocks[key];
+                                blocks[key] = {
+                                        ...block,
+                                        fields: block.fields ? block.fields.map(function(f) { return { ...f }; }) : undefined,
+                                };
+                        }
+                        return { blocks: blocks, rootId: state.rootId };
+                }
+
+                getBaseline() {
+                        return this._baseline;
+                }
+
+                // commitSave is called by the save handler after a successful server
+                // response. It remaps client UUIDs to server ULIDs, snapshots the
+                // current state as the new baseline, and clears the dirty flag.
+                // Order matters — see BLOCK_EDITOR_STATE_PLAN.md §2.
+                commitSave(idMap) {
+                        if (!this._state) return;
+
+                        // 1. Remap live state block IDs and pointers
+                        if (idMap && Object.keys(idMap).length > 0) {
+                                var clientIds = Object.keys(idMap);
+                                for (var i = 0; i < clientIds.length; i++) {
+                                        var clientId = clientIds[i];
+                                        var serverId = idMap[clientId];
+                                        var block = this._state.blocks[clientId];
+                                        if (!block) continue;
+                                        block.id = serverId;
+                                        this._state.blocks[serverId] = block;
+                                        delete this._state.blocks[clientId];
+                                        if (this._state.rootId === clientId) {
+                                                this._state.rootId = serverId;
+                                        }
+                                }
+                                // Second pass: remap pointer fields across ALL blocks
+                                var allKeys = Object.keys(this._state.blocks);
+                                for (var j = 0; j < allKeys.length; j++) {
+                                        var b = this._state.blocks[allKeys[j]];
+                                        if (b.parentId && idMap[b.parentId]) b.parentId = idMap[b.parentId];
+                                        if (b.firstChildId && idMap[b.firstChildId]) b.firstChildId = idMap[b.firstChildId];
+                                        if (b.nextSiblingId && idMap[b.nextSiblingId]) b.nextSiblingId = idMap[b.nextSiblingId];
+                                        if (b.prevSiblingId && idMap[b.prevSiblingId]) b.prevSiblingId = idMap[b.prevSiblingId];
+                                }
+
+                                // 2. Remap element/wrapper registries + all descendant data-block-id attrs
+                                for (var k = 0; k < clientIds.length; k++) {
+                                        var cid = clientIds[k];
+                                        var sid = idMap[cid];
+                                        if (this._elementRegistry.has(cid)) {
+                                                var el = this._elementRegistry.get(cid);
+                                                this._elementRegistry.delete(cid);
+                                                this._elementRegistry.set(sid, el);
+                                                el.dataset.blockId = sid;
+                                        }
+                                        if (this._wrapperRegistry.has(cid)) {
+                                                var wrapper = this._wrapperRegistry.get(cid);
+                                                this._wrapperRegistry.delete(cid);
+                                                this._wrapperRegistry.set(sid, wrapper);
+                                                wrapper.dataset.blockId = sid;
+                                                // Update child elements (kebab button, chevron, etc.)
+                                                var descendants = wrapper.querySelectorAll('[data-block-id="' + cid + '"]');
+                                                for (var d = 0; d < descendants.length; d++) {
+                                                        descendants[d].dataset.blockId = sid;
+                                                }
+                                        }
+                                }
+
+                                // 3. Remap history stacks
+                                this._history.remapIds(idMap);
+
+                                // 4. Remap selectedBlockId
+                                if (this._state.selectedBlockId && idMap[this._state.selectedBlockId] !== undefined) {
+                                        this._state.selectedBlockId = idMap[this._state.selectedBlockId];
+                                }
+                        }
+
+                        // 5. Snapshot current state as new baseline
+                        this._baseline = this._cloneBlocks(this._state);
+
+                        // 6. Clear dirty flag
+                        this._state.dirty = false;
+                        this._updateSaveButton();
+
+                        // 7. Clear crash recovery (successful save = nothing to recover)
+                        this._clearRecovery();
+                }
+
+                // ---- Crash Recovery ----
+
+                _recoveryKey() {
+                        var contentId = this.getAttribute('data-content-id');
+                        return contentId ? 'mcms-block-recovery:' + contentId : null;
+                }
+
+                _scheduleRecoveryWrite() {
+                        clearTimeout(this._recoveryTimer);
+                        var self = this;
+                        this._recoveryTimer = setTimeout(function() {
+                                self._writeRecovery();
+                        }, this._recoveryDebounceMs);
+                }
+
+                _writeRecovery() {
+                        var key = this._recoveryKey();
+                        if (!key || !this._state || !this._state.dirty) return;
+                        try {
+                                sessionStorage.setItem(key, JSON.stringify({
+                                        state: this.serialize(),
+                                        timestamp: Date.now(),
+                                }));
+                        } catch (e) {
+                                // QuotaExceededError or SecurityError — silently ignore
+                        }
+                }
+
+                _clearRecovery() {
+                        clearTimeout(this._recoveryTimer);
+                        var key = this._recoveryKey();
+                        if (!key) return;
+                        try {
+                                sessionStorage.removeItem(key);
+                        } catch (e) {
+                                // SecurityError — silently ignore
+                        }
+                }
+
+                _checkRecovery() {
+                        var key = this._recoveryKey();
+                        if (!key) return;
+                        var raw;
+                        try {
+                                raw = sessionStorage.getItem(key);
+                        } catch (e) {
+                                return;
+                        }
+                        if (!raw) return;
+
+                        var recovery;
+                        try {
+                                recovery = JSON.parse(raw);
+                        } catch (e) {
+                                this._clearRecovery();
+                                return;
+                        }
+
+                        if (!recovery.state || !recovery.timestamp) {
+                                this._clearRecovery();
+                                return;
+                        }
+
+                        var self = this;
+                        var age = Date.now() - recovery.timestamp;
+                        var ageStr = age < 60000
+                                ? Math.round(age / 1000) + 's ago'
+                                : Math.round(age / 60000) + 'm ago';
+
+                        var banner = document.createElement('div');
+                        banner.className = 'recovery-banner';
+                        banner.innerHTML =
+                                '<span>Unsaved changes recovered (' + ageStr + ')</span>' +
+                                '<button class="recovery-restore">Restore</button>' +
+                                '<button class="recovery-dismiss">Dismiss</button>';
+
+                        banner.querySelector('.recovery-restore').addEventListener('click', function() {
+                                var parsed;
+                                try {
+                                        parsed = JSON.parse(recovery.state);
+                                } catch (e) {
+                                        self._clearRecovery();
+                                        banner.remove();
+                                        return;
+                                }
+                                var restored = {
+                                        blocks: parsed.blocks || {},
+                                        rootId: parsed.rootId || null,
+                                        selectedBlockId: null,
+                                        dirty: true,
+                                };
+                                var errors = validateState(restored);
+                                if (errors.length > 0) {
+                                        self._clearRecovery();
+                                        banner.remove();
+                                        return;
+                                }
+                                self._state = restored;
+                                self._history.clear();
+                                self._elementRegistry.clear();
+                                self._wrapperRegistry.clear();
+                                self._collapsedBlocks.clear();
+                                self._render();
+                                self._updateSaveButton();
+                                self._clearRecovery();
+                        });
+
+                        banner.querySelector('.recovery-dismiss').addEventListener('click', function() {
+                                self._clearRecovery();
+                                banner.remove();
+                        });
+
+                        this.prepend(banner);
+                }
+
+                _onVisibilityChange() {
+                        if (document.hidden && this._state && this._state.dirty) {
+                                this._writeRecovery();
+                        }
+                }
+
                 getBlock(id) {
                         return this._state?.blocks[id] ?? null;
                 }
@@ -155,19 +371,16 @@ if (isBrowser) {
                 connectedCallback() {
                         window.addEventListener('beforeunload', this._beforeUnloadHandler);
                         window.addEventListener('keydown', this._escapeHandler);
+                        document.addEventListener('visibilitychange', this._visibilityHandler);
                         this._initState();
                 }
 
                 disconnectedCallback() {
                         window.removeEventListener('beforeunload', this._beforeUnloadHandler);
                         window.removeEventListener('keydown', this._escapeHandler);
+                        document.removeEventListener('visibilitychange', this._visibilityHandler);
+                        clearTimeout(this._recoveryTimer);
                         if (this._history) this._history.clear();
-                }
-
-                attributeChangedCallback(name, oldValue, newValue) {
-                        if (name === 'data-state' && this.isConnected) {
-                                this._initState();
-                        }
                 }
 
                 // ---- State Initialization ----
@@ -178,6 +391,7 @@ if (isBrowser) {
                         // No attribute or empty string — start empty
                         if (stateAttr === null || stateAttr === '') {
                                 this._state = createState();
+                                this._baseline = null;
                                 if (this._history) this._history.clear();
                                 this._render();
                                 return;
@@ -219,12 +433,20 @@ if (isBrowser) {
                         }
 
                         this._state = newState;
+                        this._baseline = this._cloneBlocks(newState);
                         if (this._history) this._history.clear();
                         this._rootDatatypeId = this.getAttribute('data-root-datatype-id') || null;
                         this._elementRegistry.clear();
                         this._wrapperRegistry.clear();
                         this._collapsedBlocks.clear();
+
+                        // Consume the attribute and free the DOM
+                        this.removeAttribute('data-state');
+
                         this._render();
+
+                        // Check for crash recovery snapshot after render
+                        this._checkRecovery();
                 }
 
                 // ---- Rendering ----
@@ -314,16 +536,10 @@ if (isBrowser) {
                                 return;
                         }
 
-                        // Insert button before the first block
-                        container.appendChild(this._renderInsertButton('before', rootList[0].id));
-
                         for (var i = 0; i < rootList.length; i++) {
                                 const block = rootList[i];
                                 const wrapper = this._renderBlockWrapper(block, 0);
                                 container.appendChild(wrapper);
-
-                                // Insert button after each block
-                                container.appendChild(this._renderInsertButton('after', block.id));
                         }
                 }
 
@@ -351,21 +567,11 @@ if (isBrowser) {
                                 childContainer.className = 'children-container';
                                 childContainer.dataset.parentId = block.id;
 
-                                // Insert button before first child
-                                childContainer.appendChild(this._renderInsertButton('before', children[0].id));
-
                                 for (var ci = 0; ci < children.length; ci++) {
                                         const child = children[ci];
                                         childContainer.appendChild(this._renderBlockWrapper(child, depth + 1));
-                                        // Insert button after each child
-                                        childContainer.appendChild(this._renderInsertButton('after', child.id));
                                 }
                                 wrapper.appendChild(childContainer);
-                        } else if (typeConfig.canHaveChildren) {
-                                // Empty container — show insert button inside
-                                const insideBtn = this._renderInsertButton('inside', block.id);
-                                insideBtn.classList.add('insert-btn--inside');
-                                wrapper.appendChild(insideBtn);
                         }
 
                         this._wrapperRegistry.set(block.id, wrapper);
@@ -415,9 +621,14 @@ if (isBrowser) {
                                 el.appendChild(countBadge);
                         }
 
-                        // Hover toolbar (child of .block-item to avoid pointerleave flicker)
-                        const hoverToolbar = this._renderHoverToolbar(block.id);
-                        el.appendChild(hoverToolbar);
+                        // Kebab menu button (three dots)
+                        const kebab = document.createElement('button');
+                        kebab.className = 'block-kebab';
+                        kebab.dataset.action = 'kebab-menu';
+                        kebab.dataset.blockId = block.id;
+                        kebab.title = 'Block actions';
+                        kebab.innerHTML = '\u22EE'; // vertical ellipsis
+                        el.appendChild(kebab);
 
                         // Content preview (actual field values)
                         const preview = this._renderContentPreview(block);
@@ -429,81 +640,181 @@ if (isBrowser) {
                         return el;
                 }
 
-                /**
-                 * Render the hover toolbar for a block header.
-                 * Contains: Move Up, Move Down, Indent, Outdent, Duplicate, Delete.
-                 * All buttons have data-action attributes so _onPointerDown excludes
-                 * them from drag initiation.
-                 */
-                _renderHoverToolbar(blockId) {
-                        const toolbar = document.createElement('div');
-                        toolbar.className = 'block-hover-toolbar';
+                // ---- Kebab Context Menu ----
 
-                        const actions = [
-                                { label: '\u2191', action: 'toolbar-move-up', title: 'Move Up' },
-                                { label: '\u2193', action: 'toolbar-move-down', title: 'Move Down' },
-                                { label: '\u2192', action: 'toolbar-indent', title: 'Indent (>)' },
-                                { label: '\u2190', action: 'toolbar-outdent', title: 'Outdent (<)' },
-                                { label: '\u2398', action: 'toolbar-duplicate', title: 'Duplicate (Ctrl+Shift+D)' },
-                                { label: '\u2715', action: 'toolbar-delete', title: 'Delete' },
-                        ];
+                _openKebabMenu(blockId, anchorEl) {
+                        console.log('[kebab-debug] _openKebabMenu — blockId:', blockId, 'anchorEl:', anchorEl.tagName + '.' + anchorEl.className, 'anchor in DOM:', document.contains(anchorEl));
+                        this._closeKebabMenu();
 
-                        for (const def of actions) {
-                                const btn = document.createElement('button');
-                                btn.textContent = def.label;
-                                btn.title = def.title;
-                                btn.dataset.action = def.action;
-                                btn.dataset.blockId = blockId;
-                                toolbar.appendChild(btn);
+                        const block = this._state.blocks[blockId];
+                        if (!block) {
+                                console.log('[kebab-debug] _openKebabMenu — block not found in state, aborting');
+                                return;
                         }
 
-                        return toolbar;
+                        const typeConfig = getTypeConfig(block.type);
+                        const canHaveChildren = typeConfig.canHaveChildren && getDepth(this._state, blockId) < MAX_DEPTH - 1;
+
+                        var menu = document.createElement('div');
+                        menu.className = 'block-context-menu';
+
+                        var sections = [
+                                {
+                                        label: 'Add',
+                                        items: [
+                                                { label: 'Add Before', action: 'insert', position: 'before', blockId: blockId },
+                                                { label: 'Add After', action: 'insert', position: 'after', blockId: blockId },
+                                                canHaveChildren ? { label: 'Add Inside', action: 'insert', position: 'inside', blockId: blockId } : null,
+                                        ],
+                                },
+                                {
+                                        label: 'Move',
+                                        items: [
+                                                { label: 'Move Up', action: 'toolbar-move-up', blockId: blockId },
+                                                { label: 'Move Down', action: 'toolbar-move-down', blockId: blockId },
+                                                { label: 'Indent', action: 'toolbar-indent', blockId: blockId },
+                                                { label: 'Outdent', action: 'toolbar-outdent', blockId: blockId },
+                                        ],
+                                },
+                                {
+                                        label: null,
+                                        items: [
+                                                { label: 'Duplicate', action: 'toolbar-duplicate', blockId: blockId },
+                                                { label: 'Delete', action: 'toolbar-delete', blockId: blockId, destructive: true },
+                                        ],
+                                },
+                        ];
+
+                        for (var si = 0; si < sections.length; si++) {
+                                var section = sections[si];
+                                if (si > 0) {
+                                        var sep = document.createElement('div');
+                                        sep.className = 'context-menu-separator';
+                                        menu.appendChild(sep);
+                                }
+                                if (section.label) {
+                                        var heading = document.createElement('div');
+                                        heading.className = 'context-menu-heading';
+                                        heading.textContent = section.label;
+                                        menu.appendChild(heading);
+                                }
+                                for (var ii = 0; ii < section.items.length; ii++) {
+                                        var item = section.items[ii];
+                                        if (!item) continue;
+                                        var btn = document.createElement('button');
+                                        btn.className = 'context-menu-item';
+                                        if (item.destructive) btn.classList.add('context-menu-item--destructive');
+                                        btn.textContent = item.label;
+                                        btn.dataset.action = item.action;
+                                        btn.dataset.blockId = item.blockId;
+                                        if (item.position) btn.dataset.position = item.position;
+                                        if (item.position) btn.dataset.targetId = item.blockId;
+                                        menu.appendChild(btn);
+                                }
+                        }
+
+                        // Position fixed to viewport, directly below the kebab button
+                        var rect = anchorEl.getBoundingClientRect();
+                        menu.style.position = 'fixed';
+                        menu.style.top = (rect.bottom + 4) + 'px';
+                        menu.style.left = rect.left + 'px';
+
+                        this._kebabMenu = menu;
+                        // Route menu clicks back to the block editor's _handleClick
+                        var self = this;
+                        menu.addEventListener('click', function(evt) {
+                                var item = evt.target.closest('[data-action]');
+                                console.log('[kebab-debug] menu click listener — e.target:', evt.target.tagName + '.' + evt.target.className, 'nodeType:', evt.target.nodeType, 'closest [data-action]:', item ? item.dataset.action + ' blockId:' + item.dataset.blockId : 'null', 'menu in DOM:', document.contains(menu));
+                                if (item) self._handleClick(evt);
+                        });
+
+                        document.body.appendChild(menu);
+                        console.log('[kebab-debug] _openKebabMenu — menu appended to body, position:', menu.style.top, menu.style.left, 'items:', menu.querySelectorAll('[data-action]').length);
+
+                        // Close on outside click (next tick to avoid catching the opening click)
+                        var self = this;
+                        requestAnimationFrame(function() {
+                                console.log('[kebab-debug] rAF fired — registering outside-click handler, menu still in DOM:', document.contains(menu));
+                                self._kebabOutsideHandler = function(evt) {
+                                        var inside = menu.contains(evt.target);
+                                        console.log('[kebab-debug] outside-click handler — target:', evt.target.tagName + '.' + evt.target.className, 'inside menu:', inside, 'menu in DOM:', document.contains(menu));
+                                        if (!inside) {
+                                                self._closeKebabMenu();
+                                        }
+                                };
+                                document.addEventListener('pointerdown', self._kebabOutsideHandler, true);
+                        });
+
+                        // Viewport overflow: flip up if clipped at bottom, nudge left if clipped at right
+                        requestAnimationFrame(function() {
+                                var menuRect = menu.getBoundingClientRect();
+                                if (menuRect.bottom > window.innerHeight - 8) {
+                                        menu.style.top = (rect.top - menuRect.height - 4) + 'px';
+                                }
+                                if (menuRect.right > window.innerWidth - 8) {
+                                        menu.style.left = (rect.right - menuRect.width) + 'px';
+                                }
+                        });
+                }
+
+                _closeKebabMenu() {
+                        console.log('[kebab-debug] _closeKebabMenu — menu exists:', !!this._kebabMenu, 'outsideHandler exists:', !!this._kebabOutsideHandler);
+                        if (this._kebabMenu) {
+                                this._kebabMenu.remove();
+                                this._kebabMenu = null;
+                        }
+                        if (this._kebabOutsideHandler) {
+                                document.removeEventListener('pointerdown', this._kebabOutsideHandler, true);
+                                this._kebabOutsideHandler = null;
+                        }
                 }
 
                 /**
-                 * Render content preview showing actual field values.
-                 * Returns null for container blocks (children ARE the content).
+                 * Render content preview showing field labels and values.
+                 * Returns null only when the block has no fields at all.
                  */
                 _renderContentPreview(block) {
-                        if (block.type === 'container') return null;
+                        var fields = block.fields || [];
+                        if (fields.length === 0) return null;
 
                         var preview = document.createElement('div');
                         preview.className = 'block-content-preview';
 
-                        var fields = block.fields || [];
-                        var hasContent = false;
-
                         for (var i = 0; i < fields.length; i++) {
-                                var value = (fields[i].value || '').trim();
-                                if (!value) continue;
-                                // Skip ULID-looking values (media/reference IDs)
-                                if (value.length === 26 && /^[0-9A-HJKMNP-TV-Z]{26}$/.test(value)) continue;
+                                var f = fields[i];
+                                var label = f.label || f.fieldId || 'Field';
+                                var value = (f.value || '').trim();
 
-                                hasContent = true;
                                 var el = document.createElement('div');
+                                el.className = 'preview-field';
 
-                                if (i === 0 && block.type === 'heading') {
-                                        el.className = 'preview-heading';
-                                } else if (value.length > 200 || value.indexOf('\n') !== -1) {
-                                        el.className = 'preview-text';
+                                var labelSpan = document.createElement('span');
+                                labelSpan.className = 'preview-field-label';
+                                labelSpan.textContent = label;
+                                el.appendChild(labelSpan);
+
+                                if (!value) {
+                                        var emptySpan = document.createElement('span');
+                                        emptySpan.className = 'preview-field-empty';
+                                        emptySpan.textContent = '\u2014';
+                                        el.appendChild(emptySpan);
                                 } else {
-                                        el.className = 'preview-field';
+                                        // Truncate ULID-looking values to just the type hint
+                                        var isUlid = value.length === 26 && /^[0-9A-HJKMNP-TV-Z]{26}$/.test(value);
+                                        var valueSpan = document.createElement('span');
+                                        valueSpan.className = 'preview-field-value';
+                                        if (isUlid) {
+                                                valueSpan.textContent = '(ref)';
+                                                valueSpan.classList.add('preview-field-ref');
+                                        } else if (value.length > 120) {
+                                                valueSpan.textContent = value.substring(0, 120) + '\u2026';
+                                        } else {
+                                                valueSpan.textContent = value;
+                                        }
+                                        el.appendChild(valueSpan);
                                 }
 
-                                // Truncate very long values
-                                if (value.length > 500) {
-                                        value = value.substring(0, 500) + '\u2026';
-                                }
-
-                                el.textContent = value;
                                 preview.appendChild(el);
-                        }
-
-                        if (!hasContent) {
-                                var empty = document.createElement('div');
-                                empty.className = 'preview-empty';
-                                empty.textContent = 'No content yet';
-                                preview.appendChild(empty);
                         }
 
                         return preview;
@@ -536,18 +847,6 @@ if (isBrowser) {
                         return container;
                 }
 
-                _renderInsertButton(position, targetId) {
-                        var btn = document.createElement('button');
-                        btn.className = 'insert-btn';
-                        btn.title = 'Insert block';
-                        btn.innerHTML = '+';
-                        btn.dataset.action = 'insert';
-                        btn.dataset.position = position;
-                        btn.dataset.targetId = targetId || '';
-                        return btn;
-                }
-
-
                 _renderError(message, detail) {
                         this.innerHTML = '';
                         const container = document.createElement('div');
@@ -576,31 +875,56 @@ if (isBrowser) {
                 // ---- Event Handling ----
 
                 _handleClick(e) {
-                        const target = e.target;
-                        const action = target.dataset?.action;
-                        if (!action) return;
+                        const target = e.target.closest('[data-action]');
+                        if (!target) {
+                                console.log('[kebab-debug] _handleClick — no [data-action] found, e.target:', e.target.tagName, e.target.className, 'nodeType:', e.target.nodeType);
+                                return;
+                        }
+                        const action = target.dataset.action;
+                        console.log('[kebab-debug] _handleClick — action:', action, 'blockId:', target.dataset.blockId, 'target element:', target.tagName + '.' + target.className, 'event source:', e.currentTarget === this._kebabMenu ? 'context-menu' : 'editor-container');
 
-                        if (action === 'insert') {
+                        if (action === 'kebab-menu') {
+                                console.log('[kebab-debug] → kebab-menu branch — blockId:', target.dataset.blockId, 'anchor rect:', JSON.stringify(target.getBoundingClientRect().toJSON()));
+                                e.stopPropagation();
+                                this._openKebabMenu(target.dataset.blockId, target);
+                                return;
+                        } else if (action === 'insert') {
+                                console.log('[kebab-debug] → insert branch — position:', target.dataset.position, 'targetId:', target.dataset.targetId);
+                                this._closeKebabMenu();
                                 var position = target.dataset.position;
                                 var targetId = target.dataset.targetId || null;
                                 this._openPicker(targetId, position);
                                 return;
                         } else if (action === 'add') {
+                                console.log('[kebab-debug] → add branch (legacy) — blockType:', target.dataset.blockType);
+                                this._closeKebabMenu();
                                 const blockType = target.dataset.blockType || 'text';
                                 this._doAddBlock(blockType);
                         } else if (action === 'delete' || action === 'toolbar-delete') {
+                                console.log('[kebab-debug] → delete branch — blockId:', target.dataset.blockId, 'block exists:', !!this._state?.blocks[target.dataset.blockId]);
+                                this._closeKebabMenu();
                                 this._doDeleteBlock(target.dataset.blockId);
                         } else if (action === 'save') {
                                 this.save();
                         } else if (action === 'toolbar-move-up') {
+                                console.log('[kebab-debug] → move-up branch — blockId:', target.dataset.blockId);
+                                this._closeKebabMenu();
                                 this._doMoveBlockUp(target.dataset.blockId);
                         } else if (action === 'toolbar-move-down') {
+                                console.log('[kebab-debug] → move-down branch — blockId:', target.dataset.blockId);
+                                this._closeKebabMenu();
                                 this._doMoveBlockDown(target.dataset.blockId);
                         } else if (action === 'toolbar-indent') {
+                                console.log('[kebab-debug] → indent branch — blockId:', target.dataset.blockId);
+                                this._closeKebabMenu();
                                 this._doIndentBlock(target.dataset.blockId);
                         } else if (action === 'toolbar-outdent') {
+                                console.log('[kebab-debug] → outdent branch — blockId:', target.dataset.blockId);
+                                this._closeKebabMenu();
                                 this._doOutdentBlock(target.dataset.blockId);
                         } else if (action === 'toolbar-duplicate') {
+                                console.log('[kebab-debug] → duplicate branch — blockId:', target.dataset.blockId);
+                                this._closeKebabMenu();
                                 this._doDuplicateBlock(target.dataset.blockId);
                         } else if (action === 'toggle-collapse') {
                                 this._toggleCollapse(target.dataset.blockId);
@@ -867,8 +1191,11 @@ if (isBrowser) {
                 }
 
                 _updateSaveButton() {
-                        // no-op: save button is always enabled.
-                        // Dirty tracking remains for autosave and beforeunload.
+                        // Save button is always enabled — dirty tracking is for
+                        // beforeunload, crash recovery, and save diffing.
+                        if (this._state && this._state.dirty) {
+                                this._scheduleRecoveryWrite();
+                        }
                 }
 
                 // ---- Collapse / Expand ----
@@ -938,8 +1265,13 @@ if (isBrowser) {
 
                 _onBeforeUnload(e) {
                         if (this._state?.dirty) {
+                                // Flush recovery snapshot before the tab closes
+                                this._writeRecovery();
                                 e.preventDefault();
                                 e.returnValue = 'You have unsaved changes.';
+                        } else {
+                                // Clean navigation — clear any stale recovery data
+                                this._clearRecovery();
                         }
                 }
 
@@ -973,27 +1305,10 @@ if (isBrowser) {
                         }));
                 }
 
+                // remapIds is kept for backward compatibility but delegates to commitSave.
+                // Prefer calling commitSave(idMap) directly from save handlers.
                 remapIds(idMap) {
-                        var clientIds = Object.keys(idMap);
-                        for (var i = 0; i < clientIds.length; i++) {
-                                var clientId = clientIds[i];
-                                if (this._elementRegistry.has(clientId)) {
-                                        var el = this._elementRegistry.get(clientId);
-                                        this._elementRegistry.delete(clientId);
-                                        this._elementRegistry.set(idMap[clientId], el);
-                                        el.dataset.blockId = idMap[clientId];
-                                }
-                                if (this._wrapperRegistry.has(clientId)) {
-                                        var wrapper = this._wrapperRegistry.get(clientId);
-                                        this._wrapperRegistry.delete(clientId);
-                                        this._wrapperRegistry.set(idMap[clientId], wrapper);
-                                        wrapper.dataset.blockId = idMap[clientId];
-                                }
-                        }
-                        this._history.remapIds(idMap);
-                        if (this._state.selectedBlockId && idMap[this._state.selectedBlockId] !== undefined) {
-                                this._state.selectedBlockId = idMap[this._state.selectedBlockId];
-                        }
+                        this.commitSave(idMap);
                 }
         }
 

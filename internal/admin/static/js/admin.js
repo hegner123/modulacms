@@ -47,6 +47,19 @@ document.body.addEventListener('htmx:configRequest', (e) => {
 })();
 
 // ========================================
+// Overflow menus: close on outside click
+// ========================================
+document.addEventListener('click', function(e) {
+    var menus = document.querySelectorAll('[data-overflow-menu]');
+    for (var i = 0; i < menus.length; i++) {
+        if (!menus[i].contains(e.target)) {
+            var panel = menus[i].querySelector('[data-overflow-panel]');
+            if (panel) panel.classList.add('hidden');
+        }
+    }
+});
+
+// ========================================
 // Error handling: HTMX response errors
 // ========================================
 document.body.addEventListener('htmx:responseError', (e) => {
@@ -399,7 +412,9 @@ const componentFiles = [
     '/admin/static/js/components/mcms-file-input.js',
     '/admin/static/js/components/mcms-scroll.js',
     '/admin/static/js/components/mcms-validation-wizard.js',
-    '/admin/static/js/components/mcms-media-tree.js',
+    '/admin/static/js/components/mcms-media-grid.js',
+    '/admin/static/js/components/mcms-focal-point.js',
+    '/admin/static/js/components/mcms-publish-button.js',
 ];
 
 for (const src of componentFiles) {
@@ -412,6 +427,9 @@ for (const src of componentFiles) {
 // ========================================
 // SPA Navigation: sidebar active state
 // ========================================
+var _sidebarActiveClasses = ['bg-[var(--color-primary-100)]', 'text-[var(--color-text)]'];
+var _sidebarInactiveClasses = ['text-[var(--color-text-muted)]', 'hover:bg-[var(--color-surface-hover)]', 'hover:text-[var(--color-text)]', 'hover:no-underline'];
+
 function updateSidebarActive(path) {
     if (!path) return;
     document.querySelectorAll('[data-sidebar-link]').forEach(function(link) {
@@ -421,14 +439,18 @@ function updateSidebarActive(path) {
         if (href === '/admin/' || href === '/admin') {
             active = (path === '/admin/' || path === '/admin');
         } else if (path.indexOf(href) === 0) {
-            active = (path.length === href.length || path.charAt(href.length) === '/');
+            active = (path.length === href.length || path.charAt(href.length) === '/' || path.charAt(href.length) === '?');
         }
         if (active) {
             link.dataset.active = '';
-            link.classList.add('active'); // DUAL: data-active + class
+            link.classList.add('active');
+            _sidebarActiveClasses.forEach(function(c) { link.classList.add(c); });
+            _sidebarInactiveClasses.forEach(function(c) { link.classList.remove(c); });
         } else {
             delete link.dataset.active;
-            link.classList.remove('active'); // DUAL: data-active + class
+            link.classList.remove('active');
+            _sidebarActiveClasses.forEach(function(c) { link.classList.remove(c); });
+            _sidebarInactiveClasses.forEach(function(c) { link.classList.add(c); });
         }
     });
 }
@@ -440,6 +462,16 @@ document.body.addEventListener('htmx:pushedIntoHistory', function(e) {
 document.body.addEventListener('htmx:historyRestore', function(e) {
     updateSidebarActive(e.detail.path);
 });
+
+// Also update on afterSettle for HTMX navigations that don't push history
+document.body.addEventListener('htmx:afterSettle', function(e) {
+    if (e.detail.target && e.detail.target.id === 'main-content') {
+        updateSidebarActive(window.location.pathname);
+    }
+});
+
+// Initial sync on page load
+updateSidebarActive(window.location.pathname);
 
 // ========================================
 // SPA Navigation: page title from HX-Trigger
@@ -576,15 +608,22 @@ document.addEventListener('mcms-dialog:confirm', function(e) {
 // Block Editor: field panel wiring
 // ========================================
 
-// Save initial panel content (root content fields) for restoration on deselect
+// Save initial panel content (root content fields) for restoration on deselect.
+// Re-captured after every HTMX swap that brings in new content (SPA navigation).
 var _rootPanelHTML = '';
 var _rootPanelTitle = '';
-(function() {
+function _captureRootPanel() {
     var panel = document.getElementById('panel-content');
     var title = document.getElementById('panel-title');
     if (panel) _rootPanelHTML = panel.innerHTML;
     if (title) _rootPanelTitle = title.textContent;
-})();
+}
+_captureRootPanel();
+document.body.addEventListener('htmx:afterSettle', function(e) {
+    if (e.detail.target && e.detail.target.id === 'main-content') {
+        _captureRootPanel();
+    }
+});
 
 function clearFieldPanel() {
     var panel = document.getElementById('panel-content');
@@ -794,17 +833,9 @@ document.addEventListener('block-editor:save', function(e) {
         return;
     }
 
-    // Read initial state from data-state attribute to diff against
-    var initialStr = editor.getAttribute('data-state');
-    var initial = {};
-    if (initialStr) {
-        try {
-            var parsed = JSON.parse(initialStr);
-            initial = parsed.blocks || {};
-        } catch (ignored) {
-            // If initial parse fails, treat all blocks as changed
-        }
-    }
+    // Read baseline from in-memory store (no DOM attribute parsing)
+    var baseline = typeof editor.getBaseline === 'function' ? editor.getBaseline() : null;
+    var initial = baseline ? baseline.blocks : {};
 
     var contentId = editor.getAttribute('data-content-id') || '';
 
@@ -927,17 +958,9 @@ document.addEventListener('block-editor:save', function(e) {
             resp = JSON.parse(xhr.responseText);
         } catch (ignored) {
             showBlockEditorToast('Content structure saved', 'success');
-            editor.setAttribute('data-state', stateStr);
+            editor.commitSave({});
             editor.dispatchEvent(new CustomEvent('block-editor:save-complete', { bubbles: true, composed: true, detail: { success: true } }));
             return;
-        }
-
-        // Remap client UUIDs to server ULIDs in editor state so the next
-        // save diff treats them as existing blocks, not new creates.
-        if (resp.id_map && Object.keys(resp.id_map).length > 0) {
-            remapEditorState(editor, state, resp.id_map);
-            // Rebuild stateStr from the remapped state
-            stateStr = JSON.stringify(state);
         }
 
         if (resp.errors && resp.errors.length > 0) {
@@ -952,8 +975,8 @@ document.addEventListener('block-editor:save', function(e) {
         }
         // Clear pending root field updates on success
         _pendingRootFieldUpdates = null;
-        // Update data-state so next save diffs correctly
-        editor.setAttribute('data-state', stateStr);
+        // Remap IDs + snapshot baseline + clear dirty in one atomic call
+        editor.commitSave(resp.id_map || {});
         var saveSuccess = !(resp.errors && resp.errors.length > 0);
         editor.dispatchEvent(new CustomEvent('block-editor:save-complete', { bubbles: true, composed: true, detail: { success: saveSuccess } }));
     };
@@ -963,47 +986,6 @@ document.addEventListener('block-editor:save', function(e) {
     };
     xhr.send(JSON.stringify(body));
 });
-
-// remapEditorState replaces client UUIDs with server ULIDs throughout the
-// editor's in-memory state and block map. This ensures the next save treats
-// previously-new blocks as existing (update path, not create path).
-function remapEditorState(editor, state, idMap) {
-    var clientIds = Object.keys(idMap);
-    for (var i = 0; i < clientIds.length; i++) {
-        var clientId = clientIds[i];
-        var serverId = idMap[clientId];
-        var block = state.blocks[clientId];
-        if (!block) continue;
-
-        // Update the block's own ID
-        block.id = serverId;
-
-        // Move the block entry to the new key
-        state.blocks[serverId] = block;
-        delete state.blocks[clientId];
-
-        // Update rootId if it pointed to this client ID
-        if (state.rootId === clientId) {
-            state.rootId = serverId;
-        }
-    }
-
-    // Second pass: remap pointer fields across ALL blocks that may reference
-    // client IDs (both newly created and existing blocks).
-    var allKeys = Object.keys(state.blocks);
-    for (var j = 0; j < allKeys.length; j++) {
-        var b = state.blocks[allKeys[j]];
-        if (b.parentId && idMap[b.parentId]) b.parentId = idMap[b.parentId];
-        if (b.firstChildId && idMap[b.firstChildId]) b.firstChildId = idMap[b.firstChildId];
-        if (b.nextSiblingId && idMap[b.nextSiblingId]) b.nextSiblingId = idMap[b.nextSiblingId];
-        if (b.prevSiblingId && idMap[b.prevSiblingId]) b.prevSiblingId = idMap[b.prevSiblingId];
-    }
-
-    // Notify the block editor component to update its internal references
-    if (typeof editor.remapIds === 'function') {
-        editor.remapIds(idMap);
-    }
-}
 
 // ========================================
 // Dialog Utilities
@@ -1149,4 +1131,108 @@ function showBlockEditorToast(message, type) {
     if (toast) {
         toast.show(message, type);
     }
+}
+
+// ========================================
+// Global Search: dismiss dropdown
+// ========================================
+(function initGlobalSearch() {
+    document.addEventListener('click', function(e) {
+        var dropdown = document.getElementById('search-dropdown');
+        if (!dropdown) return;
+        var input = document.querySelector('[data-global-search]');
+        if (input && !input.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.innerHTML = '';
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            var dropdown = document.getElementById('search-dropdown');
+            if (dropdown) dropdown.innerHTML = '';
+        }
+    });
+
+    // Clear dropdown when navigating via HTMX
+    document.body.addEventListener('htmx:beforeRequest', function(e) {
+        var dropdown = document.getElementById('search-dropdown');
+        if (dropdown && !e.target.matches('[data-global-search]')) {
+            dropdown.innerHTML = '';
+        }
+    });
+})();
+
+// ========================================
+// Media Grid: sort, display size, bulk actions
+// ========================================
+
+function updateMediaSort(value) {
+    var url = new URL(window.location.href);
+    if (value === 'newest') {
+        url.searchParams.delete('sort');
+    } else {
+        url.searchParams.set('sort', value);
+    }
+    if (typeof htmx !== 'undefined') {
+        htmx.ajax('GET', url.pathname + url.search, { target: '#main-content', swap: 'innerHTML', pushUrl: url.pathname + url.search });
+    }
+}
+
+function updateMediaGridSize(level) {
+    var grid = document.querySelector('mcms-media-grid');
+    if (grid) grid.setGridSize(level);
+}
+
+function clearMediaSelection() {
+    var grid = document.querySelector('mcms-media-grid');
+    if (grid) grid.clearSelection();
+}
+
+// Restore slider position to match saved size (grid already renders at correct size)
+document.body.addEventListener('htmx:afterSettle', function() {
+    try {
+        var saved = mcms.settings.get('media.gridSize');
+        if (saved) {
+            var slider = document.getElementById('media-display-size');
+            if (slider) slider.value = saved;
+        }
+        // Restore sort dropdown to match URL
+        var url = new URL(window.location.href);
+        var sort = url.searchParams.get('sort') || 'newest';
+        var select = document.getElementById('media-sort');
+        if (select) select.value = sort;
+    } catch (e) {}
+});
+
+function confirmBulkDeleteMedia() {
+    var grid = document.querySelector('mcms-media-grid');
+    if (!grid) return;
+    var count = grid.getSelected().length;
+    if (count === 0) return;
+
+    var dialog = document.createElement('mcms-dialog');
+    var body = document.createElement('div');
+    body.className = 'p-6';
+    body.innerHTML = '<p class="text-sm text-gray-400">Delete ' + count + ' selected item(s)? This cannot be undone.</p>';
+    dialog.appendChild(body);
+
+    var actions = document.createElement('div');
+    actions.className = 'flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', function() { dialog.close(); dialog.remove(); });
+    actions.appendChild(cancelBtn);
+
+    var confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'rounded-md bg-red-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-red-400';
+    confirmBtn.textContent = 'Delete';
+    confirmBtn.addEventListener('click', function() { dialog.close(); dialog.remove(); grid._bulkDelete(); });
+    actions.appendChild(confirmBtn);
+
+    dialog.appendChild(actions);
+    document.body.appendChild(dialog);
+    dialog.open();
 }

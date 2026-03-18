@@ -1,35 +1,145 @@
-// <mcms-media-picker> -- Media browser/selector dialog (Light DOM)
-// Supports: open, accept, multiple attributes
-// Dispatches: media-selected, media-picker:cancel custom events
+/**
+ * @module mcms-media-picker
+ * @description Modal media browser and selector dialog (Light DOM).
+ *
+ * Uses `<mcms-media-grid mode="picker">` internally for browsing and selecting media.
+ * Loads grid content from the server via fetch, supports folder navigation within the
+ * picker, file upload, search, and single/multi-select modes.
+ *
+ * The picker builds its entire DOM imperatively in `connectedCallback` (no template or
+ * shadow DOM). Visibility is controlled by the `open` attribute -- adding it opens the
+ * dialog, removing it closes it.
+ *
+ * @example <caption>Single-select media picker</caption>
+ * <mcms-media-picker accept="image/*"></mcms-media-picker>
+ *
+ * <script>
+ *   var picker = document.querySelector('mcms-media-picker');
+ *   picker.open();
+ *   picker.addEventListener('media-selected', function(e) {
+ *     console.log('Selected:', e.detail.id, e.detail.url);
+ *   });
+ * </script>
+ *
+ * @example <caption>Multi-select media picker</caption>
+ * <mcms-media-picker multiple></mcms-media-picker>
+ *
+ * <script>
+ *   var picker = document.querySelector('mcms-media-picker');
+ *   picker.open();
+ *   picker.addEventListener('media-selected', function(e) {
+ *     e.detail.items.forEach(function(item) {
+ *       console.log('Selected:', item.id, item.url, item.alt);
+ *     });
+ *   });
+ * </script>
+ */
+
+/**
+ * @event media-selected
+ * @description Fired when the user confirms their media selection by clicking the "Select" button.
+ *   The detail shape depends on whether the `multiple` attribute is set.
+ * @type {CustomEvent}
+ * @property {Object} detail - Selection data.
+ * @property {string} [detail.id] - Media ID (single-select mode only).
+ * @property {string} [detail.url] - Media URL (single-select mode only).
+ * @property {string} [detail.alt] - Media alt text (single-select mode only).
+ * @property {Array<Object>} [detail.items] - Array of selected items (multi-select mode only).
+ * @property {string} [detail.items[].id] - Media ID of each selected item.
+ * @property {string} [detail.items[].url] - Media URL of each selected item.
+ * @property {string} [detail.items[].alt] - Media alt text of each selected item.
+ */
+
+/**
+ * @event media-picker:cancel
+ * @description Fired when the user cancels the picker by clicking the close button,
+ *   the cancel button, the backdrop, or pressing the Escape key.
+ * @type {CustomEvent}
+ */
+
+/**
+ * Modal media browser and selector dialog component.
+ *
+ * Builds an accessible modal dialog with:
+ * - A header with title, breadcrumb, upload toggle button, and close button
+ * - A collapsible upload zone with drag-and-drop and click-to-browse file input
+ * - A scrollable container holding a `<mcms-media-grid mode="picker">` element
+ * - Footer actions with Cancel and Select buttons
+ *
+ * The grid is loaded from the server via fetch. Folder navigation dispatches events
+ * from the grid that the picker intercepts to load new folder content. File selection
+ * is handled entirely by the grid in picker mode.
+ *
+ * @extends HTMLElement
+ *
+ * @fires media-selected
+ * @fires media-picker:cancel
+ *
+ * @attr {boolean} open - When present, the picker dialog is visible.
+ * @attr {string} accept - File type filter for the upload input and server query.
+ * @attr {boolean} multiple - Enables multi-select mode. Passed through to the grid.
+ */
 class McmsMediaPicker extends HTMLElement {
     constructor() {
         super();
+        /** @type {boolean} Whether the DOM has been built */
         this._built = false;
+        /** @type {HTMLElement|null} The full-screen backdrop overlay element */
         this._backdrop = null;
-        this._searchInput = null;
-        this._grid = null;
+        /** @type {HTMLElement|null} The scrollable grid container */
+        this._gridContainer = null;
+        /** @type {HTMLElement|null} The collapsible upload zone wrapper */
         this._uploadZone = null;
+        /** @type {HTMLElement|null} The upload status text element */
         this._uploadStatus = null;
+        /** @type {HTMLElement|null} The drag-and-drop zone element */
         this._dropzone = null;
+        /** @type {HTMLElement|null} The breadcrumb container */
+        this._breadcrumb = null;
+        /** @type {HTMLElement|null} The Select button */
+        this._selectBtn = null;
+        /** @type {Array<{id: string, url: string, alt: string, name: string}>} Currently selected items */
         this._selected = [];
-        this._pendingSelectId = null;
+        /** @type {string} Current folder ID being browsed */
+        this._currentFolderId = '';
+        /** @type {Array<{id: string, name: string}>} Folder navigation stack for breadcrumb */
+        this._folderStack = [];
+        /** @type {Function} Bound keydown handler for Escape key */
         this._boundKeyDown = this._onKeyDown.bind(this);
+        /** @type {Function} Bound handler for grid pick events */
+        this._boundOnPick = this._onGridPick.bind(this);
+        /** @type {Function} Bound handler for grid navigate events */
+        this._boundOnNavigate = this._onGridNavigate.bind(this);
     }
 
+    /**
+     * Declares which attributes trigger `attributeChangedCallback`.
+     * @returns {string[]}
+     */
     static get observedAttributes() {
         return ['open'];
     }
 
+    /**
+     * Lifecycle callback invoked when the element is inserted into the DOM.
+     */
     connectedCallback() {
         this._build();
         this._syncVisibility();
     }
 
+    /**
+     * Lifecycle callback invoked when the element is removed from the DOM.
+     */
     disconnectedCallback() {
         document.removeEventListener('keydown', this._boundKeyDown);
         this._built = false;
     }
 
+    /**
+     * Lifecycle callback invoked when an observed attribute changes.
+     * @param {string} name
+     */
     attributeChangedCallback(name) {
         if (!this._built) return;
         if (name === 'open') {
@@ -37,18 +147,23 @@ class McmsMediaPicker extends HTMLElement {
         }
     }
 
+    /**
+     * Imperatively builds the dialog DOM tree. Only runs once.
+     */
     _build() {
         if (this._built) return;
         this._built = true;
+
+        var self = this;
 
         // Backdrop
         var backdrop = document.createElement('div');
         backdrop.className = 'fixed inset-0 z-[110] bg-black/60';
         backdrop.addEventListener('click', function(e) {
             if (e.target === backdrop) {
-                this._cancel();
+                self._cancel();
             }
-        }.bind(this));
+        });
 
         // Panel
         var panel = document.createElement('div');
@@ -73,7 +188,7 @@ class McmsMediaPicker extends HTMLElement {
         uploadBtn.type = 'button';
         uploadBtn.className = 'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer border-none';
         uploadBtn.textContent = 'Upload';
-        uploadBtn.addEventListener('click', this._toggleUpload.bind(this));
+        uploadBtn.addEventListener('click', function() { self._toggleUpload(); });
         headerLeft.appendChild(uploadBtn);
 
         header.appendChild(headerLeft);
@@ -83,23 +198,44 @@ class McmsMediaPicker extends HTMLElement {
         closeBtn.className = 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer bg-transparent border-none text-lg';
         closeBtn.textContent = '\u00d7';
         closeBtn.setAttribute('aria-label', 'Close');
-        closeBtn.addEventListener('click', this._cancel.bind(this));
+        closeBtn.addEventListener('click', function() { self._cancel(); });
         header.appendChild(closeBtn);
 
         panel.appendChild(header);
 
-        // Search
-        var searchWrapper = document.createElement('div');
-        searchWrapper.className = 'px-5 py-2';
+        // Breadcrumb bar
+        var breadcrumb = document.createElement('div');
+        breadcrumb.className = 'flex items-center gap-1 border-b border-[var(--color-border)] px-5 py-2 text-sm';
+        breadcrumb.innerHTML = '<button type="button" class="text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer bg-transparent border-none text-sm" data-breadcrumb-root>All Media</button>';
+        this._breadcrumb = breadcrumb;
+        panel.appendChild(breadcrumb);
 
-        var searchInput = document.createElement('input');
-        searchInput.type = 'search';
-        searchInput.placeholder = 'Search media...';
-        searchInput.className = 'w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]';
-        searchWrapper.appendChild(searchInput);
-        panel.appendChild(searchWrapper);
-
-        this._searchInput = searchInput;
+        // Breadcrumb root click
+        breadcrumb.addEventListener('click', function(e) {
+            var root = e.target.closest('[data-breadcrumb-root]');
+            if (root) {
+                self._currentFolderId = '';
+                self._folderStack = [];
+                self._loadGrid('');
+                self._updateBreadcrumb();
+                return;
+            }
+            var crumb = e.target.closest('[data-breadcrumb-folder]');
+            if (crumb) {
+                var targetId = crumb.getAttribute('data-breadcrumb-folder');
+                // Trim the folder stack to this point
+                var idx = -1;
+                for (var i = 0; i < self._folderStack.length; i++) {
+                    if (self._folderStack[i].id === targetId) { idx = i; break; }
+                }
+                if (idx >= 0) {
+                    self._folderStack = self._folderStack.slice(0, idx + 1);
+                }
+                self._currentFolderId = targetId;
+                self._loadGrid(targetId);
+                self._updateBreadcrumb();
+            }
+        });
 
         // Upload zone (hidden by default)
         var uploadZone = document.createElement('div');
@@ -118,10 +254,7 @@ class McmsMediaPicker extends HTMLElement {
             fileInput.accept = accept;
         }
 
-        var self = this;
-        dropzone.addEventListener('click', function() {
-            fileInput.click();
-        });
+        dropzone.addEventListener('click', function() { fileInput.click(); });
         fileInput.addEventListener('change', function() {
             if (fileInput.files && fileInput.files[0]) {
                 self._uploadFile(fileInput.files[0]);
@@ -131,16 +264,13 @@ class McmsMediaPicker extends HTMLElement {
         dropzone.addEventListener('dragover', function(e) {
             e.preventDefault();
             dropzone.setAttribute('data-dragover', '');
-            dropzone.classList.add('dragover'); // DUAL: data-dragover + class
         });
         dropzone.addEventListener('dragleave', function() {
             dropzone.removeAttribute('data-dragover');
-            dropzone.classList.remove('dragover'); // DUAL: data-dragover + class
         });
         dropzone.addEventListener('drop', function(e) {
             e.preventDefault();
             dropzone.removeAttribute('data-dragover');
-            dropzone.classList.remove('dragover'); // DUAL: data-dragover + class
             if (e.dataTransfer.files && e.dataTransfer.files[0]) {
                 self._uploadFile(e.dataTransfer.files[0]);
             }
@@ -158,14 +288,13 @@ class McmsMediaPicker extends HTMLElement {
         this._uploadStatus = uploadStatus;
         this._dropzone = dropzone;
 
-        // Grid container
-        var grid = document.createElement('div');
-        grid.className = 'grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3 overflow-y-auto p-4 flex-1';
-        grid.id = 'media-picker-grid-' + this._uniqueId();
-        panel.appendChild(grid);
-        this._grid = grid;
+        // Grid container (scrollable, holds the mcms-media-grid)
+        var gridContainer = document.createElement('div');
+        gridContainer.className = 'flex-1 overflow-y-auto p-4';
+        panel.appendChild(gridContainer);
+        this._gridContainer = gridContainer;
 
-        // Actions
+        // Footer actions
         var actions = document.createElement('div');
         actions.className = 'flex justify-end gap-3 border-t border-[var(--color-border)] px-5 py-4';
 
@@ -173,39 +302,28 @@ class McmsMediaPicker extends HTMLElement {
         cancelBtn.type = 'button';
         cancelBtn.className = 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors cursor-pointer border-none';
         cancelBtn.textContent = 'Cancel';
-        cancelBtn.addEventListener('click', this._cancel.bind(this));
+        cancelBtn.addEventListener('click', function() { self._cancel(); });
         actions.appendChild(cancelBtn);
 
-        var confirmBtn = document.createElement('button');
-        confirmBtn.type = 'button';
-        confirmBtn.className = 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer border-none';
-        confirmBtn.textContent = 'Select';
-        confirmBtn.addEventListener('click', this._confirmSelection.bind(this));
-        actions.appendChild(confirmBtn);
+        var selectBtn = document.createElement('button');
+        selectBtn.type = 'button';
+        selectBtn.className = 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed';
+        selectBtn.textContent = 'Select';
+        selectBtn.disabled = true;
+        selectBtn.addEventListener('click', function() { self._confirmSelection(); });
+        actions.appendChild(selectBtn);
+        this._selectBtn = selectBtn;
 
         panel.appendChild(actions);
         backdrop.appendChild(panel);
 
         this._backdrop = backdrop;
         this.appendChild(backdrop);
-
-        // Set up search debounce
-        var debounceTimer = null;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(function() {
-                self._loadMedia(searchInput.value.trim());
-            }, 300);
-        });
-
-        // Delegate clicks on grid items
-        grid.addEventListener('click', function(e) {
-            var item = e.target.closest('[data-media-picker-item]');
-            if (!item) return;
-            self._toggleItem(item);
-        });
     }
 
+    /**
+     * Synchronizes the dialog visibility with the `open` attribute state.
+     */
     _syncVisibility() {
         var isOpen = this.hasAttribute('open');
         if (this._backdrop) {
@@ -214,80 +332,165 @@ class McmsMediaPicker extends HTMLElement {
         if (isOpen) {
             document.addEventListener('keydown', this._boundKeyDown);
             this._selected = [];
-            this._pendingSelectId = null;
+            this._currentFolderId = '';
+            this._folderStack = [];
+            this._updateSelectBtn();
             // Collapse upload zone
             if (this._uploadZone) {
                 this._uploadZone.hidden = true;
             }
-            // Clear previous selections visually
-            if (this._grid) {
-                var items = this._grid.querySelectorAll('[data-media-picker-item][data-selected]');
-                for (var i = 0; i < items.length; i++) {
-                    items[i].removeAttribute('data-selected');
-                }
-            }
-            // Load initial media
-            this._loadMedia('');
-            // Focus search input
-            var self = this;
-            requestAnimationFrame(function() {
-                if (self._searchInput) {
-                    self._searchInput.value = '';
-                    self._searchInput.focus();
-                }
-            });
+            // Load root grid
+            this._loadGrid('');
+            this._updateBreadcrumb();
         } else {
             document.removeEventListener('keydown', this._boundKeyDown);
+            // Clean up grid event listeners
+            this._unbindGridEvents();
         }
     }
 
-    _loadMedia(query) {
-        if (!this._grid) return;
+    /**
+     * Loads the media grid for the given folder from the server.
+     * Fetches HTML containing `<mcms-media-grid mode="picker">` and swaps it
+     * into the grid container.
+     *
+     * @param {string} folderId - Folder ID to load, empty string for root.
+     */
+    _loadGrid(folderId) {
+        if (!this._gridContainer) return;
+        var self = this;
 
         var url = '/admin/media?picker=true';
-        if (query) {
-            url += '&q=' + encodeURIComponent(query);
+        if (folderId) {
+            url += '&folder_id=' + encodeURIComponent(folderId);
         }
         var accept = this.getAttribute('accept');
         if (accept) {
             url += '&accept=' + encodeURIComponent(accept);
         }
 
-        if (typeof htmx !== 'undefined') {
-            htmx.ajax('GET', url, {
-                target: this._grid,
-                swap: 'innerHTML'
-            });
-        }
-    }
+        // Show loading state
+        this._gridContainer.innerHTML = '<div class="flex items-center justify-center py-12"><p class="text-sm text-[var(--color-text-muted)]">Loading media...</p></div>';
 
-    _toggleItem(item) {
-        var isMultiple = this.hasAttribute('multiple');
-        var mediaId = item.getAttribute('data-media-id') || '';
-        var mediaUrl = item.getAttribute('data-media-url') || '';
-        var mediaAlt = item.getAttribute('data-media-alt') || '';
-
-        if (!isMultiple) {
-            // Single select: deselect all others
-            var allItems = this._grid.querySelectorAll('[data-media-picker-item][data-selected]');
-            for (var i = 0; i < allItems.length; i++) {
-                allItems[i].removeAttribute('data-selected');
-                allItems[i].classList.remove('selected'); // DUAL: data-selected + class
+        fetch(url, {
+            headers: { 'HX-Request': 'true' },
+            credentials: 'same-origin'
+        }).then(function(res) {
+            if (!res.ok) {
+                throw new Error('Failed to load media (' + res.status + ')');
             }
-            this._selected = [];
+            return res.text();
+        }).then(function(html) {
+            self._unbindGridEvents();
+            self._gridContainer.innerHTML = html;
+
+            // Find the grid element and configure it
+            var grid = self._gridContainer.querySelector('mcms-media-grid');
+            if (grid) {
+                // Pass through the multiple attribute
+                if (self.hasAttribute('multiple')) {
+                    grid.setAttribute('multiple', '');
+                }
+                // Bind events
+                self._bindGridEvents();
+            }
+
+            // Reset selection state for the new grid
+            self._selected = [];
+            self._updateSelectBtn();
+        }).catch(function(err) {
+            console.error('[mcms-media-picker] load error:', err);
+            self._gridContainer.innerHTML = '<div class="flex items-center justify-center py-12"><p class="text-sm text-red-400">Failed to load media</p></div>';
+        });
+    }
+
+    /**
+     * Binds event listeners on the grid element inside the container.
+     */
+    _bindGridEvents() {
+        if (!this._gridContainer) return;
+        this._gridContainer.addEventListener('mcms-media-grid:pick', this._boundOnPick);
+        this._gridContainer.addEventListener('mcms-media-grid:navigate', this._boundOnNavigate);
+    }
+
+    /**
+     * Removes grid event listeners.
+     */
+    _unbindGridEvents() {
+        if (!this._gridContainer) return;
+        this._gridContainer.removeEventListener('mcms-media-grid:pick', this._boundOnPick);
+        this._gridContainer.removeEventListener('mcms-media-grid:navigate', this._boundOnNavigate);
+    }
+
+    /**
+     * Handles the `mcms-media-grid:pick` event to track selection.
+     * @param {CustomEvent} e
+     */
+    _onGridPick(e) {
+        this._selected = e.detail.selected || [];
+        this._updateSelectBtn();
+    }
+
+    /**
+     * Handles the `mcms-media-grid:navigate` event for folder navigation.
+     * @param {CustomEvent} e
+     */
+    _onGridNavigate(e) {
+        var folderId = e.detail.folderId || '';
+        if (!folderId) return;
+
+        // Try to get the folder name from the grid item
+        var folderName = folderId;
+        var grid = this._gridContainer ? this._gridContainer.querySelector('mcms-media-grid') : null;
+        if (grid) {
+            var folderEl = grid.querySelector('[data-media-folder-item][data-folder-id="' + folderId + '"]');
+            if (folderEl) {
+                var nameEl = folderEl.querySelector('.text-white');
+                if (nameEl) {
+                    folderName = nameEl.textContent || folderId;
+                }
+            }
         }
 
-        if (item.hasAttribute('data-selected')) {
-            item.removeAttribute('data-selected');
-            item.classList.remove('selected'); // DUAL: data-selected + class
-            this._selected = this._selected.filter(function(s) { return s.id !== mediaId; });
-        } else {
-            item.setAttribute('data-selected', '');
-            item.classList.add('selected'); // DUAL: data-selected + class
-            this._selected.push({ id: mediaId, url: mediaUrl, alt: mediaAlt });
+        this._folderStack.push({ id: folderId, name: folderName });
+        this._currentFolderId = folderId;
+        this._loadGrid(folderId);
+        this._updateBreadcrumb();
+    }
+
+    /**
+     * Updates the breadcrumb display to reflect the current folder path.
+     */
+    _updateBreadcrumb() {
+        if (!this._breadcrumb) return;
+        var html = '<button type="button" class="text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer bg-transparent border-none text-sm" data-breadcrumb-root>All Media</button>';
+
+        for (var i = 0; i < this._folderStack.length; i++) {
+            var f = this._folderStack[i];
+            var isLast = i === this._folderStack.length - 1;
+            html += '<span class="text-[var(--color-text-muted)]">/</span>';
+            if (isLast) {
+                html += '<span class="text-sm font-medium text-[var(--color-text)]">' + this._escHtml(f.name) + '</span>';
+            } else {
+                html += '<button type="button" class="text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer bg-transparent border-none text-sm" data-breadcrumb-folder="' + this._escHtml(f.id) + '">' + this._escHtml(f.name) + '</button>';
+            }
+        }
+
+        this._breadcrumb.innerHTML = html;
+    }
+
+    /**
+     * Updates the Select button enabled/disabled state.
+     */
+    _updateSelectBtn() {
+        if (this._selectBtn) {
+            this._selectBtn.disabled = this._selected.length === 0;
         }
     }
 
+    /**
+     * Toggles the upload zone visibility.
+     */
     _toggleUpload() {
         if (!this._uploadZone) return;
         this._uploadZone.hidden = !this._uploadZone.hidden;
@@ -297,17 +500,23 @@ class McmsMediaPicker extends HTMLElement {
         }
     }
 
+    /**
+     * Uploads a file to the server and refreshes the grid on success.
+     * @param {File} file
+     */
     _uploadFile(file) {
         if (!file) return;
         var self = this;
         var formData = new FormData();
         formData.append('file', file);
+        if (this._currentFolderId) {
+            formData.append('folder_id', this._currentFolderId);
+        }
 
         var csrfMeta = document.querySelector('meta[name="csrf-token"]');
         var csrfToken = csrfMeta ? csrfMeta.content : '';
 
         this._dropzone.setAttribute('data-uploading', '');
-        this._dropzone.classList.add('uploading'); // DUAL: data-uploading + class
         this._uploadStatus.textContent = 'Uploading...';
         this._uploadStatus.className = 'mt-2 text-sm text-[var(--color-text-muted)]';
 
@@ -317,41 +526,28 @@ class McmsMediaPicker extends HTMLElement {
                 'X-CSRF-Token': csrfToken,
                 'HX-Request': 'true'
             },
-            body: formData
+            body: formData,
+            credentials: 'same-origin'
         }).then(function(response) {
             if (!response.ok) {
                 throw new Error('Upload failed (' + response.status + ')');
             }
-            var mediaId = response.headers.get('X-Media-ID');
-            var mediaUrl = response.headers.get('X-Media-URL');
-            self._pendingSelectId = mediaId;
             self._dropzone.removeAttribute('data-uploading');
-            self._dropzone.classList.remove('uploading'); // DUAL: data-uploading + class
             self._uploadStatus.textContent = 'Upload complete';
             self._uploadZone.hidden = true;
-            self._loadMedia('');
-
-            // After grid refreshes, auto-select the new item
-            if (mediaId && self._grid) {
-                var onSwap = function() {
-                    self._grid.removeEventListener('htmx:afterSwap', onSwap);
-                    var newItem = self._grid.querySelector('[data-media-picker-item][data-media-id="' + mediaId + '"]');
-                    if (newItem) {
-                        self._toggleItem(newItem);
-                    }
-                    self._pendingSelectId = null;
-                };
-                self._grid.addEventListener('htmx:afterSwap', onSwap);
-            }
+            // Reload grid to show the new item
+            self._loadGrid(self._currentFolderId);
             return response.text();
         }).catch(function(err) {
             self._dropzone.removeAttribute('data-uploading');
-            self._dropzone.classList.remove('uploading'); // DUAL: data-uploading + class
             self._uploadStatus.textContent = err.message || 'Upload failed';
             self._uploadStatus.className = 'mt-2 text-sm text-[var(--color-danger)]';
         });
     }
 
+    /**
+     * Confirms the current selection and closes the picker.
+     */
     _confirmSelection() {
         if (this._selected.length === 0) {
             this._cancel();
@@ -374,6 +570,9 @@ class McmsMediaPicker extends HTMLElement {
         this.removeAttribute('open');
     }
 
+    /**
+     * Cancels the picker.
+     */
     _cancel() {
         this.dispatchEvent(new CustomEvent('media-picker:cancel', {
             bubbles: true
@@ -381,6 +580,10 @@ class McmsMediaPicker extends HTMLElement {
         this.removeAttribute('open');
     }
 
+    /**
+     * Handles Escape key.
+     * @param {KeyboardEvent} e
+     */
     _onKeyDown(e) {
         if (!this.hasAttribute('open')) return;
         if (e.key === 'Escape') {
@@ -389,15 +592,30 @@ class McmsMediaPicker extends HTMLElement {
         }
     }
 
-    _uniqueId() {
-        return 'mp-' + Math.random().toString(36).substring(2, 9);
+    /**
+     * Escapes a string for safe HTML insertion.
+     * @param {string} s
+     * @returns {string}
+     */
+    _escHtml(s) {
+        if (!s) return '';
+        var d = document.createElement('div');
+        d.appendChild(document.createTextNode(s));
+        return d.innerHTML;
     }
 
-    // Public API
+    // ---- Public API ----
+
+    /**
+     * Opens the media picker dialog.
+     */
     open() {
         this.setAttribute('open', '');
     }
 
+    /**
+     * Closes the media picker dialog programmatically (no cancel event).
+     */
     close() {
         this.removeAttribute('open');
     }

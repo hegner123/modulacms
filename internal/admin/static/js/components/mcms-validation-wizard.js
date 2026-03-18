@@ -1,23 +1,193 @@
-// <mcms-validation-wizard> -- Visual builder for composable validation rules (Light DOM)
-// Attributes: value (initial JSON), textarea-id (sync target)
-// Dispatches: validation-changed custom event on every rule change
+/**
+ * @module mcms-validation-wizard
+ * @description Visual builder for composable validation rules, used in the admin panel
+ * to configure field validation without writing JSON by hand.
+ *
+ * Provides a three-panel UI:
+ * 1. **Rule Builder** -- a tree view of configured rules (individual rules and
+ *    AND/OR groups) with add/delete controls.
+ * 2. **Rule Editor** -- a detail panel for editing the selected rule's parameters
+ *    (operator, value/class, comparison, negate, custom message).
+ * 3. **Test Panel** -- a live test input that evaluates all rules against a user-provided
+ *    value and shows pass/fail results in real time.
+ *
+ * Rules are serialized as JSON and synchronized to a hidden `<textarea>` identified
+ * by the `textarea-id` attribute. The JSON schema follows the CMS validation config
+ * format: `{ "rules": [ { "rule": { "op": "...", ... } }, { "group": { "all_of": [...] } } ] }`.
+ *
+ * Supported rule operators:
+ * - `required` -- value must be non-empty
+ * - `contains` -- value must contain a literal string or character class
+ * - `starts_with` -- value must start with a literal string or character class
+ * - `ends_with` -- value must end with a literal string or character class
+ * - `equals` -- value must exactly equal a string
+ * - `length` -- Unicode character count compared against a threshold
+ * - `count` -- count of substring occurrences or character class matches compared against a threshold
+ * - `range` -- numeric value compared against a threshold
+ * - `item_count` -- comma-separated or JSON array item count compared against a threshold
+ * - `one_of` -- value must be one of an enumerated set
+ *
+ * Grouping operators:
+ * - `all_of` (AND) -- all child rules must pass
+ * - `any_of` (OR) -- at least one child rule must pass
+ *
+ * This is a Light DOM web component -- all rendered elements are direct children of the
+ * host element, making them accessible to global CSS.
+ *
+ * @example
+ * <!-- Validation wizard bound to a textarea -->
+ * <textarea id="validation-json" class="sr-only"></textarea>
+ * <mcms-validation-wizard
+ *     value='{"rules":[{"rule":{"op":"required"}},{"rule":{"op":"length","cmp":"gte","n":3}}]}'
+ *     textarea-id="validation-json"
+ * ></mcms-validation-wizard>
+ *
+ * @example
+ * <!-- Empty wizard (no initial rules) -->
+ * <textarea id="val-config" class="sr-only"></textarea>
+ * <mcms-validation-wizard textarea-id="val-config"></mcms-validation-wizard>
+ *
+ * @example
+ * <!-- Listen for rule changes -->
+ * <mcms-validation-wizard id="wizard" textarea-id="val-json"></mcms-validation-wizard>
+ * <script>
+ *   document.getElementById('wizard').addEventListener('validation-changed', (e) => {
+ *     console.log('Updated validation JSON:', e.detail.json);
+ *   });
+ * </script>
+ */
+
+/**
+ * @event validation-changed
+ * @description Fired whenever the validation rule configuration changes (rule added,
+ * deleted, or edited). Bubbles up through the DOM.
+ * @type {CustomEvent}
+ * @property {Object} detail
+ * @property {string} detail.json - The complete validation configuration as a JSON string
+ *   in the format `{ "rules": [...] }`, with internal `_id` fields stripped.
+ */
+
+/**
+ * Visual validation rule builder web component.
+ *
+ * Provides an interactive UI for constructing composable validation rules as a tree
+ * structure. Rules can be individual operations (required, contains, length, etc.)
+ * or groups (all_of/any_of) that contain nested rules. The component synchronizes
+ * the rule configuration to a `<textarea>` element and dispatches events on changes.
+ *
+ * @extends HTMLElement
+ *
+ * @attr {string} value - Initial validation configuration as a JSON string. Expected
+ *   format: `{ "rules": [...] }`. Empty string, `"{}"`, or invalid JSON starts with
+ *   an empty rule set (and shows a warning if the JSON was non-empty but unparseable).
+ * @attr {string} textarea-id - The `id` of the `<textarea>` element to sync the
+ *   serialized rule JSON to. Updated on every rule change.
+ *
+ * @fires validation-changed
+ */
 class McmsValidationWizard extends HTMLElement {
     constructor() {
         super();
+
+        /**
+         * Guard flag to prevent re-building the DOM on repeated connectedCallback calls
+         * (e.g., when the element is moved in the DOM).
+         * @type {boolean}
+         * @private
+         */
         this._built = false;
+
+        /**
+         * The root array of rule entries. Each entry is either `{ rule: {...}, _id: N }`
+         * or `{ group: { all_of: [...] | any_of: [...] }, _id: N }`.
+         * @type {Array<Object>}
+         * @private
+         */
         this._rules = [];
+
+        /**
+         * Auto-incrementing counter for assigning unique IDs to rule entries.
+         * Used internally for selection, lookup, and DOM keying.
+         * @type {number}
+         * @private
+         */
         this._nextId = 1;
+
+        /**
+         * The `_id` of the currently selected rule entry, or `null` if none is selected.
+         * Controls which rule's editor panel is displayed.
+         * @type {number|null}
+         * @private
+         */
         this._selectedId = null;
+
+        /**
+         * When adding a rule from a group's "+" button, this holds the group's `_id`
+         * so the new rule is inserted into that group's children instead of the root.
+         * Reset to `null` after insertion.
+         * @type {number|null}
+         * @private
+         */
         this._insertTargetId = null;
+
+        /**
+         * The current value in the test input field.
+         * @type {string}
+         * @private
+         */
         this._testValue = '';
+
+        /**
+         * Debounce timer ID for the test input. Test results are re-evaluated
+         * 200ms after the user stops typing.
+         * @type {number|null}
+         * @private
+         */
         this._testTimer = null;
+
+        /**
+         * Reference to the root container div.
+         * @type {HTMLDivElement|null}
+         * @private
+         */
         this._container = null;
+
+        /**
+         * Reference to the rule list container where rule items are rendered.
+         * @type {HTMLDivElement|null}
+         * @private
+         */
         this._ruleListEl = null;
+
+        /**
+         * Reference to the editor content container where rule editing fields are rendered.
+         * @type {HTMLDivElement|null}
+         * @private
+         */
         this._editorEl = null;
+
+        /**
+         * Reference to the test results container where pass/fail indicators are rendered.
+         * @type {HTMLDivElement|null}
+         * @private
+         */
         this._testResultsEl = null;
+
+        /**
+         * Reference to the warning banner element shown when initial JSON parsing fails.
+         * @type {HTMLDivElement|null}
+         * @private
+         */
         this._warningEl = null;
     }
 
+    /**
+     * Lifecycle callback invoked when the element is inserted into the DOM.
+     *
+     * Parses the initial `value` attribute, builds the three-panel UI (rule list,
+     * editor, test panel), and renders all sections. Only runs once per element
+     * instance (guarded by `_built` flag).
+     */
     connectedCallback() {
         if (this._built) return;
         this._built = true;
@@ -26,6 +196,14 @@ class McmsValidationWizard extends HTMLElement {
         this._renderAll();
     }
 
+    /**
+     * Parses the `value` attribute as JSON and populates the internal `_rules` array.
+     * If the value is empty, `"{}"`, or invalid JSON, starts with an empty rule set.
+     * Sets `_showWarning` to `true` if the attribute contained non-empty, unparseable content,
+     * so the warning banner is displayed.
+     *
+     * @private
+     */
     _parseInitialValue() {
         var raw = this.getAttribute('value') || '';
         if (!raw || raw === '{}') {
@@ -50,6 +228,15 @@ class McmsValidationWizard extends HTMLElement {
     // ========================================
     // ID System
     // ========================================
+
+    /**
+     * Recursively assigns unique `_id` values to an array of rule entries and their
+     * nested group children. Used during initial parsing and is not called after
+     * construction (new entries get IDs in `_addRule`).
+     *
+     * @param {Array<Object>} entries - The array of rule entries to assign IDs to.
+     * @private
+     */
     _assignIds(entries) {
         for (var i = 0; i < entries.length; i++) {
             entries[i]._id = this._nextId++;
@@ -61,6 +248,15 @@ class McmsValidationWizard extends HTMLElement {
         }
     }
 
+    /**
+     * Recursively searches for a rule entry by its `_id` in a nested entry array.
+     *
+     * @param {Array<Object>} entries - The array of entries to search.
+     * @param {number} id - The `_id` value to find.
+     * @returns {{ entries: Array<Object>, index: number }|null} An object containing the
+     *   parent array and the index of the found entry, or `null` if not found.
+     * @private
+     */
     _findById(entries, id) {
         for (var i = 0; i < entries.length; i++) {
             if (entries[i]._id === id) return { entries: entries, index: i };
@@ -76,6 +272,13 @@ class McmsValidationWizard extends HTMLElement {
         return null;
     }
 
+    /**
+     * Retrieves a rule entry object by its `_id`.
+     *
+     * @param {number} id - The `_id` value to look up.
+     * @returns {Object|null} The entry object, or `null` if not found.
+     * @private
+     */
     _getEntry(id) {
         var loc = this._findById(this._rules, id);
         return loc ? loc.entries[loc.index] : null;
@@ -84,6 +287,17 @@ class McmsValidationWizard extends HTMLElement {
     // ========================================
     // Build DOM
     // ========================================
+
+    /**
+     * Constructs the entire component DOM structure: warning banner, rule list section
+     * with header and "+ Add" button, rule editor section (initially hidden), and test
+     * panel section with live input and results area.
+     *
+     * Attaches a document-level click listener to close any open add-rule dropdowns
+     * when clicking outside of them.
+     *
+     * @private
+     */
     _build() {
         var container = document.createElement('div');
         container.className = 'flex flex-col gap-4';
@@ -201,6 +415,19 @@ class McmsValidationWizard extends HTMLElement {
         }.bind(this));
     }
 
+    /**
+     * Creates a dropdown menu element containing buttons for each available rule operator
+     * and group type. Includes a visual separator between individual rules and group types.
+     *
+     * Available operators: required, contains, starts_with, ends_with, equals, length,
+     * count, range, item_count, one_of. Group types: all_of (AND), any_of (OR).
+     *
+     * Each button click calls `_addRule()` with the operator name and closes all open
+     * dropdowns.
+     *
+     * @returns {HTMLDivElement} The dropdown menu element with `[data-dropdown]` attribute.
+     * @private
+     */
     _buildDropdown() {
         var dropdown = document.createElement('div');
         dropdown.className = 'absolute right-0 top-full z-10 mt-1 hidden min-w-[10rem] rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-lg';
@@ -252,6 +479,16 @@ class McmsValidationWizard extends HTMLElement {
         return dropdown;
     }
 
+    /**
+     * Toggles the visibility of a dropdown menu within an add-wrapper element.
+     * Closes all other open dropdowns first. Uses a dual state approach: the
+     * `data-open` attribute tracks logical state while the `hidden` class controls
+     * CSS visibility.
+     *
+     * @param {HTMLElement} wrapper - The `[data-add-wrapper]` element containing
+     *   the dropdown to toggle.
+     * @private
+     */
     _toggleDropdown(wrapper) {
         var dd = wrapper.querySelector('[data-dropdown]');
         if (!dd) return;
@@ -276,6 +513,23 @@ class McmsValidationWizard extends HTMLElement {
     // ========================================
     // Add / Delete Rules
     // ========================================
+
+    /**
+     * Creates a new rule entry with the specified operator and adds it to the rule tree.
+     *
+     * For group operators (`all_of`, `any_of`), creates a group entry with an empty
+     * children array. For individual operators, creates a rule entry with sensible
+     * defaults for that operator type (e.g., `cmp: 'gte'`, `n: 0` for length rules).
+     *
+     * If `_insertTargetId` is set (from a group's "+" button), the new entry is added
+     * to that group's children. Otherwise, it is appended to the root rule array.
+     *
+     * After adding, selects the new entry and triggers a full re-render.
+     *
+     * @param {string} op - The operator name (e.g., `"required"`, `"contains"`,
+     *   `"all_of"`, `"any_of"`).
+     * @private
+     */
     _addRule(op) {
         var entry;
         if (op === 'all_of' || op === 'any_of') {
@@ -325,6 +579,13 @@ class McmsValidationWizard extends HTMLElement {
         this._onRulesChanged();
     }
 
+    /**
+     * Deletes a rule entry by its `_id` from the rule tree (including from within groups).
+     * If the deleted entry was selected, clears the selection. Triggers a full re-render.
+     *
+     * @param {number} id - The `_id` of the entry to delete.
+     * @private
+     */
     _deleteRule(id) {
         var loc = this._findById(this._rules, id);
         if (!loc) return;
@@ -338,12 +599,24 @@ class McmsValidationWizard extends HTMLElement {
     // ========================================
     // Render
     // ========================================
+
+    /**
+     * Re-renders all three panels: rule list, editor, and test results.
+     *
+     * @private
+     */
     _renderAll() {
         this._renderRuleList();
         this._renderEditor();
         this._renderTestResults();
     }
 
+    /**
+     * Renders the rule list panel. If no rules exist, shows an empty-state message.
+     * Otherwise, delegates to `_renderEntries()` to build the nested rule tree.
+     *
+     * @private
+     */
     _renderRuleList() {
         if (!this._ruleListEl) return;
         this._ruleListEl.innerHTML = '';
@@ -357,6 +630,17 @@ class McmsValidationWizard extends HTMLElement {
         this._renderEntries(this._rules, this._ruleListEl, 0);
     }
 
+    /**
+     * Recursively renders an array of rule entries into a container element.
+     * Delegates to `_renderRuleItem()` for individual rules and `_renderGroupItem()`
+     * for groups.
+     *
+     * @param {Array<Object>} entries - The array of rule entries to render.
+     * @param {HTMLElement} container - The DOM element to append rendered items to.
+     * @param {number} depth - The current nesting depth (used for visual indentation
+     *   in groups).
+     * @private
+     */
     _renderEntries(entries, container, depth) {
         for (var i = 0; i < entries.length; i++) {
             var entry = entries[i];
@@ -368,6 +652,17 @@ class McmsValidationWizard extends HTMLElement {
         }
     }
 
+    /**
+     * Renders a single rule entry as a row in the rule list with a summary label
+     * and a delete button. Clicking the label selects the rule and opens its editor.
+     * Highlights the row when it is the currently selected entry.
+     *
+     * Uses dual state approach: `data-selected` attribute + `selected` class.
+     *
+     * @param {Object} entry - The rule entry object with `{ rule: {...}, _id: N }`.
+     * @param {HTMLElement} container - The DOM element to append the row to.
+     * @private
+     */
     _renderRuleItem(entry, container) {
         var row = document.createElement('div');
         row.className = 'flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-[var(--color-surface-hover)]';
@@ -399,6 +694,18 @@ class McmsValidationWizard extends HTMLElement {
         container.appendChild(row);
     }
 
+    /**
+     * Renders a group entry (all_of or any_of) as a bordered card with a header
+     * showing the group type, a "+" button for adding child rules, a delete button,
+     * and a body containing the nested child entries (or an empty-state message).
+     *
+     * Uses dual state approach: `data-selected` attribute + `selected` class.
+     *
+     * @param {Object} entry - The group entry object with `{ group: { all_of: [...] | any_of: [...] }, _id: N }`.
+     * @param {HTMLElement} container - The DOM element to append the group card to.
+     * @param {number} depth - The current nesting depth for recursive rendering.
+     * @private
+     */
     _renderGroupItem(entry, container, depth) {
         var g = entry.group;
         var isAllOf = !!g.all_of;
@@ -476,6 +783,16 @@ class McmsValidationWizard extends HTMLElement {
     // ========================================
     // Rule Summary
     // ========================================
+
+    /**
+     * Generates a human-readable summary string for a rule, used as the label in
+     * the rule list. Includes negation prefix, operator name, target value/class,
+     * comparison symbol, and threshold as appropriate.
+     *
+     * @param {Object} rule - The rule object with `op` and operator-specific fields.
+     * @returns {string} A concise summary string (e.g., `"length >= 3"`, `"not contains \"foo\""`).
+     * @private
+     */
     _ruleSummary(rule) {
         if (!rule) return '???';
         var neg = rule.negate ? 'not ' : '';
@@ -506,17 +823,42 @@ class McmsValidationWizard extends HTMLElement {
         }
     }
 
+    /**
+     * Returns a display label for the rule's target -- either a quoted literal value
+     * or the character class name.
+     *
+     * @param {Object} rule - The rule object with optional `value` and `class` fields.
+     * @returns {string} Display label (e.g., `'"hello"'`, `'uppercase'`, `'(unset)'`).
+     * @private
+     */
     _targetLabel(rule) {
         if (rule.value) return '"' + rule.value + '"';
         if (rule.class) return rule.class;
         return '(unset)';
     }
 
+    /**
+     * Converts a comparison operator code to its Unicode symbol for display.
+     *
+     * @param {string} cmp - The comparison code (`"eq"`, `"neq"`, `"gt"`, `"gte"`,
+     *   `"lt"`, `"lte"`).
+     * @returns {string} The Unicode symbol (e.g., `"="`, `"\u2260"`, `">"`, `"\u2265"`,
+     *   `"<"`, `"\u2264"`) or the raw code if unknown.
+     * @private
+     */
     _cmpSymbol(cmp) {
         var symbols = { eq: '=', neq: '\u2260', gt: '>', gte: '\u2265', lt: '<', lte: '\u2264' };
         return symbols[cmp] || cmp || '?';
     }
 
+    /**
+     * Formats a numeric value for display. Returns `"?"` for null/undefined,
+     * removes trailing `.0` for integers, and converts to string otherwise.
+     *
+     * @param {number|null|undefined} n - The number to format.
+     * @returns {string} The formatted string.
+     * @private
+     */
     _formatN(n) {
         if (n === null || n === undefined) return '?';
         if (n === Math.floor(n)) return String(Math.floor(n));
@@ -526,6 +868,18 @@ class McmsValidationWizard extends HTMLElement {
     // ========================================
     // Rule Editor
     // ========================================
+
+    /**
+     * Renders the rule editor panel for the currently selected entry.
+     *
+     * If no entry is selected, hides the editor section. For group entries, shows a
+     * read-only description of the group type (AND/OR). For rule entries, renders
+     * the appropriate editing fields based on the operator: value/class toggle,
+     * comparison select, numeric input, negate checkbox, values textarea, and always
+     * a custom message input at the bottom.
+     *
+     * @private
+     */
     _renderEditor() {
         if (!this._editorEl) return;
         this._editorEl.innerHTML = '';
@@ -615,6 +969,19 @@ class McmsValidationWizard extends HTMLElement {
         this._editorEl.appendChild(this._buildMessageInput(rule));
     }
 
+    /**
+     * Builds the value/class toggle editor for rules that support matching against
+     * either a literal string value or a character class (uppercase, lowercase, digits,
+     * symbols, spaces).
+     *
+     * Renders radio buttons to switch between "Literal value" (text input) and
+     * "Character class" (select dropdown) modes. Switching modes clears the other
+     * field's value in the rule object.
+     *
+     * @param {Object} rule - The rule object being edited. Mutated directly on input.
+     * @returns {HTMLDivElement} The container element with the toggle and both input fields.
+     * @private
+     */
     _buildValueOrClass(rule) {
         var frag = document.createElement('div');
         frag.className = 'flex flex-col gap-2';
@@ -717,6 +1084,14 @@ class McmsValidationWizard extends HTMLElement {
         return frag;
     }
 
+    /**
+     * Builds a simple text input field for the rule's `value` property.
+     * Used by the `equals` operator editor.
+     *
+     * @param {Object} rule - The rule object being edited. Mutated directly on input.
+     * @returns {HTMLDivElement} The labeled input field container.
+     * @private
+     */
     _buildValueInput(rule) {
         var field = document.createElement('div');
         field.className = 'flex flex-col gap-1';
@@ -736,6 +1111,14 @@ class McmsValidationWizard extends HTMLElement {
         return field;
     }
 
+    /**
+     * Builds a select dropdown for the rule's comparison operator (`cmp`).
+     * Options: equals, not equals, greater than, at least, less than, at most.
+     *
+     * @param {Object} rule - The rule object being edited. Mutated directly on change.
+     * @returns {HTMLDivElement} The labeled select field container.
+     * @private
+     */
     _buildCmpSelect(rule) {
         var field = document.createElement('div');
         field.className = 'flex flex-col gap-1';
@@ -769,6 +1152,18 @@ class McmsValidationWizard extends HTMLElement {
         return field;
     }
 
+    /**
+     * Builds a numeric input field for the rule's threshold value (`n`).
+     *
+     * For integer-only fields (length, count, item_count), sets `step="1"` and `min="0"`.
+     * For decimal-capable fields (range), sets `step="any"` to allow floating-point input.
+     *
+     * @param {Object} rule - The rule object being edited. Mutated directly on input.
+     * @param {boolean} allowDecimals - When `true`, allows floating-point values via
+     *   `step="any"`. When `false`, restricts to non-negative integers.
+     * @returns {HTMLDivElement} The labeled numeric input field container.
+     * @private
+     */
     _buildNInput(rule, allowDecimals) {
         var field = document.createElement('div');
         field.className = 'flex flex-col gap-1';
@@ -799,6 +1194,14 @@ class McmsValidationWizard extends HTMLElement {
         return field;
     }
 
+    /**
+     * Builds a checkbox input for the rule's `negate` flag. When checked, the rule
+     * result is inverted (pass becomes fail and vice versa).
+     *
+     * @param {Object} rule - The rule object being edited. Mutated directly on change.
+     * @returns {HTMLDivElement} The labeled checkbox container.
+     * @private
+     */
     _buildNegate(rule) {
         var field = document.createElement('div');
         field.className = 'flex items-center gap-2';
@@ -817,6 +1220,15 @@ class McmsValidationWizard extends HTMLElement {
         return field;
     }
 
+    /**
+     * Builds a textarea for the `one_of` rule's `values` array. Values are displayed
+     * and edited as one value per line. Empty and whitespace-only lines are filtered out.
+     *
+     * @param {Object} rule - The rule object being edited. Its `values` array is
+     *   mutated directly on input.
+     * @returns {HTMLDivElement} The labeled textarea container.
+     * @private
+     */
     _buildValuesTextarea(rule) {
         var field = document.createElement('div');
         field.className = 'flex flex-col gap-1';
@@ -841,6 +1253,15 @@ class McmsValidationWizard extends HTMLElement {
         return field;
     }
 
+    /**
+     * Builds a text input for the rule's optional custom validation error message.
+     * If left empty, the rule evaluation functions generate a default message based
+     * on the operator and parameters.
+     *
+     * @param {Object} rule - The rule object being edited. Mutated directly on input.
+     * @returns {HTMLDivElement} The labeled input field container.
+     * @private
+     */
     _buildMessageInput(rule) {
         var field = document.createElement('div');
         field.className = 'flex flex-col gap-1';
@@ -864,6 +1285,16 @@ class McmsValidationWizard extends HTMLElement {
     // ========================================
     // Test Panel
     // ========================================
+
+    /**
+     * Evaluates all rules against the current test value and renders the pass/fail
+     * results in the test panel. Each result shows a check or cross icon with the
+     * validation message. Group results include nested child results.
+     *
+     * Uses the standalone `evaluateEntries()` function for actual rule evaluation.
+     *
+     * @private
+     */
     _renderTestResults() {
         if (!this._testResultsEl) return;
         this._testResultsEl.innerHTML = '';
@@ -874,6 +1305,16 @@ class McmsValidationWizard extends HTMLElement {
         this._renderTestEntries(results, this._testResultsEl);
     }
 
+    /**
+     * Recursively renders test result entries into a container. Each result is displayed
+     * as a colored row (green for pass, red for fail) with a check/cross icon and message.
+     * Group results are followed by their nested child results in an indented container.
+     *
+     * @param {Array<Object>} results - Array of result objects from `evaluateEntries()`,
+     *   each with `{ pass: boolean, message: string, children?: Array }`.
+     * @param {HTMLElement} container - The DOM element to append result rows to.
+     * @private
+     */
     _renderTestEntries(results, container) {
         for (var i = 0; i < results.length; i++) {
             var r = results[i];
@@ -904,6 +1345,13 @@ class McmsValidationWizard extends HTMLElement {
     // ========================================
     // Sync
     // ========================================
+
+    /**
+     * Called when the rule tree structure changes (rule added or deleted).
+     * Syncs the textarea, then re-renders the rule list, editor, and test results.
+     *
+     * @private
+     */
     _onRulesChanged() {
         this._syncTextarea();
         this._renderRuleList();
@@ -911,12 +1359,26 @@ class McmsValidationWizard extends HTMLElement {
         this._renderTestResults();
     }
 
+    /**
+     * Called when a rule's properties change in the editor (value, comparison, negate, etc.).
+     * Syncs the textarea, then re-renders the rule list summaries and test results.
+     * Does not re-render the editor itself (to preserve input focus).
+     *
+     * @private
+     */
     _onEditorInput() {
         this._syncTextarea();
         this._renderRuleList();
         this._renderTestResults();
     }
 
+    /**
+     * Serializes the current rule tree to JSON (with internal `_id` fields stripped)
+     * and writes it to the target textarea. Also dispatches a `validation-changed`
+     * custom event with the JSON string in `detail.json`.
+     *
+     * @private
+     */
     _syncTextarea() {
         var textareaId = this.getAttribute('textarea-id');
         if (!textareaId) return;
@@ -933,6 +1395,19 @@ class McmsValidationWizard extends HTMLElement {
         }));
     }
 
+    /**
+     * Creates a deep copy of the rule entries array with all internal `_id` fields
+     * removed and empty/falsy properties stripped. This produces clean JSON suitable
+     * for storage and server-side consumption.
+     *
+     * Properties that are empty string, `false`, `null`, `undefined`, or empty arrays
+     * are omitted from the output.
+     *
+     * @param {Array<Object>} entries - The array of rule entries to clean.
+     * @returns {Array<Object>} A new array with cleaned entries (no `_id` fields,
+     *   no empty properties).
+     * @private
+     */
     _stripIds(entries) {
         var result = [];
         for (var i = 0; i < entries.length; i++) {
@@ -966,7 +1441,24 @@ class McmsValidationWizard extends HTMLElement {
 // ========================================
 // Client-Side Rule Evaluation (standalone functions)
 // ========================================
+// These functions are used by the test panel to evaluate rules against a test value
+// in real time. They mirror the server-side validation logic so users can preview
+// results before saving.
 
+/**
+ * Classifies whether a character belongs to a named character class.
+ *
+ * Supported classes:
+ * - `"uppercase"` -- ASCII uppercase letters (A-Z)
+ * - `"lowercase"` -- ASCII lowercase letters (a-z)
+ * - `"digits"` -- ASCII digits (0-9)
+ * - `"spaces"` -- whitespace characters (space, tab, newline, carriage return)
+ * - `"symbols"` -- any character that is not a letter, digit, or whitespace
+ *
+ * @param {string} c - A single character to classify.
+ * @param {string} cls - The character class name.
+ * @returns {boolean} `true` if the character belongs to the specified class.
+ */
 function classifyChar(c, cls) {
     var code = c.charCodeAt(0);
     if (cls === 'uppercase') return code >= 65 && code <= 90;
@@ -980,11 +1472,27 @@ function classifyChar(c, cls) {
     return false;
 }
 
+/**
+ * Converts a comparison operator code to a human-readable label for validation messages.
+ *
+ * @param {string} cmp - The comparison code (`"eq"`, `"neq"`, `"gt"`, `"gte"`, `"lt"`, `"lte"`).
+ * @returns {string} The label (e.g., `"exactly"`, `"not"`, `"more than"`, `"at least"`,
+ *   `"less than"`, `"at most"`).
+ */
 function cmpLabel(cmp) {
     var labels = { eq: 'exactly', neq: 'not', gt: 'more than', gte: 'at least', lt: 'less than', lte: 'at most' };
     return labels[cmp] || cmp;
 }
 
+/**
+ * Performs a numeric comparison between two values using a comparison operator code.
+ *
+ * @param {number} actual - The actual value (left-hand side).
+ * @param {number} expected - The expected threshold (right-hand side).
+ * @param {string} cmp - The comparison operator (`"eq"`, `"neq"`, `"gt"`, `"gte"`,
+ *   `"lt"`, `"lte"`).
+ * @returns {boolean} The result of the comparison. Returns `false` for unknown operators.
+ */
 function compareCmp(actual, expected, cmp) {
     switch (cmp) {
         case 'eq': return actual === expected;
@@ -997,6 +1505,14 @@ function compareCmp(actual, expected, cmp) {
     }
 }
 
+/**
+ * Counts the number of items in a value string. First attempts to parse the value
+ * as a JSON array (if it starts with `[`). Falls back to splitting by commas and
+ * counting non-empty trimmed segments.
+ *
+ * @param {string} value - The value string to count items in.
+ * @returns {number} The number of items. Returns `0` for empty/falsy input.
+ */
 function countItems(value) {
     if (!value) return 0;
     if (value.charAt(0) === '[') {
@@ -1015,18 +1531,40 @@ function countItems(value) {
     return count;
 }
 
+/**
+ * Formats a numeric value for display in validation messages. Returns `"?"` for
+ * null/undefined, removes trailing `.0` for integers.
+ *
+ * @param {number|null|undefined} n - The number to format.
+ * @returns {string} The formatted string.
+ */
 function formatN(n) {
     if (n === null || n === undefined) return '?';
     if (n === Math.floor(n)) return String(Math.floor(n));
     return String(n);
 }
 
+/**
+ * Returns a display label for a rule's target value or character class, used in
+ * default validation messages.
+ *
+ * @param {Object} rule - The rule object with optional `value` and `class` fields.
+ * @returns {string} Display label (e.g., `'"hello"'`, `'uppercase characters'`, `'(unset)'`).
+ */
 function targetLabel(rule) {
     if (rule.value) return '"' + rule.value + '"';
     if (rule.class) return rule.class + ' characters';
     return '(unset)';
 }
 
+/**
+ * Generates a default human-readable validation message for a rule based on its
+ * operator and parameters. Used when no custom message is set on the rule.
+ *
+ * @param {Object} rule - The rule object with `op` and operator-specific fields.
+ * @returns {string} A descriptive validation message (e.g., `"must be at least 3 characters"`,
+ *   `"must contain uppercase characters"`).
+ */
 function defaultMessage(rule) {
     var neg = rule.negate;
     switch (rule.op) {
@@ -1056,6 +1594,19 @@ function defaultMessage(rule) {
     }
 }
 
+/**
+ * Evaluates a single validation rule against a string value.
+ *
+ * Handles all supported operators: required, contains, starts_with, ends_with,
+ * equals, length (Unicode-aware via `Array.from`), count, range (numeric parsing),
+ * item_count, and one_of. Applies the `negate` flag to invert results for all
+ * operators except `required`.
+ *
+ * @param {string} value - The string value to validate.
+ * @param {Object} rule - The rule object with `op` and operator-specific fields.
+ * @returns {{ pass: boolean, message: string }} The evaluation result with a pass/fail
+ *   boolean and the validation message (custom or auto-generated).
+ */
 function evaluateRule(value, rule) {
     var passed = false;
 
@@ -1159,6 +1710,20 @@ function evaluateRule(value, rule) {
     return { pass: passed, message: msg };
 }
 
+/**
+ * Evaluates an array of rule entries (rules and groups) against a string value.
+ *
+ * Individual rules are evaluated with `evaluateRule()`. Groups evaluate their children
+ * recursively: `all_of` groups pass only if every child passes (AND logic), `any_of`
+ * groups pass if at least one child passes (OR logic). Empty `any_of` groups vacuously
+ * pass.
+ *
+ * @param {string} value - The string value to validate against all entries.
+ * @param {Array<Object>} entries - Array of rule entries, each either
+ *   `{ rule: {...} }` or `{ group: { all_of: [...] | any_of: [...] } }`.
+ * @returns {Array<{ pass: boolean, message: string, children?: Array }>} Array of
+ *   evaluation results. Group results include a `children` array with nested results.
+ */
 function evaluateEntries(value, entries) {
     var results = [];
     for (var i = 0; i < entries.length; i++) {
@@ -1195,5 +1760,3 @@ function evaluateEntries(value, entries) {
     }
     return results;
 }
-
-customElements.define('mcms-validation-wizard', McmsValidationWizard);

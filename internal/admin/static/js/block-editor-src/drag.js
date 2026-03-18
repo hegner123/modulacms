@@ -17,7 +17,10 @@ export const dragMethods = {
                 if (e.button !== 0) return;
 
                 // Don't drag when clicking delete button or toolbar buttons
-                if (e.target.closest('[data-action]')) return;
+                if (e.target.closest('[data-action]')) {
+                        console.log('[kebab-debug] pointerdown skipped drag — target has [data-action]:', e.target.closest('[data-action]').dataset.action, 'blockId:', e.target.closest('[data-action]').dataset.blockId);
+                        return;
+                }
 
                 // Find the block header (.block-item) that was clicked
                 const blockItem = e.target.closest('.block-item');
