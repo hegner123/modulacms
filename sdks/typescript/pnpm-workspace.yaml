@@ -4,3 +4,4 @@ packages:
   - 'modulacms-sdk'
   - 'modulacms-admin-sdk'
   - 'plugin-sdk'
+  - 'admin-ui'

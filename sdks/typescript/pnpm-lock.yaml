@@ -18,6 +18,15 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(jsdom@26.1.0)
 
+  admin-ui:
+    dependencies:
+      '@modulacms/admin-sdk':
+        specifier: workspace:*
+        version: link:../modulacms-admin-sdk
+      '@modulacms/types':
+        specifier: workspace:*
+        version: link:../types
+
   modulacms-admin-sdk:
     dependencies:
       '@modulacms/types':
