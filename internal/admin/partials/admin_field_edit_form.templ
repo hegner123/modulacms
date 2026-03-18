@@ -1,0 +1,71 @@
+package partials
+
+// AdminFieldEditForm renders the edit admin field form fields.
+// Used as an HTMX partial for validation error responses on the detail page.
+templ AdminFieldEditForm(id string, name string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
+    <form hx-post={ "/admin/admin-schema/fields/" + id }
+          hx-target="#admin-field-edit-form"
+          hx-swap="innerHTML">
+        @CSRFField(csrfToken)
+        if errs["_"] != "" {
+            <div class="rounded-md bg-red-400/10 p-4">
+                <div class="flex">
+                    <div class="shrink-0">
+                        <i data-lucide="alert-circle" class="size-5 text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-400">{ errs["_"] }</p>
+                    </div>
+                </div>
+            </div>
+        }
+        @FormField("name", "Name", name, errs["name"])
+        @FormField("label", "Label", label, errs["label"])
+        <div>
+            <label for="type" class="block text-sm/6 font-medium text-white">Type</label>
+            <div class="mt-2">
+                <select id="type" name="type"
+                    class={ "block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6", templ.KV("ring-red-500", errs["type"] != ""), templ.KV("ring-white/10", errs["type"] == "") }>
+                    <option value="text" selected?={ fieldType == "text" }>Text</option>
+                    <option value="textarea" selected?={ fieldType == "textarea" }>Textarea</option>
+                    <option value="richtext" selected?={ fieldType == "richtext" }>Rich Text</option>
+                    <option value="number" selected?={ fieldType == "number" }>Number</option>
+                    <option value="boolean" selected?={ fieldType == "boolean" }>Boolean</option>
+                    <option value="date" selected?={ fieldType == "date" }>Date</option>
+                    <option value="datetime" selected?={ fieldType == "datetime" }>Datetime</option>
+                    <option value="select" selected?={ fieldType == "select" }>Select</option>
+                    <option value="media" selected?={ fieldType == "media" }>Media</option>
+                    <option value="relation" selected?={ fieldType == "relation" }>Relation</option>
+                    <option value="json" selected?={ fieldType == "json" }>JSON</option>
+                    <option value="slug" selected?={ fieldType == "slug" }>Slug</option>
+                    <option value="email" selected?={ fieldType == "email" }>Email</option>
+                    <option value="url" selected?={ fieldType == "url" }>URL</option>
+                </select>
+            </div>
+            if errs["type"] != "" {
+                <p class="mt-2 text-sm text-red-400">{ errs["type"] }</p>
+            }
+        </div>
+        <div>
+            <label for="data" class="block text-sm/6 font-medium text-white">Data (JSON)</label>
+            <div class="mt-2">
+                <textarea id="data" name="data" rows="4" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">{ data }</textarea>
+            </div>
+        </div>
+        <div>
+            <label for="validation" class="block text-sm/6 font-medium text-white">Validation (JSON)</label>
+            <div class="mt-2">
+                <textarea id="validation" name="validation" rows="4" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">{ validation }</textarea>
+            </div>
+        </div>
+        <div>
+            <label for="ui_config" class="block text-sm/6 font-medium text-white">UI Config (JSON)</label>
+            <div class="mt-2">
+                <textarea id="ui_config" name="ui_config" rows="4" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">{ uiConfig }</textarea>
+            </div>
+        </div>
+        <div class="flex justify-end gap-x-3 pt-4">
+            <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Save Changes</button>
+        </div>
+    </form>
+}

@@ -10,18 +10,16 @@ templ AdminRoutesListContent(items []db.AdminRoutes, pagination partials.Paginat
     <div class="sm:flex sm:items-center">
         <div class="sm:flex-auto">
             <h1 class="text-base/7 font-semibold text-white">Admin Routes</h1>
-            <p class="mt-2 text-sm text-gray-400">Internal CMS routes managed by the system. These routes are read-only.</p>
+            <p class="mt-2 text-sm text-gray-400">Manage internal CMS routes used by the admin panel.</p>
         </div>
         <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-            <a
-                href="/admin/routes"
-                class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20 no-underline hover:no-underline"
-                hx-get="/admin/routes"
-                hx-target="#main-content"
-                hx-push-url="true"
+            <button
+                class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
+                data-action="new"
+                onclick="document.getElementById('create-admin-route-dialog').open()"
             >
-                Back to Routes
-            </a>
+                Create Route
+            </button>
         </div>
     </div>
     <div class="mt-8 flow-root">
@@ -35,10 +33,11 @@ templ AdminRoutesListContent(items []db.AdminRoutes, pagination partials.Paginat
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Title</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Status</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Modified</th>
+                                <th scope="col" class="px-4 py-3.5 text-right text-sm font-semibold text-white">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="admin-routes-table-body" class="divide-y divide-white/5">
-                            @partials.AdminRoutesTableRowsInner(items)
+                            @partials.AdminSchemaRoutesTableRowsInner(items)
                         </tbody>
                     </table>
                 </div>
@@ -50,8 +49,29 @@ templ AdminRoutesListContent(items []db.AdminRoutes, pagination partials.Paginat
     </div>
 }
 
+templ AdminRouteCreateDialog(csrfToken string) {
+    <mcms-dialog id="create-admin-route-dialog" aria-labelledby="create-admin-route-dialog-title">
+        <div class="px-5 py-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                <h2 id="create-admin-route-dialog-title" class="text-lg font-semibold text-white">Create Admin Route</h2>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">&times;</button>
+            </div>
+            <form
+                hx-post="/admin/admin-schema/routes"
+                hx-target="#create-admin-route-form-container"
+                hx-swap="innerHTML"
+                id="create-admin-route-form"
+            >
+                <div id="create-admin-route-form-container">
+                    @partials.AdminRouteForm("", "", "1", nil, csrfToken)
+                </div>
+            </form>
+        </div>
+    </mcms-dialog>
+}
+
 templ AdminRoutesList(layout layouts.AdminData, items []db.AdminRoutes, pagination partials.PaginationPageData) {
-    @layouts.Admin(layout) {
+    @layouts.Admin(layout.WithDialogs(AdminRouteCreateDialog(layout.CSRFToken))) {
         @AdminRoutesListContent(items, pagination)
     }
 }

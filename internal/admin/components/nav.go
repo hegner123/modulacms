@@ -25,6 +25,8 @@ var NavItems = []NavItem{
 	{Label: "Users", Href: "/admin/users", Icon: "users", Permission: "users:read"},
 	{Label: "Roles", Href: "/admin/users/roles", Icon: "shield", Permission: "roles:read"},
 	{Label: "Tokens", Href: "/admin/users/tokens", Icon: "key", Permission: "tokens:read"},
+	{Label: "Admin Content", Href: "/admin/admin-content", Icon: "layout", Permission: "content:read"},
+	{Label: "Admin Schema", Href: "/admin/admin-schema/datatypes", Icon: "blocks", Permission: "datatypes:read"},
 	{Label: "Plugins", Href: "/admin/plugins", Icon: "puzzle", Permission: "plugins:read"},
 	{Label: "Import", Href: "/admin/import", Icon: "upload", Permission: "import:create"},
 	{Label: "Audit", Href: "/admin/audit", Icon: "history"},

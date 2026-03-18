@@ -1,0 +1,40 @@
+package partials
+
+import (
+	"fmt"
+	"github.com/hegner123/modulacms/internal/db"
+)
+
+templ AdminVersionList(versions []db.AdminContentVersion, contentID string, csrfToken string) {
+	<div class="space-y-4" data-version-list>
+		if len(versions) == 0 {
+			<p class="text-sm text-gray-400">No versions yet.</p>
+		} else {
+			<ul class="space-y-3">
+				for _, v := range versions {
+					<li
+						class="rounded-md bg-white/5 p-4 ring-1 ring-white/10 ring-inset"
+						data-version-item
+						data-version-id={ v.AdminContentVersionID.String() }
+						data-version-number={ fmt.Sprintf("%d", v.VersionNumber) }
+					>
+						<div class="flex items-center gap-3">
+							<span class="text-sm font-medium text-white">#{ fmt.Sprintf("%d", v.VersionNumber) }</span>
+							<span class="text-xs text-gray-500">{ v.AdminContentVersionID.String()[:8] }</span>
+							if v.Published {
+								<span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">live</span>
+							}
+						</div>
+						if v.Label != "" {
+							<div class="mt-1 text-sm text-gray-300">{ v.Label }</div>
+						}
+						<div class="mt-2 flex items-center gap-3">
+							<span class="text-xs text-gray-400">{ v.Trigger }</span>
+							<span class="text-xs text-gray-400">{ v.DateCreated.Time.UTC().Format("Jan 2, 2006 15:04") }</span>
+						</div>
+					</li>
+				}
+			</ul>
+		}
+	</div>
+}

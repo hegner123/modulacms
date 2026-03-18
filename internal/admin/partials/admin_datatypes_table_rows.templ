@@ -1,0 +1,41 @@
+package partials
+
+import (
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+// AdminDatatypesTableRows renders table rows for the admin datatypes list, including pagination.
+// Used as an HTMX partial response for pagination and table refresh.
+templ AdminDatatypesTableRows(items []db.AdminDatatypes, pg PaginationPageData) {
+    if len(items) == 0 {
+        <tr>
+            <td colspan="5" class="py-10 text-center text-sm text-gray-400">No admin datatypes found.</td>
+        </tr>
+    } else {
+        for _, dt := range items {
+            <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/admin-schema/datatypes/" + dt.AdminDatatypeID.String() }>
+                <td class="py-4 pr-3 pl-4 text-sm font-medium whitespace-nowrap text-white sm:pl-6">{ dt.Name }</td>
+                <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ dt.Label }</td>
+                <td class="px-3 py-4 text-sm whitespace-nowrap">
+                    <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ dt.Type }</span>
+                </td>
+                <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ dt.DateModified.Time.UTC().Format("Jan 2, 2006 15:04") }</td>
+                <td class="py-4 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6">
+                    <mcms-confirm
+                        label="Delete"
+                        message="Delete this admin datatype? This cannot be undone."
+                        button-class="text-red-400 hover:text-red-300"
+                        hx-delete={ "/admin/admin-schema/datatypes/" + dt.AdminDatatypeID.String() }
+                        hx-target="closest tr"
+                        hx-swap="outerHTML swap:300ms"
+                    ></mcms-confirm>
+                </td>
+            </tr>
+        }
+    }
+    <tr>
+        <td colspan="5">
+            @Pagination(pg.Current, pg.TotalPages, "#admin-datatypes-table-body", "/admin/admin-schema/datatypes", pg.Limit)
+        </td>
+    </tr>
+}

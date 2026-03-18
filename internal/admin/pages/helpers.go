@@ -2,9 +2,11 @@ package pages
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/hegner123/modulacms/internal/admin/partials"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
@@ -24,6 +26,14 @@ type ContentListItem struct {
 	db.ContentDataTopLevel
 	DisplayName    string
 	Slug           string
+	HasPublishPerm bool
+}
+
+// AdminContentListItem wraps AdminContentDataTopLevel with human-readable display fields
+// resolved from the associated admin route or title content field.
+type AdminContentListItem struct {
+	db.AdminContentDataTopLevel
+	DisplayName    string
 	HasPublishPerm bool
 }
 
@@ -51,6 +61,14 @@ func fileExtension(filename string) string {
 
 // nullableIDValue returns the ID string for a valid NullableDatatypeID, or "" if null.
 func nullableIDValue(n types.NullableDatatypeID) string {
+	if !n.Valid {
+		return ""
+	}
+	return n.ID.String()
+}
+
+// nullableAdminDatatypeIDValue returns the ID string for a valid NullableAdminDatatypeID, or "" if null.
+func nullableAdminDatatypeIDValue(n types.NullableAdminDatatypeID) string {
 	if !n.Valid {
 		return ""
 	}
@@ -124,5 +142,18 @@ func isRoleSelected(rolesJSON types.NullableString, roleID string) bool {
 		}
 	}
 	return false
+}
+
+// revisionStr converts a revision number to a display string.
+func revisionStr(rev int64) string {
+	return fmt.Sprintf("%d", rev)
+}
+
+// statusOptions returns the content status options for a select dropdown.
+func statusOptions() []partials.SelectOption {
+	return []partials.SelectOption{
+		{Value: "draft", Label: "Draft"},
+		{Value: "published", Label: "Published"},
+	}
 }
 

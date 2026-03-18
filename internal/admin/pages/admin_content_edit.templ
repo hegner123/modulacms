@@ -1,0 +1,161 @@
+package pages
+
+import (
+    "github.com/hegner123/modulacms/internal/admin/components"
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+templ AdminContentEditContent(content db.AdminContentData, datatypeLabel string, csrfToken string, hasPublishPerm bool) {
+    <!-- Page Header -->
+    <div class="border-b border-white/10 pb-5">
+        <div class="flex items-center gap-x-3">
+            <a
+                href="/admin/admin-content"
+                class="text-sm text-gray-400 hover:text-white"
+                hx-get="/admin/admin-content"
+                hx-target="#main-content"
+                hx-push-url="true"
+            >
+                &larr; Back
+            </a>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                if datatypeLabel != "" {
+                    <h1 class="text-lg font-semibold text-white">{ datatypeLabel }</h1>
+                } else {
+                    <h1 class="text-lg font-semibold text-white">Admin Content</h1>
+                }
+                @components.StatusBadge(string(content.Status))
+            </div>
+            <div class="flex items-center gap-x-3">
+                if hasPublishPerm {
+                    <mcms-publish-button
+                        status={ string(content.Status) }
+                        publish-url={ "/admin/admin-content/" + content.AdminContentDataID.String() + "/publish" }
+                        unpublish-url={ "/admin/admin-content/" + content.AdminContentDataID.String() + "/unpublish" }
+                    ></mcms-publish-button>
+                }
+                <!-- Overflow menu -->
+                <div class="relative" data-overflow-menu>
+                    <button
+                        type="button"
+                        class="rounded-md bg-white/5 p-2 text-gray-400 ring-1 ring-white/10 ring-inset hover:bg-white/10 hover:text-white"
+                        aria-label="More actions"
+                        onclick="var m=this.nextElementSibling;m.classList.toggle('hidden')"
+                    >
+                        <svg class="size-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm0 5.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm0 5.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
+                        </svg>
+                    </button>
+                    <div class="absolute right-0 top-full z-20 mt-2 hidden w-48 origin-top-right divide-y divide-white/10 overflow-hidden rounded-md bg-gray-800 shadow-lg ring-1 ring-white/10" data-overflow-panel>
+                        <div class="py-1">
+                            <button
+                                type="button"
+                                class="flex w-full items-center gap-x-2 px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white"
+                                data-opens-dialog="admin-version-history-dialog"
+                                hx-get={ "/admin/admin-content/" + content.AdminContentDataID.String() + "/versions" }
+                                hx-target="#admin-version-list-panel"
+                                hx-swap="innerHTML"
+                                hx-trigger="click"
+                                onclick="this.closest('[data-overflow-menu]').querySelector('[data-overflow-panel]').classList.add('hidden')"
+                            >
+                                <svg class="size-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                                </svg>
+                                Versions
+                            </button>
+                        </div>
+                        <div class="py-1">
+                            <button
+                                type="button"
+                                class="flex w-full items-center gap-x-2 px-4 py-2 text-sm text-red-400 hover:bg-white/5 hover:text-red-300"
+                                onclick="this.closest('[data-overflow-menu]').querySelector('[data-overflow-panel]').classList.add('hidden'); document.getElementById('delete-admin-content-dialog').open()"
+                            >
+                                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                                </svg>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <mcms-dialog
+        id="delete-admin-content-dialog"
+        title="Delete Admin Content"
+        confirm-label="Delete"
+        cancel-label="Cancel"
+        destructive
+        data-delete-url={ "/admin/admin-content/" + content.AdminContentDataID.String() }
+    >
+        <p>This will permanently delete this admin content and all its children.</p>
+    </mcms-dialog>
+    <mcms-dialog id="admin-version-history-dialog" title="Version History" cancel-label="Close">
+        <div id="admin-version-list-panel">
+            <p class="text-sm text-gray-400">Loading...</p>
+        </div>
+    </mcms-dialog>
+    <!-- Metadata Section -->
+    <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <!-- Info Panel -->
+        <div class="rounded-xl border border-white/10 bg-white/5 p-6">
+            <h2 class="text-sm font-semibold text-white mb-4">Details</h2>
+            <dl class="space-y-3">
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-400">ID</dt>
+                    <dd class="text-sm text-white font-mono">{ content.AdminContentDataID.String() }</dd>
+                </div>
+                if datatypeLabel != "" {
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-400">Datatype</dt>
+                        <dd class="text-sm text-white">{ datatypeLabel }</dd>
+                    </div>
+                }
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-400">Created</dt>
+                    <dd class="text-sm text-white">{ content.DateCreated.Time.UTC().Format("Jan 2, 2006 15:04") }</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-400">Modified</dt>
+                    <dd class="text-sm text-white">{ content.DateModified.Time.UTC().Format("Jan 2, 2006 15:04") }</dd>
+                </div>
+                if !content.PublishedAt.Time.IsZero() {
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-400">Published At</dt>
+                        <dd class="text-sm text-white">{ content.PublishedAt.Time.UTC().Format("Jan 2, 2006 15:04") }</dd>
+                    </div>
+                }
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-400">Revision</dt>
+                    <dd class="text-sm text-white">{ revisionStr(content.Revision) }</dd>
+                </div>
+            </dl>
+        </div>
+        <!-- Status Update Form -->
+        <div class="rounded-xl border border-white/10 bg-white/5 p-6">
+            <h2 class="text-sm font-semibold text-white mb-4">Update Status</h2>
+            <form
+                hx-put={ "/admin/admin-content/" + content.AdminContentDataID.String() }
+                hx-target="#main-content"
+                hx-swap="innerHTML"
+            >
+                @partials.CSRFField(csrfToken)
+                @partials.FormSelect("status", "Status", string(content.Status), statusOptions(), "")
+                <div class="mt-4">
+                    <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+templ AdminContentEdit(layout layouts.AdminData, content db.AdminContentData, datatypeLabel string, csrfToken string, hasPublishPerm bool) {
+    @layouts.Admin(layout) {
+        @AdminContentEditContent(content, datatypeLabel, csrfToken, hasPublishPerm)
+    }
+}

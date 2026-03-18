@@ -1,0 +1,41 @@
+package partials
+
+import "github.com/hegner123/modulacms/internal/db"
+
+// AdminFieldsTableRows renders table rows for the admin fields list, including pagination.
+// Used as an HTMX partial response for pagination and table refresh.
+templ AdminFieldsTableRows(items []db.AdminFields, pg PaginationPageData) {
+    if len(items) == 0 {
+        <tr>
+            <td colspan="5">
+                @EmptyState("No admin fields found.")
+            </td>
+        </tr>
+    } else {
+        for _, f := range items {
+            <tr class="hover:bg-white/5 cursor-pointer transition-colors" data-clickable-row data-href={ "/admin/admin-schema/fields/" + f.AdminFieldID.String() }>
+                <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ f.Name }</td>
+                <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ f.Label }</td>
+                <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">
+                    <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ f.Type.String() }</span>
+                </td>
+                <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ f.DateModified.String() }</td>
+                <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
+                    <mcms-confirm
+                        label="Delete"
+                        message="Delete this admin field? This cannot be undone."
+                        button-class="text-sm font-medium text-red-400 hover:text-red-300"
+                        hx-delete={ "/admin/admin-schema/fields/" + f.AdminFieldID.String() }
+                        hx-target="closest tr"
+                        hx-swap="outerHTML swap:300ms"
+                    ></mcms-confirm>
+                </td>
+            </tr>
+        }
+    }
+    <tr>
+        <td colspan="5">
+            @Pagination(pg.Current, pg.TotalPages, "#admin-fields-table-body", "/admin/admin-schema/fields", pg.Limit)
+        </td>
+    </tr>
+}

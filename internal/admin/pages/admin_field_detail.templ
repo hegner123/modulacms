@@ -1,0 +1,151 @@
+package pages
+
+import (
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+templ AdminFieldDetailContent(field db.AdminFields, availableRoles []db.Roles, csrfToken string, i18nEnabled bool) {
+    <!-- Page Header -->
+    <div class="border-b border-white/10 pb-5" data-page-header>
+        <div class="flex items-center gap-x-3">
+            <a href="/admin/admin-schema/fields" class="text-sm text-gray-400 hover:text-white"
+               hx-get="/admin/admin-schema/fields"
+               hx-target="#main-content"
+               hx-push-url="true">&larr; Back</a>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <h1 class="text-lg font-semibold text-white">{ field.Label }</h1>
+                <span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">{ field.Type.String() }</span>
+            </div>
+            <div class="flex items-center gap-x-3">
+                <button type="submit" form="admin-field-form" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    <!-- Two-Column Detail Layout -->
+    <div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3">
+        <!-- Main content (2/3) -->
+        <div class="lg:col-span-2">
+            <div class="rounded-xl border border-white/10 bg-white/5 p-6">
+                <h2 class="text-base font-semibold text-white">Details</h2>
+                <div id="admin-field-edit-form" class="mt-6">
+                    <form id="admin-field-form"
+                          hx-post={ "/admin/admin-schema/fields/" + field.AdminFieldID.String() }
+                          hx-target="#admin-field-edit-form"
+                          hx-swap="innerHTML">
+                        @partials.CSRFField(csrfToken)
+                        <div class="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
+                            <div class="sm:col-span-3">
+                                @partials.FormField("name", "Name", field.Name, "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("label", "Label", field.Label, "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label for="type" class="block text-sm font-medium text-white">Type</label>
+                                <div class="mt-2">
+                                    <select id="type" name="type" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">
+                                        <option value="text" selected?={ field.Type.String() == "text" }>Text</option>
+                                        <option value="textarea" selected?={ field.Type.String() == "textarea" }>Textarea</option>
+                                        <option value="richtext" selected?={ field.Type.String() == "richtext" }>Rich Text</option>
+                                        <option value="number" selected?={ field.Type.String() == "number" }>Number</option>
+                                        <option value="boolean" selected?={ field.Type.String() == "boolean" }>Boolean</option>
+                                        <option value="date" selected?={ field.Type.String() == "date" }>Date</option>
+                                        <option value="datetime" selected?={ field.Type.String() == "datetime" }>Datetime</option>
+                                        <option value="select" selected?={ field.Type.String() == "select" }>Select</option>
+                                        <option value="media" selected?={ field.Type.String() == "media" }>Media</option>
+                                        <option value="relation" selected?={ field.Type.String() == "relation" }>Relation</option>
+                                        <option value="json" selected?={ field.Type.String() == "json" }>JSON</option>
+                                        <option value="slug" selected?={ field.Type.String() == "slug" }>Slug</option>
+                                        <option value="email" selected?={ field.Type.String() == "email" }>Email</option>
+                                        <option value="url" selected?={ field.Type.String() == "url" }>URL</option>
+                                    </select>
+                                </div>
+                            </div>
+                            if i18nEnabled {
+                                <div class="sm:col-span-6">
+                                    <label class="flex items-center gap-x-2 text-sm text-gray-300">
+                                        <input type="hidden" name="translatable" value="0"/>
+                                        if field.Translatable {
+                                            <input type="checkbox" name="translatable" value="1" checked class="rounded border-white/10 bg-white/5"/>
+                                        } else {
+                                            <input type="checkbox" name="translatable" value="1" class="rounded border-white/10 bg-white/5"/>
+                                        }
+                                        Translatable
+                                        <span class="text-gray-400">(content for this field varies per locale)</span>
+                                    </label>
+                                </div>
+                            }
+                            <div class="sm:col-span-6">
+                                <label for="roles" class="block text-sm font-medium text-white">Role Restrictions</label>
+                                <div class="mt-2">
+                                    <select id="roles" name="roles" multiple class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">
+                                        for _, role := range availableRoles {
+                                            if isRoleSelected(field.Roles, role.RoleID.String()) {
+                                                <option value={ role.RoleID.String() } selected>{ role.Label }</option>
+                                            } else {
+                                                <option value={ role.RoleID.String() }>{ role.Label }</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <p class="mt-2 text-xs text-gray-400">Leave empty for unrestricted access. Select roles to limit visibility.</p>
+                            </div>
+                            <div class="sm:col-span-6">
+                                <label for="data" class="block text-sm font-medium text-white">Data (JSON)</label>
+                                <div class="mt-2">
+                                    <textarea id="data" name="data" rows="4" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 font-mono text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">{ field.Data }</textarea>
+                                </div>
+                            </div>
+                            <div class="sm:col-span-6">
+                                <label class="block text-sm font-medium text-white">Validation</label>
+                                <div class="mt-2">
+                                    <mcms-validation-wizard
+                                        value={ field.Validation }
+                                        textarea-id="validation"
+                                    ></mcms-validation-wizard>
+                                    <textarea id="validation" name="validation" rows="4" style="display:none">{ field.Validation }</textarea>
+                                </div>
+                            </div>
+                            <div class="sm:col-span-6">
+                                <label for="ui_config" class="block text-sm font-medium text-white">UI Config (JSON)</label>
+                                <div class="mt-2">
+                                    <textarea id="ui_config" name="ui_config" rows="4" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 font-mono text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">{ field.UIConfig }</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Sidebar (1/3) -->
+        <div>
+            <div class="rounded-xl border border-white/10 bg-white/5 p-6">
+                <h2 class="text-base font-semibold text-white">Metadata</h2>
+                <dl class="mt-4 space-y-4">
+                    <div>
+                        <dt class="text-sm text-gray-400">ID</dt>
+                        <dd class="mt-1 text-sm text-white">{ field.AdminFieldID.String() }</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm text-gray-400">Created</dt>
+                        <dd class="mt-1 text-sm text-white">{ field.DateCreated.String() }</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm text-gray-400">Modified</dt>
+                        <dd class="mt-1 text-sm text-white">{ field.DateModified.String() }</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+}
+
+templ AdminFieldDetail(layout layouts.AdminData, field db.AdminFields, availableRoles []db.Roles, csrfToken string, i18nEnabled bool) {
+    @layouts.Admin(layout) {
+        @AdminFieldDetailContent(field, availableRoles, csrfToken, i18nEnabled)
+    }
+}
