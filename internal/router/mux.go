@@ -806,12 +806,19 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/media", mutating("media:create", adminhandlers.MediaUploadHandler(svc)))
 	mux.Handle("POST /admin/media/{id}", mutating("media:update", adminhandlers.MediaUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/media/{id}", mutating("media:delete", adminhandlers.MediaDeleteHandler(svc)))
+	mux.Handle("POST /admin/media/bulk-delete", mutating("media:delete", adminhandlers.MediaBulkDeleteHandler(svc)))
 
 	// Media folders
 	mux.Handle("POST /admin/media-folders", mutating("media:create", adminhandlers.MediaFolderCreateHandler(svc)))
 	mux.Handle("POST /admin/media-folders/{id}", mutating("media:update", adminhandlers.MediaFolderUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/media-folders/{id}", mutating("media:delete", adminhandlers.MediaFolderDeleteHandler(svc)))
 	mux.Handle("POST /admin/media/move/{id}", mutating("media:update", adminhandlers.MediaMoveToFolderHandler(svc)))
+
+	// Media dimensions
+	mux.Handle("GET /admin/media/dimensions", viewing("media", adminhandlers.MediaDimensionsListHandler(svc)))
+	mux.Handle("POST /admin/media/dimensions", mutating("media:create", adminhandlers.MediaDimensionCreateHandler(svc)))
+	mux.Handle("POST /admin/media/dimensions/{id}", mutating("media:update", adminhandlers.MediaDimensionUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/media/dimensions/{id}", mutating("media:delete", adminhandlers.MediaDimensionDeleteHandler(svc)))
 
 	// Routes
 	mux.Handle("GET /admin/routes", viewing("routes", adminhandlers.RoutesListHandler(svc)))
@@ -855,8 +862,12 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	// Demo
 	mux.Handle("GET /admin/demo", viewing("settings", adminhandlers.DemoHandler()))
 
+	// Search
+	mux.Handle("GET /admin/search", adminAuth(csrf(http.HandlerFunc(adminhandlers.AdminSearchHandler(svc)))))
+
 	// Audit
 	mux.Handle("GET /admin/audit", adminAuth(csrf(http.HandlerFunc(adminhandlers.AuditLogHandler(svc)))))
+	mux.Handle("GET /admin/audit/{eventID}", adminAuth(csrf(http.HandlerFunc(adminhandlers.AuditDetailHandler(svc)))))
 
 	// Settings
 	mux.Handle("GET /admin/settings", viewing("config", adminhandlers.SettingsHandler(mgr)))

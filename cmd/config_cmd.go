@@ -285,11 +285,33 @@ func printFieldDetail(out io.Writer, f config.FieldMeta) {
 	}
 }
 
+var configTemplateCmd = &cobra.Command{
+	Use:   "template",
+	Short: "Print a complete modula.config.json template with all fields",
+	Long: `Generate a modula.config.json containing every available configuration field
+with its default value. Use this as a starting point for a new installation
+or as a reference for all configurable options.
+
+Examples:
+  modula config template
+  modula config template > modula.config.json`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := config.DefaultConfig()
+		formatted, err := utility.FormatJSON(cfg)
+		if err != nil {
+			return fmt.Errorf("formatting template: %w", err)
+		}
+		_, err = fmt.Fprintln(cmd.OutOrStdout(), formatted)
+		return err
+	},
+}
+
 func init() {
 	configParentCmd.AddCommand(configShowCmd)
 	configParentCmd.AddCommand(configValidateCmd)
 	configParentCmd.AddCommand(configSetCmd)
 	configParentCmd.AddCommand(configFieldsCmd)
+	configParentCmd.AddCommand(configTemplateCmd)
 
 	configFieldsCmd.Flags().String("category", "", "filter by category (server, database, storage, cors, cookie, oauth, observability, email, plugin, update, misc)")
 }

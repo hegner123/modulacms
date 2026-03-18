@@ -19,6 +19,7 @@ var NavItems = []NavItem{
 	{Label: "Dashboard", Href: "/admin/", Icon: "home"},
 	{Label: "Content", Href: "/admin/content", Icon: "file-text", Permission: "content:read"},
 	{Label: "Media", Href: "/admin/media", Icon: "image", Permission: "media:read"},
+	{Label: "Dimensions", Href: "/admin/media/dimensions", Icon: "ruler", Permission: "media:read"},
 	{Label: "Datatypes", Href: "/admin/schema/datatypes", Icon: "blocks", Permission: "datatypes:read"},
 	{Label: "Routes", Href: "/admin/routes", Icon: "globe", Permission: "routes:read"},
 	{Label: "Users", Href: "/admin/users", Icon: "users", Permission: "users:read"},

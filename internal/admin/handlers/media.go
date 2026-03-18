@@ -1,13 +1,18 @@
 package handlers
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/media"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
@@ -57,26 +62,46 @@ func MediaListHandler(svc *service.Registry) http.HandlerFunc {
 				total = *count
 			}
 		} else {
-			// All media
-			items, count, err := svc.Media.ListMediaPaginated(r.Context(), limit, offset)
+			// Root: show only unfiled media (no folder assigned)
+			items, err := d.ListMediaUnfiledPaginated(db.PaginationParams{Limit: limit, Offset: offset})
 			if err != nil {
-				utility.DefaultLogger.Error("failed to list media", err)
+				utility.DefaultLogger.Error("failed to list unfiled media", err)
 				http.Error(w, "Failed to load media", http.StatusInternalServerError)
 				return
 			}
 			if items != nil {
 				mediaItems = *items
 			}
+			count, err := d.CountMediaUnfiled()
+			if err != nil {
+				utility.DefaultLogger.Error("failed to count unfiled media", err)
+				http.Error(w, "Failed to load media", http.StatusInternalServerError)
+				return
+			}
 			if count != nil {
 				total = *count
 			}
 		}
+
+		// In-memory sort
+		sortBy := r.URL.Query().Get("sort")
+		if sortBy == "" {
+			sortBy = "newest"
+		}
+		sortMediaItems(mediaItems, sortBy)
 
 		baseURL := "/admin/media"
 		if picker {
 			baseURL = "/admin/media?picker=true"
 		} else if folderIDStr != "" {
 			baseURL = "/admin/media?folder_id=" + folderIDStr
+		}
+		if sortBy != "newest" {
+			if strings.Contains(baseURL, "?") {
+				baseURL += "&sort=" + sortBy
+			} else {
+				baseURL += "?sort=" + sortBy
+			}
 		}
 
 		pd := NewPaginationData(total, limit, offset, "#media-grid", baseURL)
@@ -88,11 +113,19 @@ func MediaListHandler(svc *service.Registry) http.HandlerFunc {
 			BaseURL:    pd.BaseURL,
 		}
 
-		// Load folders for the sidebar
-		allFolders, folderErr := d.ListMediaFolders()
-		var folders []db.MediaFolder
-		if folderErr == nil && allFolders != nil {
-			folders = *allFolders
+		// Load child folders for the current directory
+		var childFolders []db.MediaFolder
+		if folderIDStr != "" {
+			folderID := types.MediaFolderID(folderIDStr)
+			cf, cfErr := d.ListMediaFoldersByParent(folderID)
+			if cfErr == nil && cf != nil {
+				childFolders = *cf
+			}
+		} else {
+			rf, rfErr := d.ListMediaFoldersAtRoot()
+			if rfErr == nil && rf != nil {
+				childFolders = *rf
+			}
 		}
 
 		// Build breadcrumb for current folder
@@ -113,18 +146,18 @@ func MediaListHandler(svc *service.Registry) http.HandlerFunc {
 		if IsNavHTMX(r) {
 			csrfToken := CSRFTokenFromContext(r.Context())
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Media"}`)
-			RenderWithOOB(w, r, pages.MediaListContent(mediaItems, pg, folders, folderIDStr, breadcrumb, currentFolder, csrfToken),
-				OOBSwap{TargetID: "admin-dialogs", Component: pages.MediaUploadDialog(csrfToken, folderIDStr)})
+			RenderWithOOB(w, r, pages.MediaListContent(mediaItems, pg, childFolders, folderIDStr, breadcrumb, currentFolder, csrfToken),
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.MediaDialogs(csrfToken, folderIDStr)})
 			return
 		}
 
 		if picker || IsHTMX(r) {
-			Render(w, r, pages.MediaGridPartial(mediaItems, pg, picker))
+			Render(w, r, pages.MediaGridPartial(childFolders, mediaItems, pg, picker, folderIDStr))
 			return
 		}
 
 		layout := NewAdminData(r, "Media")
-		Render(w, r, pages.MediaList(layout, mediaItems, pg, folders, folderIDStr, breadcrumb, currentFolder))
+		Render(w, r, pages.MediaList(layout, mediaItems, pg, childFolders, folderIDStr, breadcrumb, currentFolder))
 	}
 }
 
@@ -227,6 +260,7 @@ func MediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		folderIDStr := r.FormValue("folder_id")
+		utility.DefaultLogger.Info("media upload", "filename", header.Filename, "folder_id", folderIDStr)
 		var folderID types.NullableMediaFolderID
 		if folderIDStr != "" {
 			folderID = types.NullableMediaFolderID{ID: types.MediaFolderID(folderIDStr), Valid: true}
@@ -244,7 +278,7 @@ func MediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 		if err != nil {
 			if service.IsValidation(err) || service.IsConflict(err) {
 				if IsHTMX(r) {
-					w.Header().Set("HX-Trigger", `{"showToast": {"message": "Upload failed: `+err.Error()+`", "type": "error"}}`)
+					w.Header().Set("HX-Trigger", `{"showToast": {"message": "Upload failed", "type": "error"}}`)
 					w.WriteHeader(http.StatusBadRequest)
 					return
 				}
@@ -308,6 +342,19 @@ func MediaUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			Description: r.FormValue("description"),
 		}
 
+		if fxStr := r.FormValue("focal_x"); fxStr != "" {
+			fx, fxErr := strconv.ParseFloat(fxStr, 64)
+			if fxErr == nil {
+				params.FocalX = types.NullableFloat64{Float64: fx, Valid: true}
+			}
+		}
+		if fyStr := r.FormValue("focal_y"); fyStr != "" {
+			fy, fyErr := strconv.ParseFloat(fyStr, 64)
+			if fyErr == nil {
+				params.FocalY = types.NullableFloat64{Float64: fy, Valid: true}
+			}
+		}
+
 		if _, err := svc.Media.UpdateMediaMetadata(r.Context(), ac, params); err != nil {
 			if service.IsNotFound(err) {
 				http.NotFound(w, r)
@@ -321,6 +368,17 @@ func MediaUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			}
 			http.Error(w, "Failed to update media", http.StatusInternalServerError)
 			return
+		}
+
+		// Re-crop variants if focal point changed
+		focalChanged := params.FocalX.Valid || params.FocalY.Valid
+		if focalChanged {
+			record, getErr := svc.Media.GetMedia(r.Context(), types.MediaID(id))
+			if getErr == nil && media.IsImageMIME(record.Mimetype.String) {
+				if rpErr := svc.Media.ReprocessMediaVariants(r.Context(), ac, types.MediaID(id)); rpErr != nil {
+					utility.DefaultLogger.Error("failed to reprocess media variants after focal point change", rpErr)
+				}
+			}
 		}
 
 		if IsHTMX(r) {
@@ -369,6 +427,90 @@ func MediaDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Media deleted", "type": "success"}}`)
+		w.Header().Set("HX-Redirect", "/admin/media")
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// MediaBulkDeleteHandler deletes multiple media items by ID.
+// Expects a JSON body: {"ids": ["id1", "id2", ...]}.
+func MediaBulkDeleteHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !IsHTMX(r) {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		c, cfgErr := svc.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
+		var body struct {
+			IDs []string `json:"ids"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+		if len(body.IDs) == 0 {
+			http.Error(w, "No IDs provided", http.StatusBadRequest)
+			return
+		}
+
+		user := middleware.AuthenticatedUser(r.Context())
+		if user == nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		ac := middleware.AuditContextFromRequest(r, *c)
+
+		var failed int
+		for _, id := range body.IDs {
+			if err := svc.Media.DeleteMedia(r.Context(), ac, types.MediaID(id)); err != nil {
+				utility.DefaultLogger.Error("bulk delete failed for media", err, "media_id", id)
+				failed++
+			}
+		}
+
+		deleted := len(body.IDs) - failed
+		msg := fmt.Sprintf("%d item(s) deleted", deleted)
+		toastType := "success"
+		if failed > 0 {
+			msg = fmt.Sprintf("%d deleted, %d failed", deleted, failed)
+			toastType = "warning"
+		}
+
+		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "%s", "type": "%s"}}`, msg, toastType))
+		w.Header().Set("HX-Redirect", "/admin/media")
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// sortMediaItems sorts media items in-memory by the given key.
+func sortMediaItems(items []db.Media, sortBy string) {
+	switch sortBy {
+	case "oldest":
+		sort.Slice(items, func(i, j int) bool {
+			return items[i].DateCreated.String() < items[j].DateCreated.String()
+		})
+	case "name-asc":
+		sort.Slice(items, func(i, j int) bool {
+			return strings.ToLower(items[i].Name.String) < strings.ToLower(items[j].Name.String)
+		})
+	case "name-desc":
+		sort.Slice(items, func(i, j int) bool {
+			return strings.ToLower(items[i].Name.String) > strings.ToLower(items[j].Name.String)
+		})
+	case "type":
+		sort.Slice(items, func(i, j int) bool {
+			return items[i].Mimetype.String < items[j].Mimetype.String
+		})
+	default: // "newest"
+		sort.Slice(items, func(i, j int) bool {
+			return items[i].DateCreated.String() > items[j].DateCreated.String()
+		})
 	}
 }

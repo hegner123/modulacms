@@ -2375,8 +2375,8 @@ type CreateLocaleParams struct {
 	LocaleID     types.LocaleID  `json:"locale_id"`
 	Code         string          `json:"code"`
 	Label        string          `json:"label"`
-	IsDefault    int64           `json:"is_default"`
-	IsEnabled    int64           `json:"is_enabled"`
+	IsDefault    types.SafeBool  `json:"is_default"`
+	IsEnabled    types.SafeBool  `json:"is_enabled"`
 	FallbackCode sql.NullString  `json:"fallback_code"`
 	SortOrder    int64           `json:"sort_order"`
 	DateCreated  types.Timestamp `json:"date_created"`
@@ -14683,8 +14683,8 @@ WHERE locale_id = ?
 type UpdateLocaleParams struct {
 	Code         string          `json:"code"`
 	Label        string          `json:"label"`
-	IsDefault    int64           `json:"is_default"`
-	IsEnabled    int64           `json:"is_enabled"`
+	IsDefault    types.SafeBool  `json:"is_default"`
+	IsEnabled    types.SafeBool  `json:"is_enabled"`
 	FallbackCode sql.NullString  `json:"fallback_code"`
 	SortOrder    int64           `json:"sort_order"`
 	DateCreated  types.Timestamp `json:"date_created"`

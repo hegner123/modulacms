@@ -1,6 +1,8 @@
 package partials
 
 import (
+	"encoding/json"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -288,4 +290,138 @@ func DatatypeParentOptions(datatypes []db.Datatypes, excludeID string) []SelectO
 		})
 	}
 	return opts
+}
+
+// displayTimestamp formats a Timestamp for human-readable display.
+// Output: "Mar 16, 2026 at 6:17:16 PM UTC"
+func displayTimestamp(ts types.Timestamp) string {
+	if !ts.Valid {
+		return "-"
+	}
+	return ts.Time.UTC().Format("Jan 2, 2006 at 3:04:05 PM MST")
+}
+
+// prettyJSON returns indented JSON from a JSONData value.
+func prettyJSON(j types.JSONData) string {
+	if !j.Valid || j.Data == nil {
+		return "{}"
+	}
+	raw, err := json.Marshal(j.Data)
+	if err != nil {
+		return j.String()
+	}
+	var indented json.RawMessage
+	if json.Unmarshal(raw, &indented) != nil {
+		return string(raw)
+	}
+	pretty, err := json.MarshalIndent(indented, "", "  ")
+	if err != nil {
+		return string(raw)
+	}
+	return string(pretty)
+}
+
+// hlcStr formats an HLC timestamp for display.
+func hlcStr(hlc types.HLC) string {
+	return fmt.Sprintf("%d (physical: %s, logical: %d)", int64(hlc), hlc.Physical().Format("2006-01-02 15:04:05.000"), hlc.Logical())
+}
+
+// nullableStr extracts the string from a NullableString for display.
+func nullableStr(ns types.NullableString) string {
+	if !ns.Valid {
+		return ""
+	}
+	return ns.String
+}
+
+// DiffEntry represents a single field change between old and new JSON values.
+type DiffEntry struct {
+	Key  string
+	Kind string // "added", "removed", "changed"
+	Old  string
+	New  string
+}
+
+// computeDiff compares two JSONData values and returns field-level differences.
+func computeDiff(oldValues, newValues types.JSONData) []DiffEntry {
+	oldMap := jsonDataToMap(oldValues)
+	newMap := jsonDataToMap(newValues)
+
+	// Collect all keys
+	keySet := make(map[string]bool)
+	for k := range oldMap {
+		keySet[k] = true
+	}
+	for k := range newMap {
+		keySet[k] = true
+	}
+
+	keys := make([]string, 0, len(keySet))
+	for k := range keySet {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var diffs []DiffEntry
+	for _, key := range keys {
+		oldVal, inOld := oldMap[key]
+		newVal, inNew := newMap[key]
+
+		if inOld && !inNew {
+			diffs = append(diffs, DiffEntry{Key: key, Kind: "removed", Old: formatValue(oldVal)})
+		} else if !inOld && inNew {
+			diffs = append(diffs, DiffEntry{Key: key, Kind: "added", New: formatValue(newVal)})
+		} else {
+			oldStr := formatValue(oldVal)
+			newStr := formatValue(newVal)
+			if oldStr != newStr {
+				diffs = append(diffs, DiffEntry{Key: key, Kind: "changed", Old: oldStr, New: newStr})
+			}
+		}
+	}
+	return diffs
+}
+
+// jsonDataToMap attempts to convert JSONData to a string-keyed map.
+func jsonDataToMap(j types.JSONData) map[string]any {
+	if !j.Valid || j.Data == nil {
+		return nil
+	}
+	if m, ok := j.Data.(map[string]any); ok {
+		return m
+	}
+	// Try re-marshaling in case the underlying type is different
+	raw, err := json.Marshal(j.Data)
+	if err != nil {
+		return nil
+	}
+	var m map[string]any
+	if json.Unmarshal(raw, &m) != nil {
+		return nil
+	}
+	return m
+}
+
+// formatValue converts an arbitrary value to a display string.
+func formatValue(v any) string {
+	if v == nil {
+		return "null"
+	}
+	switch val := v.(type) {
+	case string:
+		return val
+	case float64:
+		if val == float64(int64(val)) {
+			return strconv.FormatInt(int64(val), 10)
+		}
+		return strconv.FormatFloat(val, 'f', -1, 64)
+	case bool:
+		return strconv.FormatBool(val)
+	default:
+		b, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Sprintf("%v", v)
+		}
+		return string(b)
+	}
 }

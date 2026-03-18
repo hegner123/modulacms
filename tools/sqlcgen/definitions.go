@@ -332,8 +332,8 @@ var Overrides = []Override{
 	{Column: "admin_fields.translatable", Import: typesImport, Type: "SafeBool"},
 	{Column: "fields.roles", Import: typesImport, Type: "NullableString"},
 	{Column: "admin_fields.roles", Import: typesImport, Type: "NullableString"},
-	{Column: "locales.is_default", Type: "int64"},
-	{Column: "locales.is_enabled", Type: "int64"},
+	{Column: "locales.is_default", Import: typesImport, Type: "SafeBool"},
+	{Column: "locales.is_enabled", Import: typesImport, Type: "SafeBool"},
 	{Column: "locales.sort_order", Type: "int64"},
 	{Column: "routes.type", Import: typesImport, Type: "RouteType"},
 	// VALIDATION

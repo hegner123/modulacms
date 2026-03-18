@@ -306,6 +306,7 @@ Examples:
 		svc.Plugins = service.NewPluginService(pluginMgr)
 		svc.Webhooks = service.NewWebhookService(driver, mgr, dispatcher)
 		svc.Locales = service.NewLocaleService(driver, mgr)
+		svc.Search = service.NewSearchService(searchSvc)
 
 		// buildRealHandler creates the full router + middleware stack.
 		buildRealHandler := func() http.Handler {

@@ -117,11 +117,18 @@ func ProcessMediaUpload(
 
 	contentType := http.DetectContentType(buffer)
 
-	// Step 2: Check for duplicate
-	_, err = store.GetMediaByName(header.Filename)
-	if err == nil {
-		return nil, DuplicateMediaError{Name: header.Filename}
+	// Step 2: Deduplicate filename — append -1, -2, etc. if name exists
+	filename := header.Filename
+	ext := filepath.Ext(filename)
+	base := strings.TrimSuffix(filename, ext)
+	for suffix := 1; suffix <= 100; suffix++ {
+		_, nameErr := store.GetMediaByName(filename)
+		if nameErr != nil {
+			break // name is available
+		}
+		filename = fmt.Sprintf("%s-%d%s", base, suffix, ext)
 	}
+	header.Filename = filename
 
 	// Step 3: Write uploaded file to temp directory
 	tmp, err := os.MkdirTemp("", TempDirPrefix)
@@ -164,6 +171,8 @@ func ProcessMediaUpload(
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	}
+
+	utility.DefaultLogger.Info("CreateMedia params", "folder_id_valid", params.FolderID.Valid, "folder_id", params.FolderID.ID)
 
 	row, err := store.CreateMedia(ctx, ac, params)
 	if err != nil {

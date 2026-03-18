@@ -169,6 +169,7 @@ func MapMediaParams(a db.Media) db.UpdateMediaParams {
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
+		FolderID:     a.FolderID,
 		DateCreated:  a.DateCreated,
 		DateModified: types.TimestampNow(),
 		MediaID:      a.MediaID,

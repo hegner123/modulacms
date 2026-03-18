@@ -2,6 +2,7 @@ package pages
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 
 	"github.com/hegner123/modulacms/internal/db"
@@ -54,6 +55,58 @@ func nullableIDValue(n types.NullableDatatypeID) string {
 		return ""
 	}
 	return n.ID.String()
+}
+
+// mediaGridItem is the JSON shape for media files in <mcms-media-grid>.
+type mediaGridItem struct {
+	ID          string `json:"id"`
+	Type        string `json:"type"`
+	URL         string `json:"url,omitempty"`
+	Alt         string `json:"alt,omitempty"`
+	DisplayName string `json:"displayName"`
+	Mimetype    string `json:"mimetype,omitempty"`
+	Name        string `json:"name"`
+	DateCreated string `json:"dateCreated,omitempty"`
+}
+
+// mediaGridJSON converts folders and media into a single JSON array for the grid component.
+// Folders appear first (type:"folder"), then media files (type:"file").
+func mediaGridJSON(folders []db.MediaFolder, items []db.Media) string {
+	out := make([]mediaGridItem, 0, len(folders)+len(items))
+	for _, f := range folders {
+		out = append(out, mediaGridItem{
+			ID:          f.FolderID.String(),
+			Type:        "folder",
+			DisplayName: f.Name,
+			Name:        f.Name,
+		})
+	}
+	for _, m := range items {
+		out = append(out, mediaGridItem{
+			ID:          m.MediaID.String(),
+			Type:        "file",
+			URL:         m.URL.String(),
+			Alt:         nullStr(m.Alt),
+			DisplayName: nullStr(m.DisplayName),
+			Mimetype:    nullStr(m.Mimetype),
+			Name:        nullStr(m.Name),
+			DateCreated: m.DateCreated.String(),
+		})
+	}
+	b, err := json.Marshal(out)
+	if err != nil {
+		return "[]"
+	}
+	return string(b)
+}
+
+// focalStr converts a NullableFloat64 to its string representation for template attributes.
+// Returns empty string if the value is not valid.
+func focalStr(n types.NullableFloat64) string {
+	if !n.Valid {
+		return ""
+	}
+	return strconv.FormatFloat(n.Float64, 'f', -1, 64)
 }
 
 // isRoleSelected checks if a role ID appears in the field's roles JSON array.

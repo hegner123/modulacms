@@ -95,7 +95,14 @@ func MediaFolderCreateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Folder created", "type": "success"}}`)
-		renderFolderTree(w, r, d, "")
+
+		// Reload the media page to show the new folder in the grid
+		if IsHTMX(r) {
+			w.Header().Set("HX-Redirect", "/admin/media")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		http.Redirect(w, r, "/admin/media", http.StatusSeeOther)
 	}
 }
 
@@ -191,7 +198,13 @@ func MediaFolderUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Folder updated", "type": "success"}}`)
-		renderFolderTree(w, r, d, id)
+
+		if IsHTMX(r) {
+			w.Header().Set("HX-Redirect", "/admin/media")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		http.Redirect(w, r, "/admin/media", http.StatusSeeOther)
 	}
 }
 
@@ -268,7 +281,13 @@ func MediaFolderDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Folder deleted", "type": "success"}}`)
-		renderFolderTree(w, r, d, "")
+
+		if IsHTMX(r) {
+			w.Header().Set("HX-Redirect", "/admin/media")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		http.Redirect(w, r, "/admin/media", http.StatusSeeOther)
 	}
 }
 
@@ -320,17 +339,19 @@ func MediaMoveToFolderHandler(svc *service.Registry) http.HandlerFunc {
 
 		ac := middleware.AuditContextFromRequest(r, *c)
 
+		utility.DefaultLogger.Info("moving media to folder", "media_id", mediaID, "folder_id", folderID)
 		if err := d.MoveMediaToFolder(r.Context(), ac, db.MoveMediaToFolderParams{
 			FolderID:     folderID,
 			DateModified: types.NewTimestamp(time.Now().UTC()),
 			MediaID:      mediaID,
 		}); err != nil {
-			utility.DefaultLogger.Error("failed to move media to folder", err)
+			utility.DefaultLogger.Error("failed to move media to folder", err, "media_id", mediaID, "folder_id", folderID)
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to move media", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
+		utility.DefaultLogger.Info("media moved to folder successfully", "media_id", mediaID, "folder_id", folderID)
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Media moved", "type": "success"}}`)
 		w.WriteHeader(http.StatusOK)
 	}

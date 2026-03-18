@@ -5,6 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -13,6 +18,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	_ "golang.org/x/image/webp"
 
 	"github.com/hegner123/modulacms/internal/bucket"
 	"github.com/hegner123/modulacms/internal/config"
@@ -414,6 +420,180 @@ func (m *MediaService) DeleteMediaDimension(ctx context.Context, ac audited.Audi
 		return fmt.Errorf("delete media dimension: %w", err)
 	}
 	return nil
+}
+
+// ReprocessMediaVariants re-generates cropped image variants using the current
+// focal point and re-uploads them to S3, then updates the media record's srcset.
+// Non-image media returns nil immediately.
+func (m *MediaService) ReprocessMediaVariants(ctx context.Context, ac audited.AuditContext, mediaID types.MediaID) error {
+	record, err := m.driver.GetMedia(mediaID)
+	if err != nil {
+		return &NotFoundError{Resource: "media", ID: string(mediaID)}
+	}
+
+	// Only process images
+	if !media.IsImageMIME(record.Mimetype.String) {
+		return nil
+	}
+
+	cfg, err := m.mgr.Config()
+	if err != nil {
+		return &InternalError{Err: fmt.Errorf("load config: %w", err)}
+	}
+
+	s3Session, err := newMediaS3Session(*cfg)
+	if err != nil {
+		return &InternalError{Err: fmt.Errorf("S3 session: %w", err)}
+	}
+
+	// Extract the S3 key from the media URL
+	endpointPrefix := cfg.BucketPublicURL() + "/" + cfg.Bucket_Media + "/"
+	originalKey := strings.TrimPrefix(string(record.URL), endpointPrefix)
+	if originalKey == "" || originalKey == string(record.URL) {
+		return fmt.Errorf("reprocess: could not extract S3 key from URL %s", record.URL)
+	}
+
+	// Create temp directory for downloaded original and generated variants
+	tmpDir, err := os.MkdirTemp("", media.TempDirPrefix)
+	if err != nil {
+		return fmt.Errorf("reprocess: create temp dir: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Download the original file from S3
+	resp, err := s3Session.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(cfg.Bucket_Media),
+		Key:    aws.String(originalKey),
+	})
+	if err != nil {
+		return fmt.Errorf("reprocess: download original from S3: %w", err)
+	}
+	defer resp.Body.Close()
+
+	originalFilename := filepath.Base(originalKey)
+	localPath := filepath.Join(tmpDir, originalFilename)
+	localFile, err := os.Create(localPath)
+	if err != nil {
+		return fmt.Errorf("reprocess: create local file: %w", err)
+	}
+	if _, err := io.Copy(localFile, resp.Body); err != nil {
+		localFile.Close()
+		return fmt.Errorf("reprocess: write local file: %w", err)
+	}
+	if err := localFile.Close(); err != nil {
+		return fmt.Errorf("reprocess: close local file: %w", err)
+	}
+
+	// Decode image headers to get bounds for focal point conversion
+	var focalPoint *image.Point
+	if record.FocalX.Valid && record.FocalY.Valid {
+		headerFile, openErr := os.Open(localPath)
+		if openErr != nil {
+			return fmt.Errorf("reprocess: open for header decode: %w", openErr)
+		}
+		imgConfig, _, decErr := image.DecodeConfig(headerFile)
+		headerFile.Close()
+		if decErr != nil {
+			return fmt.Errorf("reprocess: decode image config: %w", decErr)
+		}
+		imgBounds := image.Rect(0, 0, imgConfig.Width, imgConfig.Height)
+		focalPoint = media.FocalPointToPixels(record.FocalX, record.FocalY, imgBounds)
+	}
+
+	// Generate optimized variants
+	optimized, err := media.OptimizeUpload(localPath, tmpDir, m.driver, focalPoint)
+	if err != nil {
+		return fmt.Errorf("reprocess: optimization failed: %w", err)
+	}
+	if optimized == nil || len(*optimized) == 0 {
+		return nil // no variants generated (source too small or no dimensions configured)
+	}
+
+	// Delete old variant S3 objects (from existing srcset)
+	oldKeys := extractMediaS3Keys(record, *cfg)
+	// Remove the original key — we only want to delete variants, not the original
+	originalKeyNorm := originalKey
+	for _, oldKey := range oldKeys {
+		if oldKey == originalKeyNorm {
+			continue
+		}
+		_, delErr := s3Session.DeleteObject(&s3.DeleteObjectInput{
+			Bucket: aws.String(cfg.Bucket_Media),
+			Key:    aws.String(oldKey),
+		})
+		if delErr != nil {
+			utility.DefaultLogger.Warn("reprocess: failed to delete old variant", delErr, "key", oldKey)
+		}
+	}
+
+	// Upload new variants to S3
+	mediaPath := media.MediaPathFromURL(string(record.URL), endpointPrefix)
+	acl := cfg.Bucket_Default_ACL
+	if acl == "" {
+		acl = "public-read"
+	}
+
+	srcset := []string{}
+	uploadedKeys := []string{}
+
+	for _, fullPath := range *optimized {
+		f, openErr := os.Open(fullPath)
+		if openErr != nil {
+			rollbackVariantUploads(s3Session, cfg.Bucket_Media, uploadedKeys)
+			return fmt.Errorf("reprocess: open variant file: %w", openErr)
+		}
+
+		variantFilename := filepath.Base(fullPath)
+		s3Key := fmt.Sprintf("%s/%s", mediaPath, variantFilename)
+		uploadURL := fmt.Sprintf("%s/%s/%s", cfg.BucketPublicURL(), cfg.Bucket_Media, s3Key)
+
+		prep, prepErr := bucket.UploadPrep(s3Key, cfg.Bucket_Media, f, acl)
+		if prepErr != nil {
+			f.Close()
+			rollbackVariantUploads(s3Session, cfg.Bucket_Media, uploadedKeys)
+			return fmt.Errorf("reprocess: upload prep: %w", prepErr)
+		}
+
+		_, upErr := bucket.ObjectUpload(s3Session, prep)
+		f.Close()
+		if upErr != nil {
+			rollbackVariantUploads(s3Session, cfg.Bucket_Media, uploadedKeys)
+			return fmt.Errorf("reprocess: S3 upload: %w", upErr)
+		}
+
+		uploadedKeys = append(uploadedKeys, s3Key)
+		srcset = append(srcset, uploadURL)
+	}
+
+	// Update srcset in database
+	srcsetJSON, err := json.Marshal(srcset)
+	if err != nil {
+		rollbackVariantUploads(s3Session, cfg.Bucket_Media, uploadedKeys)
+		return fmt.Errorf("reprocess: marshal srcset: %w", err)
+	}
+
+	dbParams := media.MapMediaParams(*record)
+	dbParams.Srcset = db.NewNullString(string(srcsetJSON))
+
+	if _, err := m.driver.UpdateMedia(ctx, ac, dbParams); err != nil {
+		rollbackVariantUploads(s3Session, cfg.Bucket_Media, uploadedKeys)
+		return fmt.Errorf("reprocess: update media record: %w", err)
+	}
+
+	return nil
+}
+
+// rollbackVariantUploads deletes uploaded variant files from S3 on failure.
+func rollbackVariantUploads(s3Session *s3.S3, bucketName string, keys []string) {
+	for _, key := range keys {
+		_, err := s3Session.DeleteObject(&s3.DeleteObjectInput{
+			Bucket: aws.String(bucketName),
+			Key:    aws.String(key),
+		})
+		if err != nil {
+			utility.DefaultLogger.Warn("reprocess rollback: failed to delete S3 object", err, "key", key)
+		}
+	}
 }
 
 // --- Private Helpers ---

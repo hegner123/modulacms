@@ -18,6 +18,7 @@ import (
 type mockStore struct {
 	getByNameResult *db.Media
 	getByNameErr    error
+	getByNameFunc   func(name string) (*db.Media, error) // if set, overrides result/err
 	createResult    *db.Media
 	createErr       error
 	deleteErr       error
@@ -25,6 +26,9 @@ type mockStore struct {
 }
 
 func (m *mockStore) GetMediaByName(name string) (*db.Media, error) {
+	if m.getByNameFunc != nil {
+		return m.getByNameFunc(name)
+	}
 	return m.getByNameResult, m.getByNameErr
 }
 
@@ -116,17 +120,21 @@ func TestProcessMediaUpload(t *testing.T) {
 			wantErr:        false,
 		},
 		{
-			name:     "duplicate filename",
+			name:     "duplicate filename auto-suffixed",
 			fileData: validPNG,
 			header:   newTestHeader("existing.png", int64(len(validPNG))),
 			store: &mockStore{
-				getByNameResult: defaultMedia,
-				getByNameErr:    nil,
+				getByNameFunc: func(name string) (*db.Media, error) {
+					if name == "existing.png" {
+						return defaultMedia, nil // exists
+					}
+					return nil, errors.New("not found") // suffixed name available
+				},
+				createResult: defaultMedia,
 			},
 			uploadOriginal: noopUploadOriginal,
 			pipeline:       noopPipeline,
-			wantErr:        true,
-			wantErrType:    DuplicateMediaError{},
+			wantErr:        false,
 		},
 		{
 			name:     "file too large",

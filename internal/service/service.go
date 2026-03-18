@@ -53,7 +53,8 @@ type Registry struct {
 	Backup    *BackupService
 
 	// Phase 7 — auth service.
-	Auth *AuthService
+	Auth   *AuthService
+	Search *SearchService
 }
 
 // NewRegistry creates a Registry with the given infrastructure dependencies.

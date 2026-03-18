@@ -466,9 +466,9 @@ sql:
           - column: "admin_fields.roles"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
           - column: "locales.is_default"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "locales.is_enabled"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "locales.sort_order"
             go_type: {type: "int64"}
           - column: "routes.type"
@@ -1013,9 +1013,9 @@ sql:
           - column: "admin_fields.roles"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
           - column: "locales.is_default"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "locales.is_enabled"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "locales.sort_order"
             go_type: {type: "int64"}
           - column: "routes.type"
@@ -1560,9 +1560,9 @@ sql:
           - column: "admin_fields.roles"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
           - column: "locales.is_default"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "locales.is_enabled"
-            go_type: {type: "int64"}
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
           - column: "locales.sort_order"
             go_type: {type: "int64"}
           - column: "routes.type"
