@@ -55,3 +55,13 @@ templ AuditTableRowsPartial(events []db.ChangeEvent, pagination partials.Paginat
 		</td>
 	</tr>
 }
+
+templ AuditDetailContent(event db.ChangeEvent, related []db.ChangeEvent, userName string) {
+	@partials.AuditDetail(event, related, userName)
+}
+
+templ AuditDetail(layout layouts.AdminData, event db.ChangeEvent, related []db.ChangeEvent, userName string) {
+	@layouts.Admin(layout) {
+		@AuditDetailContent(event, related, userName)
+	}
+}

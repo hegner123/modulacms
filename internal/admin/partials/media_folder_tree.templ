@@ -16,7 +16,7 @@ templ MediaFolderTree(folders []db.MediaFolder, activeFolderID string, csrfToken
             <h3 class="text-sm font-semibold text-white">Folders</h3>
             <button
                 class="rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-white hover:bg-white/20"
-                onclick="document.getElementById('new-folder-dialog').showModal()"
+                onclick="document.getElementById('new-folder-dialog').open()"
                 title="New Folder"
             >
                 <i data-lucide="plus" class="size-3.5"></i>
@@ -39,18 +39,6 @@ templ MediaFolderTree(folders []db.MediaFolder, activeFolderID string, csrfToken
             }
         </div>
         @mediaFolderCreateDialog(csrfToken, "")
-        <script>
-            document.getElementById('media-folder-sidebar')?.addEventListener('click', function(e) {
-                var link = e.target.closest('[data-folder-id]');
-                var el = document.getElementById('upload-folder-id');
-                if (!el) return;
-                if (link) {
-                    el.value = link.getAttribute('data-folder-id');
-                } else if (e.target.closest('[data-folder-root]')) {
-                    el.value = '';
-                }
-            });
-        </script>
     </div>
 }
 
@@ -91,16 +79,14 @@ templ mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) {
                     >
                         <i data-lucide="pencil" class="size-3"></i>
                     </button>
-                    <button
-                        class="rounded p-0.5 text-gray-500 hover:text-red-400"
+                    <mcms-confirm
+                        label="Delete"
+                        message="Delete this folder? It must be empty."
+                        button-class="rounded p-0.5 text-gray-500 hover:text-red-400"
                         hx-delete={ "/admin/media-folders/" + node.Folder.FolderID.String() }
                         hx-target="#media-folder-sidebar"
                         hx-swap="outerHTML"
-                        hx-confirm="Delete this folder? It must be empty."
-                        title="Delete"
-                    >
-                        <i data-lucide="trash-2" class="size-3"></i>
-                    </button>
+                    ></mcms-confirm>
                 </div>
             </div>
             if len(node.Children) > 0 {
@@ -113,7 +99,7 @@ templ mediaFolderNodes(nodes []MediaFolderNode, activeFolderID string) {
 }
 
 templ mediaFolderCreateDialog(csrfToken string, parentID string) {
-    <dialog id="new-folder-dialog" class="rounded-xl border border-white/10 bg-[var(--color-surface)] p-0 shadow-xl backdrop:bg-gray-950/75 sm:max-w-lg sm:w-full" aria-labelledby="new-folder-dialog-title">
+    <mcms-dialog id="new-folder-dialog" aria-labelledby="new-folder-dialog-title">
         <div class="p-6">
             <h3 id="new-folder-dialog-title" class="text-base/7 font-semibold text-white">New Folder</h3>
             <form
@@ -128,11 +114,11 @@ templ mediaFolderCreateDialog(csrfToken string, parentID string) {
             </form>
         </div>
         <div class="flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3">
-            <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="document.getElementById('new-folder-dialog').close()">Cancel</button>
+            <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('mcms-dialog').close()">Cancel</button>
             <button type="submit" form="new-folder-dialog" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
                 onclick="this.closest('dialog').querySelector('form').requestSubmit()">Create</button>
         </div>
-    </dialog>
+    </mcms-dialog>
 }
 
 templ MediaFolderBreadcrumb(breadcrumb []db.MediaFolder, currentFolder *db.MediaFolder) {
@@ -140,27 +126,27 @@ templ MediaFolderBreadcrumb(breadcrumb []db.MediaFolder, currentFolder *db.Media
         <a
             href="/admin/media"
             hx-get="/admin/media"
-            hx-target="#media-grid"
+            hx-target="#main-content"
             hx-push-url="true"
             class="hover:text-white"
         >
             All Media
         </a>
-        for _, folder := range breadcrumb {
+        for i, folder := range breadcrumb {
             <span class="text-gray-500">/</span>
-            <a
-                href={ templ.SafeURL("/admin/media?folder_id=" + folder.FolderID.String()) }
-                hx-get={ "/admin/media?folder_id=" + folder.FolderID.String() }
-                hx-target="#media-grid"
-                hx-push-url="true"
-                class="hover:text-white"
-            >
-                { folder.Name }
-            </a>
-        }
-        if currentFolder != nil {
-            <span class="text-gray-500">/</span>
-            <span class="text-white">{ currentFolder.Name }</span>
+            if i == len(breadcrumb) - 1 {
+                <span class="text-white">{ folder.Name }</span>
+            } else {
+                <a
+                    href={ templ.SafeURL("/admin/media?folder_id=" + folder.FolderID.String()) }
+                    hx-get={ "/admin/media?folder_id=" + folder.FolderID.String() }
+                    hx-target="#main-content"
+                    hx-push-url="true"
+                    class="hover:text-white"
+                >
+                    { folder.Name }
+                </a>
+            }
         }
     </nav>
 }

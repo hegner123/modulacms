@@ -1,9 +1,9 @@
 package pages
 
 import (
-	"github.com/hegner123/modulacms/internal/admin/layouts"
-	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/db"
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
 )
 
 templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData, distinctTypes []string) {
@@ -17,7 +17,7 @@ templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData,
             <button type="button"
                     class="block rounded-md bg-indigo-500 px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
                     data-action="new"
-                    onclick="document.getElementById('create-datatype-dialog').showModal()">
+                    onclick="document.getElementById('create-datatype-dialog').open()">
                 New Datatype
             </button>
         </div>
@@ -82,7 +82,7 @@ templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData,
             <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
                 <div class="overflow-hidden shadow-sm -outline-offset-1 outline-white/10 sm:rounded-lg">
                     <table class="min-w-full divide-y divide-white/15">
-                        <thead class="bg-gray-800/75">
+                        <thead>
                             <tr>
                                 <th scope="col" class="py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-200 sm:pl-6">Name</th>
                                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Label</th>
@@ -94,7 +94,7 @@ templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData,
                             </tr>
                         </thead>
                         <tbody id="datatypes-table-body"
-                               class="divide-y divide-white/10 bg-gray-800/50"
+                               class="divide-y divide-white/10"
                                hx-get="/admin/schema/datatypes"
                                hx-trigger="refreshTable from:body"
                                hx-swap="innerHTML">
@@ -112,13 +112,14 @@ templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData,
                                         </td>
                                         <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ dt.DateModified.Time.UTC().Format("Jan 2, 2006 15:04") }</td>
                                         <td class="py-4 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6">
-                                            <button class="text-red-400 hover:text-red-300"
-                                                    hx-delete={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
-                                                    hx-target="closest tr"
-                                                    hx-swap="outerHTML swap:300ms"
-                                                    hx-confirm="Delete this datatype? This cannot be undone.">
-                                                Delete
-                                            </button>
+                                            <mcms-confirm
+                                                label="Delete"
+                                                message="Delete this datatype? This cannot be undone."
+                                                button-class="text-red-400 hover:text-red-300"
+                                                hx-delete={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
+                                                hx-target="closest tr"
+                                                hx-swap="outerHTML swap:300ms"
+                                            ></mcms-confirm>
                                         </td>
                                     </tr>
                                 }
@@ -134,32 +135,32 @@ templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData,
 
 
 templ DatatypeCreateDialog(csrfToken string, allDatatypes []db.Datatypes) {
-	<dialog id="create-datatype-dialog" class="rounded-lg bg-gray-800 p-0 shadow-xl backdrop:bg-gray-900/75 sm:w-full sm:max-w-lg" aria-labelledby="create-datatype-dialog-title">
-		<div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-			<h3 id="create-datatype-dialog-title" class="text-base/7 font-semibold text-white">New Datatype</h3>
-			<form
-				hx-post="/admin/schema/datatypes"
-				hx-target="#create-datatype-form"
-				hx-swap="innerHTML"
-				id="create-datatype-form"
-				class="mt-4 space-y-4"
-			>
-				@partials.CSRFField(csrfToken)
-				@partials.FormField("name", "Name", "", "")
-				@partials.FormField("label", "Label", "", "")
-				@partials.FormField("type", "Type", "", "")
-				@partials.FormSelect("parent_id", "Parent", "", partials.DatatypeParentOptions(allDatatypes, ""), "")
-				<div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-					<button type="submit" class="inline-flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 sm:ml-3 sm:w-auto">Create</button>
-					<button type="button" onclick="this.closest('dialog').close()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto">Cancel</button>
-				</div>
-			</form>
-		</div>
-	</dialog>
+    <mcms-dialog id="create-datatype-dialog" aria-labelledby="create-datatype-dialog-title">
+        <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <h3 id="create-datatype-dialog-title" class="text-base/7 font-semibold text-white">New Datatype</h3>
+            <form
+                hx-post="/admin/schema/datatypes"
+                hx-target="#create-datatype-form"
+                hx-swap="innerHTML"
+                id="create-datatype-form"
+                class="mt-4 space-y-4"
+            >
+                @partials.CSRFField(csrfToken)
+                @partials.FormField("name", "Name", "", "")
+                @partials.FormField("label", "Label", "", "")
+                @partials.FormField("type", "Type", "", "")
+                @partials.FormSelect("parent_id", "Parent", "", partials.DatatypeParentOptions(allDatatypes, ""), "")
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button type="submit" class="inline-flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 sm:ml-3 sm:w-auto">Create</button>
+                    <button type="button" onclick="this.closest('mcms-dialog').close()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </mcms-dialog>
 }
 
 templ DatatypesList(layout layouts.AdminData, items []db.Datatypes, pg partials.PaginationPageData, distinctTypes []string, allDatatypes []db.Datatypes) {
-	@layouts.Admin(layout.WithDialogs(DatatypeCreateDialog(layout.CSRFToken, allDatatypes))) {
-		@DatatypesListContent(items, pg, distinctTypes)
-	}
+    @layouts.Admin(layout.WithDialogs(DatatypeCreateDialog(layout.CSRFToken, allDatatypes))) {
+        @DatatypesListContent(items, pg, distinctTypes)
+    }
 }

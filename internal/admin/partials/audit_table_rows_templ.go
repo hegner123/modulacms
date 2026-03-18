@@ -46,40 +46,40 @@ func AuditTableRows(events []db.ChangeEvent) templ.Component {
 			}
 		}
 		for _, event := range events {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<tr><td class=\"whitespace-nowrap px-4 py-4 text-sm text-gray-300\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<tr class=\"hover:bg-white/5 transition-colors cursor-pointer\" hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var2 string
-			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(event.WallTimestamp.String())
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/audit/" + event.EventID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 15, Col: 95}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 15, Col: 55}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm text-white\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" hx-target=\"#main-content\" hx-push-url=\"true\"><td class=\"whitespace-nowrap px-4 py-4 text-sm text-gray-300\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(event.TableName)
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(event.WallTimestamp.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 16, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 18, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm text-gray-300\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm text-white\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(truncateStr(event.RecordID, 12))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(event.TableName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 17, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 19, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -90,9 +90,9 @@ func AuditTableRows(events []db.ChangeEvent) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(string(event.Operation))
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(truncateStr(event.RecordID, 12))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 18, Col: 90}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 20, Col: 98}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -103,9 +103,9 @@ func AuditTableRows(events []db.ChangeEvent) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(string(event.Action))
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(string(event.Operation))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 19, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 21, Col: 90}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -116,15 +116,28 @@ func AuditTableRows(events []db.ChangeEvent) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(truncateStr(event.UserID.String(), 12))
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(string(event.Action))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 20, Col: 105}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 22, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm text-gray-300\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(truncateStr(event.UserID.String(), 12))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/audit_table_rows.templ`, Line: 23, Col: 105}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

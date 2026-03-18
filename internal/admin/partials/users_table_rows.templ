@@ -24,15 +24,14 @@ templ UsersTableRowsInner(items []db.UserWithRoleLabelRow) {
             </td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.DateCreated.String() }</td>
             <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
-                <button
-                    class="text-sm font-medium text-red-400 hover:text-red-300"
+                <mcms-confirm
+                    label="Delete"
+                    message="Are you sure you want to delete this user?"
+                    button-class="text-sm font-medium text-red-400 hover:text-red-300"
                     hx-delete={ "/admin/users/" + item.UserID.String() }
                     hx-target={ "#user-row-" + item.UserID.String() }
                     hx-swap="outerHTML swap:300ms"
-                    hx-confirm="Are you sure you want to delete this user?"
-                >
-                    Delete
-                </button>
+                ></mcms-confirm>
             </td>
         </tr>
     }
@@ -103,7 +102,7 @@ templ UserForm(username string, name string, email string, role string, roles []
         </div>
     </div>
     <div class="flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3">
-        <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('dialog').close()">Cancel</button>
+        <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('mcms-dialog').close()">Cancel</button>
         <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create User</button>
     </div>
 }

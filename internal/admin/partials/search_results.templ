@@ -1,0 +1,50 @@
+package partials
+
+import (
+	"fmt"
+	"github.com/hegner123/modulacms/internal/search"
+)
+
+templ SearchResults(results []search.SearchResult, total int, query string) {
+	<div class="mt-1 max-h-96 overflow-y-auto rounded-lg border border-white/10 bg-[var(--color-surface)] shadow-lg">
+		if len(results) == 0 {
+			<div class="px-4 py-6 text-center text-sm text-gray-400">
+				No results for "{ query }"
+			</div>
+		} else {
+			<ul role="listbox" class="divide-y divide-white/5 py-1">
+				for _, r := range results {
+					<li>
+						<a
+							href={ templ.SafeURL(resultHref(r)) }
+							class="flex flex-col gap-1 px-4 py-3 no-underline hover:bg-white/5 transition-colors"
+						>
+							<div class="flex items-center gap-2">
+								<span class="text-sm font-medium text-white">{ r.RouteTitle }</span>
+								<span class="rounded bg-white/10 px-1.5 py-0.5 text-xs text-gray-400">{ r.DatatypeLabel }</span>
+							</div>
+							if r.Snippet != "" {
+								<p class="text-xs text-gray-400 line-clamp-2">{ r.Snippet }</p>
+							}
+							if r.RouteSlug != "" {
+								<span class="text-xs text-gray-500">{ r.RouteSlug }</span>
+							}
+						</a>
+					</li>
+				}
+			</ul>
+			if total > len(results) {
+				<div class="border-t border-white/5 px-4 py-2 text-center text-xs text-gray-400">
+					{ fmt.Sprintf("Showing %d of %d results", len(results), total) }
+				</div>
+			}
+		}
+	</div>
+}
+
+func resultHref(r search.SearchResult) string {
+	if r.ContentDataID != "" {
+		return "/admin/content/" + r.ContentDataID
+	}
+	return "/admin/"
+}

@@ -113,20 +113,20 @@ func FieldsTableRows(items []db.Fields, pg PaginationPageData) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</td><td class=\"whitespace-nowrap px-4 py-4 text-right text-sm\"><button class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</td><td class=\"whitespace-nowrap px-4 py-4 text-right text-sm\"><mcms-confirm label=\"Delete\" message=\"Delete this field? This cannot be undone.\" button-class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/fields/" + f.FieldID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/fields_table_rows.templ`, Line: 25, Col: 84}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/fields_table_rows.templ`, Line: 28, Col: 80}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\" hx-confirm=\"Delete this field? This cannot be undone.\">Delete</button></td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

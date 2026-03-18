@@ -42,7 +42,7 @@ func LocaleSettingsContent(locales []db.Locale, csrfToken string, i18nEnabled bo
 			return templ_7745c5c3_Err
 		}
 		if i18nEnabled {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<button class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\" onclick=\"document.getElementById('add-locale-dialog').showModal()\">Add Locale</button>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<button class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\" onclick=\"document.getElementById('add-locale-dialog').open()\">Add Locale</button>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -94,7 +94,7 @@ func LocaleAddDialog(locales []db.Locale, csrfToken string, i18nEnabled bool) te
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<dialog id=\"add-locale-dialog\" class=\"rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60\" aria-labelledby=\"add-locale-dialog-title\"><div class=\"px-5 py-4\"><div class=\"flex items-center justify-between border-b border-white/10 pb-4 mb-4\"><h2 id=\"add-locale-dialog-title\" class=\"text-lg font-semibold text-white\">Add Locale</h2><button class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" aria-label=\"Close dialog\" onclick=\"this.closest('dialog').close()\">&times;</button></div><form hx-post=\"/admin/settings/locales\" hx-target=\"#locale-table-body\" hx-swap=\"innerHTML\" id=\"add-locale-form\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<mcms-dialog id=\"add-locale-dialog\" aria-labelledby=\"add-locale-dialog-title\"><div class=\"px-5 py-4\"><div class=\"flex items-center justify-between border-b border-white/10 pb-4 mb-4\"><h2 id=\"add-locale-dialog-title\" class=\"text-lg font-semibold text-white\">Add Locale</h2><button class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" aria-label=\"Close dialog\" onclick=\"this.closest('mcms-dialog').close()\">&times;</button></div><form hx-post=\"/admin/settings/locales\" hx-target=\"#locale-table-body\" hx-swap=\"innerHTML\" id=\"add-locale-form\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -167,7 +167,7 @@ func LocaleAddDialog(locales []db.Locale, csrfToken string, i18nEnabled bool) te
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"flex justify-end gap-3 border-t border-white/10 pt-4 mt-4\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create</button></div></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"flex justify-end gap-3 border-t border-white/10 pt-4 mt-4\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('mcms-dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create</button></div></form></div></mcms-dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -196,27 +196,27 @@ func LocaleEditDialog(locale db.Locale, allLocales []db.Locale, csrfToken string
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<dialog id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<mcms-dialog id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("edit-locale-" + locale.LocaleID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/locale_settings.templ`, Line: 111, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/locale_settings.templ`, Line: 111, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" class=\"rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60\" aria-labelledby=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" aria-labelledby=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("edit-locale-title-" + locale.LocaleID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/locale_settings.templ`, Line: 111, Col: 229}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/locale_settings.templ`, Line: 111, Col: 131}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -248,7 +248,7 @@ func LocaleEditDialog(locale db.Locale, allLocales []db.Locale, csrfToken string
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</h2><button class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" aria-label=\"Close dialog\" onclick=\"this.closest('dialog').close()\">&times;</button></div><form hx-put=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</h2><button class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" aria-label=\"Close dialog\" onclick=\"this.closest('mcms-dialog').close()\">&times;</button></div><form hx-put=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -451,7 +451,7 @@ func LocaleEditDialog(locale db.Locale, allLocales []db.Locale, csrfToken string
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<div class=\"flex justify-end gap-3 border-t border-white/10 pt-4 mt-4\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Save</button></div></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<div class=\"flex justify-end gap-3 border-t border-white/10 pt-4 mt-4\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('mcms-dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Save</button></div></form></div></mcms-dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

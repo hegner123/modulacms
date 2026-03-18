@@ -36,7 +36,7 @@ func ContentListContent(items []ContentListItem, pg partials.PaginationPageData)
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Content</h1><p class=\"mt-2 text-sm text-gray-400\">Manage your site content entries.</p></div><div class=\"mt-4 sm:mt-0 sm:ml-16 sm:flex-none\"><button class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\" data-action=\"new\" onclick=\"document.getElementById('create-content-dialog').showModal()\">Create Content</button></div></div><div class=\"mt-4 flex items-center gap-3\"><input type=\"search\" name=\"search\" placeholder=\"Search content...\" hx-get=\"/admin/content\" hx-target=\"#content-table-body\" hx-trigger=\"input changed delay:300ms\" hx-push-url=\"false\" class=\"rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] w-64\" data-search-input> <select name=\"status\" hx-get=\"/admin/content\" hx-target=\"#content-table-body\" hx-trigger=\"change\" class=\"rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]\"><option value=\"\">All Statuses</option> <option value=\"draft\">Draft</option> <option value=\"published\">Published</option></select></div><div class=\"mt-8 flow-root\"><div class=\"-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8\"><div class=\"inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Title</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Slug</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Status</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Author</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Modified</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Actions</th></tr></thead> <tbody id=\"content-table-body\" class=\"divide-y divide-white/5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Content</h1><p class=\"mt-2 text-sm text-gray-400\">Manage your site content entries.</p></div><div class=\"mt-4 sm:mt-0 sm:ml-16 sm:flex-none\"><button class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\" data-action=\"new\" onclick=\"document.getElementById('create-content-dialog').open()\">Create Content</button></div></div><div class=\"mt-4 flex items-center gap-3\"><input type=\"search\" name=\"search\" placeholder=\"Search content...\" hx-get=\"/admin/content\" hx-target=\"#content-table-body\" hx-trigger=\"input changed delay:300ms\" hx-push-url=\"false\" class=\"rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] w-64\" data-search-input> <select name=\"status\" hx-get=\"/admin/content\" hx-target=\"#content-table-body\" hx-trigger=\"change\" class=\"rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]\"><option value=\"\">All Statuses</option> <option value=\"draft\">Draft</option> <option value=\"published\">Published</option></select></div><div class=\"mt-8 flow-root\"><div class=\"-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8\"><div class=\"inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Title</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Slug</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Status</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Author</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Modified</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Actions</th></tr></thead> <tbody id=\"content-table-body\" class=\"divide-y divide-white/5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -81,7 +81,7 @@ func ContentCreateDialog(datatypes []db.Datatypes, csrfToken string) templ.Compo
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<dialog id=\"create-content-dialog\" class=\"rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60\" aria-labelledby=\"create-content-dialog-title\"><div class=\"px-5 py-4\"><div class=\"flex items-center justify-between border-b border-white/10 pb-4 mb-4\"><h2 id=\"create-content-dialog-title\" class=\"text-lg font-semibold text-white\">Create Content</h2><button class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" aria-label=\"Close dialog\" onclick=\"this.closest('dialog').close()\">&times;</button></div><form hx-post=\"/admin/content\" hx-target=\"#create-content-form\" hx-swap=\"innerHTML\" id=\"create-content-form\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<mcms-dialog id=\"create-content-dialog\" aria-labelledby=\"create-content-dialog-title\"><div class=\"px-5 py-4\"><div class=\"flex items-center justify-between border-b border-white/10 pb-4 mb-4\"><h2 id=\"create-content-dialog-title\" class=\"text-lg font-semibold text-white\">Create Content</h2><button class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" aria-label=\"Close dialog\" onclick=\"this.closest('mcms-dialog').close()\">&times;</button></div><form hx-post=\"/admin/content\" hx-target=\"#create-content-form\" hx-swap=\"innerHTML\" id=\"create-content-form\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -137,7 +137,7 @@ func ContentCreateDialog(datatypes []db.Datatypes, csrfToken string) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"flex justify-end gap-3 border-t border-white/10 pt-4 mt-4\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create</button></div></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"flex justify-end gap-3 border-t border-white/10 pt-4 mt-4\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('mcms-dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create</button></div></form></div></mcms-dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -314,14 +314,14 @@ func ContentTableRows(items []ContentListItem) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><div class=\"flex items-center gap-2\"><button class=\"text-sm text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]\" hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><mcms-confirm label=\"Delete\" message=\"Are you sure you want to delete this content?\" button-class=\"text-sm text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]\" hx-delete=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/content/" + item.ContentDataID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/content_list.templ`, Line: 136, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/content_list.templ`, Line: 137, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -334,13 +334,13 @@ func ContentTableRows(items []ContentListItem) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs("#content-row-" + item.ContentDataID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/content_list.templ`, Line: 137, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/content_list.templ`, Line: 138, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" hx-swap=\"outerHTML\" hx-confirm=\"Are you sure you want to delete this content?\">Delete</button></div></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" hx-swap=\"outerHTML\"></mcms-confirm></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

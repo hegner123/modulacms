@@ -7,12 +7,12 @@ templ UsersListContent(items []db.UserWithRoleLabelRow, roles []db.Roles, csrfTo
         <h1 class="text-2xl font-bold text-white">Users</h1>
         <button
             class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
-            onclick="document.getElementById('create-user-dialog').showModal()"
+            onclick="document.getElementById('create-user-dialog').open()"
         >
             Create User
         </button>
     </div>
-    <dialog id="create-user-dialog" class="rounded-xl border border-white/10 bg-[var(--color-surface)] p-0 shadow-xl backdrop:bg-gray-950/75 sm:max-w-lg sm:w-full" aria-labelledby="create-user-dialog-title">
+    <mcms-dialog id="create-user-dialog" aria-labelledby="create-user-dialog-title">
         <div class="p-6">
             <h3 id="create-user-dialog-title" class="text-base/7 font-semibold text-white">Create User</h3>
         </div>
@@ -27,7 +27,7 @@ templ UsersListContent(items []db.UserWithRoleLabelRow, roles []db.Roles, csrfTo
                 @UserForm("", "", "", "viewer", roles, nil, csrfToken)
             </div>
         </form>
-    </dialog>
+    </mcms-dialog>
     <div class="mt-6 overflow-x-auto rounded-md ring-1 ring-white/10">
         <table class="w-full">
             <thead>

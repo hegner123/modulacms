@@ -22,7 +22,7 @@ templ WebhookSettingsContent(webhooksList []db.Webhook, csrfToken string) {
         </div>
         <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
             <button class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
-                    onclick="document.getElementById('add-webhook-dialog').showModal()">
+                    onclick="document.getElementById('add-webhook-dialog').open()">
                 Add Webhook
             </button>
         </div>
@@ -52,11 +52,11 @@ templ WebhookSettingsContent(webhooksList []db.Webhook, csrfToken string) {
 }
 
 templ WebhookAddDialog(csrfToken string) {
-    <dialog id="add-webhook-dialog" class="rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60" aria-labelledby="add-webhook-dialog-title">
+    <mcms-dialog id="add-webhook-dialog" aria-labelledby="add-webhook-dialog-title">
         <div class="px-5 py-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
                 <h2 id="add-webhook-dialog-title" class="text-lg font-semibold text-white">Add Webhook</h2>
-                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">&times;</button>
             </div>
             <form hx-post="/admin/settings/webhooks"
                   hx-target="#webhook-table-body"
@@ -75,12 +75,12 @@ templ WebhookAddDialog(csrfToken string) {
                     </label>
                 </div>
                 <div class="flex justify-end gap-3 border-t border-white/10 pt-4 mt-4">
-                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('mcms-dialog').close()">Cancel</button>
                     <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create</button>
                 </div>
             </form>
         </div>
-    </dialog>
+    </mcms-dialog>
 }
 
 templ WebhookSettings(layout layouts.AdminData, webhooksList []db.Webhook) {

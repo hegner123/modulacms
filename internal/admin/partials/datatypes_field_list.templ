@@ -27,13 +27,14 @@ templ DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string)
                             <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ f.Type.String() }</span>
                         </td>
                         <td class="py-3 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6">
-                            <button class="text-red-400 hover:text-red-300"
-                                    hx-delete={ "/admin/schema/fields/" + f.FieldID.String() }
-                                    hx-target="closest tr"
-                                    hx-swap="outerHTML swap:300ms"
-                                    hx-confirm="Delete this field? This cannot be undone.">
-                                Delete
-                            </button>
+                            <mcms-confirm
+                                label="Delete"
+                                message="Delete this field? This cannot be undone."
+                                button-class="text-red-400 hover:text-red-300"
+                                hx-delete={ "/admin/schema/fields/" + f.FieldID.String() }
+                                hx-target="closest tr"
+                                hx-swap="outerHTML swap:300ms"
+                            ></mcms-confirm>
                         </td>
                     </tr>
                 }

@@ -23,7 +23,7 @@ templ LocaleSettingsContent(locales []db.Locale, csrfToken string, i18nEnabled b
         <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
             if i18nEnabled {
                 <button class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
-                        onclick="document.getElementById('add-locale-dialog').showModal()">
+                        onclick="document.getElementById('add-locale-dialog').open()">
                     Add Locale
                 </button>
             }
@@ -61,11 +61,11 @@ templ LocaleSettingsContent(locales []db.Locale, csrfToken string, i18nEnabled b
 }
 
 templ LocaleAddDialog(locales []db.Locale, csrfToken string, i18nEnabled bool) {
-    <dialog id="add-locale-dialog" class="rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60" aria-labelledby="add-locale-dialog-title">
+    <mcms-dialog id="add-locale-dialog" aria-labelledby="add-locale-dialog-title">
         <div class="px-5 py-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
                 <h2 id="add-locale-dialog-title" class="text-lg font-semibold text-white">Add Locale</h2>
-                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">&times;</button>
             </div>
             <form hx-post="/admin/settings/locales"
                   hx-target="#locale-table-body"
@@ -99,20 +99,20 @@ templ LocaleAddDialog(locales []db.Locale, csrfToken string, i18nEnabled bool) {
                 </div>
                 @partials.FormField("sort_order", "Sort Order", "0", "")
                 <div class="flex justify-end gap-3 border-t border-white/10 pt-4 mt-4">
-                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('mcms-dialog').close()">Cancel</button>
                     <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create</button>
                 </div>
             </form>
         </div>
-    </dialog>
+    </mcms-dialog>
 }
 
 templ LocaleEditDialog(locale db.Locale, allLocales []db.Locale, csrfToken string) {
-    <dialog id={ "edit-locale-" + locale.LocaleID.String() } class="rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60" aria-labelledby={ "edit-locale-title-" + locale.LocaleID.String() }>
+    <mcms-dialog id={ "edit-locale-" + locale.LocaleID.String() } aria-labelledby={ "edit-locale-title-" + locale.LocaleID.String() }>
         <div class="px-5 py-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
                 <h2 id={ "edit-locale-title-" + locale.LocaleID.String() } class="text-lg font-semibold text-white">Edit Locale: { locale.Code }</h2>
-                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">&times;</button>
             </div>
             <form hx-put={ "/admin/settings/locales/" + locale.LocaleID.String() }
                   hx-target="#locale-table-body"
@@ -160,12 +160,12 @@ templ LocaleEditDialog(locale db.Locale, allLocales []db.Locale, csrfToken strin
                 </div>
                 @partials.FormField("sort_order", "Sort Order", fmt.Sprintf("%d", locale.SortOrder), "")
                 <div class="flex justify-end gap-3 border-t border-white/10 pt-4 mt-4">
-                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('mcms-dialog').close()">Cancel</button>
                     <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Save</button>
                 </div>
             </form>
         </div>
-    </dialog>
+    </mcms-dialog>
 }
 
 templ LocaleSettings(layout layouts.AdminData, locales []db.Locale, i18nEnabled bool) {

@@ -15,13 +15,11 @@ templ RoleDetail(role db.Roles, matrix PermissionMatrix, csrfToken string) {
         <div class="flex items-center gap-x-3">
             <button type="submit" form={ "role-form-" + role.RoleID.String() } class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Save Permissions</button>
             if !role.SystemProtected {
-                <button
-                    class="rounded-md bg-red-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-red-400"
+                <mcms-confirm
+                    label="Delete"
+                    message="Are you sure you want to delete this role?"
                     hx-delete={ "/admin/users/roles/" + role.RoleID.String() }
-                    hx-confirm="Are you sure you want to delete this role?"
-                >
-                    Delete
-                </button>
+                ></mcms-confirm>
             }
         </div>
     </div>

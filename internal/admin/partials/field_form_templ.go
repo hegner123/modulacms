@@ -247,7 +247,7 @@ func FieldForm(name string, label string, fieldType string, data string, validat
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</div><div class=\"flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create</button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</div><div class=\"flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('mcms-dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

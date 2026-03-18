@@ -74,20 +74,20 @@ func RoleDetail(role db.Roles, matrix PermissionMatrix, csrfToken string) templ.
 			return templ_7745c5c3_Err
 		}
 		if !role.SystemProtected {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<button class=\"rounded-md bg-red-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-red-400\" hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<mcms-confirm label=\"Delete\" message=\"Are you sure you want to delete this role?\" hx-delete=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/users/roles/" + role.RoleID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 20, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 21, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" hx-confirm=\"Are you sure you want to delete this role?\">Delete</button>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"></mcms-confirm>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -99,7 +99,7 @@ func RoleDetail(role db.Roles, matrix PermissionMatrix, csrfToken string) templ.
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("role-form-" + role.RoleID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 29, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 27, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -112,7 +112,7 @@ func RoleDetail(role db.Roles, matrix PermissionMatrix, csrfToken string) templ.
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/users/roles/" + role.RoleID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 30, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 28, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -134,7 +134,7 @@ func RoleDetail(role db.Roles, matrix PermissionMatrix, csrfToken string) templ.
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("role-label-" + role.RoleID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 36, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 34, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -147,7 +147,7 @@ func RoleDetail(role db.Roles, matrix PermissionMatrix, csrfToken string) templ.
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("role-label-" + role.RoleID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 40, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 38, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -160,7 +160,7 @@ func RoleDetail(role db.Roles, matrix PermissionMatrix, csrfToken string) templ.
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(role.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 42, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 40, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -178,7 +178,7 @@ func RoleDetail(role db.Roles, matrix PermissionMatrix, csrfToken string) templ.
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(role.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 48, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/role_detail.templ`, Line: 46, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {

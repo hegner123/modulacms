@@ -31,30 +31,30 @@ func Topbar(user *db.Users) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"flex h-14 shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 sm:px-6\"><div class=\"flex items-center gap-x-4\"><button class=\"-m-2.5 p-2.5 text-[var(--color-text-muted)] hover:text-[var(--color-text)] lg:hidden\" data-sidebar-toggle onclick=\"toggleSidebar()\" aria-label=\"Toggle sidebar\"><i data-lucide=\"menu\" class=\"size-5\"></i></button> <a href=\"/admin/\" class=\"text-lg font-bold text-[var(--color-text)] no-underline hover:no-underline\">ModulaCMS</a></div><div class=\"flex items-center gap-x-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"sticky top-0 z-40 flex h-16 shrink-0 items-center border-b border-white/10 bg-surface shadow-xs\"><button class=\"-m-2.5 p-2.5 text-gray-400 hover:text-white lg:hidden\" data-sidebar-toggle onclick=\"toggleSidebar()\" aria-label=\"Toggle sidebar\"><i data-lucide=\"menu\" class=\"size-5\"></i></button> <a href=\"/admin/\" class=\"text-lg shrink-0 w-52 text-center font-bold text-white no-underline hover:no-underline\">ModulaCMS</a><!-- Separator --><div aria-hidden=\"true\" class=\"h-6 w-px bg-white/10\"></div><div class=\"flex w-full h-16 gap-x-4 px-4 sm:gap-x-6 sm:px-6 lg:px-8\"><div class=\"flex flex-1 gap-x-4 self-stretch lg:gap-x-6\"><div class=\"relative grid flex-1 grid-cols-1\"><input type=\"search\" name=\"q\" placeholder=\"Search...\" aria-label=\"Search\" autocomplete=\"off\" class=\"col-start-1 row-start-1 block size-full bg-transparent pl-8 text-base text-white outline-hidden placeholder:text-gray-500 sm:text-sm/6\" hx-get=\"/admin/search\" hx-trigger=\"input changed delay:300ms, search\" hx-target=\"#search-dropdown\" hx-swap=\"innerHTML\" data-global-search> <svg viewBox=\"0 0 20 20\" fill=\"currentColor\" aria-hidden=\"true\" class=\"pointer-events-none col-start-1 row-start-1 size-5 self-center text-gray-400\"><path d=\"M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z\" clip-rule=\"evenodd\" fill-rule=\"evenodd\"></path></svg><div id=\"search-dropdown\" class=\"absolute top-full left-0 right-0 z-50\"></div></div><div class=\"flex items-center gap-x-4 lg:gap-x-6\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<span class=\"text-sm font-medium text-[var(--color-text-muted)]\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<!-- Separator --> <div aria-hidden=\"true\" class=\"hidden lg:block lg:h-6 lg:w-px lg:bg-white/10\"></div><div class=\"flex items-center gap-x-3\"><span class=\"text-sm/6 font-semibold text-white\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/components/topbar.templ`, Line: 16, Col: 84}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/components/topbar.templ`, Line: 41, Col: 120}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span><form method=\"POST\" action=\"/admin/logout\"><button type=\"submit\" class=\"btn btn-ghost btn-sm\">Logout</button></form>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span><form method=\"POST\" action=\"/admin/logout\"><button type=\"submit\" class=\"rounded-md bg-white/5 px-3 py-1.5 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10\">Logout</button></form></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></header>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></div></div></header>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

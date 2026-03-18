@@ -42,7 +42,7 @@ templ Login(csrfToken string, version string, nextURL string, errMsg string) {
 			</button>
 		</form>
 		<div id="login-loading" class="fixed inset-0 z-[200] flex hidden items-center justify-center bg-gray-950/75">
-			<div class="spinner-brand spinner-brand-lg"></div>
+			<div class="spinner-brand spinner-brand-lg"><img src="/admin/static/icons/spinner.svg" alt="Loading"/></div>
 		</div>
 		<script>
 			document.getElementById('login-form').addEventListener('submit', function(e) {

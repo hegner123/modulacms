@@ -21,13 +21,14 @@ templ FieldsTableRows(items []db.Fields, pg PaginationPageData) {
                 </td>
                 <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ f.DateModified.String() }</td>
                 <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
-                    <button class="text-sm font-medium text-red-400 hover:text-red-300"
-                            hx-delete={ "/admin/schema/fields/" + f.FieldID.String() }
-                            hx-target="closest tr"
-                            hx-swap="outerHTML swap:300ms"
-                            hx-confirm="Delete this field? This cannot be undone.">
-                        Delete
-                    </button>
+                    <mcms-confirm
+                        label="Delete"
+                        message="Delete this field? This cannot be undone."
+                        button-class="text-sm font-medium text-red-400 hover:text-red-300"
+                        hx-delete={ "/admin/schema/fields/" + f.FieldID.String() }
+                        hx-target="closest tr"
+                        hx-swap="outerHTML swap:300ms"
+                    ></mcms-confirm>
                 </td>
             </tr>
         }

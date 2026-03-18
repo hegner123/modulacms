@@ -3,32 +3,31 @@ package partials
 import "github.com/hegner123/modulacms/internal/db"
 
 templ SessionsTableRows(items []db.Sessions) {
-	if len(items) == 0 {
-		<tr>
-			<td colspan="7">
-				@EmptyState("No active sessions")
-			</td>
-		</tr>
-	}
-	for _, item := range items {
-		<tr id={ "session-row-" + item.SessionID.String() }>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.SessionID.String(), 12) }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.UserID.String(), 12) }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ nullStrDisplay(item.IpAddress) }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(nullStrDisplay(item.UserAgent), 40) }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.DateCreated.String() }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.ExpiresAt.String() }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-right text-sm">
-				<button
-					class="text-sm font-medium text-red-400 hover:text-red-300"
-					hx-delete={ "/admin/sessions/" + item.SessionID.String() }
-					hx-target={ "#session-row-" + item.SessionID.String() }
-					hx-swap="outerHTML"
-					hx-confirm="Are you sure you want to revoke this session?"
-				>
-					Revoke
-				</button>
-			</td>
-		</tr>
-	}
+    if len(items) == 0 {
+        <tr>
+            <td colspan="7">
+                @EmptyState("No active sessions")
+            </td>
+        </tr>
+    }
+    for _, item := range items {
+        <tr id={ "session-row-" + item.SessionID.String() }>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.SessionID.String(), 12) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.UserID.String(), 12) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ nullStrDisplay(item.IpAddress) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(nullStrDisplay(item.UserAgent), 40) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.DateCreated.String() }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.ExpiresAt.String() }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
+                <mcms-confirm
+                    label="Revoke"
+                    message="Are you sure you want to revoke this session?"
+                    button-class="text-sm font-medium text-red-400 hover:text-red-300"
+                    hx-delete={ "/admin/sessions/" + item.SessionID.String() }
+                    hx-target={ "#session-row-" + item.SessionID.String() }
+                    hx-swap="outerHTML"
+                ></mcms-confirm>
+            </td>
+        </tr>
+    }
 }

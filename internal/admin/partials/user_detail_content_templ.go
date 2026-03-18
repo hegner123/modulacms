@@ -38,33 +38,33 @@ func UserDetailContent(user db.Users, roles []db.Roles, csrfToken string) templ.
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(user.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 7, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 7, Col: 67}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</h1><div class=\"flex items-center gap-x-3\"><a href=\"/admin/users\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" hx-get=\"/admin/users\" hx-target=\"#main-content\" hx-push-url=\"true\">Back to Users</a> <button class=\"rounded-md bg-red-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-red-400\" hx-delete=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</h1><div class=\"flex items-center gap-x-3\"><a href=\"/admin/users\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" hx-get=\"/admin/users\" hx-target=\"#main-content\" hx-push-url=\"true\">Back to Users</a> <mcms-confirm label=\"Delete User\" message=\"Are you sure you want to delete this user? This cannot be undone.\" hx-delete=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/users/" + user.UserID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 20, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 21, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-confirm=\"Are you sure you want to delete this user? This cannot be undone.\" hx-target=\"#main-content\">Delete User</button> <button type=\"submit\" form=\"user-form\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Update User</button></div></div><div class=\"mt-6 rounded-md bg-white/5 p-6 ring-1 ring-white/10 ring-inset\"><div class=\"mb-6 flex flex-wrap gap-4 text-sm text-gray-400\"><span>ID: ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-target=\"#main-content\"></mcms-confirm> <button type=\"submit\" form=\"user-form\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Update User</button></div></div><div class=\"mt-6 rounded-md bg-white/5 p-6 ring-1 ring-white/10 ring-inset\"><div class=\"mb-6 flex flex-wrap gap-4 text-sm text-gray-400\"><span>ID: ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.UserID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 31, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 29, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -77,7 +77,7 @@ func UserDetailContent(user db.Users, roles []db.Roles, csrfToken string) templ.
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(user.DateCreated.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 32, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 30, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -90,7 +90,7 @@ func UserDetailContent(user db.Users, roles []db.Roles, csrfToken string) templ.
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(user.DateModified.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 33, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 31, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -103,7 +103,7 @@ func UserDetailContent(user db.Users, roles []db.Roles, csrfToken string) templ.
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/users/" + user.UserID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 37, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 35, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {

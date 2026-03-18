@@ -1,0 +1,196 @@
+package partials
+
+import (
+	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
+)
+
+templ AuditDetail(event db.ChangeEvent, related []db.ChangeEvent, userName string) {
+	<div class="space-y-6">
+		<!-- Header -->
+		<div class="flex items-center justify-between border-b border-white/10 pb-4">
+			<div class="flex items-center gap-3">
+				<a href="/admin/audit" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20 no-underline hover:no-underline"
+				   hx-get="/admin/audit"
+				   hx-target="#main-content"
+				   hx-push-url="true">&larr; Audit Log</a>
+				<h2 class="text-base/7 font-semibold text-white">Change Event</h2>
+				@auditOperationBadge(string(event.Operation))
+				@auditActionBadge(string(event.Action))
+			</div>
+		</div>
+		<!-- Event Metadata -->
+		<div class="rounded-lg border border-white/10 bg-white/5 p-5">
+			<h3 class="text-sm font-semibold text-white mb-4">Event Details</h3>
+			<dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				@auditField("Event ID", event.EventID.String())
+				@auditField("Table", event.TableName)
+				@auditField("Record ID", event.RecordID)
+				@auditField("Operation", string(event.Operation))
+				@auditField("Action", string(event.Action))
+				@auditUserField(userName, event.UserID.String())
+				@auditField("Timestamp", displayTimestamp(event.WallTimestamp))
+				@auditField("HLC", hlcStr(event.HlcTimestamp))
+				@auditField("Node ID", event.NodeID.String())
+				@auditField("Request ID", nullableStr(event.RequestID))
+				@auditField("IP Address", nullableStr(event.IP))
+			</dl>
+		</div>
+		<!-- JSON Diff -->
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+			<!-- Old Values -->
+			<div class="rounded-lg border border-white/10 bg-white/5 p-5">
+				<h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+					<span class="inline-block h-2 w-2 rounded-full bg-red-400"></span>
+					Old Values
+				</h3>
+				if event.OldValues.Valid {
+					<pre class="overflow-x-auto rounded-md bg-gray-900 p-4 text-xs text-gray-300 leading-relaxed"><code>{ prettyJSON(event.OldValues) }</code></pre>
+				} else {
+					<p class="text-sm text-gray-500 italic">No previous values (new record)</p>
+				}
+			</div>
+			<!-- New Values -->
+			<div class="rounded-lg border border-white/10 bg-white/5 p-5">
+				<h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+					<span class="inline-block h-2 w-2 rounded-full bg-green-400"></span>
+					New Values
+				</h3>
+				if event.NewValues.Valid {
+					<pre class="overflow-x-auto rounded-md bg-gray-900 p-4 text-xs text-gray-300 leading-relaxed"><code>{ prettyJSON(event.NewValues) }</code></pre>
+				} else {
+					<p class="text-sm text-gray-500 italic">No new values (deleted record)</p>
+				}
+			</div>
+		</div>
+		<!-- Diff View (when both old and new exist) -->
+		if event.OldValues.Valid && event.NewValues.Valid {
+			<div class="rounded-lg border border-white/10 bg-white/5 p-5">
+				<h3 class="text-sm font-semibold text-white mb-3">Changes</h3>
+				@AuditDiffView(event.OldValues, event.NewValues)
+			</div>
+		}
+		<!-- Metadata -->
+		if event.Metadata.Valid {
+			<div class="rounded-lg border border-white/10 bg-white/5 p-5">
+				<h3 class="text-sm font-semibold text-white mb-3">Metadata</h3>
+				<pre class="overflow-x-auto rounded-md bg-gray-900 p-4 text-xs text-gray-300 leading-relaxed"><code>{ prettyJSON(event.Metadata) }</code></pre>
+			</div>
+		}
+		<!-- Related Events -->
+		if len(related) > 1 {
+			<div class="rounded-lg border border-white/10 bg-white/5 p-5">
+				<h3 class="text-sm font-semibold text-white mb-4">
+					Related Events for { event.TableName }:{ truncateStr(event.RecordID, 12) }
+				</h3>
+				<div class="overflow-hidden rounded-lg border border-white/10 shadow-sm">
+					<table class="min-w-full divide-y divide-white/10">
+						<thead class="bg-white/5">
+							<tr>
+								<th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-white">Timestamp</th>
+								<th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-white">Operation</th>
+								<th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-white">Action</th>
+								<th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-white">User</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-white/5">
+							for _, rel := range related {
+								if rel.EventID != event.EventID {
+									<tr class="hover:bg-white/5 transition-colors cursor-pointer"
+									    hx-get={ "/admin/audit/" + rel.EventID.String() }
+									    hx-target="#main-content"
+									    hx-push-url="true">
+										<td class="whitespace-nowrap px-4 py-3 text-xs text-gray-300">{ displayTimestamp(rel.WallTimestamp) }</td>
+										<td class="whitespace-nowrap px-4 py-3 text-xs text-gray-300">{ string(rel.Operation) }</td>
+										<td class="whitespace-nowrap px-4 py-3 text-xs text-gray-300">{ string(rel.Action) }</td>
+										<td class="whitespace-nowrap px-4 py-3 text-xs text-gray-300">{ truncateStr(rel.UserID.String(), 12) }</td>
+									</tr>
+								}
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+templ auditField(label, value string) {
+	<div>
+		<dt class="text-xs font-medium text-gray-400">{ label }</dt>
+		<dd class="mt-1 text-sm text-white break-all">
+			if value == "" || value == "null" {
+				<span class="text-gray-500 italic">-</span>
+			} else {
+				{ value }
+			}
+		</dd>
+	</div>
+}
+
+templ auditUserField(userName, userID string) {
+	<div>
+		<dt class="text-xs font-medium text-gray-400">User</dt>
+		<dd class="mt-1 text-sm text-white break-all">
+			if userName != "" {
+				{ userName }
+				<span class="text-xs text-gray-500 ml-1">({ userID })</span>
+			} else if userID == "" || userID == "null" {
+				<span class="text-gray-500 italic">System</span>
+			} else {
+				{ userID }
+			}
+		</dd>
+	</div>
+}
+
+templ auditOperationBadge(op string) {
+	if op == "INSERT" {
+		<span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">{ op }</span>
+	} else if op == "UPDATE" {
+		<span class="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-blue-400/20 ring-inset">{ op }</span>
+	} else if op == "DELETE" {
+		<span class="inline-flex items-center rounded-md bg-red-400/10 px-2 py-1 text-xs font-medium text-red-400 ring-1 ring-red-400/20 ring-inset">{ op }</span>
+	} else {
+		<span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ op }</span>
+	}
+}
+
+templ auditActionBadge(action string) {
+	if action == "publish" {
+		<span class="inline-flex items-center rounded-md bg-purple-400/10 px-2 py-1 text-xs font-medium text-purple-400 ring-1 ring-purple-400/20 ring-inset">{ action }</span>
+	} else {
+		<span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ action }</span>
+	}
+}
+
+templ AuditDiffView(oldValues, newValues types.JSONData) {
+	<div class="space-y-2">
+		for _, d := range computeDiff(oldValues, newValues) {
+			<div class="flex items-start gap-3 rounded-md px-3 py-2 text-xs font-mono">
+				if d.Kind == "added" {
+					<span class="shrink-0 mt-0.5 text-green-400">+</span>
+					<span class="text-gray-400">{ d.Key }:</span>
+					<span class="text-green-300 break-all">{ d.New }</span>
+				} else if d.Kind == "removed" {
+					<span class="shrink-0 mt-0.5 text-red-400">-</span>
+					<span class="text-gray-400">{ d.Key }:</span>
+					<span class="text-red-300 break-all line-through">{ d.Old }</span>
+				} else if d.Kind == "changed" {
+					<div class="flex flex-col gap-1">
+						<div class="flex items-start gap-2">
+							<span class="shrink-0 text-red-400">-</span>
+							<span class="text-gray-400">{ d.Key }:</span>
+							<span class="text-red-300 break-all line-through">{ d.Old }</span>
+						</div>
+						<div class="flex items-start gap-2">
+							<span class="shrink-0 text-green-400">+</span>
+							<span class="text-gray-400">{ d.Key }:</span>
+							<span class="text-green-300 break-all">{ d.New }</span>
+						</div>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}

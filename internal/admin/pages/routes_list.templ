@@ -25,7 +25,7 @@ templ RoutesListContent(items []db.Routes, pagination partials.PaginationPageDat
             <button
                 class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
                 data-action="new"
-                onclick="document.getElementById('create-route-dialog').showModal()"
+                onclick="document.getElementById('create-route-dialog').open()"
             >
                 Create Route
             </button>
@@ -59,11 +59,11 @@ templ RoutesListContent(items []db.Routes, pagination partials.PaginationPageDat
 }
 
 templ RouteCreateDialog(csrfToken string) {
-    <dialog id="create-route-dialog" class="rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60" aria-labelledby="create-route-dialog-title">
+    <mcms-dialog id="create-route-dialog" aria-labelledby="create-route-dialog-title">
         <div class="px-5 py-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
                 <h2 id="create-route-dialog-title" class="text-lg font-semibold text-white">Create Route</h2>
-                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="document.getElementById('create-route-dialog').close()">&times;</button>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">&times;</button>
             </div>
             <form
                 hx-post="/admin/routes"
@@ -76,7 +76,7 @@ templ RouteCreateDialog(csrfToken string) {
                 </div>
             </form>
         </div>
-    </dialog>
+    </mcms-dialog>
 }
 
 templ RoutesList(layout layouts.AdminData, items []db.Routes, pagination partials.PaginationPageData) {

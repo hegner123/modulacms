@@ -187,14 +187,14 @@ func RoutesTableRowsInner(items []db.Routes) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</td><td class=\"whitespace-nowrap px-4 py-4 text-right text-sm\"><button class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</td><td class=\"whitespace-nowrap px-4 py-4 text-right text-sm\"><mcms-confirm label=\"Delete\" message=\"Are you sure you want to delete this route?\" button-class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/routes/" + item.RouteID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 37, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 39, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -207,13 +207,13 @@ func RoutesTableRowsInner(items []db.Routes) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs("#route-row-" + item.RouteID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 38, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 40, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" hx-swap=\"outerHTML swap:300ms\" hx-confirm=\"Are you sure you want to delete this route?\">Delete</button></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -255,7 +255,7 @@ func RouteForm(slug string, title string, status string, errs map[string]string,
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(errs["_"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 58, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 57, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -282,7 +282,7 @@ func RouteForm(slug string, title string, status string, errs map[string]string,
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(slug)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 66, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 65, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -313,7 +313,7 @@ func RouteForm(slug string, title string, status string, errs map[string]string,
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(errs["slug"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 70, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 69, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -340,7 +340,7 @@ func RouteForm(slug string, title string, status string, errs map[string]string,
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 76, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 75, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -371,7 +371,7 @@ func RouteForm(slug string, title string, status string, errs map[string]string,
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(errs["title"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 80, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 79, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -402,7 +402,7 @@ func RouteForm(slug string, title string, status string, errs map[string]string,
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, ">Inactive</option></select></div></div><div class=\"flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create Route</button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, ">Inactive</option></select></div></div><div class=\"flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('mcms-dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create Route</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -445,7 +445,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 			var templ_7745c5c3_Var24 string
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(errs["_"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 109, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 108, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
@@ -463,7 +463,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs("edit-slug-" + id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 115, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 114, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -485,7 +485,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs("edit-slug-" + id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 117, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 116, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
@@ -498,7 +498,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(slug)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 117, Col: 80}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 116, Col: 80}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
@@ -529,7 +529,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(errs["slug"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 121, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 120, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
@@ -547,7 +547,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs("edit-title-" + id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 125, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 124, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -569,7 +569,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs("edit-title-" + id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 127, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 126, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -582,7 +582,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 127, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 126, Col: 83}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -613,7 +613,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(errs["title"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 131, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 130, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -631,7 +631,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs("edit-status-" + id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 135, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 134, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
@@ -644,7 +644,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 		var templ_7745c5c3_Var38 string
 		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs("edit-status-" + id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 137, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 136, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {
@@ -670,7 +670,7 @@ func RouteEditForm(id string, slug string, title string, status string, errs map
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, ">Inactive</option></select></div></div><div class=\"flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Update Route</button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, ">Inactive</option></select></div></div><div class=\"flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('mcms-dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Update Route</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -762,7 +762,7 @@ func AdminRoutesTableRowsInner(items []db.AdminRoutes) templ.Component {
 			var templ_7745c5c3_Var41 string
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/routes/" + item.AdminRouteID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 167, Col: 146}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 166, Col: 146}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {
@@ -775,7 +775,7 @@ func AdminRoutesTableRowsInner(items []db.AdminRoutes) templ.Component {
 			var templ_7745c5c3_Var42 string
 			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(string(item.Slug))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 168, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 167, Col: 96}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 			if templ_7745c5c3_Err != nil {
@@ -788,7 +788,7 @@ func AdminRoutesTableRowsInner(items []db.AdminRoutes) templ.Component {
 			var templ_7745c5c3_Var43 string
 			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(item.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 169, Col: 86}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 168, Col: 86}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 			if templ_7745c5c3_Err != nil {
@@ -823,7 +823,7 @@ func AdminRoutesTableRowsInner(items []db.AdminRoutes) templ.Component {
 			var templ_7745c5c3_Var46 string
 			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(routeStatusLabel(item.Status))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 172, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 171, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 			if templ_7745c5c3_Err != nil {
@@ -836,7 +836,7 @@ func AdminRoutesTableRowsInner(items []db.AdminRoutes) templ.Component {
 			var templ_7745c5c3_Var47 string
 			templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(item.DateModified.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 175, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/routes_table_rows.templ`, Line: 174, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 			if templ_7745c5c3_Err != nil {

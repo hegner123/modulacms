@@ -17,7 +17,7 @@ templ ContentListContent(items []ContentListItem, pg partials.PaginationPageData
             <button
                 class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
                 data-action="new"
-                onclick="document.getElementById('create-content-dialog').showModal()"
+                onclick="document.getElementById('create-content-dialog').open()"
             >
                 Create Content
             </button>
@@ -75,11 +75,11 @@ templ ContentListContent(items []ContentListItem, pg partials.PaginationPageData
 }
 
 templ ContentCreateDialog(datatypes []db.Datatypes, csrfToken string) {
-    <dialog id="create-content-dialog" class="rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60" aria-labelledby="create-content-dialog-title">
+    <mcms-dialog id="create-content-dialog" aria-labelledby="create-content-dialog-title">
         <div class="px-5 py-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
                 <h2 id="create-content-dialog-title" class="text-lg font-semibold text-white">Create Content</h2>
-                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">&times;</button>
             </div>
             <form hx-post="/admin/content"
                   hx-target="#create-content-form"
@@ -98,12 +98,12 @@ templ ContentCreateDialog(datatypes []db.Datatypes, csrfToken string) {
                 @partials.FormField("slug", "Slug (optional)", "", "")
                 @partials.FormField("title", "Name", "", "")
                 <div class="flex justify-end gap-3 border-t border-white/10 pt-4 mt-4">
-                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('mcms-dialog').close()">Cancel</button>
                     <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create</button>
                 </div>
             </form>
         </div>
-    </dialog>
+    </mcms-dialog>
 }
 
 templ ContentList(layout layouts.AdminData, items []ContentListItem, pg partials.PaginationPageData, datatypes []db.Datatypes) {
@@ -130,17 +130,14 @@ templ ContentTableRows(items []ContentListItem) {
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ item.AuthorName }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ item.DateModified.String() }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm">
-                <div class="flex items-center gap-2">
-                    <button
-                        class="text-sm text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]"
-                        hx-delete={ "/admin/content/" + item.ContentDataID.String() }
-                        hx-target={ "#content-row-" + item.ContentDataID.String() }
-                        hx-swap="outerHTML"
-                        hx-confirm="Are you sure you want to delete this content?"
-                    >
-                        Delete
-                    </button>
-                </div>
+                <mcms-confirm
+                    label="Delete"
+                    message="Are you sure you want to delete this content?"
+                    button-class="text-sm text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]"
+                    hx-delete={ "/admin/content/" + item.ContentDataID.String() }
+                    hx-target={ "#content-row-" + item.ContentDataID.String() }
+                    hx-swap="outerHTML"
+                ></mcms-confirm>
             </td>
         </tr>
     }

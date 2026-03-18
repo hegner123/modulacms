@@ -76,7 +76,7 @@ func DatatypeForm(name string, label string, dtype string, parentID string, allD
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div class=\"mt-5 sm:mt-4 sm:flex sm:flex-row-reverse\"><button type=\"submit\" class=\"inline-flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 sm:ml-3 sm:w-auto\">Create</button> <button type=\"button\" onclick=\"this.closest('dialog').close()\" class=\"mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto\">Cancel</button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div class=\"mt-5 sm:mt-4 sm:flex sm:flex-row-reverse\"><button type=\"submit\" class=\"inline-flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 sm:ml-3 sm:w-auto\">Create</button> <button type=\"button\" onclick=\"this.closest('mcms-dialog').close()\" class=\"mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto\">Cancel</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

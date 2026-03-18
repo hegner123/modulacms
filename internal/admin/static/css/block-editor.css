@@ -3,6 +3,7 @@
    ======================================== */
 block-editor {
   display: block;
+  position: relative;
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-family: var(--font-family);
   --bg: var(--color-surface);
@@ -19,7 +20,7 @@ block-editor {
   --error-border: var(--color-danger-300);
   --error-text: var(--color-danger);
   --btn-hover-bg: var(--color-surface-hover);
-  --save-active-text: var(--color-bg);
+  --save-active-text: var(--color-text);
   --save-hover-bg: var(--color-primary-hover);
   --save-disabled-bg: var(--color-surface-hover);
   --save-disabled-text: var(--color-text-dim);
@@ -298,10 +299,6 @@ block-editor .block-wrapper.collapsed .block-content-preview {
   display: none;
 }
 
-block-editor .block-wrapper.collapsed > .insert-btn--inside {
-  display: none;
-}
-
 /* --- Content Preview --- */
 
 block-editor .block-content-preview {
@@ -310,36 +307,40 @@ block-editor .block-content-preview {
   padding-top: var(--sp-2);
   border-top: 1px solid var(--border);
   order: 99;
-}
-
-block-editor .preview-heading {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.3;
-  margin-bottom: var(--sp-1);
-}
-
-block-editor .preview-text {
-  font-size: var(--fs-base);
-  color: var(--text);
-  line-height: 1.6;
-  white-space: pre-wrap;
-  margin-bottom: var(--sp-1);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 block-editor .preview-field {
-  font-size: var(--fs-base);
-  color: var(--text);
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
   line-height: 1.4;
-  margin-bottom: var(--sp-1);
 }
 
-block-editor .preview-empty {
-  font-size: var(--fs-sm);
+block-editor .preview-field-label {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+block-editor .preview-field-value {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+block-editor .preview-field-empty {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+block-editor .preview-field-ref {
   color: var(--text-muted);
   font-style: italic;
-  padding: var(--sp-1) 0;
 }
 
 block-editor .block-type-badge--heading {
@@ -362,51 +363,82 @@ block-editor .block-type-badge--text {
   color: #f9e2af;
 }
 
-block-editor .block-hover-toolbar {
-  display: none;
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: var(--z-block-toolbar);
-  align-items: center;
-  gap: 2px;
-  padding: 0 var(--sp-2);
-  background: var(--toolbar-bg);
-  border-left: 1px solid var(--border);
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-}
+/* --- Kebab Menu Button --- */
 
-block-editor .block-item:hover > .block-hover-toolbar,
-block-editor .block-hover-toolbar:hover {
+block-editor .block-kebab {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
   display: flex;
-}
-
-block-editor .block-item.dragging > .block-hover-toolbar {
-  display: none;
-}
-
-block-editor .block-hover-toolbar button {
-  height: 100%;
-  padding: 0 var(--sp-2);
+  align-items: center;
+  justify-content: center;
   border: none;
-  border-radius: 0;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-muted);
   font-size: var(--fs-lg);
   cursor: pointer;
-  white-space: nowrap;
   transition: color 0.15s, background 0.15s;
+  line-height: 1;
 }
 
-block-editor .block-hover-toolbar button:hover {
+block-editor .block-kebab:hover {
   color: var(--text);
   background: var(--btn-hover-bg);
 }
 
-block-editor .block-hover-toolbar button[data-action="toolbar-delete"]:hover {
-  color: var(--danger);
-  background: var(--error-bg);
+/* --- Context Menu --- */
+
+.block-context-menu {
+  z-index: 9999;
+  min-width: 10rem;
+  background: var(--color-surface, #1a1a2e);
+  border: 1px solid var(--color-border, #333);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 4px 0;
+  font-size: 0.8125rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.context-menu-heading {
+  padding: 4px 12px;
+  color: var(--color-text-dim, #888);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.context-menu-separator {
+  height: 1px;
+  background: var(--color-border, #333);
+  margin: 4px 0;
+}
+
+.context-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: var(--color-text, #eee);
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.context-menu-item:hover {
+  background: var(--color-surface-hover, #2a2a3e);
+}
+
+.context-menu-item--destructive {
+  color: var(--color-danger, #ef4444);
+}
+
+.context-menu-item--destructive:hover {
+  background: var(--color-danger-50, #3b1a1a);
 }
 
 block-editor .editor-header {
@@ -415,33 +447,6 @@ block-editor .editor-header {
   padding: var(--sp-2) var(--sp-3);
   border-bottom: 1px solid var(--border);
   background: var(--toolbar-bg);
-}
-
-block-editor .insert-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 1.5rem;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: var(--fs-base);
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s, border-color 0.15s, color 0.15s;
-  margin: var(--sp-1) 0;
-}
-
-block-editor .block-list:hover .insert-btn,
-block-editor .insert-btn:focus-visible {
-  opacity: 1;
-}
-
-block-editor .insert-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
 }
 
 block-editor .insert-empty {
@@ -465,9 +470,6 @@ block-editor .insert-btn--empty:hover {
   color: var(--accent);
 }
 
-block-editor .insert-btn--inside {
-  margin: var(--sp-2);
-}
 
 /* --- Block Picker (telescope/fzf style) --- */
 
@@ -832,4 +834,48 @@ block-editor .insert-btn--inside {
   .content-editor-panel {
     max-height: none;
   }
+}
+
+/* ========================================
+   SECTION: Crash Recovery Banner
+   ======================================== */
+block-editor .recovery-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-2);
+  background: var(--color-warning-50, #fef3c7);
+  border: 1px solid var(--color-warning-300, #fcd34d);
+  border-radius: var(--radius-md, 6px);
+  font-size: 0.8125rem;
+  color: var(--color-warning-800, #92400e);
+}
+
+block-editor .recovery-banner span {
+  flex: 1;
+}
+
+block-editor .recovery-banner button {
+  padding: var(--sp-1) var(--sp-2);
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+block-editor .recovery-restore {
+  background: var(--accent);
+  color: var(--save-active-text);
+}
+
+block-editor .recovery-restore:hover {
+  background: var(--save-hover-bg);
+}
+
+block-editor .recovery-dismiss {
+  background: transparent;
+  color: var(--color-warning-800, #92400e);
+  text-decoration: underline;
 }

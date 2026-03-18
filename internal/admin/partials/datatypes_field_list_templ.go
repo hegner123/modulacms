@@ -96,20 +96,20 @@ func DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string) 
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</span></td><td class=\"py-3 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6\"><button class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</span></td><td class=\"py-3 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6\"><mcms-confirm label=\"Delete\" message=\"Delete this field? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/fields/" + f.FieldID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_field_list.templ`, Line: 31, Col: 92}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_field_list.templ`, Line: 34, Col: 88}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\" hx-confirm=\"Delete this field? This cannot be undone.\">Delete</button></td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

@@ -182,3 +182,98 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "SF Mono", "Fira Code", "Fira Mono", monospace;
 }
+
+/* Media grid picker selection ring — targets the card div, not the li */
+[data-media-grid-item][data-selected] > div:first-child {
+  outline: 2px solid var(--color-primary);
+  border-radius: var(--radius);
+}
+
+/* ========================================
+   Brand Spinner & Loading Indicators
+   ======================================== */
+@keyframes spinner {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spinner 600ms linear infinite;
+}
+
+.spinner-brand {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+}
+
+.spinner-brand img {
+  width: 100%;
+  height: 100%;
+}
+
+.spinner-brand-lg {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* HTMX request indicator */
+.htmx-indicator {
+  display: none;
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Dim content during HTMX request */
+[hx-get].htmx-request,
+[hx-post].htmx-request,
+[hx-delete].htmx-request {
+  opacity: 0.6;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+
+/* Loading bar */
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-primary);
+  z-index: var(--z-loading-bar);
+  transition: width 300ms ease;
+  pointer-events: none;
+}
+
+.loading-bar.active {
+  width: 70%;
+}
+
+.loading-bar.done {
+  width: 100%;
+  transition: width 100ms ease;
+}
+
+/* All interactive elements get pointer cursor */
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+[role="button"],
+a[href],
+select,
+summary,
+[tabindex]:not([tabindex="-1"]) {
+  cursor: pointer;
+}

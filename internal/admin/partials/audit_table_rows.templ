@@ -11,7 +11,10 @@ templ AuditTableRows(events []db.ChangeEvent) {
 		</tr>
 	}
 	for _, event := range events {
-		<tr>
+		<tr class="hover:bg-white/5 transition-colors cursor-pointer"
+		    hx-get={ "/admin/audit/" + event.EventID.String() }
+		    hx-target="#main-content"
+		    hx-push-url="true">
 			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ event.WallTimestamp.String() }</td>
 			<td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ event.TableName }</td>
 			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(event.RecordID, 12) }</td>

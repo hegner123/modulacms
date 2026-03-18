@@ -13,6 +13,7 @@ templ Base(title string, csrfToken string, version string) {
         <link rel="stylesheet" href={ "/admin/static/css/block-editor.css?v=" + version }/>
         <script src={ "/admin/static/js/htmx.min.js?v=" + version }></script>
         <script src="https://unpkg.com/lucide@latest"></script>
+        <script src={ "/admin/static/js/mcms-settings.js?v=" + version }></script>
         <script src={ "/admin/static/js/admin.js?v=" + version } defer></script>
         <script type="module" src={ "/admin/static/js/block-editor.js?v=" + version }></script>
     </head>

@@ -49,7 +49,7 @@ func DatatypesTableRows(items []db.Datatypes, pg PaginationPageData) templ.Compo
 				var templ_7745c5c3_Var2 string
 				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/datatypes/" + dt.DatatypeID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 16, Col: 129}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 16, Col: 138}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 				if templ_7745c5c3_Err != nil {
@@ -62,7 +62,7 @@ func DatatypesTableRows(items []db.Datatypes, pg PaginationPageData) templ.Compo
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(dt.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 17, Col: 97}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 17, Col: 109}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -75,7 +75,7 @@ func DatatypesTableRows(items []db.Datatypes, pg PaginationPageData) templ.Compo
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(dt.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 18, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 18, Col: 88}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -88,7 +88,7 @@ func DatatypesTableRows(items []db.Datatypes, pg PaginationPageData) templ.Compo
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(dt.Type)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 20, Col: 158}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 20, Col: 173}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -101,26 +101,26 @@ func DatatypesTableRows(items []db.Datatypes, pg PaginationPageData) templ.Compo
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(dt.DateModified.Time.UTC().Format("Jan 2, 2006 15:04"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 22, Col: 122}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 22, Col: 134}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</td><td class=\"py-4 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6\"><button class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</td><td class=\"py-4 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6\"><mcms-confirm label=\"Delete\" message=\"Delete this datatype? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/datatypes/" + dt.DatatypeID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 25, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 28, Col: 87}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\" hx-confirm=\"Delete this datatype? This cannot be undone.\">Delete</button></td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

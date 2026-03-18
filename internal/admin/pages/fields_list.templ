@@ -15,7 +15,7 @@ templ FieldsListContent(items []db.Fields, pg partials.PaginationPageData) {
         <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
             <button class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
                     data-action="new"
-                    onclick="document.getElementById('create-field-dialog').showModal()">
+                    onclick="document.getElementById('create-field-dialog').open()">
                 New Field
             </button>
         </div>
@@ -53,15 +53,14 @@ templ FieldsListContent(items []db.Fields, pg partials.PaginationPageData) {
                                         <td class="whitespace-nowrap px-4 py-4 text-sm"><span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ f.Type.String() }</span></td>
                                         <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ f.DateModified.String() }</td>
                                         <td class="whitespace-nowrap px-4 py-4 text-sm">
-                                            <div class="flex items-center gap-2">
-                                                <button class="text-sm text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]"
-                                                        hx-delete={ "/admin/schema/fields/" + f.FieldID.String() }
-                                                        hx-target="closest tr"
-                                                        hx-swap="outerHTML swap:300ms"
-                                                        hx-confirm="Delete this field? This cannot be undone.">
-                                                    Delete
-                                                </button>
-                                            </div>
+                                            <mcms-confirm
+                                                label="Delete"
+                                                message="Delete this field? This cannot be undone."
+                                                button-class="text-sm text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]"
+                                                hx-delete={ "/admin/schema/fields/" + f.FieldID.String() }
+                                                hx-target="closest tr"
+                                                hx-swap="outerHTML swap:300ms"
+                                            ></mcms-confirm>
                                         </td>
                                     </tr>
                                 }
@@ -76,11 +75,11 @@ templ FieldsListContent(items []db.Fields, pg partials.PaginationPageData) {
 }
 
 templ FieldCreateDialog(csrfToken string) {
-    <dialog id="create-field-dialog" class="rounded-lg border border-white/10 bg-[var(--color-surface)] p-0 shadow-lg backdrop:bg-black/60" aria-labelledby="create-field-dialog-title">
+    <mcms-dialog id="create-field-dialog" aria-labelledby="create-field-dialog-title">
         <div class="px-5 py-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
                 <h2 id="create-field-dialog-title" class="text-lg font-semibold text-white">New Field</h2>
-                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">&times;</button>
             </div>
             <form hx-post="/admin/schema/fields"
                   hx-target="#create-field-form"
@@ -110,12 +109,12 @@ templ FieldCreateDialog(csrfToken string) {
                     </select>
                 </div>
                 <div class="flex justify-end gap-3 border-t border-white/10 pt-4 mt-4">
-                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('mcms-dialog').close()">Cancel</button>
                     <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create</button>
                 </div>
             </form>
         </div>
-    </dialog>
+    </mcms-dialog>
 }
 
 templ FieldsList(layout layouts.AdminData, items []db.Fields, pg partials.PaginationPageData) {

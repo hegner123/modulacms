@@ -166,14 +166,14 @@ func UsersTableRowsInner(items []db.UserWithRoleLabelRow) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</td><td class=\"whitespace-nowrap px-4 py-4 text-right text-sm\"><button class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</td><td class=\"whitespace-nowrap px-4 py-4 text-right text-sm\"><mcms-confirm label=\"Delete\" message=\"Are you sure you want to delete this user?\" button-class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/users/" + item.UserID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 29, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 31, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -186,13 +186,13 @@ func UsersTableRowsInner(items []db.UserWithRoleLabelRow) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("#user-row-" + item.UserID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 30, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 32, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" hx-swap=\"outerHTML swap:300ms\" hx-confirm=\"Are you sure you want to delete this user?\">Delete</button></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -234,7 +234,7 @@ func UserForm(username string, name string, email string, role string, roles []d
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(errs["_"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 50, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 49, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -261,7 +261,7 @@ func UserForm(username string, name string, email string, role string, roles []d
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(username)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 58, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 57, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -292,7 +292,7 @@ func UserForm(username string, name string, email string, role string, roles []d
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(errs["username"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 62, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 61, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -319,7 +319,7 @@ func UserForm(username string, name string, email string, role string, roles []d
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 68, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 67, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -350,7 +350,7 @@ func UserForm(username string, name string, email string, role string, roles []d
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(errs["name"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 72, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 71, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -377,7 +377,7 @@ func UserForm(username string, name string, email string, role string, roles []d
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(email)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 78, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 77, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -408,7 +408,7 @@ func UserForm(username string, name string, email string, role string, roles []d
 			var templ_7745c5c3_Var25 string
 			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(errs["email"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 82, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 81, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 			if templ_7745c5c3_Err != nil {
@@ -453,7 +453,7 @@ func UserForm(username string, name string, email string, role string, roles []d
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(errs["password"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 92, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 91, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
@@ -476,7 +476,7 @@ func UserForm(username string, name string, email string, role string, roles []d
 			var templ_7745c5c3_Var29 string
 			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(r.RoleID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 100, Col: 53}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 99, Col: 53}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
@@ -499,7 +499,7 @@ func UserForm(username string, name string, email string, role string, roles []d
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(r.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 100, Col: 124}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 99, Col: 124}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
@@ -510,7 +510,7 @@ func UserForm(username string, name string, email string, role string, roles []d
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</select></div></div><div class=\"flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create User</button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</select></div></div><div class=\"flex justify-end gap-x-3 border-t border-white/10 bg-white/5 px-6 py-3\"><button type=\"button\" class=\"rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20\" onclick=\"this.closest('mcms-dialog').close()\">Cancel</button> <button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create User</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -551,7 +551,7 @@ func UserEditForm(id string, username string, name string, email string, role st
 			var templ_7745c5c3_Var32 string
 			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(errs["_"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 120, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 119, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 			if templ_7745c5c3_Err != nil {
@@ -578,7 +578,7 @@ func UserEditForm(id string, username string, name string, email string, role st
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(username)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 128, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 127, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -609,7 +609,7 @@ func UserEditForm(id string, username string, name string, email string, role st
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(errs["username"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 132, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 131, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -636,7 +636,7 @@ func UserEditForm(id string, username string, name string, email string, role st
 		var templ_7745c5c3_Var38 string
 		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 138, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 137, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {
@@ -667,7 +667,7 @@ func UserEditForm(id string, username string, name string, email string, role st
 			var templ_7745c5c3_Var40 string
 			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(errs["name"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 142, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 141, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 			if templ_7745c5c3_Err != nil {
@@ -694,7 +694,7 @@ func UserEditForm(id string, username string, name string, email string, role st
 		var templ_7745c5c3_Var42 string
 		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(email)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 148, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 147, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 		if templ_7745c5c3_Err != nil {
@@ -725,7 +725,7 @@ func UserEditForm(id string, username string, name string, email string, role st
 			var templ_7745c5c3_Var44 string
 			templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(errs["email"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 152, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 151, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 			if templ_7745c5c3_Err != nil {
@@ -770,7 +770,7 @@ func UserEditForm(id string, username string, name string, email string, role st
 			var templ_7745c5c3_Var47 string
 			templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(errs["password"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 162, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 161, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 			if templ_7745c5c3_Err != nil {
@@ -793,7 +793,7 @@ func UserEditForm(id string, username string, name string, email string, role st
 			var templ_7745c5c3_Var48 string
 			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(r.RoleID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 170, Col: 53}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 169, Col: 53}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 			if templ_7745c5c3_Err != nil {
@@ -816,7 +816,7 @@ func UserEditForm(id string, username string, name string, email string, role st
 			var templ_7745c5c3_Var49 string
 			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(r.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 170, Col: 124}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/users_table_rows.templ`, Line: 169, Col: 124}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 			if templ_7745c5c3_Err != nil {

@@ -153,7 +153,7 @@ func DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, allDatatyp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</dd></div></dl></div></div><!-- Fields sidebar (1/3) --><div><div class=\"overflow-hidden shadow-sm -outline-offset-1 outline-white/10 sm:rounded-lg\"><div class=\"flex items-center justify-between bg-gray-800/75 px-4 py-3.5 sm:px-6\"><h3 class=\"text-sm font-semibold text-gray-200\">Fields</h3><button type=\"button\" class=\"rounded-md bg-indigo-500 px-2.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-400\" onclick=\"document.getElementById('add-field-dialog').showModal()\">Add Field</button></div><div id=\"linked-fields-list\" class=\"bg-gray-800/50\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</dd></div></dl></div></div><!-- Fields sidebar (1/3) --><div><div class=\"overflow-hidden shadow-sm -outline-offset-1 outline-white/10 sm:rounded-lg\"><div class=\"flex items-center justify-between bg-gray-800/75 px-4 py-3.5 sm:px-6\"><h3 class=\"text-sm font-semibold text-gray-200\">Fields</h3><button type=\"button\" class=\"rounded-md bg-indigo-500 px-2.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-400\" onclick=\"document.getElementById('add-field-dialog').open()\">Add Field</button></div><div id=\"linked-fields-list\" class=\"bg-gray-800/50\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -190,7 +190,7 @@ func DatatypeAddFieldDialog(datatypeID string, csrfToken string) templ.Component
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<dialog id=\"add-field-dialog\" class=\"rounded-lg bg-gray-800 p-0 shadow-xl backdrop:bg-gray-900/75 sm:w-full sm:max-w-lg\" aria-labelledby=\"add-field-dialog-title\"><div class=\"px-4 pt-5 pb-4 sm:p-6 sm:pb-4\"><h3 id=\"add-field-dialog-title\" class=\"text-base/7 font-semibold text-white\">Add Field</h3><form hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<mcms-dialog id=\"add-field-dialog\" aria-labelledby=\"add-field-dialog-title\"><div class=\"px-4 pt-5 pb-4 sm:p-6 sm:pb-4\"><h3 id=\"add-field-dialog-title\" class=\"text-base/7 font-semibold text-white\">Add Field</h3><form hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -211,7 +211,7 @@ func DatatypeAddFieldDialog(datatypeID string, csrfToken string) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</form></div></mcms-dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
