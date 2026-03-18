@@ -6,7 +6,7 @@ Define your content schema by creating datatypes and fields, then populate them 
 
 A **datatype** is a content type definition. It describes a kind of content -- a "Blog Post," a "Hero Section," a "Product Card." Think of it as a "post type" in WordPress or a "content type" in Contentful.
 
-Every datatype has a human-readable `label` (shown in the admin panel and TUI) and a `type` that categorizes its role.
+Every datatype has a human-readable `label` (shown in the admin panel and TUI), a `name` which typically matches the label but contains no spaces or uppercase letters for use in a front end, and a `type` that categorizes its role.
 
 ### Datatype types
 
@@ -88,6 +88,8 @@ curl -X POST http://localhost:8080/api/v1/datatype \
 
 A **field** is a single property within a datatype. Fields define what data an editor fills in when creating content -- a "Title" of type `text`, a "Body" of type `richtext`, a "Featured Image" of type `media`.
 
+Each field stores its configuration across three JSON columns that separate concerns: `data` for type-specific settings, `validation` for composable rules, and `ui_config` for rendering hints.
+
 ### Create a field
 
 Create a field and assign it to a datatype using the `parent_id`:
@@ -100,13 +102,13 @@ curl -X POST http://localhost:8080/api/v1/fields \
     "parent_id": "01JNRW5V6QNPZ3R8W4T2YH9B0D",
     "label": "Post Title",
     "type": "text",
-    "data": "{\"required\": true, \"maxLength\": 200, \"placeholder\": \"Enter post title\"}",
-    "validation": "{}",
-    "ui_config": "{}"
+    "data": "{}",
+    "validation": "{\"rules\": [{\"rule\": {\"op\": \"required\"}}, {\"rule\": {\"op\": \"length\", \"cmp\": \"lte\", \"n\": 200}}]}",
+    "ui_config": "{\"placeholder\": \"Enter post title\"}"
   }'
 ```
 
-The `parent_id` is the datatype this field belongs to. The `data` property accepts a JSON string containing metadata such as validation rules, placeholder text, and help text.
+The `parent_id` is the datatype this field belongs to.
 
 ### Field types
 
@@ -138,11 +140,146 @@ Each field type determines the editor component shown in the admin panel and TUI
 |----------|---------|
 | `label` | Human-readable name shown in the editor UI |
 | `type` | Determines the editor component and value format |
-| `data` | JSON string for type-specific metadata (placeholder text, select options, help text) |
-| `validation` | JSON string for validation rules (required, min/max length) |
-| `ui_config` | JSON string controlling how the field renders in the admin interface |
+| `data` | JSON string for type-specific configuration (see [The data column](#the-data-column)) |
+| `validation` | JSON string with composable validation rules (see [Validation rules](#validation-rules)) |
+| `ui_config` | JSON string controlling how the field renders in the TUI (see [UI config](#ui-config)) |
 | `translatable` | Whether the field stores per-locale values for localization |
 | `roles` | Restrict visibility to specific user roles. Unrestricted by default. |
+
+### The data column
+
+The `data` column holds configuration that is specific to the field's type. Most field types use `"{}"` (empty). The types that use `data` are:
+
+| Field type | Data format | Example |
+|------------|------------|---------|
+| `select` | Options list | `{"options": ["draft", "review", "published"]}` |
+| `richtext` | Toolbar configuration | `{"toolbar": ["bold", "italic", "link", "heading"]}` |
+| `_id` | Relation config (required) | `{"target_datatype_id": "01JNRW...", "cardinality": "one"}` |
+
+**Select options** can also use a label/value pair format for display labels that differ from stored values:
+
+```json
+[{"label": "In Review", "value": "review"}, {"label": "Published", "value": "published"}]
+```
+
+**Relation config** fields:
+- `target_datatype_id` (required) — the datatype ID that this field references
+- `cardinality` — `"one"` or `"many"`
+- `max_depth` (optional) — limits resolution depth for nested references
+
+### Validation rules
+
+The `validation` column holds composable rules that ModulaCMS enforces when content is saved. Rules are expressed as a JSON object with a `rules` array. Each entry is either a flat rule or a group of rules combined with `all_of` (AND) or `any_of` (OR) logic.
+
+**Rule operations:**
+
+| Op | What it checks | Required fields |
+|----|---------------|----------------|
+| `required` | Value is non-empty | (none) |
+| `contains` | Value contains a substring or character class | `value` or `class` |
+| `starts_with` | Value starts with a substring or character class | `value` or `class` |
+| `ends_with` | Value ends with a substring or character class | `value` or `class` |
+| `equals` | Exact match | `value` |
+| `length` | Rune count of value | `cmp`, `n` |
+| `count` | Count occurrences of substring or class members | `cmp`, `n`, and `value` or `class` |
+| `range` | Numeric value comparison | `cmp`, `n` |
+| `item_count` | Count items in comma-separated list or JSON array | `cmp`, `n` |
+| `one_of` | Value is in a fixed set | `values` |
+
+**Comparison operators** (for `length`, `count`, `range`, `item_count`): `eq`, `neq`, `gt`, `gte`, `lt`, `lte`
+
+**Character classes** (for `contains`, `starts_with`, `ends_with`, `count`): `uppercase`, `lowercase`, `digits`, `symbols`, `spaces`
+
+**Examples:**
+
+Required field with max 200 characters:
+
+```json
+{
+  "rules": [
+    {"rule": {"op": "required"}},
+    {"rule": {"op": "length", "cmp": "lte", "n": 200}}
+  ]
+}
+```
+
+Number field between 0 and 100:
+
+```json
+{
+  "rules": [
+    {"rule": {"op": "range", "cmp": "gte", "n": 0}},
+    {"rule": {"op": "range", "cmp": "lte", "n": 100}}
+  ]
+}
+```
+
+Must contain at least one uppercase letter OR one digit:
+
+```json
+{
+  "rules": [
+    {
+      "group": {
+        "any_of": [
+          {"rule": {"op": "contains", "class": "uppercase"}},
+          {"rule": {"op": "contains", "class": "digits"}}
+        ]
+      }
+    }
+  ]
+}
+```
+
+Any string-based rule (`contains`, `starts_with`, `ends_with`, `equals`, `one_of`) supports `"negate": true` to invert the check. Groups can nest up to 10 levels deep. Custom error messages can be set per rule with the `"message"` field.
+
+### UI config
+
+The `ui_config` column controls how the field renders in the SSH TUI. The `widget` property overrides the default Bubbletea bubble component used for the field type. All properties are optional.
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `widget` | string | Override the default Bubbletea bubble component for this field type |
+| `placeholder` | string | Placeholder text shown in the input |
+| `help_text` | string | Descriptive text shown below the field label |
+| `hidden` | boolean | Hide the field from the content editor form |
+
+**Available widgets:**
+
+| Widget | TUI bubble | Use case |
+|--------|-----------|----------|
+| `markdown` | Textarea | Markdown editing for text fields |
+| `rich-text` | Textarea | Rich text editing for text fields |
+| `code-editor` | Textarea | Code editing for text fields |
+| `json-editor` | Textarea | JSON editing for text fields |
+| `toggle` | Boolean | Toggle switch for boolean fields |
+| `radio` | Select | Radio button group for select fields |
+| `date-picker` | DatePicker | Calendar date picker |
+| `datetime-picker` | DateTimePicker | Date and time picker |
+| `time-picker` | TimePicker | Time-only picker |
+| `color-picker` | _(default fallback)_ | Stored for frontend use, no TUI equivalent |
+| `slider` | _(default fallback)_ | Stored for frontend use, no TUI equivalent |
+| `range` | _(default fallback)_ | Stored for frontend use, no TUI equivalent |
+| `checkbox-group` | _(default fallback)_ | Stored for frontend use, no TUI equivalent |
+| `tags` | _(default fallback)_ | Stored for frontend use, no TUI equivalent |
+| `password` | _(default fallback)_ | Stored for frontend use, no TUI equivalent |
+| `file-upload` | _(default fallback)_ | Stored for frontend use, no TUI equivalent |
+| `image-upload` | _(default fallback)_ | Stored for frontend use, no TUI equivalent |
+| `map` | _(default fallback)_ | Stored for frontend use, no TUI equivalent |
+
+Widgets without a TUI equivalent fall back to the field type's default bubble. These widget values are still stored and available for frontend clients or the admin panel to interpret.
+
+Example -- override a text field to use a markdown editor with help text:
+
+```json
+{
+  "widget": "markdown",
+  "placeholder": "Write your bio here",
+  "help_text": "Supports basic markdown formatting"
+}
+```
+
+When `ui_config` is `"{}"` or omitted, the TUI uses the field type's default bubble (e.g., text fields get a text input, boolean fields get a toggle).
 
 ### Register custom field types
 
@@ -157,8 +294,6 @@ curl -X POST http://localhost:8080/api/v1/fieldtypes \
     "label": "Color Picker"
   }'
 ```
-
-When a field uses a custom type without a `ui_config`, the admin panel falls back to a plain text input. Set `ui_config` to specify a specialized editor component.
 
 ## View a datatype with its fields
 
@@ -187,7 +322,7 @@ curl -X POST http://localhost:8080/api/v1/datatype \
 **2. Create the fields:**
 
 ```bash
-# Title field
+# Title field — required, max 200 chars
 curl -X POST http://localhost:8080/api/v1/fields \
   -H "Cookie: session=YOUR_SESSION_COOKIE" \
   -H "Content-Type: application/json" \
@@ -195,12 +330,12 @@ curl -X POST http://localhost:8080/api/v1/fields \
     "parent_id": "01JNRW5V6QNPZ3R8W4T2YH9B0D",
     "label": "Title",
     "type": "text",
-    "data": "{\"required\": true, \"maxLength\": 200}",
-    "validation": "{}",
+    "data": "{}",
+    "validation": "{\"rules\": [{\"rule\": {\"op\": \"required\"}}, {\"rule\": {\"op\": \"length\", \"cmp\": \"lte\", \"n\": 200}}]}",
     "ui_config": "{}"
   }'
 
-# Body field
+# Body field — required, custom toolbar
 curl -X POST http://localhost:8080/api/v1/fields \
   -H "Cookie: session=YOUR_SESSION_COOKIE" \
   -H "Content-Type: application/json" \
@@ -208,12 +343,12 @@ curl -X POST http://localhost:8080/api/v1/fields \
     "parent_id": "01JNRW5V6QNPZ3R8W4T2YH9B0D",
     "label": "Body",
     "type": "richtext",
-    "data": "{\"required\": true}",
-    "validation": "{}",
+    "data": "{\"toolbar\": [\"bold\", \"italic\", \"link\", \"heading\", \"list\"]}",
+    "validation": "{\"rules\": [{\"rule\": {\"op\": \"required\"}}]}",
     "ui_config": "{}"
   }'
 
-# Excerpt field
+# Excerpt field — optional, max 300 chars, with help text
 curl -X POST http://localhost:8080/api/v1/fields \
   -H "Cookie: session=YOUR_SESSION_COOKIE" \
   -H "Content-Type: application/json" \
@@ -221,9 +356,9 @@ curl -X POST http://localhost:8080/api/v1/fields \
     "parent_id": "01JNRW5V6QNPZ3R8W4T2YH9B0D",
     "label": "Excerpt",
     "type": "textarea",
-    "data": "{\"maxLength\": 300}",
-    "validation": "{}",
-    "ui_config": "{}"
+    "data": "{}",
+    "validation": "{\"rules\": [{\"rule\": {\"op\": \"length\", \"cmp\": \"lte\", \"n\": 300}}]}",
+    "ui_config": "{\"help_text\": \"Short summary for listing pages and SEO\"}"
   }'
 
 # Featured Image field
@@ -239,7 +374,7 @@ curl -X POST http://localhost:8080/api/v1/fields \
     "ui_config": "{}"
   }'
 
-# Publish Date field
+# Publish Date field — required
 curl -X POST http://localhost:8080/api/v1/fields \
   -H "Cookie: session=YOUR_SESSION_COOKIE" \
   -H "Content-Type: application/json" \
@@ -247,8 +382,8 @@ curl -X POST http://localhost:8080/api/v1/fields \
     "parent_id": "01JNRW5V6QNPZ3R8W4T2YH9B0D",
     "label": "Publish Date",
     "type": "datetime",
-    "data": "{\"required\": true}",
-    "validation": "{}",
+    "data": "{}",
+    "validation": "{\"rules\": [{\"rule\": {\"op\": \"required\"}}]}",
     "ui_config": "{}"
   }'
 ```
