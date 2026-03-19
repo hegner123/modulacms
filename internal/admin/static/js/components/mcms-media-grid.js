@@ -94,6 +94,8 @@
  * @attr {string} folder-id - Current folder ID. Empty string or absent means root folder.
  *   Used when uploading files to associate them with the current folder.
  * @attr {string} upload-url - URL endpoint for file uploads. Defaults to `/admin/media`.
+ *   Also used as the base path for folder navigation, move, delete, and bulk-delete URLs.
+ *   Set to `/admin/admin-media` for admin media pages.
  * @attr {string} detail-url - URL prefix for media detail page links. Defaults to `/admin/media/`.
  *   The media ID is appended to form the full URL.
  * @attr {string} mode - Grid interaction mode. `"picker"` changes click behavior: clicking a file
@@ -151,6 +153,26 @@ class McmsMediaGrid extends HTMLElement {
      */
     _isPickerMode() {
         return this.getAttribute('mode') === 'picker';
+    }
+
+    /**
+     * Returns the base URL path for media operations.
+     * Derived from `upload-url` attribute (e.g. "/admin/admin-media") or defaults to "/admin/media".
+     * Used to construct folder navigation, move, delete, and bulk-delete URLs.
+     * @returns {string}
+     */
+    _basePath() {
+        return this.getAttribute('upload-url') || '/admin/media';
+    }
+
+    /**
+     * Returns the base URL path for folder operations.
+     * Derived from `_basePath()` by appending "-folders" suffix.
+     * e.g. "/admin/media" -> "/admin/media-folders", "/admin/admin-media" -> "/admin/admin-media-folders"
+     * @returns {string}
+     */
+    _folderBasePath() {
+        return this._basePath() + '-folders';
     }
 
     // ---- Data ----
@@ -331,8 +353,8 @@ class McmsMediaGrid extends HTMLElement {
      * @returns {string} HTML string for the folder grid item.
      */
     _renderFolder(item) {
-        var folderUrl = '/admin/media?folder_id=' + encodeURIComponent(item.id);
-        var deleteUrl = '/admin/media-folders/' + encodeURIComponent(item.id);
+        var folderUrl = this._basePath() + '?folder_id=' + encodeURIComponent(item.id);
+        var deleteUrl = this._folderBasePath() + '/' + encodeURIComponent(item.id);
         var isPicker = this._isPickerMode();
 
         var navElement;
@@ -706,7 +728,7 @@ class McmsMediaGrid extends HTMLElement {
         console.log('[mcms-media-grid] move media', mediaId, 'to folder', folderId);
         var csrf = this._getCSRF();
         var self = this;
-        var moveUrl = '/admin/media/move/' + encodeURIComponent(mediaId);
+        var moveUrl = this._basePath() + '/move/' + encodeURIComponent(mediaId);
         console.log('[mcms-media-grid] POST', moveUrl);
 
         fetch(moveUrl, {
@@ -905,7 +927,7 @@ class McmsMediaGrid extends HTMLElement {
         var csrf = this._getCSRF();
         var self = this;
 
-        fetch('/admin/media/bulk-delete', {
+        fetch(this._basePath() + '/bulk-delete', {
             method: 'POST',
             headers: {
                 'X-CSRF-Token': csrf,

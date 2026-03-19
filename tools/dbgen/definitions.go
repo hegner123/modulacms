@@ -1142,4 +1142,121 @@ var Entities = []Entity{
 		},
 		OutputFile: "admin_validation_gen.go",
 	},
+
+	// ========================
+	// ADMIN MEDIA
+	// ========================
+
+	// AdminMediaFolders — virtual folder organization for the admin media library.
+	{
+		Name:                  "AdminMediaFolder",
+		Singular:              "AdminMediaFolder",
+		Plural:                "AdminMediaFolders",
+		SqlcTypeName:          "AdminMediaFolders",
+		TableName:             "admin_media_folders",
+		IDType:                "types.AdminMediaFolderID",
+		IDField:               "AdminFolderID",
+		NewIDFunc:             "types.NewAdminMediaFolderID()",
+		HasPaginated:          true,
+		SqlcListName:          "ListAdminMediaFolders",
+		SqlcListPaginatedName: "ListAdminMediaFoldersPaginated",
+		UpdateSuccessField:    "s.Name",
+		SkipMappers:           false,
+		SkipAuditedCommands:   false,
+		StringTypeName:        "StringAdminMediaFolder",
+		Fields: []Field{
+			{AppName: "AdminFolderID", Type: "types.AdminMediaFolderID", JSONTag: "admin_folder_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "toString"},
+			{AppName: "Name", Type: "string", JSONTag: "name", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "ParentID", Type: "types.NullableAdminMediaFolderID", JSONTag: "parent_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "DateCreated", Type: "types.Timestamp", JSONTag: "date_created", InCreate: true, InUpdate: false, StringConvert: "toString"},
+			{AppName: "DateModified", Type: "types.Timestamp", JSONTag: "date_modified", InCreate: true, InUpdate: true, StringConvert: "toString"},
+		},
+		ExtraQueries: []ExtraQuery{
+			{
+				MethodName:  "ListAdminMediaFoldersByParent",
+				SqlcName:    "ListAdminMediaFoldersByParent",
+				ReturnsList: true,
+				Params: []ExtraQueryParam{
+					{ParamName: "parentID", ParamType: "types.AdminMediaFolderID", SqlcField: "ParentID", WrapExpr: "types.NullableAdminMediaFolderID{ID: %s, Valid: true}"},
+				},
+			},
+			{
+				MethodName:  "ListAdminMediaFoldersAtRoot",
+				SqlcName:    "ListAdminMediaFoldersAtRoot",
+				ReturnsList: true,
+				Params:      []ExtraQueryParam{},
+			},
+			{
+				MethodName:  "GetAdminMediaFolderByNameAndParent",
+				SqlcName:    "GetAdminMediaFolderByNameAndParent",
+				ReturnsList: false,
+				Params: []ExtraQueryParam{
+					{ParamName: "parentID", ParamType: "types.AdminMediaFolderID", SqlcField: "ParentID", WrapExpr: "types.NullableAdminMediaFolderID{ID: %s, Valid: true}"},
+					{ParamName: "name", ParamType: "string", SqlcField: "Name"},
+				},
+			},
+			{
+				MethodName:  "GetAdminMediaFolderByNameAtRoot",
+				SqlcName:    "GetAdminMediaFolderByNameAtRoot",
+				ReturnsList: false,
+				Params: []ExtraQueryParam{
+					{ParamName: "name", ParamType: "string", SqlcField: "Name"},
+				},
+			},
+		},
+		OutputFile: "admin_media_folder_gen.go",
+	},
+
+	// AdminMedia — media assets for the admin content system.
+	{
+		Name:               "AdminMedia",
+		Singular:           "AdminMedia",
+		Plural:             "AdminMedia",
+		SqlcTypeName:       "AdminMedia",
+		TableName:          "admin_media",
+		IDType:             "types.AdminMediaID",
+		IDField:            "AdminMediaID",
+		NewIDFunc:          "types.NewAdminMediaID()",
+		HasPaginated:       true,
+		UpdateSuccessField: "s.AdminMediaID",
+		StringTypeName:     "StringAdminMedia",
+		Fields: []Field{
+			{AppName: "AdminMediaID", Type: "types.AdminMediaID", JSONTag: "admin_media_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "toString"},
+			{AppName: "Name", Type: "NullString", JSONTag: "name", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "DisplayName", Type: "NullString", JSONTag: "display_name", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Alt", Type: "NullString", JSONTag: "alt", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Caption", Type: "NullString", JSONTag: "caption", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Description", Type: "NullString", JSONTag: "description", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Class", Type: "NullString", JSONTag: "class", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Mimetype", Type: "NullString", JSONTag: "mimetype", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Dimensions", Type: "NullString", JSONTag: "dimensions", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "URL", Type: "types.URL", JSONTag: "url", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "Srcset", Type: "NullString", JSONTag: "srcset", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "FocalX", Type: "types.NullableFloat64", JSONTag: "focal_x", InCreate: true, InUpdate: true, StringConvert: "sprintfFloat64"},
+			{AppName: "FocalY", Type: "types.NullableFloat64", JSONTag: "focal_y", InCreate: true, InUpdate: true, StringConvert: "sprintfFloat64"},
+			{AppName: "AuthorID", Type: "types.NullableUserID", JSONTag: "author_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "FolderID", Type: "types.NullableAdminMediaFolderID", JSONTag: "folder_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "DateCreated", Type: "types.Timestamp", JSONTag: "date_created", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "DateModified", Type: "types.Timestamp", JSONTag: "date_modified", InCreate: true, InUpdate: true, StringConvert: "toString"},
+		},
+		ExtraQueries: []ExtraQuery{
+			{
+				MethodName:  "GetAdminMediaByName",
+				SqlcName:    "GetAdminMediaByName",
+				ReturnsList: false,
+				Params: []ExtraQueryParam{
+					{ParamName: "name", ParamType: "string", SqlcField: "Name", WrapExpr: "StringToNullString(%s)"},
+				},
+			},
+			{
+				MethodName:  "GetAdminMediaByURL",
+				SqlcName:    "GetAdminMediaByUrl",
+				ReturnsList: false,
+				Params: []ExtraQueryParam{
+					{ParamName: "url", ParamType: "types.URL", SqlcField: "URL"},
+				},
+			},
+		},
+		OutputFile: "admin_media_gen.go",
+	},
 }

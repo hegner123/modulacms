@@ -949,3 +949,129 @@ func (n *NullableAdminValidationID) UnmarshalJSON(data []byte) error {
 	n.Valid = true
 	return json.Unmarshal(data, &n.ID)
 }
+
+// NullableAdminMediaID represents an optional AdminMediaID that may be null.
+type NullableAdminMediaID struct {
+	ID    AdminMediaID
+	Valid bool
+}
+
+// Validate checks if the NullableAdminMediaID is valid if set.
+func (n NullableAdminMediaID) Validate() error {
+	if n.Valid {
+		return n.ID.Validate()
+	}
+	return nil
+}
+
+// String returns the string representation of the NullableAdminMediaID.
+func (n NullableAdminMediaID) String() string {
+	if !n.Valid {
+		return "null"
+	}
+	return n.ID.String()
+}
+
+// IsZero returns true if the NullableAdminMediaID is not set or empty.
+func (n NullableAdminMediaID) IsZero() bool { return !n.Valid || n.ID == "" }
+
+// Value returns the database driver value for the NullableAdminMediaID.
+func (n NullableAdminMediaID) Value() (driver.Value, error) {
+	if !n.Valid {
+		return nil, nil
+	}
+	return string(n.ID), nil
+}
+
+// Scan scans a value from the database into the NullableAdminMediaID.
+func (n *NullableAdminMediaID) Scan(value any) error {
+	if value == nil {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return n.ID.Scan(value)
+}
+
+// MarshalJSON returns the JSON representation of the NullableAdminMediaID.
+func (n NullableAdminMediaID) MarshalJSON() ([]byte, error) {
+	if !n.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(n.ID)
+}
+
+// UnmarshalJSON parses JSON data into the NullableAdminMediaID.
+func (n *NullableAdminMediaID) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return json.Unmarshal(data, &n.ID)
+}
+
+// NullableAdminMediaFolderID represents an optional AdminMediaFolderID that may be null.
+type NullableAdminMediaFolderID struct {
+	ID    AdminMediaFolderID
+	Valid bool
+}
+
+// Validate checks if the NullableAdminMediaFolderID is valid if set.
+func (n NullableAdminMediaFolderID) Validate() error {
+	if n.Valid {
+		return n.ID.Validate()
+	}
+	return nil
+}
+
+// String returns the string representation of the NullableAdminMediaFolderID.
+func (n NullableAdminMediaFolderID) String() string {
+	if !n.Valid {
+		return "null"
+	}
+	return n.ID.String()
+}
+
+// IsZero returns true if the NullableAdminMediaFolderID is not set or empty.
+func (n NullableAdminMediaFolderID) IsZero() bool { return !n.Valid || n.ID == "" }
+
+// Value returns the database driver value for the NullableAdminMediaFolderID.
+func (n NullableAdminMediaFolderID) Value() (driver.Value, error) {
+	if !n.Valid {
+		return nil, nil
+	}
+	return string(n.ID), nil
+}
+
+// Scan scans a value from the database into the NullableAdminMediaFolderID.
+func (n *NullableAdminMediaFolderID) Scan(value any) error {
+	if value == nil {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return n.ID.Scan(value)
+}
+
+// MarshalJSON returns the JSON representation of the NullableAdminMediaFolderID.
+func (n NullableAdminMediaFolderID) MarshalJSON() ([]byte, error) {
+	if !n.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(n.ID)
+}
+
+// UnmarshalJSON parses JSON data into the NullableAdminMediaFolderID.
+func (n *NullableAdminMediaFolderID) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return json.Unmarshal(data, &n.ID)
+}

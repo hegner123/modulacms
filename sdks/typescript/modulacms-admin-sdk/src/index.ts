@@ -46,6 +46,8 @@ import { createLocalesResource } from './resources/locales.js'
 import { createWebhooksResource } from './resources/webhooks.js'
 import { createValidationsResource, createAdminValidationsResource } from './resources/validations.js'
 import { createQueryResource } from './resources/query.js'
+import { createAdminMediaResource } from './resources/admin-media.js'
+import { createAdminMediaFoldersResource } from './resources/admin-media-folders.js'
 
 import type { RequestOptions, PaginationParams, PaginatedResponse, AdminRouteID, FieldTypeID, AdminFieldTypeID, Slug, WebhookID, WebhookDeliveryID, ValidationID, AdminValidationID } from './types/common.js'
 import type { MediaUploadOptions } from './resources/media-upload.js'
@@ -57,6 +59,9 @@ export type { CrudResource } from './resource.js'
 export { isApiError } from './types/common.js'
 export { isDuplicateMedia, isFileTooLarge, isInvalidMediaPath } from './resources/media-upload.js'
 export type { MediaUploadOptions } from './resources/media-upload.js'
+export type { AdminMediaUploadOptions } from './resources/admin-media.js'
+export type { AdminMediaResource } from './resources/admin-media.js'
+export type { AdminMediaFoldersResource } from './resources/admin-media-folders.js'
 export type {
   Brand,
   UserID,
@@ -76,6 +81,8 @@ export type {
   FieldID,
   MediaID,
   MediaFolderID,
+  AdminMediaID,
+  AdminMediaFolderID,
   RoleID,
   PermissionID,
   RolePermissionID,
@@ -219,6 +226,19 @@ export type {
   MoveMediaParams,
   MoveMediaResponse,
 } from './types/media-folders.js'
+export type {
+  AdminMedia,
+  CreateAdminMediaParams,
+  UpdateAdminMediaParams,
+  MoveAdminMediaParams,
+  MoveAdminMediaResponse,
+} from './types/admin-media.js'
+export type {
+  AdminMediaFolder,
+  CreateAdminMediaFolderParams,
+  UpdateAdminMediaFolderParams,
+  AdminMediaFolderTreeNode,
+} from './types/admin-media-folders.js'
 export type { Route, CreateRouteParams, UpdateRouteParams } from './types/routing.js'
 export type { Table, CreateTableParams, UpdateTableParams } from './types/tables.js'
 export type { ImportFormat, ImportResponse } from './types/import.js'
@@ -446,6 +466,12 @@ import type { WebhooksResource } from './resources/webhooks.js'
 import type { ValidationsResource } from './resources/validations.js'
 import type { AdminValidationsResource } from './resources/validations.js'
 import type { QueryResource } from './resources/query.js'
+import type { AdminMediaResource } from './resources/admin-media.js'
+import type { AdminMediaFoldersResource } from './resources/admin-media-folders.js'
+import type { AdminMedia } from './types/admin-media.js'
+import type { UpdateAdminMediaParams, MoveAdminMediaParams, MoveAdminMediaResponse } from './types/admin-media.js'
+import type { AdminMediaFolder, AdminMediaFolderTreeNode, CreateAdminMediaFolderParams, UpdateAdminMediaFolderParams } from './types/admin-media-folders.js'
+import type { AdminMediaID, AdminMediaFolderID } from './types/common.js'
 
 // ---------------------------------------------------------------------------
 // Client config
@@ -630,6 +656,10 @@ export type ModulaCMSAdminClient = {
     /** Batch move media items to a folder (or root). */
     moveMedia: (params: MoveMediaParams, opts?: RequestOptions) => Promise<MoveMediaResponse>
   }
+  /** Admin media assets — CRUD, upload, and batch move for admin panel media. */
+  adminMedia: CrudResource<AdminMedia, Record<string, unknown>, UpdateAdminMediaParams, AdminMediaID> & AdminMediaResource
+  /** Admin media folders for organizing admin media assets. */
+  adminMediaFolders: AdminMediaFoldersResource
   /** User accounts. */
   users: CrudResource<User, CreateUserParams, UpdateUserParams, UserID> & {
     /** List all users with their role labels joined. */
@@ -1004,6 +1034,11 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
         return http.post<MoveMediaResponse>('/media/move', params as unknown as Record<string, unknown>, opts)
       },
     },
+    adminMedia: {
+      ...createResource<AdminMedia, Record<string, unknown>, UpdateAdminMediaParams, AdminMediaID>(http, 'adminmedia'),
+      ...createAdminMediaResource(http, defaultTimeout, credentials, config.apiKey),
+    },
+    adminMediaFolders: createAdminMediaFoldersResource(http),
     users: {
       ...createResource<User, CreateUserParams, UpdateUserParams, UserID>(http, 'users'),
       listFull(opts?: RequestOptions): Promise<UserWithRoleLabel[]> {

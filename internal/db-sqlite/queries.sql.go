@@ -304,6 +304,56 @@ func (q *Queries) CountAdminFieldType(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countAdminMedia = `-- name: CountAdminMedia :one
+SELECT COUNT(*)
+FROM admin_media
+`
+
+func (q *Queries) CountAdminMedia(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminMedia)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countAdminMediaByFolder = `-- name: CountAdminMediaByFolder :one
+SELECT COUNT(*) FROM admin_media WHERE folder_id = ?
+`
+
+type CountAdminMediaByFolderParams struct {
+	FolderID types.NullableAdminMediaFolderID `json:"folder_id"`
+}
+
+func (q *Queries) CountAdminMediaByFolder(ctx context.Context, arg CountAdminMediaByFolderParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminMediaByFolder, arg.FolderID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countAdminMediaFolder = `-- name: CountAdminMediaFolder :one
+SELECT COUNT(*)
+FROM admin_media_folders
+`
+
+func (q *Queries) CountAdminMediaFolder(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminMediaFolder)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countAdminMediaUnfiled = `-- name: CountAdminMediaUnfiled :one
+SELECT COUNT(*) FROM admin_media WHERE folder_id IS NULL
+`
+
+func (q *Queries) CountAdminMediaUnfiled(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminMediaUnfiled)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countAdminRoute = `-- name: CountAdminRoute :one
 SELECT COUNT(*)
 FROM admin_routes
@@ -1473,6 +1523,201 @@ CREATE TABLE IF NOT EXISTS admin_field_types (
 
 func (q *Queries) CreateAdminFieldTypeTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createAdminFieldTypeTable)
+	return err
+}
+
+const createAdminMedia = `-- name: CreateAdminMedia :one
+INSERT INTO admin_media (
+    admin_media_id,
+    name,
+    display_name,
+    alt,
+    caption,
+    description,
+    class,
+    mimetype,
+    dimensions,
+    url,
+    srcset,
+    focal_x,
+    focal_y,
+    author_id,
+    folder_id,
+    date_created,
+    date_modified
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
+RETURNING admin_media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified
+`
+
+type CreateAdminMediaParams struct {
+	AdminMediaID types.AdminMediaID               `json:"admin_media_id"`
+	Name         sql.NullString                   `json:"name"`
+	DisplayName  sql.NullString                   `json:"display_name"`
+	Alt          sql.NullString                   `json:"alt"`
+	Caption      sql.NullString                   `json:"caption"`
+	Description  sql.NullString                   `json:"description"`
+	Class        sql.NullString                   `json:"class"`
+	Mimetype     sql.NullString                   `json:"mimetype"`
+	Dimensions   sql.NullString                   `json:"dimensions"`
+	URL          types.URL                        `json:"url"`
+	Srcset       sql.NullString                   `json:"srcset"`
+	FocalX       types.NullableFloat64            `json:"focal_x"`
+	FocalY       types.NullableFloat64            `json:"focal_y"`
+	AuthorID     types.NullableUserID             `json:"author_id"`
+	FolderID     types.NullableAdminMediaFolderID `json:"folder_id"`
+	DateCreated  types.Timestamp                  `json:"date_created"`
+	DateModified types.Timestamp                  `json:"date_modified"`
+}
+
+func (q *Queries) CreateAdminMedia(ctx context.Context, arg CreateAdminMediaParams) (AdminMedia, error) {
+	row := q.db.QueryRowContext(ctx, createAdminMedia,
+		arg.AdminMediaID,
+		arg.Name,
+		arg.DisplayName,
+		arg.Alt,
+		arg.Caption,
+		arg.Description,
+		arg.Class,
+		arg.Mimetype,
+		arg.Dimensions,
+		arg.URL,
+		arg.Srcset,
+		arg.FocalX,
+		arg.FocalY,
+		arg.AuthorID,
+		arg.FolderID,
+		arg.DateCreated,
+		arg.DateModified,
+	)
+	var i AdminMedia
+	err := row.Scan(
+		&i.AdminMediaID,
+		&i.Name,
+		&i.DisplayName,
+		&i.Alt,
+		&i.Caption,
+		&i.Description,
+		&i.Class,
+		&i.Mimetype,
+		&i.Dimensions,
+		&i.URL,
+		&i.Srcset,
+		&i.FocalX,
+		&i.FocalY,
+		&i.AuthorID,
+		&i.FolderID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const createAdminMediaFolder = `-- name: CreateAdminMediaFolder :one
+INSERT INTO admin_media_folders (
+    admin_folder_id,
+    name,
+    parent_id,
+    date_created,
+    date_modified
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+) RETURNING admin_folder_id, name, parent_id, date_created, date_modified
+`
+
+type CreateAdminMediaFolderParams struct {
+	AdminFolderID types.AdminMediaFolderID         `json:"admin_folder_id"`
+	Name          string                           `json:"name"`
+	ParentID      types.NullableAdminMediaFolderID `json:"parent_id"`
+	DateCreated   types.Timestamp                  `json:"date_created"`
+	DateModified  types.Timestamp                  `json:"date_modified"`
+}
+
+func (q *Queries) CreateAdminMediaFolder(ctx context.Context, arg CreateAdminMediaFolderParams) (AdminMediaFolders, error) {
+	row := q.db.QueryRowContext(ctx, createAdminMediaFolder,
+		arg.AdminFolderID,
+		arg.Name,
+		arg.ParentID,
+		arg.DateCreated,
+		arg.DateModified,
+	)
+	var i AdminMediaFolders
+	err := row.Scan(
+		&i.AdminFolderID,
+		&i.Name,
+		&i.ParentID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const createAdminMediaFolderTable = `-- name: CreateAdminMediaFolderTable :exec
+CREATE TABLE IF NOT EXISTS admin_media_folders (
+    admin_folder_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_folder_id) = 26),
+    name            TEXT NOT NULL,
+    parent_id       TEXT NULL REFERENCES admin_media_folders(admin_folder_id) ON DELETE RESTRICT,
+    date_created    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_modified   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateAdminMediaFolderTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminMediaFolderTable)
+	return err
+}
+
+const createAdminMediaTable = `-- name: CreateAdminMediaTable :exec
+CREATE TABLE IF NOT EXISTS admin_media(
+    admin_media_id TEXT
+        PRIMARY KEY NOT NULL CHECK (length(admin_media_id) = 26),
+    name TEXT,
+    display_name TEXT,
+    alt TEXT,
+    caption TEXT,
+    description TEXT,
+    class TEXT,
+    mimetype TEXT,
+    dimensions TEXT,
+    url TEXT
+        UNIQUE,
+    srcset TEXT,
+    focal_x REAL,
+    focal_y REAL,
+    author_id TEXT NOT NULL
+    REFERENCES users
+    ON DELETE SET NULL,
+    folder_id TEXT NULL
+    REFERENCES admin_media_folders(admin_folder_id)
+    ON DELETE SET NULL,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateAdminMediaTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminMediaTable)
 	return err
 }
 
@@ -3935,6 +4180,34 @@ func (q *Queries) DeleteAdminFieldType(ctx context.Context, arg DeleteAdminField
 	return err
 }
 
+const deleteAdminMedia = `-- name: DeleteAdminMedia :exec
+DELETE FROM admin_media
+WHERE admin_media_id = ?
+`
+
+type DeleteAdminMediaParams struct {
+	AdminMediaID types.AdminMediaID `json:"admin_media_id"`
+}
+
+func (q *Queries) DeleteAdminMedia(ctx context.Context, arg DeleteAdminMediaParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminMedia, arg.AdminMediaID)
+	return err
+}
+
+const deleteAdminMediaFolder = `-- name: DeleteAdminMediaFolder :exec
+DELETE FROM admin_media_folders
+WHERE admin_folder_id = ?
+`
+
+type DeleteAdminMediaFolderParams struct {
+	AdminFolderID types.AdminMediaFolderID `json:"admin_folder_id"`
+}
+
+func (q *Queries) DeleteAdminMediaFolder(ctx context.Context, arg DeleteAdminMediaFolderParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminMediaFolder, arg.AdminFolderID)
+	return err
+}
+
 const deleteAdminRoute = `-- name: DeleteAdminRoute :exec
 DELETE FROM admin_routes
 WHERE admin_route_id = ?
@@ -4518,6 +4791,24 @@ DROP TABLE admin_field_types
 
 func (q *Queries) DropAdminFieldTypeTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, dropAdminFieldTypeTable)
+	return err
+}
+
+const dropAdminMediaFolderTable = `-- name: DropAdminMediaFolderTable :exec
+DROP TABLE IF EXISTS admin_media_folders
+`
+
+func (q *Queries) DropAdminMediaFolderTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminMediaFolderTable)
+	return err
+}
+
+const dropAdminMediaTable = `-- name: DropAdminMediaTable :exec
+DROP TABLE admin_media
+`
+
+func (q *Queries) DropAdminMediaTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminMediaTable)
 	return err
 }
 
@@ -5128,6 +5419,175 @@ func (q *Queries) GetAdminMaxVersionNumber(ctx context.Context, arg GetAdminMaxV
 	var coalesce interface{}
 	err := row.Scan(&coalesce)
 	return coalesce, err
+}
+
+const getAdminMedia = `-- name: GetAdminMedia :one
+SELECT admin_media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified FROM admin_media
+WHERE admin_media_id = ? LIMIT 1
+`
+
+type GetAdminMediaParams struct {
+	AdminMediaID types.AdminMediaID `json:"admin_media_id"`
+}
+
+func (q *Queries) GetAdminMedia(ctx context.Context, arg GetAdminMediaParams) (AdminMedia, error) {
+	row := q.db.QueryRowContext(ctx, getAdminMedia, arg.AdminMediaID)
+	var i AdminMedia
+	err := row.Scan(
+		&i.AdminMediaID,
+		&i.Name,
+		&i.DisplayName,
+		&i.Alt,
+		&i.Caption,
+		&i.Description,
+		&i.Class,
+		&i.Mimetype,
+		&i.Dimensions,
+		&i.URL,
+		&i.Srcset,
+		&i.FocalX,
+		&i.FocalY,
+		&i.AuthorID,
+		&i.FolderID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getAdminMediaByName = `-- name: GetAdminMediaByName :one
+SELECT admin_media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified FROM admin_media
+WHERE name = ? LIMIT 1
+`
+
+type GetAdminMediaByNameParams struct {
+	Name sql.NullString `json:"name"`
+}
+
+func (q *Queries) GetAdminMediaByName(ctx context.Context, arg GetAdminMediaByNameParams) (AdminMedia, error) {
+	row := q.db.QueryRowContext(ctx, getAdminMediaByName, arg.Name)
+	var i AdminMedia
+	err := row.Scan(
+		&i.AdminMediaID,
+		&i.Name,
+		&i.DisplayName,
+		&i.Alt,
+		&i.Caption,
+		&i.Description,
+		&i.Class,
+		&i.Mimetype,
+		&i.Dimensions,
+		&i.URL,
+		&i.Srcset,
+		&i.FocalX,
+		&i.FocalY,
+		&i.AuthorID,
+		&i.FolderID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getAdminMediaByUrl = `-- name: GetAdminMediaByUrl :one
+SELECT admin_media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified FROM admin_media
+WHERE url = ? LIMIT 1
+`
+
+type GetAdminMediaByUrlParams struct {
+	URL types.URL `json:"url"`
+}
+
+func (q *Queries) GetAdminMediaByUrl(ctx context.Context, arg GetAdminMediaByUrlParams) (AdminMedia, error) {
+	row := q.db.QueryRowContext(ctx, getAdminMediaByUrl, arg.URL)
+	var i AdminMedia
+	err := row.Scan(
+		&i.AdminMediaID,
+		&i.Name,
+		&i.DisplayName,
+		&i.Alt,
+		&i.Caption,
+		&i.Description,
+		&i.Class,
+		&i.Mimetype,
+		&i.Dimensions,
+		&i.URL,
+		&i.Srcset,
+		&i.FocalX,
+		&i.FocalY,
+		&i.AuthorID,
+		&i.FolderID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getAdminMediaFolder = `-- name: GetAdminMediaFolder :one
+SELECT admin_folder_id, name, parent_id, date_created, date_modified FROM admin_media_folders
+WHERE admin_folder_id = ? LIMIT 1
+`
+
+type GetAdminMediaFolderParams struct {
+	AdminFolderID types.AdminMediaFolderID `json:"admin_folder_id"`
+}
+
+func (q *Queries) GetAdminMediaFolder(ctx context.Context, arg GetAdminMediaFolderParams) (AdminMediaFolders, error) {
+	row := q.db.QueryRowContext(ctx, getAdminMediaFolder, arg.AdminFolderID)
+	var i AdminMediaFolders
+	err := row.Scan(
+		&i.AdminFolderID,
+		&i.Name,
+		&i.ParentID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getAdminMediaFolderByNameAndParent = `-- name: GetAdminMediaFolderByNameAndParent :one
+SELECT admin_folder_id, name, parent_id, date_created, date_modified FROM admin_media_folders
+WHERE parent_id = ? AND name = ? LIMIT 1
+`
+
+type GetAdminMediaFolderByNameAndParentParams struct {
+	ParentID types.NullableAdminMediaFolderID `json:"parent_id"`
+	Name     string                           `json:"name"`
+}
+
+func (q *Queries) GetAdminMediaFolderByNameAndParent(ctx context.Context, arg GetAdminMediaFolderByNameAndParentParams) (AdminMediaFolders, error) {
+	row := q.db.QueryRowContext(ctx, getAdminMediaFolderByNameAndParent, arg.ParentID, arg.Name)
+	var i AdminMediaFolders
+	err := row.Scan(
+		&i.AdminFolderID,
+		&i.Name,
+		&i.ParentID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getAdminMediaFolderByNameAtRoot = `-- name: GetAdminMediaFolderByNameAtRoot :one
+SELECT admin_folder_id, name, parent_id, date_created, date_modified FROM admin_media_folders
+WHERE parent_id IS NULL AND name = ? LIMIT 1
+`
+
+type GetAdminMediaFolderByNameAtRootParams struct {
+	Name string `json:"name"`
+}
+
+func (q *Queries) GetAdminMediaFolderByNameAtRoot(ctx context.Context, arg GetAdminMediaFolderByNameAtRootParams) (AdminMediaFolders, error) {
+	row := q.db.QueryRowContext(ctx, getAdminMediaFolderByNameAtRoot, arg.Name)
+	var i AdminMediaFolders
+	err := row.Scan(
+		&i.AdminFolderID,
+		&i.Name,
+		&i.ParentID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
 }
 
 const getAdminPublishedSnapshot = `-- name: GetAdminPublishedSnapshot :one
@@ -9875,6 +10335,447 @@ func (q *Queries) ListAdminFieldType(ctx context.Context) ([]AdminFieldTypes, er
 	return items, nil
 }
 
+const listAdminMedia = `-- name: ListAdminMedia :many
+SELECT admin_media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified FROM admin_media
+ORDER BY name
+`
+
+func (q *Queries) ListAdminMedia(ctx context.Context) ([]AdminMedia, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminMedia)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminMedia{}
+	for rows.Next() {
+		var i AdminMedia
+		if err := rows.Scan(
+			&i.AdminMediaID,
+			&i.Name,
+			&i.DisplayName,
+			&i.Alt,
+			&i.Caption,
+			&i.Description,
+			&i.Class,
+			&i.Mimetype,
+			&i.Dimensions,
+			&i.URL,
+			&i.Srcset,
+			&i.FocalX,
+			&i.FocalY,
+			&i.AuthorID,
+			&i.FolderID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminMediaByFolder = `-- name: ListAdminMediaByFolder :many
+SELECT admin_media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified FROM admin_media WHERE folder_id = ? ORDER BY date_created DESC
+`
+
+type ListAdminMediaByFolderParams struct {
+	FolderID types.NullableAdminMediaFolderID `json:"folder_id"`
+}
+
+func (q *Queries) ListAdminMediaByFolder(ctx context.Context, arg ListAdminMediaByFolderParams) ([]AdminMedia, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminMediaByFolder, arg.FolderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminMedia{}
+	for rows.Next() {
+		var i AdminMedia
+		if err := rows.Scan(
+			&i.AdminMediaID,
+			&i.Name,
+			&i.DisplayName,
+			&i.Alt,
+			&i.Caption,
+			&i.Description,
+			&i.Class,
+			&i.Mimetype,
+			&i.Dimensions,
+			&i.URL,
+			&i.Srcset,
+			&i.FocalX,
+			&i.FocalY,
+			&i.AuthorID,
+			&i.FolderID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminMediaByFolderPaginated = `-- name: ListAdminMediaByFolderPaginated :many
+SELECT admin_media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified FROM admin_media WHERE folder_id = ? ORDER BY date_created DESC LIMIT ? OFFSET ?
+`
+
+type ListAdminMediaByFolderPaginatedParams struct {
+	FolderID types.NullableAdminMediaFolderID `json:"folder_id"`
+	Limit    int64                            `json:"limit"`
+	Offset   int64                            `json:"offset"`
+}
+
+func (q *Queries) ListAdminMediaByFolderPaginated(ctx context.Context, arg ListAdminMediaByFolderPaginatedParams) ([]AdminMedia, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminMediaByFolderPaginated, arg.FolderID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminMedia{}
+	for rows.Next() {
+		var i AdminMedia
+		if err := rows.Scan(
+			&i.AdminMediaID,
+			&i.Name,
+			&i.DisplayName,
+			&i.Alt,
+			&i.Caption,
+			&i.Description,
+			&i.Class,
+			&i.Mimetype,
+			&i.Dimensions,
+			&i.URL,
+			&i.Srcset,
+			&i.FocalX,
+			&i.FocalY,
+			&i.AuthorID,
+			&i.FolderID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminMediaFolders = `-- name: ListAdminMediaFolders :many
+SELECT admin_folder_id, name, parent_id, date_created, date_modified FROM admin_media_folders
+ORDER BY name ASC
+`
+
+func (q *Queries) ListAdminMediaFolders(ctx context.Context) ([]AdminMediaFolders, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminMediaFolders)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminMediaFolders{}
+	for rows.Next() {
+		var i AdminMediaFolders
+		if err := rows.Scan(
+			&i.AdminFolderID,
+			&i.Name,
+			&i.ParentID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminMediaFoldersAtRoot = `-- name: ListAdminMediaFoldersAtRoot :many
+SELECT admin_folder_id, name, parent_id, date_created, date_modified FROM admin_media_folders
+WHERE parent_id IS NULL
+ORDER BY name ASC
+`
+
+func (q *Queries) ListAdminMediaFoldersAtRoot(ctx context.Context) ([]AdminMediaFolders, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminMediaFoldersAtRoot)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminMediaFolders{}
+	for rows.Next() {
+		var i AdminMediaFolders
+		if err := rows.Scan(
+			&i.AdminFolderID,
+			&i.Name,
+			&i.ParentID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminMediaFoldersByParent = `-- name: ListAdminMediaFoldersByParent :many
+SELECT admin_folder_id, name, parent_id, date_created, date_modified FROM admin_media_folders
+WHERE parent_id = ?
+ORDER BY name ASC
+`
+
+type ListAdminMediaFoldersByParentParams struct {
+	ParentID types.NullableAdminMediaFolderID `json:"parent_id"`
+}
+
+func (q *Queries) ListAdminMediaFoldersByParent(ctx context.Context, arg ListAdminMediaFoldersByParentParams) ([]AdminMediaFolders, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminMediaFoldersByParent, arg.ParentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminMediaFolders{}
+	for rows.Next() {
+		var i AdminMediaFolders
+		if err := rows.Scan(
+			&i.AdminFolderID,
+			&i.Name,
+			&i.ParentID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminMediaFoldersPaginated = `-- name: ListAdminMediaFoldersPaginated :many
+SELECT admin_folder_id, name, parent_id, date_created, date_modified FROM admin_media_folders
+ORDER BY name ASC
+LIMIT ? OFFSET ?
+`
+
+type ListAdminMediaFoldersPaginatedParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+func (q *Queries) ListAdminMediaFoldersPaginated(ctx context.Context, arg ListAdminMediaFoldersPaginatedParams) ([]AdminMediaFolders, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminMediaFoldersPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminMediaFolders{}
+	for rows.Next() {
+		var i AdminMediaFolders
+		if err := rows.Scan(
+			&i.AdminFolderID,
+			&i.Name,
+			&i.ParentID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminMediaPaginated = `-- name: ListAdminMediaPaginated :many
+SELECT admin_media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified FROM admin_media
+ORDER BY name
+LIMIT ? OFFSET ?
+`
+
+type ListAdminMediaPaginatedParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+func (q *Queries) ListAdminMediaPaginated(ctx context.Context, arg ListAdminMediaPaginatedParams) ([]AdminMedia, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminMediaPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminMedia{}
+	for rows.Next() {
+		var i AdminMedia
+		if err := rows.Scan(
+			&i.AdminMediaID,
+			&i.Name,
+			&i.DisplayName,
+			&i.Alt,
+			&i.Caption,
+			&i.Description,
+			&i.Class,
+			&i.Mimetype,
+			&i.Dimensions,
+			&i.URL,
+			&i.Srcset,
+			&i.FocalX,
+			&i.FocalY,
+			&i.AuthorID,
+			&i.FolderID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminMediaUnfiled = `-- name: ListAdminMediaUnfiled :many
+SELECT admin_media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified FROM admin_media WHERE folder_id IS NULL ORDER BY date_created DESC
+`
+
+func (q *Queries) ListAdminMediaUnfiled(ctx context.Context) ([]AdminMedia, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminMediaUnfiled)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminMedia{}
+	for rows.Next() {
+		var i AdminMedia
+		if err := rows.Scan(
+			&i.AdminMediaID,
+			&i.Name,
+			&i.DisplayName,
+			&i.Alt,
+			&i.Caption,
+			&i.Description,
+			&i.Class,
+			&i.Mimetype,
+			&i.Dimensions,
+			&i.URL,
+			&i.Srcset,
+			&i.FocalX,
+			&i.FocalY,
+			&i.AuthorID,
+			&i.FolderID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminMediaUnfiledPaginated = `-- name: ListAdminMediaUnfiledPaginated :many
+SELECT admin_media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified FROM admin_media WHERE folder_id IS NULL ORDER BY date_created DESC LIMIT ? OFFSET ?
+`
+
+type ListAdminMediaUnfiledPaginatedParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+func (q *Queries) ListAdminMediaUnfiledPaginated(ctx context.Context, arg ListAdminMediaUnfiledPaginatedParams) ([]AdminMedia, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminMediaUnfiledPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminMedia{}
+	for rows.Next() {
+		var i AdminMedia
+		if err := rows.Scan(
+			&i.AdminMediaID,
+			&i.Name,
+			&i.DisplayName,
+			&i.Alt,
+			&i.Caption,
+			&i.Description,
+			&i.Class,
+			&i.Mimetype,
+			&i.Dimensions,
+			&i.URL,
+			&i.Srcset,
+			&i.FocalX,
+			&i.FocalY,
+			&i.AuthorID,
+			&i.FolderID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAdminRoute = `-- name: ListAdminRoute :many
 SELECT admin_route_id, slug, title, status, author_id, date_created, date_modified FROM admin_routes
 ORDER BY slug
@@ -14144,6 +15045,21 @@ func (q *Queries) MarkEventsSyncedBatch(ctx context.Context, arg MarkEventsSynce
 	return err
 }
 
+const moveAdminMediaToFolder = `-- name: MoveAdminMediaToFolder :exec
+UPDATE admin_media SET folder_id = ?, date_modified = ? WHERE admin_media_id = ?
+`
+
+type MoveAdminMediaToFolderParams struct {
+	FolderID     types.NullableAdminMediaFolderID `json:"folder_id"`
+	DateModified types.Timestamp                  `json:"date_modified"`
+	AdminMediaID types.AdminMediaID               `json:"admin_media_id"`
+}
+
+func (q *Queries) MoveAdminMediaToFolder(ctx context.Context, arg MoveAdminMediaToFolderParams) error {
+	_, err := q.db.ExecContext(ctx, moveAdminMediaToFolder, arg.FolderID, arg.DateModified, arg.AdminMediaID)
+	return err
+}
+
 const moveMediaToFolder = `-- name: MoveMediaToFolder :exec
 UPDATE media SET folder_id = ?, date_modified = ? WHERE media_id = ?
 `
@@ -14707,6 +15623,95 @@ type UpdateAdminFieldTypeParams struct {
 
 func (q *Queries) UpdateAdminFieldType(ctx context.Context, arg UpdateAdminFieldTypeParams) error {
 	_, err := q.db.ExecContext(ctx, updateAdminFieldType, arg.Type, arg.Label, arg.AdminFieldTypeID)
+	return err
+}
+
+const updateAdminMedia = `-- name: UpdateAdminMedia :exec
+UPDATE admin_media
+SET name = ?,
+    display_name = ?,
+    alt = ?,
+    caption = ?,
+    description = ?,
+    class = ?,
+    mimetype = ?,
+    dimensions = ?,
+    url = ?,
+    srcset = ?,
+    focal_x = ?,
+    focal_y = ?,
+    author_id = ?,
+    folder_id = ?,
+    date_created = ?,
+    date_modified = ?
+WHERE admin_media_id = ?
+`
+
+type UpdateAdminMediaParams struct {
+	Name         sql.NullString                   `json:"name"`
+	DisplayName  sql.NullString                   `json:"display_name"`
+	Alt          sql.NullString                   `json:"alt"`
+	Caption      sql.NullString                   `json:"caption"`
+	Description  sql.NullString                   `json:"description"`
+	Class        sql.NullString                   `json:"class"`
+	Mimetype     sql.NullString                   `json:"mimetype"`
+	Dimensions   sql.NullString                   `json:"dimensions"`
+	URL          types.URL                        `json:"url"`
+	Srcset       sql.NullString                   `json:"srcset"`
+	FocalX       types.NullableFloat64            `json:"focal_x"`
+	FocalY       types.NullableFloat64            `json:"focal_y"`
+	AuthorID     types.NullableUserID             `json:"author_id"`
+	FolderID     types.NullableAdminMediaFolderID `json:"folder_id"`
+	DateCreated  types.Timestamp                  `json:"date_created"`
+	DateModified types.Timestamp                  `json:"date_modified"`
+	AdminMediaID types.AdminMediaID               `json:"admin_media_id"`
+}
+
+func (q *Queries) UpdateAdminMedia(ctx context.Context, arg UpdateAdminMediaParams) error {
+	_, err := q.db.ExecContext(ctx, updateAdminMedia,
+		arg.Name,
+		arg.DisplayName,
+		arg.Alt,
+		arg.Caption,
+		arg.Description,
+		arg.Class,
+		arg.Mimetype,
+		arg.Dimensions,
+		arg.URL,
+		arg.Srcset,
+		arg.FocalX,
+		arg.FocalY,
+		arg.AuthorID,
+		arg.FolderID,
+		arg.DateCreated,
+		arg.DateModified,
+		arg.AdminMediaID,
+	)
+	return err
+}
+
+const updateAdminMediaFolder = `-- name: UpdateAdminMediaFolder :exec
+UPDATE admin_media_folders
+SET name = ?,
+    parent_id = ?,
+    date_modified = ?
+WHERE admin_folder_id = ?
+`
+
+type UpdateAdminMediaFolderParams struct {
+	Name          string                           `json:"name"`
+	ParentID      types.NullableAdminMediaFolderID `json:"parent_id"`
+	DateModified  types.Timestamp                  `json:"date_modified"`
+	AdminFolderID types.AdminMediaFolderID         `json:"admin_folder_id"`
+}
+
+func (q *Queries) UpdateAdminMediaFolder(ctx context.Context, arg UpdateAdminMediaFolderParams) error {
+	_, err := q.db.ExecContext(ctx, updateAdminMediaFolder,
+		arg.Name,
+		arg.ParentID,
+		arg.DateModified,
+		arg.AdminFolderID,
+	)
 	return err
 }
 

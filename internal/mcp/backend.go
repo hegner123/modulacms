@@ -244,6 +244,27 @@ type DeployBackend interface {
 	DeployDryRun(ctx context.Context, payload json.RawMessage) (json.RawMessage, error)
 }
 
+// AdminMediaBackend abstracts admin media operations.
+type AdminMediaBackend interface {
+	ListAdminMedia(ctx context.Context, limit, offset int64) (json.RawMessage, error)
+	GetAdminMedia(ctx context.Context, id string) (json.RawMessage, error)
+	UpdateAdminMedia(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	DeleteAdminMedia(ctx context.Context, id string) error
+	UploadAdminMedia(ctx context.Context, reader io.Reader, filename string) (json.RawMessage, error)
+	// ListMediaDimensions returns shared media dimension presets (same as public).
+	ListMediaDimensions(ctx context.Context) (json.RawMessage, error)
+}
+
+// AdminMediaFolderBackend abstracts admin media folder operations.
+type AdminMediaFolderBackend interface {
+	ListAdminMediaFolders(ctx context.Context, parentID string) (json.RawMessage, error)
+	GetAdminMediaFolder(ctx context.Context, id string) (json.RawMessage, error)
+	CreateAdminMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	UpdateAdminMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	DeleteAdminMediaFolder(ctx context.Context, id string) (json.RawMessage, error)
+	MoveAdminMediaToFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+}
+
 // HealthBackend abstracts server health checks.
 type HealthBackend interface {
 	Health(ctx context.Context) (json.RawMessage, error)
@@ -253,24 +274,26 @@ type HealthBackend interface {
 // Each field can be satisfied by either an SDK adapter (remote mode)
 // or a service adapter (direct mode).
 type Backends struct {
-	Content      ContentBackend
-	AdminContent AdminContentBackend
-	Schema       SchemaBackend
-	AdminSchema  AdminSchemaBackend
-	Media        MediaBackend
-	MediaFolders MediaFolderBackend
-	Routes       RouteBackend
-	AdminRoutes  AdminRouteBackend
-	Users        UserBackend
-	RBAC         RBACBackend
-	Sessions     SessionBackend
-	Tokens       TokenBackend
-	SSHKeys      SSHKeyBackend
-	OAuth        OAuthBackend
-	Tables       TableBackend
-	Plugins      PluginBackend
-	Config       ConfigBackend
-	Import       ImportBackend
-	Deploy       DeployBackend
-	Health       HealthBackend
+	Content           ContentBackend
+	AdminContent      AdminContentBackend
+	Schema            SchemaBackend
+	AdminSchema       AdminSchemaBackend
+	Media             MediaBackend
+	MediaFolders      MediaFolderBackend
+	AdminMedia        AdminMediaBackend
+	AdminMediaFolders AdminMediaFolderBackend
+	Routes            RouteBackend
+	AdminRoutes       AdminRouteBackend
+	Users             UserBackend
+	RBAC              RBACBackend
+	Sessions          SessionBackend
+	Tokens            TokenBackend
+	SSHKeys           SSHKeyBackend
+	OAuth             OAuthBackend
+	Tables            TableBackend
+	Plugins           PluginBackend
+	Config            ConfigBackend
+	Import            ImportBackend
+	Deploy            DeployBackend
+	Health            HealthBackend
 }

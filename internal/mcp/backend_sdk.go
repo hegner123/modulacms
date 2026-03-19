@@ -14,26 +14,28 @@ import (
 // SDK adapter implementations that delegate to the given client over HTTP.
 func NewSDKBackends(client *modula.Client) *Backends {
 	return &Backends{
-		Content:      &sdkContentBackend{client: client},
-		AdminContent: &sdkAdminContentBackend{client: client},
-		Schema:       &sdkSchemaBackend{client: client},
-		AdminSchema:  &sdkAdminSchemaBackend{client: client},
-		Media:        &sdkMediaBackend{client: client},
-		MediaFolders: &sdkMediaFolderBackend{client: client},
-		Routes:       &sdkRouteBackend{client: client},
-		AdminRoutes:  &sdkAdminRouteBackend{client: client},
-		Users:        &sdkUserBackend{client: client},
-		RBAC:         &sdkRBACBackend{client: client},
-		Sessions:     &sdkSessionBackend{client: client},
-		Tokens:       &sdkTokenBackend{client: client},
-		SSHKeys:      &sdkSSHKeyBackend{client: client},
-		OAuth:        &sdkOAuthBackend{client: client},
-		Tables:       &sdkTableBackend{client: client},
-		Plugins:      &sdkPluginBackend{client: client},
-		Config:       &sdkConfigBackend{client: client},
-		Import:       &sdkImportBackend{client: client},
-		Deploy:       &sdkDeployBackend{client: client},
-		Health:       &sdkHealthBackend{client: client},
+		Content:           &sdkContentBackend{client: client},
+		AdminContent:      &sdkAdminContentBackend{client: client},
+		Schema:            &sdkSchemaBackend{client: client},
+		AdminSchema:       &sdkAdminSchemaBackend{client: client},
+		Media:             &sdkMediaBackend{client: client},
+		MediaFolders:      &sdkMediaFolderBackend{client: client},
+		AdminMedia:        &sdkAdminMediaBackend{client: client},
+		AdminMediaFolders: &sdkAdminMediaFolderBackend{client: client},
+		Routes:            &sdkRouteBackend{client: client},
+		AdminRoutes:       &sdkAdminRouteBackend{client: client},
+		Users:             &sdkUserBackend{client: client},
+		RBAC:              &sdkRBACBackend{client: client},
+		Sessions:          &sdkSessionBackend{client: client},
+		Tokens:            &sdkTokenBackend{client: client},
+		SSHKeys:           &sdkSSHKeyBackend{client: client},
+		OAuth:             &sdkOAuthBackend{client: client},
+		Tables:            &sdkTableBackend{client: client},
+		Plugins:           &sdkPluginBackend{client: client},
+		Config:            &sdkConfigBackend{client: client},
+		Import:            &sdkImportBackend{client: client},
+		Deploy:            &sdkDeployBackend{client: client},
+		Health:            &sdkHealthBackend{client: client},
 	}
 }
 
@@ -1538,6 +1540,150 @@ type sdkHealthBackend struct {
 
 func (b *sdkHealthBackend) Health(ctx context.Context) (json.RawMessage, error) {
 	result, err := b.client.Health.Check(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+// ---------------------------------------------------------------------------
+// AdminMediaBackend
+// ---------------------------------------------------------------------------
+
+type sdkAdminMediaBackend struct {
+	client *modula.Client
+}
+
+func (b *sdkAdminMediaBackend) ListAdminMedia(ctx context.Context, limit, offset int64) (json.RawMessage, error) {
+	result, err := b.client.AdminMediaData.ListPaginated(ctx, modula.PaginationParams{Limit: limit, Offset: offset})
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+func (b *sdkAdminMediaBackend) GetAdminMedia(ctx context.Context, id string) (json.RawMessage, error) {
+	result, err := b.client.AdminMediaData.Get(ctx, modula.AdminMediaID(id))
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+func (b *sdkAdminMediaBackend) UpdateAdminMedia(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	var p modula.UpdateAdminMediaParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal update admin media params: %w", err)
+	}
+	result, err := b.client.AdminMediaData.Update(ctx, p)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+func (b *sdkAdminMediaBackend) DeleteAdminMedia(ctx context.Context, id string) error {
+	return b.client.AdminMediaData.Delete(ctx, modula.AdminMediaID(id))
+}
+
+func (b *sdkAdminMediaBackend) UploadAdminMedia(ctx context.Context, reader io.Reader, filename string) (json.RawMessage, error) {
+	result, err := b.client.AdminMediaUpload.Upload(ctx, reader, filename, nil)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+func (b *sdkAdminMediaBackend) ListMediaDimensions(ctx context.Context) (json.RawMessage, error) {
+	result, err := b.client.MediaDimensions.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+// ---------------------------------------------------------------------------
+// AdminMediaFolderBackend
+// ---------------------------------------------------------------------------
+
+type sdkAdminMediaFolderBackend struct {
+	client *modula.Client
+}
+
+func (b *sdkAdminMediaFolderBackend) ListAdminMediaFolders(ctx context.Context, parentID string) (json.RawMessage, error) {
+	// The SDK Resource.List doesn't support query param filtering, so we fetch
+	// all folders and filter client-side. Folder counts are typically small.
+	all, err := b.client.AdminMediaFoldersData.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if parentID == "" {
+		// Return root folders (no parent)
+		roots := make([]modula.AdminMediaFolder, 0)
+		for _, f := range all {
+			if f.ParentID == nil {
+				roots = append(roots, f)
+			}
+		}
+		return json.Marshal(roots)
+	}
+	// Return children of the given parent
+	pid := modula.AdminMediaFolderID(parentID)
+	children := make([]modula.AdminMediaFolder, 0)
+	for _, f := range all {
+		if f.ParentID != nil && *f.ParentID == pid {
+			children = append(children, f)
+		}
+	}
+	return json.Marshal(children)
+}
+
+func (b *sdkAdminMediaFolderBackend) GetAdminMediaFolder(ctx context.Context, id string) (json.RawMessage, error) {
+	result, err := b.client.AdminMediaFoldersData.Get(ctx, modula.AdminMediaFolderID(id))
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+func (b *sdkAdminMediaFolderBackend) CreateAdminMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	var p modula.CreateAdminMediaFolderParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal create admin media folder params: %w", err)
+	}
+	result, err := b.client.AdminMediaFoldersData.Create(ctx, p)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+func (b *sdkAdminMediaFolderBackend) UpdateAdminMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	var p modula.UpdateAdminMediaFolderParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal update admin media folder params: %w", err)
+	}
+	result, err := b.client.AdminMediaFoldersData.Update(ctx, p)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+func (b *sdkAdminMediaFolderBackend) DeleteAdminMediaFolder(ctx context.Context, id string) (json.RawMessage, error) {
+	err := b.client.AdminMediaFoldersData.Delete(ctx, modula.AdminMediaFolderID(id))
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(map[string]string{"status": "deleted"})
+}
+
+func (b *sdkAdminMediaFolderBackend) MoveAdminMediaToFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	var p modula.MoveAdminMediaParams
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal move admin media params: %w", err)
+	}
+	result, err := b.client.AdminMediaFolders.MoveMedia(ctx, p)
 	if err != nil {
 		return nil, err
 	}

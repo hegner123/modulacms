@@ -1184,11 +1184,11 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 			// admin_content_relations, content_relations, admin_content_versions,
 			// and content_versions (IF EXISTS) drop first (9 drops; 4 actually removed).
 			// Error fires at admin_content_fields.
-			// Remaining = 33 created - 1 pre-dropped - 4 tables dropped - 5 non-existent skipped = 27
+			// Remaining = 35 created - 1 pre-dropped - 4 tables dropped - 5 non-existent skipped = 29
 			name:          "fail_at_first_table",
 			preDropTable:  "admin_content_fields",
 			dropIndex:     0,
-			wantRemaining: 27,
+			wantRemaining: 29,
 		},
 		{
 			// Pre-drop users (position 28 in drop order). Positions 0-27

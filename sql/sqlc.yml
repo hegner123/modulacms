@@ -76,6 +76,8 @@ sql:
           folder_id: "FolderID"
           validation_id: "ValidationID"
           admin_validation_id: "AdminValidationID"
+          admin_folder_id: "AdminFolderID"
+          admin_media_id: "AdminMediaID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -110,6 +112,8 @@ sql:
           media_folder: MediaFolders
           validation: Validations
           admin_validation: AdminValidations
+          admin_medium: AdminMedia
+          admin_media_folder: AdminMediaFolders
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -293,6 +297,9 @@ sql:
           - column: "media_folders.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
+          - column: "admin_media_folders.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminMediaFolderID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -568,6 +575,20 @@ sql:
           - column: "admin_content_data.publish_at"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # ADMIN MEDIA & ADMIN MEDIA FOLDERS
+          - column: "admin_media_folders.admin_folder_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminMediaFolderID"}
+          - column: "admin_media.admin_media_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminMediaID"}
+          - column: "admin_media.folder_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminMediaFolderID"}
+          - column: "admin_media.url"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "URL"}
+          - column: "admin_media.focal_x"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
+          - column: "admin_media.focal_y"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
 
   # ---------- MySQL ----------
   - engine: "mysql"
@@ -638,6 +659,8 @@ sql:
           folder_id: "FolderID"
           validation_id: "ValidationID"
           admin_validation_id: "AdminValidationID"
+          admin_folder_id: "AdminFolderID"
+          admin_media_id: "AdminMediaID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -672,6 +695,8 @@ sql:
           media_folder: MediaFolders
           validation: Validations
           admin_validation: AdminValidations
+          admin_medium: AdminMedia
+          admin_media_folder: AdminMediaFolders
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -855,6 +880,9 @@ sql:
           - column: "media_folders.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
+          - column: "admin_media_folders.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminMediaFolderID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -1130,6 +1158,20 @@ sql:
           - column: "admin_content_data.publish_at"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # ADMIN MEDIA & ADMIN MEDIA FOLDERS
+          - column: "admin_media_folders.admin_folder_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminMediaFolderID"}
+          - column: "admin_media.admin_media_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminMediaID"}
+          - column: "admin_media.folder_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminMediaFolderID"}
+          - column: "admin_media.url"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "URL"}
+          - column: "admin_media.focal_x"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
+          - column: "admin_media.focal_y"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
 
   # ---------- PostgreSQL ----------
   - engine: "postgresql"
@@ -1200,6 +1242,8 @@ sql:
           folder_id: "FolderID"
           validation_id: "ValidationID"
           admin_validation_id: "AdminValidationID"
+          admin_folder_id: "AdminFolderID"
+          admin_media_id: "AdminMediaID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -1234,6 +1278,8 @@ sql:
           media_folder: MediaFolders
           validation: Validations
           admin_validation: AdminValidations
+          admin_medium: AdminMedia
+          admin_media_folder: AdminMediaFolders
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -1417,6 +1463,9 @@ sql:
           - column: "media_folders.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
+          - column: "admin_media_folders.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminMediaFolderID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -1692,3 +1741,17 @@ sql:
           - column: "admin_content_data.publish_at"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # ADMIN MEDIA & ADMIN MEDIA FOLDERS
+          - column: "admin_media_folders.admin_folder_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminMediaFolderID"}
+          - column: "admin_media.admin_media_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminMediaID"}
+          - column: "admin_media.folder_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminMediaFolderID"}
+          - column: "admin_media.url"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "URL"}
+          - column: "admin_media.focal_x"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
+          - column: "admin_media.focal_y"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}

@@ -126,6 +126,8 @@ var Renames = []Rename{
 	{From: "folder_id", To: "FolderID", Quoted: true},
 	{From: "validation_id", To: "ValidationID", Quoted: true},
 	{From: "admin_validation_id", To: "AdminValidationID", Quoted: true},
+	{From: "admin_folder_id", To: "AdminFolderID", Quoted: true},
+	{From: "admin_media_id", To: "AdminMediaID", Quoted: true},
 	// Table-to-struct names (sqlc singularizes first, then applies rename)
 	{Comment: "Table-to-struct names (sqlc singularizes first, then applies rename)", From: "admin_content_datum", To: "AdminContentData"},
 	{From: "admin_content_field", To: "AdminContentFields"},
@@ -161,6 +163,9 @@ var Renames = []Rename{
 	// Validations
 	{From: "validation", To: "Validations"},
 	{From: "admin_validation", To: "AdminValidations"},
+	// Admin Media
+	{From: "admin_medium", To: "AdminMedia"},
+	{From: "admin_media_folder", To: "AdminMediaFolders"},
 }
 
 // Overrides defines all column-to-Go-type overrides shared across engines.
@@ -252,6 +257,8 @@ var Overrides = []Override{
 	{Comment: "FIX: admin_content_data.parent_id references admin_content_data, not content_data", Column: "admin_content_data.parent_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableAdminContentID"},
 	// FIX: media_folders.parent_id references media_folders, not content_data
 	{Column: "media_folders.parent_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableMediaFolderID"},
+	// FIX: admin_media_folders.parent_id references admin_media_folders, not content_data
+	{Column: "admin_media_folders.parent_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableAdminMediaFolderID"},
 	{Column: "*.parent_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableContentID"},
 	{Column: "*.field_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableFieldID"},
 	{Column: "*.field_id", Nullable: boolPtr(false), Import: typesImport, Type: "FieldID"},
@@ -386,4 +393,11 @@ var Overrides = []Override{
 	{Column: "admin_content_data.published_at", Nullable: boolPtr(true), Import: typesImport, Type: "Timestamp"},
 	{Column: "admin_content_data.published_by", Nullable: boolPtr(true), Import: typesImport, Type: "NullableUserID"},
 	{Column: "admin_content_data.publish_at", Nullable: boolPtr(true), Import: typesImport, Type: "Timestamp"},
+	// ADMIN MEDIA & ADMIN MEDIA FOLDERS
+	{Comment: "ADMIN MEDIA & ADMIN MEDIA FOLDERS", Column: "admin_media_folders.admin_folder_id", Import: typesImport, Type: "AdminMediaFolderID"},
+	{Column: "admin_media.admin_media_id", Import: typesImport, Type: "AdminMediaID"},
+	{Column: "admin_media.folder_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableAdminMediaFolderID"},
+	{Column: "admin_media.url", Import: typesImport, Type: "URL"},
+	{Column: "admin_media.focal_x", Import: typesImport, Type: "NullableFloat64"},
+	{Column: "admin_media.focal_y", Import: typesImport, Type: "NullableFloat64"},
 }

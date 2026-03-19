@@ -254,6 +254,20 @@ type Client struct {
 	// MediaAdmin provides administrative media operations (listing with filters, bulk actions).
 	MediaAdmin *MediaAdminResource
 
+	// --- Admin media ---
+
+	// AdminMediaData provides standard CRUD for admin media assets (list, get, update, delete).
+	AdminMediaData *Resource[AdminMedia, CreateAdminMediaParams, UpdateAdminMediaParams, AdminMediaID]
+
+	// AdminMediaUpload provides multipart file upload for admin media assets.
+	AdminMediaUpload *AdminMediaResource
+
+	// AdminMediaFoldersData provides standard CRUD for admin media folders.
+	AdminMediaFoldersData *Resource[AdminMediaFolder, CreateAdminMediaFolderParams, UpdateAdminMediaFolderParams, AdminMediaFolderID]
+
+	// AdminMediaFolders provides specialized admin media folder operations (tree, list media, move).
+	AdminMediaFolders *AdminMediaFoldersResource
+
 	// --- Content reorder ---
 
 	// ContentReorder provides sibling reordering for published content tree nodes.
@@ -420,6 +434,12 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 		// Media admin
 		MediaAdmin: &MediaAdminResource{http: h},
+
+		// Admin media
+		AdminMediaData:        newResource[AdminMedia, CreateAdminMediaParams, UpdateAdminMediaParams, AdminMediaID](h, "/api/v1/adminmedia"),
+		AdminMediaUpload:      &AdminMediaResource{http: h},
+		AdminMediaFoldersData: newResource[AdminMediaFolder, CreateAdminMediaFolderParams, UpdateAdminMediaFolderParams, AdminMediaFolderID](h, "/api/v1/adminmedia-folders"),
+		AdminMediaFolders:     &AdminMediaFoldersResource{http: h},
 
 		// Content reorder
 		ContentReorder:      &ContentReorderResource{http: h},

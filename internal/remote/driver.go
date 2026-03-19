@@ -5033,3 +5033,105 @@ func (r *RemoteDriver) UpdateAdminValidation(_ context.Context, _ audited.AuditC
 func (r *RemoteDriver) ListAdminValidationsByName(_ string) (*[]db.AdminValidation, error) {
 	return nil, ErrNotSupported{Method: "ListAdminValidationsByName"}
 }
+
+// ===== AdminMediaRepository =====
+
+func (r *RemoteDriver) CountAdminMedia() (*int64, error) {
+	return nil, ErrNotSupported{Method: "CountAdminMedia"}
+}
+func (r *RemoteDriver) CountAdminMediaByFolder(_ types.NullableAdminMediaFolderID) (*int64, error) {
+	return nil, ErrNotSupported{Method: "CountAdminMediaByFolder"}
+}
+func (r *RemoteDriver) CountAdminMediaUnfiled() (*int64, error) {
+	return nil, ErrNotSupported{Method: "CountAdminMediaUnfiled"}
+}
+func (r *RemoteDriver) CreateAdminMedia(_ context.Context, _ audited.AuditContext, _ db.CreateAdminMediaParams) (*db.AdminMedia, error) {
+	return nil, ErrNotSupported{Method: "CreateAdminMedia"}
+}
+func (r *RemoteDriver) CreateAdminMediaTable() error {
+	return ErrNotSupported{Method: "CreateAdminMediaTable"}
+}
+func (r *RemoteDriver) DeleteAdminMedia(_ context.Context, _ audited.AuditContext, _ types.AdminMediaID) error {
+	return ErrNotSupported{Method: "DeleteAdminMedia"}
+}
+func (r *RemoteDriver) GetAdminMedia(_ types.AdminMediaID) (*db.AdminMedia, error) {
+	return nil, ErrNotSupported{Method: "GetAdminMedia"}
+}
+func (r *RemoteDriver) GetAdminMediaByName(_ string) (*db.AdminMedia, error) {
+	return nil, ErrNotSupported{Method: "GetAdminMediaByName"}
+}
+func (r *RemoteDriver) GetAdminMediaByURL(_ types.URL) (*db.AdminMedia, error) {
+	return nil, ErrNotSupported{Method: "GetAdminMediaByURL"}
+}
+func (r *RemoteDriver) ListAdminMedia() (*[]db.AdminMedia, error) {
+	return nil, ErrNotSupported{Method: "ListAdminMedia"}
+}
+func (r *RemoteDriver) ListAdminMediaByFolder(_ types.NullableAdminMediaFolderID) (*[]db.AdminMedia, error) {
+	return nil, ErrNotSupported{Method: "ListAdminMediaByFolder"}
+}
+func (r *RemoteDriver) ListAdminMediaByFolderPaginated(_ db.ListAdminMediaByFolderPaginatedParams) (*[]db.AdminMedia, error) {
+	return nil, ErrNotSupported{Method: "ListAdminMediaByFolderPaginated"}
+}
+func (r *RemoteDriver) ListAdminMediaPaginated(_ db.PaginationParams) (*[]db.AdminMedia, error) {
+	return nil, ErrNotSupported{Method: "ListAdminMediaPaginated"}
+}
+func (r *RemoteDriver) ListAdminMediaUnfiled() (*[]db.AdminMedia, error) {
+	return nil, ErrNotSupported{Method: "ListAdminMediaUnfiled"}
+}
+func (r *RemoteDriver) ListAdminMediaUnfiledPaginated(_ db.PaginationParams) (*[]db.AdminMedia, error) {
+	return nil, ErrNotSupported{Method: "ListAdminMediaUnfiledPaginated"}
+}
+func (r *RemoteDriver) MoveAdminMediaToFolder(_ context.Context, _ audited.AuditContext, _ db.MoveAdminMediaToFolderParams) error {
+	return ErrNotSupported{Method: "MoveAdminMediaToFolder"}
+}
+func (r *RemoteDriver) UpdateAdminMedia(_ context.Context, _ audited.AuditContext, _ db.UpdateAdminMediaParams) (*string, error) {
+	return nil, ErrNotSupported{Method: "UpdateAdminMedia"}
+}
+
+// ===== AdminMediaFolderRepository =====
+
+func (r *RemoteDriver) CountAdminMediaFolders() (*int64, error) {
+	return nil, ErrNotSupported{Method: "CountAdminMediaFolders"}
+}
+func (r *RemoteDriver) CreateAdminMediaFolder(_ context.Context, _ audited.AuditContext, _ db.CreateAdminMediaFolderParams) (*db.AdminMediaFolder, error) {
+	return nil, ErrNotSupported{Method: "CreateAdminMediaFolder"}
+}
+func (r *RemoteDriver) CreateAdminMediaFolderTable() error {
+	return ErrNotSupported{Method: "CreateAdminMediaFolderTable"}
+}
+func (r *RemoteDriver) DeleteAdminMediaFolder(_ context.Context, _ audited.AuditContext, _ types.AdminMediaFolderID) error {
+	return ErrNotSupported{Method: "DeleteAdminMediaFolder"}
+}
+func (r *RemoteDriver) GetAdminMediaFolder(_ types.AdminMediaFolderID) (*db.AdminMediaFolder, error) {
+	return nil, ErrNotSupported{Method: "GetAdminMediaFolder"}
+}
+func (r *RemoteDriver) GetAdminMediaFolderBreadcrumb(_ types.AdminMediaFolderID) ([]db.AdminMediaFolder, error) {
+	return nil, ErrNotSupported{Method: "GetAdminMediaFolderBreadcrumb"}
+}
+func (r *RemoteDriver) GetAdminMediaFolderByNameAndParent(_ types.AdminMediaFolderID, _ string) (*db.AdminMediaFolder, error) {
+	return nil, ErrNotSupported{Method: "GetAdminMediaFolderByNameAndParent"}
+}
+func (r *RemoteDriver) GetAdminMediaFolderByNameAtRoot(_ string) (*db.AdminMediaFolder, error) {
+	return nil, ErrNotSupported{Method: "GetAdminMediaFolderByNameAtRoot"}
+}
+func (r *RemoteDriver) ListAdminMediaFolders() (*[]db.AdminMediaFolder, error) {
+	return nil, ErrNotSupported{Method: "ListAdminMediaFolders"}
+}
+func (r *RemoteDriver) ListAdminMediaFoldersByParent(_ types.AdminMediaFolderID) (*[]db.AdminMediaFolder, error) {
+	return nil, ErrNotSupported{Method: "ListAdminMediaFoldersByParent"}
+}
+func (r *RemoteDriver) ListAdminMediaFoldersAtRoot() (*[]db.AdminMediaFolder, error) {
+	return nil, ErrNotSupported{Method: "ListAdminMediaFoldersAtRoot"}
+}
+func (r *RemoteDriver) ListAdminMediaFoldersPaginated(_ db.PaginationParams) (*[]db.AdminMediaFolder, error) {
+	return nil, ErrNotSupported{Method: "ListAdminMediaFoldersPaginated"}
+}
+func (r *RemoteDriver) UpdateAdminMediaFolder(_ context.Context, _ audited.AuditContext, _ db.UpdateAdminMediaFolderParams) (*string, error) {
+	return nil, ErrNotSupported{Method: "UpdateAdminMediaFolder"}
+}
+func (r *RemoteDriver) ValidateAdminMediaFolderName(_ string, _ types.NullableAdminMediaFolderID) error {
+	return ErrNotSupported{Method: "ValidateAdminMediaFolderName"}
+}
+func (r *RemoteDriver) ValidateAdminMediaFolderMove(_ types.AdminMediaFolderID, _ types.NullableAdminMediaFolderID) error {
+	return ErrNotSupported{Method: "ValidateAdminMediaFolderMove"}
+}

@@ -1,0 +1,242 @@
+package pages
+
+import (
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+templ AdminMediaListContent(items []db.AdminMedia, pg partials.PaginationPageData, childFolders []db.AdminMediaFolder, activeFolderID string, breadcrumb []db.AdminMediaFolder, currentFolder *db.AdminMediaFolder, csrfToken string) {
+    <!-- Page Header -->
+    <div class="sm:flex sm:items-center" data-page-header>
+        <div class="sm:flex-auto">
+            <h1 class="text-base/7 font-semibold text-white">Admin Media</h1>
+            <p class="mt-2 text-sm text-gray-400">Upload and manage images, videos, and documents for the admin panel.</p>
+        </div>
+        <div class="mt-4 flex gap-x-3 sm:mt-0 sm:ml-16 sm:flex-none">
+            <button
+                type="button"
+                class="rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10"
+                data-action="new-folder"
+                onclick="document.getElementById('new-folder-dialog').open()"
+            >
+                New Folder
+            </button>
+            <button
+                type="button"
+                class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
+                data-action="new"
+                onclick="document.getElementById('upload-dialog').open()"
+            >
+                Upload Media
+            </button>
+        </div>
+    </div>
+    <!-- Breadcrumb -->
+    if activeFolderID != "" {
+        <div class="mt-4">
+            @AdminMediaFolderBreadcrumb(breadcrumb, currentFolder)
+        </div>
+    }
+    <!-- Toolbar: sort + display size -->
+    <div class="mt-6 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+            <label for="media-sort" class="text-xs font-medium text-gray-400">Sort</label>
+            <select
+                id="media-sort"
+                class="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white outline-none focus:border-[var(--color-primary)]"
+                onchange="updateAdminMediaSort(this.value)"
+            >
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="name-asc">Name A-Z</option>
+                <option value="name-desc">Name Z-A</option>
+                <option value="type">Type</option>
+            </select>
+        </div>
+        <div class="flex items-center gap-2">
+            <svg class="size-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <input
+                type="range"
+                min="1"
+                max="4"
+                class="h-1 w-20 cursor-pointer accent-[var(--color-primary)]"
+                id="admin-media-display-size"
+                oninput="updateMediaGridSize(this.value)"
+                data-init-from="adminMedia.gridSize"
+                data-init-default="3"
+            />
+            <script>
+                (function() {
+                    var el = document.getElementById('admin-media-display-size');
+                    if (el) el.value = mcms.settings.get('adminMedia.gridSize', '3');
+                })();
+            </script>
+            <svg class="size-3 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </div>
+    </div>
+    <!-- Bulk actions bar (hidden until selection) -->
+    <div id="media-bulk-bar" class="mt-3 hidden items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-2">
+        <span class="text-sm text-gray-300"><span id="bulk-count">0</span> selected</span>
+        <div class="flex gap-2">
+            <button type="button" class="text-xs text-gray-400 hover:text-white" onclick="clearMediaSelection()">Clear</button>
+            <button type="button" class="rounded-md bg-red-500/90 px-3 py-1 text-xs font-medium text-white hover:bg-red-400" onclick="confirmBulkDeleteAdminMedia()">Delete selected</button>
+        </div>
+    </div>
+    <!-- Media grid -->
+    <div class="mt-4">
+        <div id="media-grid">
+            @AdminMediaGrid(childFolders, items, activeFolderID)
+        </div>
+        <div id="pagination" class="mt-6">
+            @partials.Pagination(pg.Current, pg.TotalPages, pg.Target, pg.BaseURL, pg.Limit)
+        </div>
+    </div>
+    <script>
+        function updateAdminMediaSort(value) {
+            var url = new URL(window.location);
+            url.searchParams.set('sort', value);
+            htmx.ajax('GET', url.pathname + url.search, {target: '#media-grid', swap: 'innerHTML'});
+        }
+        function confirmBulkDeleteAdminMedia() {
+            var selected = document.querySelectorAll('[data-media-selected="true"]');
+            var ids = Array.from(selected).map(function(el) { return el.dataset.mediaId; });
+            if (ids.length === 0) return;
+            htmx.ajax('POST', '/admin/admin-media/bulk-delete', {
+                target: '#main-content',
+                swap: 'innerHTML',
+                values: JSON.stringify({ids: ids}),
+                headers: {'Content-Type': 'application/json'}
+            });
+        }
+    </script>
+}
+
+templ AdminMediaGrid(folders []db.AdminMediaFolder, items []db.AdminMedia, folderID string) {
+    <mcms-media-grid folder-id={ folderID } data-items={ adminMediaGridJSON(folders, items) } upload-url="/admin/admin-media" detail-url="/admin/admin-media/">
+    </mcms-media-grid>
+}
+
+templ AdminMediaUploadDialog(csrfToken string, activeFolderID string) {
+    <mcms-dialog id="upload-dialog" aria-labelledby="upload-dialog-title">
+        <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <h3 id="upload-dialog-title" class="text-base/7 font-semibold text-white">Upload Admin Media</h3>
+            <form
+                hx-post="/admin/admin-media"
+                hx-target="#upload-result"
+                hx-encoding="multipart/form-data"
+                hx-swap="innerHTML"
+                hx-on::after-request="if(event.detail.successful) htmx.ajax('GET', window.location.pathname + window.location.search, {target: '#main-content', swap: 'innerHTML'})"
+                id="upload-admin-media-form"
+                class="mt-4 space-y-4"
+            >
+                @partials.CSRFField(csrfToken)
+                <input type="hidden" id="upload-folder-id" name="folder_id" value={ activeFolderID }/>
+                <mcms-file-input name="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" required label="File"></mcms-file-input>
+                <div>
+                    <label for="alt" class="block text-sm/6 font-medium text-white">Alt Text</label>
+                    <div class="mt-2">
+                        <input type="text" id="alt" name="alt" placeholder="Describe this media..." class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm/6 text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]"/>
+                    </div>
+                </div>
+                <div>
+                    <label for="description" class="block text-sm/6 font-medium text-white">Description</label>
+                    <div class="mt-2">
+                        <textarea id="description" name="description" rows="3" placeholder="Optional description..." class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm/6 text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]"></textarea>
+                    </div>
+                </div>
+                <div id="upload-result"></div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button type="submit" class="inline-flex w-full justify-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] sm:ml-3 sm:w-auto">Upload</button>
+                    <button type="button" onclick="this.closest('mcms-dialog').close()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </mcms-dialog>
+}
+
+templ AdminMediaNewFolderDialog(csrfToken string, parentFolderID string) {
+    <mcms-dialog id="new-folder-dialog" aria-labelledby="new-folder-dialog-title">
+        <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <h3 id="new-folder-dialog-title" class="text-base/7 font-semibold text-white">New Folder</h3>
+            <form
+                hx-post="/admin/admin-media-folders"
+                hx-swap="none"
+                id="new-folder-form"
+                class="mt-4 space-y-4"
+            >
+                @partials.CSRFField(csrfToken)
+                <input type="hidden" name="parent_id" value={ parentFolderID }/>
+                @partials.FormField("name", "Folder Name", "", "")
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <button type="submit" class="inline-flex w-full justify-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] sm:ml-3 sm:w-auto">Create</button>
+                    <button type="button" onclick="this.closest('mcms-dialog').close()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </mcms-dialog>
+}
+
+templ AdminMediaDialogs(csrfToken string, activeFolderID string) {
+    @AdminMediaUploadDialog(csrfToken, activeFolderID)
+    @AdminMediaNewFolderDialog(csrfToken, activeFolderID)
+}
+
+templ AdminMediaList(layout layouts.AdminData, items []db.AdminMedia, pg partials.PaginationPageData, childFolders []db.AdminMediaFolder, activeFolderID string, breadcrumb []db.AdminMediaFolder, currentFolder *db.AdminMediaFolder) {
+    @layouts.Admin(layout.WithDialogs(AdminMediaDialogs(layout.CSRFToken, activeFolderID))) {
+        @AdminMediaListContent(items, pg, childFolders, activeFolderID, breadcrumb, currentFolder, layout.CSRFToken)
+    }
+}
+
+templ AdminMediaGridPartial(childFolders []db.AdminMediaFolder, items []db.AdminMedia, pg partials.PaginationPageData, folderID string) {
+    @AdminMediaGrid(childFolders, items, "")
+    <div id="pagination" hx-swap-oob="true" class="mt-6">
+        @partials.Pagination(pg.Current, pg.TotalPages, pg.Target, pg.BaseURL, pg.Limit)
+    </div>
+}
+
+templ AdminMediaFolderBreadcrumb(breadcrumb []db.AdminMediaFolder, currentFolder *db.AdminMediaFolder) {
+    <nav class="flex items-center gap-2 text-sm text-gray-400" aria-label="Folder path">
+        <a
+            href="/admin/admin-media"
+            hx-get="/admin/admin-media"
+            hx-target="#main-content"
+            hx-push-url="true"
+            class="hover:text-white"
+        >
+            All Admin Media
+        </a>
+        for i, folder := range breadcrumb {
+            <span class="text-gray-500">/</span>
+            if i == len(breadcrumb) - 1 {
+                <span class="text-white">{ folder.Name }</span>
+            } else {
+                <a
+                    href={ templ.SafeURL("/admin/admin-media?folder_id=" + folder.AdminFolderID.String()) }
+                    hx-get={ "/admin/admin-media?folder_id=" + folder.AdminFolderID.String() }
+                    hx-target="#main-content"
+                    hx-push-url="true"
+                    class="hover:text-white"
+                >
+                    { folder.Name }
+                </a>
+            }
+        }
+    </nav>
+}
+
+templ AdminMediaUploadResult(media db.AdminMedia, errMsg string) {
+    if errMsg != "" {
+        <div class="rounded-md border border-red-400/20 bg-red-400/5 px-4 py-3 text-sm text-red-400">{ errMsg }</div>
+    } else {
+        <div class="flex items-center gap-x-3 rounded-md border border-green-400/20 bg-green-400/5 px-4 py-3 text-sm text-green-400">
+            <p>Upload successful!</p>
+            <a
+                href={ templ.SafeURL("/admin/admin-media/" + media.AdminMediaID.String()) }
+                class="text-sm font-medium text-gray-400 hover:text-white"
+            >
+                View Media
+            </a>
+        </div>
+    }
+}

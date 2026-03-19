@@ -224,6 +224,35 @@ func (id MediaFolderID) String() string { return string(id) }
 // IsZero reports whether the media folder ID is empty (unset).
 func (id MediaFolderID) IsZero() bool { return id == "" }
 
+// --- Admin Media IDs ---
+//
+// Admin media IDs mirror the public media IDs but reference assets stored in
+// the admin media library. The admin media system provides a separate media
+// namespace for CMS-internal assets (e.g., admin UI images, system icons)
+// managed independently from user-uploaded public media.
+
+// AdminMediaID identifies a media asset in the admin media library.
+// Admin media assets are managed separately from public media and are
+// used for CMS-internal purposes.
+type AdminMediaID string
+
+// String returns the raw ULID string for this admin media ID.
+func (id AdminMediaID) String() string { return string(id) }
+
+// IsZero reports whether the admin media ID is empty (unset).
+func (id AdminMediaID) IsZero() bool { return id == "" }
+
+// AdminMediaFolderID identifies a folder in the admin media library.
+// Admin media folders organize admin-specific assets in a hierarchy
+// separate from the public media folder tree.
+type AdminMediaFolderID string
+
+// String returns the raw ULID string for this admin media folder ID.
+func (id AdminMediaFolderID) String() string { return string(id) }
+
+// IsZero reports whether the admin media folder ID is empty (unset).
+func (id AdminMediaFolderID) IsZero() bool { return id == "" }
+
 // --- Auth and RBAC IDs ---
 //
 // These IDs reference authentication and authorization entities. ModulaCMS uses

@@ -30,6 +30,8 @@ func (m Model) handleFilePicker(msg tea.Msg) (Model, tea.Cmd, bool) {
 				return m, RestoreBackupFromPathCmd(path), true
 			case FILEPICKER_IMPORT:
 				return m, func() tea.Msg { return ImportFileSelectedMsg{Path: path} }, true
+			case FILEPICKER_ADMINMEDIA:
+				return m, AdminMediaUploadCmd(path), true
 			default:
 				return m, MediaUploadCmd(path), true
 			}
@@ -76,6 +78,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 			if ms, ok := m.ActiveScreen.(*MediaScreen); ok && ms.Searching {
+				break
+			}
+			if ams, ok := m.ActiveScreen.(*AdminMediaScreen); ok && ams.Searching {
 				break
 			}
 			// Default: show quit confirmation.
@@ -470,6 +475,50 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.UpdateDialog(msg)
 	case MediaMovedToFolderMsg:
 		return m.UpdateDialog(msg)
+
+	// Admin media dialog messages → UpdateDialog.
+	case ShowDeleteAdminMediaDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowCreateAdminMediaFolderDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowRenameAdminMediaFolderDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowDeleteAdminMediaFolderDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowMoveAdminMediaToFolderDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowMoveAdminMediaToFolderPickerMsg:
+		return m.UpdateDialog(msg)
+	case AdminMediaFolderNameDialogCancelMsg:
+		return m.UpdateDialog(msg)
+	case MoveAdminMediaFolderDialogCancelMsg:
+		return m.UpdateDialog(msg)
+	case CreateAdminMediaFolderRequestMsg:
+		return m.UpdateDialog(msg)
+	case RenameAdminMediaFolderRequestMsg:
+		return m.UpdateDialog(msg)
+	case DeleteAdminMediaFolderRequestMsg:
+		return m.UpdateDialog(msg)
+	case MoveAdminMediaToFolderRequestMsg:
+		return m.UpdateDialog(msg)
+	case AdminMediaFolderCreatedMsg:
+		return m.UpdateDialog(msg)
+	case AdminMediaFolderRenamedMsg:
+		return m.UpdateDialog(msg)
+	case AdminMediaFolderDeletedMsg:
+		return m.UpdateDialog(msg)
+	case AdminMediaMovedToFolderMsg:
+		return m.UpdateDialog(msg)
+
+	// Admin media CRUD requests → UpdateCms.
+	case DeleteAdminMediaRequestMsg:
+		return m.UpdateCms(msg)
+	case AdminMediaDeletedMsg:
+		return m.UpdateCms(msg)
+	case AdminMediaUploadStartMsg:
+		return m.UpdateCms(msg)
+	case AdminMediaUploadedMsg:
+		return m.UpdateCms(msg)
 
 	// Webhook dialog show messages → UpdateDialog.
 	case ShowWebhookFormDialogMsg:

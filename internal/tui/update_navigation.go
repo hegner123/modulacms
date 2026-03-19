@@ -80,6 +80,13 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 			return m, tea.Batch(cmds...)
+		case ADMINMEDIA:
+			page := m.PageMap[ADMINMEDIA]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, AdminMediaFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			return m, tea.Batch(cmds...)
 		case USERSADMIN:
 			page := m.PageMap[USERSADMIN]
 			cmds = append(cmds, LoadingStartCmd())

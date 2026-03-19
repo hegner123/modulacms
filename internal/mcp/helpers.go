@@ -92,6 +92,27 @@ func toMCPMediaList(items []db.Media) []mcpMediaResponse {
 	return resp
 }
 
+// mcpAdminMediaResponse wraps db.AdminMedia with a download_url field for MCP responses.
+type mcpAdminMediaResponse struct {
+	db.AdminMedia
+	DownloadURL string `json:"download_url"`
+}
+
+func toMCPAdminMediaResponse(m db.AdminMedia) mcpAdminMediaResponse {
+	return mcpAdminMediaResponse{
+		AdminMedia:  m,
+		DownloadURL: "/api/v1/adminmedia/" + string(m.AdminMediaID) + "/download",
+	}
+}
+
+func toMCPAdminMediaList(items []db.AdminMedia) []mcpAdminMediaResponse {
+	resp := make([]mcpAdminMediaResponse, len(items))
+	for i, m := range items {
+		resp[i] = toMCPAdminMediaResponse(m)
+	}
+	return resp
+}
+
 // optionalIDPtr extracts an optional string parameter and converts it to a pointer of the given ID type.
 // Returns nil if the parameter is missing or empty.
 func optionalIDPtr[ID ~string](req mcp.CallToolRequest, key string) *ID {

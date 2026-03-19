@@ -14,24 +14,24 @@ import (
 
 // ListAdminFieldByRouteIdRow represents a result row from listing admin fields by route ID.
 type ListAdminFieldByRouteIdRow struct {
-	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
-	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
-	Label        string                        `json:"label"`
-	Data         string                        `json:"data"`
+	AdminFieldID types.AdminFieldID              `json:"admin_field_id"`
+	ParentID     types.NullableAdminDatatypeID   `json:"parent_id"`
+	Label        string                          `json:"label"`
+	Data         string                          `json:"data"`
 	ValidationID types.NullableAdminValidationID `json:"validation_id"`
-	UIConfig     string                        `json:"ui_config"`
-	Type         types.FieldType               `json:"type"`
+	UIConfig     string                          `json:"ui_config"`
+	Type         types.FieldType                 `json:"type"`
 }
 
 // ListAdminFieldsByDatatypeIDRow represents a result row from listing admin fields by datatype ID.
 type ListAdminFieldsByDatatypeIDRow struct {
-	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
-	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
-	Label        string                        `json:"label"`
-	Data         string                        `json:"data"`
+	AdminFieldID types.AdminFieldID              `json:"admin_field_id"`
+	ParentID     types.NullableAdminDatatypeID   `json:"parent_id"`
+	Label        string                          `json:"label"`
+	Data         string                          `json:"data"`
 	ValidationID types.NullableAdminValidationID `json:"validation_id"`
-	UIConfig     string                        `json:"ui_config"`
-	Type         types.FieldType               `json:"type"`
+	UIConfig     string                          `json:"ui_config"`
+	Type         types.FieldType                 `json:"type"`
 }
 
 // UtilityGetAdminfieldsRow represents a result row from utility admin fields retrieval.

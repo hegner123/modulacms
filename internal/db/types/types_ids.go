@@ -2489,3 +2489,151 @@ func (id *AdminValidationID) UnmarshalJSON(data []byte) error {
 	*id = AdminValidationID(s)
 	return id.Validate()
 }
+
+// AdminMediaID uniquely identifies an admin media item.
+type AdminMediaID string
+
+// NewAdminMediaID generates a new ULID-based AdminMediaID.
+func NewAdminMediaID() AdminMediaID { return AdminMediaID(NewULID().String()) }
+
+// String returns the string representation of the AdminMediaID.
+func (id AdminMediaID) String() string { return string(id) }
+
+// IsZero returns true if the AdminMediaID is empty.
+func (id AdminMediaID) IsZero() bool { return id == "" }
+
+// Validate checks if the AdminMediaID is a valid ULID.
+func (id AdminMediaID) Validate() error { return validateULID(string(id), "AdminMediaID") }
+
+// ULID parses the AdminMediaID as a ulid.ULID.
+func (id AdminMediaID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the AdminMediaID.
+func (id AdminMediaID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseAdminMediaID parses and validates a string as an AdminMediaID.
+func ParseAdminMediaID(s string) (AdminMediaID, error) {
+	id := AdminMediaID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id AdminMediaID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("AdminMediaID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *AdminMediaID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("AdminMediaID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = AdminMediaID(v)
+	case []byte:
+		*id = AdminMediaID(string(v))
+	default:
+		return fmt.Errorf("AdminMediaID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id AdminMediaID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *AdminMediaID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("AdminMediaID: %w", err)
+	}
+	*id = AdminMediaID(s)
+	return id.Validate()
+}
+
+// AdminMediaFolderID uniquely identifies an admin media folder.
+type AdminMediaFolderID string
+
+// NewAdminMediaFolderID generates a new ULID-based AdminMediaFolderID.
+func NewAdminMediaFolderID() AdminMediaFolderID { return AdminMediaFolderID(NewULID().String()) }
+
+// String returns the string representation of the AdminMediaFolderID.
+func (id AdminMediaFolderID) String() string { return string(id) }
+
+// IsZero returns true if the AdminMediaFolderID is empty.
+func (id AdminMediaFolderID) IsZero() bool { return id == "" }
+
+// Validate checks if the AdminMediaFolderID is a valid ULID.
+func (id AdminMediaFolderID) Validate() error {
+	return validateULID(string(id), "AdminMediaFolderID")
+}
+
+// ULID parses the AdminMediaFolderID as a ulid.ULID.
+func (id AdminMediaFolderID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the AdminMediaFolderID.
+func (id AdminMediaFolderID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseAdminMediaFolderID parses and validates a string as an AdminMediaFolderID.
+func ParseAdminMediaFolderID(s string) (AdminMediaFolderID, error) {
+	id := AdminMediaFolderID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id AdminMediaFolderID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("AdminMediaFolderID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *AdminMediaFolderID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("AdminMediaFolderID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = AdminMediaFolderID(v)
+	case []byte:
+		*id = AdminMediaFolderID(string(v))
+	default:
+		return fmt.Errorf("AdminMediaFolderID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id AdminMediaFolderID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *AdminMediaFolderID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("AdminMediaFolderID: %w", err)
+	}
+	*id = AdminMediaFolderID(s)
+	return id.Validate()
+}

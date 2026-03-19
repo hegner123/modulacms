@@ -624,6 +624,46 @@ type ValidationRepository interface {
 	ListAdminValidationsByName(string) (*[]AdminValidation, error)
 }
 
+// AdminMediaRepository manages admin media items for the admin content system.
+type AdminMediaRepository interface {
+	CountAdminMedia() (*int64, error)
+	CountAdminMediaByFolder(types.NullableAdminMediaFolderID) (*int64, error)
+	CountAdminMediaUnfiled() (*int64, error)
+	CreateAdminMedia(context.Context, audited.AuditContext, CreateAdminMediaParams) (*AdminMedia, error)
+	CreateAdminMediaTable() error
+	DeleteAdminMedia(context.Context, audited.AuditContext, types.AdminMediaID) error
+	GetAdminMedia(types.AdminMediaID) (*AdminMedia, error)
+	GetAdminMediaByName(string) (*AdminMedia, error)
+	GetAdminMediaByURL(types.URL) (*AdminMedia, error)
+	ListAdminMedia() (*[]AdminMedia, error)
+	ListAdminMediaByFolder(types.NullableAdminMediaFolderID) (*[]AdminMedia, error)
+	ListAdminMediaByFolderPaginated(ListAdminMediaByFolderPaginatedParams) (*[]AdminMedia, error)
+	ListAdminMediaPaginated(PaginationParams) (*[]AdminMedia, error)
+	ListAdminMediaUnfiled() (*[]AdminMedia, error)
+	ListAdminMediaUnfiledPaginated(PaginationParams) (*[]AdminMedia, error)
+	MoveAdminMediaToFolder(context.Context, audited.AuditContext, MoveAdminMediaToFolderParams) error
+	UpdateAdminMedia(context.Context, audited.AuditContext, UpdateAdminMediaParams) (*string, error)
+}
+
+// AdminMediaFolderRepository manages admin media folders for the admin content system.
+type AdminMediaFolderRepository interface {
+	CountAdminMediaFolders() (*int64, error)
+	CreateAdminMediaFolder(context.Context, audited.AuditContext, CreateAdminMediaFolderParams) (*AdminMediaFolder, error)
+	CreateAdminMediaFolderTable() error
+	DeleteAdminMediaFolder(context.Context, audited.AuditContext, types.AdminMediaFolderID) error
+	GetAdminMediaFolder(types.AdminMediaFolderID) (*AdminMediaFolder, error)
+	GetAdminMediaFolderBreadcrumb(types.AdminMediaFolderID) ([]AdminMediaFolder, error)
+	GetAdminMediaFolderByNameAndParent(types.AdminMediaFolderID, string) (*AdminMediaFolder, error)
+	GetAdminMediaFolderByNameAtRoot(string) (*AdminMediaFolder, error)
+	ListAdminMediaFolders() (*[]AdminMediaFolder, error)
+	ListAdminMediaFoldersByParent(types.AdminMediaFolderID) (*[]AdminMediaFolder, error)
+	ListAdminMediaFoldersAtRoot() (*[]AdminMediaFolder, error)
+	ListAdminMediaFoldersPaginated(PaginationParams) (*[]AdminMediaFolder, error)
+	UpdateAdminMediaFolder(context.Context, audited.AuditContext, UpdateAdminMediaFolderParams) (*string, error)
+	ValidateAdminMediaFolderName(string, types.NullableAdminMediaFolderID) error
+	ValidateAdminMediaFolderMove(types.AdminMediaFolderID, types.NullableAdminMediaFolderID) error
+}
+
 // FieldPluginConfigRepository manages the field_plugin_config extension table
 // that binds plugin field types to their plugin and interface definitions.
 type FieldPluginConfigRepository interface {

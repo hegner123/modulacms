@@ -45,6 +45,7 @@ const (
 	ROLESPAGE
 	AUDITPAGE
 	SEARCHPAGE
+	ADMINMEDIA
 )
 
 // NewPage creates a new page with the specified index and label.
@@ -88,6 +89,7 @@ func InitPages() *map[PageIndex]Page {
 	rolesPage := NewPage(ROLESPAGE, "Roles")
 	auditPage := NewPage(AUDITPAGE, "Audit Log")
 	searchPage := NewPage(SEARCHPAGE, "Search")
+	adminMediaPage := NewPage(ADMINMEDIA, "Admin Media")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -125,5 +127,6 @@ func InitPages() *map[PageIndex]Page {
 	p[ROLESPAGE] = rolesPage
 	p[AUDITPAGE] = auditPage
 	p[SEARCHPAGE] = searchPage
+	p[ADMINMEDIA] = adminMediaPage
 	return &p
 }

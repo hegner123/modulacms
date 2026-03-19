@@ -99,6 +99,8 @@ type DbDriver interface {
 	ValidationRepository
 	WebhookRepository
 	MediaFolderRepository
+	AdminMediaRepository
+	AdminMediaFolderRepository
 	FieldPluginConfigRepository
 }
 
@@ -244,6 +246,16 @@ func (d Database) CreateAllTables() error {
 	}
 
 	err = d.CreateMediaTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminMediaFolderTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminMediaTable()
 	if err != nil {
 		return err
 	}
@@ -1413,6 +1425,16 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateAdminMediaFolderTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminMediaTable()
+	if err != nil {
+		return err
+	}
+
 	err = d.CreateAdminRouteTable()
 	if err != nil {
 		return err
@@ -2534,6 +2556,16 @@ func (d PsqlDatabase) CreateAllTables() error {
 	}
 
 	err = d.CreateMediaTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminMediaFolderTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminMediaTable()
 	if err != nil {
 		return err
 	}

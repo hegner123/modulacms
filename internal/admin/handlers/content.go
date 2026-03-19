@@ -1656,7 +1656,8 @@ func ContentPublishHandler(driver db.DbDriver, mgr *config.Manager, dispatcher p
 
 		contentID := types.ContentID(id)
 		locale := r.URL.Query().Get("locale")
-		_, pubErr := publishing.PublishContent(r.Context(), driver, contentID, locale, user.UserID, ac, cfg.VersionMaxPerContent(), dispatcher, nil)
+		publishAll := !cfg.Node_Level_Publish
+		_, pubErr := publishing.PublishContent(r.Context(), driver, contentID, locale, user.UserID, ac, cfg.VersionMaxPerContent(), publishAll, dispatcher, nil)
 		if pubErr != nil {
 			utility.DefaultLogger.Error("admin publish content failed", pubErr)
 			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Publish failed: %s", "type": "error"}}`, pubErr.Error())

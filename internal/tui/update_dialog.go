@@ -855,6 +855,142 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(DIALOGFOCUS),
 		)
 
+	// --- Admin media dialog messages ---
+	case ShowDeleteAdminMediaDialogMsg:
+		dialog := NewDialog("Delete Admin Media", fmt.Sprintf("Delete admin media '%s'?\nThis cannot be undone.", msg.Label), true, DIALOGDELETEADMINMEDIA)
+		dialog.SetButtons("Delete", "Cancel")
+		m.DCtx.Active = &DeleteAdminMediaContext{
+			AdminMediaID: msg.AdminMediaID,
+			Label:        msg.Label,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+
+	// --- Admin media folder dialog messages ---
+	case ShowCreateAdminMediaFolderDialogMsg:
+		dialog := NewCreateAdminMediaFolderDialog(msg.ParentID)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowRenameAdminMediaFolderDialogMsg:
+		dialog := NewRenameAdminMediaFolderDialog(msg.FolderID, msg.CurrentName)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteAdminMediaFolderDialogMsg:
+		dialog := NewDialog("Delete Admin Folder",
+			fmt.Sprintf("Delete folder '%s'?\nFolder must be empty (no files or subfolders).", msg.Name),
+			true, DIALOGDELETEADMINMEDIAFOLDER)
+		dialog.SetButtons("Delete", "Cancel")
+		m.DCtx.Active = &DeleteAdminMediaFolderContext{
+			FolderID: msg.FolderID,
+			Name:     msg.Name,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowMoveAdminMediaToFolderDialogMsg:
+		// Need to fetch current admin folders to build the picker list.
+		d := m.DB
+		if d == nil {
+			dialog := NewDialog("Error", "Database not connected.", false, DIALOGGENERIC)
+			return m, tea.Batch(
+				OverlaySetCmd(&dialog),
+				FocusSetCmd(DIALOGFOCUS),
+			)
+		}
+		adminMediaID := msg.AdminMediaID
+		label := msg.Label
+		return m, func() tea.Msg {
+			folders, err := d.ListAdminMediaFolders()
+			if err != nil {
+				return ActionResultMsg{
+					Title:   "Error",
+					Message: fmt.Sprintf("Failed to load admin folders: %v", err),
+				}
+			}
+			var folderData []db.AdminMediaFolder
+			if folders != nil {
+				folderData = *folders
+			}
+			return ShowMoveAdminMediaToFolderPickerMsg{
+				AdminMediaID: adminMediaID,
+				Label:        label,
+				Folders:      folderData,
+			}
+		}
+	case ShowMoveAdminMediaToFolderPickerMsg:
+		dialog := NewMoveAdminMediaFolderDialog(msg.AdminMediaID, msg.Label, msg.Folders)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case AdminMediaFolderNameDialogCancelMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case MoveAdminMediaFolderDialogCancelMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case CreateAdminMediaFolderRequestMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			m.HandleCreateAdminMediaFolder(msg),
+		)
+	case RenameAdminMediaFolderRequestMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			m.HandleRenameAdminMediaFolder(msg),
+		)
+	case MoveAdminMediaToFolderRequestMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			m.HandleMoveAdminMediaToFolder(msg),
+		)
+	case DeleteAdminMediaFolderRequestMsg:
+		return m, tea.Batch(
+			LoadingStartCmd(),
+			m.HandleDeleteAdminMediaFolder(msg),
+		)
+	case AdminMediaFolderCreatedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin folder created: %s", msg.Name)),
+			AdminMediaFetchCmd(),
+		)
+	case AdminMediaFolderRenamedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin folder renamed to: %s", msg.NewName)),
+			AdminMediaFetchCmd(),
+		)
+	case AdminMediaFolderDeletedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin folder deleted: %s", msg.FolderID)),
+			AdminMediaFetchCmd(),
+		)
+	case AdminMediaMovedToFolderMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin media moved: %s", msg.AdminMediaID)),
+			AdminMediaFetchCmd(),
+		)
+
 	// --- Media folder dialog messages ---
 	case ShowCreateMediaFolderDialogMsg:
 		dialog := NewCreateFolderDialog(msg.ParentID)

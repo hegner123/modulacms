@@ -101,6 +101,12 @@ func (d Database) DropAllTables() error {
 	if err := queries.DropMediaFolderTable(d.Context); err != nil {
 		return fmt.Errorf("drop media_folders: %w", err)
 	}
+	if err := queries.DropAdminMediaTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_media: %w", err)
+	}
+	if err := queries.DropAdminMediaFolderTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_media_folders: %w", err)
+	}
 	if err := queries.DropTableTable(d.Context); err != nil {
 		return fmt.Errorf("drop tables: %w", err)
 	}
@@ -252,6 +258,12 @@ func (d MysqlDatabase) DropAllTables() error {
 	if err := queries.DropMediaFolderTable(d.Context); err != nil {
 		return fmt.Errorf("drop media_folders: %w", err)
 	}
+	if err := queries.DropAdminMediaTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_media: %w", err)
+	}
+	if err := queries.DropAdminMediaFolderTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_media_folders: %w", err)
+	}
 	if err := queries.DropTableTable(d.Context); err != nil {
 		return fmt.Errorf("drop tables: %w", err)
 	}
@@ -402,6 +414,12 @@ func (d PsqlDatabase) DropAllTables() error {
 	}
 	if err := queries.DropMediaFolderTable(d.Context); err != nil {
 		return fmt.Errorf("drop media_folders: %w", err)
+	}
+	if err := queries.DropAdminMediaTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_media: %w", err)
+	}
+	if err := queries.DropAdminMediaFolderTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_media_folders: %w", err)
 	}
 	if err := queries.DropTableTable(d.Context); err != nil {
 		return fmt.Errorf("drop tables: %w", err)

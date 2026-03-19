@@ -240,6 +240,28 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case DeleteMediaRequestMsg:
 		// Delete media item
 		return m, m.HandleDeleteMedia(msg)
+	case DeleteAdminMediaRequestMsg:
+		// Delete admin media item
+		return m, m.HandleDeleteAdminMedia(msg)
+	case AdminMediaDeletedMsg:
+		return m, tea.Batch(
+			AdminMediaFetchCmd(),
+			ShowDialog("Success", "Admin media deleted successfully.", false),
+		)
+	case AdminMediaUploadStartMsg:
+		// Admin media upload: this requires changes in internal/media/ to support
+		// admin media tables. For now, show an informational dialog.
+		return m, func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Not Yet Available",
+				Message: "Admin media upload is not yet implemented.\nAdmin media items can be created via the API.",
+			}
+		}
+	case AdminMediaUploadedMsg:
+		return m, tea.Batch(
+			AdminMediaFetchCmd(),
+			ShowDialog("Upload Complete", fmt.Sprintf("'%s' uploaded successfully.", msg.Name), false),
+		)
 	case CreateUserFromDialogRequestMsg:
 		// Create user from form dialog
 		return m, m.HandleCreateUserFromDialog(msg)

@@ -24,6 +24,8 @@ export type {
   FieldID,
   MediaID,
   MediaFolderID,
+  AdminMediaID,
+  AdminMediaFolderID,
   RoleID,
   PermissionID,
   RolePermissionID,

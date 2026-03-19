@@ -13,14 +13,17 @@ import (
 
 // Publish builds a snapshot of the admin content tree, stores it as a versioned
 // snapshot, and marks the admin content as published.
+// When node_level_publish is disabled (default), this publishes the root and
+// all descendants. When enabled, only the root node is published.
 func (s *AdminContentService) Publish(ctx context.Context, ac audited.AuditContext, adminContentID types.AdminContentID, locale string, userID types.UserID) error {
 	cfg, err := s.mgr.Config()
 	if err != nil {
 		return fmt.Errorf("admin publish: get config: %w", err)
 	}
 	retentionCap := cfg.VersionMaxPerContent()
+	publishAll := !cfg.Node_Level_Publish
 
-	err = publishing.PublishAdminContent(ctx, s.driver, adminContentID, locale, userID, ac, retentionCap, s.dispatcher)
+	err = publishing.PublishAdminContent(ctx, s.driver, adminContentID, locale, userID, ac, retentionCap, publishAll, s.dispatcher)
 	if err != nil {
 		if publishing.IsRevisionConflict(err) {
 			return &ConflictError{
@@ -30,6 +33,29 @@ func (s *AdminContentService) Publish(ctx context.Context, ac audited.AuditConte
 			}
 		}
 		return fmt.Errorf("admin publish content: %w", err)
+	}
+	return nil
+}
+
+// PublishAll builds a snapshot and marks the root and all descendants as
+// published, regardless of node_level_publish configuration.
+func (s *AdminContentService) PublishAll(ctx context.Context, ac audited.AuditContext, adminContentID types.AdminContentID, locale string, userID types.UserID) error {
+	cfg, err := s.mgr.Config()
+	if err != nil {
+		return fmt.Errorf("admin publish all: get config: %w", err)
+	}
+	retentionCap := cfg.VersionMaxPerContent()
+
+	err = publishing.PublishAdminContent(ctx, s.driver, adminContentID, locale, userID, ac, retentionCap, true, s.dispatcher)
+	if err != nil {
+		if publishing.IsRevisionConflict(err) {
+			return &ConflictError{
+				Resource: "admin_content_data",
+				ID:       string(adminContentID),
+				Detail:   err.Error(),
+			}
+		}
+		return fmt.Errorf("admin publish all content: %w", err)
 	}
 	return nil
 }

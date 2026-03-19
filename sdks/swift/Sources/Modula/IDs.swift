@@ -114,6 +114,18 @@ public struct MediaFolderID: ResourceID {
     public init(_ rawValue: String) { self.rawValue = rawValue }
 }
 
+// MARK: - Admin Media IDs
+
+public struct AdminMediaID: ResourceID {
+    public let rawValue: String
+    public init(_ rawValue: String) { self.rawValue = rawValue }
+}
+
+public struct AdminMediaFolderID: ResourceID {
+    public let rawValue: String
+    public init(_ rawValue: String) { self.rawValue = rawValue }
+}
+
 // MARK: - Auth IDs
 
 public struct UserID: ResourceID {

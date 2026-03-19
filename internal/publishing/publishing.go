@@ -196,8 +196,10 @@ func BuildSnapshot(d db.DbDriver, ctx context.Context, rootID types.ContentID, l
 // metadata. It uses optimistic locking via the revision field to prevent
 // publishing stale data. retentionCap: max versions to keep (0 = unlimited).
 // locale specifies which locale to snapshot ("" for all fields / i18n disabled).
+// When publishAll is true, all descendants are also marked as published.
+// When false, only the root node's status is updated (node-level publish).
 // Async pruning runs after return.
-func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, locale string, userID types.UserID, ac audited.AuditContext, retentionCap int, dispatcher WebhookDispatcher, indexer SearchIndexer) (*db.ContentVersion, error) {
+func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, locale string, userID types.UserID, ac audited.AuditContext, retentionCap int, publishAll bool, dispatcher WebhookDispatcher, indexer SearchIndexer) (*db.ContentVersion, error) {
 	// 1. Read root's current revision for TOCTOU guard.
 	root, err := d.GetContentData(rootID)
 	if err != nil {
@@ -265,6 +267,26 @@ func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, 
 	})
 	if publishErr != nil {
 		return nil, fmt.Errorf("update publish metadata: %w", publishErr)
+	}
+
+	// 8b. Publish All: also mark all descendants as published.
+	if publishAll {
+		descendants, descErr := d.GetContentDataDescendants(ctx, rootID)
+		if descErr == nil && descendants != nil {
+			publishedBy := types.NullableUserID{ID: userID, Valid: true}
+			for _, child := range *descendants {
+				if child.ContentDataID == rootID {
+					continue // already updated above
+				}
+				_ = d.UpdateContentDataPublishMeta(ctx, db.UpdateContentDataPublishMetaParams{
+					Status:        types.ContentStatusPublished,
+					PublishedAt:   now,
+					PublishedBy:   publishedBy,
+					DateModified:  now,
+					ContentDataID: child.ContentDataID,
+				})
+			}
+		}
 	}
 
 	// 9. Async: prune old versions if retention cap exceeded.

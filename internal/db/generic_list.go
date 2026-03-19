@@ -324,6 +324,34 @@ func GenericHeaders(t DBTable) []string {
 			"date_created",
 			"date_modified",
 		}
+	case Admin_media:
+		return []string{
+			"admin_media_id",
+			"name",
+			"display_name",
+			"alt",
+			"caption",
+			"description",
+			"class",
+			"mimetype",
+			"dimensions",
+			"url",
+			"srcset",
+			"focal_x",
+			"focal_y",
+			"author_id",
+			"folder_id",
+			"date_created",
+			"date_modified",
+		}
+	case Admin_media_folder:
+		return []string{
+			"admin_folder_id",
+			"name",
+			"parent_id",
+			"date_created",
+			"date_modified",
+		}
 	case Media_folder:
 		return []string{
 			"folder_id",
@@ -972,6 +1000,58 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 				s.Description,
 				s.Config,
 				s.AuthorID,
+				s.DateCreated,
+				s.DateModified,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case Admin_media:
+		a, err := d.ListAdminMedia()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringAdminMedia(row)
+			r := []string{
+				s.AdminMediaID,
+				s.Name,
+				s.DisplayName,
+				s.Alt,
+				s.Caption,
+				s.Description,
+				s.Class,
+				s.Mimetype,
+				s.Dimensions,
+				s.URL,
+				s.Srcset,
+				s.FocalX,
+				s.FocalY,
+				s.AuthorID,
+				s.FolderID,
+				s.DateCreated,
+				s.DateModified,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case Admin_media_folder:
+		a, err := d.ListAdminMediaFolders()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringAdminMediaFolder(row)
+			r := []string{
+				s.AdminFolderID,
+				s.Name,
+				s.ParentID,
 				s.DateCreated,
 				s.DateModified,
 			}

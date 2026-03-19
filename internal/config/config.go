@@ -88,6 +88,11 @@ type Config struct {
 	Bucket_Public_URL       string              `json:"bucket_public_url"`
 	Bucket_Default_ACL      string              `json:"bucket_default_acl"`
 	Bucket_Force_Path_Style bool                `json:"bucket_force_path_style"`
+	Bucket_Admin_Media      string              `json:"bucket_admin_media"`
+	Bucket_Admin_Endpoint   string              `json:"bucket_admin_endpoint"`
+	Bucket_Admin_Access_Key string              `json:"bucket_admin_access_key"`
+	Bucket_Admin_Secret_Key string              `json:"bucket_admin_secret_key"`
+	Bucket_Admin_Public_URL string              `json:"bucket_admin_public_url"`
 	Max_Upload_Size         int64               `json:"max_upload_size"` // bytes, default 10MB (10485760)
 	Backup_Option           string              `json:"backup_option"`
 	Backup_Paths            []string            `json:"backup_paths"`
@@ -193,8 +198,9 @@ type Config struct {
 	Composition_Max_Depth int `json:"composition_max_depth"`
 
 	// Publishing configuration
-	Publish_Schedule_Interval int `json:"publish_schedule_interval"` // seconds between scheduler ticks, default 60
-	Version_Max_Per_Content   int `json:"version_max_per_content"`   // max versions per content item, 0 = unlimited, default 50
+	Publish_Schedule_Interval int  `json:"publish_schedule_interval"` // seconds between scheduler ticks, default 60
+	Version_Max_Per_Content   int  `json:"version_max_per_content"`   // max versions per content item, 0 = unlimited, default 50
+	Node_Level_Publish        bool `json:"node_level_publish"`        // false (default): publish publishes root + all descendants; true: publish is per-node, "publish all" is separate action
 
 	// Richtext editor toolbar configuration
 	Richtext_Toolbar []string `json:"richtext_toolbar"`
@@ -256,6 +262,59 @@ func (c Config) BucketPublicURL() string {
 		return c.Bucket_Public_URL
 	}
 	return c.BucketEndpointURL()
+}
+
+// AdminBucketMedia returns the admin media bucket name, falling back to the shared media bucket.
+func (c Config) AdminBucketMedia() string {
+	if c.Bucket_Admin_Media != "" {
+		return c.Bucket_Admin_Media
+	}
+	return c.Bucket_Media
+}
+
+// AdminBucketEndpoint returns the admin media endpoint, falling back to the shared endpoint.
+func (c Config) AdminBucketEndpoint() string {
+	if c.Bucket_Admin_Endpoint != "" {
+		return c.Bucket_Admin_Endpoint
+	}
+	return c.Bucket_Endpoint
+}
+
+// AdminBucketEndpointURL returns the full admin bucket endpoint URL with scheme.
+func (c Config) AdminBucketEndpointURL() string {
+	endpoint := c.AdminBucketEndpoint()
+	if endpoint == "" {
+		return ""
+	}
+	scheme := "https"
+	if c.Environment == "http-only" || c.Environment == "docker" {
+		scheme = "http"
+	}
+	return scheme + "://" + endpoint
+}
+
+// AdminBucketAccessKey returns the admin media access key, falling back to the shared key.
+func (c Config) AdminBucketAccessKey() string {
+	if c.Bucket_Admin_Access_Key != "" {
+		return c.Bucket_Admin_Access_Key
+	}
+	return c.Bucket_Access_Key
+}
+
+// AdminBucketSecretKey returns the admin media secret key, falling back to the shared key.
+func (c Config) AdminBucketSecretKey() string {
+	if c.Bucket_Admin_Secret_Key != "" {
+		return c.Bucket_Admin_Secret_Key
+	}
+	return c.Bucket_Secret_Key
+}
+
+// AdminBucketPublicURL returns the admin media public URL, falling back to the shared public URL.
+func (c Config) AdminBucketPublicURL() string {
+	if c.Bucket_Admin_Public_URL != "" {
+		return c.Bucket_Admin_Public_URL
+	}
+	return c.BucketPublicURL()
 }
 
 // CompositionMaxDepth returns the configured maximum composition depth.

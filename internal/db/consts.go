@@ -47,6 +47,8 @@ const (
 	User_ssh_keys           DBTable = "user_ssh_keys"
 	ValidationT             DBTable = "validations"
 	Admin_validation        DBTable = "admin_validations"
+	Admin_media             DBTable = "admin_media"
+	Admin_media_folder      DBTable = "admin_media_folders"
 	WebhookT                DBTable = "webhooks"
 	Webhook_deliveries      DBTable = "webhook_deliveries"
 )
@@ -90,6 +92,8 @@ var allTables = map[DBTable]struct{}{
 	User_ssh_keys:           {},
 	ValidationT:             {},
 	Admin_validation:        {},
+	Admin_media:             {},
+	Admin_media_folder:      {},
 	WebhookT:                {},
 	Webhook_deliveries:      {},
 }
@@ -177,6 +181,8 @@ var TableStructMap = map[DBTable]reflect.Type{
 	User_ssh_keys:           reflect.TypeFor[UserSshKeys](),
 	ValidationT:             reflect.TypeFor[Validation](),
 	Admin_validation:        reflect.TypeFor[AdminValidation](),
+	Admin_media:             reflect.TypeFor[AdminMedia](),
+	Admin_media_folder:      reflect.TypeFor[AdminMediaFolder](),
 	WebhookT:                reflect.TypeFor[Webhook](),
 	Webhook_deliveries:      reflect.TypeFor[WebhookDelivery](),
 }
@@ -334,6 +340,14 @@ func CastToTypedSlice(result any, table DBTable) any {
 		}
 	case Admin_validation:
 		if slice, ok := result.([]AdminValidation); ok {
+			return slice
+		}
+	case Admin_media:
+		if slice, ok := result.([]AdminMedia); ok {
+			return slice
+		}
+	case Admin_media_folder:
+		if slice, ok := result.([]AdminMediaFolder); ok {
 			return slice
 		}
 	case WebhookT:

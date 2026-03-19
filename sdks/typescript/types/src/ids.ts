@@ -48,6 +48,12 @@ export type MediaID = Brand<string, 'MediaID'>
 /** Unique identifier for a media folder. */
 export type MediaFolderID = Brand<string, 'MediaFolderID'>
 
+/** Unique identifier for an admin media asset. */
+export type AdminMediaID = Brand<string, 'AdminMediaID'>
+
+/** Unique identifier for an admin media folder. */
+export type AdminMediaFolderID = Brand<string, 'AdminMediaFolderID'>
+
 /** Unique identifier for a user role. */
 export type RoleID = Brand<string, 'RoleID'>
 

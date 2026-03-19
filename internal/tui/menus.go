@@ -65,6 +65,8 @@ func AdminPageIndex(idx PageIndex) PageIndex {
 		return ADMINFIELDTYPES
 	case VALIDATIONS:
 		return ADMINVALIDATIONS
+	case MEDIA:
+		return ADMINMEDIA
 	default:
 		return idx
 	}
@@ -90,6 +92,7 @@ func (m Model) AdminCmsMenuInit() []Page {
 		m.PageMap[ADMINCONTENT],
 		m.PageMap[ADMINDATATYPES],
 		m.PageMap[ADMINROUTES],
+		m.PageMap[ADMINMEDIA],
 		m.PageMap[ADMINFIELDTYPES],
 		m.PageMap[ADMINVALIDATIONS],
 	}

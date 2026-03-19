@@ -12,6 +12,42 @@ import (
 )
 
 // =============================================================================
+// ADMIN MEDIA CONSTRUCTORS
+// =============================================================================
+
+// AdminMediaFetchCmd creates a command to fetch all admin media items.
+func AdminMediaFetchCmd() tea.Cmd { return func() tea.Msg { return AdminMediaFetchMsg{} } }
+
+// AdminMediaListSetCmd creates a command to set the admin media list and folders.
+func AdminMediaListSetCmd(media []db.AdminMedia, folders []db.AdminMediaFolder) tea.Cmd {
+	return func() tea.Msg { return AdminMediaListSet{MediaList: media, FolderList: folders} }
+}
+
+// AdminMediaUploadCmd creates a command to upload an admin media file.
+func AdminMediaUploadCmd(filePath string) tea.Cmd {
+	return func() tea.Msg {
+		return AdminMediaUploadStartMsg{FilePath: filePath}
+	}
+}
+
+// ShowDeleteAdminMediaDialogCmd creates a command to show a delete admin media confirmation dialog.
+func ShowDeleteAdminMediaDialogCmd(adminMediaID types.AdminMediaID, label string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteAdminMediaDialogMsg{
+			AdminMediaID: adminMediaID,
+			Label:        label,
+		}
+	}
+}
+
+// DeleteAdminMediaCmd creates a command to delete an admin media item.
+func DeleteAdminMediaCmd(adminMediaID types.AdminMediaID) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteAdminMediaRequestMsg{AdminMediaID: adminMediaID}
+	}
+}
+
+// =============================================================================
 // ADMIN ROUTES CONSTRUCTORS
 // =============================================================================
 

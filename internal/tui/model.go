@@ -65,6 +65,7 @@ const (
 	FILEPICKER_MEDIA FilePickerPurpose = iota
 	FILEPICKER_RESTORE
 	FILEPICKER_IMPORT
+	FILEPICKER_ADMINMEDIA
 )
 
 // DatabaseMode represents the current database operation mode.

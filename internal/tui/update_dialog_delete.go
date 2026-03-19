@@ -1082,6 +1082,38 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 			OverlayClearCmd(),
 			FocusSetCmd(PAGEFOCUS),
 		)
+	case DIALOGDELETEADMINMEDIA:
+		if ctx, ok := m.DCtx.Active.(*DeleteAdminMediaContext); ok {
+			adminMediaID := ctx.AdminMediaID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				DeleteAdminMediaCmd(adminMediaID),
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case DIALOGDELETEADMINMEDIAFOLDER:
+		if ctx, ok := m.DCtx.Active.(*DeleteAdminMediaFolderContext); ok {
+			folderID := ctx.FolderID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				func() tea.Msg {
+					return DeleteAdminMediaFolderRequestMsg{FolderID: folderID}
+				},
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
 	case DIALOGDELETESESSION:
 		if ctx, ok := m.DCtx.Active.(*DeleteSessionContext); ok {
 			sessionID := ctx.SessionID

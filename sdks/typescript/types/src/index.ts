@@ -26,6 +26,8 @@ export type {
   FieldID,
   MediaID,
   MediaFolderID,
+  AdminMediaID,
+  AdminMediaFolderID,
   RoleID,
   PermissionID,
   RolePermissionID,
@@ -67,6 +69,7 @@ export type { ContentData, ContentField, ContentRelation, ContentVersion, AdminC
 export type { Datatype, Field, FieldTypeInfo, AdminFieldTypeInfo } from './entities/schema.js'
 export type { Media, MediaDimension } from './entities/media.js'
 export type { MediaFolder, CreateMediaFolderParams, UpdateMediaFolderParams } from './entities/media-folder.js'
+export type { AdminMedia, AdminMediaFolder, CreateAdminMediaFolderParams, UpdateAdminMediaFolderParams } from './entities/admin-media.js'
 export type { Route } from './entities/routing.js'
 export type { NodeDatatype, NodeField, ContentNode, ContentTree } from './entities/tree.js'
 export type { Locale } from './entities/locale.js'

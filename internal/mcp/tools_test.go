@@ -750,6 +750,8 @@ func TestToolRegistration_AllGroupsRegistered(t *testing.T) {
 	registerAdminContentTools(srv, backends.AdminContent)
 	registerAdminSchemaTools(srv, backends.AdminSchema)
 	registerAdminRouteTools(srv, backends.AdminRoutes)
+	registerAdminMediaTools(srv, backends.AdminMedia, backends.AdminMediaFolders)
+	registerAdminMediaFolderTools(srv, backends.AdminMediaFolders)
 }
 
 // --- Auth header propagation ---

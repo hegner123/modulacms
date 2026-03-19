@@ -3201,3 +3201,191 @@ public struct MediaCleanupResponse: Codable, Sendable {
         case failedCount = "failed_count"
     }
 }
+
+// MARK: - Admin Media
+
+public struct AdminMedia: Codable, Sendable {
+    public let adminMediaID: AdminMediaID
+    public let name: String?
+    public let displayName: String?
+    public let alt: String?
+    public let caption: String?
+    public let description: String?
+    public let mediaClass: String?
+    public let mimetype: String?
+    public let dimensions: String?
+    public let url: URLValue
+    public let srcset: String?
+    public let focalX: Double?
+    public let focalY: Double?
+    public let authorID: UserID?
+    public let folderID: AdminMediaFolderID?
+    public let dateCreated: Timestamp
+    public let dateModified: Timestamp
+    public let downloadURL: String?
+
+    enum CodingKeys: String, CodingKey {
+        case adminMediaID = "admin_media_id"
+        case name
+        case displayName = "display_name"
+        case alt
+        case caption
+        case description
+        case mediaClass = "class"
+        case mimetype
+        case dimensions
+        case url
+        case srcset
+        case focalX = "focal_x"
+        case focalY = "focal_y"
+        case authorID = "author_id"
+        case folderID = "folder_id"
+        case dateCreated = "date_created"
+        case dateModified = "date_modified"
+        case downloadURL = "download_url"
+    }
+}
+
+public struct UpdateAdminMediaParams: Encodable, Sendable {
+    public let adminMediaID: AdminMediaID
+    public let name: String?
+    public let displayName: String?
+    public let alt: String?
+    public let caption: String?
+    public let description: String?
+    public let mediaClass: String?
+    public let focalX: Double?
+    public let focalY: Double?
+
+    public init(
+        adminMediaID: AdminMediaID,
+        name: String? = nil,
+        displayName: String? = nil,
+        alt: String? = nil,
+        caption: String? = nil,
+        description: String? = nil,
+        mediaClass: String? = nil,
+        focalX: Double? = nil,
+        focalY: Double? = nil
+    ) {
+        self.adminMediaID = adminMediaID
+        self.name = name
+        self.displayName = displayName
+        self.alt = alt
+        self.caption = caption
+        self.description = description
+        self.mediaClass = mediaClass
+        self.focalX = focalX
+        self.focalY = focalY
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case adminMediaID = "admin_media_id"
+        case name
+        case displayName = "display_name"
+        case alt
+        case caption
+        case description
+        case mediaClass = "class"
+        case focalX = "focal_x"
+        case focalY = "focal_y"
+    }
+}
+
+// MARK: - Admin Media Folder
+
+public struct AdminMediaFolder: Codable, Sendable {
+    public let adminFolderID: AdminMediaFolderID
+    public let name: String
+    public let parentID: AdminMediaFolderID?
+    public let dateCreated: Timestamp
+    public let dateModified: Timestamp
+
+    enum CodingKeys: String, CodingKey {
+        case adminFolderID = "admin_folder_id"
+        case name
+        case parentID = "parent_id"
+        case dateCreated = "date_created"
+        case dateModified = "date_modified"
+    }
+}
+
+public struct CreateAdminMediaFolderParams: Encodable, Sendable {
+    public let name: String
+    public let parentID: AdminMediaFolderID?
+
+    public init(
+        name: String,
+        parentID: AdminMediaFolderID? = nil
+    ) {
+        self.name = name
+        self.parentID = parentID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case parentID = "parent_id"
+    }
+}
+
+public struct UpdateAdminMediaFolderParams: Encodable, Sendable {
+    public let adminFolderID: AdminMediaFolderID
+    public let name: String
+    public let parentID: AdminMediaFolderID?
+
+    public init(
+        adminFolderID: AdminMediaFolderID,
+        name: String,
+        parentID: AdminMediaFolderID? = nil
+    ) {
+        self.adminFolderID = adminFolderID
+        self.name = name
+        self.parentID = parentID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case adminFolderID = "admin_folder_id"
+        case name
+        case parentID = "parent_id"
+    }
+}
+
+public struct AdminMediaFolderTreeNode: Codable, Sendable {
+    public let folderID: AdminMediaFolderID
+    public let name: String
+    public let parentID: AdminMediaFolderID?
+    public let dateCreated: Timestamp
+    public let dateModified: Timestamp
+    public let children: [AdminMediaFolderTreeNode]
+
+    enum CodingKeys: String, CodingKey {
+        case folderID = "folder_id"
+        case name
+        case parentID = "parent_id"
+        case dateCreated = "date_created"
+        case dateModified = "date_modified"
+        case children
+    }
+}
+
+public struct MoveAdminMediaParams: Encodable, Sendable {
+    public let mediaIDs: [AdminMediaID]
+    public let folderID: AdminMediaFolderID?
+
+    public init(
+        mediaIDs: [AdminMediaID],
+        folderID: AdminMediaFolderID? = nil
+    ) {
+        self.mediaIDs = mediaIDs
+        self.folderID = folderID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case mediaIDs = "media_ids"
+        case folderID = "folder_id"
+    }
+}
+
+public struct MoveAdminMediaResponse: Codable, Sendable {
+    public let moved: Int
+}

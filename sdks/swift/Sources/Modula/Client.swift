@@ -40,6 +40,12 @@ public final class ModulaClient: Sendable {
     public let fieldTypes: Resource<FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID>
     public let adminFieldTypes: Resource<AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID>
 
+    // Admin media resources
+    public let adminMedia: Resource<AdminMedia, NoCreate, UpdateAdminMediaParams, AdminMediaID>
+    public let adminMediaFoldersData: Resource<AdminMediaFolder, CreateAdminMediaFolderParams, UpdateAdminMediaFolderParams, AdminMediaFolderID>
+    public let adminMediaFolders: AdminMediaFoldersResource
+    public let adminMediaUpload: AdminMediaResource
+
     // Specialized resources
     public let auth: AuthResource
     public let mediaUpload: MediaUploadResource
@@ -148,6 +154,12 @@ public final class ModulaClient: Sendable {
         adminRoutes = Resource(path: "/api/v1/adminroutes", http: http)
         fieldTypes = Resource(path: "/api/v1/fieldtypes", http: http)
         adminFieldTypes = Resource(path: "/api/v1/adminfieldtypes", http: http)
+
+        // Admin media
+        adminMedia = Resource(path: "/api/v1/adminmedia", http: http)
+        adminMediaFoldersData = Resource(path: "/api/v1/adminmedia-folders", http: http)
+        adminMediaFolders = AdminMediaFoldersResource(http: http)
+        adminMediaUpload = AdminMediaResource(http: http)
 
         // Specialized
         auth = AuthResource(http: http)

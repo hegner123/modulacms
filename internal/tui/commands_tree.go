@@ -563,7 +563,8 @@ func (m Model) HandleConfirmedPublish(msg ConfirmedPublishMsg) tea.Cmd {
 		logger := utility.DefaultLogger
 
 		retentionCap := cfg.VersionMaxPerContent()
-		_, pubErr := publishing.PublishContent(ctx, d, msg.ContentID, locale, userID, ac, retentionCap, dispatcher, nil)
+		publishAll := !cfg.Node_Level_Publish
+		_, pubErr := publishing.PublishContent(ctx, d, msg.ContentID, locale, userID, ac, retentionCap, publishAll, dispatcher, nil)
 		if pubErr != nil {
 			logger.Ferror(fmt.Sprintf("Failed to publish content %s", msg.ContentID), pubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Publish failed: %v", pubErr)}

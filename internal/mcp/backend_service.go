@@ -20,26 +20,28 @@ import (
 // corresponding service with JSON marshaling.
 func NewServiceBackends(svc *service.Registry, ac audited.AuditContext) *Backends {
 	return &Backends{
-		Content:      &svcContentBackend{svc: svc, ac: ac},
-		AdminContent: &svcAdminContentBackend{svc: svc, ac: ac},
-		Schema:       &svcSchemaBackend{svc: svc, ac: ac},
-		AdminSchema:  &svcAdminSchemaBackend{svc: svc, ac: ac},
-		Media:        &svcMediaBackend{svc: svc, ac: ac},
-		MediaFolders: &svcMediaFolderBackend{svc: svc, ac: ac},
-		Routes:       &svcRouteBackend{svc: svc, ac: ac},
-		AdminRoutes:  &svcAdminRouteBackend{svc: svc, ac: ac},
-		Users:        &svcUserBackend{svc: svc, ac: ac},
-		RBAC:         &svcRBACBackend{svc: svc, ac: ac},
-		Sessions:     &svcSessionBackend{svc: svc, ac: ac},
-		Tokens:       &svcTokenBackend{svc: svc, ac: ac},
-		SSHKeys:      &svcSSHKeyBackend{svc: svc, ac: ac},
-		OAuth:        &svcOAuthBackend{svc: svc, ac: ac},
-		Tables:       &svcTableBackend{svc: svc, ac: ac},
-		Plugins:      &svcPluginBackend{svc: svc},
-		Config:       &svcConfigBackend{svc: svc},
-		Import:       &svcImportBackend{svc: svc, ac: ac},
-		Deploy:       &svcDeployBackend{svc: svc},
-		Health:       &svcHealthBackend{svc: svc},
+		Content:           &svcContentBackend{svc: svc, ac: ac},
+		AdminContent:      &svcAdminContentBackend{svc: svc, ac: ac},
+		Schema:            &svcSchemaBackend{svc: svc, ac: ac},
+		AdminSchema:       &svcAdminSchemaBackend{svc: svc, ac: ac},
+		Media:             &svcMediaBackend{svc: svc, ac: ac},
+		MediaFolders:      &svcMediaFolderBackend{svc: svc, ac: ac},
+		AdminMedia:        &svcAdminMediaBackend{svc: svc, ac: ac},
+		AdminMediaFolders: &svcAdminMediaFolderBackend{svc: svc, ac: ac},
+		Routes:            &svcRouteBackend{svc: svc, ac: ac},
+		AdminRoutes:       &svcAdminRouteBackend{svc: svc, ac: ac},
+		Users:             &svcUserBackend{svc: svc, ac: ac},
+		RBAC:              &svcRBACBackend{svc: svc, ac: ac},
+		Sessions:          &svcSessionBackend{svc: svc, ac: ac},
+		Tokens:            &svcTokenBackend{svc: svc, ac: ac},
+		SSHKeys:           &svcSSHKeyBackend{svc: svc, ac: ac},
+		OAuth:             &svcOAuthBackend{svc: svc, ac: ac},
+		Tables:            &svcTableBackend{svc: svc, ac: ac},
+		Plugins:           &svcPluginBackend{svc: svc},
+		Config:            &svcConfigBackend{svc: svc},
+		Import:            &svcImportBackend{svc: svc, ac: ac},
+		Deploy:            &svcDeployBackend{svc: svc},
+		Health:            &svcHealthBackend{svc: svc},
 	}
 }
 
@@ -1927,4 +1929,425 @@ func (b *svcHealthBackend) Health(ctx context.Context) (json.RawMessage, error) 
 	}
 
 	return json.Marshal(resp)
+}
+
+// ---------------------------------------------------------------------------
+// AdminMediaBackend
+// ---------------------------------------------------------------------------
+
+type svcAdminMediaBackend struct {
+	svc *service.Registry
+	ac  audited.AuditContext
+}
+
+func (b *svcAdminMediaBackend) ListAdminMedia(ctx context.Context, limit, offset int64) (json.RawMessage, error) {
+	d := b.svc.Driver()
+	items, err := d.ListAdminMediaPaginated(db.PaginationParams{Limit: limit, Offset: offset})
+	if err != nil {
+		return nil, err
+	}
+	total, err := d.CountAdminMedia()
+	if err != nil {
+		return nil, err
+	}
+	resp := db.PaginatedResponse[mcpAdminMediaResponse]{
+		Limit:  limit,
+		Offset: offset,
+	}
+	if items != nil {
+		resp.Data = toMCPAdminMediaList(*items)
+	}
+	if total != nil {
+		resp.Total = *total
+	}
+	return json.Marshal(resp)
+}
+
+func (b *svcAdminMediaBackend) GetAdminMedia(ctx context.Context, id string) (json.RawMessage, error) {
+	d := b.svc.Driver()
+	mid := types.AdminMediaID(id)
+	if err := mid.Validate(); err != nil {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "id", Message: fmt.Sprintf("invalid: %v", err)}}}
+	}
+	result, err := d.GetAdminMedia(mid)
+	if err != nil {
+		return nil, &service.NotFoundError{Resource: "admin_media", ID: id}
+	}
+	return json.Marshal(toMCPAdminMediaResponse(*result))
+}
+
+func (b *svcAdminMediaBackend) UpdateAdminMedia(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	d := b.svc.Driver()
+
+	var p struct {
+		AdminMediaID string   `json:"admin_media_id"`
+		Name         *string  `json:"name"`
+		DisplayName  *string  `json:"display_name"`
+		Alt          *string  `json:"alt"`
+		Caption      *string  `json:"caption"`
+		Description  *string  `json:"description"`
+		Class        *string  `json:"class"`
+		FocalX       *float64 `json:"focal_x"`
+		FocalY       *float64 `json:"focal_y"`
+	}
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal update admin media params: %w", err)
+	}
+
+	mid := types.AdminMediaID(p.AdminMediaID)
+	if err := mid.Validate(); err != nil {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "admin_media_id", Message: fmt.Sprintf("invalid: %v", err)}}}
+	}
+
+	existing, err := d.GetAdminMedia(mid)
+	if err != nil {
+		return nil, &service.NotFoundError{Resource: "admin_media", ID: p.AdminMediaID}
+	}
+
+	updateParams := db.UpdateAdminMediaParams{
+		AdminMediaID: mid,
+		Name:         existing.Name,
+		DisplayName:  existing.DisplayName,
+		Alt:          existing.Alt,
+		Caption:      existing.Caption,
+		Description:  existing.Description,
+		Class:        existing.Class,
+		Mimetype:     existing.Mimetype,
+		Dimensions:   existing.Dimensions,
+		URL:          existing.URL,
+		Srcset:       existing.Srcset,
+		FocalX:       existing.FocalX,
+		FocalY:       existing.FocalY,
+		AuthorID:     existing.AuthorID,
+		FolderID:     existing.FolderID,
+		DateCreated:  existing.DateCreated,
+		DateModified: types.NewTimestamp(time.Now().UTC()),
+	}
+
+	if p.Name != nil {
+		updateParams.Name = db.NewNullString(*p.Name)
+	}
+	if p.DisplayName != nil {
+		updateParams.DisplayName = db.NewNullString(*p.DisplayName)
+	}
+	if p.Alt != nil {
+		updateParams.Alt = db.NewNullString(*p.Alt)
+	}
+	if p.Caption != nil {
+		updateParams.Caption = db.NewNullString(*p.Caption)
+	}
+	if p.Description != nil {
+		updateParams.Description = db.NewNullString(*p.Description)
+	}
+	if p.Class != nil {
+		updateParams.Class = db.NewNullString(*p.Class)
+	}
+	if p.FocalX != nil {
+		updateParams.FocalX = types.NullableFloat64{Float64: *p.FocalX, Valid: true}
+	}
+	if p.FocalY != nil {
+		updateParams.FocalY = types.NullableFloat64{Float64: *p.FocalY, Valid: true}
+	}
+
+	if _, err := d.UpdateAdminMedia(ctx, b.ac, updateParams); err != nil {
+		return nil, err
+	}
+
+	updated, err := d.GetAdminMedia(mid)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(toMCPAdminMediaResponse(*updated))
+}
+
+func (b *svcAdminMediaBackend) DeleteAdminMedia(ctx context.Context, id string) error {
+	d := b.svc.Driver()
+	mid := types.AdminMediaID(id)
+	if err := mid.Validate(); err != nil {
+		return &service.ValidationError{Errors: []service.FieldError{{Field: "id", Message: fmt.Sprintf("invalid: %v", err)}}}
+	}
+	return d.DeleteAdminMedia(ctx, b.ac, mid)
+}
+
+func (b *svcAdminMediaBackend) UploadAdminMedia(ctx context.Context, reader io.Reader, filename string) (json.RawMessage, error) {
+	// The MediaService.Upload requires multipart.File and *multipart.FileHeader,
+	// which are HTTP-specific types. In direct mode we cannot easily construct
+	// these from an io.Reader. Return an unsupported error directing callers
+	// to use the REST API for admin media upload.
+	return nil, fmt.Errorf("admin media upload is not supported in direct mode; use the REST API")
+}
+
+func (b *svcAdminMediaBackend) ListMediaDimensions(ctx context.Context) (json.RawMessage, error) {
+	// Dimensions are shared between public and admin media.
+	result, err := b.svc.Media.ListMediaDimensions(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(result)
+}
+
+// ---------------------------------------------------------------------------
+// AdminMediaFolderBackend
+// ---------------------------------------------------------------------------
+
+type svcAdminMediaFolderBackend struct {
+	svc *service.Registry
+	ac  audited.AuditContext
+}
+
+func (b *svcAdminMediaFolderBackend) ListAdminMediaFolders(ctx context.Context, parentID string) (json.RawMessage, error) {
+	d := b.svc.Driver()
+	if parentID != "" {
+		pid := types.AdminMediaFolderID(parentID)
+		if err := pid.Validate(); err != nil {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "parent_id", Message: fmt.Sprintf("invalid: %v", err)}}}
+		}
+		folders, err := d.ListAdminMediaFoldersByParent(pid)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(folders)
+	}
+	folders, err := d.ListAdminMediaFoldersAtRoot()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(folders)
+}
+
+func (b *svcAdminMediaFolderBackend) GetAdminMediaFolder(ctx context.Context, id string) (json.RawMessage, error) {
+	d := b.svc.Driver()
+	fid := types.AdminMediaFolderID(id)
+	if err := fid.Validate(); err != nil {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "id", Message: fmt.Sprintf("invalid: %v", err)}}}
+	}
+	folder, err := d.GetAdminMediaFolder(fid)
+	if err != nil {
+		return nil, &service.NotFoundError{Resource: "admin_media_folder", ID: id}
+	}
+	return json.Marshal(folder)
+}
+
+func (b *svcAdminMediaFolderBackend) CreateAdminMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	d := b.svc.Driver()
+
+	var p struct {
+		Name     string  `json:"name"`
+		ParentID *string `json:"parent_id"`
+	}
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal create admin media folder params: %w", err)
+	}
+	if p.Name == "" {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "name", Message: "required"}}}
+	}
+
+	var parentID types.NullableAdminMediaFolderID
+	if p.ParentID != nil && *p.ParentID != "" {
+		pid := types.AdminMediaFolderID(*p.ParentID)
+		if err := pid.Validate(); err != nil {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "parent_id", Message: fmt.Sprintf("invalid: %v", err)}}}
+		}
+		if _, err := d.GetAdminMediaFolder(pid); err != nil {
+			return nil, &service.NotFoundError{Resource: "parent_folder", ID: *p.ParentID}
+		}
+		parentID = types.NullableAdminMediaFolderID{ID: pid, Valid: true}
+
+		breadcrumb, err := d.GetAdminMediaFolderBreadcrumb(pid)
+		if err != nil {
+			return nil, fmt.Errorf("check folder depth: %w", err)
+		}
+		if len(breadcrumb)+1 > 10 {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "parent_id", Message: "creating this folder would exceed maximum folder depth of 10"}}}
+		}
+	}
+
+	if err := d.ValidateAdminMediaFolderName(p.Name, parentID); err != nil {
+		return nil, &service.ConflictError{Resource: "admin_media_folder", Detail: err.Error()}
+	}
+
+	now := types.NewTimestamp(time.Now().UTC())
+	folder, err := d.CreateAdminMediaFolder(ctx, b.ac, db.CreateAdminMediaFolderParams{
+		Name:         p.Name,
+		ParentID:     parentID,
+		DateCreated:  now,
+		DateModified: now,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(folder)
+}
+
+func (b *svcAdminMediaFolderBackend) UpdateAdminMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	d := b.svc.Driver()
+
+	var p struct {
+		FolderID string  `json:"folder_id"`
+		Name     *string `json:"name"`
+		ParentID *string `json:"parent_id"`
+	}
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal update admin media folder params: %w", err)
+	}
+
+	fid := types.AdminMediaFolderID(p.FolderID)
+	if err := fid.Validate(); err != nil {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "folder_id", Message: fmt.Sprintf("invalid: %v", err)}}}
+	}
+
+	existing, err := d.GetAdminMediaFolder(fid)
+	if err != nil {
+		return nil, &service.NotFoundError{Resource: "admin_media_folder", ID: p.FolderID}
+	}
+
+	name := existing.Name
+	parentID := existing.ParentID
+
+	if p.Name != nil {
+		if *p.Name == "" {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "name", Message: "cannot be empty"}}}
+		}
+		name = *p.Name
+	}
+
+	parentChanged := false
+	if p.ParentID != nil {
+		parentChanged = true
+		if *p.ParentID == "" {
+			parentID = types.NullableAdminMediaFolderID{}
+		} else {
+			pid := types.AdminMediaFolderID(*p.ParentID)
+			if err := pid.Validate(); err != nil {
+				return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "parent_id", Message: fmt.Sprintf("invalid: %v", err)}}}
+			}
+			parentID = types.NullableAdminMediaFolderID{ID: pid, Valid: true}
+		}
+	}
+
+	if parentChanged {
+		if err := d.ValidateAdminMediaFolderMove(fid, parentID); err != nil {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "parent_id", Message: err.Error()}}}
+		}
+	}
+
+	nameChanged := p.Name != nil && name != existing.Name
+	if nameChanged || parentChanged {
+		if err := d.ValidateAdminMediaFolderName(name, parentID); err != nil {
+			return nil, &service.ConflictError{Resource: "admin_media_folder", Detail: err.Error()}
+		}
+	}
+
+	_, err = d.UpdateAdminMediaFolder(ctx, b.ac, db.UpdateAdminMediaFolderParams{
+		AdminFolderID: fid,
+		Name:          name,
+		ParentID:      parentID,
+		DateModified:  types.NewTimestamp(time.Now().UTC()),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	updated, err := d.GetAdminMediaFolder(fid)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(updated)
+}
+
+func (b *svcAdminMediaFolderBackend) DeleteAdminMediaFolder(ctx context.Context, id string) (json.RawMessage, error) {
+	d := b.svc.Driver()
+
+	fid := types.AdminMediaFolderID(id)
+	if err := fid.Validate(); err != nil {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "id", Message: fmt.Sprintf("invalid: %v", err)}}}
+	}
+
+	if _, err := d.GetAdminMediaFolder(fid); err != nil {
+		return nil, &service.NotFoundError{Resource: "admin_media_folder", ID: id}
+	}
+
+	children, err := d.ListAdminMediaFoldersByParent(fid)
+	if err != nil {
+		return nil, err
+	}
+	childCount := 0
+	if children != nil {
+		childCount = len(*children)
+	}
+
+	folderNullable := types.NullableAdminMediaFolderID{ID: fid, Valid: true}
+	mediaCount, err := d.CountAdminMediaByFolder(folderNullable)
+	if err != nil {
+		return nil, err
+	}
+
+	mc := int64(0)
+	if mediaCount != nil {
+		mc = *mediaCount
+	}
+
+	if childCount > 0 || mc > 0 {
+		return json.Marshal(map[string]any{
+			"error":         fmt.Sprintf("cannot delete folder: contains %d child folder(s) and %d media item(s)", childCount, mc),
+			"child_folders": childCount,
+			"media_items":   mc,
+		})
+	}
+
+	if err := d.DeleteAdminMediaFolder(ctx, b.ac, fid); err != nil {
+		return nil, err
+	}
+	return json.Marshal(map[string]string{"status": "deleted"})
+}
+
+func (b *svcAdminMediaFolderBackend) MoveAdminMediaToFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	d := b.svc.Driver()
+
+	var p struct {
+		MediaIDs []string `json:"media_ids"`
+		FolderID *string  `json:"folder_id"`
+	}
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("unmarshal move admin media params: %w", err)
+	}
+
+	if len(p.MediaIDs) == 0 {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "media_ids", Message: "required and cannot be empty"}}}
+	}
+	if len(p.MediaIDs) > 100 {
+		return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "media_ids", Message: "batch size cannot exceed 100 items"}}}
+	}
+
+	var folderID types.NullableAdminMediaFolderID
+	if p.FolderID != nil && *p.FolderID != "" {
+		fid := types.AdminMediaFolderID(*p.FolderID)
+		if err := fid.Validate(); err != nil {
+			return nil, &service.ValidationError{Errors: []service.FieldError{{Field: "folder_id", Message: fmt.Sprintf("invalid: %v", err)}}}
+		}
+		if _, err := d.GetAdminMediaFolder(fid); err != nil {
+			return nil, &service.NotFoundError{Resource: "admin_media_folder", ID: *p.FolderID}
+		}
+		folderID = types.NullableAdminMediaFolderID{ID: fid, Valid: true}
+	}
+
+	now := types.NewTimestamp(time.Now().UTC())
+	moved := 0
+	for _, idStr := range p.MediaIDs {
+		mid := types.AdminMediaID(idStr)
+		if err := mid.Validate(); err != nil {
+			continue
+		}
+		err := d.MoveAdminMediaToFolder(ctx, b.ac, db.MoveAdminMediaToFolderParams{
+			FolderID:     folderID,
+			DateModified: now,
+			AdminMediaID: mid,
+		})
+		if err != nil {
+			continue
+		}
+		moved++
+	}
+
+	return json.Marshal(map[string]int{"moved": moved})
 }

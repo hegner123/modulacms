@@ -111,6 +111,35 @@ type AdminValidationsSet struct {
 }
 
 // =============================================================================
+// ADMIN MEDIA FETCH MESSAGES
+// =============================================================================
+
+// AdminMediaFetchMsg requests fetching all admin media items.
+type AdminMediaFetchMsg struct{}
+
+// AdminMediaFetchResultsMsg returns fetched admin media items and folders.
+type AdminMediaFetchResultsMsg struct {
+	Data    []db.AdminMedia
+	Folders []db.AdminMediaFolder
+}
+
+// AdminMediaListSet sets the admin media items list and folders.
+type AdminMediaListSet struct {
+	MediaList  []db.AdminMedia
+	FolderList []db.AdminMediaFolder
+}
+
+// AdminMediaUploadStartMsg triggers an admin media upload from a local file.
+type AdminMediaUploadStartMsg struct {
+	FilePath string
+}
+
+// AdminMediaUploadedMsg signals successful admin media upload.
+type AdminMediaUploadedMsg struct {
+	Name string
+}
+
+// =============================================================================
 // ADMIN DIALOG MESSAGES
 // =============================================================================
 

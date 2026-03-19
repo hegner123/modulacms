@@ -499,7 +499,8 @@ func (m Model) HandleAdminConfirmedPublish(msg ConfirmedPublishAdminContentMsg) 
 		logger := utility.DefaultLogger
 
 		retentionCap := cfg.VersionMaxPerContent()
-		pubErr := publishing.PublishAdminContent(ctx, d, msg.AdminContentID, locale, userID, ac, retentionCap, dispatcher)
+		publishAll := !cfg.Node_Level_Publish
+		pubErr := publishing.PublishAdminContent(ctx, d, msg.AdminContentID, locale, userID, ac, retentionCap, publishAll, dispatcher)
 		if pubErr != nil {
 			logger.Ferror(fmt.Sprintf("Failed to publish admin content %s", msg.AdminContentID), pubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Publish failed: %v", pubErr)}

@@ -108,6 +108,34 @@ type AdminFields struct {
 	DateModified types.Timestamp                 `json:"date_modified"`
 }
 
+type AdminMedia struct {
+	AdminMediaID types.AdminMediaID               `json:"admin_media_id"`
+	Name         sql.NullString                   `json:"name"`
+	DisplayName  sql.NullString                   `json:"display_name"`
+	Alt          sql.NullString                   `json:"alt"`
+	Caption      sql.NullString                   `json:"caption"`
+	Description  sql.NullString                   `json:"description"`
+	Class        sql.NullString                   `json:"class"`
+	Mimetype     sql.NullString                   `json:"mimetype"`
+	Dimensions   sql.NullString                   `json:"dimensions"`
+	URL          types.URL                        `json:"url"`
+	Srcset       sql.NullString                   `json:"srcset"`
+	FocalX       types.NullableFloat64            `json:"focal_x"`
+	FocalY       types.NullableFloat64            `json:"focal_y"`
+	AuthorID     types.NullableUserID             `json:"author_id"`
+	FolderID     types.NullableAdminMediaFolderID `json:"folder_id"`
+	DateCreated  types.Timestamp                  `json:"date_created"`
+	DateModified types.Timestamp                  `json:"date_modified"`
+}
+
+type AdminMediaFolders struct {
+	AdminFolderID types.AdminMediaFolderID         `json:"admin_folder_id"`
+	Name          string                           `json:"name"`
+	ParentID      types.NullableAdminMediaFolderID `json:"parent_id"`
+	DateCreated   types.Timestamp                  `json:"date_created"`
+	DateModified  types.Timestamp                  `json:"date_modified"`
+}
+
 type AdminRoutes struct {
 	AdminRouteID types.AdminRouteID   `json:"admin_route_id"`
 	Slug         types.Slug           `json:"slug"`

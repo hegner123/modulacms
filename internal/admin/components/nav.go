@@ -39,6 +39,7 @@ var NavItems = []NavItem{
 	{Section: "Admin Panel", Label: "Admin Field Types", Href: "/admin/admin-field-types", Icon: "tag", Permission: "field_types:read"},
 	{Section: "Admin Panel", Label: "Admin Validations", Href: "/admin/admin-validations", Icon: "check-circle", Permission: "admin_validations:read"},
 	{Section: "Admin Panel", Label: "Admin Routes", Href: "/admin/admin-routes", Icon: "globe", Permission: "routes:read"},
+	{Section: "Admin Panel", Label: "Admin Media", Href: "/admin/admin-media", Icon: "image", Permission: "media:read"},
 
 	// Users & Access
 	{Section: "Users & Access", Label: "Users", Href: "/admin/users", Icon: "users", Permission: "users:read"},

@@ -157,3 +157,33 @@ func statusOptions() []partials.SelectOption {
 	}
 }
 
+// adminMediaGridJSON converts admin media folders and media into a single JSON array for the grid component.
+// Folders appear first (type:"folder"), then media files (type:"file").
+func adminMediaGridJSON(folders []db.AdminMediaFolder, items []db.AdminMedia) string {
+	out := make([]mediaGridItem, 0, len(folders)+len(items))
+	for _, f := range folders {
+		out = append(out, mediaGridItem{
+			ID:          f.AdminFolderID.String(),
+			Type:        "folder",
+			DisplayName: f.Name,
+			Name:        f.Name,
+		})
+	}
+	for _, m := range items {
+		out = append(out, mediaGridItem{
+			ID:          m.AdminMediaID.String(),
+			Type:        "file",
+			URL:         m.URL.String(),
+			Alt:         nullStr(m.Alt),
+			DisplayName: nullStr(m.DisplayName),
+			Mimetype:    nullStr(m.Mimetype),
+			Name:        nullStr(m.Name),
+			DateCreated: m.DateCreated.String(),
+		})
+	}
+	b, err := json.Marshal(out)
+	if err != nil {
+		return "[]"
+	}
+	return string(b)
+}

@@ -591,3 +591,33 @@ type StringAdminValidation struct {
 	DateCreated       string `json:"date_created"`
 	DateModified      string `json:"date_modified"`
 }
+
+// StringAdminMedia represents admin media data as strings for TUI display.
+type StringAdminMedia struct {
+	AdminMediaID string `json:"admin_media_id"`
+	Name         string `json:"name"`
+	DisplayName  string `json:"display_name"`
+	Alt          string `json:"alt"`
+	Caption      string `json:"caption"`
+	Description  string `json:"description"`
+	Class        string `json:"class"`
+	Mimetype     string `json:"mimetype"`
+	Dimensions   string `json:"dimensions"`
+	URL          string `json:"url"`
+	Srcset       string `json:"srcset"`
+	FocalX       string `json:"focal_x"`
+	FocalY       string `json:"focal_y"`
+	AuthorID     string `json:"author_id"`
+	FolderID     string `json:"folder_id"`
+	DateCreated  string `json:"date_created"`
+	DateModified string `json:"date_modified"`
+}
+
+// StringAdminMediaFolder represents admin media folder data as strings for TUI display.
+type StringAdminMediaFolder struct {
+	AdminFolderID string `json:"admin_folder_id"`
+	Name          string `json:"name"`
+	ParentID      string `json:"parent_id"`
+	DateCreated   string `json:"date_created"`
+	DateModified  string `json:"date_modified"`
+}

@@ -9,13 +9,15 @@ templ Topbar(user *db.Users) {
 			<i data-lucide="menu" class="size-5"></i>
 		</button>
 
-		<a href="/admin/" class="text-sm shrink-0 w-44 text-center font-bold text-white no-underline hover:no-underline">ModulaCMS</a>
+		<a href="/admin/" class="text-sm shrink-0 w-44 text-center font-bold text-white no-underline hover:no-underline">Modula</a>
 		<!-- Separator -->
 		<div aria-hidden="true" class="h-6 w-px bg-white/10"></div>
 		<div class="flex flex-1 items-center justify-end h-16 gap-x-4 px-4 sm:gap-x-6 sm:px-6 lg:px-8">
 			if user != nil {
 				<div class="flex items-center gap-x-3">
+                                <a href={ "/admin/users/" + user.UserID.String() } >
 					<span class="text-sm/6 font-semibold text-white">{ user.Username }</span>
+                                </a>
 					<form method="POST" action="/admin/logout">
 						<button type="submit" class="rounded-md bg-white/5 px-3 py-1.5 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10">Logout</button>
 					</form>

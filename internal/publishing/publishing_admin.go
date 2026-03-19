@@ -180,7 +180,10 @@ func BuildAdminSnapshot(d db.DbDriver, ctx context.Context, rootID types.AdminCo
 // retentionCap: max versions to keep (0 = unlimited).
 // locale specifies which locale to snapshot ("" for all fields / i18n disabled).
 // Async pruning runs after return.
-func PublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminContentID, locale string, userID types.UserID, ac audited.AuditContext, retentionCap int, dispatcher WebhookDispatcher) error {
+// PublishAdminContent builds a snapshot and publishes admin content.
+// When publishAll is true, all descendants are also marked as published.
+// When false, only the root node's status is updated (node-level publish).
+func PublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminContentID, locale string, userID types.UserID, ac audited.AuditContext, retentionCap int, publishAll bool, dispatcher WebhookDispatcher) error {
 	// Read root's current revision for TOCTOU guard.
 	root, err := d.GetAdminContentData(rootID)
 	if err != nil {
@@ -248,6 +251,26 @@ func PublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminC
 	})
 	if publishErr != nil {
 		return fmt.Errorf("update admin publish metadata: %w", publishErr)
+	}
+
+	// Publish All: also mark all descendants as published.
+	if publishAll {
+		descendants, descErr := d.GetAdminContentDataDescendants(ctx, rootID)
+		if descErr == nil && descendants != nil {
+			publishedBy := types.NullableUserID{ID: userID, Valid: true}
+			for _, child := range *descendants {
+				if child.AdminContentDataID == rootID {
+					continue // already updated above
+				}
+				_ = d.UpdateAdminContentDataPublishMeta(ctx, db.UpdateAdminContentDataPublishMetaParams{
+					Status:             types.ContentStatusPublished,
+					PublishedAt:        now,
+					PublishedBy:        publishedBy,
+					DateModified:       now,
+					AdminContentDataID: child.AdminContentDataID,
+				})
+			}
+		}
 	}
 
 	// Async prune.

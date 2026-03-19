@@ -31,30 +31,43 @@ func Topbar(user *db.Users) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"fixed top-0 z-40 flex h-16 w-full shrink-0 items-center border-b border-white/10 bg-surface px-4 shadow-xs lg:px-0\"><button class=\"-m-2.5 p-2.5 text-gray-400 hover:text-white lg:hidden\" data-sidebar-toggle onclick=\"toggleSidebar()\" aria-label=\"Toggle sidebar\"><i data-lucide=\"menu\" class=\"size-5\"></i></button> <a href=\"/admin/\" class=\"text-sm shrink-0 w-44 text-center font-bold text-white no-underline hover:no-underline\">ModulaCMS</a><!-- Separator --><div aria-hidden=\"true\" class=\"h-6 w-px bg-white/10\"></div><div class=\"flex flex-1 items-center justify-end h-16 gap-x-4 px-4 sm:gap-x-6 sm:px-6 lg:px-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"fixed top-0 z-40 flex h-16 w-full shrink-0 items-center border-b border-white/10 bg-surface px-4 shadow-xs lg:px-0\"><button class=\"-m-2.5 p-2.5 text-gray-400 hover:text-white lg:hidden\" data-sidebar-toggle onclick=\"toggleSidebar()\" aria-label=\"Toggle sidebar\"><i data-lucide=\"menu\" class=\"size-5\"></i></button> <a href=\"/admin/\" class=\"text-sm shrink-0 w-44 text-center font-bold text-white no-underline hover:no-underline\">Modula</a><!-- Separator --><div aria-hidden=\"true\" class=\"h-6 w-px bg-white/10\"></div><div class=\"flex flex-1 items-center justify-end h-16 gap-x-4 px-4 sm:gap-x-6 sm:px-6 lg:px-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex items-center gap-x-3\"><span class=\"text-sm/6 font-semibold text-white\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex items-center gap-x-3\"><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var2 string
-			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
+			var templ_7745c5c3_Var2 templ.SafeURL
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs("/admin/users/" + user.UserID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/components/topbar.templ`, Line: 18, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/components/topbar.templ`, Line: 18, Col: 80}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span><form method=\"POST\" action=\"/admin/logout\"><button type=\"submit\" class=\"rounded-md bg-white/5 px-3 py-1.5 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10\">Logout</button></form></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\"><span class=\"text-sm/6 font-semibold text-white\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/components/topbar.templ`, Line: 19, Col: 69}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span></a><form method=\"POST\" action=\"/admin/logout\"><button type=\"submit\" class=\"rounded-md bg-white/5 px-3 py-1.5 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10\">Logout</button></form></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></header>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></header>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -14,14 +14,17 @@ import (
 
 // Publish builds a snapshot of the content tree, stores it as a versioned
 // snapshot, and marks the content as published. Returns the created version.
+// When node_level_publish is disabled (default), this publishes the root and
+// all descendants. When enabled, only the root node is published.
 func (s *ContentService) Publish(ctx context.Context, ac audited.AuditContext, contentID types.ContentID, locale string, userID types.UserID) (*db.ContentVersion, error) {
 	cfg, err := s.mgr.Config()
 	if err != nil {
 		return nil, fmt.Errorf("publish: get config: %w", err)
 	}
 	retentionCap := cfg.VersionMaxPerContent()
+	publishAll := !cfg.Node_Level_Publish
 
-	version, err := publishing.PublishContent(ctx, s.driver, contentID, locale, userID, ac, retentionCap, s.dispatcher, nil)
+	version, err := publishing.PublishContent(ctx, s.driver, contentID, locale, userID, ac, retentionCap, publishAll, s.dispatcher, nil)
 	if err != nil {
 		if publishing.IsRevisionConflict(err) {
 			return nil, &ConflictError{
@@ -31,6 +34,29 @@ func (s *ContentService) Publish(ctx context.Context, ac audited.AuditContext, c
 			}
 		}
 		return nil, fmt.Errorf("publish content: %w", err)
+	}
+	return version, nil
+}
+
+// PublishAll builds a snapshot and marks the root and all descendants as
+// published, regardless of node_level_publish configuration.
+func (s *ContentService) PublishAll(ctx context.Context, ac audited.AuditContext, contentID types.ContentID, locale string, userID types.UserID) (*db.ContentVersion, error) {
+	cfg, err := s.mgr.Config()
+	if err != nil {
+		return nil, fmt.Errorf("publish all: get config: %w", err)
+	}
+	retentionCap := cfg.VersionMaxPerContent()
+
+	version, err := publishing.PublishContent(ctx, s.driver, contentID, locale, userID, ac, retentionCap, true, s.dispatcher, nil)
+	if err != nil {
+		if publishing.IsRevisionConflict(err) {
+			return nil, &ConflictError{
+				Resource: "content_data",
+				ID:       string(contentID),
+				Detail:   err.Error(),
+			}
+		}
+		return nil, fmt.Errorf("publish all content: %w", err)
 	}
 	return version, nil
 }

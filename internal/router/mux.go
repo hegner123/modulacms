@@ -386,6 +386,43 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 		MediaDimensionHandler(w, r, svc)
 	})))
 
+	// Admin media
+	mux.Handle("GET /api/v1/adminmedia/{id}/download", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiDownloadAdminMedia(w, r, svc)
+	})))
+	mux.Handle("POST /api/v1/adminmedia/move", middleware.RequirePermission("media:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiBatchMoveAdminMedia(w, r, svc)
+	})))
+	mux.Handle("/api/v1/adminmedia", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminMediasHandler(w, r, svc)
+	})))
+	mux.Handle("/api/v1/adminmedia/", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminMediaHandler(w, r, svc)
+	})))
+
+	// Admin media folders (tree must be registered before {id} to avoid path parameter matching "tree")
+	mux.Handle("GET /api/v1/adminmedia-folders", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiListAdminMediaFolders(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/adminmedia-folders/tree", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiAdminMediaFolderTree(w, r, svc)
+	})))
+	mux.Handle("POST /api/v1/adminmedia-folders", middleware.RequirePermission("media:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiCreateAdminMediaFolder(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/adminmedia-folders/{id}", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiGetAdminMediaFolder(w, r, svc)
+	})))
+	mux.Handle("PUT /api/v1/adminmedia-folders/{id}", middleware.RequirePermission("media:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiUpdateAdminMediaFolder(w, r, svc)
+	})))
+	mux.Handle("DELETE /api/v1/adminmedia-folders/{id}", middleware.RequirePermission("media:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiDeleteAdminMediaFolder(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/adminmedia-folders/{id}/media", middleware.RequirePermission("media:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiAdminMediaFolderMedia(w, r, svc)
+	})))
+
 	// Routes
 	mux.Handle("/api/v1/routes", middleware.RequireResourcePermission("routes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		RoutesHandler(w, r, svc)
@@ -868,6 +905,20 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/media-folders/{id}", mutating("media:update", adminhandlers.MediaFolderUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/media-folders/{id}", mutating("media:delete", adminhandlers.MediaFolderDeleteHandler(svc)))
 	mux.Handle("POST /admin/media/move/{id}", mutating("media:update", adminhandlers.MediaMoveToFolderHandler(svc)))
+
+	// Admin Media
+	mux.Handle("GET /admin/admin-media", viewing("media", adminhandlers.AdminMediaListHandler(svc)))
+	mux.Handle("GET /admin/admin-media/{id}", viewing("media", adminhandlers.AdminMediaDetailHandler(svc)))
+	mux.Handle("POST /admin/admin-media", mutating("media:create", adminhandlers.AdminMediaUploadHandler(svc)))
+	mux.Handle("POST /admin/admin-media/{id}", mutating("media:update", adminhandlers.AdminMediaUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/admin-media/{id}", mutating("media:delete", adminhandlers.AdminMediaDeleteHandler(svc)))
+	mux.Handle("POST /admin/admin-media/bulk-delete", mutating("media:delete", adminhandlers.AdminMediaBulkDeleteHandler(svc)))
+
+	// Admin Media folders
+	mux.Handle("POST /admin/admin-media-folders", mutating("media:create", adminhandlers.AdminMediaFolderCreateHandler(svc)))
+	mux.Handle("POST /admin/admin-media-folders/{id}", mutating("media:update", adminhandlers.AdminMediaFolderUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/admin-media-folders/{id}", mutating("media:delete", adminhandlers.AdminMediaFolderDeleteHandler(svc)))
+	mux.Handle("POST /admin/admin-media/move/{id}", mutating("media:update", adminhandlers.AdminMediaMoveToFolderHandler(svc)))
 
 	// Media dimensions
 	mux.Handle("GET /admin/media/dimensions", viewing("media", adminhandlers.MediaDimensionsListHandler(svc)))
