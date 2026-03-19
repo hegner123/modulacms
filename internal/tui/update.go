@@ -28,6 +28,8 @@ func (m Model) handleFilePicker(msg tea.Msg) (Model, tea.Cmd, bool) {
 			switch m.FilePickerPurpose {
 			case FILEPICKER_RESTORE:
 				return m, RestoreBackupFromPathCmd(path), true
+			case FILEPICKER_IMPORT:
+				return m, func() tea.Msg { return ImportFileSelectedMsg{Path: path} }, true
 			default:
 				return m, MediaUploadCmd(path), true
 			}
@@ -112,6 +114,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch typedMsg.Purpose {
 		case FILEPICKER_RESTORE:
 			fp.AllowedTypes = []string{".zip"}
+		case FILEPICKER_IMPORT:
+			fp.AllowedTypes = []string{".json"}
 		default:
 			fp.AllowedTypes = []string{".png", ".jpg", ".jpeg", ".webp", ".gif"}
 		}

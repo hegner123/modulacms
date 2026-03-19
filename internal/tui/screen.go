@@ -116,6 +116,8 @@ func (m Model) screenForPage(page Page) Screen {
 		return NewSessionsScreen(nil)
 	case MEDIADIMENSIONSPAGE:
 		return NewMediaDimensionsScreen(nil)
+	case IMPORTPAGE:
+		return NewImportScreen()
 	case DEPLOYPAGE:
 		return NewDeployScreen(nil)
 	case PIPELINESPAGE:
