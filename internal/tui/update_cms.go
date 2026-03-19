@@ -258,6 +258,12 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case DeleteWebhookRequestMsg:
 		// Delete webhook
 		return m, m.HandleDeleteWebhook(msg)
+	case CreateTokenFromDialogRequestMsg:
+		// Create token from form dialog
+		return m, m.HandleCreateToken(msg)
+	case DeleteTokenRequestMsg:
+		// Delete token
+		return m, m.HandleDeleteToken(msg)
 	case ContentCreatedMsg:
 		if msg.AdminMode {
 			return m, tea.Batch(

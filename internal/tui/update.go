@@ -495,6 +495,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case WebhookDeletedMsg:
 		return m.UpdateDialog(msg)
 
+	// Token dialog show messages → UpdateDialog.
+	case ShowTokenFormDialogMsg:
+		return m.UpdateDialog(msg)
+	case TokenFormDialogAcceptMsg:
+		return m.UpdateDialog(msg)
+	case TokenFormDialogCancelMsg:
+		return m.UpdateDialog(msg)
+	case ShowDeleteTokenDialogMsg:
+		return m.UpdateDialog(msg)
+
+	// Token CRUD requests → UpdateCms.
+	case CreateTokenFromDialogRequestMsg:
+		return m.UpdateCms(msg)
+	case DeleteTokenRequestMsg:
+		return m.UpdateCms(msg)
+
+	// Token CRUD results → screen (fall through to ActiveScreen.Update).
+	// TokenCreatedFromDialogMsg carries the one-time raw token value that
+	// the screen needs to display, so it must reach the screen directly.
+	// TokenDeletedMsg similarly refreshes the list via the screen.
+
 	// Field type dialog show messages → UpdateDialog.
 	case ShowDeleteFieldTypeDialogMsg:
 		return m.UpdateDialog(msg)

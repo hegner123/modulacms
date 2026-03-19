@@ -276,6 +276,49 @@ func DeleteWebhookCmd(webhookID types.WebhookID) tea.Cmd {
 }
 
 // =============================================================================
+// DELETE TOKEN
+// =============================================================================
+
+// DeleteTokenContext stores context for a token deletion operation.
+type DeleteTokenContext struct {
+	TokenID string
+	Label   string
+}
+
+// ShowDeleteTokenDialogMsg triggers showing a delete token confirmation dialog.
+type ShowDeleteTokenDialogMsg struct {
+	TokenID string
+	Label   string
+}
+
+// ShowDeleteTokenDialogCmd creates a command to show a delete token confirmation dialog.
+func ShowDeleteTokenDialogCmd(tokenID string, label string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteTokenDialogMsg{
+			TokenID: tokenID,
+			Label:   label,
+		}
+	}
+}
+
+// DeleteTokenRequestMsg triggers token deletion.
+type DeleteTokenRequestMsg struct {
+	TokenID string
+}
+
+// TokenDeletedMsg is sent after a token is successfully deleted.
+type TokenDeletedMsg struct {
+	TokenID string
+}
+
+// DeleteTokenCmd creates a command to delete a token.
+func DeleteTokenCmd(tokenID string) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteTokenRequestMsg{TokenID: tokenID}
+	}
+}
+
+// =============================================================================
 // DIALOG ACCEPT DISPATCH
 // =============================================================================
 
@@ -811,6 +854,21 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 				func() tea.Msg {
 					return DeleteMediaFolderRequestMsg{FolderID: folderID}
 				},
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case DIALOGDELETETOKEN:
+		if ctx, ok := m.DCtx.Active.(*DeleteTokenContext); ok {
+			tokenID := ctx.TokenID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				DeleteTokenCmd(tokenID),
 			)
 		}
 		return m, tea.Batch(

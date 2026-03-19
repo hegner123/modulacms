@@ -38,6 +38,7 @@ const (
 	PLUGINTUIPAGE
 	VALIDATIONS
 	ADMINVALIDATIONS
+	TOKENSPAGE
 )
 
 // NewPage creates a new page with the specified index and label.
@@ -74,6 +75,7 @@ func InitPages() *map[PageIndex]Page {
 	pluginTuiPage := NewPage(PLUGINTUIPAGE, "Plugin")
 	validationsPage := NewPage(VALIDATIONS, "Validations")
 	adminValidationsPage := NewPage(ADMINVALIDATIONS, "Admin Validations")
+	tokensPage := NewPage(TOKENSPAGE, "Tokens")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -104,5 +106,6 @@ func InitPages() *map[PageIndex]Page {
 	p[PLUGINTUIPAGE] = pluginTuiPage
 	p[VALIDATIONS] = validationsPage
 	p[ADMINVALIDATIONS] = adminValidationsPage
+	p[TOKENSPAGE] = tokensPage
 	return &p
 }

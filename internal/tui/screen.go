@@ -110,6 +110,8 @@ func (m Model) screenForPage(page Page) Screen {
 		return NewRoutesScreen(true, nil, nil, m.PageRouteId)
 	case WEBHOOKSPAGE:
 		return NewWebhooksScreen(nil)
+	case TOKENSPAGE:
+		return NewTokensScreen(nil)
 	case DEPLOYPAGE:
 		return NewDeployScreen(nil)
 	case PIPELINESPAGE:

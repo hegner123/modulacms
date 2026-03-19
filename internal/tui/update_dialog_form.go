@@ -85,6 +85,38 @@ func UpdateUserFromDialogCmd(userID, username, name, email, role string) tea.Cmd
 }
 
 // =============================================================================
+// CREATE TOKEN FROM DIALOG
+// =============================================================================
+
+// CreateTokenFromDialogRequestMsg triggers token creation from dialog.
+type CreateTokenFromDialogRequestMsg struct {
+	TokenType string
+}
+
+// TokenCreatedFromDialogMsg is sent after a token is successfully created.
+// RawToken holds the one-time visible token value.
+type TokenCreatedFromDialogMsg struct {
+	TokenID  string
+	RawToken string
+}
+
+// ShowCreateTokenDialogCmd creates a command to show a token creation dialog.
+func ShowCreateTokenDialogCmd() tea.Cmd {
+	return func() tea.Msg {
+		return ShowTokenFormDialogMsg{Title: "New API Token"}
+	}
+}
+
+// CreateTokenFromDialogCmd creates a command to trigger token creation.
+func CreateTokenFromDialogCmd(tokenType string) tea.Cmd {
+	return func() tea.Msg {
+		return CreateTokenFromDialogRequestMsg{
+			TokenType: tokenType,
+		}
+	}
+}
+
+// =============================================================================
 // CREATE/UPDATE WEBHOOK FROM DIALOG
 // =============================================================================
 

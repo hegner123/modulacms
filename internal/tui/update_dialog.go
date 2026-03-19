@@ -675,6 +675,37 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(PAGEFOCUS),
 		)
 
+	// --- Token dialog messages ---
+	case ShowTokenFormDialogMsg:
+		dialog := NewTokenFormDialog(msg.Title)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteTokenDialogMsg:
+		dialog := NewDialog("Delete Token", fmt.Sprintf("Delete token '%s'?\nThis cannot be undone.", msg.Label), true, DIALOGDELETETOKEN)
+		dialog.SetButtons("Delete", "Cancel")
+		m.DCtx.Active = &DeleteTokenContext{
+			TokenID: msg.TokenID,
+			Label:   msg.Label,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case TokenFormDialogAcceptMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			CreateTokenFromDialogCmd(msg.TokenType),
+		)
+	case TokenFormDialogCancelMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+
 	// --- Media folder dialog messages ---
 	case ShowCreateMediaFolderDialogMsg:
 		dialog := NewCreateFolderDialog(msg.ParentID)

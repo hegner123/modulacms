@@ -281,6 +281,21 @@ type ValidationsSet struct {
 	Validations []db.Validation
 }
 
+// --- Token management messages ---
+
+// TokensFetchMsg requests fetching all tokens.
+type TokensFetchMsg struct{}
+
+// TokensFetchResultsMsg returns fetched tokens.
+type TokensFetchResultsMsg struct {
+	Data []db.Tokens
+}
+
+// TokensListSet sets the tokens list.
+type TokensListSet struct {
+	TokensList []db.Tokens
+}
+
 // --- i18n locale messages ---
 
 // LocaleListMsg carries the list of enabled locales for the locale picker.

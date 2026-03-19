@@ -669,3 +669,6 @@ func PipelineEntriesSetCmd(entries []PipelineEntryDisplay) tea.Cmd {
 
 // WebhooksFetchCmd creates a command to fetch the webhook list.
 func WebhooksFetchCmd() tea.Cmd { return func() tea.Msg { return WebhooksFetchMsg{} } }
+
+// TokensFetchCmd creates a command to fetch the token list.
+func TokensFetchCmd() tea.Cmd { return func() tea.Msg { return TokensFetchMsg{} } }
