@@ -39,17 +39,13 @@ jobs:
         working-directory: sdks/typescript
         run: pnpm install --frozen-lockfile
 
-      - name: Build types
+      - name: Build
         working-directory: sdks/typescript
-        run: pnpm --filter @modulacms/types build
+        run: pnpm build
 
       - name: Typecheck
         working-directory: sdks/typescript
         run: pnpm typecheck
-
-      - name: Build
-        working-directory: sdks/typescript
-        run: pnpm build
 
       - name: Test
         working-directory: sdks/typescript
