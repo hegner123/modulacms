@@ -6,7 +6,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-templ SessionsListContent(items []db.Sessions) {
+templ SessionsListContent(items []db.Sessions, userNames map[string]string) {
 	<div class="sm:flex sm:items-center">
 		<div class="sm:flex-auto">
 			<h1 class="text-base/7 font-semibold text-white">Active Sessions</h1>
@@ -14,8 +14,8 @@ templ SessionsListContent(items []db.Sessions) {
 		</div>
 	</div>
 	<div class="mt-8 flow-root">
-		<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-			<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+		<div class="overflow-x-auto">
+			<div class="min-w-full py-2 align-middle">
 				<div class="overflow-hidden rounded-lg border border-white/10 shadow-sm">
 					<table class="min-w-full divide-y divide-white/10">
 						<thead class="bg-white/5">
@@ -30,7 +30,7 @@ templ SessionsListContent(items []db.Sessions) {
 							</tr>
 						</thead>
 						<tbody id="sessions-table-body" class="divide-y divide-white/5">
-							@partials.SessionsTableRows(items)
+							@partials.SessionsTableRows(items, userNames)
 						</tbody>
 					</table>
 				</div>
@@ -39,8 +39,8 @@ templ SessionsListContent(items []db.Sessions) {
 	</div>
 }
 
-templ SessionsList(layout layouts.AdminData, items []db.Sessions) {
+templ SessionsList(layout layouts.AdminData, items []db.Sessions, userNames map[string]string) {
 	@layouts.Admin(layout) {
-		@SessionsListContent(items)
+		@SessionsListContent(items, userNames)
 	}
 }

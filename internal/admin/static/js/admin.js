@@ -4,6 +4,9 @@
 // Richtext: fetch global toolbar config
 // ========================================
 (function() {
+    // Skip on auth pages to avoid redirected fetches that desync the CSRF cookie.
+    var p = window.location.pathname;
+    if (p.indexOf('/login') !== -1 || p.indexOf('/forgot-password') !== -1 || p.indexOf('/reset-password') !== -1) return;
     fetch('/admin/api/config/richtext-toolbar', { credentials: 'same-origin' })
         .then(function(res) { return res.ok ? res.json() : null; })
         .then(function(toolbar) { if (toolbar) window.__mcmsRichtextToolbar = toolbar; })
@@ -415,6 +418,7 @@ const componentFiles = [
     '/admin/static/js/components/mcms-media-grid.js',
     '/admin/static/js/components/mcms-focal-point.js',
     '/admin/static/js/components/mcms-publish-button.js',
+    '/admin/static/js/components/mcms-command-palette.js',
 ];
 
 for (const src of componentFiles) {

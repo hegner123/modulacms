@@ -59,7 +59,7 @@ func RolesPermissionList(matrix PermissionMatrix) templ.Component {
 			}
 		}
 		if len(matrix.Rows) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"overflow-x-auto rounded-md ring-1 ring-white/10\"><table class=\"w-full text-sm\" data-perm-matrix><thead><tr class=\"border-b border-white/10\"><th class=\"px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400\">Resource</th><th class=\"px-2 py-3 text-center\"></th>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"overflow-x-auto overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10 text-sm\" data-perm-matrix><thead><tr class=\"border-b border-white/10\"><th class=\"px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400\">Resource</th><th class=\"px-2 py-3 text-center\"></th>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -28,8 +28,8 @@ templ UsersListContent(items []db.UserWithRoleLabelRow, roles []db.Roles, csrfTo
             </div>
         </form>
     </mcms-dialog>
-    <div class="mt-6 overflow-x-auto rounded-md ring-1 ring-white/10">
-        <table class="w-full">
+    <div class="mt-6 overflow-x-auto overflow-hidden rounded-lg border border-white/10 shadow-sm">
+        <table class="min-w-full divide-y divide-white/10">
             <thead>
                 <tr class="border-b border-white/10">
                     <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Username</th>
@@ -37,7 +37,7 @@ templ UsersListContent(items []db.UserWithRoleLabelRow, roles []db.Roles, csrfTo
                     <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Email</th>
                     <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Role</th>
                     <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Created</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">Actions</th>
+                    <th class="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-400">Actions</th>
                 </tr>
             </thead>
             <tbody id="users-table-body" class="divide-y divide-white/5">

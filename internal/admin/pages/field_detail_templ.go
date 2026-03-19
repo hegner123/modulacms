@@ -35,7 +35,7 @@ func FieldDetailContent(field db.Fields, availableRoles []db.Roles, csrfToken st
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Page Header --><div class=\"border-b border-white/10 pb-5\" data-page-header><div class=\"flex items-center gap-x-3\"><a href=\"/admin/schema/fields\" class=\"text-sm text-gray-400 hover:text-white\" hx-get=\"/admin/schema/fields\" hx-target=\"#main-content\" hx-push-url=\"true\">&larr; Back</a></div><div class=\"mt-2 flex items-center justify-between\"><div class=\"flex items-center gap-x-3\"><h1 class=\"text-lg font-semibold text-white\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Page Header --><div class=\"border-b border-white/10 pb-5\" data-page-header><div class=\"flex items-center gap-x-3\"><a href=\"/admin/fields\" class=\"text-sm text-gray-400 hover:text-white\" hx-get=\"/admin/fields\" hx-target=\"#main-content\" hx-push-url=\"true\">&larr; Back</a></div><div class=\"mt-2 flex items-center justify-between\"><div class=\"flex items-center gap-x-3\"><h1 class=\"text-lg font-semibold text-white\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -61,14 +61,14 @@ func FieldDetailContent(field db.Fields, availableRoles []db.Roles, csrfToken st
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span></div><div class=\"flex items-center gap-x-3\"><button type=\"submit\" form=\"field-form\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Save Changes</button></div></div></div><!-- Two-Column Detail Layout --><div class=\"mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3\"><!-- Main content (2/3) --><div class=\"lg:col-span-2\"><div class=\"rounded-xl border border-white/10 bg-white/5 p-6\"><h2 class=\"text-base font-semibold text-white\">Details</h2><div id=\"field-edit-form\" class=\"mt-6\"><form id=\"field-form\" hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span></div><div class=\"flex items-center gap-x-3\"><button type=\"submit\" form=\"field-form\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Save Changes</button></div></div></div><!-- Two-Column Detail Layout --><div class=\"mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3\"><!-- Main content (2/3) --><div class=\"lg:col-span-2\"><div><h2 class=\"text-base font-semibold text-white\">Details</h2><div id=\"field-edit-form\" class=\"mt-6\"><form id=\"field-form\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/fields/" + field.FieldID.String())
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/fields/" + field.FieldID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 36, Col: 84}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 36, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -371,59 +371,75 @@ func FieldDetailContent(field db.Fields, availableRoles []db.Roles, csrfToken st
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</textarea></div></div><div class=\"sm:col-span-6\"><label for=\"ui_config\" class=\"block text-sm font-medium text-white\">UI Config (JSON)</label><div class=\"mt-2\"><textarea id=\"ui_config\" name=\"ui_config\" rows=\"4\" class=\"block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 font-mono text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</textarea></div></div><div class=\"sm:col-span-6\"><label for=\"ui_config\" class=\"block text-sm font-medium text-white\">UI Config</label><div class=\"mt-2 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = uiConfigFields(field.UIConfig).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</div><textarea id=\"ui_config\" name=\"ui_config\" style=\"display:none\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(field.UIConfig)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 116, Col: 303}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 118, Col: 111}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</textarea></div></div></div></form></div></div></div><!-- Sidebar (1/3) --><div><div class=\"rounded-xl border border-white/10 bg-white/5 p-6\"><h2 class=\"text-base font-semibold text-white\">Metadata</h2><dl class=\"mt-4 space-y-4\"><div><dt class=\"text-sm text-gray-400\">ID</dt><dd class=\"mt-1 text-sm text-white\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</textarea></div></div></form>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = uiConfigScript().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</div></div></div><!-- Sidebar (1/3) --><div><div class=\"rounded-xl border border-white/10 bg-white/5 p-6\"><h2 class=\"text-base font-semibold text-white\">Metadata</h2><dl class=\"mt-4 space-y-4\"><div><dt class=\"text-sm text-gray-400\">ID</dt><dd class=\"mt-1 text-sm text-white\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(field.FieldID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 131, Col: 84}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 133, Col: 84}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</dd></div><div><dt class=\"text-sm text-gray-400\">Created</dt><dd class=\"mt-1 text-sm text-white\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</dd></div><div><dt class=\"text-sm text-gray-400\">Created</dt><dd class=\"mt-1 text-sm text-white\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(field.DateCreated.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 135, Col: 88}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 137, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</dd></div><div><dt class=\"text-sm text-gray-400\">Modified</dt><dd class=\"mt-1 text-sm text-white\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</dd></div><div><dt class=\"text-sm text-gray-400\">Modified</dt><dd class=\"mt-1 text-sm text-white\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(field.DateModified.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 139, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 141, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</dd></div></dl></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</dd></div></dl></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -1,0 +1,120 @@
+package pages
+
+import (
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+templ TokenDetailContent(token db.Tokens, userName string) {
+    <!-- Page heading -->
+    <div class="border-b border-white/10 pb-5">
+        <div>
+            <a href="/admin/users/tokens"
+               hx-get="/admin/users/tokens"
+               hx-target="#main-content"
+               hx-push-url="true"
+               class="text-sm font-medium text-gray-400 hover:text-white">&larr; Back to Tokens</a>
+        </div>
+        <div class="mt-3 md:flex md:items-center md:justify-between">
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-x-3">
+                    <h2 class="text-2xl/7 font-bold text-white sm:truncate sm:text-3xl sm:tracking-tight">Token</h2>
+                    <span class="inline-flex items-center rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-gray-300 ring-1 ring-white/10 ring-inset">{ token.TokenType }</span>
+                    if token.Revoked {
+                        <span class="inline-flex items-center rounded-md bg-red-400/10 px-2 py-1 text-xs font-medium text-red-400 ring-1 ring-red-400/20 ring-inset">Revoked</span>
+                    } else {
+                        <span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">Active</span>
+                    }
+                </div>
+            </div>
+            if !token.Revoked {
+                <div class="mt-4 flex gap-x-3 md:mt-0 md:ml-4">
+                    <mcms-confirm
+                        label="Revoke Token"
+                        message="Are you sure you want to revoke this token? Any application using it will immediately lose access."
+                        button-class="inline-flex items-center rounded-md bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-400 ring-1 ring-red-400/20 ring-inset hover:bg-red-500/20"
+                        hx-delete={ "/admin/users/tokens/" + token.ID }
+                        hx-swap="none"
+                        hx-on--after-request="if(event.detail.successful) window.location='/admin/users/tokens'"
+                    ></mcms-confirm>
+                </div>
+            }
+        </div>
+    </div>
+    <!-- Token value notice -->
+    <div class="mt-6 rounded-lg border border-white/10 bg-white/5 p-4">
+        <div class="flex items-start gap-3">
+            <svg class="mt-0.5 h-5 w-5 shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"/>
+            </svg>
+            <p class="text-sm text-gray-400">
+                Token values are only shown once at creation time and cannot be retrieved. If you have lost the token value, revoke this token and create a new one.
+            </p>
+        </div>
+    </div>
+    <!-- Metadata -->
+    <div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+            <h3 class="text-base/7 font-semibold text-white">Details</h3>
+            <dl class="mt-6 divide-y divide-white/10 border-t border-white/10">
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">ID</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0 font-mono">{ token.ID }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Type</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ token.TokenType }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Token (hashed)</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0 font-mono break-all">{ token.Token }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">User</dt>
+                    <dd class="mt-1 text-sm/6 sm:col-span-2 sm:mt-0">
+                        if token.UserID.String() != "" {
+                            <a href={ templ.SafeURL("/admin/users/" + token.UserID.String()) }
+                               hx-get={ "/admin/users/" + token.UserID.String() }
+                               hx-target="#main-content"
+                               hx-push-url="true"
+                               class="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">
+                                if userName != "" {
+                                    { userName }
+                                } else {
+                                    { token.UserID.String() }
+                                }
+                            </a>
+                            <span class="ml-2 text-xs text-gray-500">({ token.UserID.String() })</span>
+                        } else {
+                            <span class="text-gray-600">none</span>
+                        }
+                    </dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Issued</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ token.IssuedAt.String() }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Expires</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ token.ExpiresAt.String() }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Status</dt>
+                    <dd class="mt-1 text-sm/6 sm:col-span-2 sm:mt-0">
+                        if token.Revoked {
+                            <span class="inline-flex items-center rounded-md bg-red-400/10 px-2 py-1 text-xs font-medium text-red-400 ring-1 ring-red-400/20 ring-inset">Revoked</span>
+                        } else {
+                            <span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">Active</span>
+                        }
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+}
+
+templ TokenDetail(layout layouts.AdminData, token db.Tokens, userName string) {
+    @layouts.Admin(layout) {
+        @TokenDetailContent(token, userName)
+    }
+}

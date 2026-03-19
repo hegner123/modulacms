@@ -4,14 +4,14 @@ import "github.com/hegner123/modulacms/internal/admin/components"
 
 templ Admin(data AdminData) {
 	@Base(data.Title, data.CSRFToken, data.Version) {
-		<div class="flex min-h-screen flex-col">
+		<div class="flex min-h-screen flex-col pt-16">
 			@components.Topbar(data.User)
-			<div class="flex flex-1">
+			<div class="flex flex-1 bg-[var(--color-bg)]">
 				@components.Sidebar(data.CurrentPath, data.Permissions)
 				<!-- Mobile sidebar overlay -->
 				<div class="fixed inset-0 z-40 hidden bg-black/60 lg:hidden" data-sidebar-overlay data-state=""
 					 onclick="toggleSidebar()"></div>
-				<main id="main-content" class="min-w-0 flex-1 overflow-y-auto p-6">
+				<main id="main-content" class="min-w-0 flex-1 overflow-y-auto bg-[var(--color-bg)] p-6 lg:ml-44">
 					{ children... }
 				</main>
 			</div>
@@ -21,6 +21,7 @@ templ Admin(data AdminData) {
 				@data.Dialogs
 			}
 		</div>
+		<mcms-command-palette></mcms-command-palette>
 		<mcms-toast position="bottom-right" duration="5000"></mcms-toast>
 	}
 }

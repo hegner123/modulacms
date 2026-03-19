@@ -8,7 +8,10 @@ package pages
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/hegner123/modulacms/internal/admin/layouts"
+import (
+	"github.com/hegner123/modulacms/internal/admin/components"
+	"github.com/hegner123/modulacms/internal/admin/layouts"
+)
 
 func DemoContent() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -31,7 +34,23 @@ func DemoContent() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"page-header\" data-page-header><h1>Demo</h1></div><div style=\"display: flex; flex-direction: column; gap: 2rem; padding: 2rem;\"><div><h3>Brand Spinner</h3><div style=\"display: flex; align-items: center; gap: 1.5rem; margin-top: 1rem;\"><div class=\"spinner-brand\"><img src=\"/admin/static/icons/spinner.svg\" alt=\"Loading\"></div><div class=\"spinner-brand spinner-brand-lg\"><img src=\"/admin/static/icons/spinner.svg\" alt=\"Loading\"></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"page-header\" data-page-header><h1>Demo</h1></div><div style=\"display: flex; flex-direction: column; gap: 2rem; padding: 2rem;\"><div><h3>Brand Spinner</h3><div style=\"display: flex; align-items: center; gap: 1.5rem; margin-top: 1rem;\"><div class=\"spinner-brand\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = components.Spinner().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"spinner-brand spinner-brand-lg\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = components.Spinner().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

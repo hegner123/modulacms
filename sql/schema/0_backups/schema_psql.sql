@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS backups (
     backup_id       CHAR(26) PRIMARY KEY,
     node_id         CHAR(26) NOT NULL,
-    backup_type     VARCHAR(20) NOT NULL CHECK (backup_type IN ('full', 'incremental', 'snapshot')),
-    status          VARCHAR(20) NOT NULL CHECK (status IN ('started', 'completed', 'failed', 'verified')),
+    backup_type     VARCHAR(20) NOT NULL CHECK (backup_type IN ('full', 'incremental', 'differential')),
+    status          VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'in_progress', 'completed', 'failed')),
     started_at      TIMESTAMP WITH TIME ZONE NOT NULL,
     completed_at    TIMESTAMP WITH TIME ZONE,
     duration_ms     INTEGER,

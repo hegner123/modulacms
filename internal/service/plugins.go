@@ -81,6 +81,16 @@ type PluginDetail struct {
 	SchemaDrift  bool
 }
 
+// PluginRoute is the service-level view of a registered plugin route.
+type PluginRoute struct {
+	Method     string
+	Path       string
+	PluginName string
+	FullPath   string
+	Public     bool
+	Approved   bool
+}
+
 // RouteApprovalInput identifies a plugin route for approval or revocation.
 type RouteApprovalInput struct {
 	Plugin string
@@ -103,6 +113,24 @@ type HookInfo struct {
 	Priority   int
 	Approved   bool
 	IsWildcard bool
+}
+
+// PipelineChain is the service-level view of a dry-run pipeline chain.
+type PipelineChain struct {
+	Key       string // "table.phase_operation"
+	Table     string
+	Operation string // base operation: "create", "update", "delete"
+	Phase     string // "before" or "after"
+	Entries   []PipelineEntryInfo
+}
+
+// PipelineEntryInfo describes a single entry in a pipeline chain.
+type PipelineEntryInfo struct {
+	PipelineID string
+	PluginName string
+	Handler    string
+	Priority   int
+	Enabled    bool
 }
 
 // RequestApprovalInput identifies a plugin request domain for approval or revocation.
@@ -313,15 +341,27 @@ func (s *PluginService) CleanupDrop(ctx context.Context, tables []string) ([]str
 }
 
 // ListRoutes returns all registered plugin routes with approval status.
-func (s *PluginService) ListRoutes(ctx context.Context) ([]plugin.RouteRegistration, error) {
+func (s *PluginService) ListRoutes(ctx context.Context) ([]PluginRoute, error) {
 	if s.mgr == nil {
-		return []plugin.RouteRegistration{}, nil
+		return []PluginRoute{}, nil
 	}
 	bridge := s.mgr.Bridge()
 	if bridge == nil {
-		return []plugin.RouteRegistration{}, nil
+		return []PluginRoute{}, nil
 	}
-	return bridge.ListRoutes(), nil
+	regs := bridge.ListRoutes()
+	routes := make([]PluginRoute, 0, len(regs))
+	for _, r := range regs {
+		routes = append(routes, PluginRoute{
+			Method:     r.Method,
+			Path:       r.Path,
+			PluginName: r.PluginName,
+			FullPath:   r.FullPath,
+			Public:     r.Public,
+			Approved:   r.Approved,
+		})
+	}
+	return routes, nil
 }
 
 // ApproveRoutes approves one or more plugin routes.
@@ -490,13 +530,33 @@ func (s *PluginService) ListPipelines(ctx context.Context) ([]db.Pipeline, error
 }
 
 // DryRunPipelines returns dry-run results for all registered pipelines.
-func (s *PluginService) DryRunPipelines(ctx context.Context) ([]plugin.DryRunResult, error) {
+func (s *PluginService) DryRunPipelines(ctx context.Context) ([]PipelineChain, error) {
 	if s.mgr == nil {
-		return []plugin.DryRunResult{}, nil
+		return []PipelineChain{}, nil
 	}
 	results := s.mgr.DryRunAllPipelines()
 	if results == nil {
-		return []plugin.DryRunResult{}, nil
+		return []PipelineChain{}, nil
 	}
-	return results, nil
+	chains := make([]PipelineChain, 0, len(results))
+	for _, r := range results {
+		entries := make([]PipelineEntryInfo, 0, len(r.Entries))
+		for _, e := range r.Entries {
+			entries = append(entries, PipelineEntryInfo{
+				PipelineID: e.PipelineID,
+				PluginName: e.PluginName,
+				Handler:    e.Handler,
+				Priority:   e.Priority,
+				Enabled:    e.Enabled,
+			})
+		}
+		chains = append(chains, PipelineChain{
+			Key:       r.Table + "." + r.Phase + "_" + r.Operation,
+			Table:     r.Table,
+			Operation: r.Operation,
+			Phase:     r.Phase,
+			Entries:   entries,
+		})
+	}
+	return chains, nil
 }

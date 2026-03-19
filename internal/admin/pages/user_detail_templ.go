@@ -14,7 +14,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-func UserDetail(layout layouts.AdminData, user db.Users, roles []db.Roles, csrfToken string) templ.Component {
+func UserDetail(layout layouts.AdminData, user db.Users, roles []db.Roles, sshKeys []db.UserSshKeys, oauthConns []db.UserOauth, oauthConfigured bool, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -47,7 +47,7 @@ func UserDetail(layout layouts.AdminData, user db.Users, roles []db.Roles, csrfT
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = partials.UserDetailContent(user, roles, csrfToken).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = partials.UserDetailContent(user, roles, sshKeys, oauthConns, oauthConfigured, csrfToken).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -92,12 +92,12 @@ func TestAdminAuthMiddleware_NextParamPreservesPath(t *testing.T) {
 	mw := AdminAuthMiddleware((*config.Manager)(nil))
 	handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/schema/datatypes", nil)
+	req := httptest.NewRequest(http.MethodGet, "/admin/datatypes", nil)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 
 	location := rec.Header().Get("Location")
-	if !strings.Contains(location, "schema") {
+	if !strings.Contains(location, "datatypes") {
 		t.Errorf("expected next= to contain the original path, got %s", location)
 	}
 }

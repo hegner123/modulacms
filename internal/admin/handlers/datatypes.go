@@ -15,7 +15,7 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-// DatatypesListHandler handles GET /admin/schema/datatypes.
+// DatatypesListHandler handles GET /admin/datatypes.
 // Lists all datatypes with pagination, search, type filter, and sorting.
 // HTMX requests receive partial table rows only.
 func DatatypesListHandler(svc *service.Registry) http.HandlerFunc {
@@ -99,7 +99,7 @@ func DatatypesListHandler(svc *service.Registry) http.HandlerFunc {
 		}
 		sortStrings(distinctTypes)
 
-		pd := NewPaginationData(total, limit, offset, "#datatypes-table-body", "/admin/schema/datatypes")
+		pd := NewPaginationData(total, limit, offset, "#datatypes-table-body", "/admin/datatypes")
 		pg := partials.PaginationPageData{
 			Current:    pd.Current,
 			TotalPages: pd.TotalPages,
@@ -142,7 +142,7 @@ func sortStrings(s []string) {
 	}
 }
 
-// DatatypeDetailHandler handles GET /admin/schema/datatypes/{id}.
+// DatatypeDetailHandler handles GET /admin/datatypes/{id}.
 // Shows datatype detail with linked fields list.
 func DatatypeDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -192,7 +192,7 @@ func DatatypeDetailHandler(svc *service.Registry) http.HandlerFunc {
 	}
 }
 
-// DatatypeCreateHandler handles POST /admin/schema/datatypes.
+// DatatypeCreateHandler handles POST /admin/datatypes.
 // Creates a datatype via the service layer, which validates label and type.
 func DatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -252,16 +252,16 @@ func DatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if !IsHTMX(r) {
-			http.Redirect(w, r, "/admin/schema/datatypes", http.StatusSeeOther)
+			http.Redirect(w, r, "/admin/datatypes", http.StatusSeeOther)
 			return
 		}
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Datatype created", "type": "success"}}`)
-		w.Header().Set("HX-Redirect", "/admin/schema/datatypes")
+		w.Header().Set("HX-Redirect", "/admin/datatypes")
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-// DatatypeUpdateHandler handles POST /admin/schema/datatypes/{id}.
+// DatatypeUpdateHandler handles POST /admin/datatypes/{id}.
 // Updates user-editable fields via the service layer, which preserves immutable fields.
 func DatatypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -326,16 +326,16 @@ func DatatypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if !IsHTMX(r) {
-			http.Redirect(w, r, "/admin/schema/datatypes/"+id, http.StatusSeeOther)
+			http.Redirect(w, r, "/admin/datatypes/"+id, http.StatusSeeOther)
 			return
 		}
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Datatype updated", "type": "success"}}`)
-		w.Header().Set("HX-Redirect", "/admin/schema/datatypes/"+id)
+		w.Header().Set("HX-Redirect", "/admin/datatypes/"+id)
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-// DatatypeDeleteHandler handles DELETE /admin/schema/datatypes/{id}.
+// DatatypeDeleteHandler handles DELETE /admin/datatypes/{id}.
 // HTMX-only endpoint. Non-HTMX requests receive 405.
 func DatatypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -371,7 +371,7 @@ func DatatypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	}
 }
 
-// DatatypeCreateFieldHandler handles POST /admin/schema/datatypes/{id}/fields.
+// DatatypeCreateFieldHandler handles POST /admin/datatypes/{id}/fields.
 // Creates a new field with parent_id set to this datatype via the service layer.
 func DatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -431,11 +431,11 @@ func DatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if !IsHTMX(r) {
-			http.Redirect(w, r, "/admin/schema/datatypes/"+id, http.StatusSeeOther)
+			http.Redirect(w, r, "/admin/datatypes/"+id, http.StatusSeeOther)
 			return
 		}
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Field created", "type": "success"}}`)
-		w.Header().Set("HX-Redirect", "/admin/schema/datatypes/"+id)
+		w.Header().Set("HX-Redirect", "/admin/datatypes/"+id)
 		w.WriteHeader(http.StatusOK)
 	}
 }

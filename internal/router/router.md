@@ -108,7 +108,7 @@ Handler functions follow same pattern as user handlers: apiGetRole, apiListRoles
 
 ### SessionsHandler
 
-Collection endpoint at /api/v1/sessions. GET and POST return 405 Method Not Allowed as sessions created through login endpoint.
+Collection endpoint at /api/v1/sessions. GET lists all sessions (requires sessions:read permission). POST returns 405 Method Not Allowed as sessions are created through the login endpoint.
 
 ### SessionHandler
 
@@ -118,7 +118,7 @@ Individual resource endpoint at /api/v1/sessions/ supporting PUT to update sessi
 
 ### TokensHandler
 
-Collection endpoint at /api/v1/tokens supporting GET to list tokens and POST to create token. GET returns 405 Method Not Allowed.
+Collection endpoint at /api/v1/tokens supporting GET to list tokens and POST to create token. Uses RequireResourcePermission("tokens") for automatic HTTP method to operation mapping, so GET lists all tokens.
 
 ### TokenHandler
 
@@ -561,6 +561,134 @@ Uses searchSvc.SearchWithPrefix by default, or searchSvc.Search when prefix=fals
 Handles POST /api/v1/admin/search/rebuild to re-index all documents. Requires `search:update` permission. Returns 404 if search is disabled.
 
 Calls searchSvc.Rebuild() then searchSvc.Stats(). Returns JSON with status, documents count, terms count, and mem_bytes.
+
+## Health Handler
+
+### HealthHandler
+
+Handles GET /api/v1/health. Public endpoint (no auth required). Returns JSON health check including database connectivity status and optional plugin health information.
+
+## Globals Handler
+
+### GlobalsHandler
+
+Handles GET /api/v1/globals. Public endpoint with CORS. Returns all published global content trees — root nodes typed as `_global` whose trees are available site-wide.
+
+## Query Handler
+
+### QueryHandler
+
+Handles GET /api/v1/query/{datatype}. Public endpoint with CORS. Queries content items by datatype name with optional filtering, sorting, and pagination.
+
+Query parameters: sort (field name, prefix - for descending), limit (default 20, max 100), offset, locale, status (default published), plus arbitrary field filter keys with optional operator suffixes ([eq], [ne], [gt], [gte], [lt], [lte], [like], [in]).
+
+## Publishing Handlers
+
+### PublishContentHandler
+
+Handles POST /api/v1/admin/content/publish. Requires content:publish permission. Publishes content by creating a snapshot.
+
+### UnpublishContentHandler
+
+Handles POST /api/v1/admin/content/unpublish. Requires content:publish permission. Removes published state from content.
+
+### ScheduleContentHandler
+
+Handles POST /api/v1/admin/content/schedule. Requires content:publish permission. Schedules content for future publication.
+
+## Content Version Handlers
+
+### ContentVersionsListHandler
+
+Handles GET /api/v1/admin/content/versions. Requires content:read permission. Lists all content versions.
+
+### ContentVersionGetHandler
+
+Handles GET /api/v1/admin/content/versions/. Requires content:read permission. Gets a specific content version by ID via query parameter q.
+
+### ContentVersionCreateHandler
+
+Handles POST /api/v1/admin/content/versions. Requires content:update permission. Creates a version snapshot of current content state.
+
+### ContentVersionDeleteHandler
+
+Handles DELETE /api/v1/admin/content/versions/. Requires content:delete permission. Deletes a specific content version.
+
+### ContentRestoreHandler
+
+Handles POST /api/v1/admin/content/restore. Requires content:update permission. Restores content to a previous version state.
+
+## Locale Handlers
+
+### LocalesHandler
+
+Collection endpoint at /api/v1/admin/locales supporting GET to list and POST to create. Uses RequireResourcePermission("locale") for automatic HTTP method to operation mapping.
+
+### LocaleHandler
+
+Individual resource endpoint at /api/v1/admin/locales/ supporting GET, PUT, DELETE for specific locale identified by query parameter q containing LocaleID.
+
+## Webhook API Handlers
+
+### WebhookListHandler
+
+Handles GET /api/v1/admin/webhooks. Requires webhook:read permission. Lists all configured webhooks.
+
+### WebhookCreateHandler
+
+Handles POST /api/v1/admin/webhooks. Requires webhook:create permission. Creates a new webhook configuration.
+
+### WebhookGetHandler
+
+Handles GET /api/v1/admin/webhooks/{id}. Requires webhook:read permission. Returns webhook details by ID.
+
+### WebhookUpdateHandler
+
+Handles PUT /api/v1/admin/webhooks/{id}. Requires webhook:update permission. Updates webhook configuration.
+
+### WebhookDeleteHandler
+
+Handles DELETE /api/v1/admin/webhooks/{id}. Requires webhook:delete permission. Deletes a webhook.
+
+### WebhookTestHandler
+
+Handles POST /api/v1/admin/webhooks/{id}/test. Requires webhook:update permission. Sends a test delivery to the webhook endpoint.
+
+### WebhookDeliveriesHandler
+
+Handles GET /api/v1/admin/webhooks/{id}/deliveries. Requires webhook:read permission. Lists delivery history for a webhook.
+
+### WebhookDeliveryRetryHandler
+
+Handles POST /api/v1/admin/webhooks/deliveries/{id}/retry. Requires webhook:update permission. Retries a failed delivery.
+
+## Translation Handlers
+
+### CreateContentTranslationHandler
+
+Handles POST /api/v1/admin/contentdata/{id}/translations. Requires content:create permission. Creates a translation of a content node for a specified locale.
+
+### CreateAdminContentTranslationHandler
+
+Handles POST /api/v1/admin/admincontentdata/{id}/translations. Requires content:create permission. Creates a translation of an admin content node.
+
+## Users Full Handlers
+
+### UsersFullHandler
+
+Handles GET /api/v1/users/full. Requires users:read permission. Returns all users with their role details included.
+
+### UserFullHandler
+
+Handles GET /api/v1/users/full/. Requires users:read permission. Returns a single user with role details by ID via query parameter q.
+
+### ReassignDeleteHandler
+
+Handles POST /api/v1/users/reassign-delete. Requires users:delete permission. Reassigns the user's content to another user and then deletes the user.
+
+### UserSessionsHandler
+
+Handles GET /api/v1/users/sessions. Requires sessions:read permission. Lists sessions for the authenticated user.
 
 ## Utilities
 

@@ -32,24 +32,21 @@ func UserIsAuth(r *http.Request, cookie *http.Cookie, c *config.Config) (*db.Use
 
 	utility.DefaultLogger.Fdebug("userCookie ID %v\n", userCookie.UserId)
 
-	session, err := dbc.GetSessionByUserId(types.NullableUserID{Valid: true, ID: userCookie.UserId})
-	utility.DefaultLogger.Fdebug("", session)
+	session, err := dbc.GetSessionByToken(userCookie.Session)
 	if err != nil || session == nil {
-		utility.DefaultLogger.Ferror("Error retrieving session or no sessions found:", err)
-		return nil, err
+		utility.DefaultLogger.Ferror("Error retrieving session by token:", err)
+		return nil, fmt.Errorf("session not found")
 	}
-	utility.DefaultLogger.Fdebug("Cookie session: %s", userCookie.Session)
-	utility.DefaultLogger.Fdebug("DB session: %s", session.SessionData.String)
-	if userCookie.Session != session.SessionData.String {
-		err := fmt.Errorf("sessions don't match")
-		utility.DefaultLogger.Fwarn("", err)
-		return nil, err
+
+	// Verify the session belongs to the cookie's user
+	if session.UserID.String() != userCookie.UserId.String() {
+		utility.DefaultLogger.Fwarn("session user mismatch: cookie=%s session=%s", fmt.Errorf("cookie=%s session=%s", userCookie.UserId, session.UserID))
+		return nil, fmt.Errorf("session user mismatch")
 	}
 
 	expired := utility.TimestampLessThan(session.ExpiresAt.String())
 	if expired {
-		err := fmt.Errorf("session is expired")
-		return nil, err
+		return nil, fmt.Errorf("session is expired")
 	}
 
 	// Check and refresh OAuth tokens if needed

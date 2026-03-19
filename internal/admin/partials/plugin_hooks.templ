@@ -1,0 +1,64 @@
+package partials
+
+import (
+	"fmt"
+
+	"github.com/hegner123/modulacms/internal/service"
+)
+
+templ PluginHooksTableRows(hooks []service.HookInfo, pluginName, csrfToken string, hasAdmin bool) {
+	for _, h := range hooks {
+		<tr>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ h.Event }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">
+				if h.Table == "" || h.IsWildcard {
+					<span class="text-gray-500 italic">all tables</span>
+				} else {
+					{ h.Table }
+				}
+			</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ fmt.Sprintf("%d", h.Priority) }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm">
+				if h.IsWildcard {
+					<span class="inline-flex items-center rounded-md bg-purple-400/10 px-2 py-1 text-xs font-medium text-purple-400 ring-1 ring-purple-400/20 ring-inset">Wildcard</span>
+				}
+			</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm">
+				if h.Approved {
+					<span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">Approved</span>
+				} else {
+					<span class="inline-flex items-center rounded-md bg-yellow-400/10 px-2 py-1 text-xs font-medium text-yellow-400 ring-1 ring-yellow-400/20 ring-inset">Pending</span>
+				}
+			</td>
+			if hasAdmin {
+				<td class="whitespace-nowrap px-4 py-4 text-sm">
+					if h.Approved {
+						<form
+							hx-post="/admin/plugins/hooks/revoke"
+							hx-target="#plugin-hooks-body"
+							hx-swap="innerHTML"
+						>
+							<input type="hidden" name="_csrf" value={ csrfToken }/>
+							<input type="hidden" name="plugin" value={ pluginName }/>
+							<input type="hidden" name="event" value={ h.Event }/>
+							<input type="hidden" name="table" value={ h.Table }/>
+							<button type="submit" class="text-sm text-red-400 hover:text-red-300">Revoke</button>
+						</form>
+					} else {
+						<form
+							hx-post="/admin/plugins/hooks/approve"
+							hx-target="#plugin-hooks-body"
+							hx-swap="innerHTML"
+						>
+							<input type="hidden" name="_csrf" value={ csrfToken }/>
+							<input type="hidden" name="plugin" value={ pluginName }/>
+							<input type="hidden" name="event" value={ h.Event }/>
+							<input type="hidden" name="table" value={ h.Table }/>
+							<button type="submit" class="text-sm text-green-400 hover:text-green-300">Approve</button>
+						</form>
+					}
+				</td>
+			}
+		</tr>
+	}
+}

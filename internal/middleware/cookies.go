@@ -67,20 +67,25 @@ func WriteCookie(w http.ResponseWriter, c *config.Config, sessionData string, us
 
 	// Parse SameSite mode from config
 	sameSite := http.SameSiteLaxMode // Default to Lax
+	secure := c.Cookie_Secure
 	if c.Cookie_SameSite == "strict" {
 		sameSite = http.SameSiteStrictMode
 	} else if c.Cookie_SameSite == "none" {
-		sameSite = http.SameSiteNoneMode
+		if c.Cookie_Secure {
+			sameSite = http.SameSiteNoneMode
+			secure = true
+		}
+		// SameSite=None without Secure is rejected by browsers — keep Lax default.
 	}
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     c.Cookie_Name,
 		Value:    encoded,
 		Path:     "/",
-		MaxAge:   86400,           // 24 hours
-		HttpOnly: true,            // Prevent JavaScript access
-		Secure:   c.Cookie_Secure, // HTTPS only (from config)
-		SameSite: sameSite,        // CSRF protection (from config)
+		MaxAge:   86400,    // 24 hours
+		HttpOnly: true,     // Prevent JavaScript access
+		Secure:   secure,   // HTTPS only (forced for SameSite=None)
+		SameSite: sameSite, // CSRF protection (from config)
 	})
 
 	utility.DefaultLogger.Finfo("Secure cookie set for user %d", userId)

@@ -1,0 +1,39 @@
+package partials
+
+// TokenRevealDialog renders a dialog showing the raw token value after creation.
+// The raw token is only available at creation time and cannot be retrieved later.
+templ TokenRevealDialog(rawToken string) {
+    <mcms-dialog id="token-reveal-dialog" aria-labelledby="token-reveal-dialog-title" open>
+        <div class="px-5 py-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                <h2 id="token-reveal-dialog-title" class="text-lg font-semibold text-white">Token Created</h2>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">&times;</button>
+            </div>
+            <div class="rounded-md border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/10 p-3 mb-4">
+                <p class="text-sm text-[var(--color-warning)]/80">
+                    Copy this token now. It will not be shown again.
+                </p>
+            </div>
+            <div class="relative">
+                <input
+                    type="text"
+                    value={ rawToken }
+                    readonly
+                    id="token-reveal-value"
+                    class="block w-full rounded-md bg-white/5 px-3 py-2 pr-20 font-mono text-sm text-white outline-1 -outline-offset-1 outline-white/10"
+                    onclick="this.select()"
+                />
+                <button
+                    type="button"
+                    class="absolute top-1 right-1 rounded-md bg-[var(--color-primary)] px-3 py-1 text-xs font-semibold text-white hover:bg-[var(--color-primary-hover)]"
+                    onclick="navigator.clipboard.writeText(document.getElementById('token-reveal-value').value).then(function() { this.textContent = 'Copied!' }.bind(this))"
+                >
+                    Copy
+                </button>
+            </div>
+            <div class="flex justify-end border-t border-white/10 pt-4 mt-4">
+                <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('mcms-dialog').close()">Done</button>
+            </div>
+        </div>
+    </mcms-dialog>
+}

@@ -65,14 +65,16 @@ When a workflow is not covered here, check `ai/workflows/` and `ai/` for relevan
 
 ## TypeScript SDKs
 
-The `sdks/typescript/` directory is a pnpm workspace monorepo containing four packages:
+The `sdks/typescript/` directory is a pnpm workspace monorepo containing six packages:
 
 | Package | npm Name | Purpose |
 |---------|----------|---------|
 | `types/` | `@modulacms/types` | Shared entity types, branded IDs, enums |
+| `tree/` | `@modulacms/tree` | Content tree utilities |
 | `modulacms-sdk/` | `@modulacms/sdk` | Read-only content delivery SDK |
 | `modulacms-admin-sdk/` | `@modulacms/admin-sdk` | Full admin CRUD SDK |
 | `plugin-sdk/` | `@modulacms/plugin-sdk` | Plugin UI SDK (Web Components, zero deps, browser-only) |
+| `admin-ui/` | `@modulacms/admin-ui` | Admin panel TypeScript (block editor state) |
 
 The content SDKs depend on `@modulacms/types` via `workspace:*`. The admin SDK uses thin re-export files in `src/types/` that re-export shared entity types from `@modulacms/types` while keeping Create/Update param types local. The plugin SDK has zero dependencies — plugin API responses are opaque and consumers provide their own types via generics.
 
@@ -479,7 +481,7 @@ internal/admin/handlers/  # Render, RenderWithOOB, NewAdminData, CSRFTokenFromCo
 internal/admin/layouts/   # templ layouts (base, admin, auth) + AdminData type
 internal/admin/pages/     # templ full-page components
 internal/admin/partials/  # templ HTMX swap targets
-internal/admin/components/# templ shared UI components (sidebar, topbar, icon)
+internal/admin/components/# templ shared UI components (sidebar, topbar, nav, icon, status_badge)
 internal/admin/static/    # CSS, JS, web components (go:embed)
 ```
 
@@ -487,7 +489,7 @@ Key patterns:
 - **templ** compiles `.templ` files to type-safe Go code. Run `just admin generate` to regenerate. Generated `*_templ.go` files are committed (like sqlc).
 - **HTMX** drives all interactions. `HX-Request` header distinguishes partial vs full page renders. `HX-Trigger` for toast notifications.
 - **CSRF** uses double-submit cookie pattern. Cookie `csrf_token` set on GET, validated on POST via `X-CSRF-Token` header or `_csrf` form field.
-- **Light DOM Web Components** (`mcms-*`) for dialog, data-table, field-renderer, media-picker, tree-nav, toast, confirm, search, file-input, scroll, validation-wizard, media-tree.
+- **Light DOM Web Components** (`mcms-*`) for confirm, data-table, dialog, field-renderer, file-input, focal-point, media-grid, media-picker, publish-button, scroll, search, toast, tree-nav, validation-wizard.
 - **Import cycle resolution**: `handlers` owns Render/CSRFTokenFromContext, `admin` owns CSRFContextKey. `PaginationPageData` lives in `partials` to avoid cycle between handlers and pages.
 - **Route registration** in `mux.go` via `registerAdminRoutes()` with `mutating()` and `viewing()` middleware helpers.
 
@@ -566,9 +568,9 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `internal/admin/` | HTMX admin panel: CSRF, auth middleware, static file embed |
 | `internal/admin/handlers/` | Admin page handlers (render, auth, CRUD for all resources) |
 | `internal/admin/layouts/` | templ layouts (base, admin, auth) and AdminData type |
-| `internal/admin/pages/` | templ full-page components (~28 pages) |
-| `internal/admin/partials/` | templ HTMX swap targets (~28 partials) |
-| `internal/admin/components/` | templ shared UI: sidebar, topbar, icon, status_badge |
+| `internal/admin/pages/` | templ full-page components (~36 pages) |
+| `internal/admin/partials/` | templ HTMX swap targets (~39 partials) |
+| `internal/admin/components/` | templ shared UI: sidebar, topbar, nav, icon, status_badge |
 | `internal/admin/static/` | CSS, JS, HTMX, web components (go:embed) |
 | `internal/tui/` | Bubbletea TUI (130+ files, Elm Architecture) |
 | `internal/router/` | HTTP route registration with stdlib ServeMux |
@@ -597,9 +599,11 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `internal/webhooks/` | Webhook dispatcher, events, signing |
 | `internal/utility/` | Logging (slog), version info, helpers, metrics, observability, runtime metrics |
 | `sdks/typescript/types/` | `@modulacms/types` -- shared TypeScript entity types, branded IDs, enums |
+| `sdks/typescript/tree/` | `@modulacms/tree` -- content tree utilities |
 | `sdks/typescript/modulacms-sdk/` | `@modulacms/sdk` -- read-only content delivery TypeScript SDK |
 | `sdks/typescript/modulacms-admin-sdk/` | `@modulacms/admin-sdk` -- full admin CRUD TypeScript SDK |
 | `sdks/typescript/plugin-sdk/` | `@modulacms/plugin-sdk` -- plugin UI SDK (Web Components, zero deps) |
+| `sdks/typescript/admin-ui/` | `@modulacms/admin-ui` -- admin panel TypeScript (block editor state) |
 | `sdks/go/` | `modulacms` -- Go SDK for content delivery and admin CRUD |
 | `sdks/swift/` | `ModulaCMS` -- Swift SDK for Apple platforms (iOS/macOS/tvOS/watchOS) |
 

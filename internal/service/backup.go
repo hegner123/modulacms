@@ -5,16 +5,18 @@ import (
 
 	"github.com/hegner123/modulacms/internal/backup"
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db"
 )
 
 // BackupService wraps backup creation and restoration with config injection.
 type BackupService struct {
-	mgr *config.Manager
+	mgr    *config.Manager
+	driver db.DbDriver
 }
 
 // NewBackupService creates a BackupService.
-func NewBackupService(mgr *config.Manager) *BackupService {
-	return &BackupService{mgr: mgr}
+func NewBackupService(mgr *config.Manager, driver db.DbDriver) *BackupService {
+	return &BackupService{mgr: mgr, driver: driver}
 }
 
 // CreateFullBackup creates a zip archive containing the database and any
@@ -24,7 +26,7 @@ func (s *BackupService) CreateFullBackup() (path string, sizeBytes int64, err er
 	if err != nil {
 		return "", 0, fmt.Errorf("load config: %w", err)
 	}
-	return backup.CreateFullBackup(*cfg)
+	return backup.CreateFullBackup(*cfg, s.driver)
 }
 
 // ReadManifest reads and returns the backup manifest from a backup archive.

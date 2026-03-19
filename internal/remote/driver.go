@@ -3713,6 +3713,23 @@ func (r *RemoteDriver) GetSessionByUserId(userID types.NullableUserID) (*db.Sess
 	})
 }
 
+func (r *RemoteDriver) GetSessionByToken(token string) (*db.Sessions, error) {
+	return doRead(r, func() (*db.Sessions, error) {
+		ctx := context.Background()
+		items, err := r.client.Sessions.List(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("remote: GetSessionByToken: %w", err)
+		}
+		for i := range items {
+			if items[i].SessionData != nil && *items[i].SessionData == token {
+				result := sessionToDb(&items[i])
+				return &result, nil
+			}
+		}
+		return nil, fmt.Errorf("remote: GetSessionByToken: session not found")
+	})
+}
+
 func (r *RemoteDriver) ListSessions() (*[]db.Sessions, error) {
 	return doRead(r, func() (*[]db.Sessions, error) {
 		ctx := context.Background()

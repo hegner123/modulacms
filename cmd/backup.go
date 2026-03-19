@@ -78,7 +78,7 @@ Examples:
 
 		utility.DefaultLogger.Info("Creating backup...")
 
-		path, sizeBytes, err := backup.CreateFullBackup(*cfg)
+		path, sizeBytes, err := backup.CreateFullBackup(*cfg, driver)
 		if err != nil {
 			if recordErr == nil {
 				updateErr := driver.UpdateBackupStatus(db.UpdateBackupStatusParams{

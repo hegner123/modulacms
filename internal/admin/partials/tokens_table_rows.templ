@@ -2,7 +2,7 @@ package partials
 
 import "github.com/hegner123/modulacms/internal/db"
 
-templ TokensTableRows(items []db.Tokens) {
+templ TokensTableRows(items []db.Tokens, userNames map[string]string) {
     if len(items) == 0 {
         <tr>
             <td colspan="8">
@@ -11,11 +11,17 @@ templ TokensTableRows(items []db.Tokens) {
         </tr>
     }
     for _, item := range items {
-        <tr id={ "token-row-" + item.ID }>
+        <tr id={ "token-row-" + item.ID } class="cursor-pointer hover:bg-white/5 transition-colors" data-clickable-row data-href={ "/admin/users/tokens/" + item.ID }>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.ID, 12) }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.TokenType }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300"><code>{ maskToken(item.Token) }</code></td>
-            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.UserID.String(), 12) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">
+                if name, ok := userNames[item.UserID.String()]; ok && name != "" {
+                    { name }
+                } else {
+                    { truncateStr(item.UserID.String(), 12) }
+                }
+            </td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.IssuedAt.String() }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.ExpiresAt.String() }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm">
@@ -25,7 +31,7 @@ templ TokensTableRows(items []db.Tokens) {
                     <span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">Active</span>
                 }
             </td>
-            <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
+            <td class="whitespace-nowrap px-4 py-4 text-sm">
                 if !item.Revoked {
                     <mcms-confirm
                         label="Revoke"

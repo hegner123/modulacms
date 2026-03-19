@@ -23,8 +23,8 @@ templ AdminRoutesListContent(items []db.AdminRoutes, pagination partials.Paginat
         </div>
     </div>
     <div class="mt-8 flow-root">
-        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+        <div class="overflow-x-auto">
+            <div class="min-w-full py-2 align-middle">
                 <div class="overflow-hidden rounded-lg border border-white/10 shadow-sm">
                     <table class="min-w-full divide-y divide-white/10">
                         <thead class="bg-white/5">
@@ -33,7 +33,7 @@ templ AdminRoutesListContent(items []db.AdminRoutes, pagination partials.Paginat
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Title</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Status</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Modified</th>
-                                <th scope="col" class="px-4 py-3.5 text-right text-sm font-semibold text-white">Actions</th>
+                                <th scope="col" class="px-4 py-3.5 text-sm font-semibold text-white">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="admin-routes-table-body" class="divide-y divide-white/5">
@@ -57,7 +57,7 @@ templ AdminRouteCreateDialog(csrfToken string) {
                 <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">&times;</button>
             </div>
             <form
-                hx-post="/admin/admin-schema/routes"
+                hx-post="/admin/admin-routes"
                 hx-target="#create-admin-route-form-container"
                 hx-swap="innerHTML"
                 id="create-admin-route-form"

@@ -1,0 +1,134 @@
+package partials
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/hegner123/modulacms/internal/deploy"
+)
+
+// DeployHealthStatus renders the health check result for an environment.
+templ DeployHealthStatus(envName string, health *deploy.HealthResponse, errMsg string) {
+	if errMsg != "" {
+		<div class="rounded-lg border border-red-400/20 bg-red-400/5 p-3">
+			<div class="flex items-start gap-x-2">
+				<svg class="mt-0.5 size-4 shrink-0 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"/></svg>
+				<div>
+					<p class="text-sm font-medium text-red-400">Connection failed</p>
+					<p class="mt-1 text-xs text-red-400/80">{ errMsg }</p>
+				</div>
+			</div>
+		</div>
+	} else if health != nil {
+		<div class="rounded-lg border border-green-400/20 bg-green-400/5 p-3">
+			<div class="flex items-start gap-x-2">
+				<svg class="mt-0.5 size-4 shrink-0 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+				<div class="text-sm">
+					<p class="font-medium text-green-400">Connected</p>
+					<div class="mt-1 flex items-center gap-x-4 text-xs text-green-400/80">
+						<span>Version: { health.Version }</span>
+						<span>Node: { health.NodeID }</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// DeploySyncResult renders the result of a push or pull operation.
+templ DeploySyncResult(envName, operation string, result *deploy.SyncResult, errMsg string) {
+	if errMsg != "" {
+		<div class="rounded-lg border border-red-400/20 bg-red-400/5 p-4">
+			<div class="flex items-start gap-x-2">
+				<svg class="mt-0.5 size-4 shrink-0 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"/></svg>
+				<div>
+					<p class="text-sm font-medium text-red-400">{ strings.Title(operation) } failed</p>
+					<p class="mt-1 text-xs text-red-400/80">{ errMsg }</p>
+				</div>
+			</div>
+		</div>
+	} else if result != nil {
+		<div class={ "rounded-lg border p-4", syncResultBorderClass(result) }>
+			<div class="flex items-start gap-x-2">
+				if result.Success {
+					<svg class="mt-0.5 size-4 shrink-0 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+				} else {
+					<svg class="mt-0.5 size-4 shrink-0 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"/></svg>
+				}
+				<div class="flex-1">
+					<p class={ "text-sm font-medium", syncResultTextClass(result) }>
+						if result.DryRun {
+							Dry run
+						} else {
+							{ strings.Title(operation) }
+						}
+						if result.Success {
+							{ " completed" }
+						} else {
+							{ " failed" }
+						}
+						if result.Duration != "" {
+							<span class="font-normal text-gray-400">{ " (" + result.Duration + ")" }</span>
+						}
+					</p>
+					<!-- Tables affected -->
+					if len(result.TablesAffected) > 0 {
+						<div class="mt-2">
+							<p class="text-xs font-medium text-gray-400">Tables affected</p>
+							<div class="mt-1 flex flex-wrap gap-1.5">
+								for _, t := range result.TablesAffected {
+									<span class="inline-flex items-center rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono text-gray-300 ring-1 ring-white/10">
+										{ t }
+										if count, ok := result.RowCounts[t]; ok {
+											<span class="ml-1 text-gray-500">{ fmt.Sprintf("(%d)", count) }</span>
+										}
+									</span>
+								}
+							</div>
+						</div>
+					}
+					<!-- Warnings -->
+					if len(result.Warnings) > 0 {
+						<div class="mt-3">
+							<p class="text-xs font-medium text-yellow-400">Warnings</p>
+							<ul class="mt-1 space-y-0.5 text-xs text-yellow-400/80">
+								for _, w := range result.Warnings {
+									<li>{ w }</li>
+								}
+							</ul>
+						</div>
+					}
+					<!-- Errors -->
+					if len(result.Errors) > 0 {
+						<div class="mt-3">
+							<p class="text-xs font-medium text-red-400">Errors</p>
+							<ul class="mt-1 space-y-0.5 text-xs text-red-400/80">
+								for _, e := range result.Errors {
+									<li>[{ e.Table }/{ e.Phase }] { e.Message }</li>
+								}
+							</ul>
+						</div>
+					}
+					<!-- Snapshot info -->
+					if result.SnapshotID != "" {
+						<p class="mt-2 text-xs text-gray-500">Snapshot: { result.SnapshotID }</p>
+					}
+				</div>
+			</div>
+		</div>
+	}
+}
+
+func syncResultBorderClass(r *deploy.SyncResult) string {
+	if r.Success {
+		return "border-green-400/20 bg-green-400/5"
+	}
+	return "border-red-400/20 bg-red-400/5"
+}
+
+func syncResultTextClass(r *deploy.SyncResult) string {
+	if r.Success {
+		return "text-green-400"
+	}
+	return "text-red-400"
+}

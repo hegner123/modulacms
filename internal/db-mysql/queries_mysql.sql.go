@@ -1554,8 +1554,8 @@ CREATE TABLE IF NOT EXISTS backups (
     triggered_by    VARCHAR(64),
     error_message   TEXT,
     metadata        JSON,
-    CONSTRAINT chk_backup_type CHECK (backup_type IN ('full', 'incremental', 'snapshot')),
-    CONSTRAINT chk_backup_status CHECK (status IN ('started', 'completed', 'failed', 'verified'))
+    CONSTRAINT chk_backup_type CHECK (backup_type IN ('full', 'incremental', 'differential')),
+    CONSTRAINT chk_backup_status CHECK (status IN ('pending', 'in_progress', 'completed', 'failed'))
 )
 `
 
@@ -3665,7 +3665,7 @@ func (q *Queries) DeleteMediaFolder(ctx context.Context, arg DeleteMediaFolderPa
 
 const deleteOldBackups = `-- name: DeleteOldBackups :exec
 DELETE FROM backups
-WHERE started_at < ? AND status IN ('completed', 'verified')
+WHERE started_at < ? AND status IN ('completed')
 `
 
 type DeleteOldBackupsParams struct {
@@ -6500,6 +6500,32 @@ type GetSessionParams struct {
 
 func (q *Queries) GetSession(ctx context.Context, arg GetSessionParams) (Sessions, error) {
 	row := q.db.QueryRowContext(ctx, getSession, arg.SessionID)
+	var i Sessions
+	err := row.Scan(
+		&i.SessionID,
+		&i.UserID,
+		&i.DateCreated,
+		&i.ExpiresAt,
+		&i.LastAccess,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.SessionData,
+	)
+	return i, err
+}
+
+const getSessionByToken = `-- name: GetSessionByToken :one
+SELECT session_id, user_id, date_created, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
+WHERE session_data = ?
+LIMIT 1
+`
+
+type GetSessionByTokenParams struct {
+	SessionData sql.NullString `json:"session_data"`
+}
+
+func (q *Queries) GetSessionByToken(ctx context.Context, arg GetSessionByTokenParams) (Sessions, error) {
+	row := q.db.QueryRowContext(ctx, getSessionByToken, arg.SessionData)
 	var i Sessions
 	err := row.Scan(
 		&i.SessionID,

@@ -79,21 +79,43 @@ func UserDetailHandler(svc *service.Registry) http.HandlerFunc {
 			roles = &[]db.Roles{}
 		}
 
+		// Load SSH keys for this user
+		var sshKeys []db.UserSshKeys
+		keyList, keysErr := svc.SSHKeys.ListKeys(r.Context(), types.NullableUserID{ID: types.UserID(id), Valid: true})
+		if keysErr != nil {
+			utility.DefaultLogger.Error("failed to list ssh keys", keysErr)
+		} else if keyList != nil {
+			sshKeys = *keyList
+		}
+
+		// Load OAuth connections for this user
+		var oauthConns []db.UserOauth
+		oauthEntry, oauthErr := svc.Driver().GetUserOauthByUserId(types.NullableUserID{ID: types.UserID(id), Valid: true})
+		if oauthErr == nil && oauthEntry != nil {
+			oauthConns = []db.UserOauth{*oauthEntry}
+		}
+
+		// Check if OAuth is configured
+		var oauthConfigured bool
+		if cfg, cfgErr := svc.Config(); cfgErr == nil {
+			oauthConfigured = cfg.Oauth_Client_Id != ""
+		}
+
 		csrfToken := CSRFTokenFromContext(r.Context())
 
 		if IsNavHTMX(r) {
 			w.Header().Set("HX-Trigger", `{"pageTitle": "User: `+user.Name+`"}`)
-			Render(w, r, partials.UserDetailContent(*user, *roles, csrfToken))
+			Render(w, r, partials.UserDetailContent(*user, *roles, sshKeys, oauthConns, oauthConfigured, csrfToken))
 			return
 		}
 
 		if IsHTMX(r) {
-			Render(w, r, partials.UserDetailContent(*user, *roles, csrfToken))
+			Render(w, r, partials.UserDetailContent(*user, *roles, sshKeys, oauthConns, oauthConfigured, csrfToken))
 			return
 		}
 
 		layout := NewAdminData(r, "User: "+user.Name)
-		Render(w, r, pages.UserDetail(layout, *user, *roles, csrfToken))
+		Render(w, r, pages.UserDetail(layout, *user, *roles, sshKeys, oauthConns, oauthConfigured, csrfToken))
 	}
 }
 

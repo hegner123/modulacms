@@ -93,7 +93,7 @@ func AdminDatatypeForm(name string, label string, dtype string, parentID string,
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div class=\"mt-5 sm:mt-4 sm:flex sm:flex-row-reverse\"><button type=\"submit\" class=\"inline-flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 sm:ml-3 sm:w-auto\">Create</button> <button type=\"button\" onclick=\"this.closest('mcms-dialog').close()\" class=\"mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto\">Cancel</button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div class=\"mt-5 sm:mt-4 sm:flex sm:flex-row-reverse\"><button type=\"submit\" class=\"inline-flex w-full justify-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] sm:ml-3 sm:w-auto\">Create</button> <button type=\"button\" onclick=\"this.closest('mcms-dialog').close()\" class=\"mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto\">Cancel</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -129,9 +129,9 @@ func AdminDatatypeEditForm(id string, name string, label string, dtype string, p
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-schema/datatypes/" + id)
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-datatypes/" + id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/admin_datatype_form.templ`, Line: 46, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/admin_datatype_form.templ`, Line: 46, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {

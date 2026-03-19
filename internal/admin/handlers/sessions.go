@@ -28,19 +28,50 @@ func SessionsListHandler(svc *service.Registry) http.HandlerFunc {
 			sessions = *items
 		}
 
+		userIDs := make([]types.NullableUserID, len(sessions))
+		for i, s := range sessions {
+			userIDs[i] = s.UserID
+		}
+		userNames := BuildUserNameMap(svc.Driver(), userIDs)
+
 		if IsNavHTMX(r) {
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Sessions"}`)
-			Render(w, r, pages.SessionsListContent(sessions))
+			Render(w, r, pages.SessionsListContent(sessions, userNames))
 			return
 		}
 
 		if IsHTMX(r) {
-			Render(w, r, partials.SessionsTableRows(sessions))
+			Render(w, r, partials.SessionsTableRows(sessions, userNames))
 			return
 		}
 
 		layout := NewAdminData(r, "Sessions")
-		Render(w, r, pages.SessionsList(layout, sessions))
+		Render(w, r, pages.SessionsList(layout, sessions, userNames))
+	}
+}
+
+// SessionDetailHandler shows session metadata.
+func SessionDetailHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sessionID := r.PathValue("id")
+		if sessionID == "" {
+			http.Error(w, "Session ID required", http.StatusBadRequest)
+			return
+		}
+
+		session, err := svc.Sessions.GetSession(r.Context(), types.SessionID(sessionID))
+		if err != nil {
+			service.HandleServiceError(w, r, err)
+			return
+		}
+
+		userName := ResolveNullableUserName(svc.Driver(), session.UserID)
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+		layout := NewAdminData(r, "Session")
+		RenderNav(w, r, "Session",
+			pages.SessionDetailContent(*session, csrfToken, userName),
+			pages.SessionDetail(layout, *session, csrfToken, userName))
 	}
 }
 

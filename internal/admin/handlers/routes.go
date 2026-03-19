@@ -61,6 +61,42 @@ func RoutesListHandler(svc *service.Registry) http.HandlerFunc {
 	}
 }
 
+// RouteDetailHandler handles GET /admin/routes/{id}.
+// Shows the full route detail with author info and content tree.
+func RouteDetailHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.NotFound(w, r)
+			return
+		}
+
+		view, err := svc.Routes.GetRouteFull(r.Context(), types.RouteID(id))
+		if err != nil {
+			if service.IsNotFound(err) {
+				http.NotFound(w, r)
+				return
+			}
+			utility.DefaultLogger.Error("failed to get route", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+		hasEdit := HasPermission(r, "routes:update")
+		hasDelete := HasPermission(r, "routes:delete")
+
+		if IsNavHTMX(r) {
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Route: `+view.Title+`"}`)
+			Render(w, r, pages.RouteDetailContent(view, csrfToken, hasEdit, hasDelete))
+			return
+		}
+
+		layout := NewAdminData(r, "Route: "+view.Title)
+		Render(w, r, pages.RouteDetail(layout, view, csrfToken, hasEdit, hasDelete))
+	}
+}
+
 // RouteCreateHandler handles POST /admin/routes.
 // Validates slug (must start with /) and title are required, creates via service layer.
 func RouteCreateHandler(svc *service.Registry) http.HandlerFunc {

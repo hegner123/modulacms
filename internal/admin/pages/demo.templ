@@ -1,6 +1,9 @@
 package pages
 
-import "github.com/hegner123/modulacms/internal/admin/layouts"
+import (
+    "github.com/hegner123/modulacms/internal/admin/components"
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+)
 
 templ DemoContent() {
     <div class="page-header" data-page-header>
@@ -10,8 +13,8 @@ templ DemoContent() {
         <div>
             <h3>Brand Spinner</h3>
             <div style="display: flex; align-items: center; gap: 1.5rem; margin-top: 1rem;">
-                <div class="spinner-brand"><img src="/admin/static/icons/spinner.svg" alt="Loading"/></div>
-                <div class="spinner-brand spinner-brand-lg"><img src="/admin/static/icons/spinner.svg" alt="Loading"/></div>
+                <div class="spinner-brand">@components.Spinner()</div>
+                <div class="spinner-brand spinner-brand-lg">@components.Spinner()</div>
             </div>
         </div>
     </div>

@@ -123,6 +123,26 @@ Updates the user password. Uses the same request/response format as Users PUT.
 
 The OAuth provider sends `code` and `state` query parameters to the callback.
 
+### Request Password Reset
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/request-password-reset \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com"}'
+```
+
+Initiates a password reset email flow. Sends a reset token to the provided email address. Returns 200 regardless of whether the email exists (to prevent enumeration).
+
+### Confirm Password Reset
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/confirm-password-reset \
+  -H "Content-Type: application/json" \
+  -d '{"token": "reset-token-from-email", "password": "new-password"}'
+```
+
+Completes the password reset using a token received via email.
+
 ## Health
 
 ```bash
@@ -159,6 +179,7 @@ Returns a JSON health check response. No authentication required.
 |--------|------|-------------|
 | GET | `/api/v1/admincontentdatas` | List all admin content data |
 | GET | `/api/v1/admincontentdatas/?q={ulid}` | Get admin content data by ID |
+| GET | `/api/v1/admincontentdatas/full` | List all admin content data with full details |
 | POST | `/api/v1/admincontentdatas` | Create admin content data |
 | PUT | `/api/v1/admincontentdatas/` | Update admin content data |
 | DELETE | `/api/v1/admincontentdatas/?q={ulid}` | Delete admin content data |
@@ -239,26 +260,6 @@ These endpoints handle batch updates, tree operations, and node reordering:
 | POST | `/api/v1/adminfields` | Create admin field |
 | PUT | `/api/v1/adminfields/` | Update admin field |
 | DELETE | `/api/v1/adminfields/?q={ulid}` | Delete admin field |
-
-### Datatype Fields (Junction)
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/datatypefields` | List all datatype-field associations |
-| GET | `/api/v1/datatypefields/?q={ulid}` | Get association by ID |
-| POST | `/api/v1/datatypefields` | Link a field to a datatype |
-| PUT | `/api/v1/datatypefields/` | Update a datatype-field association |
-| DELETE | `/api/v1/datatypefields/?q={ulid}` | Unlink a field from a datatype |
-
-### Admin Datatype Fields (Junction)
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/admindatatypefields` | List all admin datatype-field associations |
-| GET | `/api/v1/admindatatypefields/?q={ulid}` | Get association by ID |
-| POST | `/api/v1/admindatatypefields` | Link an admin field to an admin datatype |
-| PUT | `/api/v1/admindatatypefields/` | Update an admin datatype-field association |
-| DELETE | `/api/v1/admindatatypefields/?q={ulid}` | Unlink an admin field from an admin datatype |
 
 ### Field Types
 
@@ -400,9 +401,13 @@ Set `folder_id` to `null` or omit it to move media items back to root. Maximum b
 |--------|------|-------------|
 | GET | `/api/v1/users` | List all users |
 | GET | `/api/v1/users/?q={ulid}` | Get user by ID |
+| GET | `/api/v1/users/full` | List all users with role details |
+| GET | `/api/v1/users/full/` | Get user with role details by ID |
 | POST | `/api/v1/users` | Create user |
 | PUT | `/api/v1/users/` | Update user |
 | DELETE | `/api/v1/users/?q={ulid}` | Delete user |
+| POST | `/api/v1/users/reassign-delete` | Reassign content and delete user |
+| GET | `/api/v1/users/sessions` | List sessions for authenticated user |
 
 ### Roles
 
@@ -582,6 +587,97 @@ Response (201):
   "errors": []
 }
 ```
+
+## Publishing
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| POST | `/api/v1/admin/content/publish` | `content:publish` | Publish content |
+| POST | `/api/v1/admin/content/unpublish` | `content:publish` | Unpublish content |
+| POST | `/api/v1/admin/content/schedule` | `content:publish` | Schedule content for future publication |
+
+## Content Versions
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| GET | `/api/v1/admin/content/versions` | `content:read` | List content versions |
+| GET | `/api/v1/admin/content/versions/` | `content:read` | Get specific version |
+| POST | `/api/v1/admin/content/versions` | `content:update` | Create a version snapshot |
+| DELETE | `/api/v1/admin/content/versions/` | `content:delete` | Delete a version |
+| POST | `/api/v1/admin/content/restore` | `content:update` | Restore content from a version |
+
+## Locales
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| GET | `/api/v1/admin/locales` | `locale:read` | List all locales |
+| GET | `/api/v1/admin/locales/` | `locale:read` | Get locale by ID |
+| POST | `/api/v1/admin/locales` | `locale:create` | Create locale |
+| PUT | `/api/v1/admin/locales/` | `locale:update` | Update locale |
+| DELETE | `/api/v1/admin/locales/` | `locale:delete` | Delete locale |
+
+## Webhooks
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| GET | `/api/v1/admin/webhooks` | `webhook:read` | List all webhooks |
+| POST | `/api/v1/admin/webhooks` | `webhook:create` | Create webhook |
+| GET | `/api/v1/admin/webhooks/{id}` | `webhook:read` | Get webhook by ID |
+| PUT | `/api/v1/admin/webhooks/{id}` | `webhook:update` | Update webhook |
+| DELETE | `/api/v1/admin/webhooks/{id}` | `webhook:delete` | Delete webhook |
+| POST | `/api/v1/admin/webhooks/{id}/test` | `webhook:update` | Send test delivery |
+| GET | `/api/v1/admin/webhooks/{id}/deliveries` | `webhook:read` | List deliveries for webhook |
+| POST | `/api/v1/admin/webhooks/deliveries/{id}/retry` | `webhook:update` | Retry a failed delivery |
+
+## Translations
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| POST | `/api/v1/admin/contentdata/{id}/translations` | `content:create` | Create translation for content |
+| POST | `/api/v1/admin/admincontentdata/{id}/translations` | `content:create` | Create translation for admin content |
+
+## Search
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/search` | Full-text search across published content (no auth required) |
+| POST | `/api/v1/admin/search/rebuild` | Re-index all documents (requires `search:update` permission) |
+
+**Search query parameters:**
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `q` | Yes | Search query string |
+| `type` | No | Filter by content type (e.g. `"blog_post"`) |
+| `locale` | No | Filter by locale code |
+| `limit` | No | Maximum results (default 20) |
+| `offset` | No | Pagination offset |
+| `prefix` | No | Enable prefix matching (default true, set `"false"` for exact) |
+
+## Globals
+
+```bash
+curl http://localhost:8080/api/v1/globals
+```
+
+Returns all published global content trees. No authentication required. Global content items are root nodes typed as `_global` whose trees are available site-wide (e.g. navigation, footer, site settings).
+
+## Query
+
+```bash
+curl "http://localhost:8080/api/v1/query/blog_post?sort=-published_at&limit=10"
+```
+
+Query content items by datatype name with optional filtering, sorting, and pagination. No authentication required.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `sort` | No | Sort field, prefix `-` for descending (e.g. `-published_at`) |
+| `limit` | No | Maximum results (default 20, max 100) |
+| `offset` | No | Pagination offset |
+| `locale` | No | Locale code filter |
+| `status` | No | Content status filter (default `published`) |
+| `{field}` | No | Field filters as key-value pairs (supports `[eq]`, `[ne]`, `[gt]`, `[gte]`, `[lt]`, `[lte]`, `[like]`, `[in]` operators) |
 
 ## Content Delivery
 

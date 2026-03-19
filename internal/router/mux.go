@@ -530,6 +530,7 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	mux.Handle("GET /api/v1/admin/config", configAuthChain(middleware.RequirePermission("config:read")(ConfigGetHandler(svc))))
 	mux.Handle("PATCH /api/v1/admin/config", configAuthChain(middleware.RequirePermission("config:update")(ConfigUpdateHandler(svc))))
 	mux.Handle("GET /api/v1/admin/config/meta", configAuthChain(middleware.RequirePermission("config:read")(ConfigMetaHandler())))
+	mux.Handle("GET /api/v1/admin/config/search-index", configAuthChain(middleware.RequirePermission("config:read")(ConfigSearchIndexHandler())))
 
 	// Metrics endpoint (admin, config:read permission)
 	mux.Handle("GET /api/v1/admin/metrics", configAuthChain(middleware.RequirePermission("config:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -778,27 +779,34 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	// Admin API — config endpoints
 	mux.Handle("GET /admin/api/config/richtext-toolbar", viewing("config", adminhandlers.RichtextToolbarHandler(mgr)))
 
-	// Schema — datatypes (JSON API for block editor)
+	// datatypes (JSON API for block editor)
 	mux.Handle("GET /admin/api/datatypes", viewing("datatypes", adminhandlers.DatatypesJSONHandler(svc)))
 	mux.Handle("GET /admin/api/datatypes/{id}/fields", viewing("datatypes", adminhandlers.DatatypeFieldsJSONHandler(svc)))
 
-	// Schema — datatypes
-	mux.Handle("GET /admin/schema/datatypes", viewing("datatypes", adminhandlers.DatatypesListHandler(svc)))
-	mux.Handle("GET /admin/schema/datatypes/{id}", viewing("datatypes", adminhandlers.DatatypeDetailHandler(svc)))
-	mux.Handle("POST /admin/schema/datatypes", mutating("datatypes:create", adminhandlers.DatatypeCreateHandler(svc)))
-	mux.Handle("POST /admin/schema/datatypes/{id}", mutating("datatypes:update", adminhandlers.DatatypeUpdateHandler(svc)))
-	mux.Handle("DELETE /admin/schema/datatypes/{id}", mutating("datatypes:delete", adminhandlers.DatatypeDeleteHandler(svc)))
+	// datatypes
+	mux.Handle("GET /admin/datatypes", viewing("datatypes", adminhandlers.DatatypesListHandler(svc)))
+	mux.Handle("GET /admin/datatypes/{id}", viewing("datatypes", adminhandlers.DatatypeDetailHandler(svc)))
+	mux.Handle("POST /admin/datatypes", mutating("datatypes:create", adminhandlers.DatatypeCreateHandler(svc)))
+	mux.Handle("POST /admin/datatypes/{id}", mutating("datatypes:update", adminhandlers.DatatypeUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/datatypes/{id}", mutating("datatypes:delete", adminhandlers.DatatypeDeleteHandler(svc)))
 
-	// Schema — fields (detail, update, delete only — no standalone list or create)
-	mux.Handle("GET /admin/schema/fields/{id}", viewing("fields", adminhandlers.FieldDetailHandler(svc)))
-	mux.Handle("POST /admin/schema/fields/{id}", mutating("fields:update", adminhandlers.FieldUpdateHandler(svc)))
-	mux.Handle("DELETE /admin/schema/fields/{id}", mutating("fields:delete", adminhandlers.FieldDeleteHandler(svc)))
+	// fields
+	mux.Handle("GET /admin/fields", viewing("fields", adminhandlers.FieldsListHandler(svc)))
+	mux.Handle("GET /admin/fields/new", viewing("fields", adminhandlers.FieldCreatePageHandler(svc)))
+	mux.Handle("POST /admin/fields", mutating("fields:create", adminhandlers.FieldCreateHandler(svc)))
+	mux.Handle("GET /admin/fields/{id}", viewing("fields", adminhandlers.FieldDetailHandler(svc)))
+	mux.Handle("POST /admin/fields/{id}", mutating("fields:update", adminhandlers.FieldUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/fields/{id}", mutating("fields:delete", adminhandlers.FieldDeleteHandler(svc)))
 
-	// Schema — field types
-	mux.Handle("GET /admin/schema/field-types", viewing("field_types", adminhandlers.FieldTypesListHandler()))
+	// field types
+	mux.Handle("GET /admin/field-types", viewing("field_types", adminhandlers.FieldTypesListHandler(svc)))
+	mux.Handle("GET /admin/field-types/{id}", viewing("field_types", adminhandlers.FieldTypeDetailHandler(svc)))
+	mux.Handle("POST /admin/field-types", mutating("field_types:create", adminhandlers.FieldTypeCreateHandler(svc)))
+	mux.Handle("POST /admin/field-types/{id}", mutating("field_types:update", adminhandlers.FieldTypeUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/field-types/{id}", mutating("field_types:delete", adminhandlers.FieldTypeDeleteHandler(svc)))
 
-	// Schema — datatype field creation
-	mux.Handle("POST /admin/schema/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeCreateFieldHandler(svc)))
+	// datatype field creation
+	mux.Handle("POST /admin/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeCreateFieldHandler(svc)))
 
 	// Media
 	mux.Handle("GET /admin/media", viewing("media", adminhandlers.MediaListHandler(svc)))
@@ -823,32 +831,36 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	// Routes
 	mux.Handle("GET /admin/routes", viewing("routes", adminhandlers.RoutesListHandler(svc)))
 	mux.Handle("GET /admin/routes/admin", viewing("routes", adminhandlers.AdminRoutesListHandler(svc)))
+	mux.Handle("GET /admin/routes/{id}", viewing("routes", adminhandlers.RouteDetailHandler(svc)))
 	mux.Handle("POST /admin/routes", mutating("routes:create", adminhandlers.RouteCreateHandler(svc)))
 	mux.Handle("POST /admin/routes/{id}", mutating("routes:update", adminhandlers.RouteUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/routes/{id}", mutating("routes:delete", adminhandlers.RouteDeleteHandler(svc)))
 
-	// Admin Schema: Datatypes
-	mux.Handle("GET /admin/admin-schema/datatypes", viewing("datatypes", adminhandlers.AdminDatatypesListHandler(svc)))
-	mux.Handle("GET /admin/admin-schema/datatypes/{id}", viewing("datatypes", adminhandlers.AdminDatatypeDetailHandler(svc)))
-	mux.Handle("POST /admin/admin-schema/datatypes", mutating("datatypes:create", adminhandlers.AdminDatatypeCreateHandler(svc)))
-	mux.Handle("POST /admin/admin-schema/datatypes/{id}", mutating("datatypes:update", adminhandlers.AdminDatatypeUpdateHandler(svc)))
-	mux.Handle("DELETE /admin/admin-schema/datatypes/{id}", mutating("datatypes:delete", adminhandlers.AdminDatatypeDeleteHandler(svc)))
-	mux.Handle("POST /admin/admin-schema/datatypes/{id}/fields", mutating("fields:create", adminhandlers.AdminDatatypeCreateFieldHandler(svc)))
+	// Admin Datatypes
+	mux.Handle("GET /admin/admin-datatypes", viewing("datatypes", adminhandlers.AdminDatatypesListHandler(svc)))
+	mux.Handle("GET /admin/admin-datatypes/{id}", viewing("datatypes", adminhandlers.AdminDatatypeDetailHandler(svc)))
+	mux.Handle("POST /admin/admin-datatypes", mutating("datatypes:create", adminhandlers.AdminDatatypeCreateHandler(svc)))
+	mux.Handle("POST /admin/admin-datatypes/{id}", mutating("datatypes:update", adminhandlers.AdminDatatypeUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/admin-datatypes/{id}", mutating("datatypes:delete", adminhandlers.AdminDatatypeDeleteHandler(svc)))
+	mux.Handle("POST /admin/admin-datatypes/{id}/fields", mutating("fields:create", adminhandlers.AdminDatatypeCreateFieldHandler(svc)))
 
-	// Admin Schema: Fields
-	mux.Handle("GET /admin/admin-schema/fields", viewing("fields", adminhandlers.AdminFieldsListHandler(svc)))
-	mux.Handle("GET /admin/admin-schema/fields/{id}", viewing("fields", adminhandlers.AdminFieldDetailHandler(svc)))
-	mux.Handle("POST /admin/admin-schema/fields/{id}", mutating("fields:update", adminhandlers.AdminFieldUpdateHandler(svc)))
-	mux.Handle("DELETE /admin/admin-schema/fields/{id}", mutating("fields:delete", adminhandlers.AdminFieldDeleteHandler(svc)))
+	// Admin Fields (detail/update/delete only — fields are created per admin datatype)
+	mux.Handle("GET /admin/admin-fields/{id}", viewing("fields", adminhandlers.AdminFieldDetailHandler(svc)))
+	mux.Handle("POST /admin/admin-fields/{id}", mutating("fields:update", adminhandlers.AdminFieldUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/admin-fields/{id}", mutating("fields:delete", adminhandlers.AdminFieldDeleteHandler(svc)))
 
-	// Admin Schema: Field Types
-	mux.Handle("GET /admin/admin-schema/field-types", viewing("fields", adminhandlers.AdminFieldTypesListHandler()))
+	// Admin Field Types
+	mux.Handle("GET /admin/admin-field-types", viewing("field_types", adminhandlers.AdminFieldTypesListHandler(svc)))
+	mux.Handle("GET /admin/admin-field-types/{id}", viewing("field_types", adminhandlers.AdminFieldTypeDetailHandler(svc)))
+	mux.Handle("POST /admin/admin-field-types", mutating("field_types:create", adminhandlers.AdminFieldTypeCreateHandler(svc)))
+	mux.Handle("POST /admin/admin-field-types/{id}", mutating("field_types:update", adminhandlers.AdminFieldTypeUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/admin-field-types/{id}", mutating("field_types:delete", adminhandlers.AdminFieldTypeDeleteHandler(svc)))
 
-	// Admin Schema: Routes
-	mux.Handle("GET /admin/admin-schema/routes", viewing("routes", adminhandlers.AdminSchemaRoutesListHandler(svc)))
-	mux.Handle("POST /admin/admin-schema/routes", mutating("routes:create", adminhandlers.AdminRouteCreateHandler(svc)))
-	mux.Handle("POST /admin/admin-schema/routes/{id}", mutating("routes:update", adminhandlers.AdminRouteUpdateHandler(svc)))
-	mux.Handle("DELETE /admin/admin-schema/routes/{id}", mutating("routes:delete", adminhandlers.AdminRouteDeleteHandler(svc)))
+	// Admin Routes
+	mux.Handle("GET /admin/admin-routes", viewing("routes", adminhandlers.AdminSchemaRoutesListHandler(svc)))
+	mux.Handle("POST /admin/admin-routes", mutating("routes:create", adminhandlers.AdminRouteCreateHandler(svc)))
+	mux.Handle("POST /admin/admin-routes/{id}", mutating("routes:update", adminhandlers.AdminRouteUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/admin-routes/{id}", mutating("routes:delete", adminhandlers.AdminRouteDeleteHandler(svc)))
 
 	// Admin Content
 	mux.Handle("GET /admin/admin-content", viewing("content", adminhandlers.AdminContentListHandler(svc)))
@@ -867,6 +879,14 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/users/{id}", mutating("users:update", adminhandlers.UserUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/users/{id}", mutating("users:delete", adminhandlers.UserDeleteHandler(svc)))
 
+	// User SSH Keys
+	mux.Handle("POST /admin/ssh-keys/{id}", mutating("ssh_keys:create", adminhandlers.UserSSHKeyAddHandler(svc)))
+	mux.Handle("DELETE /admin/ssh-keys/{id}/{keyId}", mutating("ssh_keys:delete", adminhandlers.UserSSHKeyDeleteHandler(svc)))
+
+	// User OAuth Connections
+	mux.Handle("POST /admin/oauth/{id}", mutating("users:update", adminhandlers.OAuthCreateHandler(svc)))
+	mux.Handle("DELETE /admin/oauth/{id}", mutating("users:update", adminhandlers.OAuthDeleteHandler(svc)))
+
 	// Roles
 	mux.Handle("GET /admin/users/roles", viewing("roles", adminhandlers.RolesListHandler(svc)))
 	mux.Handle("GET /admin/users/roles/new", viewing("roles", adminhandlers.RoleNewFormHandler(svc)))
@@ -877,16 +897,41 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 
 	// Tokens
 	mux.Handle("GET /admin/users/tokens", viewing("tokens", adminhandlers.TokensListHandler(svc)))
+	mux.Handle("GET /admin/users/tokens/{id}", viewing("tokens", adminhandlers.TokenDetailHandler(svc)))
 	mux.Handle("POST /admin/users/tokens", mutating("tokens:create", adminhandlers.TokenCreateHandler(svc)))
 	mux.Handle("DELETE /admin/users/tokens/{id}", mutating("tokens:delete", adminhandlers.TokenDeleteHandler(svc)))
 
 	// Sessions
 	mux.Handle("GET /admin/sessions", viewing("sessions", adminhandlers.SessionsListHandler(svc)))
+	mux.Handle("GET /admin/sessions/{id}", viewing("sessions", adminhandlers.SessionDetailHandler(svc)))
 	mux.Handle("DELETE /admin/sessions/{id}", mutating("sessions:delete", adminhandlers.SessionDeleteHandler(svc)))
 
 	// Plugins
 	mux.Handle("GET /admin/plugins", viewing("plugins", adminhandlers.PluginsListHandler(svc)))
 	mux.Handle("GET /admin/plugins/{name}", viewing("plugins", adminhandlers.PluginDetailHandler(svc)))
+	mux.Handle("POST /admin/plugins/{name}/enable", mutating("plugins:admin", adminhandlers.PluginEnableHandler(svc)))
+	mux.Handle("POST /admin/plugins/{name}/disable", mutating("plugins:admin", adminhandlers.PluginDisableHandler(svc)))
+	mux.Handle("POST /admin/plugins/{name}/reload", mutating("plugins:admin", adminhandlers.PluginReloadHandler(svc)))
+	mux.Handle("POST /admin/plugins/routes/approve", mutating("plugins:admin", adminhandlers.PluginApproveRouteHandler(svc)))
+	mux.Handle("POST /admin/plugins/routes/revoke", mutating("plugins:admin", adminhandlers.PluginRevokeRouteHandler(svc)))
+	mux.Handle("POST /admin/plugins/hooks/approve", mutating("plugins:admin", adminhandlers.PluginApproveHookHandler(svc)))
+	mux.Handle("POST /admin/plugins/hooks/revoke", mutating("plugins:admin", adminhandlers.PluginRevokeHookHandler(svc)))
+
+	// Pipelines (read-only viewer, plugins:read permission)
+	mux.Handle("GET /admin/pipelines", viewing("plugins", adminhandlers.PipelinesListHandler(svc)))
+	mux.Handle("GET /admin/pipelines/{key}", viewing("plugins", adminhandlers.PipelineDetailHandler(svc)))
+
+	// Tables (system operation — mutations require password re-authentication in handler)
+	mux.Handle("GET /admin/tables", viewing("tables", adminhandlers.TablesListHandler(svc)))
+	mux.Handle("POST /admin/tables", mutating("tables:create", adminhandlers.TableCreateHandler(svc)))
+	mux.Handle("POST /admin/tables/update", mutating("tables:update", adminhandlers.TableUpdateHandler(svc)))
+	mux.Handle("POST /admin/tables/delete", mutating("tables:delete", adminhandlers.TableDeleteHandler(svc)))
+
+	// Deploy
+	mux.Handle("GET /admin/deploy", viewing("deploy", adminhandlers.DeployPageHandler(svc)))
+	mux.Handle("POST /admin/deploy/{name}/health", mutating("deploy:read", adminhandlers.DeployHealthHandler(svc)))
+	mux.Handle("POST /admin/deploy/{name}/push", mutating("deploy:create", adminhandlers.DeployPushHandler(svc)))
+	mux.Handle("POST /admin/deploy/{name}/pull", mutating("deploy:create", adminhandlers.DeployPullHandler(svc)))
 
 	// Import
 	mux.Handle("GET /admin/import", viewing("import", adminhandlers.ImportPageHandler()))
@@ -903,8 +948,9 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("GET /admin/audit/{eventID}", adminAuth(csrf(http.HandlerFunc(adminhandlers.AuditDetailHandler(svc)))))
 
 	// Settings
-	mux.Handle("GET /admin/settings", viewing("config", adminhandlers.SettingsHandler(mgr)))
-	mux.Handle("POST /admin/settings", mutating("config:update", adminhandlers.SettingsUpdateHandler(mgr)))
+	mux.Handle("GET /admin/settings", viewing("config", adminhandlers.SettingsHandler(svc)))
+	mux.Handle("POST /admin/settings", mutating("config:update", adminhandlers.SettingsUpdateHandler(svc)))
+	mux.Handle("POST /admin/settings/search/rebuild", mutating("search:update", adminhandlers.SearchRebuildHandler(svc)))
 
 	// Locale settings (i18n)
 	mux.Handle("GET /admin/settings/locales", viewing("locale", adminhandlers.LocaleSettingsHandler(svc)))
@@ -920,6 +966,13 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/settings/webhooks/{id}", mutating("webhook:update", adminhandlers.WebhookUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/settings/webhooks/{id}", mutating("webhook:delete", adminhandlers.WebhookDeleteHandler(svc)))
 	mux.Handle("POST /admin/settings/webhooks/{id}/test", mutating("webhook:update", adminhandlers.WebhookTestHandler(svc)))
+
+	// Backups
+	mux.Handle("GET /admin/settings/backups", viewing("backup", adminhandlers.BackupsListHandler(svc)))
+	mux.Handle("GET /admin/settings/backups/{id}", viewing("backup", adminhandlers.BackupDetailHandler(svc)))
+	mux.Handle("POST /admin/settings/backups", mutating("backup:create", adminhandlers.BackupCreateHandler(svc)))
+	mux.Handle("POST /admin/settings/backups/{id}/restore", mutating("backup:update", adminhandlers.BackupRestoreHandler(svc)))
+	mux.Handle("DELETE /admin/settings/backups/{id}", mutating("backup:delete", adminhandlers.BackupDeleteHandler(svc)))
 }
 
 // pluginRoutesRevokeHandler revokes approval for one or more plugin routes.

@@ -86,8 +86,12 @@ func (fp *FileProvider) Save(c *Config) error {
 	}
 
 	if err := os.Rename(tmpPath, fp.path); err != nil {
+		// Atomic rename can fail on Docker bind mounts and cross-device
+		// scenarios. Fall back to truncate-and-write-in-place.
 		os.Remove(tmpPath)
-		return fmt.Errorf("renaming temp config to %s: %w", fp.path, err)
+		if writeErr := os.WriteFile(fp.path, data, 0644); writeErr != nil {
+			return fmt.Errorf("writing config to %s (rename failed: %v): %w", fp.path, err, writeErr)
+		}
 	}
 
 	return nil

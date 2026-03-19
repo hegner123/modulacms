@@ -88,6 +88,19 @@ func ConfigUpdateHandler(svc *service.Registry) http.Handler {
 	})
 }
 
+// ConfigSearchIndexHandler returns the full search index of all config fields.
+// Combines FieldRegistry metadata with rich help text from HELP_TEXT.md.
+func ConfigSearchIndexHandler() http.Handler {
+	// Build once at handler creation time — the index is static.
+	index := config.BuildSearchIndex()
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		// Encode error is non-recoverable (client disconnected);
+		// response is already partially written so no recovery is possible.
+		json.NewEncoder(w).Encode(index)
+	})
+}
+
 // ConfigMetaHandler returns the field metadata registry.
 func ConfigMetaHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

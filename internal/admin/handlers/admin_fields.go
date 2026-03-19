@@ -14,49 +14,7 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-// AdminFieldsListHandler handles GET /admin/admin-schema/fields.
-// Lists all admin fields with pagination.
-// HTMX requests receive partial table rows only.
-func AdminFieldsListHandler(svc *service.Registry) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		limit, offset := ParsePagination(r)
-
-		result, err := svc.Schema.ListAdminFieldsPaginated(r.Context(), db.PaginationParams{
-			Limit:  limit,
-			Offset: offset,
-		})
-		if err != nil {
-			utility.DefaultLogger.Error("failed to list admin fields", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-
-		pd := NewPaginationData(result.Total, limit, offset, "#admin-fields-table-body", "/admin/admin-schema/fields")
-		pg := partials.PaginationPageData{
-			Current:    pd.Current,
-			TotalPages: pd.TotalPages,
-			Limit:      pd.Limit,
-			Target:     pd.Target,
-			BaseURL:    pd.BaseURL,
-		}
-
-		if IsNavHTMX(r) {
-			w.Header().Set("HX-Trigger", `{"pageTitle": "Admin Fields"}`)
-			Render(w, r, pages.AdminFieldsListContent(result.Data, pg))
-			return
-		}
-
-		if IsHTMX(r) {
-			Render(w, r, partials.AdminFieldsTableRows(result.Data, pg))
-			return
-		}
-
-		layout := NewAdminData(r, "Admin Fields")
-		Render(w, r, pages.AdminFieldsList(layout, result.Data, pg))
-	}
-}
-
-// AdminFieldDetailHandler handles GET /admin/admin-schema/fields/{id}.
+// AdminFieldDetailHandler handles GET /admin/admin-fields/{id}.
 // Shows admin field detail with configuration, validation, and linked datatypes.
 // When i18n is enabled, shows a "Translatable" checkbox on the edit form.
 func AdminFieldDetailHandler(svc *service.Registry) http.HandlerFunc {
@@ -100,7 +58,7 @@ func AdminFieldDetailHandler(svc *service.Registry) http.HandlerFunc {
 	}
 }
 
-// AdminFieldUpdateHandler handles POST /admin/admin-schema/fields/{id}.
+// AdminFieldUpdateHandler handles POST /admin/admin-fields/{id}.
 // Updates admin field properties via the service layer, which validates and preserves immutable fields.
 func AdminFieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -182,16 +140,16 @@ func AdminFieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if !IsHTMX(r) {
-			http.Redirect(w, r, "/admin/admin-schema/fields/"+id, http.StatusSeeOther)
+			http.Redirect(w, r, "/admin/admin-fields/"+id, http.StatusSeeOther)
 			return
 		}
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Admin field updated", "type": "success"}}`)
-		w.Header().Set("HX-Redirect", "/admin/admin-schema/fields/"+id)
+		w.Header().Set("HX-Redirect", "/admin/admin-fields/"+id)
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-// AdminFieldDeleteHandler handles DELETE /admin/admin-schema/fields/{id}.
+// AdminFieldDeleteHandler handles DELETE /admin/admin-fields/{id}.
 // HTMX-only endpoint. Non-HTMX requests receive 405.
 func AdminFieldDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

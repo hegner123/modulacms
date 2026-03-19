@@ -1,0 +1,276 @@
+package pages
+
+import (
+    "fmt"
+
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+func backupStatusBadge(status string) string {
+    switch status {
+    case "completed":
+        return "bg-green-400/10 text-green-400 ring-green-400/20"
+    case "started", "in_progress":
+        return "bg-blue-400/10 text-blue-400 ring-blue-400/20"
+    case "failed":
+        return "bg-red-400/10 text-red-400 ring-red-400/20"
+    default:
+        return "bg-gray-400/10 text-gray-400 ring-gray-400/20"
+    }
+}
+
+func backupStatusLabel(status string) string {
+    switch status {
+    case "completed":
+        return "Completed"
+    case "started", "in_progress":
+        return "In Progress"
+    case "failed":
+        return "Failed"
+    case "pending":
+        return "Pending"
+    case "verified":
+        return "Verified"
+    default:
+        return status
+    }
+}
+
+func formatBackupSize(b int64) string {
+    if b <= 0 {
+        return "-"
+    }
+    switch {
+    case b >= 1<<30:
+        return fmt.Sprintf("%.1f GB", float64(b)/float64(1<<30))
+    case b >= 1<<20:
+        return fmt.Sprintf("%.1f MB", float64(b)/float64(1<<20))
+    case b >= 1<<10:
+        return fmt.Sprintf("%.1f KB", float64(b)/float64(1<<10))
+    default:
+        return fmt.Sprintf("%d B", b)
+    }
+}
+
+func formatDuration(ms int64) string {
+    if ms <= 0 {
+        return "-"
+    }
+    if ms < 1000 {
+        return fmt.Sprintf("%dms", ms)
+    }
+    return fmt.Sprintf("%.1fs", float64(ms)/1000)
+}
+
+templ BackupsContent(backups []db.Backup, pg partials.PaginationPageData, csrfToken string) {
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-base/7 font-semibold text-white">Backups</h1>
+            <p class="mt-2 text-sm text-gray-400">Create, view, and restore database backups.</p>
+        </div>
+        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+            <form hx-post="/admin/settings/backups"
+                  hx-target="#backups-table-body"
+                  hx-swap="innerHTML">
+                @partials.CSRFField(csrfToken)
+                <button type="submit"
+                    class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
+                >
+                    Create Backup
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="mt-8 flow-root">
+        <div class="overflow-x-auto">
+            <div class="min-w-full py-2 align-middle">
+                <div class="overflow-hidden rounded-lg border border-white/10 shadow-sm">
+                    <table class="min-w-full divide-y divide-white/10">
+                        <thead class="bg-white/5">
+                            <tr>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Type</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Status</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Started</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Duration</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Size</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Triggered By</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="backups-table-body" class="divide-y divide-white/5">
+                            @BackupsTableRows(backups, pg, csrfToken)
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+templ BackupsTableRows(backups []db.Backup, pg partials.PaginationPageData, csrfToken string) {
+    if len(backups) == 0 {
+        <tr>
+            <td colspan="7">
+                @partials.EmptyState("No backups found. Create your first backup to protect your data.")
+            </td>
+        </tr>
+    }
+    for _, b := range backups {
+        <tr id={ "backup-row-" + b.BackupID.String() } class="cursor-pointer hover:bg-white/5 transition-colors" data-clickable-row data-href={ "/admin/settings/backups/" + b.BackupID.String() }>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ string(b.BackupType) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm">
+                <span class={ "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset", backupStatusBadge(string(b.Status)) }>
+                    { backupStatusLabel(string(b.Status)) }
+                </span>
+            </td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ b.StartedAt.String() }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ formatDuration(b.DurationMs.Int64) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ formatBackupSize(b.SizeBytes.Int64) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">
+                if b.TriggeredBy.Valid && b.TriggeredBy.String != "" {
+                    { b.TriggeredBy.String }
+                } else {
+                    <span class="text-gray-600">system</span>
+                }
+            </td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm">
+                if string(b.Status) == "completed" && b.StoragePath != "" {
+                    <mcms-confirm
+                        label="Restore"
+                        message="This will restore the database from this backup. The current database will be overwritten. This action cannot be undone."
+                        button-class="text-sm font-medium text-[var(--color-warning)] hover:text-[var(--color-warning)]/80"
+                        hx-post={ "/admin/settings/backups/" + b.BackupID.String() + "/restore" }
+                        hx-swap="none"
+                    ></mcms-confirm>
+                }
+            </td>
+        </tr>
+    }
+    if pg.TotalPages > 0 {
+        <tr>
+            <td colspan="7" class="px-4 py-2">
+                @partials.Pagination(pg.Current, pg.TotalPages, "#backups-table-body", "/admin/settings/backups", pg.Limit)
+            </td>
+        </tr>
+    }
+}
+
+templ BackupDetailContent(b db.Backup, csrfToken string) {
+    <div class="border-b border-white/10 pb-5">
+        <div>
+            <a href="/admin/settings/backups"
+               hx-get="/admin/settings/backups"
+               hx-target="#main-content"
+               hx-push-url="true"
+               class="text-sm font-medium text-gray-400 hover:text-white">&larr; Back to Backups</a>
+        </div>
+        <div class="mt-3 md:flex md:items-center md:justify-between">
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-x-3">
+                    <h2 class="text-2xl/7 font-bold text-white sm:truncate sm:text-3xl sm:tracking-tight">Backup</h2>
+                    <span class={ "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset", backupStatusBadge(string(b.Status)) }>
+                        { backupStatusLabel(string(b.Status)) }
+                    </span>
+                </div>
+            </div>
+            if string(b.Status) == "completed" && b.StoragePath != "" {
+                <div class="mt-4 flex gap-x-3 md:mt-0 md:ml-4">
+                    <mcms-confirm
+                        label="Restore This Backup"
+                        message="This will restore the database from this backup. The current database will be overwritten. This action cannot be undone."
+                        button-class="inline-flex items-center rounded-md bg-[var(--color-warning)]/10 px-3 py-2 text-sm font-semibold text-[var(--color-warning)] ring-1 ring-[var(--color-warning)]/20 ring-inset hover:bg-[var(--color-warning)]/20"
+                        hx-post={ "/admin/settings/backups/" + b.BackupID.String() + "/restore" }
+                        hx-swap="none"
+                    ></mcms-confirm>
+                    <mcms-confirm
+                        label="Delete"
+                        message="Delete this backup record? The backup file on disk will not be removed."
+                        button-class="inline-flex items-center rounded-md bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-400 ring-1 ring-red-400/20 ring-inset hover:bg-red-500/20"
+                        hx-delete={ "/admin/settings/backups/" + b.BackupID.String() }
+                        hx-swap="none"
+                        hx-on--after-request="if(event.detail.successful) window.location='/admin/settings/backups'"
+                    ></mcms-confirm>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+            <h3 class="text-base/7 font-semibold text-white">Details</h3>
+            <dl class="mt-6 divide-y divide-white/10 border-t border-white/10">
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">ID</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0 font-mono">{ b.BackupID.String() }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Type</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ string(b.BackupType) }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Node</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0 font-mono">{ string(b.NodeID) }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Started</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ b.StartedAt.String() }</dd>
+                </div>
+                if !b.CompletedAt.IsZero() {
+                    <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm/6 font-medium text-white">Completed</dt>
+                        <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ b.CompletedAt.String() }</dd>
+                    </div>
+                }
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Duration</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ formatDuration(b.DurationMs.Int64) }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Size</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ formatBackupSize(b.SizeBytes.Int64) }</dd>
+                </div>
+                if b.StoragePath != "" {
+                    <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm/6 font-medium text-white">Storage Path</dt>
+                        <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0 font-mono break-all">{ b.StoragePath }</dd>
+                    </div>
+                }
+                if b.Checksum.Valid && b.Checksum.String != "" {
+                    <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm/6 font-medium text-white">Checksum</dt>
+                        <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0 font-mono break-all">{ b.Checksum.String }</dd>
+                    </div>
+                }
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Triggered By</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">
+                        if b.TriggeredBy.Valid && b.TriggeredBy.String != "" {
+                            { b.TriggeredBy.String }
+                        } else {
+                            <span class="text-gray-600">system</span>
+                        }
+                    </dd>
+                </div>
+                if b.ErrorMessage.Valid && b.ErrorMessage.String != "" {
+                    <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm/6 font-medium text-red-400">Error</dt>
+                        <dd class="mt-1 text-sm/6 text-red-400 sm:col-span-2 sm:mt-0">{ b.ErrorMessage.String }</dd>
+                    </div>
+                }
+            </dl>
+        </div>
+    </div>
+}
+
+templ BackupDetail(layout layouts.AdminData, b db.Backup) {
+    @layouts.Admin(layout) {
+        @BackupDetailContent(b, layout.CSRFToken)
+    }
+}
+
+templ Backups(layout layouts.AdminData, backups []db.Backup, pg partials.PaginationPageData) {
+    @layouts.Admin(layout) {
+        @BackupsContent(backups, pg, layout.CSRFToken)
+    }
+}

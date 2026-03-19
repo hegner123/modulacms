@@ -5,7 +5,7 @@ templ FormField(name string, label string, value string, fieldErr string) {
 		<label for={ name } class="block text-sm/6 font-medium text-white">{ label }</label>
 		<div class="mt-2">
 			<input type="text" id={ name } name={ name } value={ value }
-				class={ "block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6", templ.KV("outline-red-500", fieldErr != ""), templ.KV("outline-white/10", fieldErr == "") }/>
+				class={ "block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)] sm:text-sm/6", templ.KV("outline-red-500", fieldErr != ""), templ.KV("outline-white/10", fieldErr == "") }/>
 		</div>
 		if fieldErr != "" {
 			<p class="mt-2 text-sm text-red-400">{ fieldErr }</p>
@@ -18,7 +18,7 @@ templ FormSelect(name string, label string, value string, options []SelectOption
 		<label for={ name } class="block text-sm/6 font-medium text-white">{ label }</label>
 		<div class="mt-2 grid grid-cols-1">
 			<select id={ name } name={ name }
-				class={ "col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-base text-white outline-1 -outline-offset-1 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6", templ.KV("outline-red-500", fieldErr != ""), templ.KV("outline-white/10", fieldErr == "") }>
+				class={ "col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-base text-white outline-1 -outline-offset-1 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)] sm:text-sm/6", templ.KV("outline-red-500", fieldErr != ""), templ.KV("outline-white/10", fieldErr == "") }>
 				for _, opt := range options {
 					<option value={ opt.Value } selected?={ opt.Value == value }>{ opt.Label }</option>
 				}

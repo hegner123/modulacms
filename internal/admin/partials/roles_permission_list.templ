@@ -15,8 +15,8 @@ templ RolesPermissionList(matrix PermissionMatrix) {
 		</div>
 	}
 	if len(matrix.Rows) > 0 {
-		<div class="overflow-x-auto rounded-md ring-1 ring-white/10">
-			<table class="w-full text-sm" data-perm-matrix>
+		<div class="overflow-x-auto overflow-hidden rounded-lg border border-white/10 shadow-sm">
+			<table class="min-w-full divide-y divide-white/10 text-sm" data-perm-matrix>
 				<thead>
 					<tr class="border-b border-white/10">
 						<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Resource</th>

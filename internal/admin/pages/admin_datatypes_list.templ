@@ -15,7 +15,7 @@ templ AdminDatatypesListContent(items []db.AdminDatatypes, pg partials.Paginatio
         </div>
         <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
             <button type="button"
-                    class="block rounded-md bg-indigo-500 px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                    class="block rounded-md bg-[var(--color-primary)] px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
                     data-action="new"
                     onclick="document.getElementById('create-admin-datatype-dialog').open()">
                 New Admin Datatype
@@ -28,22 +28,22 @@ templ AdminDatatypesListContent(items []db.AdminDatatypes, pg partials.Paginatio
             type="search"
             name="search"
             placeholder="Search admin datatypes..."
-            hx-get="/admin/admin-schema/datatypes"
+            hx-get="/admin/admin-datatypes"
             hx-target="#admin-datatypes-table-body"
             hx-trigger="input changed delay:300ms"
             hx-include="[name='type'],[name='sort']"
             hx-push-url="false"
-            class="block w-64 rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500"
+            class="block w-64 rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]"
             data-search-input
         />
         <div class="grid grid-cols-1">
             <select
                 name="type"
-                hx-get="/admin/admin-schema/datatypes"
+                hx-get="/admin/admin-datatypes"
                 hx-target="#admin-datatypes-table-body"
                 hx-trigger="change"
                 hx-include="[name='search'],[name='sort']"
-                class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500"
+                class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]"
             >
                 <option value="">All Types</option>
                 for _, t := range distinctTypes {
@@ -57,11 +57,11 @@ templ AdminDatatypesListContent(items []db.AdminDatatypes, pg partials.Paginatio
         <div class="grid grid-cols-1">
             <select
                 name="sort"
-                hx-get="/admin/admin-schema/datatypes"
+                hx-get="/admin/admin-datatypes"
                 hx-target="#admin-datatypes-table-body"
                 hx-trigger="change"
                 hx-include="[name='search'],[name='type']"
-                class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500"
+                class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]"
             >
                 <option value="">Default</option>
                 <option value="name-asc">Name A-Z</option>
@@ -78,24 +78,22 @@ templ AdminDatatypesListContent(items []db.AdminDatatypes, pg partials.Paginatio
     </div>
     <!-- Table -->
     <div class="mt-8 flow-root">
-        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-                <div class="overflow-hidden shadow-sm -outline-offset-1 outline-white/10 sm:rounded-lg">
-                    <table class="min-w-full divide-y divide-white/15">
-                        <thead>
+        <div class="overflow-x-auto">
+            <div class="min-w-full py-2 align-middle">
+                <div class="overflow-hidden rounded-lg border border-white/10 shadow-sm">
+                    <table class="min-w-full divide-y divide-white/10">
+                        <thead class="bg-white/5">
                             <tr>
-                                <th scope="col" class="py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-200 sm:pl-6">Name</th>
-                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Label</th>
-                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Type</th>
-                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-200">Modified</th>
-                                <th scope="col" class="py-3.5 pr-4 pl-3 sm:pr-6">
-                                    <span class="sr-only">Actions</span>
-                                </th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Name</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Label</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Type</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Modified</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="admin-datatypes-table-body"
                                class="divide-y divide-white/10"
-                               hx-get="/admin/admin-schema/datatypes"
+                               hx-get="/admin/admin-datatypes"
                                hx-trigger="refreshTable from:body"
                                hx-swap="innerHTML">
                             if len(items) == 0 {
@@ -104,19 +102,19 @@ templ AdminDatatypesListContent(items []db.AdminDatatypes, pg partials.Paginatio
                                 </tr>
                             } else {
                                 for _, dt := range items {
-                                    <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/admin-schema/datatypes/" + dt.AdminDatatypeID.String() }>
+                                    <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/admin-datatypes/" + dt.AdminDatatypeID.String() }>
                                         <td class="py-4 pr-3 pl-4 text-sm font-medium whitespace-nowrap text-white sm:pl-6">{ dt.Name }</td>
                                         <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ dt.Label }</td>
                                         <td class="px-3 py-4 text-sm whitespace-nowrap">
                                             <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ dt.Type }</span>
                                         </td>
                                         <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ dt.DateModified.Time.UTC().Format("Jan 2, 2006 15:04") }</td>
-                                        <td class="py-4 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6">
+                                        <td class="py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6">
                                             <mcms-confirm
                                                 label="Delete"
                                                 message="Delete this admin datatype? This cannot be undone."
                                                 button-class="text-red-400 hover:text-red-300"
-                                                hx-delete={ "/admin/admin-schema/datatypes/" + dt.AdminDatatypeID.String() }
+                                                hx-delete={ "/admin/admin-datatypes/" + dt.AdminDatatypeID.String() }
                                                 hx-target="closest tr"
                                                 hx-swap="outerHTML swap:300ms"
                                             ></mcms-confirm>
@@ -130,7 +128,7 @@ templ AdminDatatypesListContent(items []db.AdminDatatypes, pg partials.Paginatio
             </div>
         </div>
     </div>
-    @partials.Pagination(pg.Current, pg.TotalPages, "#admin-datatypes-table-body", "/admin/admin-schema/datatypes", pg.Limit)
+    @partials.Pagination(pg.Current, pg.TotalPages, "#admin-datatypes-table-body", "/admin/admin-datatypes", pg.Limit)
 }
 
 
@@ -139,7 +137,7 @@ templ AdminDatatypeCreateDialog(csrfToken string, allDatatypes []db.AdminDatatyp
         <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <h3 id="create-admin-datatype-dialog-title" class="text-base/7 font-semibold text-white">New Admin Datatype</h3>
             <form
-                hx-post="/admin/admin-schema/datatypes"
+                hx-post="/admin/admin-datatypes"
                 hx-target="#create-admin-datatype-form"
                 hx-swap="innerHTML"
                 id="create-admin-datatype-form"
@@ -151,7 +149,7 @@ templ AdminDatatypeCreateDialog(csrfToken string, allDatatypes []db.AdminDatatyp
                 @partials.FormField("type", "Type", "", "")
                 @partials.FormSelect("parent_id", "Parent", "", partials.AdminDatatypeParentOptions(allDatatypes, ""), "")
                 <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                    <button type="submit" class="inline-flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 sm:ml-3 sm:w-auto">Create</button>
+                    <button type="submit" class="inline-flex w-full justify-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] sm:ml-3 sm:w-auto">Create</button>
                     <button type="button" onclick="this.closest('mcms-dialog').close()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto">Cancel</button>
                 </div>
             </form>

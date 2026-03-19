@@ -14,7 +14,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-func SessionsListContent(items []db.Sessions) templ.Component {
+func SessionsListContent(items []db.Sessions, userNames map[string]string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -35,11 +35,11 @@ func SessionsListContent(items []db.Sessions) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Active Sessions</h1><p class=\"mt-2 text-sm text-gray-400\">View and manage currently active user sessions.</p></div></div><div class=\"mt-8 flow-root\"><div class=\"-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8\"><div class=\"inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Session ID</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">User</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">IP Address</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">User Agent</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Created</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Expires</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Actions</th></tr></thead> <tbody id=\"sessions-table-body\" class=\"divide-y divide-white/5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Active Sessions</h1><p class=\"mt-2 text-sm text-gray-400\">View and manage currently active user sessions.</p></div></div><div class=\"mt-8 flow-root\"><div class=\"overflow-x-auto\"><div class=\"min-w-full py-2 align-middle\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Session ID</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">User</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">IP Address</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">User Agent</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Created</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Expires</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Actions</th></tr></thead> <tbody id=\"sessions-table-body\" class=\"divide-y divide-white/5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.SessionsTableRows(items).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = partials.SessionsTableRows(items, userNames).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -51,7 +51,7 @@ func SessionsListContent(items []db.Sessions) templ.Component {
 	})
 }
 
-func SessionsList(layout layouts.AdminData, items []db.Sessions) templ.Component {
+func SessionsList(layout layouts.AdminData, items []db.Sessions, userNames map[string]string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -84,7 +84,7 @@ func SessionsList(layout layouts.AdminData, items []db.Sessions) templ.Component
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = SessionsListContent(items).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = SessionsListContent(items, userNames).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

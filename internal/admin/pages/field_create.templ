@@ -1,0 +1,239 @@
+package pages
+
+import (
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+templ FieldCreateContent(name string, label string, fieldType string, data string, validation string, uiConfig string, availableRoles []db.Roles, errs map[string]string, csrfToken string) {
+    <!-- Page Header -->
+    <div class="border-b border-white/10 pb-5" data-page-header>
+        <div class="flex items-center gap-x-3">
+            <a href="/admin/fields" class="text-sm text-gray-400 hover:text-white"
+               hx-get="/admin/fields"
+               hx-target="#main-content"
+               hx-push-url="true">&larr; Back</a>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+            <h1 class="text-lg font-semibold text-white">New Field</h1>
+            <button type="submit" form="field-create-form" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create Field</button>
+        </div>
+    </div>
+    <!-- Two-Column Layout -->
+    <div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3">
+        <!-- Main content (2/3) -->
+        <div class="lg:col-span-2">
+            <div>
+                <h2 class="text-base font-semibold text-white">Details</h2>
+                <div id="field-create-form-container" class="mt-6">
+                    @FieldCreateForm(name, label, fieldType, data, validation, uiConfig, availableRoles, errs, csrfToken)
+                </div>
+            </div>
+        </div>
+        <!-- Sidebar (1/3) -->
+        <div>
+            <div class="rounded-xl border border-white/10 bg-white/5 p-6">
+                <h2 class="text-base font-semibold text-white">Field Types</h2>
+                <dl class="mt-4 space-y-3">
+                    <div>
+                        <dt class="text-sm font-medium text-white">text / textarea / richtext</dt>
+                        <dd class="text-xs text-gray-400">String content of varying length and formatting</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-white">number / boolean</dt>
+                        <dd class="text-xs text-gray-400">Numeric values or true/false toggles</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-white">date / datetime</dt>
+                        <dd class="text-xs text-gray-400">Date values with optional time component</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-white">select / json</dt>
+                        <dd class="text-xs text-gray-400">Choice lists or arbitrary structured data</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-white">media / relation</dt>
+                        <dd class="text-xs text-gray-400">References to media assets or other content</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-white">slug / email / url</dt>
+                        <dd class="text-xs text-gray-400">Formatted string types with built-in validation</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+}
+
+templ FieldCreateForm(name string, label string, fieldType string, data string, validation string, uiConfig string, availableRoles []db.Roles, errs map[string]string, csrfToken string) {
+    <form id="field-create-form"
+          hx-post="/admin/fields"
+          hx-target="#field-create-form-container"
+          hx-swap="innerHTML">
+        @partials.CSRFField(csrfToken)
+        if errs["_"] != "" {
+            <div class="mb-6 rounded-md bg-red-400/10 p-4">
+                <div class="flex">
+                    <div class="shrink-0">
+                        <i data-lucide="alert-circle" class="size-5 text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-400">{ errs["_"] }</p>
+                    </div>
+                </div>
+            </div>
+        }
+        <div class="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
+            <div class="sm:col-span-3">
+                @partials.FormField("name", "Name", name, errs["name"])
+            </div>
+            <div class="sm:col-span-3">
+                @partials.FormField("label", "Label", label, errs["label"])
+            </div>
+            <div class="sm:col-span-3">
+                <label for="type" class="block text-sm font-medium text-white">Type</label>
+                <div class="mt-2">
+                    <select id="type" name="type" class={ "block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6", templ.KV("ring-red-500", errs["type"] != ""), templ.KV("ring-white/10", errs["type"] == "") }>
+                        <option value="">Select a type</option>
+                        <option value="text" selected?={ fieldType == "text" }>Text</option>
+                        <option value="textarea" selected?={ fieldType == "textarea" }>Textarea</option>
+                        <option value="richtext" selected?={ fieldType == "richtext" }>Rich Text</option>
+                        <option value="number" selected?={ fieldType == "number" }>Number</option>
+                        <option value="boolean" selected?={ fieldType == "boolean" }>Boolean</option>
+                        <option value="date" selected?={ fieldType == "date" }>Date</option>
+                        <option value="datetime" selected?={ fieldType == "datetime" }>Datetime</option>
+                        <option value="select" selected?={ fieldType == "select" }>Select</option>
+                        <option value="media" selected?={ fieldType == "media" }>Media</option>
+                        <option value="relation" selected?={ fieldType == "relation" }>Relation</option>
+                        <option value="json" selected?={ fieldType == "json" }>JSON</option>
+                        <option value="slug" selected?={ fieldType == "slug" }>Slug</option>
+                        <option value="email" selected?={ fieldType == "email" }>Email</option>
+                        <option value="url" selected?={ fieldType == "url" }>URL</option>
+                    </select>
+                </div>
+                if errs["type"] != "" {
+                    <p class="mt-2 text-sm text-red-400">{ errs["type"] }</p>
+                }
+            </div>
+            <div class="sm:col-span-6">
+                <label for="roles" class="block text-sm font-medium text-white">Role Restrictions</label>
+                <div class="mt-2">
+                    <select id="roles" name="roles" multiple class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">
+                        for _, role := range availableRoles {
+                            <option value={ role.RoleID.String() }>{ role.Label }</option>
+                        }
+                    </select>
+                </div>
+                <p class="mt-2 text-xs text-gray-400">Leave empty for unrestricted access. Select roles to limit visibility.</p>
+            </div>
+            <div class="sm:col-span-6">
+                <label for="data" class="block text-sm font-medium text-white">Data (JSON)</label>
+                <div class="mt-2">
+                    <textarea id="data" name="data" rows="4" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 font-mono text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">{ data }</textarea>
+                </div>
+            </div>
+            <div class="sm:col-span-6">
+                <label class="block text-sm font-medium text-white">Validation</label>
+                <div class="mt-2">
+                    <mcms-validation-wizard
+                        value={ validation }
+                        textarea-id="validation"
+                    ></mcms-validation-wizard>
+                    <textarea id="validation" name="validation" rows="4" style="display:none">{ validation }</textarea>
+                </div>
+            </div>
+            <div class="sm:col-span-6">
+                <label for="ui_config" class="block text-sm font-medium text-white">UI Config</label>
+                <div class="mt-2 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+                    @uiConfigFields(uiConfig)
+                </div>
+                <textarea id="ui_config" name="ui_config" style="display:none">{ uiConfig }</textarea>
+            </div>
+        </div>
+    </form>
+    @uiConfigScript()
+}
+
+templ uiConfigFields(uiConfig string) {
+    <div class="sm:col-span-3">
+        <label for="ui_widget" class="block text-sm font-medium text-gray-300">Widget</label>
+        <div class="mt-1">
+            <select id="ui_widget" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6" data-ui-config="widget">
+                <option value="">Default</option>
+                <option value="rich-editor">Rich Editor</option>
+                <option value="code-editor">Code Editor</option>
+                <option value="color-picker">Color Picker</option>
+                <option value="slider">Slider</option>
+                <option value="toggle">Toggle</option>
+                <option value="tag-input">Tag Input</option>
+                <option value="media-picker">Media Picker</option>
+            </select>
+        </div>
+    </div>
+    <div class="sm:col-span-3">
+        <label for="ui_placeholder" class="block text-sm font-medium text-gray-300">Placeholder</label>
+        <div class="mt-1">
+            <input type="text" id="ui_placeholder" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6" data-ui-config="placeholder"/>
+        </div>
+    </div>
+    <div class="sm:col-span-4">
+        <label for="ui_help_text" class="block text-sm font-medium text-gray-300">Help Text</label>
+        <div class="mt-1">
+            <input type="text" id="ui_help_text" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6" data-ui-config="help_text"/>
+        </div>
+    </div>
+    <div class="sm:col-span-2 flex items-end">
+        <label class="flex items-center gap-x-2 text-sm text-gray-300">
+            <input type="checkbox" id="ui_hidden" class="rounded border-white/10 bg-white/5" data-ui-config="hidden"/>
+            Hidden
+        </label>
+    </div>
+}
+
+templ uiConfigScript() {
+    <script>
+    (function() {
+        const textarea = document.getElementById('ui_config');
+        const inputs = document.querySelectorAll('[data-ui-config]');
+
+        // Parse existing value into fields
+        function load() {
+            let cfg = {};
+            try { cfg = JSON.parse(textarea.value || '{}'); } catch(e) {}
+            inputs.forEach(el => {
+                const key = el.dataset.uiConfig;
+                if (el.type === 'checkbox') {
+                    el.checked = !!cfg[key];
+                } else {
+                    el.value = cfg[key] || '';
+                }
+            });
+        }
+
+        // Sync fields back to textarea
+        function sync() {
+            const cfg = {};
+            inputs.forEach(el => {
+                const key = el.dataset.uiConfig;
+                if (el.type === 'checkbox') {
+                    if (el.checked) cfg[key] = true;
+                } else if (el.value) {
+                    cfg[key] = el.value;
+                }
+            });
+            textarea.value = Object.keys(cfg).length ? JSON.stringify(cfg) : '';
+        }
+
+        load();
+        inputs.forEach(el => el.addEventListener('input', sync));
+        inputs.forEach(el => el.addEventListener('change', sync));
+    })();
+    </script>
+}
+
+templ FieldCreate(layout layouts.AdminData, availableRoles []db.Roles, csrfToken string) {
+    @layouts.Admin(layout) {
+        @FieldCreateContent("", "", "", "", "", "", availableRoles, nil, csrfToken)
+    }
+}

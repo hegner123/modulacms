@@ -14,7 +14,7 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-// AdminSchemaRoutesListHandler handles GET /admin/admin-schema/routes.
+// AdminSchemaRoutesListHandler handles GET /admin/admin-routes.
 // Lists all admin routes with pagination and create dialog OOB swap.
 func AdminSchemaRoutesListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +32,7 @@ func AdminSchemaRoutesListHandler(svc *service.Registry) http.HandlerFunc {
 			list = *items
 		}
 
-		pd := NewPaginationData(*total, limit, offset, "#admin-routes-table-body", "/admin/admin-schema/routes")
+		pd := NewPaginationData(*total, limit, offset, "#admin-routes-table-body", "/admin/admin-routes")
 		pg := partials.PaginationPageData{
 			Current:    pd.Current,
 			TotalPages: pd.TotalPages,
@@ -60,7 +60,7 @@ func AdminSchemaRoutesListHandler(svc *service.Registry) http.HandlerFunc {
 	}
 }
 
-// AdminRouteCreateHandler handles POST /admin/admin-schema/routes.
+// AdminRouteCreateHandler handles POST /admin/admin-routes.
 // Validates slug (must start with /) and title are required, creates via service layer.
 func AdminRouteCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -119,16 +119,16 @@ func AdminRouteCreateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if !IsHTMX(r) {
-			http.Redirect(w, r, "/admin/admin-schema/routes", http.StatusSeeOther)
+			http.Redirect(w, r, "/admin/admin-routes", http.StatusSeeOther)
 			return
 		}
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Admin route created", "type": "success"}}`)
-		w.Header().Set("HX-Redirect", "/admin/admin-schema/routes")
+		w.Header().Set("HX-Redirect", "/admin/admin-routes")
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-// AdminRouteUpdateHandler handles POST /admin/admin-schema/routes/{id}.
+// AdminRouteUpdateHandler handles POST /admin/admin-routes/{id}.
 // Updates an existing admin route via the service layer.
 func AdminRouteUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -198,16 +198,16 @@ func AdminRouteUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if !IsHTMX(r) {
-			http.Redirect(w, r, "/admin/admin-schema/routes", http.StatusSeeOther)
+			http.Redirect(w, r, "/admin/admin-routes", http.StatusSeeOther)
 			return
 		}
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Admin route updated", "type": "success"}}`)
-		w.Header().Set("HX-Redirect", "/admin/admin-schema/routes")
+		w.Header().Set("HX-Redirect", "/admin/admin-routes")
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-// AdminRouteDeleteHandler handles DELETE /admin/admin-schema/routes/{id}.
+// AdminRouteDeleteHandler handles DELETE /admin/admin-routes/{id}.
 // HTMX-only endpoint. Non-HTMX requests receive 405.
 func AdminRouteDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -10,8 +10,8 @@ templ FieldDetailContent(field db.Fields, availableRoles []db.Roles, csrfToken s
     <!-- Page Header -->
     <div class="border-b border-white/10 pb-5" data-page-header>
         <div class="flex items-center gap-x-3">
-            <a href="/admin/schema/fields" class="text-sm text-gray-400 hover:text-white"
-               hx-get="/admin/schema/fields"
+            <a href="/admin/fields" class="text-sm text-gray-400 hover:text-white"
+               hx-get="/admin/fields"
                hx-target="#main-content"
                hx-push-url="true">&larr; Back</a>
         </div>
@@ -29,11 +29,11 @@ templ FieldDetailContent(field db.Fields, availableRoles []db.Roles, csrfToken s
     <div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3">
         <!-- Main content (2/3) -->
         <div class="lg:col-span-2">
-            <div class="rounded-xl border border-white/10 bg-white/5 p-6">
+            <div>
                 <h2 class="text-base font-semibold text-white">Details</h2>
                 <div id="field-edit-form" class="mt-6">
                     <form id="field-form"
-                          hx-post={ "/admin/schema/fields/" + field.FieldID.String() }
+                          hx-post={ "/admin/fields/" + field.FieldID.String() }
                           hx-target="#field-edit-form"
                           hx-swap="innerHTML">
                         @partials.CSRFField(csrfToken)
@@ -111,13 +111,15 @@ templ FieldDetailContent(field db.Fields, availableRoles []db.Roles, csrfToken s
                                 </div>
                             </div>
                             <div class="sm:col-span-6">
-                                <label for="ui_config" class="block text-sm font-medium text-white">UI Config (JSON)</label>
-                                <div class="mt-2">
-                                    <textarea id="ui_config" name="ui_config" rows="4" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 font-mono text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">{ field.UIConfig }</textarea>
+                                <label for="ui_config" class="block text-sm font-medium text-white">UI Config</label>
+                                <div class="mt-2 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+                                    @uiConfigFields(field.UIConfig)
                                 </div>
+                                <textarea id="ui_config" name="ui_config" style="display:none">{ field.UIConfig }</textarea>
                             </div>
                         </div>
                     </form>
+                    @uiConfigScript()
                 </div>
             </div>
         </div>

@@ -1,0 +1,114 @@
+package pages
+
+import (
+	"github.com/hegner123/modulacms/internal/admin/layouts"
+	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/config"
+)
+
+templ DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasWrite bool) {
+	<div class="sm:flex sm:items-center">
+		<div class="sm:flex-auto">
+			<h1 class="text-base/7 font-semibold text-white">Deploy</h1>
+			<p class="mt-2 text-sm text-gray-400">Push and pull content between this instance and remote environments.</p>
+		</div>
+	</div>
+	if len(envs) == 0 {
+		<div class="mt-8">
+			@partials.EmptyState("No deploy environments configured. Add environments to modula.config.json under deploy_environments.")
+		</div>
+	} else {
+		<div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+			for _, env := range envs {
+				<div class="rounded-xl border border-white/10 bg-white/5 p-6">
+					<!-- Environment header -->
+					<div class="flex items-center justify-between">
+						<div>
+							<h2 class="text-base font-semibold text-white">{ env.Name }</h2>
+							<p class="mt-1 text-sm font-mono text-gray-400">{ env.URL }</p>
+						</div>
+						<form
+							hx-post={ "/admin/deploy/" + env.Name + "/health" }
+							hx-target={ "#health-" + env.Name }
+							hx-swap="innerHTML"
+							hx-indicator={ "#health-spinner-" + env.Name }
+						>
+							<input type="hidden" name="_csrf" value={ csrfToken }/>
+							<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20">
+								<svg class="size-4" id={ "health-spinner-" + env.Name } viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-6.219-8.56"/>
+								</svg>
+								Test Connection
+							</button>
+						</form>
+					</div>
+					<!-- Health status area -->
+					<div id={ "health-" + env.Name } class="mt-4">
+						<p class="text-sm text-gray-500">Click "Test Connection" to check status.</p>
+					</div>
+					<!-- Actions -->
+					if hasWrite {
+						<div class="mt-6 flex items-center gap-x-3 border-t border-white/10 pt-4">
+							<!-- Dry Run Pull -->
+							<form
+								hx-post={ "/admin/deploy/" + env.Name + "/pull?dry_run=true" }
+								hx-target={ "#result-" + env.Name }
+								hx-swap="innerHTML"
+							>
+								<input type="hidden" name="_csrf" value={ csrfToken }/>
+								<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20">
+									Dry Run Pull
+								</button>
+							</form>
+							<!-- Pull -->
+							<form
+								hx-post={ "/admin/deploy/" + env.Name + "/pull" }
+								hx-target={ "#result-" + env.Name }
+								hx-swap="innerHTML"
+								hx-confirm={ "Pull from " + env.Name + "? This will overwrite local content with data from the remote environment." }
+							>
+								<input type="hidden" name="_csrf" value={ csrfToken }/>
+								<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-500/10 px-3 py-1.5 text-sm font-semibold text-blue-400 ring-1 ring-blue-400/20 ring-inset hover:bg-blue-500/20">
+									<svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+									Pull
+								</button>
+							</form>
+							<!-- Dry Run Push -->
+							<form
+								hx-post={ "/admin/deploy/" + env.Name + "/push?dry_run=true" }
+								hx-target={ "#result-" + env.Name }
+								hx-swap="innerHTML"
+							>
+								<input type="hidden" name="_csrf" value={ csrfToken }/>
+								<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20">
+									Dry Run Push
+								</button>
+							</form>
+							<!-- Push -->
+							<form
+								hx-post={ "/admin/deploy/" + env.Name + "/push" }
+								hx-target={ "#result-" + env.Name }
+								hx-swap="innerHTML"
+								hx-confirm={ "Push to " + env.Name + "? This will overwrite remote content with your local data." }
+							>
+								<input type="hidden" name="_csrf" value={ csrfToken }/>
+								<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-yellow-500/10 px-3 py-1.5 text-sm font-semibold text-yellow-400 ring-1 ring-yellow-400/20 ring-inset hover:bg-yellow-500/20">
+									<svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+									Push
+								</button>
+							</form>
+						</div>
+					}
+					<!-- Result area -->
+					<div id={ "result-" + env.Name } class="mt-4"></div>
+				</div>
+			}
+		</div>
+	}
+}
+
+templ Deploy(layout layouts.AdminData, envs []config.DeployEnvironmentConfig, csrfToken string, hasWrite bool) {
+	@layouts.Admin(layout) {
+		@DeployContent(envs, csrfToken, hasWrite)
+	}
+}

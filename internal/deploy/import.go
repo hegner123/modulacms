@@ -54,7 +54,7 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 	// Optional full backup.
 	var backupPath string
 	if !skipBackup {
-		path, _, bErr := backup.CreateFullBackup(cfg)
+		path, _, bErr := backup.CreateFullBackup(cfg, driver)
 		if bErr != nil {
 			return nil, fmt.Errorf("pre-import backup: %w", bErr)
 		}

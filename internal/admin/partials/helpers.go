@@ -36,7 +36,7 @@ type PermissionMatrix struct {
 // BuildPermissionMatrix groups permissions by resource:operation into a matrix.
 func BuildPermissionMatrix(permissions []db.Permissions, activePerms map[types.PermissionID]bool) PermissionMatrix {
 	m := PermissionMatrix{
-		Columns: []string{"read", "create", "update", "delete", "admin"},
+		Columns: []string{"read", "create", "update", "delete", "publish", "admin"},
 	}
 
 	rowMap := make(map[string]*PermissionRow)
@@ -185,10 +185,7 @@ func nullStrDisplay(ns db.NullString) string {
 
 // routeStatusLabel returns a human-readable label for a route status integer.
 func routeStatusLabel(status int64) string {
-	if status == 1 {
-		return "Active"
-	}
-	return "Inactive"
+	return RouteStatusLabel(status)
 }
 
 // routeStatusBadgeClass returns the CSS class for a route status badge.
@@ -201,6 +198,19 @@ func routeStatusBadgeClass(status int64) string {
 
 // routeStatusBadgeClassTW returns Tailwind UI badge classes for a route status.
 func routeStatusBadgeClassTW(status int64) string {
+	return RouteStatusBadgeClassTW(status)
+}
+
+// RouteStatusLabel returns the display label for a route status (exported for pages).
+func RouteStatusLabel(status int64) string {
+	if status == 1 {
+		return "Active"
+	}
+	return "Inactive"
+}
+
+// RouteStatusBadgeClassTW returns Tailwind badge classes for a route status (exported for pages).
+func RouteStatusBadgeClassTW(status int64) string {
 	if status == 1 {
 		return "bg-green-400/10 text-green-400 ring-green-400/20"
 	}

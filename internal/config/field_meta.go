@@ -13,6 +13,12 @@ const (
 	CategoryObservability FieldCategory = "observability"
 	CategoryEmail         FieldCategory = "email"
 	CategoryPlugin        FieldCategory = "plugin"
+	CategoryDeploy        FieldCategory = "deploy"
+	CategoryPublishing    FieldCategory = "publishing"
+	CategoryI18n          FieldCategory = "i18n"
+	CategoryWebhook       FieldCategory = "webhook"
+	CategorySearch        FieldCategory = "search"
+	CategoryMCP           FieldCategory = "mcp"
 	CategoryUpdate        FieldCategory = "update"
 	CategoryMisc          FieldCategory = "misc"
 )
@@ -29,6 +35,12 @@ func AllCategories() []FieldCategory {
 		CategoryObservability,
 		CategoryEmail,
 		CategoryPlugin,
+		CategoryDeploy,
+		CategoryPublishing,
+		CategoryI18n,
+		CategoryWebhook,
+		CategorySearch,
+		CategoryMCP,
 		CategoryUpdate,
 		CategoryMisc,
 	}
@@ -55,6 +67,18 @@ func CategoryLabel(c FieldCategory) string {
 		return "Email Settings"
 	case CategoryPlugin:
 		return "Plugin Settings"
+	case CategoryDeploy:
+		return "Deploy Settings"
+	case CategoryPublishing:
+		return "Publishing Settings"
+	case CategoryI18n:
+		return "Internationalization"
+	case CategoryWebhook:
+		return "Webhook Settings"
+	case CategorySearch:
+		return "Search Settings"
+	case CategoryMCP:
+		return "MCP Settings"
 	case CategoryUpdate:
 		return "Update Settings"
 	case CategoryMisc:
@@ -95,6 +119,10 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "output_format", Label: "Output Format", Category: CategoryServer, HotReloadable: true, Description: "Default API response format (contentful, sanity, strapi, wordpress, clean, raw)", Example: "clean"},
 	{JSONKey: "custom_style_path", Label: "Custom Style Path", Category: CategoryServer, HotReloadable: true, Description: "Path to custom TUI style file", Example: "./styles/dark.json"},
 	{JSONKey: "max_upload_size", Label: "Max Upload Size", Category: CategoryServer, HotReloadable: true, Description: "Maximum file upload size in bytes", Example: "10485760"},
+
+	// Remote
+	{JSONKey: "remote_url", Label: "Remote URL", Category: CategoryServer, HotReloadable: false, Description: "Base URL of remote ModulaCMS instance (mutually exclusive with db_driver)", Example: "https://cms.example.com"},
+	{JSONKey: "remote_api_key", Label: "Remote API Key", Category: CategoryServer, HotReloadable: false, Sensitive: true, Description: "API key for remote instance authentication", Example: "api-key-here"},
 
 	// Database
 	{JSONKey: "db_driver", Label: "DB Driver", Category: CategoryDatabase, HotReloadable: false, Required: true, Description: "Database driver (sqlite, mysql, postgres)", Example: "sqlite"},
@@ -164,8 +192,9 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "email_reply_to", Label: "Reply-To", Category: CategoryEmail, HotReloadable: true, Description: "Default reply-to address", Example: "support@example.com"},
 	{JSONKey: "email_aws_access_key_id", Label: "AWS Access Key ID", Category: CategoryEmail, HotReloadable: true, Sensitive: true, Description: "AWS access key ID for SES", Example: "AKIAIOSFODNN7EXAMPLE"},
 	{JSONKey: "email_aws_secret_access_key", Label: "AWS Secret Access Key", Category: CategoryEmail, HotReloadable: true, Sensitive: true, Description: "AWS secret access key for SES", Example: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"},
+	{JSONKey: "password_reset_url", Label: "Password Reset URL", Category: CategoryEmail, HotReloadable: true, Description: "URL template for password reset links in emails", Example: "https://admin.example.com/reset-password"},
 
-	// Plugin
+	// Plugin — Core
 	{JSONKey: "plugin_enabled", Label: "Plugin Enabled", Category: CategoryPlugin, HotReloadable: false, Description: "Enable plugin system", Example: "true"},
 	{JSONKey: "plugin_directory", Label: "Plugin Directory", Category: CategoryPlugin, HotReloadable: false, Description: "Path to plugins directory", Example: "./plugins"},
 	{JSONKey: "plugin_max_vms", Label: "Max VMs", Category: CategoryPlugin, HotReloadable: true, Description: "Max Lua VMs per plugin", Example: "4"},
@@ -174,10 +203,65 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "plugin_hot_reload", Label: "Hot Reload", Category: CategoryPlugin, HotReloadable: false, Description: "Enable plugin hot reload (file watcher)", Example: "true"},
 	{JSONKey: "plugin_max_failures", Label: "Max Failures", Category: CategoryPlugin, HotReloadable: true, Description: "Circuit breaker failure threshold", Example: "5"},
 	{JSONKey: "plugin_reset_interval", Label: "Reset Interval", Category: CategoryPlugin, HotReloadable: true, Description: "Circuit breaker reset interval", Example: "60s"},
+	{JSONKey: "plugin_sync_interval", Label: "Sync Interval", Category: CategoryPlugin, HotReloadable: true, Description: "DB state poll interval for multi-instance sync (0 disables)", Example: "10s"},
+
+	// Plugin — HTTP
 	{JSONKey: "plugin_rate_limit", Label: "Rate Limit", Category: CategoryPlugin, HotReloadable: true, Description: "Plugin HTTP rate limit (req/sec/IP)", Example: "100"},
-	{JSONKey: "plugin_max_routes", Label: "Max Routes", Category: CategoryPlugin, HotReloadable: true, Description: "Max HTTP routes per plugin", Example: "10"},
+	{JSONKey: "plugin_max_routes", Label: "Max Routes", Category: CategoryPlugin, HotReloadable: true, Description: "Max HTTP routes per plugin", Example: "50"},
 	{JSONKey: "plugin_max_request_body", Label: "Max Request Body", Category: CategoryPlugin, HotReloadable: true, Description: "Max request body size (bytes)", Example: "1048576"},
 	{JSONKey: "plugin_max_response_body", Label: "Max Response Body", Category: CategoryPlugin, HotReloadable: true, Description: "Max response body size (bytes)", Example: "5242880"},
+	{JSONKey: "plugin_trusted_proxies", Label: "Trusted Proxies", Category: CategoryPlugin, HotReloadable: true, Description: "CIDR list for X-Forwarded-For (empty = RemoteAddr only)", Example: "10.0.0.0/8"},
+
+	// Plugin — Database Pool
+	{JSONKey: "plugin_db_max_open_conns", Label: "DB Max Open Conns", Category: CategoryPlugin, HotReloadable: false, Description: "Max open DB connections for plugin pool (0 = driver default)", Example: "10"},
+	{JSONKey: "plugin_db_max_idle_conns", Label: "DB Max Idle Conns", Category: CategoryPlugin, HotReloadable: false, Description: "Max idle DB connections for plugin pool (0 = driver default)", Example: "5"},
+	{JSONKey: "plugin_db_conn_max_lifetime", Label: "DB Conn Max Lifetime", Category: CategoryPlugin, HotReloadable: false, Description: "Max DB connection lifetime (e.g. 30m, 1h)", Example: "30m"},
+
+	// Plugin — Content Hooks
+	{JSONKey: "plugin_hook_reserve_vms", Label: "Hook Reserve VMs", Category: CategoryPlugin, HotReloadable: true, Description: "VMs reserved for hooks per plugin", Example: "1"},
+	{JSONKey: "plugin_hook_max_consecutive_aborts", Label: "Hook Max Aborts", Category: CategoryPlugin, HotReloadable: true, Description: "Consecutive aborts before hook circuit breaker trips", Example: "10"},
+	{JSONKey: "plugin_hook_max_ops", Label: "Hook Max Ops", Category: CategoryPlugin, HotReloadable: true, Description: "Reduced op budget for after-hooks", Example: "100"},
+	{JSONKey: "plugin_hook_max_concurrent_after", Label: "Hook Max Concurrent After", Category: CategoryPlugin, HotReloadable: true, Description: "Max concurrent after-hook goroutines", Example: "10"},
+	{JSONKey: "plugin_hook_timeout_ms", Label: "Hook Timeout (ms)", Category: CategoryPlugin, HotReloadable: true, Description: "Per-hook timeout for before-hooks (ms)", Example: "2000"},
+	{JSONKey: "plugin_hook_event_timeout_ms", Label: "Hook Event Timeout (ms)", Category: CategoryPlugin, HotReloadable: true, Description: "Total timeout for before-hook chain per event (ms)", Example: "5000"},
+
+	// Plugin — Outbound Requests
+	{JSONKey: "plugin_request_timeout", Label: "Request Timeout (s)", Category: CategoryPlugin, HotReloadable: true, Description: "Outbound HTTP request timeout in seconds", Example: "10"},
+	{JSONKey: "plugin_request_max_response", Label: "Request Max Response", Category: CategoryPlugin, HotReloadable: true, Description: "Max outbound response body size (bytes)", Example: "1048576"},
+	{JSONKey: "plugin_request_max_body", Label: "Request Max Body", Category: CategoryPlugin, HotReloadable: true, Description: "Max outbound request body size (bytes)", Example: "1048576"},
+	{JSONKey: "plugin_request_rate_limit", Label: "Request Rate Limit", Category: CategoryPlugin, HotReloadable: true, Description: "Outbound requests per plugin per domain per minute", Example: "60"},
+	{JSONKey: "plugin_request_global_rate", Label: "Request Global Rate", Category: CategoryPlugin, HotReloadable: true, Description: "Aggregate outbound requests per minute (0 = unlimited)", Example: "600"},
+	{JSONKey: "plugin_request_cb_failures", Label: "Request CB Failures", Category: CategoryPlugin, HotReloadable: true, Description: "Consecutive failures to trip outbound circuit breaker", Example: "5"},
+	{JSONKey: "plugin_request_cb_reset", Label: "Request CB Reset (s)", Category: CategoryPlugin, HotReloadable: true, Description: "Seconds before outbound circuit breaker half-open probe", Example: "60"},
+	{JSONKey: "plugin_request_allow_local", Label: "Request Allow Local", Category: CategoryPlugin, HotReloadable: true, Description: "Allow outbound HTTP to localhost (dev only)", Example: "false"},
+
+	// Deploy
+	{JSONKey: "deploy_snapshot_dir", Label: "Snapshot Directory", Category: CategoryDeploy, HotReloadable: true, Description: "Local directory for deploy snapshots", Example: "./deploy/snapshots"},
+
+	// Publishing
+	{JSONKey: "composition_max_depth", Label: "Composition Max Depth", Category: CategoryPublishing, HotReloadable: true, Description: "Max depth for recursive content tree composition", Example: "10"},
+	{JSONKey: "publish_schedule_interval", Label: "Schedule Interval (s)", Category: CategoryPublishing, HotReloadable: true, Description: "Seconds between scheduled publish checks", Example: "60"},
+	{JSONKey: "version_max_per_content", Label: "Max Versions Per Content", Category: CategoryPublishing, HotReloadable: true, Description: "Max version snapshots per content item (0 = unlimited)", Example: "50"},
+
+	// Internationalization
+	{JSONKey: "i18n_enabled", Label: "I18n Enabled", Category: CategoryI18n, HotReloadable: false, Description: "Enable internationalization support", Example: "true"},
+	{JSONKey: "i18n_default_locale", Label: "Default Locale", Category: CategoryI18n, HotReloadable: true, Description: "Default locale code (BCP 47)", Example: "en"},
+
+	// Webhooks
+	{JSONKey: "webhook_enabled", Label: "Webhooks Enabled", Category: CategoryWebhook, HotReloadable: false, Description: "Enable webhook event notifications", Example: "true"},
+	{JSONKey: "webhook_timeout", Label: "Delivery Timeout (s)", Category: CategoryWebhook, HotReloadable: true, Description: "HTTP timeout for webhook delivery", Example: "10"},
+	{JSONKey: "webhook_max_retries", Label: "Max Retries", Category: CategoryWebhook, HotReloadable: true, Description: "Max retry attempts for failed deliveries", Example: "3"},
+	{JSONKey: "webhook_workers", Label: "Workers", Category: CategoryWebhook, HotReloadable: true, Description: "Concurrent delivery workers", Example: "4"},
+	{JSONKey: "webhook_allow_http", Label: "Allow HTTP", Category: CategoryWebhook, HotReloadable: true, Description: "Allow non-TLS webhook URLs (dev only)", Example: "false"},
+	{JSONKey: "webhook_delivery_retention_days", Label: "Delivery Retention (days)", Category: CategoryWebhook, HotReloadable: true, Description: "Days to retain delivery records", Example: "30"},
+
+	// Search
+	{JSONKey: "search_enabled", Label: "Search Enabled", Category: CategorySearch, HotReloadable: false, Description: "Enable built-in full-text search index", Example: "true"},
+	{JSONKey: "search_path", Label: "Index Path", Category: CategorySearch, HotReloadable: false, Description: "File path for persisted search index", Example: "search.idx"},
+
+	// MCP
+	{JSONKey: "mcp_enabled", Label: "MCP Enabled", Category: CategoryMCP, HotReloadable: false, Description: "Enable Model Context Protocol server", Example: "true"},
+	{JSONKey: "mcp_api_key", Label: "MCP API Key", Category: CategoryMCP, HotReloadable: true, Sensitive: true, Description: "API key for MCP client authentication", Example: "mcp-secret-key"},
 
 	// Misc
 	{JSONKey: "richtext_toolbar", Label: "Richtext Toolbar", Category: CategoryMisc, HotReloadable: true, Description: "Default toolbar buttons for richtext fields", Example: "bold,italic,link,heading,list,quote,code"},

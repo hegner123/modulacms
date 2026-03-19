@@ -6,17 +6,18 @@ package backup
 
 import (
 	"archive/zip"
-	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -48,7 +49,10 @@ func TimestampBackupName(output string, timestamp string) string {
 
 // CreateFullBackup creates a zip archive containing the database and any
 // configured backup paths. It returns the file path, size in bytes, or an error.
-func CreateFullBackup(cfg config.Config) (path string, sizeBytes int64, err error) {
+// For MySQL and PostgreSQL, the driver parameter is used for a pure-Go export
+// via DeployOps. For SQLite, the database file is copied directly and driver
+// may be nil.
+func CreateFullBackup(cfg config.Config, driver db.DbDriver) (path string, sizeBytes int64, err error) {
 	// Determine output directory
 	outputDir := cfg.Backup_Option
 	if outputDir == "" {
@@ -91,13 +95,12 @@ func CreateFullBackup(cfg config.Config) (path string, sizeBytes int64, err erro
 		if addErr := addSQLiteDB(zipWriter, cfg.Db_URL); addErr != nil {
 			return "", 0, fmt.Errorf("failed to add SQLite database: %w", addErr)
 		}
-	case config.Mysql:
-		if addErr := addMySQLDump(zipWriter, cfg); addErr != nil {
-			return "", 0, fmt.Errorf("failed to add MySQL dump: %w", addErr)
+	case config.Mysql, config.Psql:
+		if driver == nil {
+			return "", 0, fmt.Errorf("driver required for %s backup", cfg.Db_Driver)
 		}
-	case config.Psql:
-		if addErr := addPostgresDump(zipWriter, cfg); addErr != nil {
-			return "", 0, fmt.Errorf("failed to add PostgreSQL dump: %w", addErr)
+		if addErr := addGoSQLDump(zipWriter, driver); addErr != nil {
+			return "", 0, fmt.Errorf("failed to add database dump: %w", addErr)
 		}
 	default:
 		return "", 0, fmt.Errorf("unsupported database driver: %s", cfg.Db_Driver)
@@ -178,63 +181,72 @@ func addSQLiteDB(zw *zip.Writer, dbPath string) error {
 	return nil
 }
 
-func addMySQLDump(zw *zip.Writer, cfg config.Config) error {
-	host, port := splitHostPort(cfg.Db_URL, "3306")
-	args := []string{
-		"-h", host,
-		"-P", port,
-		"-u", cfg.Db_User,
-		"-p" + cfg.Db_Password,
-		cfg.Db_Name,
-	}
-	cmd := exec.Command("mysqldump", args...)
-
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	output, err := cmd.Output()
+// addGoSQLDump exports all CMS tables as SQL INSERT statements using DeployOps.
+// Pure Go — no external tools (pg_dump, mysqldump) required.
+func addGoSQLDump(zw *zip.Writer, driver db.DbDriver) error {
+	ops, err := db.NewDeployOps(driver)
 	if err != nil {
-		return fmt.Errorf("mysqldump failed: %w: %s", err, stderr.String())
+		return fmt.Errorf("failed to create deploy ops: %w", err)
 	}
+
+	ctx := context.Background()
 
 	w, err := zw.Create("database.sql")
 	if err != nil {
 		return fmt.Errorf("failed to create database.sql in archive: %w", err)
 	}
 
-	if _, err = w.Write(output); err != nil {
-		return fmt.Errorf("failed to write MySQL dump to archive: %w", err)
+	// Write header
+	fmt.Fprintf(w, "-- ModulaCMS backup\n")
+	fmt.Fprintf(w, "-- Generated: %s\n", time.Now().UTC().Format(time.RFC3339))
+	fmt.Fprintf(w, "-- Method: pure-go DeployOps export\n\n")
+
+	// Export each table
+	for table := range db.AllTablesExported() {
+		columns, rows, queryErr := ops.QueryAllRows(ctx, table)
+		if queryErr != nil {
+			// Table might not exist yet — skip silently
+			fmt.Fprintf(w, "-- Skipped %s: %v\n\n", string(table), queryErr)
+			continue
+		}
+
+		if len(rows) == 0 {
+			fmt.Fprintf(w, "-- %s: 0 rows\n\n", string(table))
+			continue
+		}
+
+		fmt.Fprintf(w, "-- %s: %d rows\n", string(table), len(rows))
+
+		for _, row := range rows {
+			fmt.Fprintf(w, "INSERT INTO %s (%s) VALUES (", string(table), strings.Join(columns, ", "))
+			for j, val := range row {
+				if j > 0 {
+					fmt.Fprint(w, ", ")
+				}
+				if val == nil {
+					fmt.Fprint(w, "NULL")
+				} else {
+					switch v := val.(type) {
+					case int64:
+						fmt.Fprintf(w, "%d", v)
+					case string:
+						fmt.Fprintf(w, "'%s'", escapeSQLString(v))
+					default:
+						fmt.Fprintf(w, "'%s'", escapeSQLString(fmt.Sprintf("%v", v)))
+					}
+				}
+			}
+			fmt.Fprint(w, ");\n")
+		}
+		fmt.Fprint(w, "\n")
 	}
 
 	return nil
 }
 
-func addPostgresDump(zw *zip.Writer, cfg config.Config) error {
-	host, port := splitHostPort(cfg.Db_URL, "5432")
-	cmd := exec.Command("pg_dump",
-		"-h", host,
-		"-p", port,
-		"-U", cfg.Db_User,
-		"-d", cfg.Db_Name,
-	)
-	cmd.Env = append(os.Environ(), "PGPASSWORD="+cfg.Db_Password)
-
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	output, err := cmd.Output()
-	if err != nil {
-		return fmt.Errorf("pg_dump failed: %w: %s", err, stderr.String())
-	}
-
-	w, err := zw.Create("database.sql")
-	if err != nil {
-		return fmt.Errorf("failed to create database.sql in archive: %w", err)
-	}
-
-	if _, err = w.Write(output); err != nil {
-		return fmt.Errorf("failed to write PostgreSQL dump to archive: %w", err)
-	}
-
-	return nil
+// escapeSQLString escapes single quotes in SQL string literals.
+func escapeSQLString(s string) string {
+	return strings.ReplaceAll(s, "'", "''")
 }
 
 func addFilesToZip(zipWriter *zip.Writer, dir, baseInZip string) error {

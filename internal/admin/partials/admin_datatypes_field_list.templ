@@ -18,7 +18,7 @@ templ AdminDatatypeFieldList(datatypeID string, fields []db.AdminFields, csrfTok
             </thead>
             <tbody class="divide-y divide-white/5">
                 for _, f := range fields {
-                    <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/admin-schema/fields/" + f.AdminFieldID.String() }>
+                    <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/admin-fields/" + f.AdminFieldID.String() }>
                         <td class="py-3 pr-3 pl-4 text-sm sm:pl-6">
                             <div class="font-medium text-white">{ f.Name }</div>
                             <div class="mt-0.5 text-gray-400">{ f.Label }</div>
@@ -26,12 +26,12 @@ templ AdminDatatypeFieldList(datatypeID string, fields []db.AdminFields, csrfTok
                         <td class="px-3 py-3 text-sm whitespace-nowrap">
                             <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ f.Type.String() }</span>
                         </td>
-                        <td class="py-3 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6">
+                        <td class="py-3 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6">
                             <mcms-confirm
                                 label="Delete"
                                 message="Delete this field? This cannot be undone."
                                 button-class="text-red-400 hover:text-red-300"
-                                hx-delete={ "/admin/admin-schema/fields/" + f.AdminFieldID.String() }
+                                hx-delete={ "/admin/admin-fields/" + f.AdminFieldID.String() }
                                 hx-target="closest tr"
                                 hx-swap="outerHTML swap:300ms"
                             ></mcms-confirm>

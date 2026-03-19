@@ -12,16 +12,7 @@ templ RoutesListContent(items []db.Routes, pagination partials.PaginationPageDat
             <h1 class="text-base/7 font-semibold text-white">Routes</h1>
             <p class="mt-2 text-sm text-gray-400">Manage URL routes for your site pages.</p>
         </div>
-        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center gap-3">
-            <a
-                href="/admin/routes/admin"
-                class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20 no-underline hover:no-underline"
-                hx-get="/admin/routes/admin"
-                hx-target="#main-content"
-                hx-push-url="true"
-            >
-                Admin Routes
-            </a>
+        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
             <button
                 class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
                 data-action="new"
@@ -31,9 +22,24 @@ templ RoutesListContent(items []db.Routes, pagination partials.PaginationPageDat
             </button>
         </div>
     </div>
-    <div class="mt-8 flow-root">
-        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+    <div class="mt-4 rounded-lg border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/10 p-4">
+        <div class="flex items-start gap-3">
+            <svg class="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-warning)]" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+            </svg>
+            <div>
+                <h3 class="text-sm font-semibold text-[var(--color-warning)]">Routes are managed by content</h3>
+                <p class="mt-1 text-sm text-[var(--color-warning)]/80">
+                    Routes are normally created and updated when you publish content. Editing routes directly
+                    can cause mismatches between your content and URL structure. Use this page only when you need
+                    to fix or override a route that content publishing cannot resolve.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="mt-6 flow-root">
+        <div class="overflow-x-auto">
+            <div class="min-w-full py-2 align-middle">
                 <div class="overflow-hidden rounded-lg border border-white/10 shadow-sm">
                     <table class="min-w-full divide-y divide-white/10">
                         <thead class="bg-white/5">

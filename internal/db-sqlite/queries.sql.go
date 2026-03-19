@@ -6855,6 +6855,32 @@ func (q *Queries) GetSession(ctx context.Context, arg GetSessionParams) (Session
 	return i, err
 }
 
+const getSessionByToken = `-- name: GetSessionByToken :one
+SELECT session_id, user_id, date_created, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
+WHERE session_data = ?
+LIMIT 1
+`
+
+type GetSessionByTokenParams struct {
+	SessionData sql.NullString `json:"session_data"`
+}
+
+func (q *Queries) GetSessionByToken(ctx context.Context, arg GetSessionByTokenParams) (Sessions, error) {
+	row := q.db.QueryRowContext(ctx, getSessionByToken, arg.SessionData)
+	var i Sessions
+	err := row.Scan(
+		&i.SessionID,
+		&i.UserID,
+		&i.DateCreated,
+		&i.ExpiresAt,
+		&i.LastAccess,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.SessionData,
+	)
+	return i, err
+}
+
 const getSessionByUserId = `-- name: GetSessionByUserId :one
 SELECT session_id, user_id, date_created, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
 WHERE user_id = ?

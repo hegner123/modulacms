@@ -1,0 +1,115 @@
+package pages
+
+import (
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+templ SessionDetailContent(session db.Sessions, csrfToken string, userName string) {
+    <!-- Page heading -->
+    <div class="border-b border-white/10 pb-5">
+        <div>
+            <a href="/admin/sessions"
+               hx-get="/admin/sessions"
+               hx-target="#main-content"
+               hx-push-url="true"
+               class="text-sm font-medium text-gray-400 hover:text-white">&larr; Back to Sessions</a>
+        </div>
+        <div class="mt-3 md:flex md:items-center md:justify-between">
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-x-3">
+                    <h2 class="text-2xl/7 font-bold text-white sm:truncate sm:text-3xl sm:tracking-tight">Session</h2>
+                </div>
+            </div>
+            <div class="mt-4 flex gap-x-3 md:mt-0 md:ml-4">
+                <mcms-confirm
+                    label="Revoke Session"
+                    message="Are you sure you want to revoke this session? The user will be logged out immediately."
+                    button-class="inline-flex items-center rounded-md bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-400 ring-1 ring-red-400/20 ring-inset hover:bg-red-500/20"
+                    hx-delete={ "/admin/sessions/" + session.SessionID.String() }
+                    hx-swap="none"
+                    hx-on--after-request="if(event.detail.successful) window.location='/admin/sessions'"
+                ></mcms-confirm>
+            </div>
+        </div>
+    </div>
+    <!-- Metadata -->
+    <div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+            <h3 class="text-base/7 font-semibold text-white">Details</h3>
+            <dl class="mt-6 divide-y divide-white/10 border-t border-white/10">
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Session ID</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0 font-mono break-all">{ session.SessionID.String() }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">User</dt>
+                    <dd class="mt-1 text-sm/6 sm:col-span-2 sm:mt-0">
+                        if session.UserID.String() != "" {
+                            <a href={ templ.SafeURL("/admin/users/" + session.UserID.String()) }
+                               hx-get={ "/admin/users/" + session.UserID.String() }
+                               hx-target="#main-content"
+                               hx-push-url="true"
+                               class="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">
+                                if userName != "" {
+                                    { userName }
+                                } else {
+                                    { session.UserID.String() }
+                                }
+                            </a>
+                            <span class="ml-2 text-xs text-gray-500">({ session.UserID.String() })</span>
+                        } else {
+                            <span class="text-gray-600">none</span>
+                        }
+                    </dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">IP Address</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0 font-mono">
+                        if session.IpAddress.Valid && session.IpAddress.String != "" {
+                            { session.IpAddress.String }
+                        } else {
+                            <span class="text-gray-600">unknown</span>
+                        }
+                    </dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">User Agent</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0 break-all">
+                        if session.UserAgent.Valid && session.UserAgent.String != "" {
+                            { session.UserAgent.String }
+                        } else {
+                            <span class="text-gray-600">unknown</span>
+                        }
+                    </dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Created</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ session.DateCreated.String() }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Last Active</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ session.LastAccess.String() }</dd>
+                </div>
+                <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm/6 font-medium text-white">Expires</dt>
+                    <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ session.ExpiresAt.String() }</dd>
+                </div>
+                if session.SessionData.Valid && session.SessionData.String != "" {
+                    <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm/6 font-medium text-white">Session Data</dt>
+                        <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">
+                            <pre class="rounded-md bg-white/5 p-3 text-xs font-mono overflow-x-auto">{ session.SessionData.String }</pre>
+                        </dd>
+                    </div>
+                }
+            </dl>
+        </div>
+    </div>
+}
+
+templ SessionDetail(layout layouts.AdminData, session db.Sessions, csrfToken string, userName string) {
+    @layouts.Admin(layout) {
+        @SessionDetailContent(session, csrfToken, userName)
+    }
+}

@@ -1,0 +1,26 @@
+package components
+
+// Spinner renders the brand spinner SVG inline so it inherits color
+// from the CSS cascade via currentColor. Wrap in .spinner-brand for sizing.
+templ Spinner() {
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true">
+		<style>
+			@keyframes slide-lg {
+				0%, 100% { transform: translate(0, 0); }
+				25%      { transform: translate(0, -25px); }
+				50%      { transform: translate(25px, -25px); }
+				75%      { transform: translate(25px, 0); }
+			}
+			@keyframes slide-sm {
+				0%, 100% { transform: translate(0, 0); }
+				25%      { transform: translate(0, 37px); }
+				50%      { transform: translate(-37px, 37px); }
+				75%      { transform: translate(-37px, 0); }
+			}
+			.sq-lg { animation: slide-lg 2s ease-in-out infinite; }
+			.sq-sm { animation: slide-sm 2s ease-in-out infinite; }
+		</style>
+		<rect class="sq-lg" x="0" y="25" width="39" height="39" rx="3" fill="currentColor"/>
+		<rect class="sq-sm" x="37" y="0" width="27" height="27" rx="3" fill="currentColor"/>
+	</svg>
+}

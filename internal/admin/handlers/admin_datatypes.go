@@ -14,7 +14,7 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-// AdminDatatypesListHandler handles GET /admin/admin-schema/datatypes.
+// AdminDatatypesListHandler handles GET /admin/admin-datatypes.
 // Lists all admin datatypes with pagination, search, type filter, and sorting.
 // HTMX requests receive partial table rows only.
 func AdminDatatypesListHandler(svc *service.Registry) http.HandlerFunc {
@@ -98,7 +98,7 @@ func AdminDatatypesListHandler(svc *service.Registry) http.HandlerFunc {
 		}
 		sortStrings(distinctTypes)
 
-		pd := NewPaginationData(total, limit, offset, "#admin-datatypes-table-body", "/admin/admin-schema/datatypes")
+		pd := NewPaginationData(total, limit, offset, "#admin-datatypes-table-body", "/admin/admin-datatypes")
 		pg := partials.PaginationPageData{
 			Current:    pd.Current,
 			TotalPages: pd.TotalPages,
@@ -133,7 +133,7 @@ func sortAdminDatatypes(s []db.AdminDatatypes, less func(a, b db.AdminDatatypes)
 	}
 }
 
-// AdminDatatypeDetailHandler handles GET /admin/admin-schema/datatypes/{id}.
+// AdminDatatypeDetailHandler handles GET /admin/admin-datatypes/{id}.
 // Shows admin datatype detail with linked admin fields list.
 func AdminDatatypeDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -188,7 +188,7 @@ func AdminDatatypeDetailHandler(svc *service.Registry) http.HandlerFunc {
 	}
 }
 
-// AdminDatatypeCreateHandler handles POST /admin/admin-schema/datatypes.
+// AdminDatatypeCreateHandler handles POST /admin/admin-datatypes.
 // Creates an admin datatype via the service layer, which validates label and type.
 func AdminDatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -248,16 +248,16 @@ func AdminDatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if !IsHTMX(r) {
-			http.Redirect(w, r, "/admin/admin-schema/datatypes", http.StatusSeeOther)
+			http.Redirect(w, r, "/admin/admin-datatypes", http.StatusSeeOther)
 			return
 		}
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Admin datatype created", "type": "success"}}`)
-		w.Header().Set("HX-Redirect", "/admin/admin-schema/datatypes")
+		w.Header().Set("HX-Redirect", "/admin/admin-datatypes")
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-// AdminDatatypeUpdateHandler handles POST /admin/admin-schema/datatypes/{id}.
+// AdminDatatypeUpdateHandler handles POST /admin/admin-datatypes/{id}.
 // Updates user-editable fields via the service layer, which preserves immutable fields.
 func AdminDatatypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -322,16 +322,16 @@ func AdminDatatypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if !IsHTMX(r) {
-			http.Redirect(w, r, "/admin/admin-schema/datatypes/"+id, http.StatusSeeOther)
+			http.Redirect(w, r, "/admin/admin-datatypes/"+id, http.StatusSeeOther)
 			return
 		}
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Admin datatype updated", "type": "success"}}`)
-		w.Header().Set("HX-Redirect", "/admin/admin-schema/datatypes/"+id)
+		w.Header().Set("HX-Redirect", "/admin/admin-datatypes/"+id)
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-// AdminDatatypeDeleteHandler handles DELETE /admin/admin-schema/datatypes/{id}.
+// AdminDatatypeDeleteHandler handles DELETE /admin/admin-datatypes/{id}.
 // HTMX-only endpoint. Non-HTMX requests receive 405.
 func AdminDatatypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -367,7 +367,7 @@ func AdminDatatypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	}
 }
 
-// AdminDatatypeCreateFieldHandler handles POST /admin/admin-schema/datatypes/{id}/fields.
+// AdminDatatypeCreateFieldHandler handles POST /admin/admin-datatypes/{id}/fields.
 // Creates a new admin field with parent_id set to this admin datatype via the service layer.
 func AdminDatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -427,11 +427,11 @@ func AdminDatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if !IsHTMX(r) {
-			http.Redirect(w, r, "/admin/admin-schema/datatypes/"+id, http.StatusSeeOther)
+			http.Redirect(w, r, "/admin/admin-datatypes/"+id, http.StatusSeeOther)
 			return
 		}
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Field created", "type": "success"}}`)
-		w.Header().Set("HX-Redirect", "/admin/admin-schema/datatypes/"+id)
+		w.Header().Set("HX-Redirect", "/admin/admin-datatypes/"+id)
 		w.WriteHeader(http.StatusOK)
 	}
 }

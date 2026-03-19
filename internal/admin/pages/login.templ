@@ -1,6 +1,9 @@
 package pages
 
-import "github.com/hegner123/modulacms/internal/admin/layouts"
+import (
+    "github.com/hegner123/modulacms/internal/admin/components"
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+)
 
 templ Login(csrfToken string, version string, nextURL string, errMsg string) {
 	@layouts.Auth("Login", csrfToken, version) {
@@ -21,28 +24,28 @@ templ Login(csrfToken string, version string, nextURL string, errMsg string) {
 			<div>
 				<label for="email" class="block text-sm/6 font-medium text-white">Email address</label>
 				<div class="mt-2">
-					<input type="email" id="email" name="email" required autofocus autocomplete="email" placeholder="you@example.com"
+					<input type="email" id="email" name="email" required autofocus autocomplete="email" placeholder="you@example.com" tabindex="1"
 						class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6"/>
 				</div>
 			</div>
 			<div>
 				<div class="flex items-center justify-between">
 					<label for="password" class="block text-sm/6 font-medium text-white">Password</label>
-					<a href="/admin/forgot-password" class="text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">Forgot password?</a>
+					<a href="/admin/forgot-password" tabindex="4" class="text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">Forgot password?</a>
 				</div>
 				<div class="mt-2">
-					<input type="password" id="password" name="password" required autocomplete="current-password"
+					<input type="password" id="password" name="password" required autocomplete="current-password" tabindex="2"
 						class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6"/>
 				</div>
 			</div>
 			<input type="hidden" name="next" value={ nextURL }/>
 			<input type="hidden" name="_csrf" value={ csrfToken }/>
-			<button type="submit" class="flex w-full justify-center rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]">
+			<button type="submit" tabindex="3" class="flex w-full justify-center rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]">
 				Sign in
 			</button>
 		</form>
 		<div id="login-loading" class="fixed inset-0 z-[200] flex hidden items-center justify-center bg-gray-950/75">
-			<div class="spinner-brand spinner-brand-lg"><img src="/admin/static/icons/spinner.svg" alt="Loading"/></div>
+			<div class="spinner-brand spinner-brand-lg">@components.Spinner()</div>
 		</div>
 		<script>
 			document.getElementById('login-form').addEventListener('submit', function(e) {

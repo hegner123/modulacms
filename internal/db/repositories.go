@@ -402,6 +402,7 @@ type AuthRepository interface {
 	DeleteSession(context.Context, audited.AuditContext, types.SessionID) error
 	GetSession(types.SessionID) (*Sessions, error)
 	GetSessionByUserId(types.NullableUserID) (*Sessions, error)
+	GetSessionByToken(string) (*Sessions, error)
 	ListSessions() (*[]Sessions, error)
 	UpdateSession(context.Context, audited.AuditContext, UpdateSessionParams) (*string, error)
 

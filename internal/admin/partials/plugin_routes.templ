@@ -1,0 +1,73 @@
+package partials
+
+import "github.com/hegner123/modulacms/internal/service"
+
+templ PluginRoutesTableRows(routes []service.PluginRoute, pluginName, csrfToken string, hasAdmin bool) {
+	for _, rt := range routes {
+		<tr>
+			<td class="whitespace-nowrap px-4 py-4 text-sm font-mono">
+				<span class={ "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset", methodBadgeClassesTW(rt.Method) }>{ rt.Method }</span>
+			</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300 font-mono">{ rt.Path }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300 font-mono">{ rt.FullPath }</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm">
+				if rt.Public {
+					<span class="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-blue-400/20 ring-inset">Public</span>
+				} else {
+					<span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">Auth</span>
+				}
+			</td>
+			<td class="whitespace-nowrap px-4 py-4 text-sm">
+				if rt.Approved {
+					<span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">Approved</span>
+				} else {
+					<span class="inline-flex items-center rounded-md bg-yellow-400/10 px-2 py-1 text-xs font-medium text-yellow-400 ring-1 ring-yellow-400/20 ring-inset">Pending</span>
+				}
+			</td>
+			if hasAdmin {
+				<td class="whitespace-nowrap px-4 py-4 text-sm">
+					if rt.Approved {
+						<form
+							hx-post="/admin/plugins/routes/revoke"
+							hx-target="#plugin-routes-body"
+							hx-swap="innerHTML"
+						>
+							<input type="hidden" name="_csrf" value={ csrfToken }/>
+							<input type="hidden" name="plugin" value={ pluginName }/>
+							<input type="hidden" name="method" value={ rt.Method }/>
+							<input type="hidden" name="path" value={ rt.Path }/>
+							<button type="submit" class="text-sm text-red-400 hover:text-red-300">Revoke</button>
+						</form>
+					} else {
+						<form
+							hx-post="/admin/plugins/routes/approve"
+							hx-target="#plugin-routes-body"
+							hx-swap="innerHTML"
+						>
+							<input type="hidden" name="_csrf" value={ csrfToken }/>
+							<input type="hidden" name="plugin" value={ pluginName }/>
+							<input type="hidden" name="method" value={ rt.Method }/>
+							<input type="hidden" name="path" value={ rt.Path }/>
+							<button type="submit" class="text-sm text-green-400 hover:text-green-300">Approve</button>
+						</form>
+					}
+				</td>
+			}
+		</tr>
+	}
+}
+
+func methodBadgeClassesTW(method string) string {
+	switch method {
+	case "GET":
+		return "bg-green-400/10 text-green-400 ring-green-400/20"
+	case "POST":
+		return "bg-blue-400/10 text-blue-400 ring-blue-400/20"
+	case "PUT", "PATCH":
+		return "bg-yellow-400/10 text-yellow-400 ring-yellow-400/20"
+	case "DELETE":
+		return "bg-red-400/10 text-red-400 ring-red-400/20"
+	default:
+		return "bg-gray-400/10 text-gray-400 ring-gray-400/20"
+	}
+}

@@ -1,0 +1,176 @@
+package pages
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/hegner123/modulacms/internal/admin/layouts"
+	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
+)
+
+templ RouteDetailContent(view *db.RouteFullView, csrfToken string, hasEdit, hasDelete bool) {
+	<!-- Page Header -->
+	<div class="border-b border-white/10 pb-5" data-page-header>
+		<div class="flex items-center gap-x-3">
+			<a href="/admin/routes" class="text-sm text-gray-400 hover:text-white"
+			   hx-get="/admin/routes"
+			   hx-target="#main-content"
+			   hx-push-url="true">&larr; Back to Routes</a>
+		</div>
+		<div class="mt-2 flex items-center justify-between">
+			<div class="flex items-center gap-x-3">
+				<h1 class="text-lg font-semibold text-white">{ view.Title }</h1>
+				<span class={ "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset", partials.RouteStatusBadgeClassTW(view.Status) }>
+					{ partials.RouteStatusLabel(view.Status) }
+				</span>
+			</div>
+			if hasDelete {
+				<mcms-confirm
+					label="Delete Route"
+					message="Are you sure you want to delete this route? This cannot be undone."
+					button-class="inline-flex items-center gap-x-1.5 rounded-md bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-400 ring-1 ring-red-400/20 ring-inset hover:bg-red-500/20"
+					hx-delete={ "/admin/routes/" + view.RouteID.String() }
+					hx-swap="none"
+				></mcms-confirm>
+			}
+		</div>
+	</div>
+	<!-- Two-column layout -->
+	<div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3">
+		<!-- Main (2/3): Edit form -->
+		<div class="lg:col-span-2">
+			if hasEdit {
+				<div class="rounded-xl border border-white/10 bg-white/5 p-6">
+					<h2 class="text-base font-semibold text-white">Edit Route</h2>
+					<form
+						id="route-edit-form"
+						hx-post={ "/admin/routes/" + view.RouteID.String() }
+						hx-target="#route-edit-form"
+						hx-swap="innerHTML"
+						class="mt-4 space-y-4"
+					>
+						@partials.RouteEditForm(
+							view.RouteID.String(),
+							string(view.Slug),
+							view.Title,
+							strconv.FormatInt(view.Status, 10),
+							nil,
+							csrfToken,
+						)
+					</form>
+				</div>
+			} else {
+				<!-- Read-only view -->
+				<div class="rounded-xl border border-white/10 bg-white/5 p-6">
+					<h2 class="text-base font-semibold text-white">Route Details</h2>
+					<dl class="mt-4 divide-y divide-white/10">
+						<div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+							<dt class="text-sm font-medium text-gray-400">Slug</dt>
+							<dd class="mt-1 text-sm font-mono text-white sm:col-span-2 sm:mt-0">{ string(view.Slug) }</dd>
+						</div>
+						<div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+							<dt class="text-sm font-medium text-gray-400">Title</dt>
+							<dd class="mt-1 text-sm text-white sm:col-span-2 sm:mt-0">{ view.Title }</dd>
+						</div>
+						<div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+							<dt class="text-sm font-medium text-gray-400">Status</dt>
+							<dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
+								<span class={ "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset", partials.RouteStatusBadgeClassTW(view.Status) }>
+									{ partials.RouteStatusLabel(view.Status) }
+								</span>
+							</dd>
+						</div>
+					</dl>
+				</div>
+			}
+			<!-- Content Tree -->
+			<div class="mt-8 rounded-xl border border-white/10 bg-white/5 p-6">
+				<div class="flex items-center justify-between">
+					<h2 class="text-base font-semibold text-white">Content Tree</h2>
+					<span class="text-sm text-gray-400">{ fmt.Sprintf("%d items", len(view.ContentTree)) }</span>
+				</div>
+				if len(view.ContentTree) == 0 {
+					<p class="mt-4 text-sm text-gray-500">No content attached to this route.</p>
+				} else {
+					<div class="mt-4 overflow-x-auto">
+						<table class="min-w-full divide-y divide-white/10">
+							<thead class="bg-white/5">
+								<tr>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Datatype</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Type</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Status</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Modified</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-white/5">
+								for _, node := range view.ContentTree {
+									<tr class="hover:bg-white/5 cursor-pointer transition-colors"
+									    data-clickable-row
+									    data-href={ "/admin/content/" + node.ContentDataID.String() }>
+										<td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ node.DatatypeLabel }</td>
+										<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ node.DatatypeType }</td>
+										<td class="whitespace-nowrap px-4 py-4 text-sm">
+											<span class={ "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset", contentStatusBadge(node.Status) }>
+												{ string(node.Status) }
+											</span>
+										</td>
+										<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ node.DateModified.String() }</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+		</div>
+		<!-- Sidebar (1/3): Metadata -->
+		<div class="space-y-6">
+			<div class="rounded-xl border border-white/10 bg-white/5 p-6">
+				<h2 class="text-base font-semibold text-white">Metadata</h2>
+				<dl class="mt-4 space-y-4">
+					<div>
+						<dt class="text-sm text-gray-400">Route ID</dt>
+						<dd class="mt-1 text-sm font-mono text-white break-all">{ view.RouteID.String() }</dd>
+					</div>
+					<div>
+						<dt class="text-sm text-gray-400">Author</dt>
+						<dd class="mt-1 text-sm text-white">
+							if view.Author != nil {
+								{ view.Author.Username }
+							} else {
+								<span class="text-gray-500">Unknown</span>
+							}
+						</dd>
+					</div>
+					<div>
+						<dt class="text-sm text-gray-400">Created</dt>
+						<dd class="mt-1 text-sm text-white">{ view.DateCreated.String() }</dd>
+					</div>
+					<div>
+						<dt class="text-sm text-gray-400">Modified</dt>
+						<dd class="mt-1 text-sm text-white">{ view.DateModified.String() }</dd>
+					</div>
+				</dl>
+			</div>
+		</div>
+	</div>
+}
+
+templ RouteDetail(layout layouts.AdminData, view *db.RouteFullView, csrfToken string, hasEdit, hasDelete bool) {
+	@layouts.Admin(layout) {
+		@RouteDetailContent(view, csrfToken, hasEdit, hasDelete)
+	}
+}
+
+func contentStatusBadge(status types.ContentStatus) string {
+	switch status {
+	case types.ContentStatusPublished:
+		return "bg-green-400/10 text-green-400 ring-green-400/20"
+	case types.ContentStatusDraft:
+		return "bg-yellow-400/10 text-yellow-400 ring-yellow-400/20"
+	default:
+		return "bg-gray-400/10 text-gray-400 ring-gray-400/20"
+	}
+}

@@ -328,7 +328,7 @@ func MediaDetailContent(media db.Media, csrfToken string, folders []db.MediaFold
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</dd></div></dl></div></div><!-- Sidebar (1/3) --><div><!-- Edit Metadata --><div class=\"overflow-hidden shadow-sm -outline-offset-1 outline-white/10 sm:rounded-lg\"><div class=\"bg-gray-800/75 px-4 py-3.5 sm:px-6\"><h3 class=\"text-sm font-semibold text-gray-200\">Edit Metadata</h3></div><div class=\"bg-gray-800/50 px-4 py-4 sm:px-6\"><form id=\"media-form\" hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</dd></div></dl></div></div><!-- Sidebar (1/3) --><div><!-- Edit Metadata --><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><div class=\"bg-gray-800/75 px-4 py-3.5 sm:px-6\"><h3 class=\"text-sm font-semibold text-gray-200\">Edit Metadata</h3></div><div class=\"bg-gray-800/50 px-4 py-4 sm:px-6\"><form id=\"media-form\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -386,7 +386,7 @@ func MediaDetailContent(media db.Media, csrfToken string, folders []db.MediaFold
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</textarea></div></div></div></form></div></div><!-- Folder --><div class=\"mt-6 overflow-hidden shadow-sm -outline-offset-1 outline-white/10 sm:rounded-lg\"><div class=\"bg-gray-800/75 px-4 py-3.5 sm:px-6\"><h3 class=\"text-sm font-semibold text-gray-200\">Folder</h3></div><div class=\"bg-gray-800/50 px-4 py-4 sm:px-6\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</textarea></div></div></div></form></div></div><!-- Folder --><div class=\"mt-6 overflow-hidden rounded-lg border border-white/10 shadow-sm\"><div class=\"bg-gray-800/75 px-4 py-3.5 sm:px-6\"><h3 class=\"text-sm font-semibold text-gray-200\">Folder</h3></div><div class=\"bg-gray-800/50 px-4 py-4 sm:px-6\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

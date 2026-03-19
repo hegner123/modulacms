@@ -96,7 +96,7 @@ func VersionDiff(versionA db.ContentVersion, versionB db.ContentVersion) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</h3></div><div class=\"overflow-x-auto rounded-md ring-1 ring-white/10\"><table class=\"w-full\"><thead><tr class=\"border-b border-white/10\"><th class=\"px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400\">Field</th><th class=\"px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400\">Version #")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</h3></div><div class=\"overflow-x-auto overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead><tr class=\"border-b border-white/10\"><th class=\"px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400\">Field</th><th class=\"px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400\">Version #")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

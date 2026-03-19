@@ -43,7 +43,7 @@ func Admin(data AdminData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex min-h-screen flex-col\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex min-h-screen flex-col pt-16\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -51,7 +51,7 @@ func Admin(data AdminData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-1 bg-[var(--color-bg)]\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -59,7 +59,7 @@ func Admin(data AdminData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Mobile sidebar overlay --><div class=\"fixed inset-0 z-40 hidden bg-black/60 lg:hidden\" data-sidebar-overlay data-state=\"\" onclick=\"toggleSidebar()\"></div><main id=\"main-content\" class=\"min-w-0 flex-1 overflow-y-auto p-6\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Mobile sidebar overlay --><div class=\"fixed inset-0 z-40 hidden bg-black/60 lg:hidden\" data-sidebar-overlay data-state=\"\" onclick=\"toggleSidebar()\"></div><main id=\"main-content\" class=\"min-w-0 flex-1 overflow-y-auto bg-[var(--color-bg)] p-6 lg:ml-44\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -77,7 +77,7 @@ func Admin(data AdminData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><mcms-toast position=\"bottom-right\" duration=\"5000\"></mcms-toast>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><mcms-command-palette></mcms-command-palette> <mcms-toast position=\"bottom-right\" duration=\"5000\"></mcms-toast>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

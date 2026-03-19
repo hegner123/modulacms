@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -30,20 +29,50 @@ func TokensListHandler(svc *service.Registry) http.HandlerFunc {
 			tokens = *items
 		}
 
+		userIDs := make([]types.NullableUserID, len(tokens))
+		for i, t := range tokens {
+			userIDs[i] = t.UserID
+		}
+		userNames := BuildUserNameMap(svc.Driver(), userIDs)
+
 		if IsNavHTMX(r) {
 			csrfToken := CSRFTokenFromContext(r.Context())
 			w.Header().Set("HX-Trigger", `{"pageTitle": "API Tokens"}`)
-			Render(w, r, pages.TokensListContent(tokens, csrfToken))
+			Render(w, r, pages.TokensListContent(tokens, csrfToken, userNames))
 			return
 		}
 
 		if IsHTMX(r) {
-			Render(w, r, partials.TokensTableRows(tokens))
+			Render(w, r, partials.TokensTableRows(tokens, userNames))
 			return
 		}
 
 		layout := NewAdminData(r, "API Tokens")
-		Render(w, r, pages.TokensList(layout, tokens))
+		Render(w, r, pages.TokensList(layout, tokens, userNames))
+	}
+}
+
+// TokenDetailHandler shows token metadata.
+func TokenDetailHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tokenID := r.PathValue("id")
+		if tokenID == "" {
+			http.Error(w, "Token ID required", http.StatusBadRequest)
+			return
+		}
+
+		token, err := svc.Tokens.GetToken(r.Context(), tokenID)
+		if err != nil {
+			service.HandleServiceError(w, r, err)
+			return
+		}
+
+		userName := ResolveNullableUserName(svc.Driver(), token.UserID)
+
+		layout := NewAdminData(r, "Token")
+		RenderNav(w, r, "Token",
+			pages.TokenDetailContent(*token, userName),
+			pages.TokenDetail(layout, *token, userName))
 	}
 }
 
@@ -106,9 +135,14 @@ func TokenCreateHandler(svc *service.Registry) http.HandlerFunc {
 			if items != nil {
 				tokens = *items
 			}
-			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Copy your token now — it will not be shown again: %s", "type": "success", "persist": true}}`, result.RawToken)
-			w.Header().Set("HX-Trigger", toastMsg)
-			Render(w, r, partials.TokensTableRows(tokens))
+			userIDs := make([]types.NullableUserID, len(tokens))
+			for i, t := range tokens {
+				userIDs[i] = t.UserID
+			}
+			userNames := BuildUserNameMap(svc.Driver(), userIDs)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Token created", "type": "success"}}`)
+			RenderWithOOB(w, r, partials.TokensTableRows(tokens, userNames),
+				OOBSwap{TargetID: "admin-dialogs", Component: partials.TokenRevealDialog(result.RawToken)})
 			return
 		}
 		http.Redirect(w, r, "/admin/users/tokens", http.StatusSeeOther)

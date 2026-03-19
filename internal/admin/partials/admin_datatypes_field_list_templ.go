@@ -49,9 +49,9 @@ func AdminDatatypeFieldList(datatypeID string, fields []db.AdminFields, csrfToke
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var2 string
-				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-schema/fields/" + f.AdminFieldID.String())
+				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-fields/" + f.AdminFieldID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/admin_datatypes_field_list.templ`, Line: 21, Col: 150}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/admin_datatypes_field_list.templ`, Line: 21, Col: 143}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 				if templ_7745c5c3_Err != nil {
@@ -96,14 +96,14 @@ func AdminDatatypeFieldList(datatypeID string, fields []db.AdminFields, csrfToke
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</span></td><td class=\"py-3 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6\"><mcms-confirm label=\"Delete\" message=\"Delete this field? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</span></td><td class=\"py-3 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6\"><mcms-confirm label=\"Delete\" message=\"Delete this field? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-schema/fields/" + f.AdminFieldID.String())
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-fields/" + f.AdminFieldID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/admin_datatypes_field_list.templ`, Line: 34, Col: 99}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/admin_datatypes_field_list.templ`, Line: 34, Col: 92}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {

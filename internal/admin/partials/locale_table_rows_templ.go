@@ -143,7 +143,7 @@ func LocaleTableRows(locales []db.Locale, csrfToken string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</td><td class=\"whitespace-nowrap px-4 py-4 text-right text-sm\"><div class=\"flex items-center justify-end gap-3\"><button class=\"text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]\" hx-get=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><div class=\"flex items-center justify-end gap-3\"><button class=\"text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]\" hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

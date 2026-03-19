@@ -151,9 +151,9 @@ internal/
   admin/                      # HTMX admin panel: CSRF, auth middleware, static file embed
     handlers/                 # Admin page handlers (render, auth, CRUD for all resources)
     layouts/                  # templ layouts (base, admin, auth) and AdminData type
-    pages/                    # templ full-page components (~28 pages)
-    partials/                 # templ HTMX swap targets (~27 partials)
-    components/               # templ shared UI: sidebar, topbar, icon, status_badge
+    pages/                    # templ full-page components (~36 pages)
+    partials/                 # templ HTMX swap targets (~39 partials)
+    components/               # templ shared UI: sidebar, topbar, nav, icon, status_badge
     static/                   # CSS, JS, HTMX, web components (go:embed)
   tui/                        # Bubbletea TUI (130+ files, Elm Architecture)
   router/                     # HTTP route registration with stdlib ServeMux (Go 1.22+ patterns)
@@ -181,7 +181,7 @@ internal/
   tui/                        # TUI layout framework (header, panel, statusbar, layers)
   update/                     # Self-update checker
 sdks/
-  typescript/                 # pnpm workspace monorepo: @modulacms/types, @modulacms/sdk, @modulacms/admin-sdk
+  typescript/                 # pnpm workspace monorepo: @modulacms/types, @modulacms/tree, @modulacms/sdk, @modulacms/admin-sdk, @modulacms/plugin-sdk, @modulacms/admin-ui
   go/                         # Go SDK (modulacms package)
   swift/                      # Swift SDK (SPM package, Apple platforms)
 sql/
@@ -363,7 +363,7 @@ Regenerate with `just admin generate`. Watch mode: `just admin watch`.
 ### Static Assets
 
 - **Build tags**: `//go:build !dev` embeds `static/*` into binary; `-tags dev` serves from disk
-- **Web components**: Light DOM components prefixed `mcms-*` (dialog, data-table, field-renderer, media-picker, media-tree, tree-nav, toast, confirm, search)
+- **Web components**: Light DOM components prefixed `mcms-*` (confirm, data-table, dialog, field-renderer, file-input, focal-point, media-grid, media-picker, publish-button, scroll, search, toast, tree-nav, validation-wizard)
 - **Block editor**: Source in `static/js/block-editor-src/`, bundled via esbuild to `static/js/block-editor.js`
 - **CSS**: tokens → layout → components → web-components → pages → block-editor → utilities
 
@@ -489,13 +489,16 @@ Each entity has `*TestFixture()` and `*UpdateParams()` helper functions that pro
 
 ### TypeScript (`sdks/typescript/`)
 
-pnpm workspace monorepo with three packages:
+pnpm workspace monorepo with six packages:
 
 | Package | npm Name | Purpose |
 |---------|----------|---------|
 | `types/` | `@modulacms/types` | Shared entity types, branded IDs, enums |
+| `tree/` | `@modulacms/tree` | Content tree utilities |
 | `modulacms-sdk/` | `@modulacms/sdk` | Read-only content delivery SDK |
 | `modulacms-admin-sdk/` | `@modulacms/admin-sdk` | Full admin CRUD SDK |
+| `plugin-sdk/` | `@modulacms/plugin-sdk` | Plugin UI SDK (Web Components, zero deps, browser-only) |
+| `admin-ui/` | `@modulacms/admin-ui` | Admin panel TypeScript (block editor state) |
 
 Tooling: TypeScript 5.7+, tsup (ESM+CJS dual builds), Vitest, pnpm 9+, Node 22+.
 
@@ -523,7 +526,7 @@ SPM package. Platforms: iOS 16+, macOS 13+, tvOS 16+, watchOS 9+. Swift 5.9+, ze
 ### SDK CI (`.github/workflows/sdks.yml`)
 
 - Triggers on `sdks/**` changes
-- **TypeScript**: pnpm 9 + Node 22 → install → typecheck → build → test
+- **TypeScript**: pnpm 9 + Node 22 → install → build types → typecheck → build → test
 - **Go SDK**: Go 1.25 → vet → test
 - **Swift SDK**: macOS 14 + Xcode 15.4 → build → test
 

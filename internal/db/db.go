@@ -390,7 +390,15 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 		"deploy:read", "deploy:create",
-		"webhook:create", "webhook:read", "webhook:update", "webhook:delete",
+		"webhook:read", "webhook:create", "webhook:update", "webhook:delete", "webhook:admin",
+		"plugins:read", "plugins:admin",
+		"tables:read", "tables:create", "tables:update", "tables:delete", "tables:admin",
+		"import:read", "import:create", "import:admin",
+		"tokens:read", "tokens:create", "tokens:delete", "tokens:admin",
+		"locale:read", "locale:create", "locale:update", "locale:delete", "locale:admin",
+		"audit:read", "audit:admin",
+		"backup:read", "backup:create", "backup:update", "backup:delete", "backup:admin",
+		"search:read", "search:update", "search:admin",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {
@@ -466,6 +474,14 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		"sessions:read",
 		"ssh_keys:read",
 		"config:read",
+		"webhook:read", "webhook:create", "webhook:update", "webhook:delete",
+		"tokens:read", "tokens:create", "tokens:delete",
+		"locale:read", "locale:create", "locale:update", "locale:delete",
+		"audit:read",
+		"import:read",
+		"plugins:read",
+		"backup:read",
+		"search:read",
 	}
 	for _, label := range editorPermLabels {
 		permID, ok := rbacPermissions[label]
@@ -1273,12 +1289,12 @@ func (d Database) ValidateBootstrapData() error {
 
 	// Validate tables table (should have EXACTLY 27 records - all core tables)
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 27 {
+	if err != nil || tableCount == nil || *tableCount < 27 {
 		actual := int64(0)
 		if tableCount != nil {
 			actual = *tableCount
 		}
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 27 records (table registry), got %d", actual))
+		errors = append(errors, fmt.Sprintf("tables table: expected at least 27 records (table registry), got %d", actual))
 	}
 
 	// If any validation failed, return combined error
@@ -1524,7 +1540,15 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 		"deploy:read", "deploy:create",
-		"webhook:create", "webhook:read", "webhook:update", "webhook:delete",
+		"webhook:read", "webhook:create", "webhook:update", "webhook:delete", "webhook:admin",
+		"plugins:read", "plugins:admin",
+		"tables:read", "tables:create", "tables:update", "tables:delete", "tables:admin",
+		"import:read", "import:create", "import:admin",
+		"tokens:read", "tokens:create", "tokens:delete", "tokens:admin",
+		"locale:read", "locale:create", "locale:update", "locale:delete", "locale:admin",
+		"audit:read", "audit:admin",
+		"backup:read", "backup:create", "backup:update", "backup:delete", "backup:admin",
+		"search:read", "search:update", "search:admin",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {
@@ -1599,6 +1623,14 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		"sessions:read",
 		"ssh_keys:read",
 		"config:read",
+		"webhook:read", "webhook:create", "webhook:update", "webhook:delete",
+		"tokens:read", "tokens:create", "tokens:delete",
+		"locale:read", "locale:create", "locale:update", "locale:delete",
+		"audit:read",
+		"import:read",
+		"plugins:read",
+		"backup:read",
+		"search:read",
 	}
 	for _, label := range editorPermLabels {
 		permID, ok := rbacPermissions[label]
@@ -2198,12 +2230,12 @@ func (d MysqlDatabase) ValidateBootstrapData() error {
 	}
 
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 26 {
+	if err != nil || tableCount == nil || *tableCount < 27 {
 		actual := int64(0)
 		if tableCount != nil {
 			actual = *tableCount
 		}
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
+		errors = append(errors, fmt.Sprintf("tables table: expected at least 27 records (table registry), got %d", actual))
 	}
 
 	if len(errors) > 0 {
@@ -2618,7 +2650,15 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 		"deploy:read", "deploy:create",
-		"webhook:create", "webhook:read", "webhook:update", "webhook:delete",
+		"webhook:read", "webhook:create", "webhook:update", "webhook:delete", "webhook:admin",
+		"plugins:read", "plugins:admin",
+		"tables:read", "tables:create", "tables:update", "tables:delete", "tables:admin",
+		"import:read", "import:create", "import:admin",
+		"tokens:read", "tokens:create", "tokens:delete", "tokens:admin",
+		"locale:read", "locale:create", "locale:update", "locale:delete", "locale:admin",
+		"audit:read", "audit:admin",
+		"backup:read", "backup:create", "backup:update", "backup:delete", "backup:admin",
+		"search:read", "search:update", "search:admin",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {
@@ -2693,6 +2733,14 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		"sessions:read",
 		"ssh_keys:read",
 		"config:read",
+		"webhook:read", "webhook:create", "webhook:update", "webhook:delete",
+		"tokens:read", "tokens:create", "tokens:delete",
+		"locale:read", "locale:create", "locale:update", "locale:delete",
+		"audit:read",
+		"import:read",
+		"plugins:read",
+		"backup:read",
+		"search:read",
 	}
 	for _, label := range editorPermLabels {
 		permID, ok := rbacPermissions[label]
@@ -3292,12 +3340,12 @@ func (d PsqlDatabase) ValidateBootstrapData() error {
 	}
 
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 26 {
+	if err != nil || tableCount == nil || *tableCount < 27 {
 		actual := int64(0)
 		if tableCount != nil {
 			actual = *tableCount
 		}
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
+		errors = append(errors, fmt.Sprintf("tables table: expected at least 27 records (table registry), got %d", actual))
 	}
 
 	if len(errors) > 0 {

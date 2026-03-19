@@ -2,7 +2,7 @@ package partials
 
 import "github.com/hegner123/modulacms/internal/db"
 
-templ SessionsTableRows(items []db.Sessions) {
+templ SessionsTableRows(items []db.Sessions, userNames map[string]string) {
     if len(items) == 0 {
         <tr>
             <td colspan="7">
@@ -11,14 +11,20 @@ templ SessionsTableRows(items []db.Sessions) {
         </tr>
     }
     for _, item := range items {
-        <tr id={ "session-row-" + item.SessionID.String() }>
+        <tr id={ "session-row-" + item.SessionID.String() } class="cursor-pointer hover:bg-white/5 transition-colors" data-clickable-row data-href={ "/admin/sessions/" + item.SessionID.String() }>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.SessionID.String(), 12) }</td>
-            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(item.UserID.String(), 12) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">
+                if name, ok := userNames[item.UserID.String()]; ok && name != "" {
+                    { name }
+                } else {
+                    { truncateStr(item.UserID.String(), 12) }
+                }
+            </td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ nullStrDisplay(item.IpAddress) }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(nullStrDisplay(item.UserAgent), 40) }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.DateCreated.String() }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.ExpiresAt.String() }</td>
-            <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
+            <td class="whitespace-nowrap px-4 py-4 text-sm">
                 <mcms-confirm
                     label="Revoke"
                     message="Are you sure you want to revoke this session?"

@@ -1,33 +1,60 @@
 package pages
 
-import "github.com/hegner123/modulacms/internal/admin/layouts"
+import (
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
+)
 
-templ AdminFieldTypesListContent(fieldTypes []FieldTypeInfo) {
+templ AdminFieldTypesListContent(fieldTypes []db.AdminFieldTypes) {
     <div class="sm:flex sm:items-center">
         <div class="sm:flex-auto">
             <h1 class="text-base/7 font-semibold text-white">Admin Field Types</h1>
-            <p class="mt-2 text-sm text-gray-400">Available field types that can be assigned to admin fields. These are built-in types and cannot be modified.</p>
+            <p class="mt-2 text-sm text-gray-400">Available field types that can be assigned to admin fields.</p>
+        </div>
+        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+            <button type="button"
+                    class="block rounded-md bg-[var(--color-primary)] px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+                    data-action="new"
+                    onclick="document.getElementById('create-admin-field-type-dialog').open()">
+                New Admin Field Type
+            </button>
         </div>
     </div>
     <div class="mt-8 flow-root">
-        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+        <div class="overflow-x-auto">
+            <div class="min-w-full py-2 align-middle">
                 <div class="overflow-hidden rounded-lg border border-white/10 shadow-sm">
                     <table class="min-w-full divide-y divide-white/10">
                         <thead class="bg-white/5">
                             <tr>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Type</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Label</th>
-                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Description</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/5">
-                            for _, ft := range fieldTypes {
-                                <tr class="hover:bg-white/5 transition-colors">
-                                    <td class="whitespace-nowrap px-4 py-4 text-sm"><code class="rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono text-white">{ ft.Value }</code></td>
-                                    <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ ft.Label }</td>
-                                    <td class="px-4 py-4 text-sm text-gray-400">{ ft.Description }</td>
+                            if len(fieldTypes) == 0 {
+                                <tr>
+                                    <td colspan="3" class="py-10 text-center text-sm text-gray-400">No admin field types found.</td>
                                 </tr>
+                            } else {
+                                for _, ft := range fieldTypes {
+                                    <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/admin-field-types/" + ft.AdminFieldTypeID.String() }>
+                                        <td class="whitespace-nowrap px-4 py-4 text-sm"><code class="rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono text-white">{ ft.Type }</code></td>
+                                        <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ ft.Label }</td>
+                                        <td class="whitespace-nowrap px-4 py-4 text-sm">
+                                            <mcms-confirm
+                                                label="Delete"
+                                                message="Delete this admin field type? This cannot be undone."
+                                                button-class="text-red-400 hover:text-red-300"
+                                                hx-delete={ "/admin/admin-field-types/" + ft.AdminFieldTypeID.String() }
+                                                hx-target="closest tr"
+                                                hx-swap="outerHTML swap:300ms"
+                                            ></mcms-confirm>
+                                        </td>
+                                    </tr>
+                                }
                             }
                         </tbody>
                     </table>
@@ -37,8 +64,23 @@ templ AdminFieldTypesListContent(fieldTypes []FieldTypeInfo) {
     </div>
 }
 
-templ AdminFieldTypesList(layout layouts.AdminData, fieldTypes []FieldTypeInfo) {
-    @layouts.Admin(layout) {
+templ AdminFieldTypeCreateDialog(csrfToken string) {
+    <mcms-dialog id="create-admin-field-type-dialog" aria-labelledby="create-admin-field-type-dialog-title">
+        <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <h3 id="create-admin-field-type-dialog-title" class="text-base/7 font-semibold text-white">New Admin Field Type</h3>
+            <form hx-post="/admin/admin-field-types"
+                  hx-target="#create-admin-field-type-form"
+                  hx-swap="innerHTML"
+                  id="create-admin-field-type-form"
+                  class="mt-4 space-y-4">
+                @partials.AdminFieldTypeForm("", "", nil, csrfToken)
+            </form>
+        </div>
+    </mcms-dialog>
+}
+
+templ AdminFieldTypesList(layout layouts.AdminData, fieldTypes []db.AdminFieldTypes) {
+    @layouts.Admin(layout.WithDialogs(AdminFieldTypeCreateDialog(layout.CSRFToken))) {
         @AdminFieldTypesListContent(fieldTypes)
     }
 }

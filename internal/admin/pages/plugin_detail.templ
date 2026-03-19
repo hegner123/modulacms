@@ -9,7 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/service"
 )
 
-templ PluginDetailContent(detail *service.PluginDetail) {
+templ PluginDetailContent(detail *service.PluginDetail, routes []service.PluginRoute, hooks []service.HookInfo, csrfToken string, hasAdmin bool) {
 	<!-- Page Header -->
 	<div class="border-b border-white/10 pb-5" data-page-header>
 		<div class="flex items-center gap-x-3">
@@ -33,6 +33,44 @@ templ PluginDetailContent(detail *service.PluginDetail) {
 					<h1 class="text-lg font-semibold text-white">Plugin</h1>
 				}
 			</div>
+			<!-- Action Buttons -->
+			if detail != nil && hasAdmin {
+				<div class="flex items-center gap-x-3">
+					<form
+						hx-post={ "/admin/plugins/" + detail.Name + "/reload" }
+						hx-swap="none"
+					>
+						<input type="hidden" name="_csrf" value={ csrfToken }/>
+						<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/20">
+							<i data-lucide="refresh-cw" class="h-4 w-4"></i>
+							Reload
+						</button>
+					</form>
+					if detail.State == "running" {
+						<form
+							hx-post={ "/admin/plugins/" + detail.Name + "/disable" }
+							hx-swap="none"
+						>
+							<input type="hidden" name="_csrf" value={ csrfToken }/>
+							<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-400 ring-1 ring-red-400/20 ring-inset hover:bg-red-500/20">
+								<i data-lucide="power-off" class="h-4 w-4"></i>
+								Disable
+							</button>
+						</form>
+					} else {
+						<form
+							hx-post={ "/admin/plugins/" + detail.Name + "/enable" }
+							hx-swap="none"
+						>
+							<input type="hidden" name="_csrf" value={ csrfToken }/>
+							<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-green-500/10 px-3 py-2 text-sm font-semibold text-green-400 ring-1 ring-green-400/20 ring-inset hover:bg-green-500/20">
+								<i data-lucide="power" class="h-4 w-4"></i>
+								Enable
+							</button>
+						</form>
+					}
+				</div>
+			}
 		</div>
 	</div>
 	if detail == nil {
@@ -111,11 +149,75 @@ templ PluginDetailContent(detail *service.PluginDetail) {
 				}
 			</div>
 		</div>
+		<!-- Routes Section -->
+		<div class="mt-8">
+			<div class="rounded-xl border border-white/10 bg-white/5 p-6">
+				<div class="flex items-center justify-between">
+					<h2 class="text-base font-semibold text-white">Routes</h2>
+					<span class="text-sm text-gray-400">{ fmt.Sprintf("%d registered", len(routes)) }</span>
+				</div>
+				if len(routes) == 0 {
+					<p class="mt-4 text-sm text-gray-500">No routes registered by this plugin.</p>
+				} else {
+					<div class="mt-4 overflow-x-auto">
+						<table class="min-w-full divide-y divide-white/10">
+							<thead class="bg-white/5">
+								<tr>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Method</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Path</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Full Path</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Access</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Status</th>
+									if hasAdmin {
+										<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Action</th>
+									}
+								</tr>
+							</thead>
+							<tbody id="plugin-routes-body" class="divide-y divide-white/5">
+								@partials.PluginRoutesTableRows(routes, detail.Name, csrfToken, hasAdmin)
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+		</div>
+		<!-- Hooks Section -->
+		<div class="mt-8">
+			<div class="rounded-xl border border-white/10 bg-white/5 p-6">
+				<div class="flex items-center justify-between">
+					<h2 class="text-base font-semibold text-white">Hooks</h2>
+					<span class="text-sm text-gray-400">{ fmt.Sprintf("%d registered", len(hooks)) }</span>
+				</div>
+				if len(hooks) == 0 {
+					<p class="mt-4 text-sm text-gray-500">No hooks registered by this plugin.</p>
+				} else {
+					<div class="mt-4 overflow-x-auto">
+						<table class="min-w-full divide-y divide-white/10">
+							<thead class="bg-white/5">
+								<tr>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Event</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Table</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Priority</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Scope</th>
+									<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Status</th>
+									if hasAdmin {
+										<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Action</th>
+									}
+								</tr>
+							</thead>
+							<tbody id="plugin-hooks-body" class="divide-y divide-white/5">
+								@partials.PluginHooksTableRows(hooks, detail.Name, csrfToken, hasAdmin)
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+		</div>
 	}
 }
 
-templ PluginDetail(layout layouts.AdminData, detail *service.PluginDetail) {
+templ PluginDetail(layout layouts.AdminData, detail *service.PluginDetail, routes []service.PluginRoute, hooks []service.HookInfo, csrfToken string, hasAdmin bool) {
 	@layouts.Admin(layout) {
-		@PluginDetailContent(detail)
+		@PluginDetailContent(detail, routes, hooks, csrfToken, hasAdmin)
 	}
 }

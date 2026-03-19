@@ -53,7 +53,7 @@ templ FieldForm(name string, label string, fieldType string, data string, valida
 // FieldEditForm renders the edit field form fields.
 // Used as an HTMX partial for validation error responses on the detail page.
 templ FieldEditForm(id string, name string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
-	<form hx-post={ "/admin/schema/fields/" + id }
+	<form hx-post={ "/admin/fields/" + id }
 	      hx-target="#field-edit-form"
 	      hx-swap="innerHTML">
 		@CSRFField(csrfToken)

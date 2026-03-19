@@ -164,6 +164,10 @@ func (d Database) maxSubtreeDepth(folderID types.MediaFolderID) (int, error) {
 
 // ===== MySQL =====
 
+// ===== PostgreSQL =====
+
+// MYSQL
+
 // GetMediaFolderBreadcrumb walks up the parent chain from the given folder to root (MySQL).
 // Returns folders in order from root to the given folder. Max 10 iterations.
 func (d MysqlDatabase) GetMediaFolderBreadcrumb(folderID types.MediaFolderID) ([]MediaFolder, error) {
@@ -314,7 +318,7 @@ func (d MysqlDatabase) maxSubtreeDepth(folderID types.MediaFolderID) (int, error
 	return maxDepth, nil
 }
 
-// ===== PostgreSQL =====
+// PSQL
 
 // GetMediaFolderBreadcrumb walks up the parent chain from the given folder to root (PostgreSQL).
 // Returns folders in order from root to the given folder. Max 10 iterations.

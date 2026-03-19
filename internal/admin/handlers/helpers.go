@@ -12,6 +12,8 @@ import (
 	"github.com/a-h/templ"
 	"github.com/hegner123/modulacms/internal/admin"
 	"github.com/hegner123/modulacms/internal/admin/layouts"
+	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -185,6 +187,50 @@ func RenderNav(w http.ResponseWriter, r *http.Request, title string, content, fu
 		return
 	}
 	Render(w, r, fullPage)
+}
+
+// ResolveUserName looks up a user by ID and returns a display name.
+// Prefers Name, falls back to Username, then Email. Returns "" if not found.
+func ResolveUserName(driver db.DbDriver, userID types.UserID) string {
+	if userID.IsZero() {
+		return ""
+	}
+	user, err := driver.GetUser(userID)
+	if err != nil || user == nil {
+		return ""
+	}
+	if user.Name != "" {
+		return user.Name
+	}
+	if user.Username != "" {
+		return user.Username
+	}
+	return string(user.Email)
+}
+
+// ResolveNullableUserName is like ResolveUserName but for NullableUserID fields.
+func ResolveNullableUserName(driver db.DbDriver, userID types.NullableUserID) string {
+	if !userID.Valid || userID.ID.IsZero() {
+		return ""
+	}
+	return ResolveUserName(driver, userID.ID)
+}
+
+// BuildUserNameMap resolves a set of NullableUserIDs to display names.
+// Deduplicates lookups so each user is fetched at most once.
+func BuildUserNameMap(driver db.DbDriver, userIDs []types.NullableUserID) map[string]string {
+	names := make(map[string]string, len(userIDs))
+	for _, uid := range userIDs {
+		idStr := uid.String()
+		if idStr == "" {
+			continue
+		}
+		if _, seen := names[idStr]; seen {
+			continue
+		}
+		names[idStr] = ResolveNullableUserName(driver, uid)
+	}
+	return names
 }
 
 // HasPermission checks if the current request has a specific permission.

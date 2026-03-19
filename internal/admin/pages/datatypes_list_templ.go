@@ -35,7 +35,7 @@ func DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData, 
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Page heading --><div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Datatypes</h1><p class=\"mt-2 text-sm text-gray-400\">Define the content structures used across your site.</p></div><div class=\"mt-4 sm:mt-0 sm:ml-16 sm:flex-none\"><button type=\"button\" class=\"block rounded-md bg-indigo-500 px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500\" data-action=\"new\" onclick=\"document.getElementById('create-datatype-dialog').open()\">New Datatype</button></div></div><!-- Toolbar --><div class=\"mt-4 flex items-center gap-x-3\"><input type=\"search\" name=\"search\" placeholder=\"Search datatypes...\" hx-get=\"/admin/schema/datatypes\" hx-target=\"#datatypes-table-body\" hx-trigger=\"input changed delay:300ms\" hx-include=\"[name='type'],[name='sort']\" hx-push-url=\"false\" class=\"block w-64 rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500\" data-search-input><div class=\"grid grid-cols-1\"><select name=\"type\" hx-get=\"/admin/schema/datatypes\" hx-target=\"#datatypes-table-body\" hx-trigger=\"change\" hx-include=\"[name='search'],[name='sort']\" class=\"col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500\"><option value=\"\">All Types</option> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Page heading --><div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Datatypes</h1><p class=\"mt-2 text-sm text-gray-400\">Define the content structures used across your site.</p></div><div class=\"mt-4 sm:mt-0 sm:ml-16 sm:flex-none\"><button type=\"button\" class=\"block rounded-md bg-[var(--color-primary)] px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]\" data-action=\"new\" onclick=\"document.getElementById('create-datatype-dialog').open()\">New Datatype</button></div></div><!-- Toolbar --><div class=\"mt-4 flex items-center gap-x-3\"><input type=\"search\" name=\"search\" placeholder=\"Search datatypes...\" hx-get=\"/admin/datatypes\" hx-target=\"#datatypes-table-body\" hx-trigger=\"input changed delay:300ms\" hx-include=\"[name='type'],[name='sort']\" hx-push-url=\"false\" class=\"block w-64 rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]\" data-search-input><div class=\"grid grid-cols-1\"><select name=\"type\" hx-get=\"/admin/datatypes\" hx-target=\"#datatypes-table-body\" hx-trigger=\"change\" hx-include=\"[name='search'],[name='sort']\" class=\"col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]\"><option value=\"\">All Types</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -71,7 +71,7 @@ func DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData, 
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</select> <svg viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\" class=\"pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4\"><path d=\"M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z\" clip-rule=\"evenodd\" fill-rule=\"evenodd\"></path></svg></div><div class=\"grid grid-cols-1\"><select name=\"sort\" hx-get=\"/admin/schema/datatypes\" hx-target=\"#datatypes-table-body\" hx-trigger=\"change\" hx-include=\"[name='search'],[name='type']\" class=\"col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500\"><option value=\"\">Default</option> <option value=\"name-asc\">Name A-Z</option> <option value=\"name-desc\">Name Z-A</option> <option value=\"type-asc\">Type A-Z</option> <option value=\"type-desc\">Type Z-A</option> <option value=\"modified-desc\">Newest</option> <option value=\"modified-asc\">Oldest</option></select> <svg viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\" class=\"pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4\"><path d=\"M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z\" clip-rule=\"evenodd\" fill-rule=\"evenodd\"></path></svg></div></div><!-- Table --><div class=\"mt-8 flow-root\"><div class=\"-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8\"><div class=\"inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8\"><div class=\"overflow-hidden shadow-sm -outline-offset-1 outline-white/10 sm:rounded-lg\"><table class=\"min-w-full divide-y divide-white/15\"><thead><tr><th scope=\"col\" class=\"py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-200 sm:pl-6\">Name</th><th scope=\"col\" class=\"px-3 py-3.5 text-left text-sm font-semibold text-gray-200\">Label</th><th scope=\"col\" class=\"px-3 py-3.5 text-left text-sm font-semibold text-gray-200\">Type</th><th scope=\"col\" class=\"px-3 py-3.5 text-left text-sm font-semibold text-gray-200\">Modified</th><th scope=\"col\" class=\"py-3.5 pr-4 pl-3 sm:pr-6\"><span class=\"sr-only\">Actions</span></th></tr></thead> <tbody id=\"datatypes-table-body\" class=\"divide-y divide-white/10\" hx-get=\"/admin/schema/datatypes\" hx-trigger=\"refreshTable from:body\" hx-swap=\"innerHTML\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</select> <svg viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\" class=\"pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4\"><path d=\"M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z\" clip-rule=\"evenodd\" fill-rule=\"evenodd\"></path></svg></div><div class=\"grid grid-cols-1\"><select name=\"sort\" hx-get=\"/admin/datatypes\" hx-target=\"#datatypes-table-body\" hx-trigger=\"change\" hx-include=\"[name='search'],[name='type']\" class=\"col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]\"><option value=\"\">Default</option> <option value=\"name-asc\">Name A-Z</option> <option value=\"name-desc\">Name Z-A</option> <option value=\"type-asc\">Type A-Z</option> <option value=\"type-desc\">Type Z-A</option> <option value=\"modified-desc\">Newest</option> <option value=\"modified-asc\">Oldest</option></select> <svg viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\" class=\"pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4\"><path d=\"M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z\" clip-rule=\"evenodd\" fill-rule=\"evenodd\"></path></svg></div></div><!-- Table --><div class=\"mt-8 flow-root\"><div class=\"overflow-x-auto\"><div class=\"min-w-full py-2 align-middle\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Name</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Label</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Type</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Modified</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Actions</th></tr></thead> <tbody id=\"datatypes-table-body\" class=\"divide-y divide-white/10\" hx-get=\"/admin/datatypes\" hx-trigger=\"refreshTable from:body\" hx-swap=\"innerHTML\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -87,9 +87,9 @@ func DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData, 
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/datatypes/" + dt.DatatypeID.String())
+				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/datatypes/" + dt.DatatypeID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 107, Col: 162}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 105, Col: 155}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -102,7 +102,7 @@ func DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData, 
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(dt.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 108, Col: 133}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 106, Col: 133}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -115,7 +115,7 @@ func DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData, 
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(dt.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 109, Col: 112}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 107, Col: 112}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -128,7 +128,7 @@ func DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData, 
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(dt.Type)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 111, Col: 197}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 109, Col: 197}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -141,20 +141,20 @@ func DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData, 
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(dt.DateModified.Time.UTC().Format("Jan 2, 2006 15:04"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 113, Col: 158}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 111, Col: 158}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</td><td class=\"py-4 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6\"><mcms-confirm label=\"Delete\" message=\"Delete this datatype? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</td><td class=\"py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6\"><mcms-confirm label=\"Delete\" message=\"Delete this datatype? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/datatypes/" + dt.DatatypeID.String())
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/datatypes/" + dt.DatatypeID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 119, Col: 111}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatypes_list.templ`, Line: 117, Col: 104}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -170,7 +170,7 @@ func DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData, 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.Pagination(pg.Current, pg.TotalPages, "#datatypes-table-body", "/admin/schema/datatypes", pg.Limit).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = partials.Pagination(pg.Current, pg.TotalPages, "#datatypes-table-body", "/admin/datatypes", pg.Limit).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -199,7 +199,7 @@ func DatatypeCreateDialog(csrfToken string, allDatatypes []db.Datatypes) templ.C
 			templ_7745c5c3_Var10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<mcms-dialog id=\"create-datatype-dialog\" aria-labelledby=\"create-datatype-dialog-title\"><div class=\"px-4 pt-5 pb-4 sm:p-6 sm:pb-4\"><h3 id=\"create-datatype-dialog-title\" class=\"text-base/7 font-semibold text-white\">New Datatype</h3><form hx-post=\"/admin/schema/datatypes\" hx-target=\"#create-datatype-form\" hx-swap=\"innerHTML\" id=\"create-datatype-form\" class=\"mt-4 space-y-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<mcms-dialog id=\"create-datatype-dialog\" aria-labelledby=\"create-datatype-dialog-title\"><div class=\"px-4 pt-5 pb-4 sm:p-6 sm:pb-4\"><h3 id=\"create-datatype-dialog-title\" class=\"text-base/7 font-semibold text-white\">New Datatype</h3><form hx-post=\"/admin/datatypes\" hx-target=\"#create-datatype-form\" hx-swap=\"innerHTML\" id=\"create-datatype-form\" class=\"mt-4 space-y-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -223,7 +223,7 @@ func DatatypeCreateDialog(csrfToken string, allDatatypes []db.Datatypes) templ.C
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"mt-5 sm:mt-4 sm:flex sm:flex-row-reverse\"><button type=\"submit\" class=\"inline-flex w-full justify-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-400 sm:ml-3 sm:w-auto\">Create</button> <button type=\"button\" onclick=\"this.closest('mcms-dialog').close()\" class=\"mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto\">Cancel</button></div></form></div></mcms-dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"mt-5 sm:mt-4 sm:flex sm:flex-row-reverse\"><button type=\"submit\" class=\"inline-flex w-full justify-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] sm:ml-3 sm:w-auto\">Create</button> <button type=\"button\" onclick=\"this.closest('mcms-dialog').close()\" class=\"mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto\">Cancel</button></div></form></div></mcms-dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

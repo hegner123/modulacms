@@ -1760,3 +1760,7 @@ function evaluateEntries(value, entries) {
     }
     return results;
 }
+
+if (!customElements.get('mcms-validation-wizard')) {
+    customElements.define('mcms-validation-wizard', McmsValidationWizard);
+}

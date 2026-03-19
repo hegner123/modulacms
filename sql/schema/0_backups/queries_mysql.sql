@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS backups (
     triggered_by    VARCHAR(64),
     error_message   TEXT,
     metadata        JSON,
-    CONSTRAINT chk_backup_type CHECK (backup_type IN ('full', 'incremental', 'snapshot')),
-    CONSTRAINT chk_backup_status CHECK (status IN ('started', 'completed', 'failed', 'verified'))
+    CONSTRAINT chk_backup_type CHECK (backup_type IN ('full', 'incremental', 'differential')),
+    CONSTRAINT chk_backup_status CHECK (status IN ('pending', 'in_progress', 'completed', 'failed'))
 );
 
 -- Backups CRUD
@@ -111,7 +111,7 @@ WHERE backup_id = ?;
 
 -- name: DeleteOldBackups :exec
 DELETE FROM backups
-WHERE started_at < ? AND status IN ('completed', 'verified');
+WHERE started_at < ? AND status IN ('completed');
 
 -- Backup Verifications CRUD
 

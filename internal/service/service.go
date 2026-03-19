@@ -88,7 +88,7 @@ func NewRegistry(
 	reg.Import = NewImportService(driver, mgr)
 	reg.Deploy = NewDeployService(driver, mgr)
 	reg.AuditLog = NewAuditLogService(driver)
-	reg.Backup = NewBackupService(mgr)
+	reg.Backup = NewBackupService(mgr, driver)
 	reg.Auth = NewAuthService(driver, mgr, emailSvc)
 	return reg
 }

@@ -90,6 +90,15 @@ var allTables = map[DBTable]struct{}{
 	Webhook_deliveries:      {},
 }
 
+// AllTablesExported returns a copy of the allTables map for external iteration.
+func AllTablesExported() map[DBTable]struct{} {
+	out := make(map[DBTable]struct{}, len(allTables))
+	for k, v := range allTables {
+		out[k] = v
+	}
+	return out
+}
+
 // SystemPluginTables are CMS-managed plugin infrastructure tables that should
 // not be included in plugin data export/import.
 var SystemPluginTables = map[string]bool{

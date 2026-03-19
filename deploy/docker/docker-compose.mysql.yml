@@ -21,7 +21,7 @@ services:
       - mysql_cms_data:/app/data
       - mysql_cms_ssh:/app/.ssh
       - mysql_cms_backups:/app/backups
-      - ./config.mysql.json:/app/modula.config.json:ro
+      - ./config.mysql.json:/app/modula.config.json
     env_file:
       - .env
     depends_on:

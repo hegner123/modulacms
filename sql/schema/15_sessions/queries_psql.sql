@@ -30,6 +30,11 @@ WHERE user_id = $1
 ORDER BY session_id DESC
 LIMIT 1;
 
+-- name: GetSessionByToken :one
+SELECT * FROM sessions
+WHERE session_data = $1
+LIMIT 1;
+
 -- name: ListSession :many
 SELECT * FROM sessions;
 

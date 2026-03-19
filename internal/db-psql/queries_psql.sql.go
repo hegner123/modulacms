@@ -1685,8 +1685,8 @@ const createBackupTables = `-- name: CreateBackupTables :exec
 CREATE TABLE IF NOT EXISTS backups (
     backup_id       CHAR(26) PRIMARY KEY,
     node_id         CHAR(26) NOT NULL,
-    backup_type     VARCHAR(20) NOT NULL CHECK (backup_type IN ('full', 'incremental', 'snapshot')),
-    status          VARCHAR(20) NOT NULL CHECK (status IN ('started', 'completed', 'failed', 'verified')),
+    backup_type     VARCHAR(20) NOT NULL CHECK (backup_type IN ('full', 'incremental', 'differential')),
+    status          VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'in_progress', 'completed', 'failed')),
     started_at      TIMESTAMP WITH TIME ZONE NOT NULL,
     completed_at    TIMESTAMP WITH TIME ZONE,
     duration_ms     INTEGER,
@@ -4156,7 +4156,7 @@ func (q *Queries) DeleteMediaFolder(ctx context.Context, arg DeleteMediaFolderPa
 
 const deleteOldBackups = `-- name: DeleteOldBackups :exec
 DELETE FROM backups
-WHERE started_at < $1 AND status IN ('completed', 'verified')
+WHERE started_at < $1 AND status IN ('completed')
 `
 
 type DeleteOldBackupsParams struct {
@@ -6983,6 +6983,32 @@ type GetSessionParams struct {
 
 func (q *Queries) GetSession(ctx context.Context, arg GetSessionParams) (Sessions, error) {
 	row := q.db.QueryRowContext(ctx, getSession, arg.SessionID)
+	var i Sessions
+	err := row.Scan(
+		&i.SessionID,
+		&i.UserID,
+		&i.DateCreated,
+		&i.ExpiresAt,
+		&i.LastAccess,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.SessionData,
+	)
+	return i, err
+}
+
+const getSessionByToken = `-- name: GetSessionByToken :one
+SELECT session_id, user_id, date_created, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
+WHERE session_data = $1
+LIMIT 1
+`
+
+type GetSessionByTokenParams struct {
+	SessionData sql.NullString `json:"session_data"`
+}
+
+func (q *Queries) GetSessionByToken(ctx context.Context, arg GetSessionByTokenParams) (Sessions, error) {
+	row := q.db.QueryRowContext(ctx, getSessionByToken, arg.SessionData)
 	var i Sessions
 	err := row.Scan(
 		&i.SessionID,

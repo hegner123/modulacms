@@ -1,14 +1,103 @@
 package pages
 
 import (
+    "encoding/json"
     "fmt"
+    "strings"
 
     "github.com/hegner123/modulacms/internal/admin/layouts"
     "github.com/hegner123/modulacms/internal/admin/partials"
     "github.com/hegner123/modulacms/internal/config"
 )
 
-templ SettingsContent(cfg *config.Config, csrfToken string) {
+// SearchIndexStatus holds search index stats for the settings page.
+// Zero values mean search is unavailable.
+type SearchIndexStatus struct {
+    Available bool
+    Documents int
+    Terms     int
+    MemBytes  int64
+}
+
+// formatBytes formats a byte count as a human-readable string.
+func formatBytes(b int64) string {
+    switch {
+    case b >= 1<<20:
+        return fmt.Sprintf("%.1f MB", float64(b)/float64(1<<20))
+    case b >= 1<<10:
+        return fmt.Sprintf("%.1f KB", float64(b)/float64(1<<10))
+    default:
+        return fmt.Sprintf("%d B", b)
+    }
+}
+
+// joinSlice joins a string slice with ", " for display in a textarea.
+func joinSlice(s []string) string {
+    return strings.Join(s, ", ")
+}
+
+// fmtFloat formats a float64 for display in a form field.
+func fmtFloat(f float64) string {
+    return fmt.Sprintf("%g", f)
+}
+
+// fmtInt formats an int for display.
+func fmtInt(n int) string {
+    return fmt.Sprintf("%d", n)
+}
+
+// fmtInt64 formats an int64 for display.
+func fmtInt64(n int64) string {
+    return fmt.Sprintf("%d", n)
+}
+
+// toJSONMap marshals a map value to indented JSON for display in a textarea.
+// Returns "{}" for nil/empty values.
+func toJSONMap(v any) string {
+    if v == nil {
+        return "{}"
+    }
+    b, err := json.MarshalIndent(v, "", "  ")
+    if err != nil {
+        return "{}"
+    }
+    s := string(b)
+    if s == "null" {
+        return "{}"
+    }
+    return s
+}
+
+// toJSONSlice marshals a slice value to indented JSON for display in a textarea.
+// Returns "[]" for nil/empty values.
+func toJSONSlice(v any) string {
+    if v == nil {
+        return "[]"
+    }
+    b, err := json.MarshalIndent(v, "", "  ")
+    if err != nil {
+        return "[]"
+    }
+    s := string(b)
+    if s == "null" {
+        return "[]"
+    }
+    return s
+}
+
+// oauthEndpointValue extracts a specific OAuth endpoint URL from the config map.
+func oauthEndpointValue(endpoints map[config.Endpoint]string, key config.Endpoint) string {
+    return endpoints[key]
+}
+
+templ settingsSection(title string, description string) {
+    <div>
+        <h2 class="text-base/7 font-semibold text-white">{ title }</h2>
+        <p class="mt-1 text-sm/6 text-gray-400">{ description }</p>
+    </div>
+}
+
+templ SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIndexStatus) {
     <!-- Page Header -->
     <div class="border-b border-white/10 pb-5" data-page-header>
         <div class="flex items-center justify-between">
@@ -25,20 +114,23 @@ templ SettingsContent(cfg *config.Config, csrfToken string) {
         <div class="divide-y divide-white/10">
             <!-- General -->
             <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-                <div>
-                    <h2 class="text-base/7 font-semibold text-white">General</h2>
-                    <p class="mt-1 text-sm/6 text-gray-400">Core server configuration including ports, hosts, and site URLs.</p>
-                </div>
+                @settingsSection("General", "Core server configuration including ports, hosts, and site URLs.")
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
                         <div class="sm:col-span-3">
                             @partials.FormField("environment", "Environment", cfg.Environment, "")
                         </div>
                         <div class="sm:col-span-3">
+                            @partials.FormField("os", "OS", cfg.OS, "")
+                        </div>
+                        <div class="sm:col-span-3">
                             @partials.FormField("port", "HTTP Port", cfg.Port, "")
                         </div>
                         <div class="sm:col-span-3">
                             @partials.FormField("ssl_port", "HTTPS Port", cfg.SSL_Port, "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("cert_dir", "Certificate Directory", cfg.Cert_Dir, "")
                         </div>
                         <div class="sm:col-span-3">
                             @partials.FormField("ssh_host", "SSH Host", cfg.SSH_Host, "")
@@ -59,20 +151,26 @@ templ SettingsContent(cfg *config.Config, csrfToken string) {
                             @partials.FormField("output_format", "Output Format", string(cfg.Output_Format), "")
                         </div>
                         <div class="sm:col-span-3">
+                            @partials.FormField("custom_style_path", "Custom Style Path", cfg.Custom_Style_Path, "")
+                        </div>
+                        <div class="sm:col-span-3">
                             @partials.FormField("node_id", "Node ID", cfg.Node_ID, "")
                         </div>
                         <div class="sm:col-span-3">
                             @partials.FormField("space_id", "Space ID", cfg.Space_ID, "")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @settingsJSONField("environment_hosts", "Environment Hosts", toJSONMap(cfg.Environment_Hosts), "JSON map of environment name to host URL")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @settingsJSONField("options", "Options", toJSONMap(cfg.Options), "JSON map of option keys to value arrays")
                         </div>
                     </div>
                 </div>
             </div>
             <!-- Database -->
             <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-                <div>
-                    <h2 class="text-base/7 font-semibold text-white">Database</h2>
-                    <p class="mt-1 text-sm/6 text-gray-400">Database driver and connection settings.</p>
-                </div>
+                @settingsSection("Database", "Database driver and connection settings.")
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
                         <div class="sm:col-span-3">
@@ -93,12 +191,23 @@ templ SettingsContent(cfg *config.Config, csrfToken string) {
                     </div>
                 </div>
             </div>
+            <!-- Remote -->
+            <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
+                @settingsSection("Remote", "Remote CMS instance for content sync and deploy operations.")
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                        <div class="sm:col-span-6">
+                            @partials.FormField("remote_url", "Remote URL", cfg.Remote_URL, "")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @settingsPasswordField("remote_api_key", "Remote API Key", cfg.Remote_API_Key)
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- S3 / Storage -->
             <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-                <div>
-                    <h2 class="text-base/7 font-semibold text-white">Storage (S3)</h2>
-                    <p class="mt-1 text-sm/6 text-gray-400">S3-compatible object storage for media and backups.</p>
-                </div>
+                @settingsSection("Storage (S3)", "S3-compatible object storage for media and backups.")
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
                         <div class="sm:col-span-3">
@@ -129,17 +238,28 @@ templ SettingsContent(cfg *config.Config, csrfToken string) {
                             @settingsCheckbox("bucket_force_path_style", "Force Path Style", cfg.Bucket_Force_Path_Style)
                         </div>
                         <div class="sm:col-span-3">
-                            @partials.FormField("max_upload_size", "Max Upload Size (bytes)", fmt.Sprintf("%d", cfg.MaxUploadSize()), "")
+                            @partials.FormField("max_upload_size", "Max Upload Size (bytes)", fmtInt64(cfg.MaxUploadSize()), "")
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Backup -->
+            <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
+                @settingsSection("Backup", "Backup storage option and local paths.")
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            @partials.FormField("backup_option", "Backup Option", cfg.Backup_Option, "")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @settingsListField("backup_paths", "Backup Paths", joinSlice(cfg.Backup_Paths), "Comma-separated list of local backup directories")
                         </div>
                     </div>
                 </div>
             </div>
             <!-- Auth / Cookies -->
             <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-                <div>
-                    <h2 class="text-base/7 font-semibold text-white">Authentication</h2>
-                    <p class="mt-1 text-sm/6 text-gray-400">Session cookies and authentication salt configuration.</p>
-                </div>
+                @settingsSection("Authentication", "Session cookies and authentication salt configuration.")
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
                         <div class="sm:col-span-6">
@@ -162,10 +282,7 @@ templ SettingsContent(cfg *config.Config, csrfToken string) {
             </div>
             <!-- OAuth -->
             <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-                <div>
-                    <h2 class="text-base/7 font-semibold text-white">OAuth</h2>
-                    <p class="mt-1 text-sm/6 text-gray-400">OAuth provider configuration for third-party authentication.</p>
-                </div>
+                @settingsSection("OAuth", "OAuth provider configuration for third-party authentication.")
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
                         <div class="sm:col-span-3">
@@ -183,17 +300,35 @@ templ SettingsContent(cfg *config.Config, csrfToken string) {
                         <div class="sm:col-span-6">
                             @partials.FormField("oauth_success_redirect", "Success Redirect", cfg.Oauth_Success_Redirect, "")
                         </div>
+                        <div class="sm:col-span-6">
+                            @settingsListField("oauth_scopes", "Scopes", joinSlice(cfg.Oauth_Scopes), "Comma-separated OAuth scopes")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @partials.FormField("oauth_auth_url", "Auth URL", oauthEndpointValue(cfg.Oauth_Endpoint, config.OauthAuthURL), "")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @partials.FormField("oauth_token_url", "Token URL", oauthEndpointValue(cfg.Oauth_Endpoint, config.OauthTokenURL), "")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @partials.FormField("oauth_userinfo_url", "User Info URL", oauthEndpointValue(cfg.Oauth_Endpoint, config.OauthUserInfoURL), "")
+                        </div>
                     </div>
                 </div>
             </div>
             <!-- CORS -->
             <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-                <div>
-                    <h2 class="text-base/7 font-semibold text-white">CORS</h2>
-                    <p class="mt-1 text-sm/6 text-gray-400">Cross-origin resource sharing settings for API access.</p>
-                </div>
+                @settingsSection("CORS", "Cross-origin resource sharing settings for API access.")
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                        <div class="sm:col-span-6">
+                            @settingsListField("cors_origins", "Allowed Origins", joinSlice(cfg.Cors_Origins), "Comma-separated origin URLs (e.g. https://example.com)")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @settingsListField("cors_methods", "Allowed Methods", joinSlice(cfg.Cors_Methods), "Comma-separated HTTP methods (e.g. GET, POST, PUT, DELETE)")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @settingsListField("cors_headers", "Allowed Headers", joinSlice(cfg.Cors_Headers), "Comma-separated header names")
+                        </div>
                         <div class="sm:col-span-6">
                             @settingsCheckbox("cors_credentials", "Allow Credentials", cfg.Cors_Credentials)
                         </div>
@@ -202,10 +337,7 @@ templ SettingsContent(cfg *config.Config, csrfToken string) {
             </div>
             <!-- Email -->
             <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-                <div>
-                    <h2 class="text-base/7 font-semibold text-white">Email</h2>
-                    <p class="mt-1 text-sm/6 text-gray-400">Email service provider and SMTP configuration for transactional emails.</p>
-                </div>
+                @settingsSection("Email", "Email service provider and SMTP configuration for transactional emails.")
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
                         <div class="sm:col-span-6">
@@ -224,7 +356,7 @@ templ SettingsContent(cfg *config.Config, csrfToken string) {
                             @partials.FormField("email_host", "SMTP Host", cfg.Email_Host, "")
                         </div>
                         <div class="sm:col-span-3">
-                            @partials.FormField("email_port", "SMTP Port", fmt.Sprintf("%d", cfg.Email_Port), "")
+                            @partials.FormField("email_port", "SMTP Port", fmtInt(cfg.Email_Port), "")
                         </div>
                         <div class="sm:col-span-3">
                             @partials.FormField("email_username", "Username", cfg.Email_Username, "")
@@ -238,48 +370,167 @@ templ SettingsContent(cfg *config.Config, csrfToken string) {
                         <div class="sm:col-span-3">
                             @settingsPasswordField("email_api_key", "API Key", cfg.Email_API_Key)
                         </div>
+                        <div class="sm:col-span-6">
+                            @partials.FormField("email_api_endpoint", "API Endpoint", cfg.Email_API_Endpoint, "")
+                        </div>
                         <div class="sm:col-span-3">
                             @partials.FormField("email_reply_to", "Reply-To", cfg.Email_Reply_To, "")
                         </div>
                         <div class="sm:col-span-6">
                             @partials.FormField("password_reset_url", "Password Reset URL", cfg.Password_Reset_URL, "")
                         </div>
+                        <div class="sm:col-span-3">
+                            @settingsPasswordField("email_aws_access_key_id", "AWS Access Key ID", cfg.Email_AWS_Access_Key_ID)
+                        </div>
+                        <div class="sm:col-span-3">
+                            @settingsPasswordField("email_aws_secret_access_key", "AWS Secret Access Key", cfg.Email_AWS_Secret_Access_Key)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Content -->
+            <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
+                @settingsSection("Content", "Content composition, publishing, and versioning behavior.")
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            @partials.FormField("composition_max_depth", "Composition Max Depth", fmtInt(cfg.CompositionMaxDepth()), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("publish_schedule_interval", "Publish Schedule Interval (min)", fmtInt(cfg.PublishScheduleInterval()), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("version_max_per_content", "Max Versions Per Content", fmtInt(cfg.VersionMaxPerContent()), "")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @settingsListField("richtext_toolbar", "Rich Text Toolbar", joinSlice(cfg.RichtextToolbar()), "Comma-separated toolbar actions (e.g. bold, italic, link, image)")
+                        </div>
                     </div>
                 </div>
             </div>
             <!-- Plugins -->
             <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-                <div>
-                    <h2 class="text-base/7 font-semibold text-white">Plugins</h2>
-                    <p class="mt-1 text-sm/6 text-gray-400">Plugin system configuration including directory, VM limits, and timeouts.</p>
-                </div>
+                @settingsSection("Plugins", "Plugin system configuration including directory, VM limits, and timeouts.")
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
-                        <div class="sm:col-span-6">
+                        <div class="sm:col-span-3">
                             @settingsCheckbox("plugin_enabled", "Enabled", cfg.Plugin_Enabled)
+                        </div>
+                        <div class="sm:col-span-3">
+                            @settingsCheckbox("plugin_hot_reload", "Hot Reload", cfg.Plugin_Hot_Reload)
                         </div>
                         <div class="sm:col-span-6">
                             @partials.FormField("plugin_directory", "Plugin Directory", cfg.Plugin_Directory, "")
                         </div>
                         <div class="sm:col-span-3">
-                            @partials.FormField("plugin_max_vms", "Max VMs Per Plugin", fmt.Sprintf("%d", cfg.Plugin_Max_VMs), "")
+                            @partials.FormField("plugin_max_vms", "Max VMs Per Plugin", fmtInt(cfg.Plugin_Max_VMs), "")
                         </div>
                         <div class="sm:col-span-3">
-                            @partials.FormField("plugin_timeout", "Timeout (seconds)", fmt.Sprintf("%d", cfg.Plugin_Timeout), "")
+                            @partials.FormField("plugin_timeout", "Timeout (seconds)", fmtInt(cfg.Plugin_Timeout), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("plugin_max_ops", "Max Ops", fmtInt(cfg.Plugin_Max_Ops), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("plugin_rate_limit", "Rate Limit (req/min)", fmtInt(cfg.Plugin_Rate_Limit), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("plugin_max_routes", "Max Routes", fmtInt(cfg.Plugin_Max_Routes), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("plugin_max_failures", "Max Failures", fmtInt(cfg.Plugin_Max_Failures), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("plugin_max_request_body", "Max Request Body (bytes)", fmtInt64(cfg.Plugin_Max_Request_Body), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("plugin_max_response_body", "Max Response Body (bytes)", fmtInt64(cfg.Plugin_Max_Response_Body), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("plugin_db_max_open_conns", "DB Max Open Conns", fmtInt(cfg.Plugin_DB_MaxOpenConns), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("plugin_db_max_idle_conns", "DB Max Idle Conns", fmtInt(cfg.Plugin_DB_MaxIdleConns), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("plugin_db_conn_max_lifetime", "DB Conn Max Lifetime", cfg.Plugin_DB_ConnMaxLifetime, "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("plugin_reset_interval", "Reset Interval", cfg.Plugin_Reset_Interval, "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("plugin_sync_interval", "Sync Interval", cfg.Plugin_Sync_Interval, "")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @settingsListField("plugin_trusted_proxies", "Trusted Proxies", joinSlice(cfg.Plugin_Trusted_Proxies), "Comma-separated proxy IPs/CIDRs")
+                        </div>
+                    </div>
+                    <!-- Plugin Hooks sub-section -->
+                    <div class="mt-10 border-t border-white/10 pt-8">
+                        <h3 class="text-sm font-semibold text-gray-300">Plugin Hooks</h3>
+                        <div class="mt-4 grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_hook_reserve_vms", "Reserve VMs", fmtInt(cfg.Plugin_Hook_Reserve_VMs), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_hook_max_ops", "Max Ops", fmtInt(cfg.Plugin_Hook_Max_Ops), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_hook_timeout_ms", "Timeout (ms)", fmtInt(cfg.Plugin_Hook_Timeout_Ms), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_hook_event_timeout_ms", "Event Timeout (ms)", fmtInt(cfg.Plugin_Hook_Event_Timeout_Ms), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_hook_max_consecutive_aborts", "Max Consecutive Aborts", fmtInt(cfg.Plugin_Hook_Max_Consecutive_Aborts), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_hook_max_concurrent_after", "Max Concurrent After", fmtInt(cfg.Plugin_Hook_Max_Concurrent_After), "")
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Plugin HTTP Requests sub-section -->
+                    <div class="mt-10 border-t border-white/10 pt-8">
+                        <h3 class="text-sm font-semibold text-gray-300">Plugin HTTP Requests</h3>
+                        <div class="mt-4 grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_request_timeout", "Timeout (seconds)", fmtInt(cfg.Plugin_Request_Timeout), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_request_rate_limit", "Rate Limit", fmtInt(cfg.Plugin_Request_Rate_Limit), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_request_global_rate", "Global Rate Limit", fmtInt(cfg.Plugin_Request_Global_Rate), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_request_max_response", "Max Response (bytes)", fmtInt64(cfg.Plugin_Request_Max_Response), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_request_max_body", "Max Body (bytes)", fmtInt64(cfg.Plugin_Request_Max_Body), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_request_cb_failures", "Circuit Breaker Failures", fmtInt(cfg.Plugin_Request_CB_Failures), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("plugin_request_cb_reset", "Circuit Breaker Reset (s)", fmtInt(cfg.Plugin_Request_CB_Reset), "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @settingsCheckbox("plugin_request_allow_local", "Allow Local Requests", cfg.Plugin_Request_Allow_Local)
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             <!-- Observability -->
             <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-                <div>
-                    <h2 class="text-base/7 font-semibold text-white">Observability</h2>
-                    <p class="mt-1 text-sm/6 text-gray-400">Error tracking and performance monitoring configuration.</p>
-                </div>
+                @settingsSection("Observability", "Error tracking and performance monitoring configuration.")
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
-                        <div class="sm:col-span-6">
+                        <div class="sm:col-span-3">
                             @settingsCheckbox("observability_enabled", "Enabled", cfg.Observability_Enabled)
+                        </div>
+                        <div class="sm:col-span-3">
+                            @settingsCheckbox("observability_debug", "Debug Mode", cfg.Observability_Debug)
                         </div>
                         <div class="sm:col-span-3">
                             @partials.FormField("observability_provider", "Provider", cfg.Observability_Provider, "")
@@ -291,7 +542,170 @@ templ SettingsContent(cfg *config.Config, csrfToken string) {
                             @partials.FormField("observability_environment", "Environment", cfg.Observability_Environment, "")
                         </div>
                         <div class="sm:col-span-3">
+                            @partials.FormField("observability_release", "Release", cfg.Observability_Release, "")
+                        </div>
+                        <div class="sm:col-span-3">
                             @partials.FormField("observability_server_name", "Server Name", cfg.Observability_Server_Name, "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("observability_flush_interval", "Flush Interval", cfg.Observability_Flush_Interval, "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("observability_sample_rate", "Sample Rate", fmtFloat(cfg.Observability_Sample_Rate), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("observability_traces_rate", "Traces Rate", fmtFloat(cfg.Observability_Traces_Rate), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @settingsCheckbox("observability_send_pii", "Send PII", cfg.Observability_Send_PII)
+                        </div>
+                        <div class="sm:col-span-6">
+                            @settingsJSONField("observability_tags", "Tags", toJSONMap(cfg.Observability_Tags), "JSON map of tag key to value")
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Updates -->
+            <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
+                @settingsSection("Updates", "Automatic update checking and notification preferences.")
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            @settingsCheckbox("update_auto_enabled", "Auto-Update Enabled", cfg.Update_Auto_Enabled)
+                        </div>
+                        <div class="sm:col-span-3">
+                            @settingsCheckbox("update_notify_only", "Notify Only", cfg.Update_Notify_Only)
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("update_check_interval", "Check Interval", cfg.Update_Check_Interval, "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("update_channel", "Channel", cfg.Update_Channel, "")
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Deploy -->
+            <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
+                @settingsSection("Deploy", "Content deployment snapshot directory.")
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                        <div class="sm:col-span-6">
+                            @partials.FormField("deploy_snapshot_dir", "Snapshot Directory", cfg.Deploy_Snapshot_Dir, "")
+                        </div>
+                        <div class="sm:col-span-6">
+                            @settingsJSONField("deploy_environments", "Environments", toJSONSlice(cfg.Deploy_Environments), "JSON array of {name, url, api_key} objects")
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- MCP -->
+            <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
+                @settingsSection("MCP", "Model Context Protocol server for AI tool integration.")
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            @settingsCheckbox("mcp_enabled", "Enabled", cfg.MCP_Enabled)
+                        </div>
+                        <div class="sm:col-span-6">
+                            @settingsPasswordField("mcp_api_key", "API Key", cfg.MCP_API_Key)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Search -->
+            <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
+                @settingsSection("Search", "Full-text search index configuration.")
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            @settingsCheckbox("search_enabled", "Enabled", cfg.Search_Enabled)
+                        </div>
+                        <div class="sm:col-span-6">
+                            @partials.FormField("search_path", "Index Path", cfg.Search_Path, "")
+                        </div>
+                    </div>
+                    <!-- Index status & rebuild -->
+                    <div class="mt-8 rounded-lg border border-white/10 bg-white/5 p-5">
+                        <h4 class="text-sm font-semibold text-white mb-4">Search Index</h4>
+                        if searchStatus.Available {
+                            <dl class="grid grid-cols-3 gap-4 text-sm">
+                                <div>
+                                    <dt class="text-gray-400">Documents</dt>
+                                    <dd class="mt-1 text-white font-mono">{ fmt.Sprintf("%d", searchStatus.Documents) }</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-gray-400">Terms</dt>
+                                    <dd class="mt-1 text-white font-mono">{ fmt.Sprintf("%d", searchStatus.Terms) }</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-gray-400">Memory</dt>
+                                    <dd class="mt-1 text-white font-mono">{ formatBytes(searchStatus.MemBytes) }</dd>
+                                </div>
+                            </dl>
+                            <div id="search-rebuild-container" class="mt-4 flex items-center gap-3">
+                                <mcms-confirm
+                                    label="Rebuild Index"
+                                    message="This will drop and rebuild the entire search index from published content. The index will be temporarily unavailable during rebuild."
+                                    button-class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
+                                    hx-post="/admin/settings/search/rebuild"
+                                    hx-target="#search-rebuild-container"
+                                    hx-swap="innerHTML"
+                                ></mcms-confirm>
+                            </div>
+                        } else {
+                            <p class="text-sm text-gray-400">Search is not enabled. Enable it above and restart the server to activate the search index.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+            <!-- i18n -->
+            <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
+                @settingsSection("Internationalization", "Multi-language content support.")
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            @settingsCheckbox("i18n_enabled", "Enabled", cfg.I18n_Enabled)
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("i18n_default_locale", "Default Locale", cfg.I18n_Default_Locale, "")
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Webhooks -->
+            <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
+                @settingsSection("Webhooks", "Webhook delivery configuration and retry behavior.")
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            @settingsCheckbox("webhook_enabled", "Enabled", cfg.Webhook_Enabled)
+                        </div>
+                        <div class="sm:col-span-3">
+                            @settingsCheckbox("webhook_allow_http", "Allow HTTP", cfg.Webhook_Allow_HTTP)
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("webhook_timeout", "Timeout (seconds)", fmtInt(cfg.Webhook_Timeout), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("webhook_max_retries", "Max Retries", fmtInt(cfg.Webhook_Max_Retries), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("webhook_workers", "Workers", fmtInt(cfg.Webhook_Workers), "")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @partials.FormField("webhook_delivery_retention_days", "Delivery Retention (days)", fmtInt(cfg.Webhook_Delivery_Retention_Days), "")
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Keybindings -->
+            <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
+                @settingsSection("Keybindings", "TUI keyboard shortcut mappings. Maps action names to arrays of key strings.")
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
+                        <div class="sm:col-span-6">
+                            @settingsJSONField("keybindings", "Key Map", toJSONMap(cfg.KeyBindings), "JSON map of action names to key binding arrays")
                         </div>
                     </div>
                 </div>
@@ -300,9 +714,9 @@ templ SettingsContent(cfg *config.Config, csrfToken string) {
     </form>
 }
 
-templ Settings(layout layouts.AdminData, cfg *config.Config) {
+templ Settings(layout layouts.AdminData, cfg *config.Config, searchStatus SearchIndexStatus) {
     @layouts.Admin(layout) {
-        @SettingsContent(cfg, layout.CSRFToken)
+        @SettingsContent(cfg, layout.CSRFToken, searchStatus)
     }
 }
 
@@ -334,5 +748,27 @@ templ settingsCheckbox(name string, label string, checked bool) {
             }
             { label }
         </label>
+    </div>
+}
+
+// settingsJSONField renders a textarea for complex JSON values (maps, arrays of objects).
+templ settingsJSONField(name string, label string, value string, description string) {
+    <div>
+        <label for={ name } class="block text-sm font-medium text-white">{ label }</label>
+        <div class="mt-2">
+            <textarea id={ name } name={ name } rows="16" class="scrollbar-dark block w-full rounded-md bg-white/5 px-3 py-1.5 font-mono text-xs text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)] sm:text-sm/6">{ value }</textarea>
+        </div>
+        <p class="mt-1 text-xs text-gray-500">{ description }</p>
+    </div>
+}
+
+// settingsListField renders a textarea for comma-separated list values ([]string config fields).
+templ settingsListField(name string, label string, value string, placeholder string) {
+    <div>
+        <label for={ name } class="block text-sm font-medium text-white">{ label }</label>
+        <div class="mt-2">
+            <textarea id={ name } name={ name } rows="6" placeholder={ placeholder } class="scrollbar-dark block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)] sm:text-sm/6">{ value }</textarea>
+        </div>
+        <p class="mt-1 text-xs text-gray-500">Separate multiple values with commas.</p>
     </div>
 }

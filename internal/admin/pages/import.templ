@@ -1,44 +1,101 @@
 package pages
 
 import (
-	"github.com/hegner123/modulacms/internal/admin/layouts"
-	"github.com/hegner123/modulacms/internal/admin/partials"
+    "fmt"
+
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/service"
 )
 
 templ ImportContent(csrfToken string) {
-	<div class="page-header" data-page-header>
-		<h1>Import Content</h1>
-	</div>
-	<div class="settings-section">
-		<p>Import content from another CMS or a custom JSON export. Select the source format and upload the export file.</p>
-		<form
-			hx-post="/admin/import"
-			hx-encoding="multipart/form-data"
-			hx-swap="none"
-			class="form-stack"
-		>
-			@partials.CSRFField(csrfToken)
-			<div class="form-field">
-				<label for="format">Source Format</label>
-				<select id="format" name="format" required>
-					<option value="">-- Select format --</option>
-					<option value="wordpress">WordPress</option>
-					<option value="strapi">Strapi</option>
-					<option value="sanity">Sanity</option>
-					<option value="contentful">Contentful</option>
-					<option value="json">Custom JSON</option>
-				</select>
-			</div>
-			<mcms-file-input name="import_file" accept=".json,.xml,.csv,.zip" required label="Export File"></mcms-file-input>
-			<div class="form-actions">
-				<button type="submit" class="btn btn-primary">Start Import</button>
-			</div>
-		</form>
-	</div>
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-base/7 font-semibold text-white">Import Content</h1>
+            <p class="mt-2 text-sm text-gray-400">Import content from another CMS or a custom JSON export. Select the source format and upload the export file.</p>
+        </div>
+    </div>
+    <div class="mt-6 rounded-lg border border-white/10 bg-white/5 p-6">
+        <form
+            hx-post="/admin/import"
+            hx-encoding="multipart/form-data"
+            hx-target="#import-result"
+            hx-swap="innerHTML"
+            class="space-y-6"
+        >
+            @partials.CSRFField(csrfToken)
+            <div>
+                <label for="format" class="block text-sm/6 font-medium text-white">Source Format</label>
+                <div class="mt-2 grid grid-cols-1">
+                    <select id="format" name="format" required
+                        class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]">
+                        <option value="">-- Select format --</option>
+                        <option value="wordpress">WordPress</option>
+                        <option value="strapi">Strapi</option>
+                        <option value="sanity">Sanity</option>
+                        <option value="contentful">Contentful</option>
+                        <option value="clean">Clean JSON</option>
+                    </select>
+                    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" class="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4">
+                        <path d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" fill-rule="evenodd"/>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <label for="import_file" class="block text-sm/6 font-medium text-white">Export File</label>
+                <div class="mt-2">
+                    <input type="file" id="import_file" name="import_file" accept=".json,.xml,.csv,.zip" required
+                        class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white file:mr-4 file:rounded-md file:border-0 file:bg-[var(--color-primary)] file:px-3 file:py-1 file:text-sm file:font-semibold file:text-white hover:file:bg-[var(--color-primary-hover)]"/>
+                </div>
+                <p class="mt-1 text-xs text-gray-500">Accepted formats: .json, .xml, .csv, .zip</p>
+            </div>
+            <div>
+                <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">
+                    Start Import
+                </button>
+            </div>
+        </form>
+    </div>
+    <div id="import-result" class="mt-6"></div>
+}
+
+templ ImportResultPartial(result *service.ImportResult) {
+    if result.Success {
+        <div class="rounded-lg border border-green-400/20 bg-green-400/10 p-5">
+            <h3 class="text-sm font-semibold text-green-400">Import Successful</h3>
+            <p class="mt-1 text-sm text-green-400/80">{ result.Message }</p>
+            <dl class="mt-4 grid grid-cols-3 gap-4 text-sm">
+                <div>
+                    <dt class="text-green-400/60">Datatypes Created</dt>
+                    <dd class="mt-1 text-green-400 font-mono">{ fmt.Sprintf("%d", result.DatatypesCreated) }</dd>
+                </div>
+                <div>
+                    <dt class="text-green-400/60">Fields Created</dt>
+                    <dd class="mt-1 text-green-400 font-mono">{ fmt.Sprintf("%d", result.FieldsCreated) }</dd>
+                </div>
+                <div>
+                    <dt class="text-green-400/60">Content Created</dt>
+                    <dd class="mt-1 text-green-400 font-mono">{ fmt.Sprintf("%d", result.ContentCreated) }</dd>
+                </div>
+            </dl>
+        </div>
+    } else {
+        <div class="rounded-lg border border-red-400/20 bg-red-400/10 p-5">
+            <h3 class="text-sm font-semibold text-red-400">Import Failed</h3>
+            <p class="mt-1 text-sm text-red-400/80">{ result.Message }</p>
+            if len(result.Errors) > 0 {
+                <ul class="mt-3 list-disc pl-5 text-sm text-red-400/80 space-y-1">
+                    for _, e := range result.Errors {
+                        <li>{ e }</li>
+                    }
+                </ul>
+            }
+        </div>
+    }
 }
 
 templ Import(layout layouts.AdminData) {
-	@layouts.Admin(layout) {
-		@ImportContent(layout.CSRFToken)
-	}
+    @layouts.Admin(layout) {
+        @ImportContent(layout.CSRFToken)
+    }
 }

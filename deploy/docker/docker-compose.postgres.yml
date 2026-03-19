@@ -23,7 +23,7 @@ services:
       - postgres_cms_ssh:/app/.ssh
       - postgres_cms_backups:/app/backups
       - postgres_cms_plugins:/app/plugins
-      - ./config.postgres.json:/app/modula.config.json:ro
+      - ./config.postgres.json:/app/modula.config.json
       - ../../examples/plugins/hello_world:/app/plugins/hello_world:ro
       - ../../examples/plugins/task_tracker:/app/plugins/task_tracker:ro
     env_file:

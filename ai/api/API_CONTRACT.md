@@ -92,6 +92,14 @@ Creates a new user. Request/response follows the Users POST format.
 
 Updates user password. Request/response follows the Users PUT format.
 
+### POST /api/v1/auth/request-password-reset
+
+Initiates a password reset email flow. Accepts email address and sends a reset token via email.
+
+### POST /api/v1/auth/confirm-password-reset
+
+Completes a password reset using a token from the reset email. Accepts token and new password.
+
 ### GET /api/v1/auth/oauth/login
 
 Initiates OAuth flow with PKCE. Redirects to configured OAuth provider.
@@ -101,6 +109,16 @@ Initiates OAuth flow with PKCE. Redirects to configured OAuth provider.
 OAuth provider redirect target. Validates state, exchanges code for token via PKCE, provisions user, creates session, sets cookie, redirects to configured success URL.
 
 Query parameters: `code`, `state` (set by provider).
+
+---
+
+## Health
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/health` | Health check (PUBLIC — no auth required) |
+
+Returns JSON health status including database connectivity and optional plugin health.
 
 ---
 
@@ -134,6 +152,7 @@ Returns 404 if the slug does not match an admin route.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/admincontentdatas` | List all |
+| GET | `/api/v1/admincontentdatas/full` | List all with full details |
 | GET | `/api/v1/admincontentdatas/?q={ulid}` | Get by ID |
 | POST | `/api/v1/admincontentdatas` | Create |
 | PUT | `/api/v1/admincontentdatas/` | Update |
@@ -293,9 +312,13 @@ All media folder endpoints use `media:*` permissions (`media:read`, `media:creat
 |--------|------|-------------|
 | GET | `/api/v1/users` | List all |
 | GET | `/api/v1/users/?q={ulid}` | Get by ID |
+| GET | `/api/v1/users/full` | List all users with role details |
+| GET | `/api/v1/users/full/` | Get user with role details by ID |
 | POST | `/api/v1/users` | Create |
 | PUT | `/api/v1/users/` | Update |
 | DELETE | `/api/v1/users/?q={ulid}` | Delete |
+| POST | `/api/v1/users/reassign-delete` | Reassign content and delete user |
+| GET | `/api/v1/users/sessions` | List sessions for authenticated user |
 
 ### Roles
 
@@ -331,10 +354,11 @@ All media folder endpoints use `media:*` permissions (`media:read`, `media:creat
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/api/v1/sessions` | List all sessions (requires `sessions:read`) |
 | PUT | `/api/v1/sessions/` | Update session |
 | DELETE | `/api/v1/sessions/?q={ulid}` | Delete session |
 
-GET and POST are not allowed on session endpoints. Use `/api/v1/auth/login` and `/api/v1/auth/logout` instead.
+POST is not allowed on session endpoints. Use `/api/v1/auth/login` and `/api/v1/auth/logout` for session creation and destruction. Use `/api/v1/users/sessions` to list sessions for the authenticated user.
 
 ### SSH Keys
 
@@ -435,9 +459,82 @@ Query parameter: `?format=` overrides the default. Valid: `contentful`, `sanity`
 
 ---
 
+## Publishing
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| POST | `/api/v1/admin/content/publish` | `content:publish` | Publish content |
+| POST | `/api/v1/admin/content/unpublish` | `content:publish` | Unpublish content |
+| POST | `/api/v1/admin/content/schedule` | `content:publish` | Schedule content for future publication |
+
+## Content Versions
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| GET | `/api/v1/admin/content/versions` | `content:read` | List content versions |
+| GET | `/api/v1/admin/content/versions/` | `content:read` | Get specific version |
+| POST | `/api/v1/admin/content/versions` | `content:update` | Create a version snapshot |
+| DELETE | `/api/v1/admin/content/versions/` | `content:delete` | Delete a version |
+| POST | `/api/v1/admin/content/restore` | `content:update` | Restore content from a version |
+
+## Locales
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| GET | `/api/v1/admin/locales` | `locale:read` | List all locales |
+| GET | `/api/v1/admin/locales/` | `locale:read` | Get locale by ID |
+| POST | `/api/v1/admin/locales` | `locale:create` | Create locale |
+| PUT | `/api/v1/admin/locales/` | `locale:update` | Update locale |
+| DELETE | `/api/v1/admin/locales/` | `locale:delete` | Delete locale |
+
+## Webhooks
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| GET | `/api/v1/admin/webhooks` | `webhook:read` | List all webhooks |
+| POST | `/api/v1/admin/webhooks` | `webhook:create` | Create webhook |
+| GET | `/api/v1/admin/webhooks/{id}` | `webhook:read` | Get webhook by ID |
+| PUT | `/api/v1/admin/webhooks/{id}` | `webhook:update` | Update webhook |
+| DELETE | `/api/v1/admin/webhooks/{id}` | `webhook:delete` | Delete webhook |
+| POST | `/api/v1/admin/webhooks/{id}/test` | `webhook:update` | Send test delivery |
+| GET | `/api/v1/admin/webhooks/{id}/deliveries` | `webhook:read` | List deliveries for webhook |
+| POST | `/api/v1/admin/webhooks/deliveries/{id}/retry` | `webhook:update` | Retry a failed delivery |
+
+## Translations
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| POST | `/api/v1/admin/contentdata/{id}/translations` | `content:create` | Create translation for content |
+| POST | `/api/v1/admin/admincontentdata/{id}/translations` | `content:create` | Create translation for admin content |
+
+## Search
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/search` | Full-text search across published content (PUBLIC) |
+| POST | `/api/v1/admin/search/rebuild` | Re-index all documents (requires `search:update`) |
+
+Query parameters for GET: `q` (required), `type`, `locale`, `limit`, `offset`, `prefix`.
+
+## Globals
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/globals` | Fetch all published global content trees (PUBLIC) |
+
+## Query
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/query/{datatype}` | Query content by datatype name with filtering, sorting, pagination (PUBLIC) |
+
+Query parameters: `sort`, `limit`, `offset`, `locale`, `status`, plus arbitrary field filter keys.
+
+---
+
 ## Implementation Notes
 
-- All handlers use `db.ConfigDB(c)` which returns a singleton connection pool (initialized at startup via `db.InitDB()`). Handlers do not open or close connections.
+- Handlers receive dependencies via closure injection (e.g., `db.DbDriver`, `*service.Registry`). The database connection pool is initialized at startup and injected into handlers.
 - Request bodies are decoded with `json.NewDecoder(r.Body)`. Response bodies are encoded with `json.NewEncoder(w)`.
 - Auth endpoints have CORS middleware and rate limiting (10 req/min). Resource endpoints use `HandleFunc` directly.
 - The router uses `net/http.ServeMux` (standard library). See `internal/router/mux.go`.

@@ -3,7 +3,7 @@ package partials
 // AdminFieldEditForm renders the edit admin field form fields.
 // Used as an HTMX partial for validation error responses on the detail page.
 templ AdminFieldEditForm(id string, name string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
-    <form hx-post={ "/admin/admin-schema/fields/" + id }
+    <form hx-post={ "/admin/admin-fields/" + id }
           hx-target="#admin-field-edit-form"
           hx-swap="innerHTML">
         @CSRFField(csrfToken)

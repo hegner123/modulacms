@@ -6,8 +6,8 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-templ UserDetail(layout layouts.AdminData, user db.Users, roles []db.Roles, csrfToken string) {
+templ UserDetail(layout layouts.AdminData, user db.Users, roles []db.Roles, sshKeys []db.UserSshKeys, oauthConns []db.UserOauth, oauthConfigured bool, csrfToken string) {
 	@layouts.Admin(layout) {
-		@partials.UserDetailContent(user, roles, csrfToken)
+		@partials.UserDetailContent(user, roles, sshKeys, oauthConns, oauthConfigured, csrfToken)
 	}
 }

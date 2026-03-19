@@ -1,34 +1,226 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
+	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/service"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
-// allFieldTypes is the canonical list of supported field types with descriptions.
-var allFieldTypes = []pages.FieldTypeInfo{
-	{Value: "text", Label: "Text", Description: "Single-line plain text input"},
-	{Value: "textarea", Label: "Textarea", Description: "Multi-line plain text input"},
-	{Value: "richtext", Label: "Rich Text", Description: "Rich text editor with formatting support"},
-	{Value: "number", Label: "Number", Description: "Numeric input (integer or decimal)"},
-	{Value: "boolean", Label: "Boolean", Description: "True/false toggle switch"},
-	{Value: "date", Label: "Date", Description: "Date picker (date only, no time)"},
-	{Value: "datetime", Label: "Datetime", Description: "Date and time picker"},
-	{Value: "select", Label: "Select", Description: "Dropdown selection from predefined options"},
-	{Value: "media", Label: "Media", Description: "Media file reference (image, video, document)"},
-	{Value: "_id", Label: "ID Reference", Description: "Content data ID for references and composition"},
-	{Value: "json", Label: "JSON", Description: "Freeform JSON data"},
-	{Value: "slug", Label: "Slug", Description: "URL-friendly identifier auto-generated from text"},
-	{Value: "email", Label: "Email", Description: "Email address with format validation"},
-	{Value: "url", Label: "URL", Description: "Web URL with format validation"},
+// FieldTypesListHandler handles GET /admin/field-types.
+// Lists all field types from the database with a create dialog.
+func FieldTypesListHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		list, err := svc.Schema.ListFieldTypes(r.Context())
+		if err != nil {
+			utility.DefaultLogger.Error("failed to list field types", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+		layout := NewAdminData(r, "Field Types")
+
+		if IsNavHTMX(r) {
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Field Types"}`)
+			RenderWithOOB(w, r, pages.FieldTypesListContent(list),
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.FieldTypeCreateDialog(csrfToken)})
+			return
+		}
+
+		Render(w, r, pages.FieldTypesList(layout, list))
+	}
 }
 
-// FieldTypesListHandler handles GET /admin/schema/field-types.
-// Read-only list of available field types. No CRUD operations.
-func FieldTypesListHandler() http.HandlerFunc {
+// FieldTypeDetailHandler handles GET /admin/field-types/{id}.
+// Shows field type detail with an edit form.
+func FieldTypeDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		layout := NewAdminData(r, "Field Types")
-		RenderNav(w, r, "Field Types", pages.FieldTypesListContent(allFieldTypes), pages.FieldTypesList(layout, allFieldTypes))
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "Missing field type ID", http.StatusBadRequest)
+			return
+		}
+
+		ft, err := svc.Schema.GetFieldType(r.Context(), types.FieldTypeID(id))
+		if err != nil {
+			utility.DefaultLogger.Error("failed to get field type", err)
+			var nfe *service.NotFoundError
+			if errors.As(err, &nfe) {
+				http.Error(w, "Field type not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+		layout := NewAdminData(r, "Field Type: "+ft.Label)
+
+		if IsNavHTMX(r) {
+			safeTitle := "Field Type: " + ft.Label
+			w.Header().Set("HX-Trigger", `{"pageTitle": "`+safeTitle+`"}`)
+			Render(w, r, pages.FieldTypeDetailContent(*ft, csrfToken))
+			return
+		}
+		Render(w, r, pages.FieldTypeDetail(layout, *ft, csrfToken))
+	}
+}
+
+// FieldTypeCreateHandler handles POST /admin/field-types.
+// Creates a field type via the service layer.
+func FieldTypeCreateHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if parseErr := r.ParseForm(); parseErr != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		ftType := strings.TrimSpace(r.FormValue("type"))
+		label := strings.TrimSpace(r.FormValue("label"))
+
+		ac, acErr := svc.AuditCtx(r.Context())
+		if acErr != nil {
+			utility.DefaultLogger.Error("failed to build audit context", acErr)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		_, err := svc.Schema.CreateFieldType(r.Context(), ac, db.CreateFieldTypeParams{
+			Type:  ftType,
+			Label: label,
+		})
+		if err != nil {
+			var ve *service.ValidationError
+			if errors.As(err, &ve) {
+				errs := make(map[string]string, len(ve.Errors))
+				for _, fe := range ve.Errors {
+					errs[fe.Field] = fe.Message
+				}
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				csrfToken := CSRFTokenFromContext(r.Context())
+				Render(w, r, partials.FieldTypeForm(ftType, label, errs, csrfToken))
+				return
+			}
+			utility.DefaultLogger.Error("failed to create field type", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			csrfToken := CSRFTokenFromContext(r.Context())
+			Render(w, r, partials.FieldTypeForm(ftType, label, map[string]string{"_": "Failed to create field type"}, csrfToken))
+			return
+		}
+
+		if !IsHTMX(r) {
+			http.Redirect(w, r, "/admin/field-types", http.StatusSeeOther)
+			return
+		}
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Field type created", "type": "success"}}`)
+		w.Header().Set("HX-Redirect", "/admin/field-types")
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// FieldTypeUpdateHandler handles POST /admin/field-types/{id}.
+// Updates user-editable fields via the service layer.
+func FieldTypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "Missing field type ID", http.StatusBadRequest)
+			return
+		}
+
+		if parseErr := r.ParseForm(); parseErr != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		ftType := strings.TrimSpace(r.FormValue("type"))
+		label := strings.TrimSpace(r.FormValue("label"))
+
+		ac, acErr := svc.AuditCtx(r.Context())
+		if acErr != nil {
+			utility.DefaultLogger.Error("failed to build audit context", acErr)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		_, err := svc.Schema.UpdateFieldType(r.Context(), ac, db.UpdateFieldTypeParams{
+			FieldTypeID: types.FieldTypeID(id),
+			Type:        ftType,
+			Label:       label,
+		})
+		if err != nil {
+			var ve *service.ValidationError
+			if errors.As(err, &ve) {
+				errs := make(map[string]string, len(ve.Errors))
+				for _, fe := range ve.Errors {
+					errs[fe.Field] = fe.Message
+				}
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				csrfToken := CSRFTokenFromContext(r.Context())
+				Render(w, r, partials.FieldTypeEditForm(id, ftType, label, errs, csrfToken))
+				return
+			}
+			var nfe *service.NotFoundError
+			if errors.As(err, &nfe) {
+				http.Error(w, "Field type not found", http.StatusNotFound)
+				return
+			}
+			utility.DefaultLogger.Error("failed to update field type", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			csrfToken := CSRFTokenFromContext(r.Context())
+			Render(w, r, partials.FieldTypeEditForm(id, ftType, label, map[string]string{"_": "Failed to update field type"}, csrfToken))
+			return
+		}
+
+		if !IsHTMX(r) {
+			http.Redirect(w, r, "/admin/field-types/"+id, http.StatusSeeOther)
+			return
+		}
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Field type updated", "type": "success"}}`)
+		w.Header().Set("HX-Redirect", "/admin/field-types/"+id)
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// FieldTypeDeleteHandler handles DELETE /admin/field-types/{id}.
+// HTMX-only endpoint. Non-HTMX requests receive 405.
+func FieldTypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !IsHTMX(r) {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "Missing field type ID", http.StatusBadRequest)
+			return
+		}
+
+		ac, acErr := svc.AuditCtx(r.Context())
+		if acErr != nil {
+			utility.DefaultLogger.Error("failed to build audit context", acErr)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete field type", "type": "error"}}`)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		err := svc.Schema.DeleteFieldType(r.Context(), ac, types.FieldTypeID(id))
+		if err != nil {
+			utility.DefaultLogger.Error("failed to delete field type", err)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete field type", "type": "error"}}`)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Field type deleted", "type": "success"}}`)
+		w.WriteHeader(http.StatusOK)
 	}
 }

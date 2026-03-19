@@ -13,16 +13,18 @@ templ FieldsListContent(items []db.Fields, pg partials.PaginationPageData) {
             <p class="mt-2 text-sm text-gray-400">Define content properties that can be assigned to datatypes.</p>
         </div>
         <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-            <button class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]"
-                    data-action="new"
-                    onclick="document.getElementById('create-field-dialog').open()">
+            <a href="/admin/fields/new"
+               hx-get="/admin/fields/new"
+               hx-target="#main-content"
+               hx-push-url="true"
+               class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white no-underline shadow-xs hover:bg-[var(--color-primary-hover)] hover:no-underline">
                 New Field
-            </button>
+            </a>
         </div>
     </div>
     <div class="mt-8 flow-root">
-        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+        <div class="overflow-x-auto">
+            <div class="min-w-full py-2 align-middle">
                 <div class="overflow-hidden rounded-lg border border-white/10 shadow-sm">
                     <table class="min-w-full divide-y divide-white/10">
                         <thead class="bg-white/5">
@@ -36,7 +38,7 @@ templ FieldsListContent(items []db.Fields, pg partials.PaginationPageData) {
                         </thead>
                         <tbody id="fields-table-body"
                                class="divide-y divide-white/5"
-                               hx-get="/admin/schema/fields"
+                               hx-get="/admin/fields"
                                hx-trigger="refreshTable from:body"
                                hx-swap="innerHTML">
                             if len(items) == 0 {
@@ -47,7 +49,7 @@ templ FieldsListContent(items []db.Fields, pg partials.PaginationPageData) {
                                 </tr>
                             } else {
                                 for _, f := range items {
-                                    <tr class="cursor-pointer hover:bg-white/5 transition-colors" data-clickable-row data-href={ "/admin/schema/fields/" + f.FieldID.String() }>
+                                    <tr class="cursor-pointer hover:bg-white/5 transition-colors" data-clickable-row data-href={ "/admin/fields/" + f.FieldID.String() }>
                                         <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ f.Name }</td>
                                         <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ f.Label }</td>
                                         <td class="whitespace-nowrap px-4 py-4 text-sm"><span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ f.Type.String() }</span></td>
@@ -57,7 +59,7 @@ templ FieldsListContent(items []db.Fields, pg partials.PaginationPageData) {
                                                 label="Delete"
                                                 message="Delete this field? This cannot be undone."
                                                 button-class="text-sm text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]"
-                                                hx-delete={ "/admin/schema/fields/" + f.FieldID.String() }
+                                                hx-delete={ "/admin/fields/" + f.FieldID.String() }
                                                 hx-target="closest tr"
                                                 hx-swap="outerHTML swap:300ms"
                                             ></mcms-confirm>
@@ -71,54 +73,11 @@ templ FieldsListContent(items []db.Fields, pg partials.PaginationPageData) {
             </div>
         </div>
     </div>
-    @partials.Pagination(pg.Current, pg.TotalPages, "#fields-table-body", "/admin/schema/fields", pg.Limit)
-}
-
-templ FieldCreateDialog(csrfToken string) {
-    <mcms-dialog id="create-field-dialog" aria-labelledby="create-field-dialog-title">
-        <div class="px-5 py-4">
-            <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
-                <h2 id="create-field-dialog-title" class="text-lg font-semibold text-white">New Field</h2>
-                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">&times;</button>
-            </div>
-            <form hx-post="/admin/schema/fields"
-                  hx-target="#create-field-form"
-                  hx-swap="innerHTML"
-                  id="create-field-form">
-                @partials.CSRFField(csrfToken)
-                @partials.FormField("name", "Name", "", "")
-                @partials.FormField("label", "Label", "", "")
-                <div class="flex flex-col gap-1 mb-4">
-                    <label for="type" class="text-sm font-medium text-gray-400">Type</label>
-                    <select id="type" name="type" class="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]">
-                        <option value="">Select a type</option>
-                        <option value="text">Text</option>
-                        <option value="textarea">Textarea</option>
-                        <option value="richtext">Rich Text</option>
-                        <option value="number">Number</option>
-                        <option value="boolean">Boolean</option>
-                        <option value="date">Date</option>
-                        <option value="datetime">Datetime</option>
-                        <option value="select">Select</option>
-                        <option value="media">Media</option>
-                        <option value="relation">Relation</option>
-                        <option value="json">JSON</option>
-                        <option value="slug">Slug</option>
-                        <option value="email">Email</option>
-                        <option value="url">URL</option>
-                    </select>
-                </div>
-                <div class="flex justify-end gap-3 border-t border-white/10 pt-4 mt-4">
-                    <button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('mcms-dialog').close()">Cancel</button>
-                    <button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create</button>
-                </div>
-            </form>
-        </div>
-    </mcms-dialog>
+    @partials.Pagination(pg.Current, pg.TotalPages, "#fields-table-body", "/admin/fields", pg.Limit)
 }
 
 templ FieldsList(layout layouts.AdminData, items []db.Fields, pg partials.PaginationPageData) {
-    @layouts.Admin(layout.WithDialogs(FieldCreateDialog(layout.CSRFToken))) {
+    @layouts.Admin(layout) {
         @FieldsListContent(items, pg)
     }
 }

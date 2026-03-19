@@ -36,9 +36,9 @@ func AdminFieldEditForm(id string, name string, label string, fieldType string, 
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-schema/fields/" + id)
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-fields/" + id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/admin_field_edit_form.templ`, Line: 6, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/admin_field_edit_form.templ`, Line: 6, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {

@@ -399,7 +399,7 @@ func TestCreateFullBackup_SQLite_CreatesValidZip(t *testing.T) {
 		Backup_Option: tmpDir,
 	}
 
-	path, size, err := CreateFullBackup(cfg)
+	path, size, err := CreateFullBackup(cfg, nil)
 	if err != nil {
 		t.Fatalf("CreateFullBackup: %v", err)
 	}
@@ -487,7 +487,7 @@ func TestCreateFullBackup_SQLite_WithExtraPaths(t *testing.T) {
 		Backup_Paths:  []string{extraDir},
 	}
 
-	path, _, err := CreateFullBackup(cfg)
+	path, _, err := CreateFullBackup(cfg, nil)
 	if err != nil {
 		t.Fatalf("CreateFullBackup with extra paths: %v", err)
 	}
@@ -532,7 +532,7 @@ func TestCreateFullBackup_SQLite_SkipsEmptyAndMissingBackupPaths(t *testing.T) {
 		},
 	}
 
-	path, _, err := CreateFullBackup(cfg)
+	path, _, err := CreateFullBackup(cfg, nil)
 	if err != nil {
 		t.Fatalf("CreateFullBackup should skip missing paths, got error: %v", err)
 	}
@@ -554,7 +554,7 @@ func TestCreateFullBackup_SQLite_MissingDatabase(t *testing.T) {
 		Backup_Option: tmpDir,
 	}
 
-	_, _, err := CreateFullBackup(cfg)
+	_, _, err := CreateFullBackup(cfg, nil)
 	if err == nil {
 		t.Fatal("expected error when database file does not exist, got nil")
 	}
@@ -572,7 +572,7 @@ func TestCreateFullBackup_UnsupportedDriver(t *testing.T) {
 		Backup_Option: tmpDir,
 	}
 
-	_, _, err := CreateFullBackup(cfg)
+	_, _, err := CreateFullBackup(cfg, nil)
 	if err == nil {
 		t.Fatal("expected error for unsupported driver, got nil")
 	}
@@ -598,7 +598,7 @@ func TestCreateFullBackup_DefaultBackupDir(t *testing.T) {
 		Backup_Option: tmpDir,
 	}
 
-	path, _, err := CreateFullBackup(cfg)
+	path, _, err := CreateFullBackup(cfg, nil)
 	if err != nil {
 		t.Fatalf("CreateFullBackup: %v", err)
 	}
@@ -946,7 +946,7 @@ func TestRestoreFromBackup_SQLite_RoundTrip(t *testing.T) {
 		Backup_Option: tmpDir,
 	}
 
-	backupPath, _, err := CreateFullBackup(cfg)
+	backupPath, _, err := CreateFullBackup(cfg, nil)
 	if err != nil {
 		t.Fatalf("CreateFullBackup: %v", err)
 	}
