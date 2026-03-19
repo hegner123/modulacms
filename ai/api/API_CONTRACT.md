@@ -173,9 +173,12 @@ Returns 404 if the slug does not match an admin route.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/admindatatypes` | List all |
+| GET | `/api/v1/admindatatypes/full` | List all with full details |
 | GET | `/api/v1/admindatatypes/?q={ulid}` | Get by ID |
+| GET | `/api/v1/admindatatypes/max-sort-order` | Get max sort order |
 | POST | `/api/v1/admindatatypes` | Create |
 | PUT | `/api/v1/admindatatypes/` | Update |
+| PUT | `/api/v1/admindatatypes/{id}/sort-order` | Update sort order |
 | DELETE | `/api/v1/admindatatypes/?q={ulid}` | Delete |
 
 ### Admin Fields
@@ -221,9 +224,13 @@ Returns 404 if the slug does not match an admin route.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/datatype` | List all |
+| GET | `/api/v1/datatype/full` | List all with full details |
+| GET | `/api/v1/datatype/full/list` | List all with full details (alternate) |
 | GET | `/api/v1/datatype/?q={ulid}` | Get by ID |
+| GET | `/api/v1/datatype/max-sort-order` | Get max sort order |
 | POST | `/api/v1/datatype` | Create |
 | PUT | `/api/v1/datatype/` | Update |
+| PUT | `/api/v1/datatype/{id}/sort-order` | Update sort order |
 | DELETE | `/api/v1/datatype/?q={ulid}` | Delete |
 
 ### Fields
@@ -232,8 +239,10 @@ Returns 404 if the slug does not match an admin route.
 |--------|------|-------------|
 | GET | `/api/v1/fields` | List all |
 | GET | `/api/v1/fields/?q={ulid}` | Get by ID |
+| GET | `/api/v1/fields/max-sort-order` | Get max sort order for parent |
 | POST | `/api/v1/fields` | Create |
 | PUT | `/api/v1/fields/` | Update |
+| PUT | `/api/v1/fields/{id}/sort-order` | Update sort order |
 | DELETE | `/api/v1/fields/?q={ulid}` | Delete |
 
 ---

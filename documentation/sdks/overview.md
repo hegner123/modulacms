@@ -27,13 +27,13 @@ ModulaCMS provides official SDKs for Go, TypeScript, and Swift that share the sa
 | Min runtime | Go 1.25+ | Node 22+ / any modern browser | iOS 16+, macOS 13+, tvOS 16+, watchOS 9+ |
 | Dependencies | Zero | Zero | Zero |
 | Build output | Compiled binary | ESM + CJS dual build | Framework |
-| Package name | `modulacms` | `@modulacms/sdk`, `@modulacms/admin-sdk`, `@modulacms/plugin-sdk` | `ModulaCMS` |
+| Package name | `modulacms` | `@modulacms/types`, `@modulacms/tree`, `@modulacms/sdk`, `@modulacms/admin-sdk`, `@modulacms/plugin-sdk`, `@modulacms/admin-ui` | `ModulaCMS` |
 
 ## When to Use Each SDK
 
 **Go** -- Server-side applications, CLI tools, backend services, data pipelines, and any Go codebase that needs to read or write CMS content. The Go SDK is a single package with zero dependencies, making it straightforward to vendor or embed in existing projects.
 
-**TypeScript** -- Web applications, server-side rendering (Next.js, Nuxt, SvelteKit), and frontend SPAs. The TypeScript SDK ships as three packages: `@modulacms/sdk` for read-only content delivery, `@modulacms/admin-sdk` for full admin CRUD, and `@modulacms/plugin-sdk` for building plugin UIs with Web Components. The content SDKs share types from `@modulacms/types`; the plugin SDK has zero dependencies.
+**TypeScript** -- Web applications, server-side rendering (Next.js, Nuxt, SvelteKit), and frontend SPAs. The TypeScript SDK ships as six packages: `@modulacms/types` for shared entity types and branded IDs, `@modulacms/tree` for content tree utilities, `@modulacms/sdk` for read-only content delivery, `@modulacms/admin-sdk` for full admin CRUD, `@modulacms/plugin-sdk` for building plugin UIs with Web Components, and `@modulacms/admin-ui` for admin panel TypeScript (block editor state). The content SDKs share types from `@modulacms/types`; the plugin SDK has zero dependencies.
 
 **Swift** -- Native Apple platform applications (iOS, macOS, tvOS, watchOS). The Swift SDK uses URLSession with async/await and requires no third-party dependencies.
 

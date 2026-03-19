@@ -71,7 +71,7 @@ const (
 	Err    DbStatus = "error"
 )
 
-// DbDriver is the interface for all database drivers. It composes 22 focused
+// DbDriver is the interface for all database drivers. It composes 24 focused
 // repository interfaces defined in repositories.go. Consumers that need only
 // a subset of methods should accept the narrower repository interface instead.
 type DbDriver interface {

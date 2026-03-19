@@ -424,7 +424,7 @@ Client -> Middleware Chain (Recovery, RequestID, ClientIP, UserAgent, Logging, H
 ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `modula.config.json`'s `db_driver` field. The architecture:
 
 1. **sqlc generates** per-database Go code from SQL queries in `sql/schema/` into `internal/db-sqlite/`, `internal/db-mysql/`, `internal/db-psql/`
-2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 24 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`) that each implement it
+2. **`internal/db/db.go`** defines the `DbDriver` interface (450+ methods across 24 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`) that each implement it
 3. **Wrapper methods** in `internal/db/*.go` (e.g., `datatype.go`, `content_data.go`, `media.go`) convert between sqlc-generated types and application-level types, handling NULL conversions and type width differences (SQLite uses int64, MySQL/PostgreSQL use int32)
 4. **`db.DefaultDriver`** is set at startup based on config and injected into handlers
 
@@ -489,7 +489,7 @@ Key patterns:
 - **templ** compiles `.templ` files to type-safe Go code. Run `just admin generate` to regenerate. Generated `*_templ.go` files are committed (like sqlc).
 - **HTMX** drives all interactions. `HX-Request` header distinguishes partial vs full page renders. `HX-Trigger` for toast notifications.
 - **CSRF** uses double-submit cookie pattern. Cookie `csrf_token` set on GET, validated on POST via `X-CSRF-Token` header or `_csrf` form field.
-- **Light DOM Web Components** (`mcms-*`) for confirm, data-table, dialog, field-renderer, file-input, focal-point, media-grid, media-picker, publish-button, scroll, search, toast, tree-nav, validation-wizard.
+- **Light DOM Web Components** (`mcms-*`) for command-palette, confirm, data-table, dialog, field-renderer, file-input, focal-point, media-grid, media-picker, publish-button, scroll, search, toast, tree-nav, validation-wizard.
 - **Import cycle resolution**: `handlers` owns Render/CSRFTokenFromContext, `admin` owns CSRFContextKey. `PaginationPageData` lives in `partials` to avoid cycle between handlers and pages.
 - **Route registration** in `mux.go` via `registerAdminRoutes()` with `mutating()` and `viewing()` middleware helpers.
 
@@ -504,26 +504,20 @@ just admin bundle-verify # Verify bundle is up-to-date (CI)
 
 #### Tailwind CSS Migration (In Progress)
 
-The admin panel is migrating from hand-written semantic CSS to Tailwind CSS v4 with utility-first classes. This is an incremental migration -- existing CSS and Tailwind coexist.
+The admin panel uses Tailwind CSS v4 with utility-first classes. Legacy hand-written CSS files (tokens.css, layout.css, components.css, etc.) have been removed.
 
 **Architecture:**
 - `internal/admin/static/css/input.css` -- Tailwind entry point with `@theme` bridging project design tokens
 - `internal/admin/static/css/tailwind.css` -- Compiled output (committed, go:embed'd). **Do not edit directly.**
-- Existing CSS files (tokens.css, layout.css, components.css, etc.) remain during migration
-- Tailwind uses CSS `@layer` -- existing unlayered CSS always wins over Tailwind layers, so migration is safe
+- `internal/admin/static/css/block-editor.css` -- Block editor styles (separate from Tailwind)
 - `package.json` at project root exists solely for the `tailwindcss` dev dependency. `node_modules/` is gitignored.
 
 **CSS load order (in base.templ):**
-1. `tailwind.css` -- Tailwind base, components, utilities (CSS layers, lowest priority)
-2. `tokens.css` -- Design tokens and reset (unlayered, overrides Tailwind)
-3. `layout.css` -> `components.css` -> `web-components.css` -> `pages.css` -> `block-editor.css` -> `utilities.css`
+1. `tailwind.css` -- Tailwind base, components, utilities
+2. `block-editor.css` -- Block editor styles
 
-**Migration rules:**
-- New pages and components should use Tailwind utility classes
-- Existing pages migrate to Tailwind when touched
-- Web components (`mcms-*`) migrate last since they are self-contained
-- The `tailwind-ui/` directory (gitignored) holds Tailwind UI reference HTML samples
-- Once a page is fully migrated, remove its old CSS rules from the hand-written files
+**Rules:**
+- All pages and components use Tailwind utility classes
 - After modifying `input.css` or any templ file's classes, run `just admin generate`
 
 ### HTTP Router (internal/router/)
@@ -568,11 +562,11 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `internal/admin/` | HTMX admin panel: CSRF, auth middleware, static file embed |
 | `internal/admin/handlers/` | Admin page handlers (render, auth, CRUD for all resources) |
 | `internal/admin/layouts/` | templ layouts (base, admin, auth) and AdminData type |
-| `internal/admin/pages/` | templ full-page components (~36 pages) |
-| `internal/admin/partials/` | templ HTMX swap targets (~39 partials) |
+| `internal/admin/pages/` | templ full-page components (~45 pages) |
+| `internal/admin/partials/` | templ HTMX swap targets (~46 partials) |
 | `internal/admin/components/` | templ shared UI: sidebar, topbar, nav, icon, status_badge |
 | `internal/admin/static/` | CSS, JS, HTMX, web components (go:embed) |
-| `internal/tui/` | Bubbletea TUI (130+ files, Elm Architecture) |
+| `internal/tui/` | Bubbletea TUI (140+ files, Elm Architecture) |
 | `internal/router/` | HTTP route registration with stdlib ServeMux |
 | `internal/middleware/` | CORS, rate limiting, sessions, panic recovery, HTTP metrics, RBAC authorization |
 | `internal/auth/` | Authentication (password + OAuth with Google/GitHub/Azure) |

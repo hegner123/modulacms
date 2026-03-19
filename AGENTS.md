@@ -151,11 +151,11 @@ internal/
   admin/                      # HTMX admin panel: CSRF, auth middleware, static file embed
     handlers/                 # Admin page handlers (render, auth, CRUD for all resources)
     layouts/                  # templ layouts (base, admin, auth) and AdminData type
-    pages/                    # templ full-page components (~36 pages)
-    partials/                 # templ HTMX swap targets (~39 partials)
+    pages/                    # templ full-page components (~45 pages)
+    partials/                 # templ HTMX swap targets (~46 partials)
     components/               # templ shared UI: sidebar, topbar, nav, icon, status_badge
     static/                   # CSS, JS, HTMX, web components (go:embed)
-  tui/                        # Bubbletea TUI (130+ files, Elm Architecture)
+  tui/                        # Bubbletea TUI (140+ files, Elm Architecture)
   router/                     # HTTP route registration with stdlib ServeMux (Go 1.22+ patterns)
   middleware/                  # CORS, rate limiting, sessions, panic recovery, HTTP metrics, RBAC authorization
   auth/                       # Authentication (password + OAuth with Google/GitHub/Azure)
@@ -363,9 +363,9 @@ Regenerate with `just admin generate`. Watch mode: `just admin watch`.
 ### Static Assets
 
 - **Build tags**: `//go:build !dev` embeds `static/*` into binary; `-tags dev` serves from disk
-- **Web components**: Light DOM components prefixed `mcms-*` (confirm, data-table, dialog, field-renderer, file-input, focal-point, media-grid, media-picker, publish-button, scroll, search, toast, tree-nav, validation-wizard)
+- **Web components**: Light DOM components prefixed `mcms-*` (command-palette, confirm, data-table, dialog, field-renderer, file-input, focal-point, media-grid, media-picker, publish-button, scroll, search, toast, tree-nav, validation-wizard)
 - **Block editor**: Source in `static/js/block-editor-src/`, bundled via esbuild to `static/js/block-editor.js`
-- **CSS**: tokens → layout → components → web-components → pages → block-editor → utilities
+- **CSS**: tailwind.css → block-editor.css (Tailwind migration complete, legacy CSS files removed)
 
 ### Hot Reload (Development)
 

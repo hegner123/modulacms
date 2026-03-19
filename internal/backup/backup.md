@@ -25,10 +25,10 @@ type BackupManifest struct {
 CreateFullBackup creates a zip archive containing the database and any configured backup paths. It returns the file path, size in bytes, or an error. The function generates a timestamped filename in the format backup_YYYYMMDD_HHMMSS.zip and stores it in the configured backup directory. The backup includes the database dump or file based on the driver type, a manifest.json file with backup metadata, and any additional paths specified in the configuration.
 
 ```go
-func CreateFullBackup(cfg config.Config) (path string, sizeBytes int64, err error)
+func CreateFullBackup(cfg config.Config, driver db.DbDriver) (path string, sizeBytes int64, err error)
 ```
 
-For SQLite databases, the entire database file is copied into the archive as database.db. For MySQL and PostgreSQL databases, the function executes mysqldump or pg_dump respectively and stores the SQL output as database.sql. Extra backup paths from the configuration are added to an extra subdirectory within the archive, preserving their relative structure.
+For SQLite databases, the entire database file is copied into the archive as database.db. For MySQL and PostgreSQL databases, a pure-Go SQL dump is performed via DeployOps.QueryAllRows() and stored as database.sql. Extra backup paths from the configuration are added to an extra subdirectory within the archive, preserving their relative structure.
 
 #### ReadManifest
 
@@ -68,25 +68,15 @@ addSQLiteDB adds a SQLite database file to the zip archive. It opens the databas
 func addSQLiteDB(zw *zip.Writer, dbPath string) error
 ```
 
-#### addMySQLDump
+#### addGoSQLDump
 
-addMySQLDump executes mysqldump to create a database backup and adds the SQL output to the zip archive. It parses the database URL to extract host and port, defaulting to port 3306 if not specified. The function runs mysqldump with the configured credentials and database name, captures the output, and writes it to database.sql in the archive.
-
-```go
-func addMySQLDump(zw *zip.Writer, cfg config.Config) error
-```
-
-Returns an error if mysqldump execution fails or if the output cannot be written to the archive. Stderr output from mysqldump is included in the error message for debugging.
-
-#### addPostgresDump
-
-addPostgresDump executes pg_dump to create a database backup and adds the SQL output to the zip archive. It parses the database URL to extract host and port, defaulting to port 5432 if not specified. The function runs pg_dump with the configured credentials and database name, passing the password via the PGPASSWORD environment variable.
+addGoSQLDump creates a pure-Go database dump for MySQL and PostgreSQL backends. It uses DeployOps.QueryAllRows() to read all table data and writes INSERT statements as database.sql in the zip archive. This avoids requiring external tools like mysqldump or pg_dump.
 
 ```go
-func addPostgresDump(zw *zip.Writer, cfg config.Config) error
+func addGoSQLDump(zw *zip.Writer, driver db.DbDriver) error
 ```
 
-The SQL output is written to database.sql in the archive. Returns an error if pg_dump execution fails or if the output cannot be written. Stderr output from pg_dump is included in the error message for debugging.
+Returns an error if the database query fails or if the output cannot be written to the archive.
 
 #### addFilesToZip
 

@@ -40,7 +40,7 @@ Constants: `Open`, `Closed`, `Err`.
 
 ### DbDriver
 
-Unified interface for all database operations across SQLite, MySQL, PostgreSQL. Composes 23 focused repository interfaces defined in repositories.go. Provides connection management, table operations, and CRUD methods for all ModulaCMS tables. Each method group handles a specific entity type with consistent naming patterns.
+Unified interface for all database operations across SQLite, MySQL, PostgreSQL. Composes 24 focused repository interfaces defined in repositories.go. Provides connection management, table operations, and CRUD methods for all ModulaCMS tables. Each method group handles a specific entity type with consistent naming patterns.
 
 ## Connection Methods
 
@@ -48,19 +48,19 @@ Methods for managing database connections and executing raw queries.
 
 ### CreateAllTables
 
-Creates all 27 database tables in dependency order. Tier 0: permissions, roles, media_dimensions. Tier 1: users. Tier 2: tokens, oauth, ssh_keys, sessions, tables, media, routes, datatypes. Tier 3: fields. Tier 4: content_data. Tier 5: content_fields, content_relations. Returns error if any table creation fails.
+Creates all 37 database tables in dependency order. Tier 0: permissions, roles, media_dimensions. Tier 1: users. Tier 2: tokens, oauth, ssh_keys, sessions, tables, media, routes, datatypes. Tier 3: fields. Tier 4: content_data. Tier 5: content_fields, content_relations. Returns error if any table creation fails.
 
 ### CreateBootstrapData
 
-Inserts required system records after CreateAllTables succeeds. Creates system admin user, default roles and permissions, home route, page datatype, validation records for all 26 tables. Accepts admin password hash. Returns error with specific table name if any bootstrap insert fails.
+Inserts required system records after CreateAllTables succeeds. Creates system admin user, default roles and permissions, home route, page datatype, validation records for all 37 tables. Accepts admin password hash. Returns error with specific table name if any bootstrap insert fails.
 
 ### ValidateBootstrapData
 
-Verifies all tables contain expected bootstrap records. Checks record counts for all 26 tables. Validates tables registry has exactly 26 entries. Returns combined error listing all validation failures.
+Verifies all tables contain expected bootstrap records. Checks record counts for all 37 tables. Validates tables registry has exactly 37 entries. Returns combined error listing all validation failures.
 
 ### DropAllTables
 
-Drops all 26 database tables in reverse dependency order. Dangerous operation for testing or reinstallation. Returns error if any drop fails.
+Drops all 37 database tables in reverse dependency order. Dangerous operation for testing or reinstallation. Returns error if any drop fails.
 
 ### DumpSql
 
@@ -104,7 +104,7 @@ Determines table creation order based on foreign key dependencies. Returns error
 
 String type representing table names. Used for type-safe table references.
 
-Constants: `Admin_content_data`, `Admin_content_fields`, `Admin_datatype`, `Admin_field`, `Admin_route`, `Content_data`, `Content_fields`, `Datatype`, `Field`, `MediaT`, `Media_dimension`, `Media_folder`, `Permission`, `Role`, `Route`, `Session`, `Table`, `Token`, `User`, `User_oauth`.
+Constants: `Admin_content_data`, `Admin_content_fields`, `Admin_content_relations`, `Admin_content_versions`, `Admin_datatype`, `Admin_field`, `Admin_field_types`, `Admin_route`, `BackupT`, `Backup_set`, `Backup_verification`, `Change_event`, `Content_data`, `Content_fields`, `Content_relations`, `Content_versions`, `Datatype`, `Field`, `Field_plugin_config`, `Field_types`, `LocaleT`, `MediaT`, `Media_dimension`, `Media_folder`, `Permission`, `PipelineT`, `Role`, `Role_permissions`, `Route`, `Session`, `Table`, `Token`, `User`, `User_oauth`, `User_ssh_keys`, `WebhookT`, `Webhook_deliveries`.
 
 ### TableStructMap
 
