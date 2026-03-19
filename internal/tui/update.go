@@ -542,6 +542,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Role CRUD results → screen (fall through to ActiveScreen.Update).
 
+	// SSH key dialog messages → UpdateDialog.
+	case ShowDeleteSshKeyDialogMsg:
+		return m.UpdateDialog(msg)
+
+	// SSH key CRUD requests → UpdateCms.
+	case DeleteSshKeyRequestMsg:
+		return m.UpdateCms(msg)
+
+	// SSH key results → screen (fall through to ActiveScreen.Update).
+
 	// User OAuth dialog messages → UpdateDialog.
 	case ShowUnlinkOauthDialogMsg:
 		return m.UpdateDialog(msg)

@@ -267,6 +267,8 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case DeleteSessionRequestMsg:
 		// Revoke session
 		return m, m.HandleDeleteSession(msg)
+	case DeleteSshKeyRequestMsg:
+		return m, m.HandleDeleteSshKey(msg)
 	case CreateRoleFromDialogRequestMsg:
 		return m, m.HandleCreateRole(msg)
 	case UpdateRoleFromDialogRequestMsg:

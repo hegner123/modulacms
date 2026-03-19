@@ -276,6 +276,17 @@ func DeleteWebhookCmd(webhookID types.WebhookID) tea.Cmd {
 }
 
 // =============================================================================
+// DELETE SSH KEY
+// =============================================================================
+
+// DeleteSshKeyContext stores context for an SSH key deletion.
+type DeleteSshKeyContext struct {
+	SshKeyID    string
+	UserID      types.UserID
+	Fingerprint string
+}
+
+// =============================================================================
 // DELETE ROLE
 // =============================================================================
 
@@ -1003,6 +1014,22 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
 				DeleteTokenCmd(tokenID),
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case DIALOGDELETESSHKEY:
+		if ctx, ok := m.DCtx.Active.(*DeleteSshKeyContext); ok {
+			sshKeyID := ctx.SshKeyID
+			userID := ctx.UserID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				DeleteSshKeyCmd(sshKeyID, userID),
 			)
 		}
 		return m, tea.Batch(

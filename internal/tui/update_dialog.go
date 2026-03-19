@@ -706,6 +706,24 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(PAGEFOCUS),
 		)
 
+	// --- SSH key dialog messages ---
+	case ShowDeleteSshKeyDialogMsg:
+		fp := msg.Fingerprint
+		if len(fp) > 30 {
+			fp = fp[:30] + "..."
+		}
+		dialog := NewDialog("Remove SSH Key", fmt.Sprintf("Remove SSH key?\n%s\nThe user will no longer be able to authenticate with this key.", fp), true, DIALOGDELETESSHKEY)
+		dialog.SetButtons("Remove", "Cancel")
+		m.DCtx.Active = &DeleteSshKeyContext{
+			SshKeyID:    msg.SshKeyID,
+			UserID:      msg.UserID,
+			Fingerprint: msg.Fingerprint,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+
 	// --- Role dialog messages ---
 	case ShowRoleFormDialogMsg:
 		dialog := NewRoleFormDialog(msg.Title)

@@ -22,8 +22,8 @@ var usersGrid = Grid{
 			{Height: 1.0, Title: "Users"},
 		}},
 		{Span: 9, Cells: []GridCell{
-			{Height: 0.35, Title: "Details"},
-			{Height: 0.25, Title: "OAuth"},
+			{Height: 0.30, Title: "Details"},
+			{Height: 0.30, Title: "Connections"},
 			{Height: 0.40, Title: "Permissions"},
 		}},
 	},
@@ -76,15 +76,57 @@ func UnlinkOauthCmd(oauthID types.UserOauthID, userID types.UserID) tea.Cmd {
 	}
 }
 
+// UserSshKeysFetchedMsg delivers SSH keys for a user.
+type UserSshKeysFetchedMsg struct {
+	UserID types.UserID
+	Data   []db.UserSshKeys
+	Err    error
+}
+
+// UserSshKeyDeletedMsg is sent after an SSH key is removed.
+type UserSshKeyDeletedMsg struct {
+	UserID   types.UserID
+	SshKeyID string
+}
+
+// ShowDeleteSshKeyDialogMsg triggers showing a delete SSH key dialog.
+type ShowDeleteSshKeyDialogMsg struct {
+	SshKeyID    string
+	UserID      types.UserID
+	Fingerprint string
+}
+
+// ShowDeleteSshKeyDialogCmd creates a command to show the delete dialog.
+func ShowDeleteSshKeyDialogCmd(sshKeyID string, userID types.UserID, fingerprint string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteSshKeyDialogMsg{SshKeyID: sshKeyID, UserID: userID, Fingerprint: fingerprint}
+	}
+}
+
+// DeleteSshKeyRequestMsg triggers SSH key deletion.
+type DeleteSshKeyRequestMsg struct {
+	SshKeyID string
+	UserID   types.UserID
+}
+
+// DeleteSshKeyCmd creates a command to delete an SSH key.
+func DeleteSshKeyCmd(sshKeyID string, userID types.UserID) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteSshKeyRequestMsg{SshKeyID: sshKeyID, UserID: userID}
+	}
+}
+
 // UsersScreen implements Screen for the USERSADMIN page.
 type UsersScreen struct {
 	GridScreen
-	UsersList       []db.UserWithRoleLabelRow
-	RolesList       []db.Roles
-	PermissionCache map[types.RoleID][]string       // role ID -> permission labels
-	LastPermRoleID  types.RoleID                     // role ID of last permission fetch
-	OauthCache      map[types.UserID][]db.UserOauth  // user ID -> OAuth connections
-	LastOauthUserID types.UserID                     // user ID of last OAuth fetch
+	UsersList        []db.UserWithRoleLabelRow
+	RolesList        []db.Roles
+	PermissionCache  map[types.RoleID][]string          // role ID -> permission labels
+	LastPermRoleID   types.RoleID                        // role ID of last permission fetch
+	OauthCache       map[types.UserID][]db.UserOauth     // user ID -> OAuth connections
+	LastOauthUserID  types.UserID                        // user ID of last OAuth fetch
+	SshKeyCache      map[types.UserID][]db.UserSshKeys   // user ID -> SSH keys
+	LastSshKeyUserID types.UserID                        // user ID of last SSH key fetch
 }
 
 // NewUsersScreen creates a UsersScreen with the given users and roles data.
@@ -102,6 +144,7 @@ func NewUsersScreen(users []db.UserWithRoleLabelRow, roles []db.Roles) *UsersScr
 		RolesList:       roles,
 		PermissionCache: make(map[types.RoleID][]string),
 		OauthCache:      make(map[types.UserID][]db.UserOauth),
+		SshKeyCache:     make(map[types.UserID][]db.UserSshKeys),
 	}
 }
 
@@ -180,6 +223,33 @@ func (s *UsersScreen) fetchOauthIfNeeded(driver db.DbDriver) tea.Cmd {
 	}
 }
 
+// fetchSshKeysIfNeeded returns a command to fetch SSH keys for the
+// selected user, or nil if already cached.
+func (s *UsersScreen) fetchSshKeysIfNeeded(driver db.DbDriver) tea.Cmd {
+	user := s.selectedUser()
+	if user == nil || driver == nil {
+		return nil
+	}
+	userID := user.UserID
+	if userID == s.LastSshKeyUserID {
+		return nil
+	}
+	s.LastSshKeyUserID = userID
+	if _, ok := s.SshKeyCache[userID]; ok {
+		return nil
+	}
+	return func() tea.Msg {
+		result, err := driver.ListUserSshKeys(types.NullableUserID{ID: userID, Valid: true})
+		if err != nil {
+			return UserSshKeysFetchedMsg{UserID: userID, Data: []db.UserSshKeys{}}
+		}
+		if result == nil {
+			return UserSshKeysFetchedMsg{UserID: userID, Data: []db.UserSshKeys{}}
+		}
+		return UserSshKeysFetchedMsg{UserID: userID, Data: *result}
+	}
+}
+
 func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -199,6 +269,16 @@ func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		if km.Matches(key, config.ActionEdit) {
 			if len(s.UsersList) > 0 && s.Cursor < len(s.UsersList) {
 				return s, ShowEditUserDialogCmd(s.UsersList[s.Cursor], s.RolesList)
+			}
+		}
+
+		// Remove SSH key
+		if key == "s" {
+			if user := s.selectedUser(); user != nil {
+				if keys, ok := s.SshKeyCache[user.UserID]; ok && len(keys) > 0 {
+					k := keys[0]
+					return s, ShowDeleteSshKeyDialogCmd(k.SshKeyID, user.UserID, k.Fingerprint)
+				}
 			}
 		}
 
@@ -236,6 +316,9 @@ func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 				if oauthCmd := s.fetchOauthIfNeeded(ctx.DB); oauthCmd != nil {
 					cmds = append(cmds, oauthCmd)
 				}
+				if sshCmd := s.fetchSshKeysIfNeeded(ctx.DB); sshCmd != nil {
+					cmds = append(cmds, sshCmd)
+				}
 				if len(cmds) > 0 {
 					return s, tea.Batch(cmds...)
 				}
@@ -243,6 +326,19 @@ func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			}
 			return s, cmd
 		}
+
+	// SSH keys fetched
+	case UserSshKeysFetchedMsg:
+		if msg.Err == nil {
+			s.SshKeyCache[msg.UserID] = msg.Data
+		}
+		return s, nil
+
+	// SSH key deleted — invalidate cache and re-fetch
+	case UserSshKeyDeletedMsg:
+		delete(s.SshKeyCache, msg.UserID)
+		s.LastSshKeyUserID = ""
+		return s, s.fetchSshKeysIfNeeded(ctx.DB)
 
 	// OAuth connections fetched
 	case UserOauthFetchedMsg:
@@ -286,12 +382,16 @@ func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		s.updateCursorMax()
 		s.LastPermRoleID = ""
 		s.LastOauthUserID = ""
+		s.LastSshKeyUserID = ""
 		cmds := []tea.Cmd{LoadingStopCmd()}
 		if permCmd := s.fetchPermissionsIfNeeded(ctx.DB); permCmd != nil {
 			cmds = append(cmds, permCmd)
 		}
 		if oauthCmd := s.fetchOauthIfNeeded(ctx.DB); oauthCmd != nil {
 			cmds = append(cmds, oauthCmd)
+		}
+		if sshCmd := s.fetchSshKeysIfNeeded(ctx.DB); sshCmd != nil {
+			cmds = append(cmds, sshCmd)
 		}
 		return s, tea.Batch(cmds...)
 	case RolesFetchMsg:
@@ -336,6 +436,7 @@ func (s *UsersScreen) KeyHints(km config.KeyMap) []KeyHint {
 		{km.HintString(config.ActionEdit), "edit"},
 		{km.HintString(config.ActionDelete), "del"},
 		{"u", "unlink oauth"},
+		{"s", "rm ssh key"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionBack), "back"},
 		{km.HintString(config.ActionQuit), "quit"},
@@ -346,7 +447,7 @@ func (s *UsersScreen) View(ctx AppContext) string {
 	cells := []CellContent{
 		{Content: s.renderUsersList()},
 		{Content: s.renderUserDetail()},
-		{Content: s.renderOAuth()},
+		{Content: s.renderConnections()},
 		{Content: s.renderPermissions()},
 	}
 	return s.RenderGrid(ctx, cells)
@@ -393,7 +494,7 @@ func (s *UsersScreen) renderUserDetail() string {
 	return strings.Join(lines, "\n")
 }
 
-func (s *UsersScreen) renderOAuth() string {
+func (s *UsersScreen) renderConnections() string {
 	user := s.selectedUser()
 	if user == nil {
 		return " No user selected"
@@ -402,21 +503,44 @@ func (s *UsersScreen) renderOAuth() string {
 	faint := lipgloss.NewStyle().Faint(true)
 	accent := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent)
 
-	oauths, ok := s.OauthCache[user.UserID]
-	if !ok {
-		return faint.Render(" Loading OAuth connections...")
+	var lines []string
+
+	// SSH Keys
+	sshKeys, sshOk := s.SshKeyCache[user.UserID]
+	if !sshOk {
+		lines = append(lines, faint.Render(" Loading SSH keys..."))
+	} else if len(sshKeys) == 0 {
+		lines = append(lines, faint.Render(" No SSH keys"))
+	} else {
+		for _, k := range sshKeys {
+			label := k.Label
+			if label == "" {
+				label = k.KeyType
+			}
+			lines = append(lines, accent.Render(fmt.Sprintf(" SSH: %s", label)))
+			fp := k.Fingerprint
+			if len(fp) > 40 {
+				fp = fp[:40] + "..."
+			}
+			lines = append(lines, fmt.Sprintf("   %s", fp))
+		}
 	}
 
-	if len(oauths) == 0 {
-		return faint.Render(" No OAuth connections")
+	// OAuth
+	oauths, oauthOk := s.OauthCache[user.UserID]
+	if !oauthOk {
+		lines = append(lines, faint.Render(" Loading OAuth..."))
+	} else if len(oauths) > 0 {
+		for _, oa := range oauths {
+			lines = append(lines, accent.Render(fmt.Sprintf(" OAuth: %s", oa.OauthProvider)))
+			lines = append(lines, fmt.Sprintf("   %s", oa.OauthProviderUserID))
+		}
 	}
 
-	lines := make([]string, 0)
-	for _, oa := range oauths {
-		lines = append(lines, accent.Render(fmt.Sprintf(" %s", oa.OauthProvider)))
-		lines = append(lines, fmt.Sprintf("   ID      %s", oa.OauthProviderUserID))
-		lines = append(lines, faint.Render(fmt.Sprintf("   Linked  %s", oa.DateCreated.String())))
+	if len(lines) == 0 {
+		return faint.Render(" No connections")
 	}
+
 	return strings.Join(lines, "\n")
 }
 
