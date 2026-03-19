@@ -104,10 +104,10 @@ templ AdminFieldDetailContent(field db.AdminFields, availableRoles []db.Roles, c
                                 <label class="block text-sm font-medium text-white">Validation</label>
                                 <div class="mt-2">
                                     <mcms-validation-wizard
-                                        value={ field.Validation }
+                                        value={ field.ValidationID.String() }
                                         textarea-id="validation"
                                     ></mcms-validation-wizard>
-                                    <textarea id="validation" name="validation" rows="4" style="display:none">{ field.Validation }</textarea>
+                                    <textarea id="validation" name="validation" rows="4" style="display:none">{ field.ValidationID.String() }</textarea>
                                 </div>
                             </div>
                             <div class="sm:col-span-6">

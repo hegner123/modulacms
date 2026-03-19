@@ -153,7 +153,7 @@ SELECT
     af.parent_id AS f_parent_id,
     af.label AS f_label,
     af.data AS f_data,
-    af.validation AS f_validation,
+    af.validation_id AS f_validation_id,
     af.ui_config AS f_ui_config,
     af.type AS f_type,
     af.author_id AS f_author_id,
@@ -174,7 +174,7 @@ SELECT
     af.parent_id AS f_parent_id,
     af.label AS f_label,
     af.data AS f_data,
-    af.validation AS f_validation,
+    af.validation_id AS f_validation_id,
     af.ui_config AS f_ui_config,
     af.type AS f_type,
     af.author_id AS f_author_id,
@@ -206,7 +206,7 @@ SELECT
     f.label,
     f.type,
     f.data,
-    f.validation,
+    f.validation_id,
     f.ui_config,
     f.roles
 FROM fields f

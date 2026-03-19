@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS fields (
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT NOT NULL,
-    validation TEXT NOT NULL,
+    validation_id TEXT DEFAULT NULL
+        REFERENCES validations(validation_id)
+            ON DELETE SET NULL,
     ui_config TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     translatable BOOLEAN NOT NULL DEFAULT FALSE,
@@ -23,6 +25,7 @@ CREATE TABLE IF NOT EXISTS fields (
 
 CREATE INDEX IF NOT EXISTS idx_fields_parent ON fields(parent_id);
 CREATE INDEX IF NOT EXISTS idx_fields_author ON fields(author_id);
+CREATE INDEX IF NOT EXISTS idx_fields_validation ON fields(validation_id);
 
 CREATE OR REPLACE FUNCTION update_fields_modified()
 RETURNS TRIGGER AS $$

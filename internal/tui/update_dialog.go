@@ -531,6 +531,50 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			OverlaySetCmd(&dialog),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	case ShowDeleteValidationDialogMsg:
+		dialog := NewDialog("Delete Validation", fmt.Sprintf("Delete validation '%s'?\nFields using this validation will lose their reference.\nThis cannot be undone.", msg.Name), true, DIALOGDELETEVALIDATION)
+		dialog.SetButtons("Delete", "Cancel")
+		m.DCtx.Active = &DeleteValidationContext{
+			ValidationID: msg.ValidationID,
+			Name:         msg.Name,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditValidationDialogMsg:
+		// Edit validation dialog with pre-populated values
+		// Label field = Name, Type field = Description
+		dialog := NewRouteFormDialog("Edit Validation", FORMDIALOGEDITVALIDATION)
+		dialog.LabelInput.SetValue(msg.Validation.Name)
+		dialog.TypeInput.SetValue(msg.Validation.Description)
+		dialog.EntityID = string(msg.Validation.ValidationID)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteAdminValidationDialogMsg:
+		dialog := NewDialog("Delete Admin Validation", fmt.Sprintf("Delete admin validation '%s'?\nFields using this validation will lose their reference.\nThis cannot be undone.", msg.Name), true, DIALOGDELETEADMINVALIDATION)
+		dialog.SetButtons("Delete", "Cancel")
+		m.DCtx.Active = &DeleteAdminValidationContext{
+			AdminValidationID: msg.AdminValidationID,
+			Name:              msg.Name,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditAdminValidationDialogMsg:
+		// Edit admin validation dialog with pre-populated values
+		// Label field = Name, Type field = Description
+		dialog := NewRouteFormDialog("Edit Admin Validation", FORMDIALOGEDITADMINVALIDATION)
+		dialog.LabelInput.SetValue(msg.AdminValidation.Name)
+		dialog.TypeInput.SetValue(msg.AdminValidation.Description)
+		dialog.EntityID = string(msg.AdminValidation.AdminValidationID)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
 	// =========================================================================
 	// DEPLOY CONFIRMATION DIALOGS
 	// =========================================================================

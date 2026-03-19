@@ -350,9 +350,9 @@ func FieldDetailContent(field db.Fields, availableRoles []db.Roles, csrfToken st
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(field.Validation)
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(field.ValidationID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 107, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 107, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -363,9 +363,9 @@ func FieldDetailContent(field db.Fields, availableRoles []db.Roles, csrfToken st
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(field.Validation)
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(field.ValidationID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 110, Col: 128}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_detail.templ`, Line: 110, Col: 139}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {

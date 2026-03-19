@@ -50,7 +50,7 @@ type StringFields struct {
 	Name         string `json:"name"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
-	Validation   string `json:"validation"`
+	ValidationID string `json:"validation_id"`
 	UIConfig     string `json:"ui_config"`
 	Type         string `json:"type"`
 	Translatable string `json:"translatable"`
@@ -220,7 +220,7 @@ type StringAdminFields struct {
 	Name         string `json:"name"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
-	Validation   string `json:"validation"`
+	ValidationID string `json:"validation_id"`
 	UIConfig     string `json:"ui_config"`
 	Type         string `json:"type"`
 	Translatable string `json:"translatable"`
@@ -568,4 +568,26 @@ func MapStringFieldPluginConfig(a FieldPluginConfig) StringFieldPluginConfig {
 		DateCreated:     a.DateCreated.String(),
 		DateModified:    a.DateModified.String(),
 	}
+}
+
+// StringValidation represents validation data as strings for TUI display.
+type StringValidation struct {
+	ValidationID string `json:"validation_id"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Config       string `json:"config"`
+	AuthorID     string `json:"author_id"`
+	DateCreated  string `json:"date_created"`
+	DateModified string `json:"date_modified"`
+}
+
+// StringAdminValidation represents admin validation data as strings for TUI display.
+type StringAdminValidation struct {
+	AdminValidationID string `json:"admin_validation_id"`
+	Name              string `json:"name"`
+	Description       string `json:"description"`
+	Config            string `json:"config"`
+	AuthorID          string `json:"author_id"`
+	DateCreated       string `json:"date_created"`
+	DateModified      string `json:"date_modified"`
 }

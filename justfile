@@ -109,6 +109,12 @@ dev-admin:
         -o out/modulacms-dev ./cmd
     codesign -s - out/modulacms-dev
 
+# [Build] Build and install to /usr/local/bin/modula
+install: build
+    cp out/bin/{{x86_binary_name}} /usr/local/bin/modula
+    codesign -s - /usr/local/bin/modula
+    @echo "Installed modula to /usr/local/bin/modula"
+
 # [Build] Build production binary to out/bin/
 build:
     #!/usr/bin/env bash

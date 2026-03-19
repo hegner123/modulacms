@@ -2550,7 +2550,7 @@ func (r *RemoteDriver) ListFieldsWithSortOrderByDatatypeID(parentID types.Nullab
 				Label:      f.Label,
 				Type:       types.FieldType(string(f.Type)),
 				Data:       f.Data,
-				Validation: f.Validation,
+				ValidationID: types.NullableValidationID{},
 				UIConfig:   f.UIConfig,
 				Roles:      rolesToNullableString(f.Roles),
 			}
@@ -4975,4 +4975,61 @@ func (r *RemoteDriver) ListMediaUnfiledPaginated(_ db.PaginationParams) (*[]db.M
 
 func (r *RemoteDriver) MoveMediaToFolder(_ context.Context, _ audited.AuditContext, _ db.MoveMediaToFolderParams) error {
 	return ErrNotSupported{Method: "MoveMediaToFolder"}
+}
+
+// ========== ValidationRepository (stub — SDK update in Phase 8) ==========
+
+func (r *RemoteDriver) CountValidations() (*int64, error) {
+	return nil, ErrNotSupported{Method: "CountValidations"}
+}
+func (r *RemoteDriver) CreateValidation(_ context.Context, _ audited.AuditContext, _ db.CreateValidationParams) (*db.Validation, error) {
+	return nil, ErrNotSupported{Method: "CreateValidation"}
+}
+func (r *RemoteDriver) CreateValidationTable() error {
+	return ErrNotSupported{Method: "CreateValidationTable"}
+}
+func (r *RemoteDriver) DeleteValidation(_ context.Context, _ audited.AuditContext, _ types.ValidationID) error {
+	return ErrNotSupported{Method: "DeleteValidation"}
+}
+func (r *RemoteDriver) GetValidation(_ types.ValidationID) (*db.Validation, error) {
+	return nil, ErrNotSupported{Method: "GetValidation"}
+}
+func (r *RemoteDriver) ListValidations() (*[]db.Validation, error) {
+	return nil, ErrNotSupported{Method: "ListValidations"}
+}
+func (r *RemoteDriver) ListValidationsPaginated(_ db.PaginationParams) (*[]db.Validation, error) {
+	return nil, ErrNotSupported{Method: "ListValidationsPaginated"}
+}
+func (r *RemoteDriver) UpdateValidation(_ context.Context, _ audited.AuditContext, _ db.UpdateValidationParams) (*string, error) {
+	return nil, ErrNotSupported{Method: "UpdateValidation"}
+}
+func (r *RemoteDriver) ListValidationsByName(_ string) (*[]db.Validation, error) {
+	return nil, ErrNotSupported{Method: "ListValidationsByName"}
+}
+func (r *RemoteDriver) CountAdminValidations() (*int64, error) {
+	return nil, ErrNotSupported{Method: "CountAdminValidations"}
+}
+func (r *RemoteDriver) CreateAdminValidation(_ context.Context, _ audited.AuditContext, _ db.CreateAdminValidationParams) (*db.AdminValidation, error) {
+	return nil, ErrNotSupported{Method: "CreateAdminValidation"}
+}
+func (r *RemoteDriver) CreateAdminValidationTable() error {
+	return ErrNotSupported{Method: "CreateAdminValidationTable"}
+}
+func (r *RemoteDriver) DeleteAdminValidation(_ context.Context, _ audited.AuditContext, _ types.AdminValidationID) error {
+	return ErrNotSupported{Method: "DeleteAdminValidation"}
+}
+func (r *RemoteDriver) GetAdminValidation(_ types.AdminValidationID) (*db.AdminValidation, error) {
+	return nil, ErrNotSupported{Method: "GetAdminValidation"}
+}
+func (r *RemoteDriver) ListAdminValidations() (*[]db.AdminValidation, error) {
+	return nil, ErrNotSupported{Method: "ListAdminValidations"}
+}
+func (r *RemoteDriver) ListAdminValidationsPaginated(_ db.PaginationParams) (*[]db.AdminValidation, error) {
+	return nil, ErrNotSupported{Method: "ListAdminValidationsPaginated"}
+}
+func (r *RemoteDriver) UpdateAdminValidation(_ context.Context, _ audited.AuditContext, _ db.UpdateAdminValidationParams) (*string, error) {
+	return nil, ErrNotSupported{Method: "UpdateAdminValidation"}
+}
+func (r *RemoteDriver) ListAdminValidationsByName(_ string) (*[]db.AdminValidation, error) {
+	return nil, ErrNotSupported{Method: "ListAdminValidationsByName"}
 }

@@ -432,3 +432,81 @@ type AdminFieldTypeUpdatedFromDialogMsg struct {
 type AdminFieldTypeDeletedMsg struct {
 	AdminFieldTypeID types.AdminFieldTypeID
 }
+
+// =============================================================================
+// VALIDATION CRUD MESSAGES
+// =============================================================================
+
+// CreateValidationFromDialogRequestMsg requests creating a validation from dialog input.
+type CreateValidationFromDialogRequestMsg struct {
+	Name        string
+	Description string
+}
+
+// UpdateValidationFromDialogRequestMsg requests updating a validation from dialog input.
+type UpdateValidationFromDialogRequestMsg struct {
+	ValidationID string
+	Name         string
+	Description  string
+}
+
+// DeleteValidationRequestMsg requests deleting a validation.
+type DeleteValidationRequestMsg struct {
+	ValidationID types.ValidationID
+}
+
+// ValidationCreatedFromDialogMsg signals successful validation creation.
+type ValidationCreatedFromDialogMsg struct {
+	ValidationID types.ValidationID
+	Name         string
+}
+
+// ValidationUpdatedFromDialogMsg signals successful validation update.
+type ValidationUpdatedFromDialogMsg struct {
+	ValidationID types.ValidationID
+	Name         string
+}
+
+// ValidationDeletedMsg signals successful validation deletion.
+type ValidationDeletedMsg struct {
+	ValidationID types.ValidationID
+}
+
+// =============================================================================
+// ADMIN VALIDATION CRUD MESSAGES
+// =============================================================================
+
+// CreateAdminValidationFromDialogRequestMsg requests creating an admin validation from dialog input.
+type CreateAdminValidationFromDialogRequestMsg struct {
+	Name        string
+	Description string
+}
+
+// UpdateAdminValidationFromDialogRequestMsg requests updating an admin validation from dialog input.
+type UpdateAdminValidationFromDialogRequestMsg struct {
+	AdminValidationID string
+	Name              string
+	Description       string
+}
+
+// DeleteAdminValidationRequestMsg requests deleting an admin validation.
+type DeleteAdminValidationRequestMsg struct {
+	AdminValidationID types.AdminValidationID
+}
+
+// AdminValidationCreatedFromDialogMsg signals successful admin validation creation.
+type AdminValidationCreatedFromDialogMsg struct {
+	AdminValidationID types.AdminValidationID
+	Name              string
+}
+
+// AdminValidationUpdatedFromDialogMsg signals successful admin validation update.
+type AdminValidationUpdatedFromDialogMsg struct {
+	AdminValidationID types.AdminValidationID
+	Name              string
+}
+
+// AdminValidationDeletedMsg signals successful admin validation deletion.
+type AdminValidationDeletedMsg struct {
+	AdminValidationID types.AdminValidationID
+}

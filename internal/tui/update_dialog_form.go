@@ -610,6 +610,38 @@ func (m Model) handleFormDialogAccept(msg FormDialogAcceptMsg) (Model, tea.Cmd) 
 			LoadingStartCmd(),
 			UpdateAdminFieldTypeFromDialogCmd(msg.EntityID, msg.Label, msg.Type),
 		)
+	case FORMDIALOGCREATEVALIDATION:
+		// Create a new validation (Label=Name, Type=Description)
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			CreateValidationFromDialogCmd(msg.Label, msg.Type),
+		)
+	case FORMDIALOGEDITVALIDATION:
+		// Update an existing validation (Label=Name, Type=Description)
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			UpdateValidationFromDialogCmd(msg.EntityID, msg.Label, msg.Type),
+		)
+	case FORMDIALOGCREATEADMINVALIDATION:
+		// Create a new admin validation (Label=Name, Type=Description)
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			CreateAdminValidationFromDialogCmd(msg.Label, msg.Type),
+		)
+	case FORMDIALOGEDITADMINVALIDATION:
+		// Update an existing admin validation (Label=Name, Type=Description)
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			UpdateAdminValidationFromDialogCmd(msg.EntityID, msg.Label, msg.Type),
+		)
 	case FORMDIALOGCONFIGEDIT:
 		// EntityID holds the JSON key, Label holds the new value
 		return m, tea.Batch(

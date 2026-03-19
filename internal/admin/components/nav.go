@@ -26,6 +26,7 @@ var NavItems = []NavItem{
 	{Section: "Content", Label: "Content", Href: "/admin/content", Icon: "file-text", Permission: "content:read"},
 	{Section: "Content", Label: "Datatypes", Href: "/admin/datatypes", Icon: "blocks", Permission: "datatypes:read"},
 	{Section: "Content", Label: "Field Types", Href: "/admin/field-types", Icon: "tag", Permission: "field_types:read"},
+	{Section: "Content", Label: "Validations", Href: "/admin/validations", Icon: "check-circle", Permission: "validations:read"},
 	{Section: "Content", Label: "Routes", Href: "/admin/routes", Icon: "globe", Permission: "routes:read"},
 
 	// Media
@@ -36,6 +37,7 @@ var NavItems = []NavItem{
 	{Section: "Admin Panel", Label: "Admin Content", Href: "/admin/admin-content", Icon: "layout", Permission: "content:read"},
 	{Section: "Admin Panel", Label: "Admin Datatypes", Href: "/admin/admin-datatypes", Icon: "blocks", Permission: "datatypes:read"},
 	{Section: "Admin Panel", Label: "Admin Field Types", Href: "/admin/admin-field-types", Icon: "tag", Permission: "field_types:read"},
+	{Section: "Admin Panel", Label: "Admin Validations", Href: "/admin/admin-validations", Icon: "check-circle", Permission: "admin_validations:read"},
 	{Section: "Admin Panel", Label: "Admin Routes", Href: "/admin/admin-routes", Icon: "globe", Permission: "routes:read"},
 
 	// Users & Access

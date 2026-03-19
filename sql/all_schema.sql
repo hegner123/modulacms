@@ -102,7 +102,9 @@ CREATE TABLE admin_fields (
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,
-    validation TEXT NOT NULL,
+    validation_id TEXT DEFAULT NULL
+        REFERENCES admin_validations(admin_validation_id)
+            ON DELETE SET NULL,
     ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text' NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     translatable INTEGER NOT NULL DEFAULT 0,
@@ -116,6 +118,7 @@ CREATE TABLE admin_fields (
 
 CREATE INDEX IF NOT EXISTS idx_admin_fields_parent ON admin_fields(parent_id);
 CREATE INDEX IF NOT EXISTS idx_admin_fields_author ON admin_fields(author_id);
+CREATE INDEX IF NOT EXISTS idx_admin_fields_validation ON admin_fields(validation_id);
 
 CREATE TRIGGER IF NOT EXISTS update_admin_fields_modified
     AFTER UPDATE ON admin_fields
@@ -196,11 +199,15 @@ CREATE TABLE IF NOT EXISTS media (
     author_id TEXT
     REFERENCES users
     ON DELETE SET NULL,
+    folder_id TEXT NULL
+    REFERENCES media_folders(folder_id)
+    ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_media_author ON media(author_id);
+CREATE INDEX IF NOT EXISTS idx_media_folder ON media(folder_id);
 
 CREATE TRIGGER IF NOT EXISTS update_media_modified
     AFTER UPDATE ON media
@@ -238,6 +245,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     next_sibling_id TEXT,
     prev_sibling_id TEXT,
     route_id TEXT,
+    root_id TEXT,
     datatype_id TEXT NOT NULL,
     author_id TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'draft',
@@ -253,12 +261,14 @@ CREATE TABLE IF NOT EXISTS content_data (
     FOREIGN KEY (next_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (prev_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE SET NULL,
+    FOREIGN KEY (root_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (datatype_id) REFERENCES datatypes(datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE RESTRICT
 );
 
 CREATE INDEX IF NOT EXISTS idx_content_data_parent ON content_data(parent_id);
 CREATE INDEX IF NOT EXISTS idx_content_data_route ON content_data(route_id);
+CREATE INDEX IF NOT EXISTS idx_content_data_root ON content_data(root_id);
 CREATE INDEX IF NOT EXISTS idx_content_data_datatype ON content_data(datatype_id);
 CREATE INDEX IF NOT EXISTS idx_content_data_author ON content_data(author_id);
 
@@ -278,6 +288,9 @@ CREATE TABLE IF NOT EXISTS content_fields (
     route_id TEXT
         REFERENCES routes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    root_id TEXT
+        REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
     content_data_id TEXT NOT NULL
         REFERENCES content_data
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -294,6 +307,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
 );
 
 CREATE INDEX IF NOT EXISTS idx_content_fields_route ON content_fields(route_id);
+CREATE INDEX IF NOT EXISTS idx_content_fields_root ON content_fields(root_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_content ON content_fields(content_data_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_field ON content_fields(field_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_author ON content_fields(author_id);
@@ -315,6 +329,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     first_child_id TEXT,
     next_sibling_id TEXT,
     prev_sibling_id TEXT,
+    root_id TEXT,
     admin_route_id TEXT NOT NULL,
     admin_datatype_id TEXT NOT NULL,
     author_id TEXT NOT NULL,
@@ -330,12 +345,14 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     FOREIGN KEY (first_child_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (next_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (prev_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (root_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id) ON DELETE RESTRICT,
     FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes(admin_datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE RESTRICT
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_parent ON admin_content_data(parent_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_data_root ON admin_content_data(root_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_route ON admin_content_data(admin_route_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_datatype ON admin_content_data(admin_datatype_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_author ON admin_content_data(author_id);
@@ -353,6 +370,7 @@ CREATE TRIGGER IF NOT EXISTS update_admin_content_data_modified
 CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_field_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_content_field_id) = 26),
     admin_route_id TEXT,
+    root_id TEXT,
     admin_content_data_id TEXT NOT NULL,
     admin_field_id TEXT NOT NULL,
     admin_field_value TEXT NOT NULL,
@@ -363,6 +381,8 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
 
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id)
         ON DELETE SET NULL,
+    FOREIGN KEY (root_id) REFERENCES admin_content_data(admin_content_data_id)
+        ON DELETE SET NULL,
     FOREIGN KEY (admin_content_data_id) REFERENCES admin_content_data(admin_content_data_id)
         ON DELETE CASCADE,
     FOREIGN KEY (admin_field_id) REFERENCES admin_fields(admin_field_id)
@@ -372,6 +392,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_route ON admin_content_fields(admin_route_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_fields_root ON admin_content_fields(root_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_content ON admin_content_fields(admin_content_data_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_field ON admin_content_fields(admin_field_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_author ON admin_content_fields(author_id);
@@ -652,6 +673,89 @@ CREATE INDEX IF NOT EXISTS idx_wd_webhook ON webhook_deliveries(webhook_id);
 CREATE INDEX IF NOT EXISTS idx_wd_status ON webhook_deliveries(status);
 CREATE INDEX IF NOT EXISTS idx_wd_retry ON webhook_deliveries(next_retry_at) WHERE status = 'retrying';
 
+-- ===== 36_field_plugin_config =====
+
+CREATE TABLE IF NOT EXISTS field_plugin_config (
+    field_id         TEXT PRIMARY KEY NOT NULL
+        REFERENCES fields(field_id) ON DELETE CASCADE,
+    plugin_name      TEXT NOT NULL,
+    plugin_interface TEXT NOT NULL,
+    plugin_version   TEXT NOT NULL DEFAULT '',
+    date_created     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_modified    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_field_plugin_config (
+    field_id         TEXT PRIMARY KEY NOT NULL
+        REFERENCES admin_fields(field_id) ON DELETE CASCADE,
+    plugin_name      TEXT NOT NULL,
+    plugin_interface TEXT NOT NULL,
+    plugin_version   TEXT NOT NULL DEFAULT '',
+    date_created     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_modified    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===== 37_media_folders =====
+
+CREATE TABLE IF NOT EXISTS media_folders (
+    folder_id     TEXT PRIMARY KEY NOT NULL CHECK (length(folder_id) = 26),
+    name          TEXT NOT NULL,
+    parent_id     TEXT NULL REFERENCES media_folders(folder_id) ON DELETE RESTRICT,
+    date_created  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_media_folders_parent ON media_folders(parent_id);
+
+-- ===== 38_validations =====
+
+CREATE TABLE IF NOT EXISTS validations (
+    validation_id TEXT PRIMARY KEY NOT NULL CHECK (length(validation_id) = 26),
+    name          TEXT NOT NULL,
+    description   TEXT NOT NULL DEFAULT '',
+    config        TEXT NOT NULL DEFAULT '{}',
+    author_id     TEXT
+        REFERENCES users
+            ON DELETE SET NULL,
+    date_created  TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_validations_name ON validations(name);
+CREATE INDEX IF NOT EXISTS idx_validations_author ON validations(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_validations_modified
+    AFTER UPDATE ON validations
+    FOR EACH ROW
+    BEGIN
+        UPDATE validations SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE validation_id = NEW.validation_id;
+    END;
+
+-- ===== 39_admin_validations =====
+
+CREATE TABLE IF NOT EXISTS admin_validations (
+    admin_validation_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_validation_id) = 26),
+    name                TEXT NOT NULL,
+    description         TEXT NOT NULL DEFAULT '',
+    config              TEXT NOT NULL DEFAULT '{}',
+    author_id           TEXT
+        REFERENCES users
+            ON DELETE SET NULL,
+    date_created        TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified       TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_validations_name ON admin_validations(name);
+CREATE INDEX IF NOT EXISTS idx_admin_validations_author ON admin_validations(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_admin_validations_modified
+    AFTER UPDATE ON admin_validations
+    FOR EACH ROW
+    BEGIN
+        UPDATE admin_validations SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE admin_validation_id = NEW.admin_validation_id;
+    END;
+
 -- ===== 4_users =====
 
 CREATE TABLE IF NOT EXISTS users (
@@ -734,6 +838,7 @@ CREATE TABLE IF NOT EXISTS datatypes(
     parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -767,7 +872,9 @@ CREATE TABLE IF NOT EXISTS fields(
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
-    validation TEXT NOT NULL,
+    validation_id TEXT DEFAULT NULL
+        REFERENCES validations(validation_id)
+            ON DELETE SET NULL,
     ui_config TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     translatable INTEGER NOT NULL DEFAULT 0,
@@ -781,6 +888,7 @@ CREATE TABLE IF NOT EXISTS fields(
 
 CREATE INDEX IF NOT EXISTS idx_fields_parent ON fields(parent_id);
 CREATE INDEX IF NOT EXISTS idx_fields_author ON fields(author_id);
+CREATE INDEX IF NOT EXISTS idx_fields_validation ON fields(validation_id);
 
 CREATE TRIGGER IF NOT EXISTS update_fields_modified
     AFTER UPDATE ON fields
@@ -798,6 +906,7 @@ CREATE TABLE admin_datatypes (
     parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
             ON DELETE SET NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,

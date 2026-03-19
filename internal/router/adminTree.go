@@ -110,7 +110,7 @@ func apiGetAdminTreeContent(w http.ResponseWriter, r *http.Request, svc *service
 			ParentID:     row.FParentID,
 			Label:        row.FLabel,
 			Data:         row.FData,
-			Validation:   row.FValidation,
+			ValidationID: row.FValidationID,
 			UIConfig:     row.FUIConfig,
 			Type:         row.FType,
 			AuthorID:     row.FAuthorID,

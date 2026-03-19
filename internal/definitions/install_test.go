@@ -30,7 +30,7 @@ func (m *mockInstaller) CreateField(p db.CreateFieldParams) (db.Fields, error) {
 		Name:         p.Name,
 		Label:        p.Label,
 		Data:         p.Data,
-		Validation:   p.Validation,
+		ValidationID: p.ValidationID,
 		UIConfig:     p.UIConfig,
 		Type:         p.Type,
 		AuthorID:     p.AuthorID,

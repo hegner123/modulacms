@@ -1793,7 +1793,7 @@ func TestDatabase_MapAdminContentFieldsWithFieldRow_AllFields(t *testing.T) {
 		FParentId:           fParentID,
 		FLabel:              "admin-field-label",
 		FData:               "field-data",
-		FValidation:         `{"required":true}`,
+		FValidationId:       types.NullableAdminValidationID{},
 		FUiConfig:           `{"width":"full"}`,
 		FType:               types.FieldType("textarea"),
 		FAuthorId:           fAuthorID,
@@ -1839,8 +1839,8 @@ func TestDatabase_MapAdminContentFieldsWithFieldRow_AllFields(t *testing.T) {
 	if got.FData != "field-data" {
 		t.Errorf("FData = %q, want %q", got.FData, "field-data")
 	}
-	if got.FValidation != `{"required":true}` {
-		t.Errorf("FValidation = %q, want %q", got.FValidation, `{"required":true}`)
+	if !got.FValidationID.IsZero() {
+		t.Errorf("FValidationID = %v, want zero value", got.FValidationID)
 	}
 	if got.FUIConfig != `{"width":"full"}` {
 		t.Errorf("FUIConfig = %q, want %q", got.FUIConfig, `{"width":"full"}`)
@@ -1922,7 +1922,7 @@ func TestMysqlDatabase_MapAdminContentFieldsWithFieldRow_AllFields(t *testing.T)
 		FParentId:           types.NullableAdminDatatypeID{ID: types.NewAdminDatatypeID(), Valid: true},
 		FLabel:              "mysql-admin-field",
 		FData:               "mysql-data",
-		FValidation:         "{}",
+		FValidationId:       types.NullableAdminValidationID{},
 		FUiConfig:           "{}",
 		FType:               types.FieldType("text"),
 		FAuthorId:           types.NullableUserID{ID: types.NewUserID(), Valid: true},
@@ -1985,7 +1985,7 @@ func TestPsqlDatabase_MapAdminContentFieldsWithFieldRow_AllFields(t *testing.T) 
 		FParentId:           types.NullableAdminDatatypeID{ID: types.NewAdminDatatypeID(), Valid: true},
 		FLabel:              "psql-admin-field",
 		FData:               "psql-data",
-		FValidation:         "{}",
+		FValidationId:       types.NullableAdminValidationID{},
 		FUiConfig:           "{}",
 		FType:               types.FieldType("richtext"),
 		FAuthorId:           types.NullableUserID{ID: types.NewUserID(), Valid: true},
@@ -2048,7 +2048,7 @@ func TestCrossDatabase_MapAdminContentFieldsWithFieldRow_Consistency(t *testing.
 		AdminFieldValue: "cross-val", AuthorID: authorID,
 		DateCreated: ts, DateModified: ts,
 		FAdminFieldId: fAdminFieldID, FParentId: fParentID,
-		FLabel: "cross-label", FData: "data", FValidation: "{}", FUiConfig: "{}",
+		FLabel: "cross-label", FData: "data", FValidationId: types.NullableAdminValidationID{}, FUiConfig: "{}",
 		FType: types.FieldType("text"), FAuthorId: fAuthorID,
 		FDateCreated: ts, FDateModified: ts,
 	}
@@ -2058,7 +2058,7 @@ func TestCrossDatabase_MapAdminContentFieldsWithFieldRow_Consistency(t *testing.
 		AdminFieldValue: "cross-val", AuthorID: authorID,
 		DateCreated: ts, DateModified: ts,
 		FAdminFieldId: fAdminFieldID, FParentId: fParentID,
-		FLabel: "cross-label", FData: "data", FValidation: "{}", FUiConfig: "{}",
+		FLabel: "cross-label", FData: "data", FValidationId: types.NullableAdminValidationID{}, FUiConfig: "{}",
 		FType: types.FieldType("text"), FAuthorId: fAuthorID,
 		FDateCreated: ts, FDateModified: ts,
 	}
@@ -2068,7 +2068,7 @@ func TestCrossDatabase_MapAdminContentFieldsWithFieldRow_Consistency(t *testing.
 		AdminFieldValue: "cross-val", AuthorID: authorID,
 		DateCreated: ts, DateModified: ts,
 		FAdminFieldId: fAdminFieldID, FParentId: fParentID,
-		FLabel: "cross-label", FData: "data", FValidation: "{}", FUiConfig: "{}",
+		FLabel: "cross-label", FData: "data", FValidationId: types.NullableAdminValidationID{}, FUiConfig: "{}",
 		FType: types.FieldType("text"), FAuthorId: fAuthorID,
 		FDateCreated: ts, FDateModified: ts,
 	}
@@ -2570,8 +2570,8 @@ func TestDatabase_MapFieldWithSortOrderRow_AllFields(t *testing.T) {
 		Label:      "sort-field",
 		Type:       types.FieldType("select"),
 		Data:       `{"options":["a","b"]}`,
-		Validation: `{"required":true}`,
-		UiConfig:   `{"display":"dropdown"}`,
+		ValidationID: types.NullableValidationID{},
+		UiConfig:     `{"display":"dropdown"}`,
 	}
 
 	got := d.MapFieldWithSortOrderRow(input)
@@ -2591,8 +2591,8 @@ func TestDatabase_MapFieldWithSortOrderRow_AllFields(t *testing.T) {
 	if got.Data != `{"options":["a","b"]}` {
 		t.Errorf("Data = %q, want %q", got.Data, `{"options":["a","b"]}`)
 	}
-	if got.Validation != `{"required":true}` {
-		t.Errorf("Validation = %q, want %q", got.Validation, `{"required":true}`)
+	if !got.ValidationID.IsZero() {
+		t.Errorf("ValidationID = %v, want zero value", got.ValidationID)
 	}
 	if got.UIConfig != `{"display":"dropdown"}` {
 		t.Errorf("UIConfig = %q, want %q", got.UIConfig, `{"display":"dropdown"}`)
@@ -2619,8 +2619,8 @@ func TestDatabase_MapFieldWithSortOrderRow_ZeroValues(t *testing.T) {
 	if got.Data != "" {
 		t.Errorf("Data = %q, want empty string", got.Data)
 	}
-	if got.Validation != "" {
-		t.Errorf("Validation = %q, want empty string", got.Validation)
+	if !got.ValidationID.IsZero() {
+		t.Errorf("ValidationID = %v, want zero value", got.ValidationID)
 	}
 	if got.UIConfig != "" {
 		t.Errorf("UIConfig = %q, want empty string", got.UIConfig)
@@ -2697,8 +2697,8 @@ func TestMysqlDatabase_MapFieldWithSortOrderRow_AllFields(t *testing.T) {
 		Label:      "mysql-sort-field",
 		Type:       types.FieldType("media"),
 		Data:       "mysql-data",
-		Validation: "mysql-validation",
-		UiConfig:   "mysql-ui",
+		ValidationID: types.NullableValidationID{},
+		UiConfig:     "mysql-ui",
 	}
 
 	got := d.MapFieldWithSortOrderRow(input)
@@ -2781,8 +2781,8 @@ func TestPsqlDatabase_MapFieldWithSortOrderRow_AllFields(t *testing.T) {
 		Label:      "psql-sort-field",
 		Type:       types.FieldType("boolean"),
 		Data:       "psql-data",
-		Validation: "psql-validation",
-		UiConfig:   "psql-ui",
+		ValidationID: types.NullableValidationID{},
+		UiConfig:     "psql-ui",
 	}
 
 	got := d.MapFieldWithSortOrderRow(input)
@@ -2828,15 +2828,15 @@ func TestCrossDatabase_MapFieldWithSortOrderRow_Consistency(t *testing.T) {
 
 	sqliteInput := mdb.ListFieldsWithSortOrderByDatatypeIDRow{
 		SortOrder: 99, FieldID: fieldID, Label: "cross-sort",
-		Type: types.FieldType("text"), Data: "d", Validation: "v", UiConfig: "u",
+		Type: types.FieldType("text"), Data: "d", ValidationID: types.NullableValidationID{}, UiConfig: "u",
 	}
 	mysqlInput := mdbm.ListFieldsWithSortOrderByDatatypeIDRow{
 		SortOrder: 99, FieldID: fieldID, Label: "cross-sort",
-		Type: types.FieldType("text"), Data: "d", Validation: "v", UiConfig: "u",
+		Type: types.FieldType("text"), Data: "d", ValidationID: types.NullableValidationID{}, UiConfig: "u",
 	}
 	psqlInput := mdbp.ListFieldsWithSortOrderByDatatypeIDRow{
 		SortOrder: 99, FieldID: fieldID, Label: "cross-sort",
-		Type: types.FieldType("text"), Data: "d", Validation: "v", UiConfig: "u",
+		Type: types.FieldType("text"), Data: "d", ValidationID: types.NullableValidationID{}, UiConfig: "u",
 	}
 
 	sqliteResult := Database{}.MapFieldWithSortOrderRow(sqliteInput)
@@ -2923,7 +2923,7 @@ func TestAdminContentFieldsWithFieldRow_JSONTags(t *testing.T) {
 		FParentID:           types.NullableAdminDatatypeID{ID: types.NewAdminDatatypeID(), Valid: true},
 		FLabel:              "label",
 		FData:               "data",
-		FValidation:         "{}",
+		FValidationID:       types.NullableAdminValidationID{},
 		FUIConfig:           "{}",
 		FType:               types.FieldType("text"),
 		FAuthorID:           types.NullableUserID{ID: types.NewUserID(), Valid: true},
@@ -2946,7 +2946,7 @@ func TestAdminContentFieldsWithFieldRow_JSONTags(t *testing.T) {
 		"admin_field_id", "admin_field_value", "author_id",
 		"date_created", "date_modified",
 		"f_admin_field_id", "f_parent_id", "f_label", "f_data",
-		"f_validation", "f_ui_config", "f_type",
+		"f_validation_id", "f_ui_config", "f_type",
 		"f_author_id", "f_date_created", "f_date_modified",
 	}
 	for _, field := range expectedFields {
@@ -3043,13 +3043,13 @@ func TestUserWithRoleLabelRow_JSONTags(t *testing.T) {
 func TestFieldWithSortOrderRow_JSONTags(t *testing.T) {
 	t.Parallel()
 	row := FieldWithSortOrderRow{
-		SortOrder:  1,
-		FieldID:    types.NewFieldID(),
-		Label:      "test",
-		Type:       types.FieldType("text"),
-		Data:       "data",
-		Validation: "{}",
-		UIConfig:   "{}",
+		SortOrder:    1,
+		FieldID:      types.NewFieldID(),
+		Label:        "test",
+		Type:         types.FieldType("text"),
+		Data:         "data",
+		ValidationID: types.NullableValidationID{},
+		UIConfig:     "{}",
 	}
 
 	data, err := json.Marshal(row)
@@ -3064,7 +3064,7 @@ func TestFieldWithSortOrderRow_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"sort_order", "field_id", "label", "type",
-		"data", "validation", "ui_config", "roles",
+		"data", "validation_id", "ui_config", "roles",
 	}
 	for _, field := range expectedFields {
 		if _, ok := m[field]; !ok {
@@ -3100,7 +3100,7 @@ func TestDatabase_MapAdminContentFieldsWithFieldRow_AllNullableFieldsInvalid(t *
 		FParentId:           types.NullableAdminDatatypeID{Valid: false},
 		FLabel:              "orphan-field",
 		FData:               "",
-		FValidation:         "{}",
+		FValidationId:       types.NullableAdminValidationID{},
 		FUiConfig:           "{}",
 		FType:               types.FieldType("text"),
 		FAuthorId:           types.NullableUserID{Valid: false},

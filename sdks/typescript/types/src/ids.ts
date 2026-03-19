@@ -93,6 +93,12 @@ export type TokenID = Brand<string, 'TokenID'>
 /** Unique identifier for a user SSH key. */
 export type UserSshKeyID = Brand<string, 'UserSshKeyID'>
 
+/** Unique identifier for a validation config. */
+export type ValidationID = Brand<string, 'ValidationID'>
+
+/** Unique identifier for an admin validation config. */
+export type AdminValidationID = Brand<string, 'AdminValidationID'>
+
 /** URL-safe slug string used to identify routes. */
 export type Slug = Brand<string, 'Slug'>
 

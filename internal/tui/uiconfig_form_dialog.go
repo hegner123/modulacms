@@ -519,7 +519,7 @@ func resolveFieldInput(f db.Fields) ContentFieldInput {
 		Type:           fieldType,
 		Widget:         uc.Widget,
 		Bubble:         bubble,
-		ValidationJSON: f.Validation,
+		ValidationJSON: "", // TODO: resolve from validation table
 		DataJSON:       f.Data,
 		HelpText:       uc.HelpText,
 		Hidden:         uc.Hidden,

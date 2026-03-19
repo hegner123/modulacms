@@ -36,6 +36,8 @@ const (
 	PIPELINEDETAILPAGE
 	WEBHOOKSPAGE
 	PLUGINTUIPAGE
+	VALIDATIONS
+	ADMINVALIDATIONS
 )
 
 // NewPage creates a new page with the specified index and label.
@@ -70,6 +72,8 @@ func InitPages() *map[PageIndex]Page {
 	pipelineDetailPage := NewPage(PIPELINEDETAILPAGE, "Pipeline Detail")
 	webhooksPage := NewPage(WEBHOOKSPAGE, "Webhooks")
 	pluginTuiPage := NewPage(PLUGINTUIPAGE, "Plugin")
+	validationsPage := NewPage(VALIDATIONS, "Validations")
+	adminValidationsPage := NewPage(ADMINVALIDATIONS, "Admin Validations")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -98,5 +102,7 @@ func InitPages() *map[PageIndex]Page {
 	p[PIPELINEDETAILPAGE] = pipelineDetailPage
 	p[WEBHOOKSPAGE] = webhooksPage
 	p[PLUGINTUIPAGE] = pluginTuiPage
+	p[VALIDATIONS] = validationsPage
+	p[ADMINVALIDATIONS] = adminValidationsPage
 	return &p
 }

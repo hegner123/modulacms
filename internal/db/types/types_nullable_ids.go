@@ -823,3 +823,129 @@ func (n *NullableMediaFolderID) UnmarshalJSON(data []byte) error {
 	n.Valid = true
 	return json.Unmarshal(data, &n.ID)
 }
+
+// NullableValidationID represents a nullable foreign key to validations
+type NullableValidationID struct {
+	ID    ValidationID
+	Valid bool
+}
+
+// Validate checks if the NullableValidationID is valid if set.
+func (n NullableValidationID) Validate() error {
+	if n.Valid {
+		return n.ID.Validate()
+	}
+	return nil
+}
+
+// String returns the string representation of the NullableValidationID.
+func (n NullableValidationID) String() string {
+	if !n.Valid {
+		return "null"
+	}
+	return n.ID.String()
+}
+
+// IsZero returns true if the NullableValidationID is not set or empty.
+func (n NullableValidationID) IsZero() bool { return !n.Valid || n.ID == "" }
+
+// Value returns the database driver value for the NullableValidationID.
+func (n NullableValidationID) Value() (driver.Value, error) {
+	if !n.Valid {
+		return nil, nil
+	}
+	return string(n.ID), nil
+}
+
+// Scan scans a value from the database into the NullableValidationID.
+func (n *NullableValidationID) Scan(value any) error {
+	if value == nil {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return n.ID.Scan(value)
+}
+
+// MarshalJSON returns the JSON representation of the NullableValidationID.
+func (n NullableValidationID) MarshalJSON() ([]byte, error) {
+	if !n.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(n.ID)
+}
+
+// UnmarshalJSON parses JSON data into the NullableValidationID.
+func (n *NullableValidationID) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return json.Unmarshal(data, &n.ID)
+}
+
+// NullableAdminValidationID represents a nullable foreign key to admin_validations
+type NullableAdminValidationID struct {
+	ID    AdminValidationID
+	Valid bool
+}
+
+// Validate checks if the NullableAdminValidationID is valid if set.
+func (n NullableAdminValidationID) Validate() error {
+	if n.Valid {
+		return n.ID.Validate()
+	}
+	return nil
+}
+
+// String returns the string representation of the NullableAdminValidationID.
+func (n NullableAdminValidationID) String() string {
+	if !n.Valid {
+		return "null"
+	}
+	return n.ID.String()
+}
+
+// IsZero returns true if the NullableAdminValidationID is not set or empty.
+func (n NullableAdminValidationID) IsZero() bool { return !n.Valid || n.ID == "" }
+
+// Value returns the database driver value for the NullableAdminValidationID.
+func (n NullableAdminValidationID) Value() (driver.Value, error) {
+	if !n.Valid {
+		return nil, nil
+	}
+	return string(n.ID), nil
+}
+
+// Scan scans a value from the database into the NullableAdminValidationID.
+func (n *NullableAdminValidationID) Scan(value any) error {
+	if value == nil {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return n.ID.Scan(value)
+}
+
+// MarshalJSON returns the JSON representation of the NullableAdminValidationID.
+func (n NullableAdminValidationID) MarshalJSON() ([]byte, error) {
+	if !n.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(n.ID)
+}
+
+// UnmarshalJSON parses JSON data into the NullableAdminValidationID.
+func (n *NullableAdminValidationID) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return json.Unmarshal(data, &n.ID)
+}

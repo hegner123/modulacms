@@ -19,56 +19,56 @@ import (
 
 // Fields represents a field record in the database.
 type Fields struct {
-	FieldID      types.FieldID            `json:"field_id"`
-	ParentID     types.NullableDatatypeID `json:"parent_id"`
-	SortOrder    int64                    `json:"sort_order"`
-	Name         string                   `json:"name"`
-	Label        string                   `json:"label"`
-	Data         string                   `json:"data"`
-	Validation   string                   `json:"validation"`
-	UIConfig     string                   `json:"ui_config"`
-	Type         types.FieldType          `json:"type"`
-	Translatable bool                     `json:"translatable"`
-	Roles        types.NullableString     `json:"roles"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
-	DateCreated  types.Timestamp          `json:"date_created"`
-	DateModified types.Timestamp          `json:"date_modified"`
+	FieldID      types.FieldID              `json:"field_id"`
+	ParentID     types.NullableDatatypeID   `json:"parent_id"`
+	SortOrder    int64                      `json:"sort_order"`
+	Name         string                     `json:"name"`
+	Label        string                     `json:"label"`
+	Data         string                     `json:"data"`
+	ValidationID types.NullableValidationID `json:"validation_id"`
+	UIConfig     string                     `json:"ui_config"`
+	Type         types.FieldType            `json:"type"`
+	Translatable bool                       `json:"translatable"`
+	Roles        types.NullableString       `json:"roles"`
+	AuthorID     types.NullableUserID       `json:"author_id"`
+	DateCreated  types.Timestamp            `json:"date_created"`
+	DateModified types.Timestamp            `json:"date_modified"`
 }
 
 // CreateFieldParams contains parameters for creating a new field.
 type CreateFieldParams struct {
-	FieldID      types.FieldID            `json:"field_id"`
-	ParentID     types.NullableDatatypeID `json:"parent_id"`
-	SortOrder    int64                    `json:"sort_order"`
-	Name         string                   `json:"name"`
-	Label        string                   `json:"label"`
-	Data         string                   `json:"data"`
-	Validation   string                   `json:"validation"`
-	UIConfig     string                   `json:"ui_config"`
-	Type         types.FieldType          `json:"type"`
-	Translatable bool                     `json:"translatable"`
-	Roles        types.NullableString     `json:"roles"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
-	DateCreated  types.Timestamp          `json:"date_created"`
-	DateModified types.Timestamp          `json:"date_modified"`
+	FieldID      types.FieldID              `json:"field_id"`
+	ParentID     types.NullableDatatypeID   `json:"parent_id"`
+	SortOrder    int64                      `json:"sort_order"`
+	Name         string                     `json:"name"`
+	Label        string                     `json:"label"`
+	Data         string                     `json:"data"`
+	ValidationID types.NullableValidationID `json:"validation_id"`
+	UIConfig     string                     `json:"ui_config"`
+	Type         types.FieldType            `json:"type"`
+	Translatable bool                       `json:"translatable"`
+	Roles        types.NullableString       `json:"roles"`
+	AuthorID     types.NullableUserID       `json:"author_id"`
+	DateCreated  types.Timestamp            `json:"date_created"`
+	DateModified types.Timestamp            `json:"date_modified"`
 }
 
 // UpdateFieldParams contains parameters for updating an existing field.
 type UpdateFieldParams struct {
-	ParentID     types.NullableDatatypeID `json:"parent_id"`
-	SortOrder    int64                    `json:"sort_order"`
-	Name         string                   `json:"name"`
-	Label        string                   `json:"label"`
-	Data         string                   `json:"data"`
-	Validation   string                   `json:"validation"`
-	UIConfig     string                   `json:"ui_config"`
-	Type         types.FieldType          `json:"type"`
-	Translatable bool                     `json:"translatable"`
-	Roles        types.NullableString     `json:"roles"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
-	DateCreated  types.Timestamp          `json:"date_created"`
-	DateModified types.Timestamp          `json:"date_modified"`
-	FieldID      types.FieldID            `json:"field_id"`
+	ParentID     types.NullableDatatypeID   `json:"parent_id"`
+	SortOrder    int64                      `json:"sort_order"`
+	Name         string                     `json:"name"`
+	Label        string                     `json:"label"`
+	Data         string                     `json:"data"`
+	ValidationID types.NullableValidationID `json:"validation_id"`
+	UIConfig     string                     `json:"ui_config"`
+	Type         types.FieldType            `json:"type"`
+	Translatable bool                       `json:"translatable"`
+	Roles        types.NullableString       `json:"roles"`
+	AuthorID     types.NullableUserID       `json:"author_id"`
+	DateCreated  types.Timestamp            `json:"date_created"`
+	DateModified types.Timestamp            `json:"date_modified"`
+	FieldID      types.FieldID              `json:"field_id"`
 }
 
 // MapStringField converts Fields to StringFields for TUI display.
@@ -80,7 +80,7 @@ func MapStringField(a Fields) StringFields {
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID.String(),
 		UIConfig:     a.UIConfig,
 		Type:         a.Type.String(),
 		Translatable: fmt.Sprintf("%t", a.Translatable),
@@ -112,7 +112,7 @@ func (d Database) MapField(a mdb.Fields) Fields {
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID,
 		UIConfig:     a.UiConfig,
 		Type:         a.Type,
 		Translatable: a.Translatable.Bool(),
@@ -136,7 +136,7 @@ func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParam
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		Translatable: types.SafeBool{Val: a.Translatable},
@@ -155,7 +155,7 @@ func (d Database) MapUpdateFieldParams(a UpdateFieldParams) mdb.UpdateFieldParam
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		Translatable: types.SafeBool{Val: a.Translatable},
@@ -269,7 +269,7 @@ func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID,
 		UIConfig:     a.UiConfig,
 		Type:         a.Type,
 		Translatable: a.Translatable.Bool(),
@@ -293,7 +293,7 @@ func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFiel
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		Translatable: types.SafeBool{Val: a.Translatable},
@@ -312,7 +312,7 @@ func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFiel
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		Translatable: types.SafeBool{Val: a.Translatable},
@@ -426,7 +426,7 @@ func (d PsqlDatabase) MapField(a mdbp.Fields) Fields {
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID,
 		UIConfig:     a.UiConfig,
 		Type:         a.Type,
 		Translatable: a.Translatable.Bool(),
@@ -450,7 +450,7 @@ func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateField
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		Translatable: types.SafeBool{Val: a.Translatable},
@@ -469,7 +469,7 @@ func (d PsqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbp.UpdateField
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		Translatable: types.SafeBool{Val: a.Translatable},
@@ -616,7 +616,7 @@ func (c NewFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Fields, 
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
-		Validation:   c.params.Validation,
+		ValidationID: c.params.ValidationID,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		Translatable: types.SafeBool{Val: c.params.Translatable},
@@ -679,7 +679,7 @@ func (c UpdateFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
-		Validation:   c.params.Validation,
+		ValidationID: c.params.ValidationID,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		Translatable: types.SafeBool{Val: c.params.Translatable},
@@ -788,7 +788,7 @@ func (c NewFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Fi
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
-		Validation:   c.params.Validation,
+		ValidationID: c.params.ValidationID,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		Translatable: types.SafeBool{Val: c.params.Translatable},
@@ -855,7 +855,7 @@ func (c UpdateFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
-		Validation:   c.params.Validation,
+		ValidationID: c.params.ValidationID,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		Translatable: types.SafeBool{Val: c.params.Translatable},
@@ -964,7 +964,7 @@ func (c NewFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Fie
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
-		Validation:   c.params.Validation,
+		ValidationID: c.params.ValidationID,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		Translatable: types.SafeBool{Val: c.params.Translatable},
@@ -1027,7 +1027,7 @@ func (c UpdateFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error 
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
-		Validation:   c.params.Validation,
+		ValidationID: c.params.ValidationID,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		Translatable: types.SafeBool{Val: c.params.Translatable},

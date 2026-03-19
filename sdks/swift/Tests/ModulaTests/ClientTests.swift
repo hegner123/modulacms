@@ -70,9 +70,9 @@ final class ClientTests: XCTestCase {
     }
 }
 
-func awaitAsync<T>(_ block: @escaping () async throws -> T) throws -> T {
+func awaitAsync<T: Sendable>(_ block: @Sendable @escaping () async throws -> T) throws -> T {
     let expectation = XCTestExpectation(description: "async")
-    var result: Result<T, Error>!
+    nonisolated(unsafe) var result: Result<T, Error>!
     Task {
         do {
             result = .success(try await block())

@@ -2341,3 +2341,151 @@ func (id *MediaFolderID) UnmarshalJSON(data []byte) error {
 	*id = MediaFolderID(s)
 	return id.Validate()
 }
+
+// ValidationID uniquely identifies a validation config.
+type ValidationID string
+
+// NewValidationID generates a new ULID-based ValidationID.
+func NewValidationID() ValidationID { return ValidationID(NewULID().String()) }
+
+// String returns the string representation of the ValidationID.
+func (id ValidationID) String() string { return string(id) }
+
+// IsZero returns true if the ValidationID is empty.
+func (id ValidationID) IsZero() bool { return id == "" }
+
+// Validate checks if the ValidationID is a valid ULID.
+func (id ValidationID) Validate() error { return validateULID(string(id), "ValidationID") }
+
+// ULID parses the ValidationID as a ulid.ULID.
+func (id ValidationID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the ValidationID.
+func (id ValidationID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseValidationID parses and validates a string as a ValidationID.
+func ParseValidationID(s string) (ValidationID, error) {
+	id := ValidationID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id ValidationID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("ValidationID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *ValidationID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("ValidationID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = ValidationID(v)
+	case []byte:
+		*id = ValidationID(string(v))
+	default:
+		return fmt.Errorf("ValidationID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id ValidationID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *ValidationID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("ValidationID: %w", err)
+	}
+	*id = ValidationID(s)
+	return id.Validate()
+}
+
+// AdminValidationID uniquely identifies an admin validation config.
+type AdminValidationID string
+
+// NewAdminValidationID generates a new ULID-based AdminValidationID.
+func NewAdminValidationID() AdminValidationID { return AdminValidationID(NewULID().String()) }
+
+// String returns the string representation of the AdminValidationID.
+func (id AdminValidationID) String() string { return string(id) }
+
+// IsZero returns true if the AdminValidationID is empty.
+func (id AdminValidationID) IsZero() bool { return id == "" }
+
+// Validate checks if the AdminValidationID is a valid ULID.
+func (id AdminValidationID) Validate() error {
+	return validateULID(string(id), "AdminValidationID")
+}
+
+// ULID parses the AdminValidationID as a ulid.ULID.
+func (id AdminValidationID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the AdminValidationID.
+func (id AdminValidationID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseAdminValidationID parses and validates a string as an AdminValidationID.
+func ParseAdminValidationID(s string) (AdminValidationID, error) {
+	id := AdminValidationID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id AdminValidationID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("AdminValidationID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *AdminValidationID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("AdminValidationID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = AdminValidationID(v)
+	case []byte:
+		*id = AdminValidationID(string(v))
+	default:
+		return fmt.Errorf("AdminValidationID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id AdminValidationID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *AdminValidationID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("AdminValidationID: %w", err)
+	}
+	*id = AdminValidationID(s)
+	return id.Validate()
+}

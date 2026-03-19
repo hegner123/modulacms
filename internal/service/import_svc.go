@@ -245,7 +245,7 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 		Name:         field.Info.Name,
 		Label:        field.Info.Label,
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         types.FieldType(field.Info.Type),
 		AuthorID:     types.NullableUserID{ID: ctx.authorID, Valid: !ctx.authorID.IsZero()},

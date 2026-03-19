@@ -22,18 +22,18 @@ func TestMapContentFieldsToDisplay(t *testing.T) {
 
 	fieldDefs := []db.Fields{
 		{
-			FieldID:    fieldID1,
-			Label:      "Title",
-			Type:       "text",
-			Validation: `{"required":true}`,
-			Data:       `{}`,
+			FieldID:      fieldID1,
+			Label:        "Title",
+			Type:         "text",
+			ValidationID: types.NullableValidationID{},
+			Data:         `{}`,
 		},
 		{
-			FieldID:    fieldID2,
-			Label:      "Body",
-			Type:       "richtext",
-			Validation: `{}`,
-			Data:       `{"format":"markdown"}`,
+			FieldID:      fieldID2,
+			Label:        "Body",
+			Type:         "richtext",
+			ValidationID: types.NullableValidationID{},
+			Data:         `{"format":"markdown"}`,
 		},
 	}
 
@@ -70,8 +70,8 @@ func TestMapContentFieldsToDisplay(t *testing.T) {
 		if displays[0].Value != "Hello World" {
 			t.Errorf("displays[0].Value = %q, want %q", displays[0].Value, "Hello World")
 		}
-		if displays[0].ValidationJSON != `{"required":true}` {
-			t.Errorf("displays[0].ValidationJSON = %q", displays[0].ValidationJSON)
+		if displays[0].ValidationJSON != "" {
+			t.Errorf("displays[0].ValidationJSON = %q, want empty (validation is now FK-based)", displays[0].ValidationJSON)
 		}
 	})
 

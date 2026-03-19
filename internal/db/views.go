@@ -45,7 +45,7 @@ type DatatypeFieldView struct {
 	Label      string               `json:"label"`
 	Type       types.FieldType      `json:"type"`
 	Data       string               `json:"data"`
-	Validation string               `json:"validation"`
+	ValidationID types.NullableValidationID `json:"validation_id"`
 	UIConfig   string               `json:"ui_config"`
 	SortOrder  int64                `json:"sort_order"`
 	Roles      types.NullableString `json:"roles"`
@@ -70,7 +70,7 @@ func MapDatatypeFieldView(row FieldWithSortOrderRow) DatatypeFieldView {
 		Label:      row.Label,
 		Type:       row.Type,
 		Data:       row.Data,
-		Validation: row.Validation,
+		ValidationID: row.ValidationID,
 		UIConfig:   row.UIConfig,
 		SortOrder:  row.SortOrder,
 		Roles:      row.Roles,
@@ -270,7 +270,7 @@ type AdminFieldView struct {
 	Label        string            `json:"label"`
 	Type         types.FieldType   `json:"type"`
 	Data         string            `json:"data"`
-	Validation   string            `json:"validation"`
+	ValidationID types.NullableAdminValidationID `json:"validation_id"`
 	UIConfig     string            `json:"ui_config"`
 	SortOrder    int64             `json:"sort_order"`
 }

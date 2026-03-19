@@ -10,6 +10,62 @@ ModulaCMS looks for `modula.config.json` in the working directory. Override the 
 ./modula-x86 serve --config /etc/modulacms/modula.config.json
 ```
 
+## Config Layering (Multi-Environment)
+
+When you maintain multiple environments (dev, staging, prod), you don't need to duplicate the entire config file. Create a small overlay file containing only the fields that differ, then merge it on top of the base config with `--overlay`:
+
+```bash
+./modula-x86 serve --overlay modula.config.prod.json
+```
+
+The overlay file only needs the fields you want to override:
+
+```json
+{
+  "environment": "prod",
+  "db_driver": "postgres",
+  "db_url": "db.example.com:5432",
+  "db_password": "${POSTGRES_PASSWORD}",
+  "port": ":8080",
+  "bucket_secret_key": "${MINIO_ROOT_PASSWORD}"
+}
+```
+
+At load time, overlay keys overwrite base keys. Fields absent from the overlay keep their base values. Maps and slices are replaced entirely (not deep-merged).
+
+### Scaffold an Overlay
+
+Generate a minimal overlay file for a new environment:
+
+```bash
+./modula-x86 config overlay --env staging
+# Creates modula.config.staging.json with {"environment": "staging"}
+```
+
+Then add only the fields that differ from your base config.
+
+### Viewing Layered Config
+
+```bash
+# Show the merged result (base + overlay)
+./modula-x86 config show --overlay modula.config.prod.json
+
+# Show the overlay file contents only
+./modula-x86 config show --overlay modula.config.prod.json --raw
+```
+
+### Updating Layered Config
+
+When `--overlay` is set, `config set` writes to the overlay file by default (your intent is to override). Use `--base` to write to the base config instead:
+
+```bash
+# Write to overlay (default when layered)
+./modula-x86 config set db_password "newpass" --overlay modula.config.prod.json
+
+# Write to base config
+./modula-x86 config set port ":8080" --overlay modula.config.prod.json --base
+```
+
 ## Viewing and Validating
 
 ```bash

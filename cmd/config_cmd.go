@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/hegner123/modulacms/internal/config"
@@ -38,11 +40,36 @@ var configShowCmd = &cobra.Command{
 Reads from the path specified by --config (default: ./modula.config.json). Environment
 variable references (${VAR}) in the config file are expanded before display.
 
+When using --overlay, the default output is the merged config. Use --raw to print
+the overlay file contents only (useful for seeing what a specific environment overrides).
+
 Examples:
   modula config show
-  modula config show --config /etc/modula/modula.config.json`,
+  modula config show --overlay modula.config.prod.json
+  modula config show --overlay modula.config.prod.json --raw`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
+
+		rawFlag, _ := cmd.Flags().GetBool("raw")
+
+		// --raw without --overlay is meaningless
+		if rawFlag && overlayPath == "" {
+			return fmt.Errorf("--raw requires --overlay to be set")
+		}
+
+		// --raw: show the overlay file contents only
+		if rawFlag {
+			rawCfg, err := config.NewFileProvider(overlayPath).Get()
+			if err != nil {
+				return fmt.Errorf("loading overlay file: %w", err)
+			}
+			formatted, err := utility.FormatJSON(rawCfg)
+			if err != nil {
+				return fmt.Errorf("formatting overlay: %w", err)
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), formatted)
+			return err
+		}
 
 		cfg, err := loadConfigPtr()
 		if err != nil {
@@ -112,6 +139,9 @@ The key must be a known configuration field name. Use "modula config fields" to
 see all available keys and their descriptions. If the updated field requires a
 server restart to take effect, a notice is printed.
 
+When using --overlay, writes target the overlay file by default (operator intent
+is to override). Use --base to write to the base config file instead.
+
 Arguments:
   key     Configuration field name (e.g. port, db_driver, environment)
   value   New value for the field
@@ -119,18 +149,48 @@ Arguments:
 Examples:
   modula config set port ":9090"
   modula config set environment "production"
-  modula config set db_driver "postgres"
-  modula config set ssh_port "2223"`,
+  modula config set db_driver "postgres" --overlay modula.config.prod.json
+  modula config set db_driver "sqlite" --overlay modula.config.prod.json --base`,
 	Args: cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
 		key := args[0]
 		value := args[1]
+		baseFlag, _ := cmd.Flags().GetBool("base")
+
+		// --base without --overlay is meaningless
+		if baseFlag && overlayPath == "" {
+			return fmt.Errorf("--base requires --overlay to be set")
+		}
 
 		// Validate the key exists in the field registry
 		if _, ok := config.FieldByKey(key); !ok {
 			return fmt.Errorf("unknown config key %q; run 'modula config fields' to see available keys", key)
+		}
+
+		// When --base is set with a layered config, we need to load the base
+		// config directly, update it, and save back to base.
+		if baseFlag {
+			baseMgr := config.NewManager(config.NewFileProvider(cfgPath))
+			if err := baseMgr.Load(); err != nil {
+				return fmt.Errorf("loading base configuration: %w", err)
+			}
+
+			updates := map[string]any{key: value}
+			result, err := baseMgr.Update(updates)
+			if err != nil {
+				return fmt.Errorf("updating base config: %w", err)
+			}
+			if !result.Valid {
+				return fmt.Errorf("validation failed:\n  %s", strings.Join(result.Errors, "\n  "))
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Updated %s = %q (in base config)\n", key, value)
+			if len(result.RestartRequired) > 0 {
+				fmt.Fprintf(cmd.OutOrStderr(), "Note: the following fields require a server restart to take effect:\n  %s\n", strings.Join(result.RestartRequired, "\n  "))
+			}
+			return nil
 		}
 
 		mgr, err := loadConfig()
@@ -148,7 +208,11 @@ Examples:
 			return fmt.Errorf("validation failed:\n  %s", strings.Join(result.Errors, "\n  "))
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Updated %s = %q\n", key, value)
+		target := ""
+		if overlayPath != "" {
+			target = " (in overlay)"
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "Updated %s = %q%s\n", key, value, target)
 
 		if len(result.RestartRequired) > 0 {
 			fmt.Fprintf(cmd.OutOrStderr(), "Note: the following fields require a server restart to take effect:\n  %s\n", strings.Join(result.RestartRequired, "\n  "))
@@ -306,12 +370,58 @@ Examples:
 	},
 }
 
+var configOverlayCmd = &cobra.Command{
+	Use:   "overlay --env <name>",
+	Short: "Generate a minimal overlay config file for an environment",
+	Long: `Create a modula.config.<env>.json overlay file containing only the
+environment field. Use this as a starting point, then add only the fields
+that differ from the base config for that environment.
+
+Examples:
+  modula config overlay --env prod
+  modula config overlay --env staging`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		envName, _ := cmd.Flags().GetString("env")
+		if envName == "" {
+			return fmt.Errorf("--env is required")
+		}
+
+		filename := fmt.Sprintf("modula.config.%s.json", envName)
+
+		// Check if the file already exists
+		if _, err := os.Stat(filename); err == nil {
+			return fmt.Errorf("%s already exists; remove it first or edit it directly", filename)
+		}
+
+		overlay := map[string]any{
+			"environment": envName,
+		}
+		data, err := json.MarshalIndent(overlay, "", "  ")
+		if err != nil {
+			return fmt.Errorf("marshaling overlay: %w", err)
+		}
+		data = append(data, '\n')
+
+		if err := os.WriteFile(filename, data, 0644); err != nil {
+			return fmt.Errorf("writing %s: %w", filename, err)
+		}
+
+		fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", filename)
+		fmt.Fprintf(cmd.OutOrStdout(), "Usage: modula serve --overlay %s\n", filename)
+		return nil
+	},
+}
+
 func init() {
 	configParentCmd.AddCommand(configShowCmd)
 	configParentCmd.AddCommand(configValidateCmd)
 	configParentCmd.AddCommand(configSetCmd)
 	configParentCmd.AddCommand(configFieldsCmd)
 	configParentCmd.AddCommand(configTemplateCmd)
+	configParentCmd.AddCommand(configOverlayCmd)
 
+	configShowCmd.Flags().Bool("raw", false, "show overlay file contents only (requires --overlay)")
+	configSetCmd.Flags().Bool("base", false, "write to base config instead of overlay (requires --overlay)")
+	configOverlayCmd.Flags().String("env", "", "environment name for the overlay file (required)")
 	configFieldsCmd.Flags().String("category", "", "filter by category (server, database, storage, cors, cookie, oauth, observability, email, plugin, update, misc)")
 }

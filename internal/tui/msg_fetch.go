@@ -266,6 +266,21 @@ type FieldTypesSet struct {
 	FieldTypes []db.FieldTypes
 }
 
+// --- Validation fetch messages ---
+
+// ValidationsFetchMsg requests fetching all validations.
+type ValidationsFetchMsg struct{}
+
+// ValidationsFetchResultsMsg returns fetched validations.
+type ValidationsFetchResultsMsg struct {
+	Data []db.Validation
+}
+
+// ValidationsSet sets the validations list.
+type ValidationsSet struct {
+	Validations []db.Validation
+}
+
 // --- i18n locale messages ---
 
 // LocaleListMsg carries the list of enabled locales for the locale picker.

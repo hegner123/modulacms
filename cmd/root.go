@@ -6,8 +6,9 @@ import (
 )
 
 var (
-	cfgPath string
-	verbose bool
+	cfgPath     string
+	overlayPath string
+	verbose     bool
 )
 
 var rootCmd = &cobra.Command{
@@ -39,6 +40,7 @@ Management commands:
 
 Global flags:
   --config   Path to modula.config.json (default: ./modula.config.json)
+  --overlay  Overlay config file (merged on top of --config)
   --verbose  Enable debug-level log output`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
@@ -46,6 +48,7 @@ Global flags:
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgPath, "config", config.DefaultConfigFilename, "Path to configuration file")
+	rootCmd.PersistentFlags().StringVar(&overlayPath, "overlay", "", "Overlay config file (merged on top of --config)")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable debug logging")
 
 	rootCmd.AddCommand(serveCmd)

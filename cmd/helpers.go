@@ -34,10 +34,17 @@ func configureLogger() {
 	}
 }
 
-// loadConfig loads the configuration from cfgPath and returns the Manager.
+// loadConfig loads the configuration from cfgPath (and overlayPath if set)
+// and returns the Manager. When --overlay is provided, a LayeredFileProvider
+// merges the overlay on top of the base config.
 func loadConfig() (*config.Manager, error) {
-	configProvider := config.NewFileProvider(cfgPath)
-	configManager := config.NewManager(configProvider)
+	var provider config.Provider
+	if overlayPath != "" {
+		provider = config.NewLayeredFileProvider(cfgPath, overlayPath)
+	} else {
+		provider = config.NewFileProvider(cfgPath)
+	}
+	configManager := config.NewManager(provider)
 
 	if err := configManager.Load(); err != nil {
 		return nil, err

@@ -1,0 +1,69 @@
+package partials
+
+// ValidationForm renders the create validation form fields.
+// Used as an HTMX partial for validation error responses.
+templ ValidationForm(name string, description string, config string, errs map[string]string, csrfToken string) {
+	@CSRFField(csrfToken)
+	if errs["_"] != "" {
+		<div class="rounded-md bg-red-500/10 p-4 ring-1 ring-red-400/20 ring-inset">
+			<p class="text-sm text-red-400">{ errs["_"] }</p>
+		</div>
+	}
+	<div class="space-y-4">
+		@FormField("name", "Name", name, errs["name"])
+		@FormField("description", "Description", description, errs["description"])
+		<div>
+			<label class="block text-sm font-medium text-white">Config</label>
+			<div class="mt-2">
+				<mcms-validation-wizard
+					value={ config }
+					textarea-id="create-validation-config"
+				></mcms-validation-wizard>
+				<textarea id="create-validation-config" name="config" rows="4" style="display:none">{ config }</textarea>
+			</div>
+			if errs["config"] != "" {
+				<p class="mt-2 text-sm text-red-400">{ errs["config"] }</p>
+			}
+		</div>
+	</div>
+	<div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+		<button type="submit" class="inline-flex w-full justify-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] sm:ml-3 sm:w-auto">Create</button>
+		<button type="button" onclick="this.closest('mcms-dialog').close()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto">Cancel</button>
+	</div>
+}
+
+// ValidationEditForm renders the edit validation form fields.
+// Used as an HTMX partial for validation error responses on the detail page.
+templ ValidationEditForm(id string, name string, description string, config string, errs map[string]string, csrfToken string) {
+	<form hx-post={ "/admin/validations/" + id }
+	      hx-target="#validation-edit-form"
+	      hx-swap="innerHTML">
+		@CSRFField(csrfToken)
+		if errs["_"] != "" {
+			<div class="rounded-md bg-red-500/10 p-4 ring-1 ring-red-400/20 ring-inset">
+				<p class="text-sm text-red-400">{ errs["_"] }</p>
+			</div>
+		}
+		<div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+			<div class="sm:col-span-3">
+				@FormField("name", "Name", name, errs["name"])
+			</div>
+			<div class="sm:col-span-3">
+				@FormField("description", "Description", description, errs["description"])
+			</div>
+			<div class="sm:col-span-6">
+				<label class="block text-sm font-medium text-white">Config</label>
+				<div class="mt-2">
+					<mcms-validation-wizard
+						value={ config }
+						textarea-id="config"
+					></mcms-validation-wizard>
+					<textarea id="config" name="config" rows="4" style="display:none">{ config }</textarea>
+				</div>
+				if errs["config"] != "" {
+					<p class="mt-2 text-sm text-red-400">{ errs["config"] }</p>
+				}
+			</div>
+		</div>
+	</form>
+}

@@ -389,7 +389,7 @@ public struct Field: Codable, Sendable {
     public let name: String
     public let label: String
     public let data: String
-    public let validation: String
+    public let validationID: String?
     public let uiConfig: String
     public let type: FieldType
     public let translatable: Bool
@@ -405,7 +405,7 @@ public struct Field: Codable, Sendable {
         case name
         case label
         case data
-        case validation
+        case validationID = "validation_id"
         case uiConfig = "ui_config"
         case type
         case translatable
@@ -423,7 +423,7 @@ public struct CreateFieldParams: Encodable, Sendable {
     public let name: String
     public let label: String
     public let data: String
-    public let validation: String
+    public let validationID: String?
     public let uiConfig: String
     public let type: FieldType
     public let roles: [String]?
@@ -436,7 +436,7 @@ public struct CreateFieldParams: Encodable, Sendable {
         name: String = "",
         label: String,
         data: String,
-        validation: String,
+        validationID: String? = nil,
         uiConfig: String,
         type: FieldType,
         roles: [String]? = nil,
@@ -448,7 +448,7 @@ public struct CreateFieldParams: Encodable, Sendable {
         self.name = name
         self.label = label
         self.data = data
-        self.validation = validation
+        self.validationID = validationID
         self.uiConfig = uiConfig
         self.type = type
         self.roles = roles
@@ -462,7 +462,7 @@ public struct CreateFieldParams: Encodable, Sendable {
         case name
         case label
         case data
-        case validation
+        case validationID = "validation_id"
         case uiConfig = "ui_config"
         case type
         case roles
@@ -477,7 +477,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
     public let name: String
     public let label: String
     public let data: String
-    public let validation: String
+    public let validationID: String?
     public let uiConfig: String
     public let type: FieldType
     public let roles: [String]?
@@ -490,7 +490,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
         name: String = "",
         label: String,
         data: String,
-        validation: String,
+        validationID: String? = nil,
         uiConfig: String,
         type: FieldType,
         roles: [String]? = nil,
@@ -502,7 +502,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
         self.name = name
         self.label = label
         self.data = data
-        self.validation = validation
+        self.validationID = validationID
         self.uiConfig = uiConfig
         self.type = type
         self.roles = roles
@@ -516,7 +516,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
         case name
         case label
         case data
-        case validation
+        case validationID = "validation_id"
         case uiConfig = "ui_config"
         case type
         case roles
@@ -544,7 +544,7 @@ public struct Media: Codable, Sendable {
     public let folderID: MediaFolderID?
     public let dateCreated: Timestamp
     public let dateModified: Timestamp
-    public let downloadURL: String
+    public let downloadURL: String?
 
     enum CodingKeys: String, CodingKey {
         case mediaID = "media_id"
@@ -1758,7 +1758,7 @@ public struct AdminField: Codable, Sendable {
     public let name: String
     public let label: String
     public let data: String
-    public let validation: String
+    public let validationID: String?
     public let uiConfig: String
     public let type: FieldType
     public let translatable: Bool
@@ -1774,7 +1774,7 @@ public struct AdminField: Codable, Sendable {
         case name
         case label
         case data
-        case validation
+        case validationID = "validation_id"
         case uiConfig = "ui_config"
         case type
         case translatable
@@ -1791,7 +1791,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
     public let name: String
     public let label: String
     public let data: String
-    public let validation: String
+    public let validationID: String?
     public let uiConfig: String
     public let type: FieldType
     public let roles: [String]?
@@ -1803,7 +1803,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
         name: String = "",
         label: String,
         data: String,
-        validation: String,
+        validationID: String? = nil,
         uiConfig: String,
         type: FieldType,
         roles: [String]? = nil,
@@ -1814,7 +1814,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
         self.name = name
         self.label = label
         self.data = data
-        self.validation = validation
+        self.validationID = validationID
         self.uiConfig = uiConfig
         self.type = type
         self.roles = roles
@@ -1827,7 +1827,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
         case name
         case label
         case data
-        case validation
+        case validationID = "validation_id"
         case uiConfig = "ui_config"
         case type
         case roles
@@ -1842,7 +1842,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
     public let name: String
     public let label: String
     public let data: String
-    public let validation: String
+    public let validationID: String?
     public let uiConfig: String
     public let type: FieldType
     public let roles: [String]?
@@ -1855,7 +1855,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
         name: String = "",
         label: String,
         data: String,
-        validation: String,
+        validationID: String? = nil,
         uiConfig: String,
         type: FieldType,
         roles: [String]? = nil,
@@ -1867,7 +1867,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
         self.name = name
         self.label = label
         self.data = data
-        self.validation = validation
+        self.validationID = validationID
         self.uiConfig = uiConfig
         self.type = type
         self.roles = roles
@@ -1881,7 +1881,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
         case name
         case label
         case data
-        case validation
+        case validationID = "validation_id"
         case uiConfig = "ui_config"
         case type
         case roles
@@ -2880,6 +2880,144 @@ public struct WebhookTestResponse: Decodable, Sendable {
         case status
         case statusCode = "status_code"
         case error
+    }
+}
+
+// MARK: - Validation
+
+/// A reusable validation configuration referenced by fields.
+public struct Validation: Codable, Sendable {
+    public let validationID: ValidationID
+    public let name: String
+    public let description: String
+    public let config: String
+    public let authorID: UserID?
+    public let dateCreated: Timestamp
+    public let dateModified: Timestamp
+
+    enum CodingKeys: String, CodingKey {
+        case validationID = "validation_id"
+        case name
+        case description
+        case config
+        case authorID = "author_id"
+        case dateCreated = "date_created"
+        case dateModified = "date_modified"
+    }
+}
+
+/// Parameters for creating a new validation.
+public struct CreateValidationParams: Encodable, Sendable {
+    public let name: String
+    public let description: String
+    public let config: String
+
+    public init(
+        name: String,
+        description: String = "",
+        config: String = "{}"
+    ) {
+        self.name = name
+        self.description = description
+        self.config = config
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case description
+        case config
+    }
+}
+
+/// Parameters for updating an existing validation.
+public struct UpdateValidationParams: Encodable, Sendable {
+    public let name: String
+    public let description: String
+    public let config: String
+
+    public init(
+        name: String,
+        description: String = "",
+        config: String = "{}"
+    ) {
+        self.name = name
+        self.description = description
+        self.config = config
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case description
+        case config
+    }
+}
+
+// MARK: - Admin Validation
+
+/// A reusable admin validation configuration referenced by admin fields.
+public struct AdminValidation: Codable, Sendable {
+    public let adminValidationID: AdminValidationID
+    public let name: String
+    public let description: String
+    public let config: String
+    public let authorID: UserID?
+    public let dateCreated: Timestamp
+    public let dateModified: Timestamp
+
+    enum CodingKeys: String, CodingKey {
+        case adminValidationID = "admin_validation_id"
+        case name
+        case description
+        case config
+        case authorID = "author_id"
+        case dateCreated = "date_created"
+        case dateModified = "date_modified"
+    }
+}
+
+/// Parameters for creating a new admin validation.
+public struct CreateAdminValidationParams: Encodable, Sendable {
+    public let name: String
+    public let description: String
+    public let config: String
+
+    public init(
+        name: String,
+        description: String = "",
+        config: String = "{}"
+    ) {
+        self.name = name
+        self.description = description
+        self.config = config
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case description
+        case config
+    }
+}
+
+/// Parameters for updating an existing admin validation.
+public struct UpdateAdminValidationParams: Encodable, Sendable {
+    public let name: String
+    public let description: String
+    public let config: String
+
+    public init(
+        name: String,
+        description: String = "",
+        config: String = "{}"
+    ) {
+        self.name = name
+        self.description = description
+        self.config = config
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case description
+        case config
     }
 }
 

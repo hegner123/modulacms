@@ -18,7 +18,7 @@ type ListAdminFieldByRouteIdRow struct {
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
-	Validation   string                        `json:"validation"`
+	ValidationID types.NullableAdminValidationID `json:"validation_id"`
 	UIConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
 }
@@ -29,7 +29,7 @@ type ListAdminFieldsByDatatypeIDRow struct {
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
-	Validation   string                        `json:"validation"`
+	ValidationID types.NullableAdminValidationID `json:"validation_id"`
 	UIConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
 }
@@ -68,7 +68,7 @@ func MapAdminFieldJSON(a AdminFields) FieldsJSON {
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID.String(),
 		UIConfig:     a.UIConfig,
 		Type:         a.Type.String(),
 		Translatable: fmt.Sprintf("%t", a.Translatable),

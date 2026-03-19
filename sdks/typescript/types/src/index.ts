@@ -38,6 +38,8 @@ export type {
   WebhookDeliveryID,
   TokenID,
   UserSshKeyID,
+  ValidationID,
+  AdminValidationID,
   Slug,
   Email,
   URL,
@@ -69,4 +71,5 @@ export type { Route } from './entities/routing.js'
 export type { NodeDatatype, NodeField, ContentNode, ContentTree } from './entities/tree.js'
 export type { Locale } from './entities/locale.js'
 export type { Webhook, WebhookDelivery } from './entities/webhook.js'
+export type { Validation, AdminValidation } from './entities/validation.js'
 export type { QueryParams, QueryItem, QueryDatatype, QueryResult } from './entities/query.js'

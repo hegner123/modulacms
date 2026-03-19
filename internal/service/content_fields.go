@@ -56,7 +56,7 @@ func (s *ContentService) CreateField(ctx context.Context, ac audited.AuditContex
 		return nil, &NotFoundError{Resource: "field", ID: string(params.FieldID.ID)}
 	}
 
-	if fe := validateContentFieldValue(fieldDef, params.FieldValue); fe != nil {
+	if fe := s.validateContentFieldValue(fieldDef, params.FieldValue); fe != nil {
 		return nil, fe
 	}
 
@@ -78,7 +78,7 @@ func (s *ContentService) UpdateField(ctx context.Context, ac audited.AuditContex
 		return nil, &NotFoundError{Resource: "field", ID: string(params.FieldID.ID)}
 	}
 
-	if fe := validateContentFieldValue(fieldDef, params.FieldValue); fe != nil {
+	if fe := s.validateContentFieldValue(fieldDef, params.FieldValue); fe != nil {
 		return nil, fe
 	}
 
@@ -107,15 +107,28 @@ func (s *ContentService) ListFieldsByContentDataAndLocale(ctx context.Context, c
 	return s.driver.ListContentFieldsByContentDataAndLocale(contentDataID, locale)
 }
 
+// resolveValidationConfig fetches the config JSON for a field's validation_id.
+// Returns empty string if the validation_id is null/zero or the record is missing.
+func (s *ContentService) resolveValidationConfig(id types.NullableValidationID) string {
+	if !id.Valid || id.ID.IsZero() {
+		return ""
+	}
+	v, err := s.driver.GetValidation(id.ID)
+	if err != nil || v == nil {
+		return ""
+	}
+	return v.Config
+}
+
 // validateContentFieldValue runs validation.ValidateField and converts the
 // result to a service-layer ValidationError.
-func validateContentFieldValue(fieldDef *db.Fields, value string) *ValidationError {
+func (s *ContentService) validateContentFieldValue(fieldDef *db.Fields, value string) *ValidationError {
 	fe := validation.ValidateField(validation.FieldInput{
 		FieldID:    fieldDef.FieldID,
 		Label:      fieldDef.Label,
 		FieldType:  fieldDef.Type,
 		Value:      value,
-		Validation: fieldDef.Validation,
+		Validation: s.resolveValidationConfig(fieldDef.ValidationID),
 		Data:       fieldDef.Data,
 	})
 	if fe != nil {

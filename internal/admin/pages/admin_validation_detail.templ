@@ -1,0 +1,102 @@
+package pages
+
+import (
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+templ AdminValidationDetailContent(v db.AdminValidation, csrfToken string) {
+    <!-- Page heading -->
+    <div class="border-b border-white/10 pb-5">
+        <div>
+            <a href="/admin/admin-validations"
+               hx-get="/admin/admin-validations"
+               hx-target="#main-content"
+               hx-push-url="true"
+               class="text-sm font-medium text-gray-400 hover:text-white">&larr; Back to Admin Validations</a>
+        </div>
+        <div class="mt-3 md:flex md:items-center md:justify-between">
+            <div class="min-w-0 flex-1">
+                <h2 class="text-2xl/7 font-bold text-white sm:truncate sm:text-3xl sm:tracking-tight">{ v.Name }</h2>
+            </div>
+            <div class="mt-4 flex gap-x-3 md:mt-0 md:ml-4">
+                <mcms-confirm
+                    label="Delete"
+                    message="Delete this admin validation? Admin fields using it will lose their validation reference."
+                    button-class="inline-flex items-center rounded-md bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-400 ring-1 ring-red-400/20 ring-inset hover:bg-red-500/20"
+                    hx-delete={ "/admin/admin-validations/" + v.AdminValidationID.String() }
+                    hx-swap="none"
+                    hx-on--after-request="if(event.detail.successful) window.location='/admin/admin-validations'"
+                ></mcms-confirm>
+                <button type="submit" form="admin-validation-form"
+                        class="inline-flex items-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Edit form -->
+    <div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3">
+        <div class="lg:col-span-2 space-y-10">
+            <div class="border-b border-white/10 pb-10">
+                <h3 class="text-base/7 font-semibold text-white">Details</h3>
+                <p class="mt-1 text-sm/6 text-gray-400">Edit the admin validation name, description, and config.</p>
+                <div id="admin-validation-edit-form" class="mt-10">
+                    <form id="admin-validation-form"
+                          hx-post={ "/admin/admin-validations/" + v.AdminValidationID.String() }
+                          hx-target="#admin-validation-edit-form"
+                          hx-swap="innerHTML">
+                        @partials.CSRFField(csrfToken)
+                        <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                            <div class="sm:col-span-3">
+                                @partials.FormField("name", "Name", v.Name, "")
+                            </div>
+                            <div class="sm:col-span-3">
+                                @partials.FormField("description", "Description", v.Description, "")
+                            </div>
+                            <div class="sm:col-span-6">
+                                <label class="block text-sm font-medium text-white">Config</label>
+                                <div class="mt-2">
+                                    <mcms-validation-wizard
+                                        value={ v.Config }
+                                        textarea-id="config"
+                                    ></mcms-validation-wizard>
+                                    <textarea id="config" name="config" rows="4" style="display:none">{ v.Config }</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Metadata -->
+            <div>
+                <h3 class="text-base/7 font-semibold text-white">Metadata</h3>
+                <dl class="mt-6 divide-y divide-white/10 border-t border-white/10">
+                    <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm/6 font-medium text-white">ID</dt>
+                        <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ v.AdminValidationID.String() }</dd>
+                    </div>
+                    <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm/6 font-medium text-white">Author</dt>
+                        <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ v.AuthorID.String() }</dd>
+                    </div>
+                    <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm/6 font-medium text-white">Created</dt>
+                        <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ v.DateCreated.String() }</dd>
+                    </div>
+                    <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                        <dt class="text-sm/6 font-medium text-white">Modified</dt>
+                        <dd class="mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0">{ v.DateModified.String() }</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+}
+
+templ AdminValidationDetail(layout layouts.AdminData, v db.AdminValidation, csrfToken string) {
+    @layouts.Admin(layout) {
+        @AdminValidationDetailContent(v, csrfToken)
+    }
+}

@@ -158,7 +158,7 @@ func ensureReferenceDatatype(ctx context.Context, driver DbDriver) error {
 		Name:         "target",
 		Label:        "Target",
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         types.FieldTypeIDRef,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUserID},

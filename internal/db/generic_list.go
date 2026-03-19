@@ -82,7 +82,7 @@ func GenericHeaders(t DBTable) []string {
 			"name",
 			"label",
 			"data",
-			"validation",
+			"validation_id",
 			"ui_config",
 			"type",
 			"translatable",
@@ -248,7 +248,7 @@ func GenericHeaders(t DBTable) []string {
 			"name",
 			"label",
 			"data",
-			"validation",
+			"validation_id",
 			"ui_config",
 			"type",
 			"translatable",
@@ -301,6 +301,26 @@ func GenericHeaders(t DBTable) []string {
 			"focal_y",
 			"author_id",
 			"folder_id",
+			"date_created",
+			"date_modified",
+		}
+	case ValidationT:
+		return []string{
+			"validation_id",
+			"name",
+			"description",
+			"config",
+			"author_id",
+			"date_created",
+			"date_modified",
+		}
+	case Admin_validation:
+		return []string{
+			"admin_validation_id",
+			"name",
+			"description",
+			"config",
+			"author_id",
 			"date_created",
 			"date_modified",
 		}
@@ -578,7 +598,7 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 				s.Name,
 				s.Label,
 				s.Data,
-				s.Validation,
+				s.ValidationID,
 				s.UIConfig,
 				s.Type,
 				s.Translatable,
@@ -825,7 +845,7 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 				s.Name,
 				s.Label,
 				s.Data,
-				s.Validation,
+				s.ValidationID,
 				s.UIConfig,
 				s.Type,
 				s.Translatable,
@@ -908,6 +928,50 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 				s.FocalY,
 				s.AuthorID,
 				s.FolderID,
+				s.DateCreated,
+				s.DateModified,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case ValidationT:
+		a, err := d.ListValidations()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringValidation(row)
+			r := []string{
+				s.ValidationID,
+				s.Name,
+				s.Description,
+				s.Config,
+				s.AuthorID,
+				s.DateCreated,
+				s.DateModified,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
+	case Admin_validation:
+		a, err := d.ListAdminValidations()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringAdminValidation(row)
+			r := []string{
+				s.AdminValidationID,
+				s.Name,
+				s.Description,
+				s.Config,
+				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
 			}

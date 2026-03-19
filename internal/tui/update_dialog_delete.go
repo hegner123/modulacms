@@ -629,6 +629,36 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 			OverlayClearCmd(),
 			FocusSetCmd(PAGEFOCUS),
 		)
+	case DIALOGDELETEVALIDATION:
+		if ctx, ok := m.DCtx.Active.(*DeleteValidationContext); ok {
+			validationID := ctx.ValidationID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				DeleteValidationCmd(validationID),
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case DIALOGDELETEADMINVALIDATION:
+		if ctx, ok := m.DCtx.Active.(*DeleteAdminValidationContext); ok {
+			adminValidationID := ctx.AdminValidationID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				DeleteAdminValidationCmd(adminValidationID),
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
 	case DIALOGBACKUPRESTORE:
 		if ctx, ok := m.DCtx.Active.(*RestoreBackupContext); ok {
 			backupPath := ctx.Path

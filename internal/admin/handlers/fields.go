@@ -95,7 +95,7 @@ func FieldCreateHandler(svc *service.Registry) http.HandlerFunc {
 		label := strings.TrimSpace(r.FormValue("label"))
 		fieldType := strings.TrimSpace(r.FormValue("type"))
 		data := strings.TrimSpace(r.FormValue("data"))
-		validation := strings.TrimSpace(r.FormValue("validation"))
+		validation := strings.TrimSpace(r.FormValue("validation")) // kept for form re-render
 		uiConfig := strings.TrimSpace(r.FormValue("ui_config"))
 
 		ac, acErr := svc.AuditCtx(r.Context())
@@ -124,7 +124,7 @@ func FieldCreateHandler(svc *service.Registry) http.HandlerFunc {
 			Label:      label,
 			Type:       types.FieldType(fieldType),
 			Data:       data,
-			Validation: validation,
+			ValidationID: types.NullableValidationID{}, // TODO: parse validation_id from form
 			UIConfig:   uiConfig,
 			Roles:      rolesParam,
 			AuthorID:   authorID,
@@ -243,7 +243,7 @@ func FieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		label := strings.TrimSpace(r.FormValue("label"))
 		fieldType := strings.TrimSpace(r.FormValue("type"))
 		data := strings.TrimSpace(r.FormValue("data"))
-		validation := strings.TrimSpace(r.FormValue("validation"))
+		validation := strings.TrimSpace(r.FormValue("validation")) // kept for form re-render
 		uiConfig := strings.TrimSpace(r.FormValue("ui_config"))
 
 		ac, acErr := svc.AuditCtx(r.Context())
@@ -276,7 +276,7 @@ func FieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			Label:        label,
 			Type:         types.FieldType(fieldType),
 			Data:         data,
-			Validation:   validation,
+			ValidationID: types.NullableValidationID{}, // TODO: parse validation_id from form
 			UIConfig:     uiConfig,
 			Translatable: translatable,
 			Roles:        rolesParam,

@@ -74,6 +74,8 @@ sql:
           webhook_id: "WebhookID"
           delivery_id: "DeliveryID"
           folder_id: "FolderID"
+          validation_id: "ValidationID"
+          admin_validation_id: "AdminValidationID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -106,6 +108,8 @@ sql:
           webhook: Webhooks
           webhook_delivery: WebhookDeliveries
           media_folder: MediaFolders
+          validation: Validations
+          admin_validation: AdminValidations
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -534,6 +538,17 @@ sql:
           - column: "media.folder_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
+          # VALIDATIONS
+          - column: "validations.validation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ValidationID"}
+          - column: "admin_validations.admin_validation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminValidationID"}
+          - column: "fields.validation_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableValidationID"}
+          - column: "admin_fields.validation_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminValidationID"}
           # PUBLISH METADATA on content_data / admin_content_data
           - column: "content_data.published_at"
             nullable: true
@@ -621,6 +636,8 @@ sql:
           webhook_id: "WebhookID"
           delivery_id: "DeliveryID"
           folder_id: "FolderID"
+          validation_id: "ValidationID"
+          admin_validation_id: "AdminValidationID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -653,6 +670,8 @@ sql:
           webhook: Webhooks
           webhook_delivery: WebhookDeliveries
           media_folder: MediaFolders
+          validation: Validations
+          admin_validation: AdminValidations
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -1081,6 +1100,17 @@ sql:
           - column: "media.folder_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
+          # VALIDATIONS
+          - column: "validations.validation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ValidationID"}
+          - column: "admin_validations.admin_validation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminValidationID"}
+          - column: "fields.validation_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableValidationID"}
+          - column: "admin_fields.validation_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminValidationID"}
           # PUBLISH METADATA on content_data / admin_content_data
           - column: "content_data.published_at"
             nullable: true
@@ -1168,6 +1198,8 @@ sql:
           webhook_id: "WebhookID"
           delivery_id: "DeliveryID"
           folder_id: "FolderID"
+          validation_id: "ValidationID"
+          admin_validation_id: "AdminValidationID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -1200,6 +1232,8 @@ sql:
           webhook: Webhooks
           webhook_delivery: WebhookDeliveries
           media_folder: MediaFolders
+          validation: Validations
+          admin_validation: AdminValidations
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -1628,6 +1662,17 @@ sql:
           - column: "media.folder_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaFolderID"}
+          # VALIDATIONS
+          - column: "validations.validation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ValidationID"}
+          - column: "admin_validations.admin_validation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminValidationID"}
+          - column: "fields.validation_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableValidationID"}
+          - column: "admin_fields.validation_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminValidationID"}
           # PUBLISH METADATA on content_data / admin_content_data
           - column: "content_data.published_at"
             nullable: true

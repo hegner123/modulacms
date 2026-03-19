@@ -26,7 +26,7 @@ Parallel `admin_validations` table with `admin_validation_id` PK.
 
 ## Phases
 
-### Phase 1: SQL Schema and Code Generation
+### Phase 1: SQL Schema and Code Generation ✅
 
 1. **Typed IDs** — Add `ValidationID`, `AdminValidationID`, plus nullable wrappers to `internal/db/types/`
 2. **Schema directories** — Create `sql/schema/38_validations/` and `sql/schema/39_admin_validations/` (6 files each)
@@ -36,7 +36,7 @@ Parallel `admin_validations` table with `admin_validation_id` PK.
 6. **dbgen entity definitions** — Add Validations/AdminValidations entities, update Fields/AdminFields to replace `Validation string` with `ValidationID NullableValidationID` in `tools/dbgen/definitions.go`
 7. **Run `just dbgen`**
 
-### Phase 2: DbDriver Interface and Registration
+### Phase 2: DbDriver Interface and Registration ✅
 
 1. **ValidationRepository interface** — Standard CRUD plus `ListValidationsByName` (search)
 2. **Embed in DbDriver** — Add to interface in `internal/db/db.go`
@@ -45,7 +45,7 @@ Parallel `admin_validations` table with `admin_validation_id` PK.
 5. **Regenerate combined schemas** — `sql/schema/read_sql.sh`
 6. **GenericHeaders/GenericList** — Add cases + test entries
 
-### Phase 3: Service Layer
+### Phase 3: Service Layer ✅
 
 1. **ValidationService** (new file `internal/service/validations.go`)
    - `CreateValidation` — validates name non-empty, validates config JSON via `types.ValidateValidationConfig`
@@ -56,7 +56,7 @@ Parallel `admin_validations` table with `admin_validation_id` PK.
 3. **Update content field validation** — `content_fields.go` resolves config by fetching the `Validations` row via `validation_id`. NULL `validation_id` means no validation.
 4. **Register in service.Registry**
 
-### Phase 4: REST API
+### Phase 4: REST API ✅
 
 1. **CRUD handlers** — `internal/router/validations.go`
    - `GET /api/v1/validations` (list + pagination)
@@ -69,7 +69,7 @@ Parallel `admin_validations` table with `admin_validation_id` PK.
 2. **Routes** — Register in `mux.go` with permission middleware
 3. **RBAC** — Add `validations:read/create/update/delete` to bootstrap permissions
 
-### Phase 5: Admin Panel
+### Phase 5: Admin Panel ✅
 
 1. **Validation CRUD pages**
    - `validations_list.templ` — data table of all configs
@@ -81,19 +81,19 @@ Parallel `admin_validations` table with `admin_validation_id` PK.
 5. **Update field handlers** — Read `validation_id` from form, pass validations list to templates
 6. **Sidebar nav** — Add "Validations" under Schema section
 
-### Phase 6: Cleanup
+### Phase 6: Cleanup ✅ (completed during Phase 1 rename sweep)
 
 1. **Remove `Validation string` field** from Fields/AdminFields structs, CreateFieldParams, UpdateFieldParams
 2. **Remove inline validation parsing** — delete `ParseValidationConfig` calls from field handlers and service methods that operated on the inline string
 3. **Remove `validation` column references** from all SQL queries
 4. **Update existing tests** that set `Validation` on field params to use `ValidationID` instead
 
-### Phase 7: TUI (Note Only)
+### Phase 7: TUI ✅
 
 - `screen_validations.go` — list/detail/create/edit
 - Update field screens to show validation picker instead of raw JSON
 
-### Phase 8: SDK Updates
+### Phase 8: SDK Updates ✅
 
 - **TypeScript:** Add `Validation` type to `@modulacms/types`, CRUD to admin SDK, replace `validation: string` with `validation_id?: string` on Fields type
 - **Go:** Add `Validation` struct, `ValidationID` branded type, CRUD resource, update Fields struct

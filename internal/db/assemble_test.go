@@ -242,7 +242,7 @@ func TestAssembleContentDataView(t *testing.T) {
 		Name:         seed.Field.Name,
 		Label:        seed.Field.Label,
 		Data:         seed.Field.Data,
-		Validation:   seed.Field.Validation,
+		ValidationID: seed.Field.ValidationID,
 		UIConfig:     seed.Field.UIConfig,
 		Type:         seed.Field.Type,
 		AuthorID:     seed.Field.AuthorID,
@@ -472,8 +472,8 @@ func TestMapDatatypeFieldView(t *testing.T) {
 		Label:      "title",
 		Type:       types.FieldTypeText,
 		Data:       "{}",
-		Validation: "{}",
-		UIConfig:   "{}",
+		ValidationID: types.NullableValidationID{},
+		UIConfig:     "{}",
 	}
 
 	fv := MapDatatypeFieldView(row)
@@ -490,8 +490,8 @@ func TestMapDatatypeFieldView(t *testing.T) {
 	if fv.Data != row.Data {
 		t.Errorf("Data = %q, want %q", fv.Data, row.Data)
 	}
-	if fv.Validation != row.Validation {
-		t.Errorf("Validation = %q, want %q", fv.Validation, row.Validation)
+	if fv.ValidationID != row.ValidationID {
+		t.Errorf("ValidationID = %v, want %v", fv.ValidationID, row.ValidationID)
 	}
 	if fv.UIConfig != row.UIConfig {
 		t.Errorf("UIConfig = %q, want %q", fv.UIConfig, row.UIConfig)
@@ -517,7 +517,7 @@ func TestAssembleDatatypeFullView(t *testing.T) {
 		Name:         seed.Field.Name,
 		Label:        seed.Field.Label,
 		Data:         seed.Field.Data,
-		Validation:   seed.Field.Validation,
+		ValidationID: seed.Field.ValidationID,
 		UIConfig:     seed.Field.UIConfig,
 		Type:         seed.Field.Type,
 		AuthorID:     seed.Field.AuthorID,
@@ -535,7 +535,7 @@ func TestAssembleDatatypeFullView(t *testing.T) {
 		SortOrder:    2,
 		Label:        "body",
 		Data:         "{}",
-		Validation:   "{}",
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     "{}",
 		Type:         types.FieldTypeTextarea,
 		AuthorID:     authorID,

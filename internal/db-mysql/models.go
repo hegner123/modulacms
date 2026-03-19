@@ -93,20 +93,20 @@ type AdminFieldTypes struct {
 }
 
 type AdminFields struct {
-	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
-	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
-	SortOrder    int32                         `json:"sort_order"`
-	Name         string                        `json:"name"`
-	Label        string                        `json:"label"`
-	Data         string                        `json:"data"`
-	Validation   string                        `json:"validation"`
-	UiConfig     string                        `json:"ui_config"`
-	Type         types.FieldType               `json:"type"`
-	Translatable types.SafeBool                `json:"translatable"`
-	Roles        types.NullableString          `json:"roles"`
-	AuthorID     types.NullableUserID          `json:"author_id"`
-	DateCreated  types.Timestamp               `json:"date_created"`
-	DateModified types.Timestamp               `json:"date_modified"`
+	AdminFieldID types.AdminFieldID              `json:"admin_field_id"`
+	ParentID     types.NullableAdminDatatypeID   `json:"parent_id"`
+	SortOrder    int32                           `json:"sort_order"`
+	Name         string                          `json:"name"`
+	Label        string                          `json:"label"`
+	Data         string                          `json:"data"`
+	ValidationID types.NullableAdminValidationID `json:"validation_id"`
+	UiConfig     string                          `json:"ui_config"`
+	Type         types.FieldType                 `json:"type"`
+	Translatable types.SafeBool                  `json:"translatable"`
+	Roles        types.NullableString            `json:"roles"`
+	AuthorID     types.NullableUserID            `json:"author_id"`
+	DateCreated  types.Timestamp                 `json:"date_created"`
+	DateModified types.Timestamp                 `json:"date_modified"`
 }
 
 type AdminRoutes struct {
@@ -117,6 +117,16 @@ type AdminRoutes struct {
 	AuthorID     types.NullableUserID `json:"author_id"`
 	DateCreated  types.Timestamp      `json:"date_created"`
 	DateModified types.Timestamp      `json:"date_modified"`
+}
+
+type AdminValidations struct {
+	AdminValidationID types.AdminValidationID `json:"admin_validation_id"`
+	Name              string                  `json:"name"`
+	Description       string                  `json:"description"`
+	Config            string                  `json:"config"`
+	AuthorID          types.NullableUserID    `json:"author_id"`
+	DateCreated       types.Timestamp         `json:"date_created"`
+	DateModified      types.Timestamp         `json:"date_modified"`
 }
 
 type Backup struct {
@@ -263,20 +273,20 @@ type FieldTypes struct {
 }
 
 type Fields struct {
-	FieldID      types.FieldID            `json:"field_id"`
-	ParentID     types.NullableDatatypeID `json:"parent_id"`
-	SortOrder    int32                    `json:"sort_order"`
-	Name         string                   `json:"name"`
-	Label        string                   `json:"label"`
-	Data         string                   `json:"data"`
-	Validation   string                   `json:"validation"`
-	UiConfig     string                   `json:"ui_config"`
-	Type         types.FieldType          `json:"type"`
-	Translatable types.SafeBool           `json:"translatable"`
-	Roles        types.NullableString     `json:"roles"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
-	DateCreated  types.Timestamp          `json:"date_created"`
-	DateModified types.Timestamp          `json:"date_modified"`
+	FieldID      types.FieldID              `json:"field_id"`
+	ParentID     types.NullableDatatypeID   `json:"parent_id"`
+	SortOrder    int32                      `json:"sort_order"`
+	Name         string                     `json:"name"`
+	Label        string                     `json:"label"`
+	Data         string                     `json:"data"`
+	ValidationID types.NullableValidationID `json:"validation_id"`
+	UiConfig     string                     `json:"ui_config"`
+	Type         types.FieldType            `json:"type"`
+	Translatable types.SafeBool             `json:"translatable"`
+	Roles        types.NullableString       `json:"roles"`
+	AuthorID     types.NullableUserID       `json:"author_id"`
+	DateCreated  types.Timestamp            `json:"date_created"`
+	DateModified types.Timestamp            `json:"date_modified"`
 }
 
 type Locale struct {
@@ -440,6 +450,16 @@ type Users struct {
 	Roles        string          `json:"role"`
 	DateCreated  types.Timestamp `json:"date_created"`
 	DateModified types.Timestamp `json:"date_modified"`
+}
+
+type Validations struct {
+	ValidationID types.ValidationID   `json:"validation_id"`
+	Name         string               `json:"name"`
+	Description  string               `json:"description"`
+	Config       string               `json:"config"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
 }
 
 type WebhookDeliveries struct {

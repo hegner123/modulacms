@@ -143,7 +143,7 @@ func SnapshotFieldsToSlice(items []db.FieldsJSON) ([]db.Fields, error) {
 			Name:         item.Name,
 			Label:        item.Label,
 			Data:         item.Data,
-			Validation:   item.Validation,
+			ValidationID: ParseNullableValidationID(item.ValidationID),
 			UIConfig:     item.UIConfig,
 			Type:         types.FieldType(item.Type),
 			Translatable: translatable,
@@ -216,4 +216,12 @@ func ParseNullableUserID(s string) types.NullableUserID {
 		return types.NullableUserID{}
 	}
 	return types.NullableUserID{ID: types.UserID(s), Valid: true}
+}
+
+// ParseNullableValidationID converts a string to a NullableValidationID.
+func ParseNullableValidationID(s string) types.NullableValidationID {
+	if s == "" || s == "null" {
+		return types.NullableValidationID{}
+	}
+	return types.NullableValidationID{ID: types.ValidationID(s), Valid: true}
 }
