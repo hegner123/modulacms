@@ -267,6 +267,12 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case DeleteSessionRequestMsg:
 		// Revoke session
 		return m, m.HandleDeleteSession(msg)
+	case CreateMediaDimensionFromDialogRequestMsg:
+		return m, m.HandleCreateMediaDimension(msg)
+	case UpdateMediaDimensionFromDialogRequestMsg:
+		return m, m.HandleUpdateMediaDimension(msg)
+	case DeleteMediaDimensionRequestMsg:
+		return m, m.HandleDeleteMediaDimension(msg)
 	case ContentCreatedMsg:
 		if msg.AdminMode {
 			return m, tea.Batch(

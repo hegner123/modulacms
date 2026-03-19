@@ -85,6 +85,71 @@ func UpdateUserFromDialogCmd(userID, username, name, email, role string) tea.Cmd
 }
 
 // =============================================================================
+// CREATE/UPDATE MEDIA DIMENSION FROM DIALOG
+// =============================================================================
+
+// CreateMediaDimensionFromDialogRequestMsg triggers media dimension creation.
+type CreateMediaDimensionFromDialogRequestMsg struct {
+	Label       string
+	Width       string
+	Height      string
+	AspectRatio string
+}
+
+// MediaDimensionCreatedMsg is sent after a media dimension is created.
+type MediaDimensionCreatedMsg struct {
+	MdID  string
+	Label string
+}
+
+// UpdateMediaDimensionFromDialogRequestMsg triggers media dimension update.
+type UpdateMediaDimensionFromDialogRequestMsg struct {
+	MdID        string
+	Label       string
+	Width       string
+	Height      string
+	AspectRatio string
+}
+
+// MediaDimensionUpdatedMsg is sent after a media dimension is updated.
+type MediaDimensionUpdatedMsg struct {
+	MdID  string
+	Label string
+}
+
+// ShowCreateMediaDimensionDialogCmd creates a command to show the create dialog.
+func ShowCreateMediaDimensionDialogCmd() tea.Cmd {
+	return func() tea.Msg {
+		return ShowMediaDimensionFormDialogMsg{Title: "New Dimension"}
+	}
+}
+
+// ShowEditMediaDimensionDialogCmd creates a command to show the edit dialog.
+func ShowEditMediaDimensionDialogCmd(dim db.MediaDimensions) tea.Cmd {
+	return func() tea.Msg {
+		return ShowEditMediaDimensionDialogMsg{Dimension: dim}
+	}
+}
+
+// CreateMediaDimensionFromDialogCmd creates a command to trigger creation.
+func CreateMediaDimensionFromDialogCmd(label, width, height, aspectRatio string) tea.Cmd {
+	return func() tea.Msg {
+		return CreateMediaDimensionFromDialogRequestMsg{
+			Label: label, Width: width, Height: height, AspectRatio: aspectRatio,
+		}
+	}
+}
+
+// UpdateMediaDimensionFromDialogCmd creates a command to trigger update.
+func UpdateMediaDimensionFromDialogCmd(mdID, label, width, height, aspectRatio string) tea.Cmd {
+	return func() tea.Msg {
+		return UpdateMediaDimensionFromDialogRequestMsg{
+			MdID: mdID, Label: label, Width: width, Height: height, AspectRatio: aspectRatio,
+		}
+	}
+}
+
+// =============================================================================
 // CREATE TOKEN FROM DIALOG
 // =============================================================================
 

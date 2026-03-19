@@ -22,6 +22,7 @@ func (m Model) HomepageMenuInit() []Page {
 		m.PageMap[DATATYPES],
 		m.PageMap[FIELDTYPES],
 		m.PageMap[VALIDATIONS],
+		m.PageMap[MEDIADIMENSIONSPAGE],
 		m.PageMap[USERSADMIN],
 	)
 

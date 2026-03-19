@@ -516,6 +516,28 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// the screen needs to display, so it must reach the screen directly.
 	// TokenDeletedMsg similarly refreshes the list via the screen.
 
+	// Media dimension dialog messages → UpdateDialog.
+	case ShowMediaDimensionFormDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowEditMediaDimensionDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowDeleteMediaDimensionDialogMsg:
+		return m.UpdateDialog(msg)
+	case MediaDimensionFormDialogAcceptMsg:
+		return m.UpdateDialog(msg)
+	case MediaDimensionFormDialogCancelMsg:
+		return m.UpdateDialog(msg)
+
+	// Media dimension CRUD requests → UpdateCms.
+	case CreateMediaDimensionFromDialogRequestMsg:
+		return m.UpdateCms(msg)
+	case UpdateMediaDimensionFromDialogRequestMsg:
+		return m.UpdateCms(msg)
+	case DeleteMediaDimensionRequestMsg:
+		return m.UpdateCms(msg)
+
+	// Media dimension CRUD results → screen (fall through to ActiveScreen.Update).
+
 	// Session dialog show messages → UpdateDialog.
 	case ShowDeleteSessionDialogMsg:
 		return m.UpdateDialog(msg)

@@ -276,6 +276,46 @@ func DeleteWebhookCmd(webhookID types.WebhookID) tea.Cmd {
 }
 
 // =============================================================================
+// DELETE MEDIA DIMENSION
+// =============================================================================
+
+// DeleteMediaDimensionContext stores context for a media dimension deletion.
+type DeleteMediaDimensionContext struct {
+	MdID  string
+	Label string
+}
+
+// ShowDeleteMediaDimensionDialogMsg triggers showing a delete media dimension dialog.
+type ShowDeleteMediaDimensionDialogMsg struct {
+	MdID  string
+	Label string
+}
+
+// ShowDeleteMediaDimensionDialogCmd creates a command to show a delete media dimension dialog.
+func ShowDeleteMediaDimensionDialogCmd(mdID string, label string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteMediaDimensionDialogMsg{MdID: mdID, Label: label}
+	}
+}
+
+// DeleteMediaDimensionRequestMsg triggers media dimension deletion.
+type DeleteMediaDimensionRequestMsg struct {
+	MdID string
+}
+
+// MediaDimensionDeletedMsg is sent after a media dimension is deleted.
+type MediaDimensionDeletedMsg struct {
+	MdID string
+}
+
+// DeleteMediaDimensionCmd creates a command to delete a media dimension.
+func DeleteMediaDimensionCmd(mdID string) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteMediaDimensionRequestMsg{MdID: mdID}
+	}
+}
+
+// =============================================================================
 // DELETE TOKEN
 // =============================================================================
 
@@ -912,6 +952,21 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
 				DeleteTokenCmd(tokenID),
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case DIALOGDELETEMEDIADIMENSION:
+		if ctx, ok := m.DCtx.Active.(*DeleteMediaDimensionContext); ok {
+			mdID := ctx.MdID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				DeleteMediaDimensionCmd(mdID),
 			)
 		}
 		return m, tea.Batch(

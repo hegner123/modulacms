@@ -211,6 +211,13 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 			return m, tea.Batch(cmds...)
+		case MEDIADIMENSIONSPAGE:
+			page := m.PageMap[MEDIADIMENSIONSPAGE]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, MediaDimensionsFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			return m, tea.Batch(cmds...)
 		case SESSIONSPAGE:
 			page := m.PageMap[SESSIONSPAGE]
 			cmds = append(cmds, LoadingStartCmd())

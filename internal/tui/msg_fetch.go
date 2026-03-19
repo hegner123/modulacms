@@ -296,6 +296,16 @@ type TokensListSet struct {
 	TokensList []db.Tokens
 }
 
+// --- Media dimension management messages ---
+
+// MediaDimensionsFetchMsg requests fetching all media dimensions.
+type MediaDimensionsFetchMsg struct{}
+
+// MediaDimensionsFetchResultsMsg returns fetched media dimensions.
+type MediaDimensionsFetchResultsMsg struct {
+	Data []db.MediaDimensions
+}
+
 // --- Session management messages ---
 
 // SessionsFetchMsg requests fetching all sessions.

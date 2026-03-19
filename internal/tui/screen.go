@@ -114,6 +114,8 @@ func (m Model) screenForPage(page Page) Screen {
 		return NewTokensScreen(nil)
 	case SESSIONSPAGE:
 		return NewSessionsScreen(nil)
+	case MEDIADIMENSIONSPAGE:
+		return NewMediaDimensionsScreen(nil)
 	case DEPLOYPAGE:
 		return NewDeployScreen(nil)
 	case PIPELINESPAGE:

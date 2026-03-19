@@ -706,6 +706,58 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(PAGEFOCUS),
 		)
 
+	// --- Media dimension dialog messages ---
+	case ShowMediaDimensionFormDialogMsg:
+		dialog := NewMediaDimensionFormDialog(msg.Title)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditMediaDimensionDialogMsg:
+		dialog := NewEditMediaDimensionFormDialog("Edit Dimension", msg.Dimension)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteMediaDimensionDialogMsg:
+		dialog := NewDialog("Delete Dimension", fmt.Sprintf("Delete dimension '%s'?\nThis cannot be undone.", msg.Label), true, DIALOGDELETEMEDIADIMENSION)
+		dialog.SetButtons("Delete", "Cancel")
+		m.DCtx.Active = &DeleteMediaDimensionContext{
+			MdID:  msg.MdID,
+			Label: msg.Label,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case MediaDimensionFormDialogAcceptMsg:
+		switch msg.Action {
+		case FORMDIALOGCREATEMEDIADIMENSION:
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				CreateMediaDimensionFromDialogCmd(msg.Label, msg.Width, msg.Height, msg.AspectRatio),
+			)
+		case FORMDIALOGEDITMEDIADIMENSION:
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				UpdateMediaDimensionFromDialogCmd(msg.EntityID, msg.Label, msg.Width, msg.Height, msg.AspectRatio),
+			)
+		default:
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		}
+	case MediaDimensionFormDialogCancelMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+
 	// --- Session dialog messages ---
 	case ShowDeleteSessionDialogMsg:
 		dialog := NewDialog("Revoke Session", fmt.Sprintf("Revoke session '%s'?\nThe user will be logged out.", msg.Label), true, DIALOGDELETESESSION)

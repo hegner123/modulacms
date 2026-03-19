@@ -675,3 +675,6 @@ func TokensFetchCmd() tea.Cmd { return func() tea.Msg { return TokensFetchMsg{} 
 
 // SessionsFetchCmd creates a command to fetch the session list.
 func SessionsFetchCmd() tea.Cmd { return func() tea.Msg { return SessionsFetchMsg{} } }
+
+// MediaDimensionsFetchCmd creates a command to fetch media dimensions.
+func MediaDimensionsFetchCmd() tea.Cmd { return func() tea.Msg { return MediaDimensionsFetchMsg{} } }
