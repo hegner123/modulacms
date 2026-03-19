@@ -53,6 +53,8 @@ const (
 	FORMDIALOGEDITADMINSINGLEFIELD        FormDialogAction = "edit_admin_single_field"
 	FORMDIALOGCREATEMEDIADIMENSION         FormDialogAction = "create_media_dimension"
 	FORMDIALOGEDITMEDIADIMENSION           FormDialogAction = "edit_media_dimension"
+	FORMDIALOGCREATEROLE                   FormDialogAction = "create_role"
+	FORMDIALOGEDITROLE                     FormDialogAction = "edit_role"
 	FORMDIALOGCREATEWEBHOOK               FormDialogAction = "create_webhook"
 	FORMDIALOGEDITWEBHOOK                 FormDialogAction = "edit_webhook"
 	FORMDIALOGCREATEVALIDATION            FormDialogAction = "create_validation"

@@ -678,3 +678,6 @@ func SessionsFetchCmd() tea.Cmd { return func() tea.Msg { return SessionsFetchMs
 
 // MediaDimensionsFetchCmd creates a command to fetch media dimensions.
 func MediaDimensionsFetchCmd() tea.Cmd { return func() tea.Msg { return MediaDimensionsFetchMsg{} } }
+
+// RolesScreenFetchCmd creates a command to fetch roles screen data.
+func RolesScreenFetchCmd() tea.Cmd { return func() tea.Msg { return RolesScreenFetchMsg{} } }

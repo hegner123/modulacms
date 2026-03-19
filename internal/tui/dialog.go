@@ -52,6 +52,7 @@ const (
 	DIALOGDELETESESSION        DialogAction = "delete_session"
 	DIALOGDELETEMEDIADIMENSION DialogAction = "delete_media_dimension"
 	DIALOGUNLINKOAUTH          DialogAction = "unlink_oauth"
+	DIALOGDELETEROLE           DialogAction = "delete_role"
 )
 
 // dialogBorderPadding accounts for border and padding in dialog width calculations.
@@ -135,7 +136,8 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 		DIALOGDELETETOKEN,
 		DIALOGDELETESESSION,
 		DIALOGDELETEMEDIADIMENSION,
-		DIALOGUNLINKOAUTH:
+		DIALOGUNLINKOAUTH,
+		DIALOGDELETEROLE:
 		return d.ToggleControls(msg)
 	case DIALOGLOCALESELECT:
 		return d.LocaleSelectControls(msg)

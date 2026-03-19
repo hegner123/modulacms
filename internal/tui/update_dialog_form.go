@@ -85,6 +85,61 @@ func UpdateUserFromDialogCmd(userID, username, name, email, role string) tea.Cmd
 }
 
 // =============================================================================
+// CREATE/UPDATE ROLE FROM DIALOG
+// =============================================================================
+
+// CreateRoleFromDialogRequestMsg triggers role creation.
+type CreateRoleFromDialogRequestMsg struct {
+	Label string
+}
+
+// RoleCreatedFromDialogMsg is sent after a role is created.
+type RoleCreatedFromDialogMsg struct {
+	RoleID types.RoleID
+	Label  string
+}
+
+// UpdateRoleFromDialogRequestMsg triggers role update.
+type UpdateRoleFromDialogRequestMsg struct {
+	RoleID string
+	Label  string
+}
+
+// RoleUpdatedFromDialogMsg is sent after a role is updated.
+type RoleUpdatedFromDialogMsg struct {
+	RoleID types.RoleID
+	Label  string
+}
+
+// ShowCreateRoleDialogCmd creates a command to show the create role dialog.
+func ShowCreateRoleDialogCmd() tea.Cmd {
+	return func() tea.Msg {
+		return ShowRoleFormDialogMsg{Title: "New Role"}
+	}
+}
+
+// ShowEditRoleDialogCmd creates a command to show the edit role dialog.
+func ShowEditRoleDialogCmd(role db.Roles) tea.Cmd {
+	return func() tea.Msg {
+		return ShowEditRoleDialogMsg{Role: role}
+	}
+}
+
+// CreateRoleFromDialogCmd creates a command to trigger role creation.
+func CreateRoleFromDialogCmd(label string) tea.Cmd {
+	return func() tea.Msg {
+		return CreateRoleFromDialogRequestMsg{Label: label}
+	}
+}
+
+// UpdateRoleFromDialogCmd creates a command to trigger role update.
+func UpdateRoleFromDialogCmd(roleID, label string) tea.Cmd {
+	return func() tea.Msg {
+		return UpdateRoleFromDialogRequestMsg{RoleID: roleID, Label: label}
+	}
+}
+
+// =============================================================================
 // CREATE/UPDATE MEDIA DIMENSION FROM DIALOG
 // =============================================================================
 

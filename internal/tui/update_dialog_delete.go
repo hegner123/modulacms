@@ -276,6 +276,46 @@ func DeleteWebhookCmd(webhookID types.WebhookID) tea.Cmd {
 }
 
 // =============================================================================
+// DELETE ROLE
+// =============================================================================
+
+// DeleteRoleContext stores context for a role deletion operation.
+type DeleteRoleContext struct {
+	RoleID types.RoleID
+	Label  string
+}
+
+// ShowDeleteRoleDialogMsg triggers showing a delete role confirmation dialog.
+type ShowDeleteRoleDialogMsg struct {
+	RoleID types.RoleID
+	Label  string
+}
+
+// ShowDeleteRoleDialogCmd creates a command to show a delete role dialog.
+func ShowDeleteRoleDialogCmd(roleID types.RoleID, label string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteRoleDialogMsg{RoleID: roleID, Label: label}
+	}
+}
+
+// DeleteRoleRequestMsg triggers role deletion.
+type DeleteRoleRequestMsg struct {
+	RoleID types.RoleID
+}
+
+// RoleDeletedMsg is sent after a role is deleted.
+type RoleDeletedMsg struct {
+	RoleID types.RoleID
+}
+
+// DeleteRoleCmd creates a command to delete a role.
+func DeleteRoleCmdAction(roleID types.RoleID) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteRoleRequestMsg{RoleID: roleID}
+	}
+}
+
+// =============================================================================
 // UNLINK OAUTH
 // =============================================================================
 
@@ -963,6 +1003,21 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
 				DeleteTokenCmd(tokenID),
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case DIALOGDELETEROLE:
+		if ctx, ok := m.DCtx.Active.(*DeleteRoleContext); ok {
+			roleID := ctx.RoleID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				DeleteRoleCmdAction(roleID),
 			)
 		}
 		return m, tea.Batch(

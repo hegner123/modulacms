@@ -42,6 +42,7 @@ const (
 	SESSIONSPAGE
 	MEDIADIMENSIONSPAGE
 	IMPORTPAGE
+	ROLESPAGE
 )
 
 // NewPage creates a new page with the specified index and label.
@@ -82,6 +83,7 @@ func InitPages() *map[PageIndex]Page {
 	sessionsPage := NewPage(SESSIONSPAGE, "Sessions")
 	mediaDimensionsPage := NewPage(MEDIADIMENSIONSPAGE, "Media Dimensions")
 	importPage := NewPage(IMPORTPAGE, "Import")
+	rolesPage := NewPage(ROLESPAGE, "Roles")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -116,5 +118,6 @@ func InitPages() *map[PageIndex]Page {
 	p[SESSIONSPAGE] = sessionsPage
 	p[MEDIADIMENSIONSPAGE] = mediaDimensionsPage
 	p[IMPORTPAGE] = importPage
+	p[ROLESPAGE] = rolesPage
 	return &p
 }

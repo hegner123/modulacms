@@ -706,6 +706,58 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(PAGEFOCUS),
 		)
 
+	// --- Role dialog messages ---
+	case ShowRoleFormDialogMsg:
+		dialog := NewRoleFormDialog(msg.Title)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditRoleDialogMsg:
+		dialog := NewEditRoleFormDialog("Edit Role", msg.Role)
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteRoleDialogMsg:
+		dialog := NewDialog("Delete Role", fmt.Sprintf("Delete role '%s'?\nThis cannot be undone.", msg.Label), true, DIALOGDELETEROLE)
+		dialog.SetButtons("Delete", "Cancel")
+		m.DCtx.Active = &DeleteRoleContext{
+			RoleID: msg.RoleID,
+			Label:  msg.Label,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case RoleFormDialogAcceptMsg:
+		switch msg.Action {
+		case FORMDIALOGCREATEROLE:
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				CreateRoleFromDialogCmd(msg.Label),
+			)
+		case FORMDIALOGEDITROLE:
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				UpdateRoleFromDialogCmd(msg.EntityID, msg.Label),
+			)
+		default:
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		}
+	case RoleFormDialogCancelMsg:
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+
 	// --- User OAuth dialog messages ---
 	case ShowUnlinkOauthDialogMsg:
 		dialog := NewDialog("Unlink OAuth", fmt.Sprintf("Unlink %s OAuth connection?\nThe user will no longer be able to sign in with this provider.", msg.Provider), true, DIALOGUNLINKOAUTH)

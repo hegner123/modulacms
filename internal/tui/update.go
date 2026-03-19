@@ -520,6 +520,28 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// the screen needs to display, so it must reach the screen directly.
 	// TokenDeletedMsg similarly refreshes the list via the screen.
 
+	// Role dialog messages → UpdateDialog.
+	case ShowRoleFormDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowEditRoleDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowDeleteRoleDialogMsg:
+		return m.UpdateDialog(msg)
+	case RoleFormDialogAcceptMsg:
+		return m.UpdateDialog(msg)
+	case RoleFormDialogCancelMsg:
+		return m.UpdateDialog(msg)
+
+	// Role CRUD requests → UpdateCms.
+	case CreateRoleFromDialogRequestMsg:
+		return m.UpdateCms(msg)
+	case UpdateRoleFromDialogRequestMsg:
+		return m.UpdateCms(msg)
+	case DeleteRoleRequestMsg:
+		return m.UpdateCms(msg)
+
+	// Role CRUD results → screen (fall through to ActiveScreen.Update).
+
 	// User OAuth dialog messages → UpdateDialog.
 	case ShowUnlinkOauthDialogMsg:
 		return m.UpdateDialog(msg)

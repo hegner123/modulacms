@@ -24,6 +24,7 @@ func (m Model) HomepageMenuInit() []Page {
 		m.PageMap[VALIDATIONS],
 		m.PageMap[MEDIADIMENSIONSPAGE],
 		m.PageMap[USERSADMIN],
+		m.PageMap[ROLESPAGE],
 	)
 
 	// System

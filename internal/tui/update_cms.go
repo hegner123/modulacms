@@ -267,6 +267,12 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case DeleteSessionRequestMsg:
 		// Revoke session
 		return m, m.HandleDeleteSession(msg)
+	case CreateRoleFromDialogRequestMsg:
+		return m, m.HandleCreateRole(msg)
+	case UpdateRoleFromDialogRequestMsg:
+		return m, m.HandleUpdateRole(msg)
+	case DeleteRoleRequestMsg:
+		return m, m.HandleDeleteRole(msg)
 	case UnlinkOauthRequestMsg:
 		return m, m.HandleUnlinkOauth(msg)
 	case CreateMediaDimensionFromDialogRequestMsg:

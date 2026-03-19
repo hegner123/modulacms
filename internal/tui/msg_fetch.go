@@ -296,6 +296,18 @@ type TokensListSet struct {
 	TokensList []db.Tokens
 }
 
+// --- Roles management messages ---
+
+// RolesScreenFetchMsg requests fetching roles with permission counts.
+type RolesScreenFetchMsg struct{}
+
+// RolesScreenFetchResultsMsg returns roles + all permissions + role-permission assignments.
+type RolesScreenFetchResultsMsg struct {
+	Roles       []db.Roles
+	Permissions []db.Permissions
+	Assignments []db.RolePermissions
+}
+
 // --- Media dimension management messages ---
 
 // MediaDimensionsFetchMsg requests fetching all media dimensions.
