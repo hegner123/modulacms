@@ -39,6 +39,7 @@ func (m Model) HomepageMenuInit() []Page {
 	)
 
 	// Power user
+	pages = append(pages, m.PageMap[AUDITPAGE])
 	pages = append(pages, m.PageMap[IMPORTPAGE])
 	pages = append(pages, m.PageMap[ACTIONSPAGE])
 	if !m.IsRemote {

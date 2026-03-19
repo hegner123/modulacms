@@ -681,3 +681,6 @@ func MediaDimensionsFetchCmd() tea.Cmd { return func() tea.Msg { return MediaDim
 
 // RolesScreenFetchCmd creates a command to fetch roles screen data.
 func RolesScreenFetchCmd() tea.Cmd { return func() tea.Msg { return RolesScreenFetchMsg{} } }
+
+// AuditFetchCmd creates a command to fetch audit log events.
+func AuditFetchCmd() tea.Cmd { return func() tea.Msg { return AuditFetchMsg{} } }

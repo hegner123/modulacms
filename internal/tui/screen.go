@@ -120,6 +120,8 @@ func (m Model) screenForPage(page Page) Screen {
 		return NewImportScreen()
 	case ROLESPAGE:
 		return NewRolesScreen(nil)
+	case AUDITPAGE:
+		return NewAuditScreen()
 	case DEPLOYPAGE:
 		return NewDeployScreen(nil)
 	case PIPELINESPAGE:
