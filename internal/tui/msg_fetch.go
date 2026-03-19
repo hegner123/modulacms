@@ -296,6 +296,21 @@ type TokensListSet struct {
 	TokensList []db.Tokens
 }
 
+// --- Session management messages ---
+
+// SessionsFetchMsg requests fetching all sessions.
+type SessionsFetchMsg struct{}
+
+// SessionsFetchResultsMsg returns fetched sessions.
+type SessionsFetchResultsMsg struct {
+	Data []db.Sessions
+}
+
+// SessionsListSet sets the sessions list.
+type SessionsListSet struct {
+	SessionsList []db.Sessions
+}
+
 // --- i18n locale messages ---
 
 // LocaleListMsg carries the list of enabled locales for the locale picker.

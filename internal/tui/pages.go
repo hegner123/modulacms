@@ -39,6 +39,7 @@ const (
 	VALIDATIONS
 	ADMINVALIDATIONS
 	TOKENSPAGE
+	SESSIONSPAGE
 )
 
 // NewPage creates a new page with the specified index and label.
@@ -76,6 +77,7 @@ func InitPages() *map[PageIndex]Page {
 	validationsPage := NewPage(VALIDATIONS, "Validations")
 	adminValidationsPage := NewPage(ADMINVALIDATIONS, "Admin Validations")
 	tokensPage := NewPage(TOKENSPAGE, "Tokens")
+	sessionsPage := NewPage(SESSIONSPAGE, "Sessions")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -107,5 +109,6 @@ func InitPages() *map[PageIndex]Page {
 	p[VALIDATIONS] = validationsPage
 	p[ADMINVALIDATIONS] = adminValidationsPage
 	p[TOKENSPAGE] = tokensPage
+	p[SESSIONSPAGE] = sessionsPage
 	return &p
 }

@@ -706,6 +706,19 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(PAGEFOCUS),
 		)
 
+	// --- Session dialog messages ---
+	case ShowDeleteSessionDialogMsg:
+		dialog := NewDialog("Revoke Session", fmt.Sprintf("Revoke session '%s'?\nThe user will be logged out.", msg.Label), true, DIALOGDELETESESSION)
+		dialog.SetButtons("Revoke", "Cancel")
+		m.DCtx.Active = &DeleteSessionContext{
+			SessionID: msg.SessionID,
+			Label:     msg.Label,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+
 	// --- Media folder dialog messages ---
 	case ShowCreateMediaFolderDialogMsg:
 		dialog := NewCreateFolderDialog(msg.ParentID)

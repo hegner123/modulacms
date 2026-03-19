@@ -319,6 +319,49 @@ func DeleteTokenCmd(tokenID string) tea.Cmd {
 }
 
 // =============================================================================
+// DELETE SESSION
+// =============================================================================
+
+// DeleteSessionContext stores context for a session deletion operation.
+type DeleteSessionContext struct {
+	SessionID types.SessionID
+	Label     string
+}
+
+// ShowDeleteSessionDialogMsg triggers showing a delete session confirmation dialog.
+type ShowDeleteSessionDialogMsg struct {
+	SessionID types.SessionID
+	Label     string
+}
+
+// ShowDeleteSessionDialogCmd creates a command to show a delete session confirmation dialog.
+func ShowDeleteSessionDialogCmd(sessionID types.SessionID, label string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteSessionDialogMsg{
+			SessionID: sessionID,
+			Label:     label,
+		}
+	}
+}
+
+// DeleteSessionRequestMsg triggers session deletion.
+type DeleteSessionRequestMsg struct {
+	SessionID types.SessionID
+}
+
+// SessionDeletedMsg is sent after a session is successfully deleted.
+type SessionDeletedMsg struct {
+	SessionID types.SessionID
+}
+
+// DeleteSessionCmd creates a command to delete a session.
+func DeleteSessionCmd(sessionID types.SessionID) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteSessionRequestMsg{SessionID: sessionID}
+	}
+}
+
+// =============================================================================
 // DIALOG ACCEPT DISPATCH
 // =============================================================================
 
@@ -869,6 +912,21 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
 				DeleteTokenCmd(tokenID),
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case DIALOGDELETESESSION:
+		if ctx, ok := m.DCtx.Active.(*DeleteSessionContext); ok {
+			sessionID := ctx.SessionID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				DeleteSessionCmd(sessionID),
 			)
 		}
 		return m, tea.Batch(

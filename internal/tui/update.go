@@ -516,6 +516,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// the screen needs to display, so it must reach the screen directly.
 	// TokenDeletedMsg similarly refreshes the list via the screen.
 
+	// Session dialog show messages → UpdateDialog.
+	case ShowDeleteSessionDialogMsg:
+		return m.UpdateDialog(msg)
+
+	// Session CRUD requests → UpdateCms.
+	case DeleteSessionRequestMsg:
+		return m.UpdateCms(msg)
+
+	// Session CRUD results → screen (fall through to ActiveScreen.Update).
+	// SessionDeletedMsg refreshes the list via the screen.
+
 	// Field type dialog show messages → UpdateDialog.
 	case ShowDeleteFieldTypeDialogMsg:
 		return m.UpdateDialog(msg)

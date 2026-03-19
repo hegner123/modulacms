@@ -264,6 +264,9 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case DeleteTokenRequestMsg:
 		// Delete token
 		return m, m.HandleDeleteToken(msg)
+	case DeleteSessionRequestMsg:
+		// Revoke session
+		return m, m.HandleDeleteSession(msg)
 	case ContentCreatedMsg:
 		if msg.AdminMode {
 			return m, tea.Batch(
