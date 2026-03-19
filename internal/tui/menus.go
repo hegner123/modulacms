@@ -29,6 +29,7 @@ func (m Model) HomepageMenuInit() []Page {
 
 	// System
 	pages = append(pages,
+		m.PageMap[SEARCHPAGE],
 		m.PageMap[PLUGINSPAGE],
 		m.PageMap[PIPELINESPAGE],
 		m.PageMap[WEBHOOKSPAGE],

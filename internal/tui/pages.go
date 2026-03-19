@@ -44,6 +44,7 @@ const (
 	IMPORTPAGE
 	ROLESPAGE
 	AUDITPAGE
+	SEARCHPAGE
 )
 
 // NewPage creates a new page with the specified index and label.
@@ -86,6 +87,7 @@ func InitPages() *map[PageIndex]Page {
 	importPage := NewPage(IMPORTPAGE, "Import")
 	rolesPage := NewPage(ROLESPAGE, "Roles")
 	auditPage := NewPage(AUDITPAGE, "Audit Log")
+	searchPage := NewPage(SEARCHPAGE, "Search")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -122,5 +124,6 @@ func InitPages() *map[PageIndex]Page {
 	p[IMPORTPAGE] = importPage
 	p[ROLESPAGE] = rolesPage
 	p[AUDITPAGE] = auditPage
+	p[SEARCHPAGE] = searchPage
 	return &p
 }

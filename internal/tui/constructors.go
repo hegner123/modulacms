@@ -684,3 +684,6 @@ func RolesScreenFetchCmd() tea.Cmd { return func() tea.Msg { return RolesScreenF
 
 // AuditFetchCmd creates a command to fetch audit log events.
 func AuditFetchCmd() tea.Cmd { return func() tea.Msg { return AuditFetchMsg{} } }
+
+// SearchStatsFetchCmd creates a command to fetch search index stats.
+func SearchStatsFetchCmd() tea.Cmd { return func() tea.Msg { return SearchStatsFetchMsg{} } }

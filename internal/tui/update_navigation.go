@@ -211,6 +211,12 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 			return m, tea.Batch(cmds...)
+		case SEARCHPAGE:
+			page := m.PageMap[SEARCHPAGE]
+			cmds = append(cmds, SearchStatsFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			return m, tea.Batch(cmds...)
 		case AUDITPAGE:
 			page := m.PageMap[AUDITPAGE]
 			cmds = append(cmds, LoadingStartCmd())
