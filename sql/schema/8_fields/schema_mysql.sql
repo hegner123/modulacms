@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS fields (
     name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
-    validation TEXT NOT NULL,
+    validation_id VARCHAR(26) NULL,
     ui_config TEXT NOT NULL,
     type VARCHAR(20) NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     translatable TINYINT NOT NULL DEFAULT 0,
@@ -19,8 +19,12 @@ CREATE TABLE IF NOT EXISTS fields (
             ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_fields_users_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_fields_validations
+        FOREIGN KEY (validation_id) REFERENCES validations (validation_id)
             ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE INDEX idx_fields_parent ON fields(parent_id);
 CREATE INDEX idx_fields_author ON fields(author_id);
+CREATE INDEX idx_fields_validation ON fields(validation_id);

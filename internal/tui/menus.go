@@ -21,6 +21,7 @@ func (m Model) HomepageMenuInit() []Page {
 	pages = append(pages,
 		m.PageMap[DATATYPES],
 		m.PageMap[FIELDTYPES],
+		m.PageMap[VALIDATIONS],
 		m.PageMap[USERSADMIN],
 	)
 
@@ -55,6 +56,8 @@ func AdminPageIndex(idx PageIndex) PageIndex {
 		return ADMINROUTES
 	case FIELDTYPES:
 		return ADMINFIELDTYPES
+	case VALIDATIONS:
+		return ADMINVALIDATIONS
 	default:
 		return idx
 	}
@@ -69,6 +72,7 @@ func (m Model) CmsMenuInit() []Page {
 		m.PageMap[MEDIA],
 		m.PageMap[USERSADMIN],
 		m.PageMap[FIELDTYPES],
+		m.PageMap[VALIDATIONS],
 	}
 	return CmsMenu
 }
@@ -80,6 +84,7 @@ func (m Model) AdminCmsMenuInit() []Page {
 		m.PageMap[ADMINDATATYPES],
 		m.PageMap[ADMINROUTES],
 		m.PageMap[ADMINFIELDTYPES],
+		m.PageMap[ADMINVALIDATIONS],
 	}
 	return AdminCmsMenu
 }

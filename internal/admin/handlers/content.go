@@ -1495,7 +1495,7 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 					Label:      resolvedFieldDef.Label,
 					FieldType:  resolvedFieldDef.Type,
 					Value:      fu.Value,
-					Validation: resolvedFieldDef.Validation,
+					Validation: "", // TODO: resolve config from validation table via resolvedFieldDef.ValidationID
 					Data:       resolvedFieldDef.Data,
 				})
 				if fe != nil {

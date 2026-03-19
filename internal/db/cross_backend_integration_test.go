@@ -325,7 +325,7 @@ func seedCrossBackend(t *testing.T, driver DbDriver) crossBackendSeed {
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "title",
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         types.FieldTypeText,
 		AuthorID:     types.NullableUserID{ID: user.UserID, Valid: true},

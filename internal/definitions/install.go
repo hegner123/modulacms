@@ -167,10 +167,8 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID, exis
 				data = fieldDef.Data.String
 			}
 
-			validation, err := marshalConfig(fieldDef.Validation)
-			if err != nil {
-				return InstallResult{}, fmt.Errorf("definitions: datatype %q field %q validation: %w", key, fieldDef.Label, err)
-			}
+			// TODO: create validation record from fieldDef.Validation and reference by ID
+			_ = fieldDef.Validation
 
 			uiConfig, err := marshalConfig(fieldDef.UiConfig)
 			if err != nil {
@@ -183,7 +181,7 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID, exis
 				Name:         fieldDef.Name,
 				Label:        fieldDef.Label,
 				Data:         data,
-				Validation:   validation,
+				ValidationID: types.NullableValidationID{},
 				UIConfig:     uiConfig,
 				Type:         fieldDef.Type,
 				AuthorID:     types.NullableUserID{ID: authorID, Valid: true},

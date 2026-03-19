@@ -470,7 +470,7 @@ var Entities = []Entity{
 			{AppName: "Name", Type: "string", JSONTag: "name", InCreate: true, InUpdate: true, StringConvert: "string"},
 			{AppName: "Label", Type: "string", JSONTag: "label", InCreate: true, InUpdate: true, StringConvert: "string"},
 			{AppName: "Data", Type: "string", JSONTag: "data", InCreate: true, InUpdate: true, StringConvert: "string"},
-			{AppName: "Validation", Type: "string", JSONTag: "validation", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "ValidationID", Type: "types.NullableAdminValidationID", JSONTag: "validation_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "UIConfig", SqlcName: "UiConfig", Type: "string", JSONTag: "ui_config", InCreate: true, InUpdate: true, StringConvert: "string"},
 			{AppName: "Type", Type: "types.FieldType", JSONTag: "type", InCreate: true, InUpdate: true, StringConvert: "cast"},
 			{AppName: "Translatable", Type: "bool", JSONTag: "translatable", InCreate: true, InUpdate: true, SafeBool: true, StringConvert: "sprintfBool"},
@@ -585,7 +585,7 @@ var Entities = []Entity{
 			{AppName: "Name", Type: "string", JSONTag: "name", InCreate: true, InUpdate: true, StringConvert: "string"},
 			{AppName: "Label", Type: "string", JSONTag: "label", InCreate: true, InUpdate: true, StringConvert: "string"},
 			{AppName: "Data", Type: "string", JSONTag: "data", InCreate: true, InUpdate: true, StringConvert: "string"},
-			{AppName: "Validation", Type: "string", JSONTag: "validation", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "ValidationID", Type: "types.NullableValidationID", JSONTag: "validation_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "UIConfig", SqlcName: "UiConfig", Type: "string", JSONTag: "ui_config", InCreate: true, InUpdate: true, StringConvert: "string"},
 			{AppName: "Type", Type: "types.FieldType", JSONTag: "type", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "Translatable", Type: "bool", JSONTag: "translatable", InCreate: true, InUpdate: true, SafeBool: true, StringConvert: "sprintfBool"},
@@ -1063,5 +1063,83 @@ var Entities = []Entity{
 			},
 		},
 		OutputFile: "media_folder_gen.go",
+	},
+
+	// ========================
+	// VALIDATIONS
+	// ========================
+
+	// Validations — reusable validation configs referenced by fields.
+	{
+		Name:                  "Validation",
+		Singular:              "Validation",
+		Plural:                "Validations",
+		SqlcTypeName:          "Validations",
+		TableName:             "validations",
+		IDType:                "types.ValidationID",
+		IDField:               "ValidationID",
+		NewIDFunc:             "types.NewValidationID()",
+		HasPaginated:          true,
+		SqlcListName:          "ListValidation",
+		SqlcListPaginatedName: "ListValidationPaginated",
+		UpdateSuccessField:    "s.Name",
+		StringTypeName:        "StringValidation",
+		Fields: []Field{
+			{AppName: "ValidationID", Type: "types.ValidationID", JSONTag: "validation_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "toString"},
+			{AppName: "Name", Type: "string", JSONTag: "name", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "Description", Type: "string", JSONTag: "description", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "Config", Type: "string", JSONTag: "config", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "AuthorID", Type: "types.NullableUserID", JSONTag: "author_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "DateCreated", Type: "types.Timestamp", JSONTag: "date_created", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "DateModified", Type: "types.Timestamp", JSONTag: "date_modified", InCreate: true, InUpdate: true, StringConvert: "toString"},
+		},
+		ExtraQueries: []ExtraQuery{
+			{
+				MethodName:  "ListValidationsByName",
+				SqlcName:    "ListValidationsByName",
+				ReturnsList: true,
+				Params: []ExtraQueryParam{
+					{ParamName: "name", ParamType: "string", SqlcField: "Name", WrapExpr: "StringToNullString(%s)"},
+				},
+			},
+		},
+		OutputFile: "validation_gen.go",
+	},
+
+	// AdminValidations — reusable validation configs referenced by admin_fields.
+	{
+		Name:                  "AdminValidation",
+		Singular:              "AdminValidation",
+		Plural:                "AdminValidations",
+		SqlcTypeName:          "AdminValidations",
+		TableName:             "admin_validations",
+		IDType:                "types.AdminValidationID",
+		IDField:               "AdminValidationID",
+		NewIDFunc:             "types.NewAdminValidationID()",
+		HasPaginated:          true,
+		SqlcListName:          "ListAdminValidation",
+		SqlcListPaginatedName: "ListAdminValidationPaginated",
+		UpdateSuccessField:    "s.Name",
+		StringTypeName:        "StringAdminValidation",
+		Fields: []Field{
+			{AppName: "AdminValidationID", Type: "types.AdminValidationID", JSONTag: "admin_validation_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "toString"},
+			{AppName: "Name", Type: "string", JSONTag: "name", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "Description", Type: "string", JSONTag: "description", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "Config", Type: "string", JSONTag: "config", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "AuthorID", Type: "types.NullableUserID", JSONTag: "author_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "DateCreated", Type: "types.Timestamp", JSONTag: "date_created", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "DateModified", Type: "types.Timestamp", JSONTag: "date_modified", InCreate: true, InUpdate: true, StringConvert: "toString"},
+		},
+		ExtraQueries: []ExtraQuery{
+			{
+				MethodName:  "ListAdminValidationsByName",
+				SqlcName:    "ListAdminValidationsByName",
+				ReturnsList: true,
+				Params: []ExtraQueryParam{
+					{ParamName: "name", ParamType: "string", SqlcField: "Name", WrapExpr: "StringToNullString(%s)"},
+				},
+			},
+		},
+		OutputFile: "admin_validation_gen.go",
 	},
 }

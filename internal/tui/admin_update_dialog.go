@@ -435,7 +435,7 @@ func (m Model) HandleCreateAdminFieldFromDialog(msg CreateAdminFieldFromDialogRe
 			Name:       msg.Name,
 			Label:      msg.Label,
 			Data:       "",
-			Validation: types.EmptyJSON,
+			ValidationID: types.NullableAdminValidationID{},
 			UIConfig:   types.EmptyJSON,
 			Type:       fieldType,
 			AuthorID: types.NullableUserID{
@@ -511,7 +511,7 @@ func (m Model) HandleUpdateAdminFieldFromDialog(msg UpdateAdminFieldFromDialogRe
 			Name:         msg.Name,
 			Label:        msg.Label,
 			Data:         existing.Data,
-			Validation:   existing.Validation,
+			ValidationID: existing.ValidationID,
 			UIConfig:     existing.UIConfig,
 			Type:         fieldType,
 			AuthorID:     existing.AuthorID,
@@ -886,6 +886,322 @@ func (m Model) HandleDeleteAdminFieldType(msg DeleteAdminFieldTypeRequestMsg) te
 		}
 
 		return AdminFieldTypeDeletedMsg{AdminFieldTypeID: msg.AdminFieldTypeID}
+	}
+}
+
+// =============================================================================
+// VALIDATION HANDLERS
+// =============================================================================
+
+// DeleteValidationContext stores context for deleting a validation.
+type DeleteValidationContext struct {
+	ValidationID types.ValidationID
+	Name         string
+}
+
+// HandleCreateValidationFromDialog processes the validation creation request.
+func (m Model) HandleCreateValidationFromDialog(msg CreateValidationFromDialogRequestMsg) tea.Cmd {
+	authorID := m.UserID
+	cfg := m.Config
+
+	if authorID.IsZero() {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot create validation: no user is logged in",
+			}
+		}
+	}
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot create validation: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		params := db.CreateValidationParams{
+			Name:        msg.Name,
+			Description: msg.Description,
+			Config:      "{}",
+			AuthorID:    types.NullableUserID{ID: authorID, Valid: true},
+			DateCreated: types.TimestampNow(),
+			DateModified: types.TimestampNow(),
+		}
+
+		v, err := d.CreateValidation(ctx, ac, params)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to create validation: %v", err),
+			}
+		}
+
+		return ValidationCreatedFromDialogMsg{
+			ValidationID: v.ValidationID,
+			Name:         v.Name,
+		}
+	}
+}
+
+// HandleUpdateValidationFromDialog processes the validation update request.
+func (m Model) HandleUpdateValidationFromDialog(msg UpdateValidationFromDialogRequestMsg) tea.Cmd {
+	cfg := m.Config
+	authorID := m.UserID
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot update validation: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		// STEP 1: Fetch existing record (Golden Rule)
+		validationID := types.ValidationID(msg.ValidationID)
+		existing, err := d.GetValidation(validationID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to get validation for update: %v", err),
+			}
+		}
+
+		// STEP 2: Build params -- set EVERY field
+		updateName := msg.Name
+		if updateName == "" {
+			updateName = existing.Name
+		}
+		updateDescription := msg.Description
+		if updateDescription == "" {
+			updateDescription = existing.Description
+		}
+
+		params := db.UpdateValidationParams{
+			ValidationID: validationID,
+			Name:         updateName,
+			Description:  updateDescription,
+			Config:       existing.Config,
+			AuthorID:     existing.AuthorID,
+			DateCreated:  existing.DateCreated,
+			DateModified: types.TimestampNow(),
+		}
+
+		// STEP 3: Execute update
+		_, err = d.UpdateValidation(ctx, ac, params)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to update validation: %v", err),
+			}
+		}
+
+		return ValidationUpdatedFromDialogMsg{
+			ValidationID: validationID,
+			Name:         updateName,
+		}
+	}
+}
+
+// HandleDeleteValidation processes the validation deletion request.
+func (m Model) HandleDeleteValidation(msg DeleteValidationRequestMsg) tea.Cmd {
+	cfg := m.Config
+	authorID := m.UserID
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot delete validation: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		err := d.DeleteValidation(ctx, ac, msg.ValidationID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to delete validation: %v", err),
+			}
+		}
+
+		return ValidationDeletedMsg{ValidationID: msg.ValidationID}
+	}
+}
+
+// =============================================================================
+// ADMIN VALIDATION HANDLERS
+// =============================================================================
+
+// DeleteAdminValidationContext stores context for deleting an admin validation.
+type DeleteAdminValidationContext struct {
+	AdminValidationID types.AdminValidationID
+	Name              string
+}
+
+// HandleCreateAdminValidationFromDialog processes the admin validation creation request.
+func (m Model) HandleCreateAdminValidationFromDialog(msg CreateAdminValidationFromDialogRequestMsg) tea.Cmd {
+	authorID := m.UserID
+	cfg := m.Config
+
+	if authorID.IsZero() {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot create admin validation: no user is logged in",
+			}
+		}
+	}
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot create admin validation: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		params := db.CreateAdminValidationParams{
+			Name:        msg.Name,
+			Description: msg.Description,
+			Config:      "{}",
+			AuthorID:    types.NullableUserID{ID: authorID, Valid: true},
+			DateCreated: types.TimestampNow(),
+			DateModified: types.TimestampNow(),
+		}
+
+		v, err := d.CreateAdminValidation(ctx, ac, params)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to create admin validation: %v", err),
+			}
+		}
+
+		return AdminValidationCreatedFromDialogMsg{
+			AdminValidationID: v.AdminValidationID,
+			Name:              v.Name,
+		}
+	}
+}
+
+// HandleUpdateAdminValidationFromDialog processes the admin validation update request.
+func (m Model) HandleUpdateAdminValidationFromDialog(msg UpdateAdminValidationFromDialogRequestMsg) tea.Cmd {
+	cfg := m.Config
+	authorID := m.UserID
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot update admin validation: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		// STEP 1: Fetch existing record (Golden Rule)
+		adminValidationID := types.AdminValidationID(msg.AdminValidationID)
+		existing, err := d.GetAdminValidation(adminValidationID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to get admin validation for update: %v", err),
+			}
+		}
+
+		// STEP 2: Build params -- set EVERY field
+		updateName := msg.Name
+		if updateName == "" {
+			updateName = existing.Name
+		}
+		updateDescription := msg.Description
+		if updateDescription == "" {
+			updateDescription = existing.Description
+		}
+
+		params := db.UpdateAdminValidationParams{
+			AdminValidationID: adminValidationID,
+			Name:              updateName,
+			Description:       updateDescription,
+			Config:            existing.Config,
+			AuthorID:          existing.AuthorID,
+			DateCreated:       existing.DateCreated,
+			DateModified:      types.TimestampNow(),
+		}
+
+		// STEP 3: Execute update
+		_, err = d.UpdateAdminValidation(ctx, ac, params)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to update admin validation: %v", err),
+			}
+		}
+
+		return AdminValidationUpdatedFromDialogMsg{
+			AdminValidationID: adminValidationID,
+			Name:              updateName,
+		}
+	}
+}
+
+// HandleDeleteAdminValidation processes the admin validation deletion request.
+func (m Model) HandleDeleteAdminValidation(msg DeleteAdminValidationRequestMsg) tea.Cmd {
+	cfg := m.Config
+	authorID := m.UserID
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot delete admin validation: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		err := d.DeleteAdminValidation(ctx, ac, msg.AdminValidationID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to delete admin validation: %v", err),
+			}
+		}
+
+		return AdminValidationDeletedMsg{AdminValidationID: msg.AdminValidationID}
 	}
 }
 

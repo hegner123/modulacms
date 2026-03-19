@@ -141,6 +141,20 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 			return m, tea.Batch(cmds...)
+		case VALIDATIONS:
+			page := m.PageMap[VALIDATIONS]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, ValidationsFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			return m, tea.Batch(cmds...)
+		case ADMINVALIDATIONS:
+			page := m.PageMap[ADMINVALIDATIONS]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, AdminValidationsFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			return m, tea.Batch(cmds...)
 		case PLUGINSPAGE:
 			page := m.PageMap[PLUGINSPAGE]
 			cmds = append(cmds, LoadingStartCmd())

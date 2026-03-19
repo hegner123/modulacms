@@ -369,7 +369,7 @@ func AssembleAdminDatatypeFullView(d DbDriver, id types.AdminDatatypeID) (*Admin
 			Label:        f.Label,
 			Type:         f.Type,
 			Data:         f.Data,
-			Validation:   f.Validation,
+			ValidationID: f.ValidationID,
 			UIConfig:     f.UIConfig,
 			SortOrder:    f.SortOrder,
 		})

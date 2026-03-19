@@ -54,7 +54,7 @@ When a change touches multiple systems, follow this sequence:
 - The `DbDriver` interface in `internal/db/db.go` is the contract for all database operations. Any new query must be added to this interface and implemented on all three wrapper structs.
 - Audited mutations take `(context.Context, audited.AuditContext, Params)` and record change events.
 - NULL handling uses helper functions (`NullStringToString`, `StringToNullString`, `NullTimeToString`, etc.) in `internal/db/convert.go`.
-- Config is passed through via `config.Config` struct, not environment variables (though env vars can be referenced in modula.config.json via `${VAR}` syntax).
+- Config is passed through via `config.Config` struct, not environment variables (though env vars can be referenced in modula.config.json via `${VAR}` syntax). Multi-environment setups use `--overlay` to layer a per-environment file on top of the base config.
 - The TUI communicates via Bubbletea messages -- state changes happen in `Update()`, rendering in `View()`, side effects in `tea.Cmd` functions.
 - Permission labels follow the `resource:operation` format (e.g., `content:read`, `media:create`). Use `middleware.ValidatePermissionLabel()` before storing new labels. System-protected roles/permissions (bootstrap data) cannot be deleted or renamed via API.
 - Route handlers that modify roles or permissions must trigger an async `pc.Load(driver)` to refresh the PermissionCache. Registration always assigns the `viewer` role; non-admins cannot set or change roles.
@@ -529,6 +529,8 @@ Uses stdlib `http.ServeMux` (Go 1.22+ pattern routing). Endpoints are registered
 ### Configuration (internal/config/)
 
 Loaded from `modula.config.json` at project root. Key fields: `db_driver`, `port`, `ssl_port`, `ssh_port`, `bucket_*` (S3), `oauth_*`, `cors_*`, `plugin_*`, `observability_*`. If no config exists at startup, auto-setup runs with defaults.
+
+**Config layering**: The `--overlay` CLI flag merges a per-environment overlay file on top of the base config. Overlay files contain only the fields that differ (e.g., `modula.config.prod.json` with 10 fields instead of 250+). At load time, `LayeredFileProvider` reads both files, shallow-merges overlay keys onto base keys (absent overlay keys preserve base values), and unmarshals the result. `config set` writes to the overlay when layered (use `--base` to target the base file). `config show --raw` prints the overlay file alone. `config overlay --env <name>` scaffolds a minimal overlay file.
 
 ## SQL Schema Organization
 

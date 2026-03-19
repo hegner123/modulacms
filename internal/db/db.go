@@ -96,6 +96,7 @@ type DbDriver interface {
 	TableRepository
 	PluginRepository
 	LocaleRepository
+	ValidationRepository
 	WebhookRepository
 	MediaFolderRepository
 	FieldPluginConfigRepository
@@ -267,7 +268,18 @@ func (d Database) CreateAllTables() error {
 		return err
 	}
 
-	// Tier 3: Field definition tables (depend on datatypes)
+	// Tier 2.5: Validation tables (depend on users, referenced by fields)
+	err = d.CreateValidationTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminValidationTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 3: Field definition tables (depend on datatypes, validations)
 	err = d.CreateFieldTable()
 	if err != nil {
 		return err
@@ -390,6 +402,8 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 		"deploy:read", "deploy:create",
+		"validations:read", "validations:create", "validations:update", "validations:delete", "validations:admin",
+		"admin_validations:read", "admin_validations:create", "admin_validations:update", "admin_validations:delete", "admin_validations:admin",
 		"webhook:read", "webhook:create", "webhook:update", "webhook:delete", "webhook:admin",
 		"plugins:read", "plugins:admin",
 		"tables:read", "tables:create", "tables:update", "tables:delete", "tables:admin",
@@ -474,6 +488,8 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		"sessions:read",
 		"ssh_keys:read",
 		"config:read",
+		"validations:read", "validations:create", "validations:update", "validations:delete",
+		"admin_validations:read", "admin_validations:create", "admin_validations:update", "admin_validations:delete",
 		"webhook:read", "webhook:create", "webhook:update", "webhook:delete",
 		"tokens:read", "tokens:create", "tokens:delete",
 		"locale:read", "locale:create", "locale:update", "locale:delete",
@@ -593,7 +609,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		SortOrder:    0,
 		Label:        "Target",
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         types.FieldTypeIDRef,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -646,7 +662,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableAdminValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -666,7 +682,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1417,7 +1433,18 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
-	// Tier 3: Field definition tables (depend on datatypes)
+	// Tier 2.5: Validation tables (depend on users, referenced by fields)
+	err = d.CreateValidationTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminValidationTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 3: Field definition tables (depend on datatypes, validations)
 	err = d.CreateFieldTable()
 	if err != nil {
 		return err
@@ -1540,6 +1567,8 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 		"deploy:read", "deploy:create",
+		"validations:read", "validations:create", "validations:update", "validations:delete", "validations:admin",
+		"admin_validations:read", "admin_validations:create", "admin_validations:update", "admin_validations:delete", "admin_validations:admin",
 		"webhook:read", "webhook:create", "webhook:update", "webhook:delete", "webhook:admin",
 		"plugins:read", "plugins:admin",
 		"tables:read", "tables:create", "tables:update", "tables:delete", "tables:admin",
@@ -1623,6 +1652,8 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		"sessions:read",
 		"ssh_keys:read",
 		"config:read",
+		"validations:read", "validations:create", "validations:update", "validations:delete",
+		"admin_validations:read", "admin_validations:create", "admin_validations:update", "admin_validations:delete",
 		"webhook:read", "webhook:create", "webhook:update", "webhook:delete",
 		"tokens:read", "tokens:create", "tokens:delete",
 		"locale:read", "locale:create", "locale:update", "locale:delete",
@@ -1742,7 +1773,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		SortOrder:    0,
 		Label:        "Target",
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         types.FieldTypeIDRef,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1795,7 +1826,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableAdminValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1815,7 +1846,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -2527,7 +2558,18 @@ func (d PsqlDatabase) CreateAllTables() error {
 		return err
 	}
 
-	// Tier 3: Field definition tables (depend on datatypes)
+	// Tier 2.5: Validation tables (depend on users, referenced by fields)
+	err = d.CreateValidationTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminValidationTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 3: Field definition tables (depend on datatypes, validations)
 	err = d.CreateFieldTable()
 	if err != nil {
 		return err
@@ -2650,6 +2692,8 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 		"deploy:read", "deploy:create",
+		"validations:read", "validations:create", "validations:update", "validations:delete", "validations:admin",
+		"admin_validations:read", "admin_validations:create", "admin_validations:update", "admin_validations:delete", "admin_validations:admin",
 		"webhook:read", "webhook:create", "webhook:update", "webhook:delete", "webhook:admin",
 		"plugins:read", "plugins:admin",
 		"tables:read", "tables:create", "tables:update", "tables:delete", "tables:admin",
@@ -2733,6 +2777,8 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		"sessions:read",
 		"ssh_keys:read",
 		"config:read",
+		"validations:read", "validations:create", "validations:update", "validations:delete",
+		"admin_validations:read", "admin_validations:create", "admin_validations:update", "admin_validations:delete",
 		"webhook:read", "webhook:create", "webhook:update", "webhook:delete",
 		"tokens:read", "tokens:create", "tokens:delete",
 		"locale:read", "locale:create", "locale:update", "locale:delete",
@@ -2852,7 +2898,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		SortOrder:    0,
 		Label:        "Target",
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         types.FieldTypeIDRef,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -2905,7 +2951,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableAdminValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -2925,7 +2971,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
-		Validation:   types.EmptyJSON,
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},

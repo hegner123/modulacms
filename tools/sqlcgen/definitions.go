@@ -124,6 +124,8 @@ var Renames = []Rename{
 	{From: "webhook_id", To: "WebhookID", Quoted: true},
 	{From: "delivery_id", To: "DeliveryID", Quoted: true},
 	{From: "folder_id", To: "FolderID", Quoted: true},
+	{From: "validation_id", To: "ValidationID", Quoted: true},
+	{From: "admin_validation_id", To: "AdminValidationID", Quoted: true},
 	// Table-to-struct names (sqlc singularizes first, then applies rename)
 	{Comment: "Table-to-struct names (sqlc singularizes first, then applies rename)", From: "admin_content_datum", To: "AdminContentData"},
 	{From: "admin_content_field", To: "AdminContentFields"},
@@ -156,6 +158,9 @@ var Renames = []Rename{
 	{From: "webhook", To: "Webhooks"},
 	{From: "webhook_delivery", To: "WebhookDeliveries"},
 	{From: "media_folder", To: "MediaFolders"},
+	// Validations
+	{From: "validation", To: "Validations"},
+	{From: "admin_validation", To: "AdminValidations"},
 }
 
 // Overrides defines all column-to-Go-type overrides shared across engines.
@@ -368,6 +373,11 @@ var Overrides = []Override{
 	// MEDIA FOLDERS
 	{Comment: "MEDIA FOLDERS", Column: "media_folders.folder_id", Import: typesImport, Type: "MediaFolderID"},
 	{Column: "media.folder_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableMediaFolderID"},
+	// VALIDATIONS
+	{Comment: "VALIDATIONS", Column: "validations.validation_id", Import: typesImport, Type: "ValidationID"},
+	{Column: "admin_validations.admin_validation_id", Import: typesImport, Type: "AdminValidationID"},
+	{Column: "fields.validation_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableValidationID"},
+	{Column: "admin_fields.validation_id", Nullable: boolPtr(true), Import: typesImport, Type: "NullableAdminValidationID"},
 	// NOTE: media_folders.parent_id override is placed before *.parent_id wildcard above
 	// PUBLISH METADATA on content_data / admin_content_data
 	{Comment: "PUBLISH METADATA on content_data / admin_content_data", Column: "content_data.published_at", Nullable: boolPtr(true), Import: typesImport, Type: "Timestamp"},

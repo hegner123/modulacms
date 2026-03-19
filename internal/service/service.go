@@ -53,8 +53,9 @@ type Registry struct {
 	Backup    *BackupService
 
 	// Phase 7 — auth service.
-	Auth   *AuthService
-	Search *SearchService
+	Auth        *AuthService
+	Search      *SearchService
+	Validations *ValidationService
 }
 
 // NewRegistry creates a Registry with the given infrastructure dependencies.
@@ -90,6 +91,7 @@ func NewRegistry(
 	reg.AuditLog = NewAuditLogService(driver)
 	reg.Backup = NewBackupService(mgr, driver)
 	reg.Auth = NewAuthService(driver, mgr, emailSvc)
+	reg.Validations = NewValidationService(driver)
 	return reg
 }
 

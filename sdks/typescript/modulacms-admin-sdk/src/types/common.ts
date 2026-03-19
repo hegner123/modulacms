@@ -34,6 +34,8 @@ export type {
   UserOauthID,
   WebhookID,
   WebhookDeliveryID,
+  ValidationID,
+  AdminValidationID,
   Slug,
   Email,
   URL,

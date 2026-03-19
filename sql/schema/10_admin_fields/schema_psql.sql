@@ -7,7 +7,9 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT DEFAULT ''::TEXT NOT NULL,
-    validation TEXT NOT NULL,
+    validation_id TEXT DEFAULT NULL
+        REFERENCES admin_validations(admin_validation_id)
+            ON DELETE SET NULL,
     ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text'::TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     translatable BOOLEAN NOT NULL DEFAULT FALSE,
@@ -21,6 +23,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
 
 CREATE INDEX IF NOT EXISTS idx_admin_fields_parent ON admin_fields(parent_id);
 CREATE INDEX IF NOT EXISTS idx_admin_fields_author ON admin_fields(author_id);
+CREATE INDEX IF NOT EXISTS idx_admin_fields_validation ON admin_fields(validation_id);
 
 CREATE OR REPLACE FUNCTION update_admin_fields_modified()
 RETURNS TRIGGER AS $$

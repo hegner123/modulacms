@@ -133,7 +133,7 @@ func (s *ContentService) BatchUpdate(ctx context.Context, ac audited.AuditContex
 			Label:      fd.Label,
 			FieldType:  fd.Type,
 			Value:      value,
-			Validation: fd.Validation,
+			Validation: s.resolveValidationConfig(fd.ValidationID),
 			Data:       fd.Data,
 		})
 	}

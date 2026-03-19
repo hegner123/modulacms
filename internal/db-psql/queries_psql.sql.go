@@ -317,6 +317,18 @@ func (q *Queries) CountAdminRoute(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countAdminValidation = `-- name: CountAdminValidation :one
+SELECT COUNT(*)
+FROM admin_validations
+`
+
+func (q *Queries) CountAdminValidation(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminValidation)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countBackupSets = `-- name: CountBackupSets :one
 SELECT COUNT(*) FROM backup_sets
 `
@@ -750,6 +762,18 @@ SELECT COUNT(*) FROM user_ssh_keys
 
 func (q *Queries) CountUserSshKeys(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countUserSshKeys)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countValidation = `-- name: CountValidation :one
+SELECT COUNT(*)
+FROM validations
+`
+
+func (q *Queries) CountValidation(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countValidation)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -1291,7 +1315,7 @@ INSERT INTO admin_fields (
     name,
     label,
     data,
-    validation,
+    validation_id,
     ui_config,
     type,
     translatable,
@@ -1315,24 +1339,24 @@ INSERT INTO admin_fields (
     $13,
     $14
 )
-RETURNING admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified
+RETURNING admin_field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified
 `
 
 type CreateAdminFieldParams struct {
-	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
-	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
-	SortOrder    int32                         `json:"sort_order"`
-	Name         string                        `json:"name"`
-	Label        string                        `json:"label"`
-	Data         string                        `json:"data"`
-	Validation   string                        `json:"validation"`
-	UiConfig     string                        `json:"ui_config"`
-	Type         types.FieldType               `json:"type"`
-	Translatable types.SafeBool                `json:"translatable"`
-	Roles        types.NullableString          `json:"roles"`
-	AuthorID     types.NullableUserID          `json:"author_id"`
-	DateCreated  types.Timestamp               `json:"date_created"`
-	DateModified types.Timestamp               `json:"date_modified"`
+	AdminFieldID types.AdminFieldID              `json:"admin_field_id"`
+	ParentID     types.NullableAdminDatatypeID   `json:"parent_id"`
+	SortOrder    int32                           `json:"sort_order"`
+	Name         string                          `json:"name"`
+	Label        string                          `json:"label"`
+	Data         string                          `json:"data"`
+	ValidationID types.NullableAdminValidationID `json:"validation_id"`
+	UiConfig     string                          `json:"ui_config"`
+	Type         types.FieldType                 `json:"type"`
+	Translatable types.SafeBool                  `json:"translatable"`
+	Roles        types.NullableString            `json:"roles"`
+	AuthorID     types.NullableUserID            `json:"author_id"`
+	DateCreated  types.Timestamp                 `json:"date_created"`
+	DateModified types.Timestamp                 `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldParams) (AdminFields, error) {
@@ -1343,7 +1367,7 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 		arg.Name,
 		arg.Label,
 		arg.Data,
-		arg.Validation,
+		arg.ValidationID,
 		arg.UiConfig,
 		arg.Type,
 		arg.Translatable,
@@ -1360,7 +1384,7 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 		&i.Name,
 		&i.Label,
 		&i.Data,
-		&i.Validation,
+		&i.ValidationID,
 		&i.UiConfig,
 		&i.Type,
 		&i.Translatable,
@@ -1437,7 +1461,9 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT DEFAULT ''::TEXT NOT NULL,
-    validation TEXT NOT NULL,
+    validation_id TEXT DEFAULT NULL
+        REFERENCES admin_validations(admin_validation_id)
+            ON DELETE SET NULL,
     ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text'::TEXT NOT NULL,
     translatable BOOLEAN NOT NULL DEFAULT FALSE,
@@ -1574,6 +1600,78 @@ CREATE TABLE IF NOT EXISTS admin_routes (
 
 func (q *Queries) CreateAdminRouteTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createAdminRouteTable)
+	return err
+}
+
+const createAdminValidation = `-- name: CreateAdminValidation :one
+INSERT INTO admin_validations (
+    admin_validation_id,
+    name,
+    description,
+    config,
+    author_id,
+    date_created,
+    date_modified
+) VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7
+) RETURNING admin_validation_id, name, description, config, author_id, date_created, date_modified
+`
+
+type CreateAdminValidationParams struct {
+	AdminValidationID types.AdminValidationID `json:"admin_validation_id"`
+	Name              string                  `json:"name"`
+	Description       string                  `json:"description"`
+	Config            string                  `json:"config"`
+	AuthorID          types.NullableUserID    `json:"author_id"`
+	DateCreated       types.Timestamp         `json:"date_created"`
+	DateModified      types.Timestamp         `json:"date_modified"`
+}
+
+func (q *Queries) CreateAdminValidation(ctx context.Context, arg CreateAdminValidationParams) (AdminValidations, error) {
+	row := q.db.QueryRowContext(ctx, createAdminValidation,
+		arg.AdminValidationID,
+		arg.Name,
+		arg.Description,
+		arg.Config,
+		arg.AuthorID,
+		arg.DateCreated,
+		arg.DateModified,
+	)
+	var i AdminValidations
+	err := row.Scan(
+		&i.AdminValidationID,
+		&i.Name,
+		&i.Description,
+		&i.Config,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const createAdminValidationTable = `-- name: CreateAdminValidationTable :exec
+CREATE TABLE IF NOT EXISTS admin_validations (
+    admin_validation_id TEXT PRIMARY KEY NOT NULL,
+    name                TEXT NOT NULL,
+    description         TEXT NOT NULL DEFAULT '',
+    config              TEXT NOT NULL DEFAULT '{}',
+    author_id           TEXT
+        REFERENCES users
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    date_created        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateAdminValidationTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminValidationTable)
 	return err
 }
 
@@ -2231,7 +2329,7 @@ INSERT INTO fields  (
     name,
     label,
     data,
-    validation,
+    validation_id,
     ui_config,
     type,
     translatable,
@@ -2254,24 +2352,24 @@ INSERT INTO fields  (
     $12,
     $13,
     $14
-    ) RETURNING field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified
+    ) RETURNING field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified
 `
 
 type CreateFieldParams struct {
-	FieldID      types.FieldID            `json:"field_id"`
-	ParentID     types.NullableDatatypeID `json:"parent_id"`
-	SortOrder    int32                    `json:"sort_order"`
-	Name         string                   `json:"name"`
-	Label        string                   `json:"label"`
-	Data         string                   `json:"data"`
-	Validation   string                   `json:"validation"`
-	UiConfig     string                   `json:"ui_config"`
-	Type         types.FieldType          `json:"type"`
-	Translatable types.SafeBool           `json:"translatable"`
-	Roles        types.NullableString     `json:"roles"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
-	DateCreated  types.Timestamp          `json:"date_created"`
-	DateModified types.Timestamp          `json:"date_modified"`
+	FieldID      types.FieldID              `json:"field_id"`
+	ParentID     types.NullableDatatypeID   `json:"parent_id"`
+	SortOrder    int32                      `json:"sort_order"`
+	Name         string                     `json:"name"`
+	Label        string                     `json:"label"`
+	Data         string                     `json:"data"`
+	ValidationID types.NullableValidationID `json:"validation_id"`
+	UiConfig     string                     `json:"ui_config"`
+	Type         types.FieldType            `json:"type"`
+	Translatable types.SafeBool             `json:"translatable"`
+	Roles        types.NullableString       `json:"roles"`
+	AuthorID     types.NullableUserID       `json:"author_id"`
+	DateCreated  types.Timestamp            `json:"date_created"`
+	DateModified types.Timestamp            `json:"date_modified"`
 }
 
 func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Fields, error) {
@@ -2282,7 +2380,7 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field
 		arg.Name,
 		arg.Label,
 		arg.Data,
-		arg.Validation,
+		arg.ValidationID,
 		arg.UiConfig,
 		arg.Type,
 		arg.Translatable,
@@ -2299,7 +2397,7 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field
 		&i.Name,
 		&i.Label,
 		&i.Data,
-		&i.Validation,
+		&i.ValidationID,
 		&i.UiConfig,
 		&i.Type,
 		&i.Translatable,
@@ -2377,7 +2475,9 @@ CREATE TABLE IF NOT EXISTS fields (
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT NOT NULL,
-    validation TEXT NOT NULL,
+    validation_id TEXT DEFAULT NULL
+        REFERENCES validations(validation_id)
+            ON DELETE SET NULL,
     ui_config TEXT NOT NULL,
     type TEXT NOT NULL,
     translatable BOOLEAN NOT NULL DEFAULT FALSE,
@@ -3583,6 +3683,78 @@ func (q *Queries) CreateUsersEmailIndex(ctx context.Context) error {
 	return err
 }
 
+const createValidation = `-- name: CreateValidation :one
+INSERT INTO validations (
+    validation_id,
+    name,
+    description,
+    config,
+    author_id,
+    date_created,
+    date_modified
+) VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7
+) RETURNING validation_id, name, description, config, author_id, date_created, date_modified
+`
+
+type CreateValidationParams struct {
+	ValidationID types.ValidationID   `json:"validation_id"`
+	Name         string               `json:"name"`
+	Description  string               `json:"description"`
+	Config       string               `json:"config"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
+}
+
+func (q *Queries) CreateValidation(ctx context.Context, arg CreateValidationParams) (Validations, error) {
+	row := q.db.QueryRowContext(ctx, createValidation,
+		arg.ValidationID,
+		arg.Name,
+		arg.Description,
+		arg.Config,
+		arg.AuthorID,
+		arg.DateCreated,
+		arg.DateModified,
+	)
+	var i Validations
+	err := row.Scan(
+		&i.ValidationID,
+		&i.Name,
+		&i.Description,
+		&i.Config,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const createValidationTable = `-- name: CreateValidationTable :exec
+CREATE TABLE IF NOT EXISTS validations (
+    validation_id TEXT PRIMARY KEY NOT NULL,
+    name          TEXT NOT NULL,
+    description   TEXT NOT NULL DEFAULT '',
+    config        TEXT NOT NULL DEFAULT '{}',
+    author_id     TEXT
+        REFERENCES users
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    date_created  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateValidationTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createValidationTable)
+	return err
+}
+
 const createVerification = `-- name: CreateVerification :one
 
 INSERT INTO backup_verifications (
@@ -3926,6 +4098,20 @@ type DeleteAdminRouteParams struct {
 
 func (q *Queries) DeleteAdminRoute(ctx context.Context, arg DeleteAdminRouteParams) error {
 	_, err := q.db.ExecContext(ctx, deleteAdminRoute, arg.AdminRouteID)
+	return err
+}
+
+const deleteAdminValidation = `-- name: DeleteAdminValidation :exec
+DELETE FROM admin_validations
+WHERE admin_validation_id = $1
+`
+
+type DeleteAdminValidationParams struct {
+	AdminValidationID types.AdminValidationID `json:"admin_validation_id"`
+}
+
+func (q *Queries) DeleteAdminValidation(ctx context.Context, arg DeleteAdminValidationParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminValidation, arg.AdminValidationID)
 	return err
 }
 
@@ -4359,6 +4545,20 @@ func (q *Queries) DeleteUserSshKey(ctx context.Context, arg DeleteUserSshKeyPara
 	return err
 }
 
+const deleteValidation = `-- name: DeleteValidation :exec
+DELETE FROM validations
+WHERE validation_id = $1
+`
+
+type DeleteValidationParams struct {
+	ValidationID types.ValidationID `json:"validation_id"`
+}
+
+func (q *Queries) DeleteValidation(ctx context.Context, arg DeleteValidationParams) error {
+	_, err := q.db.ExecContext(ctx, deleteValidation, arg.ValidationID)
+	return err
+}
+
 const deleteVerification = `-- name: DeleteVerification :exec
 DELETE FROM backup_verifications
 WHERE verification_id = $1
@@ -4479,6 +4679,15 @@ DROP TABLE admin_routes
 
 func (q *Queries) DropAdminRouteTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, dropAdminRouteTable)
+	return err
+}
+
+const dropAdminValidationTable = `-- name: DropAdminValidationTable :exec
+DROP TABLE IF EXISTS admin_validations
+`
+
+func (q *Queries) DropAdminValidationTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminValidationTable)
 	return err
 }
 
@@ -4752,6 +4961,15 @@ func (q *Queries) DropUserTable(ctx context.Context) error {
 	return err
 }
 
+const dropValidationTable = `-- name: DropValidationTable :exec
+DROP TABLE IF EXISTS validations
+`
+
+func (q *Queries) DropValidationTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropValidationTable)
+	return err
+}
+
 const dropWebhookDeliveryTable = `-- name: DropWebhookDeliveryTable :exec
 DROP TABLE IF EXISTS webhook_deliveries
 `
@@ -4963,7 +5181,7 @@ func (q *Queries) GetAdminDatatype(ctx context.Context, arg GetAdminDatatypePara
 }
 
 const getAdminField = `-- name: GetAdminField :one
-SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified
+SELECT admin_field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified
 FROM admin_fields
 WHERE admin_field_id = $1
 LIMIT 1
@@ -4983,7 +5201,7 @@ func (q *Queries) GetAdminField(ctx context.Context, arg GetAdminFieldParams) (A
 		&i.Name,
 		&i.Label,
 		&i.Data,
-		&i.Validation,
+		&i.ValidationID,
 		&i.UiConfig,
 		&i.Type,
 		&i.Translatable,
@@ -5157,6 +5375,30 @@ func (q *Queries) GetAdminRouteIdBySlug(ctx context.Context, arg GetAdminRouteId
 	var admin_route_id types.AdminRouteID
 	err := row.Scan(&admin_route_id)
 	return admin_route_id, err
+}
+
+const getAdminValidation = `-- name: GetAdminValidation :one
+SELECT admin_validation_id, name, description, config, author_id, date_created, date_modified FROM admin_validations
+WHERE admin_validation_id = $1 LIMIT 1
+`
+
+type GetAdminValidationParams struct {
+	AdminValidationID types.AdminValidationID `json:"admin_validation_id"`
+}
+
+func (q *Queries) GetAdminValidation(ctx context.Context, arg GetAdminValidationParams) (AdminValidations, error) {
+	row := q.db.QueryRowContext(ctx, getAdminValidation, arg.AdminValidationID)
+	var i AdminValidations
+	err := row.Scan(
+		&i.AdminValidationID,
+		&i.Name,
+		&i.Description,
+		&i.Config,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
 }
 
 const getBackup = `-- name: GetBackup :one
@@ -6008,7 +6250,7 @@ func (q *Queries) GetDefaultLocale(ctx context.Context) (Locale, error) {
 }
 
 const getField = `-- name: GetField :one
-SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
 WHERE field_id = $1 LIMIT 1
 `
 
@@ -6026,7 +6268,7 @@ func (q *Queries) GetField(ctx context.Context, arg GetFieldParams) (Fields, err
 		&i.Name,
 		&i.Label,
 		&i.Data,
-		&i.Validation,
+		&i.ValidationID,
 		&i.UiConfig,
 		&i.Type,
 		&i.Translatable,
@@ -6141,7 +6383,7 @@ func (q *Queries) GetFieldTypesByType(ctx context.Context, arg GetFieldTypesByTy
 }
 
 const getFieldsByIDs = `-- name: GetFieldsByIDs :many
-SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
 WHERE field_id = ANY($1::char(26)[])
 `
 
@@ -6165,7 +6407,7 @@ func (q *Queries) GetFieldsByIDs(ctx context.Context, arg GetFieldsByIDsParams) 
 			&i.Name,
 			&i.Label,
 			&i.Data,
-			&i.Validation,
+			&i.ValidationID,
 			&i.UiConfig,
 			&i.Type,
 			&i.Translatable,
@@ -7680,6 +7922,30 @@ func (q *Queries) GetUserSshKeyByFingerprint(ctx context.Context, arg GetUserSsh
 	return i, err
 }
 
+const getValidation = `-- name: GetValidation :one
+SELECT validation_id, name, description, config, author_id, date_created, date_modified FROM validations
+WHERE validation_id = $1 LIMIT 1
+`
+
+type GetValidationParams struct {
+	ValidationID types.ValidationID `json:"validation_id"`
+}
+
+func (q *Queries) GetValidation(ctx context.Context, arg GetValidationParams) (Validations, error) {
+	row := q.db.QueryRowContext(ctx, getValidation, arg.ValidationID)
+	var i Validations
+	err := row.Scan(
+		&i.ValidationID,
+		&i.Name,
+		&i.Description,
+		&i.Config,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
 const getVerification = `-- name: GetVerification :one
 SELECT verification_id, backup_id, verified_at, verified_by, restore_tested, checksum_valid, record_count_match, status, error_message, duration_ms FROM backup_verifications
 WHERE verification_id = $1 LIMIT 1
@@ -8827,7 +9093,7 @@ SELECT
     af.parent_id AS f_parent_id,
     af.label AS f_label,
     af.data AS f_data,
-    af.validation AS f_validation,
+    af.validation_id AS f_validation_id,
     af.ui_config AS f_ui_config,
     af.type AS f_type,
     af.author_id AS f_author_id,
@@ -8844,25 +9110,25 @@ type ListAdminContentFieldsWithFieldByContentDataParams struct {
 }
 
 type ListAdminContentFieldsWithFieldByContentDataRow struct {
-	AdminContentFieldID types.AdminContentFieldID     `json:"admin_content_field_id"`
-	AdminRouteID        types.NullableAdminRouteID    `json:"admin_route_id"`
-	RootID              types.NullableAdminContentID  `json:"root_id"`
-	AdminContentDataID  types.NullableAdminContentID  `json:"admin_content_data_id"`
-	AdminFieldID        types.NullableAdminFieldID    `json:"admin_field_id"`
-	AdminFieldValue     string                        `json:"admin_field_value"`
-	AuthorID            types.UserID                  `json:"author_id"`
-	DateCreated         types.Timestamp               `json:"date_created"`
-	DateModified        types.Timestamp               `json:"date_modified"`
-	FAdminFieldId       types.AdminFieldID            `json:"f_admin_field_id"`
-	FParentId           types.NullableAdminDatatypeID `json:"f_parent_id"`
-	FLabel              string                        `json:"f_label"`
-	FData               string                        `json:"f_data"`
-	FValidation         string                        `json:"f_validation"`
-	FUiConfig           string                        `json:"f_ui_config"`
-	FType               types.FieldType               `json:"f_type"`
-	FAuthorId           types.NullableUserID          `json:"f_author_id"`
-	FDateCreated        types.Timestamp               `json:"f_date_created"`
-	FDateModified       types.Timestamp               `json:"f_date_modified"`
+	AdminContentFieldID types.AdminContentFieldID       `json:"admin_content_field_id"`
+	AdminRouteID        types.NullableAdminRouteID      `json:"admin_route_id"`
+	RootID              types.NullableAdminContentID    `json:"root_id"`
+	AdminContentDataID  types.NullableAdminContentID    `json:"admin_content_data_id"`
+	AdminFieldID        types.NullableAdminFieldID      `json:"admin_field_id"`
+	AdminFieldValue     string                          `json:"admin_field_value"`
+	AuthorID            types.UserID                    `json:"author_id"`
+	DateCreated         types.Timestamp                 `json:"date_created"`
+	DateModified        types.Timestamp                 `json:"date_modified"`
+	FAdminFieldId       types.AdminFieldID              `json:"f_admin_field_id"`
+	FParentId           types.NullableAdminDatatypeID   `json:"f_parent_id"`
+	FLabel              string                          `json:"f_label"`
+	FData               string                          `json:"f_data"`
+	FValidationId       types.NullableAdminValidationID `json:"f_validation_id"`
+	FUiConfig           string                          `json:"f_ui_config"`
+	FType               types.FieldType                 `json:"f_type"`
+	FAuthorId           types.NullableUserID            `json:"f_author_id"`
+	FDateCreated        types.Timestamp                 `json:"f_date_created"`
+	FDateModified       types.Timestamp                 `json:"f_date_modified"`
 }
 
 func (q *Queries) ListAdminContentFieldsWithFieldByContentData(ctx context.Context, arg ListAdminContentFieldsWithFieldByContentDataParams) ([]ListAdminContentFieldsWithFieldByContentDataRow, error) {
@@ -8888,7 +9154,7 @@ func (q *Queries) ListAdminContentFieldsWithFieldByContentData(ctx context.Conte
 			&i.FParentId,
 			&i.FLabel,
 			&i.FData,
-			&i.FValidation,
+			&i.FValidationId,
 			&i.FUiConfig,
 			&i.FType,
 			&i.FAuthorId,
@@ -8918,7 +9184,7 @@ SELECT
     af.parent_id AS f_parent_id,
     af.label AS f_label,
     af.data AS f_data,
-    af.validation AS f_validation,
+    af.validation_id AS f_validation_id,
     af.ui_config AS f_ui_config,
     af.type AS f_type,
     af.author_id AS f_author_id,
@@ -8935,25 +9201,25 @@ type ListAdminContentFieldsWithFieldByRouteParams struct {
 }
 
 type ListAdminContentFieldsWithFieldByRouteRow struct {
-	AdminContentFieldID types.AdminContentFieldID     `json:"admin_content_field_id"`
-	AdminRouteID        types.NullableAdminRouteID    `json:"admin_route_id"`
-	RootID              types.NullableAdminContentID  `json:"root_id"`
-	AdminContentDataID  types.NullableAdminContentID  `json:"admin_content_data_id"`
-	AdminFieldID        types.NullableAdminFieldID    `json:"admin_field_id"`
-	AdminFieldValue     string                        `json:"admin_field_value"`
-	AuthorID            types.UserID                  `json:"author_id"`
-	DateCreated         types.Timestamp               `json:"date_created"`
-	DateModified        types.Timestamp               `json:"date_modified"`
-	FAdminFieldId       types.AdminFieldID            `json:"f_admin_field_id"`
-	FParentId           types.NullableAdminDatatypeID `json:"f_parent_id"`
-	FLabel              string                        `json:"f_label"`
-	FData               string                        `json:"f_data"`
-	FValidation         string                        `json:"f_validation"`
-	FUiConfig           string                        `json:"f_ui_config"`
-	FType               types.FieldType               `json:"f_type"`
-	FAuthorId           types.NullableUserID          `json:"f_author_id"`
-	FDateCreated        types.Timestamp               `json:"f_date_created"`
-	FDateModified       types.Timestamp               `json:"f_date_modified"`
+	AdminContentFieldID types.AdminContentFieldID       `json:"admin_content_field_id"`
+	AdminRouteID        types.NullableAdminRouteID      `json:"admin_route_id"`
+	RootID              types.NullableAdminContentID    `json:"root_id"`
+	AdminContentDataID  types.NullableAdminContentID    `json:"admin_content_data_id"`
+	AdminFieldID        types.NullableAdminFieldID      `json:"admin_field_id"`
+	AdminFieldValue     string                          `json:"admin_field_value"`
+	AuthorID            types.UserID                    `json:"author_id"`
+	DateCreated         types.Timestamp                 `json:"date_created"`
+	DateModified        types.Timestamp                 `json:"date_modified"`
+	FAdminFieldId       types.AdminFieldID              `json:"f_admin_field_id"`
+	FParentId           types.NullableAdminDatatypeID   `json:"f_parent_id"`
+	FLabel              string                          `json:"f_label"`
+	FData               string                          `json:"f_data"`
+	FValidationId       types.NullableAdminValidationID `json:"f_validation_id"`
+	FUiConfig           string                          `json:"f_ui_config"`
+	FType               types.FieldType                 `json:"f_type"`
+	FAuthorId           types.NullableUserID            `json:"f_author_id"`
+	FDateCreated        types.Timestamp                 `json:"f_date_created"`
+	FDateModified       types.Timestamp                 `json:"f_date_modified"`
 }
 
 func (q *Queries) ListAdminContentFieldsWithFieldByRoute(ctx context.Context, arg ListAdminContentFieldsWithFieldByRouteParams) ([]ListAdminContentFieldsWithFieldByRouteRow, error) {
@@ -8979,7 +9245,7 @@ func (q *Queries) ListAdminContentFieldsWithFieldByRoute(ctx context.Context, ar
 			&i.FParentId,
 			&i.FLabel,
 			&i.FData,
-			&i.FValidation,
+			&i.FValidationId,
 			&i.FUiConfig,
 			&i.FType,
 			&i.FAuthorId,
@@ -9494,7 +9760,7 @@ func (q *Queries) ListAdminDatatypeRoot(ctx context.Context) ([]AdminDatatypes, 
 }
 
 const listAdminField = `-- name: ListAdminField :many
-SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified
+SELECT admin_field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified
 FROM admin_fields
 ORDER BY sort_order, admin_field_id
 `
@@ -9515,7 +9781,7 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 			&i.Name,
 			&i.Label,
 			&i.Data,
-			&i.Validation,
+			&i.ValidationID,
 			&i.UiConfig,
 			&i.Type,
 			&i.Translatable,
@@ -9538,7 +9804,7 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 }
 
 const listAdminFieldByParentID = `-- name: ListAdminFieldByParentID :many
-SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified
+SELECT admin_field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified
 FROM admin_fields
 WHERE parent_id = $1
 ORDER BY sort_order, admin_field_id
@@ -9564,7 +9830,7 @@ func (q *Queries) ListAdminFieldByParentID(ctx context.Context, arg ListAdminFie
 			&i.Name,
 			&i.Label,
 			&i.Data,
-			&i.Validation,
+			&i.ValidationID,
 			&i.UiConfig,
 			&i.Type,
 			&i.Translatable,
@@ -9587,7 +9853,7 @@ func (q *Queries) ListAdminFieldByParentID(ctx context.Context, arg ListAdminFie
 }
 
 const listAdminFieldByParentIDPaginated = `-- name: ListAdminFieldByParentIDPaginated :many
-SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM admin_fields
+SELECT admin_field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM admin_fields
 WHERE parent_id = $1
 ORDER BY sort_order, admin_field_id
 LIMIT $2 OFFSET $3
@@ -9615,7 +9881,7 @@ func (q *Queries) ListAdminFieldByParentIDPaginated(ctx context.Context, arg Lis
 			&i.Name,
 			&i.Label,
 			&i.Data,
-			&i.Validation,
+			&i.ValidationID,
 			&i.UiConfig,
 			&i.Type,
 			&i.Translatable,
@@ -9638,7 +9904,7 @@ func (q *Queries) ListAdminFieldByParentIDPaginated(ctx context.Context, arg Lis
 }
 
 const listAdminFieldPaginated = `-- name: ListAdminFieldPaginated :many
-SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM admin_fields
+SELECT admin_field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM admin_fields
 ORDER BY sort_order, admin_field_id
 LIMIT $1 OFFSET $2
 `
@@ -9664,7 +9930,7 @@ func (q *Queries) ListAdminFieldPaginated(ctx context.Context, arg ListAdminFiel
 			&i.Name,
 			&i.Label,
 			&i.Data,
-			&i.Validation,
+			&i.ValidationID,
 			&i.UiConfig,
 			&i.Type,
 			&i.Translatable,
@@ -9815,6 +10081,125 @@ func (q *Queries) ListAdminRoutePaginated(ctx context.Context, arg ListAdminRout
 			&i.Slug,
 			&i.Title,
 			&i.Status,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminValidation = `-- name: ListAdminValidation :many
+SELECT admin_validation_id, name, description, config, author_id, date_created, date_modified FROM admin_validations
+ORDER BY name, admin_validation_id
+`
+
+func (q *Queries) ListAdminValidation(ctx context.Context) ([]AdminValidations, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminValidation)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminValidations{}
+	for rows.Next() {
+		var i AdminValidations
+		if err := rows.Scan(
+			&i.AdminValidationID,
+			&i.Name,
+			&i.Description,
+			&i.Config,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminValidationPaginated = `-- name: ListAdminValidationPaginated :many
+SELECT admin_validation_id, name, description, config, author_id, date_created, date_modified FROM admin_validations
+ORDER BY name, admin_validation_id
+LIMIT $1 OFFSET $2
+`
+
+type ListAdminValidationPaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListAdminValidationPaginated(ctx context.Context, arg ListAdminValidationPaginatedParams) ([]AdminValidations, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminValidationPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminValidations{}
+	for rows.Next() {
+		var i AdminValidations
+		if err := rows.Scan(
+			&i.AdminValidationID,
+			&i.Name,
+			&i.Description,
+			&i.Config,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminValidationsByName = `-- name: ListAdminValidationsByName :many
+SELECT admin_validation_id, name, description, config, author_id, date_created, date_modified FROM admin_validations
+WHERE name LIKE '%' || $1 || '%'
+ORDER BY name, admin_validation_id
+`
+
+type ListAdminValidationsByNameParams struct {
+	Name sql.NullString `json:"name"`
+}
+
+func (q *Queries) ListAdminValidationsByName(ctx context.Context, arg ListAdminValidationsByNameParams) ([]AdminValidations, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminValidationsByName, arg.Name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminValidations{}
+	for rows.Next() {
+		var i AdminValidations
+		if err := rows.Scan(
+			&i.AdminValidationID,
+			&i.Name,
+			&i.Description,
+			&i.Config,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -11733,7 +12118,7 @@ func (q *Queries) ListEnabledPipelines(ctx context.Context) ([]Pipelines, error)
 }
 
 const listField = `-- name: ListField :many
-SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
 ORDER BY sort_order, field_id
 `
 
@@ -11753,7 +12138,7 @@ func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 			&i.Name,
 			&i.Label,
 			&i.Data,
-			&i.Validation,
+			&i.ValidationID,
 			&i.UiConfig,
 			&i.Type,
 			&i.Translatable,
@@ -11776,7 +12161,7 @@ func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 }
 
 const listFieldByDatatypeID = `-- name: ListFieldByDatatypeID :many
-SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
 WHERE parent_id = $1
 ORDER BY sort_order, field_id
 `
@@ -11801,7 +12186,7 @@ func (q *Queries) ListFieldByDatatypeID(ctx context.Context, arg ListFieldByData
 			&i.Name,
 			&i.Label,
 			&i.Data,
-			&i.Validation,
+			&i.ValidationID,
 			&i.UiConfig,
 			&i.Type,
 			&i.Translatable,
@@ -11824,7 +12209,7 @@ func (q *Queries) ListFieldByDatatypeID(ctx context.Context, arg ListFieldByData
 }
 
 const listFieldPaginated = `-- name: ListFieldPaginated :many
-SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
 ORDER BY sort_order, field_id
 LIMIT $1 OFFSET $2
 `
@@ -11850,7 +12235,7 @@ func (q *Queries) ListFieldPaginated(ctx context.Context, arg ListFieldPaginated
 			&i.Name,
 			&i.Label,
 			&i.Data,
-			&i.Validation,
+			&i.ValidationID,
 			&i.UiConfig,
 			&i.Type,
 			&i.Translatable,
@@ -11947,7 +12332,7 @@ SELECT
     f.label,
     f.type,
     f.data,
-    f.validation,
+    f.validation_id,
     f.ui_config,
     f.roles
 FROM fields f
@@ -11960,14 +12345,14 @@ type ListFieldsWithSortOrderByDatatypeIDParams struct {
 }
 
 type ListFieldsWithSortOrderByDatatypeIDRow struct {
-	SortOrder  int32                `json:"sort_order"`
-	FieldID    types.FieldID        `json:"field_id"`
-	Label      string               `json:"label"`
-	Type       types.FieldType      `json:"type"`
-	Data       string               `json:"data"`
-	Validation string               `json:"validation"`
-	UiConfig   string               `json:"ui_config"`
-	Roles      types.NullableString `json:"roles"`
+	SortOrder    int32                      `json:"sort_order"`
+	FieldID      types.FieldID              `json:"field_id"`
+	Label        string                     `json:"label"`
+	Type         types.FieldType            `json:"type"`
+	Data         string                     `json:"data"`
+	ValidationID types.NullableValidationID `json:"validation_id"`
+	UiConfig     string                     `json:"ui_config"`
+	Roles        types.NullableString       `json:"roles"`
 }
 
 func (q *Queries) ListFieldsWithSortOrderByDatatypeID(ctx context.Context, arg ListFieldsWithSortOrderByDatatypeIDParams) ([]ListFieldsWithSortOrderByDatatypeIDRow, error) {
@@ -11985,7 +12370,7 @@ func (q *Queries) ListFieldsWithSortOrderByDatatypeID(ctx context.Context, arg L
 			&i.Label,
 			&i.Type,
 			&i.Data,
-			&i.Validation,
+			&i.ValidationID,
 			&i.UiConfig,
 			&i.Roles,
 		); err != nil {
@@ -13491,6 +13876,125 @@ func (q *Queries) ListUsersWithRoleLabel(ctx context.Context) ([]ListUsersWithRo
 	return items, nil
 }
 
+const listValidation = `-- name: ListValidation :many
+SELECT validation_id, name, description, config, author_id, date_created, date_modified FROM validations
+ORDER BY name, validation_id
+`
+
+func (q *Queries) ListValidation(ctx context.Context) ([]Validations, error) {
+	rows, err := q.db.QueryContext(ctx, listValidation)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Validations{}
+	for rows.Next() {
+		var i Validations
+		if err := rows.Scan(
+			&i.ValidationID,
+			&i.Name,
+			&i.Description,
+			&i.Config,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listValidationPaginated = `-- name: ListValidationPaginated :many
+SELECT validation_id, name, description, config, author_id, date_created, date_modified FROM validations
+ORDER BY name, validation_id
+LIMIT $1 OFFSET $2
+`
+
+type ListValidationPaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListValidationPaginated(ctx context.Context, arg ListValidationPaginatedParams) ([]Validations, error) {
+	rows, err := q.db.QueryContext(ctx, listValidationPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Validations{}
+	for rows.Next() {
+		var i Validations
+		if err := rows.Scan(
+			&i.ValidationID,
+			&i.Name,
+			&i.Description,
+			&i.Config,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listValidationsByName = `-- name: ListValidationsByName :many
+SELECT validation_id, name, description, config, author_id, date_created, date_modified FROM validations
+WHERE name LIKE '%' || $1 || '%'
+ORDER BY name, validation_id
+`
+
+type ListValidationsByNameParams struct {
+	Name sql.NullString `json:"name"`
+}
+
+func (q *Queries) ListValidationsByName(ctx context.Context, arg ListValidationsByNameParams) ([]Validations, error) {
+	rows, err := q.db.QueryContext(ctx, listValidationsByName, arg.Name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Validations{}
+	for rows.Next() {
+		var i Validations
+		if err := rows.Scan(
+			&i.ValidationID,
+			&i.Name,
+			&i.Description,
+			&i.Config,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVerifications = `-- name: ListVerifications :many
 SELECT verification_id, backup_id, verified_at, verified_by, restore_tested, checksum_valid, record_count_match, status, error_message, duration_ms FROM backup_verifications
 ORDER BY verified_at DESC
@@ -14223,7 +14727,7 @@ SET parent_id    = $1,
     name         = $3,
     label        = $4,
     data         = $5,
-    validation   = $6,
+    validation_id = $6,
     ui_config    = $7,
     type         = $8,
     translatable = $9,
@@ -14235,20 +14739,20 @@ WHERE admin_field_id = $14
 `
 
 type UpdateAdminFieldParams struct {
-	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
-	SortOrder    int32                         `json:"sort_order"`
-	Name         string                        `json:"name"`
-	Label        string                        `json:"label"`
-	Data         string                        `json:"data"`
-	Validation   string                        `json:"validation"`
-	UiConfig     string                        `json:"ui_config"`
-	Type         types.FieldType               `json:"type"`
-	Translatable types.SafeBool                `json:"translatable"`
-	Roles        types.NullableString          `json:"roles"`
-	AuthorID     types.NullableUserID          `json:"author_id"`
-	DateCreated  types.Timestamp               `json:"date_created"`
-	DateModified types.Timestamp               `json:"date_modified"`
-	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
+	ParentID     types.NullableAdminDatatypeID   `json:"parent_id"`
+	SortOrder    int32                           `json:"sort_order"`
+	Name         string                          `json:"name"`
+	Label        string                          `json:"label"`
+	Data         string                          `json:"data"`
+	ValidationID types.NullableAdminValidationID `json:"validation_id"`
+	UiConfig     string                          `json:"ui_config"`
+	Type         types.FieldType                 `json:"type"`
+	Translatable types.SafeBool                  `json:"translatable"`
+	Roles        types.NullableString            `json:"roles"`
+	AuthorID     types.NullableUserID            `json:"author_id"`
+	DateCreated  types.Timestamp                 `json:"date_created"`
+	DateModified types.Timestamp                 `json:"date_modified"`
+	AdminFieldID types.AdminFieldID              `json:"admin_field_id"`
 }
 
 func (q *Queries) UpdateAdminField(ctx context.Context, arg UpdateAdminFieldParams) error {
@@ -14258,7 +14762,7 @@ func (q *Queries) UpdateAdminField(ctx context.Context, arg UpdateAdminFieldPara
 		arg.Name,
 		arg.Label,
 		arg.Data,
-		arg.Validation,
+		arg.ValidationID,
 		arg.UiConfig,
 		arg.Type,
 		arg.Translatable,
@@ -14361,6 +14865,40 @@ func (q *Queries) UpdateAdminRoute(ctx context.Context, arg UpdateAdminRoutePara
 		arg.DateCreated,
 		arg.DateModified,
 		arg.Slug_2,
+	)
+	return err
+}
+
+const updateAdminValidation = `-- name: UpdateAdminValidation :exec
+UPDATE admin_validations
+SET name = $1,
+    description = $2,
+    config = $3,
+    author_id = $4,
+    date_created = $5,
+    date_modified = $6
+WHERE admin_validation_id = $7
+`
+
+type UpdateAdminValidationParams struct {
+	Name              string                  `json:"name"`
+	Description       string                  `json:"description"`
+	Config            string                  `json:"config"`
+	AuthorID          types.NullableUserID    `json:"author_id"`
+	DateCreated       types.Timestamp         `json:"date_created"`
+	DateModified      types.Timestamp         `json:"date_modified"`
+	AdminValidationID types.AdminValidationID `json:"admin_validation_id"`
+}
+
+func (q *Queries) UpdateAdminValidation(ctx context.Context, arg UpdateAdminValidationParams) error {
+	_, err := q.db.ExecContext(ctx, updateAdminValidation,
+		arg.Name,
+		arg.Description,
+		arg.Config,
+		arg.AuthorID,
+		arg.DateCreated,
+		arg.DateModified,
+		arg.AdminValidationID,
 	)
 	return err
 }
@@ -14710,7 +15248,7 @@ SET parent_id = $1,
     name = $3,
     label = $4,
     data = $5,
-    validation = $6,
+    validation_id = $6,
     ui_config = $7,
     type = $8,
     translatable = $9,
@@ -14719,24 +15257,24 @@ SET parent_id = $1,
     date_created = $12,
     date_modified = $13
     WHERE field_id = $14
-    RETURNING field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified
+    RETURNING field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified
 `
 
 type UpdateFieldParams struct {
-	ParentID     types.NullableDatatypeID `json:"parent_id"`
-	SortOrder    int32                    `json:"sort_order"`
-	Name         string                   `json:"name"`
-	Label        string                   `json:"label"`
-	Data         string                   `json:"data"`
-	Validation   string                   `json:"validation"`
-	UiConfig     string                   `json:"ui_config"`
-	Type         types.FieldType          `json:"type"`
-	Translatable types.SafeBool           `json:"translatable"`
-	Roles        types.NullableString     `json:"roles"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
-	DateCreated  types.Timestamp          `json:"date_created"`
-	DateModified types.Timestamp          `json:"date_modified"`
-	FieldID      types.FieldID            `json:"field_id"`
+	ParentID     types.NullableDatatypeID   `json:"parent_id"`
+	SortOrder    int32                      `json:"sort_order"`
+	Name         string                     `json:"name"`
+	Label        string                     `json:"label"`
+	Data         string                     `json:"data"`
+	ValidationID types.NullableValidationID `json:"validation_id"`
+	UiConfig     string                     `json:"ui_config"`
+	Type         types.FieldType            `json:"type"`
+	Translatable types.SafeBool             `json:"translatable"`
+	Roles        types.NullableString       `json:"roles"`
+	AuthorID     types.NullableUserID       `json:"author_id"`
+	DateCreated  types.Timestamp            `json:"date_created"`
+	DateModified types.Timestamp            `json:"date_modified"`
+	FieldID      types.FieldID              `json:"field_id"`
 }
 
 func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error {
@@ -14746,7 +15284,7 @@ func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error 
 		arg.Name,
 		arg.Label,
 		arg.Data,
-		arg.Validation,
+		arg.ValidationID,
 		arg.UiConfig,
 		arg.Type,
 		arg.Translatable,
@@ -15305,6 +15843,40 @@ type UpdateUserSshKeyLastUsedParams struct {
 
 func (q *Queries) UpdateUserSshKeyLastUsed(ctx context.Context, arg UpdateUserSshKeyLastUsedParams) error {
 	_, err := q.db.ExecContext(ctx, updateUserSshKeyLastUsed, arg.LastUsed, arg.SSHKeyID)
+	return err
+}
+
+const updateValidation = `-- name: UpdateValidation :exec
+UPDATE validations
+SET name = $1,
+    description = $2,
+    config = $3,
+    author_id = $4,
+    date_created = $5,
+    date_modified = $6
+WHERE validation_id = $7
+`
+
+type UpdateValidationParams struct {
+	Name         string               `json:"name"`
+	Description  string               `json:"description"`
+	Config       string               `json:"config"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
+	ValidationID types.ValidationID   `json:"validation_id"`
+}
+
+func (q *Queries) UpdateValidation(ctx context.Context, arg UpdateValidationParams) error {
+	_, err := q.db.ExecContext(ctx, updateValidation,
+		arg.Name,
+		arg.Description,
+		arg.Config,
+		arg.AuthorID,
+		arg.DateCreated,
+		arg.DateModified,
+		arg.ValidationID,
+	)
 	return err
 }
 

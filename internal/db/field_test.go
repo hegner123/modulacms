@@ -46,7 +46,7 @@ func fieldFixture() (Fields, types.FieldID, types.NullableDatatypeID, types.Null
 		Name:         "test-field",
 		Label:        "Test Label",
 		Data:         "some-data",
-		Validation:   `{"required": true}`,
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     `{"widget": "text"}`,
 		Type:         types.FieldTypeText,
 		Translatable: false,
@@ -74,7 +74,7 @@ func TestMapFieldJSON_AllFields(t *testing.T) {
 		{"ParentID", got.ParentID, parentID.String()},
 		{"Label", got.Label, "Test Label"},
 		{"Data", got.Data, "some-data"},
-		{"Validation", got.Validation, `{"required": true}`},
+		{"ValidationID", got.ValidationID, "null"},
 		{"UIConfig", got.UIConfig, `{"widget": "text"}`},
 		{"Type", got.Type, types.FieldTypeText.String()},
 		{"AuthorID", got.AuthorID, authorID.String()},
@@ -173,7 +173,7 @@ func TestMapStringField_AllFields(t *testing.T) {
 		{"ParentID", got.ParentID, parentID.String()},
 		{"Label", got.Label, "Test Label"},
 		{"Data", got.Data, "some-data"},
-		{"Validation", got.Validation, `{"required": true}`},
+		{"ValidationID", got.ValidationID, "null"},
 		{"UIConfig", got.UIConfig, `{"widget": "text"}`},
 		// MapStringField uses a.Type.String()
 		{"Type", got.Type, types.FieldTypeText.String()},
@@ -259,7 +259,7 @@ func TestDatabase_MapField_AllFields(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "sqlite-label",
 		Data:         "sqlite-data",
-		Validation:   "sqlite-validation",
+		ValidationID: types.NullableValidationID{},
 		UiConfig:     "sqlite-ui-config",
 		Type:         types.FieldTypeNumber,
 		AuthorID:     authorID,
@@ -281,8 +281,8 @@ func TestDatabase_MapField_AllFields(t *testing.T) {
 	if got.Data != "sqlite-data" {
 		t.Errorf("Data = %q, want %q", got.Data, "sqlite-data")
 	}
-	if got.Validation != "sqlite-validation" {
-		t.Errorf("Validation = %q, want %q", got.Validation, "sqlite-validation")
+	if !got.ValidationID.IsZero() {
+		t.Errorf("ValidationID = %v, want zero value", got.ValidationID)
 	}
 	// UIConfig in wrapper maps from UiConfig in sqlc type
 	if got.UIConfig != "sqlite-ui-config" {
@@ -336,7 +336,7 @@ func TestDatabase_MapCreateFieldParams_PreservesProvidedID(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "create-label",
 		Data:         "create-data",
-		Validation:   "create-validation",
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     "create-ui-config",
 		Type:         types.FieldTypeTextarea,
 		AuthorID:     authorID,
@@ -359,8 +359,8 @@ func TestDatabase_MapCreateFieldParams_PreservesProvidedID(t *testing.T) {
 	if got.Data != input.Data {
 		t.Errorf("Data = %q, want %q", got.Data, input.Data)
 	}
-	if got.Validation != input.Validation {
-		t.Errorf("Validation = %q, want %q", got.Validation, input.Validation)
+	if got.ValidationID != input.ValidationID {
+		t.Errorf("ValidationID = %v, want %v", got.ValidationID, input.ValidationID)
 	}
 	// UIConfig -> UiConfig field name mapping
 	if got.UiConfig != input.UIConfig {
@@ -444,7 +444,7 @@ func TestDatabase_MapUpdateFieldParams_AllFields(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "updated-label",
 		Data:         "updated-data",
-		Validation:   "updated-validation",
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     "updated-ui-config",
 		Type:         types.FieldTypeBoolean,
 		AuthorID:     authorID,
@@ -464,8 +464,8 @@ func TestDatabase_MapUpdateFieldParams_AllFields(t *testing.T) {
 	if got.Data != input.Data {
 		t.Errorf("Data = %q, want %q", got.Data, input.Data)
 	}
-	if got.Validation != input.Validation {
-		t.Errorf("Validation = %q, want %q", got.Validation, input.Validation)
+	if got.ValidationID != input.ValidationID {
+		t.Errorf("ValidationID = %v, want %v", got.ValidationID, input.ValidationID)
 	}
 	if got.UiConfig != input.UIConfig {
 		t.Errorf("UiConfig = %q, want %q", got.UiConfig, input.UIConfig)
@@ -503,7 +503,7 @@ func TestMysqlDatabase_MapField_AllFields(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "mysql-label",
 		Data:         "mysql-data",
-		Validation:   "mysql-validation",
+		ValidationID: types.NullableValidationID{},
 		UiConfig:     "mysql-ui-config",
 		Type:         types.FieldTypeSelect,
 		AuthorID:     authorID,
@@ -525,8 +525,8 @@ func TestMysqlDatabase_MapField_AllFields(t *testing.T) {
 	if got.Data != "mysql-data" {
 		t.Errorf("Data = %q, want %q", got.Data, "mysql-data")
 	}
-	if got.Validation != "mysql-validation" {
-		t.Errorf("Validation = %q, want %q", got.Validation, "mysql-validation")
+	if !got.ValidationID.IsZero() {
+		t.Errorf("ValidationID = %v, want zero value", got.ValidationID)
 	}
 	if got.UIConfig != "mysql-ui-config" {
 		t.Errorf("UIConfig = %q, want %q", got.UIConfig, "mysql-ui-config")
@@ -648,7 +648,7 @@ func TestPsqlDatabase_MapField_AllFields(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "psql-label",
 		Data:         "psql-data",
-		Validation:   "psql-validation",
+		ValidationID: types.NullableValidationID{},
 		UiConfig:     "psql-ui-config",
 		Type:         types.FieldTypeJSON,
 		AuthorID:     authorID,
@@ -670,8 +670,8 @@ func TestPsqlDatabase_MapField_AllFields(t *testing.T) {
 	if got.Data != "psql-data" {
 		t.Errorf("Data = %q, want %q", got.Data, "psql-data")
 	}
-	if got.Validation != "psql-validation" {
-		t.Errorf("Validation = %q, want %q", got.Validation, "psql-validation")
+	if !got.ValidationID.IsZero() {
+		t.Errorf("ValidationID = %v, want zero value", got.ValidationID)
 	}
 	if got.UIConfig != "psql-ui-config" {
 		t.Errorf("UIConfig = %q, want %q", got.UIConfig, "psql-ui-config")
@@ -784,21 +784,21 @@ func TestCrossDatabaseMapField_Consistency(t *testing.T) {
 	sqliteInput := mdb.Fields{
 		FieldID: fieldID, ParentID: parentID,
 		Label: "cross-label", Data: "cross-data",
-		Validation: "cross-validation", UiConfig: "cross-ui",
+		ValidationID: types.NullableValidationID{}, UiConfig: "cross-ui",
 		Type: types.FieldTypeEmail, AuthorID: authorID,
 		DateCreated: ts, DateModified: ts,
 	}
 	mysqlInput := mdbm.Fields{
 		FieldID: fieldID, ParentID: parentID,
 		Label: "cross-label", Data: "cross-data",
-		Validation: "cross-validation", UiConfig: "cross-ui",
+		ValidationID: types.NullableValidationID{}, UiConfig: "cross-ui",
 		Type: types.FieldTypeEmail, AuthorID: authorID,
 		DateCreated: ts, DateModified: ts,
 	}
 	psqlInput := mdbp.Fields{
 		FieldID: fieldID, ParentID: parentID,
 		Label: "cross-label", Data: "cross-data",
-		Validation: "cross-validation", UiConfig: "cross-ui",
+		ValidationID: types.NullableValidationID{}, UiConfig: "cross-ui",
 		Type: types.FieldTypeEmail, AuthorID: authorID,
 		DateCreated: ts, DateModified: ts,
 	}
@@ -1579,7 +1579,7 @@ func TestFieldsStruct_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"field_id", "parent_id", "sort_order", "name", "label", "data",
-		"validation", "ui_config", "type", "translatable", "roles", "author_id",
+		"validation_id", "ui_config", "type", "translatable", "roles", "author_id",
 		"date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1601,7 +1601,7 @@ func TestCreateFieldParams_JSONTags(t *testing.T) {
 		Name:         "test-name",
 		Label:        "test-label",
 		Data:         "test-data",
-		Validation:   "test-validation",
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     "test-ui-config",
 		Type:         types.FieldTypeText,
 		Translatable: false,
@@ -1622,7 +1622,7 @@ func TestCreateFieldParams_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"field_id", "parent_id", "sort_order", "name", "label", "data",
-		"validation", "ui_config", "type", "translatable", "roles", "author_id",
+		"validation_id", "ui_config", "type", "translatable", "roles", "author_id",
 		"date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1644,7 +1644,7 @@ func TestUpdateFieldParams_JSONTags(t *testing.T) {
 		Name:         "test-name",
 		Label:        "test-label",
 		Data:         "test-data",
-		Validation:   "test-validation",
+		ValidationID: types.NullableValidationID{},
 		UIConfig:     "test-ui-config",
 		Type:         types.FieldTypeText,
 		Translatable: false,
@@ -1666,7 +1666,7 @@ func TestUpdateFieldParams_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"parent_id", "sort_order", "name", "label", "data",
-		"validation", "ui_config", "type", "translatable", "roles", "author_id",
+		"validation_id", "ui_config", "type", "translatable", "roles", "author_id",
 		"date_created", "date_modified",
 		"field_id",
 	}
@@ -1688,7 +1688,7 @@ func TestFieldsJSONStruct_JSONTags(t *testing.T) {
 		Name:         "json-name",
 		Label:        "json-label",
 		Data:         "json-data",
-		Validation:   "json-validation",
+		ValidationID: "",
 		UIConfig:     "json-ui-config",
 		Type:         "text",
 		Translatable: "0",
@@ -1709,7 +1709,7 @@ func TestFieldsJSONStruct_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"field_id", "parent_id", "sort_order", "name", "label", "data",
-		"validation", "ui_config", "type", "translatable", "roles", "author_id",
+		"validation_id", "ui_config", "type", "translatable", "roles", "author_id",
 		"date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1772,7 +1772,7 @@ func TestStringFieldsStruct_JSONTags(t *testing.T) {
 		Name:         "test-name",
 		Label:        "test-label",
 		Data:         "test-data",
-		Validation:   "test-validation",
+		ValidationID: "",
 		UIConfig:     "test-ui",
 		Type:         "text",
 		Translatable: "0",
@@ -1794,7 +1794,7 @@ func TestStringFieldsStruct_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"field_id", "parent_id", "sort_order", "name", "label", "data",
-		"validation", "ui_config", "type", "translatable", "roles", "author_id",
+		"validation_id", "ui_config", "type", "translatable", "roles", "author_id",
 		"date_created", "date_modified", "history",
 	}
 	for _, field := range expectedFields {

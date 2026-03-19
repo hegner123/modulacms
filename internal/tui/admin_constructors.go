@@ -272,6 +272,104 @@ func ShowDeleteAdminFieldTypeDialogCmd(adminFieldTypeID types.AdminFieldTypeID, 
 }
 
 // =============================================================================
+// VALIDATION CONSTRUCTORS
+// =============================================================================
+
+// ValidationsFetchCmd creates a command to fetch all validations.
+func ValidationsFetchCmd() tea.Cmd {
+	return func() tea.Msg { return ValidationsFetchMsg{} }
+}
+
+// ValidationsSetCmd creates a command to set the validations list.
+func ValidationsSetCmd(validations []db.Validation) tea.Cmd {
+	return func() tea.Msg { return ValidationsSet{Validations: validations} }
+}
+
+// DeleteValidationCmd creates a command to delete a validation.
+func DeleteValidationCmd(validationID types.ValidationID) tea.Cmd {
+	return func() tea.Msg { return DeleteValidationRequestMsg{ValidationID: validationID} }
+}
+
+// ShowDeleteValidationDialogCmd creates a command to show the delete validation dialog.
+func ShowDeleteValidationDialogCmd(validationID types.ValidationID, name string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteValidationDialogMsg{ValidationID: validationID, Name: name}
+	}
+}
+
+// CreateValidationFromDialogCmd creates a command to create a validation from dialog input.
+func CreateValidationFromDialogCmd(name, description string) tea.Cmd {
+	return func() tea.Msg {
+		return CreateValidationFromDialogRequestMsg{Name: name, Description: description}
+	}
+}
+
+// UpdateValidationFromDialogCmd creates a command to update a validation from dialog input.
+func UpdateValidationFromDialogCmd(validationID, name, description string) tea.Cmd {
+	return func() tea.Msg {
+		return UpdateValidationFromDialogRequestMsg{
+			ValidationID: validationID,
+			Name:         name,
+			Description:  description,
+		}
+	}
+}
+
+// ShowEditValidationDialogCmd creates a command to show the edit validation dialog.
+func ShowEditValidationDialogCmd(v db.Validation) tea.Cmd {
+	return func() tea.Msg { return ShowEditValidationDialogMsg{Validation: v} }
+}
+
+// =============================================================================
+// ADMIN VALIDATION CONSTRUCTORS
+// =============================================================================
+
+// AdminValidationsFetchCmd creates a command to fetch all admin validations.
+func AdminValidationsFetchCmd() tea.Cmd {
+	return func() tea.Msg { return AdminValidationsFetchMsg{} }
+}
+
+// AdminValidationsSetCmd creates a command to set the admin validations list.
+func AdminValidationsSetCmd(adminValidations []db.AdminValidation) tea.Cmd {
+	return func() tea.Msg { return AdminValidationsSet{AdminValidations: adminValidations} }
+}
+
+// DeleteAdminValidationCmd creates a command to delete an admin validation.
+func DeleteAdminValidationCmd(adminValidationID types.AdminValidationID) tea.Cmd {
+	return func() tea.Msg { return DeleteAdminValidationRequestMsg{AdminValidationID: adminValidationID} }
+}
+
+// ShowDeleteAdminValidationDialogCmd creates a command to show the delete admin validation dialog.
+func ShowDeleteAdminValidationDialogCmd(adminValidationID types.AdminValidationID, name string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteAdminValidationDialogMsg{AdminValidationID: adminValidationID, Name: name}
+	}
+}
+
+// CreateAdminValidationFromDialogCmd creates a command to create an admin validation from dialog input.
+func CreateAdminValidationFromDialogCmd(name, description string) tea.Cmd {
+	return func() tea.Msg {
+		return CreateAdminValidationFromDialogRequestMsg{Name: name, Description: description}
+	}
+}
+
+// UpdateAdminValidationFromDialogCmd creates a command to update an admin validation from dialog input.
+func UpdateAdminValidationFromDialogCmd(adminValidationID, name, description string) tea.Cmd {
+	return func() tea.Msg {
+		return UpdateAdminValidationFromDialogRequestMsg{
+			AdminValidationID: adminValidationID,
+			Name:              name,
+			Description:       description,
+		}
+	}
+}
+
+// ShowEditAdminValidationDialogCmd creates a command to show the edit admin validation dialog.
+func ShowEditAdminValidationDialogCmd(v db.AdminValidation) tea.Cmd {
+	return func() tea.Msg { return ShowEditAdminValidationDialogMsg{AdminValidation: v} }
+}
+
+// =============================================================================
 // ADMIN CONTENT TREE CONSTRUCTORS
 // =============================================================================
 
@@ -348,7 +446,7 @@ func ReloadAdminContentTreeCmd(cfg *config.Config, adminRouteID types.AdminRoute
 						ParentID:     r.FParentID,
 						Label:        r.FLabel,
 						Data:         r.FData,
-						Validation:   r.FValidation,
+						ValidationID: r.FValidationID,
 						UIConfig:     r.FUIConfig,
 						Type:         r.FType,
 						AuthorID:     r.FAuthorID,
@@ -485,7 +583,7 @@ func LoadAdminContentFieldsCmd(cfg *config.Config, adminContentDataID types.Admi
 						AdminFieldID:   f.AdminFieldID,
 						Label:          f.Label,
 						Type:           string(f.Type),
-						ValidationJSON: f.Validation,
+						ValidationJSON: "", // TODO: resolve from validation table
 						DataJSON:       f.Data,
 					}
 					if cf, ok := valueMap[f.AdminFieldID]; ok {
@@ -514,7 +612,7 @@ func LoadAdminContentFieldsCmd(cfg *config.Config, adminContentDataID types.Admi
 					Label:               r.FLabel,
 					Type:                string(r.FType),
 					Value:               r.AdminFieldValue,
-					ValidationJSON:      r.FValidation,
+					ValidationJSON:      "", // TODO: resolve from validation table
 					DataJSON:            r.FData,
 				})
 			}
@@ -558,7 +656,7 @@ func FetchAdminContentForEditCmd(cfg *config.Config, adminContentID types.AdminC
 					AdminFieldID:   f.AdminFieldID,
 					Label:          f.Label,
 					Type:           string(f.Type),
-					ValidationJSON: f.Validation,
+					ValidationJSON: "", // TODO: resolve from validation table
 					DataJSON:       f.Data,
 				}
 				if cf, ok := valueMap[f.AdminFieldID]; ok {

@@ -53,6 +53,10 @@ const (
 	FORMDIALOGEDITADMINSINGLEFIELD        FormDialogAction = "edit_admin_single_field"
 	FORMDIALOGCREATEWEBHOOK               FormDialogAction = "create_webhook"
 	FORMDIALOGEDITWEBHOOK                 FormDialogAction = "edit_webhook"
+	FORMDIALOGCREATEVALIDATION            FormDialogAction = "create_validation"
+	FORMDIALOGEDITVALIDATION              FormDialogAction = "edit_validation"
+	FORMDIALOGCREATEADMINVALIDATION       FormDialogAction = "create_admin_validation"
+	FORMDIALOGEDITADMINVALIDATION         FormDialogAction = "edit_admin_validation"
 )
 
 // FormDialogField constants define focus indices for dialog fields.

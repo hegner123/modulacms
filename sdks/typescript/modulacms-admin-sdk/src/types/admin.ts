@@ -194,8 +194,8 @@ export type AdminField = {
   label: string
   /** Additional field data (JSON-encoded metadata). */
   data: string
-  /** Validation rules (JSON-encoded). */
-  validation: string
+  /** ID of the admin validation config applied to this field, or `null` for none. */
+  validation_id: string | null
   /** UI widget configuration (JSON-encoded). */
   ui_config: string
   /** The data type of this field. */
@@ -361,8 +361,8 @@ export type CreateAdminFieldParams = {
   label: string
   /** Additional field metadata (JSON-encoded string). Pass `'{}'` for defaults. */
   data: string
-  /** Validation rules (JSON-encoded string, e.g. `'{"required":true,"maxLength":255}'`). */
-  validation: string
+  /** ID of the admin validation config to apply, or `null` for none. */
+  validation_id?: string | null
   /** UI widget configuration (JSON-encoded string, e.g. `'{"placeholder":"Enter title"}'`). */
   ui_config: string
   /** The data type of this field (e.g. `'text'`, `'number'`, `'richtext'`, `'media'`). */
@@ -501,8 +501,8 @@ export type UpdateAdminFieldParams = {
   label: string
   /** Updated metadata (JSON-encoded). */
   data: string
-  /** Updated validation rules (JSON-encoded). */
-  validation: string
+  /** Updated admin validation config ID, or `null` for none. */
+  validation_id?: string | null
   /** Updated UI configuration (JSON-encoded). */
   ui_config: string
   /** Updated field type. */

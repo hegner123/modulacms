@@ -226,6 +226,8 @@ func TestGenericHeaders_MatchesStringStructFields(t *testing.T) {
 		User:                    reflect.TypeOf(StringUsers{}),
 		User_oauth:              reflect.TypeOf(StringUserOauth{}),
 		User_ssh_keys:           reflect.TypeOf(StringUserSshKeys{}),
+		ValidationT:             reflect.TypeOf(StringValidation{}),
+		Admin_validation:        reflect.TypeOf(StringAdminValidation{}),
 		WebhookT:                reflect.TypeOf(StringWebhook{}),
 		Webhook_deliveries:      reflect.TypeOf(StringWebhookDelivery{}),
 	}

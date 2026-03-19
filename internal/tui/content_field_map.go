@@ -34,7 +34,7 @@ func MapContentFieldsToDisplay(
 		if def, ok := defMap[cf.FieldID.ID]; ok {
 			d.Label = def.Label
 			d.Type = string(def.Type)
-			d.ValidationJSON = def.Validation
+			d.ValidationJSON = "" // TODO: resolve from validation table
 			d.DataJSON = def.Data
 		}
 		result[cid] = append(result[cid], d)
@@ -68,7 +68,7 @@ func MapAdminContentFieldsToDisplay(
 		if def, ok := defMap[cf.AdminFieldID.ID]; ok {
 			d.Label = def.Label
 			d.Type = string(def.Type)
-			d.ValidationJSON = def.Validation
+			d.ValidationJSON = "" // TODO: resolve from validation table
 			d.DataJSON = def.Data
 		}
 		result[cid] = append(result[cid], d)

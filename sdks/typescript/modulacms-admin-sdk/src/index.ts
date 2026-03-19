@@ -44,9 +44,10 @@ import { createContentDeliveryResource } from './resources/content-delivery.js'
 import { createPublishingResource, createAdminPublishingResource } from './resources/publishing.js'
 import { createLocalesResource } from './resources/locales.js'
 import { createWebhooksResource } from './resources/webhooks.js'
+import { createValidationsResource, createAdminValidationsResource } from './resources/validations.js'
 import { createQueryResource } from './resources/query.js'
 
-import type { RequestOptions, PaginationParams, PaginatedResponse, AdminRouteID, FieldTypeID, AdminFieldTypeID, Slug, WebhookID, WebhookDeliveryID } from './types/common.js'
+import type { RequestOptions, PaginationParams, PaginatedResponse, AdminRouteID, FieldTypeID, AdminFieldTypeID, Slug, WebhookID, WebhookDeliveryID, ValidationID, AdminValidationID } from './types/common.js'
 import type { MediaUploadOptions } from './resources/media-upload.js'
 import type { AdminRoute, CreateAdminRouteParams, UpdateAdminRouteParams } from './types/admin.js'
 import type { CrudResource } from './resource.js'
@@ -85,6 +86,8 @@ export type {
   UserOauthID,
   WebhookID,
   WebhookDeliveryID,
+  ValidationID,
+  AdminValidationID,
   Slug,
   Email,
   URL,
@@ -283,6 +286,7 @@ export type {
 } from './resources/publishing.js'
 export type { Locale } from '@modulacms/types'
 export type { Webhook, WebhookDelivery } from '@modulacms/types'
+export type { Validation, AdminValidation } from '@modulacms/types'
 export type { QueryParams, QueryItem, QueryDatatype, QueryResult } from '@modulacms/types'
 export type { QueryResource } from './resources/query.js'
 export type {
@@ -298,6 +302,14 @@ export type {
   UpdateWebhookParams,
   WebhookTestResponse,
 } from './resources/webhooks.js'
+export type {
+  ValidationsResource,
+  AdminValidationsResource,
+  CreateValidationParams,
+  UpdateValidationParams,
+  CreateAdminValidationParams,
+  UpdateAdminValidationParams,
+} from './resources/validations.js'
 
 // ---------------------------------------------------------------------------
 // Imports for client type (type-only, for the ModulaCMSAdminClient shape)
@@ -431,6 +443,8 @@ import type { PublishingResource } from './resources/publishing.js'
 import type { AdminPublishingResource } from './resources/publishing.js'
 import type { LocalesResource } from './resources/locales.js'
 import type { WebhooksResource } from './resources/webhooks.js'
+import type { ValidationsResource } from './resources/validations.js'
+import type { AdminValidationsResource } from './resources/validations.js'
 import type { QueryResource } from './resources/query.js'
 
 // ---------------------------------------------------------------------------
@@ -723,6 +737,12 @@ export type ModulaCMSAdminClient = {
 
   /** Webhook management (CRUD, test, delivery history, retry). */
   webhooks: WebhooksResource
+
+  /** Public validation config management (CRUD and search). */
+  validations: ValidationsResource
+
+  /** Admin validation config management (CRUD and search). */
+  adminValidations: AdminValidationsResource
 
   /** Content query by datatype (filtered, sorted, paginated). */
   query: QueryResource
@@ -1042,6 +1062,8 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     adminPublishing: createAdminPublishingResource(http, 'admin/content'),
     locales: createLocalesResource(http),
     webhooks: createWebhooksResource(http),
+    validations: createValidationsResource(http),
+    adminValidations: createAdminValidationsResource(http),
     query: createQueryResource(http),
     deploy: createDeployResource(http),
     import: createImportResource(http),

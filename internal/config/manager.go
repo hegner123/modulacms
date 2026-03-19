@@ -122,13 +122,16 @@ func (m *Manager) Update(updates map[string]any) (ValidationResult, error) {
 		return ValidationResult{}, fmt.Errorf("unmarshaling current config to map: %w", err)
 	}
 
-	// Merge updates, skipping redacted values.
+	// Filter out redacted values before merging.
+	filtered := make(map[string]any, len(updates))
 	for k, v := range updates {
 		if strVal, ok := v.(string); ok && IsRedactedValue(strVal) {
 			continue
 		}
-		currentMap[k] = v
+		filtered[k] = v
 	}
+
+	currentMap = MergeMaps(currentMap, filtered)
 
 	mergedBytes, err := json.Marshal(currentMap)
 	if err != nil {

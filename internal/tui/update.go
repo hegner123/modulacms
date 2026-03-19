@@ -531,6 +531,42 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case AdminFieldTypeDeletedMsg:
 		return m.UpdateAdminCms(msg)
 
+	// Validation dialog show messages -> UpdateDialog.
+	case ShowDeleteValidationDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowEditValidationDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowDeleteAdminValidationDialogMsg:
+		return m.UpdateDialog(msg)
+	case ShowEditAdminValidationDialogMsg:
+		return m.UpdateDialog(msg)
+
+	// Validation CRUD -> UpdateAdminCms.
+	case CreateValidationFromDialogRequestMsg:
+		return m.UpdateAdminCms(msg)
+	case UpdateValidationFromDialogRequestMsg:
+		return m.UpdateAdminCms(msg)
+	case DeleteValidationRequestMsg:
+		return m.UpdateAdminCms(msg)
+	case ValidationCreatedFromDialogMsg:
+		return m.UpdateAdminCms(msg)
+	case ValidationUpdatedFromDialogMsg:
+		return m.UpdateAdminCms(msg)
+	case ValidationDeletedMsg:
+		return m.UpdateAdminCms(msg)
+	case CreateAdminValidationFromDialogRequestMsg:
+		return m.UpdateAdminCms(msg)
+	case UpdateAdminValidationFromDialogRequestMsg:
+		return m.UpdateAdminCms(msg)
+	case DeleteAdminValidationRequestMsg:
+		return m.UpdateAdminCms(msg)
+	case AdminValidationCreatedFromDialogMsg:
+		return m.UpdateAdminCms(msg)
+	case AdminValidationUpdatedFromDialogMsg:
+		return m.UpdateAdminCms(msg)
+	case AdminValidationDeletedMsg:
+		return m.UpdateAdminCms(msg)
+
 	// Title font cycling (Home + CMS Menu screens).
 	case TitleFontMsg:
 		return m.UpdateState(msg)

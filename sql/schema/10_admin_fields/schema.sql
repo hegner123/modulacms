@@ -8,7 +8,9 @@ CREATE TABLE admin_fields (
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,
-    validation TEXT NOT NULL,
+    validation_id TEXT DEFAULT NULL
+        REFERENCES admin_validations(admin_validation_id)
+            ON DELETE SET NULL,
     ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text' NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     translatable INTEGER NOT NULL DEFAULT 0,
@@ -22,6 +24,7 @@ CREATE TABLE admin_fields (
 
 CREATE INDEX IF NOT EXISTS idx_admin_fields_parent ON admin_fields(parent_id);
 CREATE INDEX IF NOT EXISTS idx_admin_fields_author ON admin_fields(author_id);
+CREATE INDEX IF NOT EXISTS idx_admin_fields_validation ON admin_fields(validation_id);
 
 CREATE TRIGGER IF NOT EXISTS update_admin_fields_modified
     AFTER UPDATE ON admin_fields

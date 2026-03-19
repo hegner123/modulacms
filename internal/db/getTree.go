@@ -119,7 +119,7 @@ type FieldWithSortOrderRow struct {
 	Label      string               `json:"label"`
 	Type       types.FieldType      `json:"type"`
 	Data       string               `json:"data"`
-	Validation string               `json:"validation"`
+	ValidationID types.NullableValidationID `json:"validation_id"`
 	UIConfig   string               `json:"ui_config"`
 	Roles      types.NullableString `json:"roles"`
 }
@@ -139,7 +139,7 @@ type AdminContentFieldsWithFieldRow struct {
 	FParentID           types.NullableAdminDatatypeID `json:"f_parent_id"`
 	FLabel              string                        `json:"f_label"`
 	FData               string                        `json:"f_data"`
-	FValidation         string                        `json:"f_validation"`
+	FValidationID       types.NullableAdminValidationID `json:"f_validation_id"`
 	FUIConfig           string                        `json:"f_ui_config"`
 	FType               types.FieldType               `json:"f_type"`
 	FAuthorID           types.NullableUserID          `json:"f_author_id"`
@@ -380,7 +380,7 @@ func (d Database) MapAdminContentFieldsWithFieldRow(a mdb.ListAdminContentFields
 		FParentID:           a.FParentId,
 		FLabel:              a.FLabel,
 		FData:               a.FData,
-		FValidation:         a.FValidation,
+		FValidationID:       a.FValidationId,
 		FUIConfig:           a.FUiConfig,
 		FType:               a.FType,
 		FAuthorID:           a.FAuthorId,
@@ -433,7 +433,7 @@ func (d Database) MapAdminContentFieldsWithFieldByContentDataRow(a mdb.ListAdmin
 		FParentID:           a.FParentId,
 		FLabel:              a.FLabel,
 		FData:               a.FData,
-		FValidation:         a.FValidation,
+		FValidationID:       a.FValidationId,
 		FUIConfig:           a.FUiConfig,
 		FType:               a.FType,
 		FAuthorID:           a.FAuthorId,
@@ -524,7 +524,7 @@ func (d Database) MapFieldWithSortOrderRow(a mdb.ListFieldsWithSortOrderByDataty
 		Label:      a.Label,
 		Type:       a.Type,
 		Data:       a.Data,
-		Validation: a.Validation,
+		ValidationID: a.ValidationID,
 		UIConfig:   a.UiConfig,
 		Roles:      a.Roles,
 	}
@@ -777,7 +777,7 @@ func (d MysqlDatabase) MapAdminContentFieldsWithFieldRow(a mdbm.ListAdminContent
 		FParentID:           a.FParentId,
 		FLabel:              a.FLabel,
 		FData:               a.FData,
-		FValidation:         a.FValidation,
+		FValidationID:       a.FValidationId,
 		FUIConfig:           a.FUiConfig,
 		FType:               a.FType,
 		FAuthorID:           a.FAuthorId,
@@ -830,7 +830,7 @@ func (d MysqlDatabase) MapAdminContentFieldsWithFieldByContentDataRow(a mdbm.Lis
 		FParentID:           a.FParentId,
 		FLabel:              a.FLabel,
 		FData:               a.FData,
-		FValidation:         a.FValidation,
+		FValidationID:       a.FValidationId,
 		FUIConfig:           a.FUiConfig,
 		FType:               a.FType,
 		FAuthorID:           a.FAuthorId,
@@ -921,7 +921,7 @@ func (d MysqlDatabase) MapFieldWithSortOrderRow(a mdbm.ListFieldsWithSortOrderBy
 		Label:      a.Label,
 		Type:       a.Type,
 		Data:       a.Data,
-		Validation: a.Validation,
+		ValidationID: a.ValidationID,
 		UIConfig:   a.UiConfig,
 		Roles:      a.Roles,
 	}
@@ -1174,7 +1174,7 @@ func (d PsqlDatabase) MapAdminContentFieldsWithFieldRow(a mdbp.ListAdminContentF
 		FParentID:           a.FParentId,
 		FLabel:              a.FLabel,
 		FData:               a.FData,
-		FValidation:         a.FValidation,
+		FValidationID:       a.FValidationId,
 		FUIConfig:           a.FUiConfig,
 		FType:               a.FType,
 		FAuthorID:           a.FAuthorId,
@@ -1227,7 +1227,7 @@ func (d PsqlDatabase) MapAdminContentFieldsWithFieldByContentDataRow(a mdbp.List
 		FParentID:           a.FParentId,
 		FLabel:              a.FLabel,
 		FData:               a.FData,
-		FValidation:         a.FValidation,
+		FValidationID:       a.FValidationId,
 		FUIConfig:           a.FUiConfig,
 		FType:               a.FType,
 		FAuthorID:           a.FAuthorId,
@@ -1318,7 +1318,7 @@ func (d PsqlDatabase) MapFieldWithSortOrderRow(a mdbp.ListFieldsWithSortOrderByD
 		Label:      a.Label,
 		Type:       a.Type,
 		Data:       a.Data,
-		Validation: a.Validation,
+		ValidationID: a.ValidationID,
 		UIConfig:   a.UiConfig,
 		Roles:      a.Roles,
 	}

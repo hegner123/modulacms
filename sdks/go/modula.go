@@ -308,6 +308,14 @@ type Client struct {
 	// AdminDatatypesExtra provides sort order and max sort order operations for admin datatypes.
 	AdminDatatypesExtra *AdminDatatypesExtraResource
 
+	// --- Validations ---
+
+	// Validations provides CRUD and search for public validation configurations.
+	Validations *ValidationResource
+
+	// AdminValidations provides CRUD and search for admin validation configurations.
+	AdminValidations *AdminValidationResource
+
 	// --- Composite / cascade operations ---
 
 	// ContentComposite provides atomic cascade operations across content and its related data.
@@ -426,6 +434,10 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 		// Webhooks
 		Webhooks: newWebhookResource(h),
+
+		// Validations
+		Validations:      newValidationResource(h),
+		AdminValidations: newAdminValidationResource(h),
 
 		// Content Query
 		Query: &QueryResource{http: h},

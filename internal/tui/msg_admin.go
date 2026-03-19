@@ -95,6 +95,21 @@ type AdminFieldTypesSet struct {
 	AdminFieldTypes []db.AdminFieldTypes
 }
 
+// --- Admin Validation fetch messages ---
+
+// AdminValidationsFetchMsg requests fetching all admin validations.
+type AdminValidationsFetchMsg struct{}
+
+// AdminValidationsFetchResultsMsg returns fetched admin validations.
+type AdminValidationsFetchResultsMsg struct {
+	Data []db.AdminValidation
+}
+
+// AdminValidationsSet sets the admin validations list.
+type AdminValidationsSet struct {
+	AdminValidations []db.AdminValidation
+}
+
 // =============================================================================
 // ADMIN DIALOG MESSAGES
 // =============================================================================
@@ -162,6 +177,28 @@ type ShowDeleteAdminFieldTypeDialogMsg struct {
 // ShowEditAdminFieldTypeDialogMsg requests showing the edit admin field type dialog.
 type ShowEditAdminFieldTypeDialogMsg struct {
 	AdminFieldType db.AdminFieldTypes
+}
+
+// ShowDeleteValidationDialogMsg requests showing the delete validation confirmation dialog.
+type ShowDeleteValidationDialogMsg struct {
+	ValidationID types.ValidationID
+	Name         string
+}
+
+// ShowEditValidationDialogMsg requests showing the edit validation dialog.
+type ShowEditValidationDialogMsg struct {
+	Validation db.Validation
+}
+
+// ShowDeleteAdminValidationDialogMsg requests showing the delete admin validation confirmation dialog.
+type ShowDeleteAdminValidationDialogMsg struct {
+	AdminValidationID types.AdminValidationID
+	Name              string
+}
+
+// ShowEditAdminValidationDialogMsg requests showing the edit admin validation dialog.
+type ShowEditAdminValidationDialogMsg struct {
+	AdminValidation db.AdminValidation
 }
 
 // =============================================================================

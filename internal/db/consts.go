@@ -45,6 +45,8 @@ const (
 	User                    DBTable = "users"
 	User_oauth              DBTable = "user_oauth"
 	User_ssh_keys           DBTable = "user_ssh_keys"
+	ValidationT             DBTable = "validations"
+	Admin_validation        DBTable = "admin_validations"
 	WebhookT                DBTable = "webhooks"
 	Webhook_deliveries      DBTable = "webhook_deliveries"
 )
@@ -86,6 +88,8 @@ var allTables = map[DBTable]struct{}{
 	User:                    {},
 	User_oauth:              {},
 	User_ssh_keys:           {},
+	ValidationT:             {},
+	Admin_validation:        {},
 	WebhookT:                {},
 	Webhook_deliveries:      {},
 }
@@ -171,6 +175,8 @@ var TableStructMap = map[DBTable]reflect.Type{
 	User:                    reflect.TypeFor[Users](),
 	User_oauth:              reflect.TypeFor[UserOauth](),
 	User_ssh_keys:           reflect.TypeFor[UserSshKeys](),
+	ValidationT:             reflect.TypeFor[Validation](),
+	Admin_validation:        reflect.TypeFor[AdminValidation](),
 	WebhookT:                reflect.TypeFor[Webhook](),
 	Webhook_deliveries:      reflect.TypeFor[WebhookDelivery](),
 }
@@ -320,6 +326,14 @@ func CastToTypedSlice(result any, table DBTable) any {
 		}
 	case User_ssh_keys:
 		if slice, ok := result.([]UserSshKeys); ok {
+			return slice
+		}
+	case ValidationT:
+		if slice, ok := result.([]Validation); ok {
+			return slice
+		}
+	case Admin_validation:
+		if slice, ok := result.([]AdminValidation); ok {
 			return slice
 		}
 	case WebhookT:

@@ -44,7 +44,7 @@ func afTestFixture() (AdminFields, types.AdminFieldID, types.NullableAdminDataty
 		ParentID:     parentID,
 		Label:        "Test Label",
 		Data:         "some-data",
-		Validation:   `{"required": true}`,
+		ValidationID: types.NullableAdminValidationID{},
 		UIConfig:     `{"widget": "text"}`,
 		Type:         types.FieldTypeText,
 		AuthorID:     authorID,
@@ -71,7 +71,7 @@ func TestMapAdminFieldJSON_AllFields(t *testing.T) {
 		{"ParentID", got.ParentID, parentID.String()},
 		{"Label", got.Label, "Test Label"},
 		{"Data", got.Data, "some-data"},
-		{"Validation", got.Validation, `{"required": true}`},
+		{"ValidationID", got.ValidationID, "null"},
 		{"UIConfig", got.UIConfig, `{"widget": "text"}`},
 		{"Type", got.Type, types.FieldTypeText.String()},
 		{"AuthorID", got.AuthorID, authorID.String()},
@@ -170,7 +170,7 @@ func TestMapStringAdminField_AllFields(t *testing.T) {
 		{"ParentID", got.ParentID, parentID.String()},
 		{"Label", got.Label, "Test Label"},
 		{"Data", got.Data, "some-data"},
-		{"Validation", got.Validation, `{"required": true}`},
+		{"ValidationID", got.ValidationID, "null"},
 		{"UIConfig", got.UIConfig, `{"widget": "text"}`},
 		// Note: MapStringAdminField uses string(a.Type), not a.Type.String()
 		// Both are equivalent since FieldType.String() returns string(t)
@@ -257,7 +257,7 @@ func TestDatabase_MapAdminField_AllFields(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "sqlite-label",
 		Data:         "sqlite-data",
-		Validation:   "sqlite-validation",
+		ValidationID: types.NullableAdminValidationID{},
 		UiConfig:     "sqlite-ui-config",
 		Type:         types.FieldTypeNumber,
 		AuthorID:     authorID,
@@ -279,8 +279,8 @@ func TestDatabase_MapAdminField_AllFields(t *testing.T) {
 	if got.Data != "sqlite-data" {
 		t.Errorf("Data = %q, want %q", got.Data, "sqlite-data")
 	}
-	if got.Validation != "sqlite-validation" {
-		t.Errorf("Validation = %q, want %q", got.Validation, "sqlite-validation")
+	if !got.ValidationID.IsZero() {
+		t.Errorf("ValidationID should be zero, got %v", got.ValidationID)
 	}
 	// UIConfig in wrapper maps from UiConfig in sqlc type
 	if got.UIConfig != "sqlite-ui-config" {
@@ -332,7 +332,7 @@ func TestDatabase_MapCreateAdminFieldParams_GeneratesID(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "create-label",
 		Data:         "create-data",
-		Validation:   "create-validation",
+		ValidationID: types.NullableAdminValidationID{},
 		UIConfig:     "create-ui-config",
 		Type:         types.FieldTypeTextarea,
 		AuthorID:     authorID,
@@ -357,8 +357,8 @@ func TestDatabase_MapCreateAdminFieldParams_GeneratesID(t *testing.T) {
 	if got.Data != input.Data {
 		t.Errorf("Data = %q, want %q", got.Data, input.Data)
 	}
-	if got.Validation != input.Validation {
-		t.Errorf("Validation = %q, want %q", got.Validation, input.Validation)
+	if got.ValidationID != input.ValidationID {
+		t.Errorf("ValidationID = %v, want %v", got.ValidationID, input.ValidationID)
 	}
 	// UIConfig -> UiConfig field name mapping
 	if got.UiConfig != input.UIConfig {
@@ -423,7 +423,7 @@ func TestDatabase_MapUpdateAdminFieldParams_AllFields(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "updated-label",
 		Data:         "updated-data",
-		Validation:   "updated-validation",
+		ValidationID: types.NullableAdminValidationID{},
 		UIConfig:     "updated-ui-config",
 		Type:         types.FieldTypeBoolean,
 		AuthorID:     authorID,
@@ -443,8 +443,8 @@ func TestDatabase_MapUpdateAdminFieldParams_AllFields(t *testing.T) {
 	if got.Data != input.Data {
 		t.Errorf("Data = %q, want %q", got.Data, input.Data)
 	}
-	if got.Validation != input.Validation {
-		t.Errorf("Validation = %q, want %q", got.Validation, input.Validation)
+	if got.ValidationID != input.ValidationID {
+		t.Errorf("ValidationID = %v, want %v", got.ValidationID, input.ValidationID)
 	}
 	if got.UiConfig != input.UIConfig {
 		t.Errorf("UiConfig = %q, want %q", got.UiConfig, input.UIConfig)
@@ -482,7 +482,7 @@ func TestMysqlDatabase_MapAdminField_AllFields(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "mysql-label",
 		Data:         "mysql-data",
-		Validation:   "mysql-validation",
+		ValidationID: types.NullableAdminValidationID{},
 		UiConfig:     "mysql-ui-config",
 		Type:         types.FieldTypeSelect,
 		AuthorID:     authorID,
@@ -504,8 +504,8 @@ func TestMysqlDatabase_MapAdminField_AllFields(t *testing.T) {
 	if got.Data != "mysql-data" {
 		t.Errorf("Data = %q, want %q", got.Data, "mysql-data")
 	}
-	if got.Validation != "mysql-validation" {
-		t.Errorf("Validation = %q, want %q", got.Validation, "mysql-validation")
+	if !got.ValidationID.IsZero() {
+		t.Errorf("ValidationID should be zero, got %v", got.ValidationID)
 	}
 	if got.UIConfig != "mysql-ui-config" {
 		t.Errorf("UIConfig = %q, want %q", got.UIConfig, "mysql-ui-config")
@@ -610,7 +610,7 @@ func TestPsqlDatabase_MapAdminField_AllFields(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "psql-label",
 		Data:         "psql-data",
-		Validation:   "psql-validation",
+		ValidationID: types.NullableAdminValidationID{},
 		UiConfig:     "psql-ui-config",
 		Type:         types.FieldTypeJSON,
 		AuthorID:     authorID,
@@ -632,8 +632,8 @@ func TestPsqlDatabase_MapAdminField_AllFields(t *testing.T) {
 	if got.Data != "psql-data" {
 		t.Errorf("Data = %q, want %q", got.Data, "psql-data")
 	}
-	if got.Validation != "psql-validation" {
-		t.Errorf("Validation = %q, want %q", got.Validation, "psql-validation")
+	if !got.ValidationID.IsZero() {
+		t.Errorf("ValidationID should be zero, got %v", got.ValidationID)
 	}
 	if got.UIConfig != "psql-ui-config" {
 		t.Errorf("UIConfig = %q, want %q", got.UIConfig, "psql-ui-config")
@@ -729,21 +729,21 @@ func TestCrossDatabaseMapAdminField_Consistency(t *testing.T) {
 	sqliteInput := mdb.AdminFields{
 		AdminFieldID: fieldID, ParentID: parentID,
 		Label: "cross-label", Data: "cross-data",
-		Validation: "cross-validation", UiConfig: "cross-ui",
+		ValidationID: types.NullableAdminValidationID{}, UiConfig: "cross-ui",
 		Type: types.FieldTypeEmail, AuthorID: authorID,
 		DateCreated: ts, DateModified: ts,
 	}
 	mysqlInput := mdbm.AdminFields{
 		AdminFieldID: fieldID, ParentID: parentID,
 		Label: "cross-label", Data: "cross-data",
-		Validation: "cross-validation", UiConfig: "cross-ui",
+		ValidationID: types.NullableAdminValidationID{}, UiConfig: "cross-ui",
 		Type: types.FieldTypeEmail, AuthorID: authorID,
 		DateCreated: ts, DateModified: ts,
 	}
 	psqlInput := mdbp.AdminFields{
 		AdminFieldID: fieldID, ParentID: parentID,
 		Label: "cross-label", Data: "cross-data",
-		Validation: "cross-validation", UiConfig: "cross-ui",
+		ValidationID: types.NullableAdminValidationID{}, UiConfig: "cross-ui",
 		Type: types.FieldTypeEmail, AuthorID: authorID,
 		DateCreated: ts, DateModified: ts,
 	}
@@ -1557,7 +1557,7 @@ func TestListAdminFieldByRouteIdRow_PopulatedValues(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "route-field",
 		Data:         "route-data",
-		Validation:   "route-validation",
+		ValidationID: types.NullableAdminValidationID{},
 		UIConfig:     "route-ui-config",
 		Type:         types.FieldTypeMedia,
 	}
@@ -1574,8 +1574,8 @@ func TestListAdminFieldByRouteIdRow_PopulatedValues(t *testing.T) {
 	if row.Data != "route-data" {
 		t.Errorf("Data = %q, want %q", row.Data, "route-data")
 	}
-	if row.Validation != "route-validation" {
-		t.Errorf("Validation = %q, want %q", row.Validation, "route-validation")
+	if !row.ValidationID.IsZero() {
+		t.Errorf("ValidationID should be zero, got %v", row.ValidationID)
 	}
 	if row.UIConfig != "route-ui-config" {
 		t.Errorf("UIConfig = %q, want %q", row.UIConfig, "route-ui-config")
@@ -1595,7 +1595,7 @@ func TestListAdminFieldsByDatatypeIDRow_PopulatedValues(t *testing.T) {
 		ParentID:     parentID,
 		Label:        "datatype-field",
 		Data:         "datatype-data",
-		Validation:   "datatype-validation",
+		ValidationID: types.NullableAdminValidationID{},
 		UIConfig:     "datatype-ui-config",
 		Type:         types.FieldTypeIDRef,
 	}
@@ -1612,8 +1612,8 @@ func TestListAdminFieldsByDatatypeIDRow_PopulatedValues(t *testing.T) {
 	if row.Data != "datatype-data" {
 		t.Errorf("Data = %q, want %q", row.Data, "datatype-data")
 	}
-	if row.Validation != "datatype-validation" {
-		t.Errorf("Validation = %q, want %q", row.Validation, "datatype-validation")
+	if !row.ValidationID.IsZero() {
+		t.Errorf("ValidationID should be zero, got %v", row.ValidationID)
 	}
 	if row.UIConfig != "datatype-ui-config" {
 		t.Errorf("UIConfig = %q, want %q", row.UIConfig, "datatype-ui-config")

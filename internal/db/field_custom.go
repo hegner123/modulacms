@@ -55,7 +55,7 @@ type FieldsJSON struct {
 	Name         string `json:"name"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
-	Validation   string `json:"validation"`
+	ValidationID string `json:"validation_id"`
 	UIConfig     string `json:"ui_config"`
 	Type         string `json:"type"`
 	Translatable string `json:"translatable"`
@@ -74,7 +74,7 @@ func MapFieldJSON(a Fields) FieldsJSON {
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
-		Validation:   a.Validation,
+		ValidationID: a.ValidationID.String(),
 		UIConfig:     a.UIConfig,
 		Type:         a.Type.String(),
 		Translatable: fmt.Sprintf("%t", a.Translatable),

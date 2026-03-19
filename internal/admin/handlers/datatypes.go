@@ -407,7 +407,7 @@ func DatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 			Label:      label,
 			Type:       types.FieldType(fieldType),
 			Data:       data,
-			Validation: validationJSON,
+			ValidationID: types.NullableValidationID{}, // TODO: parse validation_id from form
 			UIConfig:   uiConfig,
 			AuthorID:   types.NullableUserID{ID: user.UserID, Valid: true},
 		})

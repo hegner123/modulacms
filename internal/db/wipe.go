@@ -74,6 +74,14 @@ func (d Database) DropAllTables() error {
 		return fmt.Errorf("drop fields: %w", err)
 	}
 
+	// Tier 2.5: Validation tables (referenced by fields)
+	if err := queries.DropAdminValidationTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_validations: %w", err)
+	}
+	if err := queries.DropValidationTable(d.Context); err != nil {
+		return fmt.Errorf("drop validations: %w", err)
+	}
+
 	// Tier 2: Core content tables and user-related tables
 	if err := queries.DropAdminDatatypeTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_datatypes: %w", err)
@@ -217,6 +225,14 @@ func (d MysqlDatabase) DropAllTables() error {
 		return fmt.Errorf("drop fields: %w", err)
 	}
 
+	// Tier 2.5: Validation tables (referenced by fields)
+	if err := queries.DropAdminValidationTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_validations: %w", err)
+	}
+	if err := queries.DropValidationTable(d.Context); err != nil {
+		return fmt.Errorf("drop validations: %w", err)
+	}
+
 	// Tier 2: Core content tables and user-related tables
 	if err := queries.DropAdminDatatypeTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_datatypes: %w", err)
@@ -358,6 +374,14 @@ func (d PsqlDatabase) DropAllTables() error {
 	}
 	if err := queries.DropFieldTable(d.Context); err != nil {
 		return fmt.Errorf("drop fields: %w", err)
+	}
+
+	// Tier 2.5: Validation tables (referenced by fields)
+	if err := queries.DropAdminValidationTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_validations: %w", err)
+	}
+	if err := queries.DropValidationTable(d.Context); err != nil {
+		return fmt.Errorf("drop validations: %w", err)
 	}
 
 	// Tier 2: Core content tables and user-related tables

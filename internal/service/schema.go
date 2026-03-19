@@ -377,13 +377,10 @@ func (s *SchemaService) CreateField(ctx context.Context, ac audited.AuditContext
 		ve.Add("type", "Invalid field type")
 	}
 
-	// Validate validation config JSON.
-	if params.Validation != "" && params.Validation != types.EmptyJSON {
-		vc, vcErr := types.ParseValidationConfig(params.Validation)
-		if vcErr != nil {
-			ve.Add("validation", vcErr.Error())
-		} else if vcValErr := types.ValidateValidationConfig(vc); vcValErr != nil {
-			ve.Add("validation", vcValErr.Error())
+	// Validate validation_id references an existing validation if set.
+	if params.ValidationID.Valid && !params.ValidationID.ID.IsZero() {
+		if _, lookupErr := s.fullDriver.GetValidation(params.ValidationID.ID); lookupErr != nil {
+			ve.Add("validation_id", "Validation config not found")
 		}
 	}
 
@@ -404,9 +401,6 @@ func (s *SchemaService) CreateField(ctx context.Context, ac audited.AuditContext
 	}
 	if params.Data == "" {
 		params.Data = types.EmptyJSON
-	}
-	if params.Validation == "" {
-		params.Validation = types.EmptyJSON
 	}
 	if params.UIConfig == "" {
 		params.UIConfig = types.EmptyJSON
@@ -432,13 +426,10 @@ func (s *SchemaService) UpdateField(ctx context.Context, ac audited.AuditContext
 		ve.Add("type", "Invalid field type")
 	}
 
-	// Validate validation config JSON.
-	if params.Validation != "" && params.Validation != types.EmptyJSON {
-		vc, vcErr := types.ParseValidationConfig(params.Validation)
-		if vcErr != nil {
-			ve.Add("validation", vcErr.Error())
-		} else if vcValErr := types.ValidateValidationConfig(vc); vcValErr != nil {
-			ve.Add("validation", vcValErr.Error())
+	// Validate validation_id references an existing validation if set.
+	if params.ValidationID.Valid && !params.ValidationID.ID.IsZero() {
+		if _, lookupErr := s.fullDriver.GetValidation(params.ValidationID.ID); lookupErr != nil {
+			ve.Add("validation_id", "Validation config not found")
 		}
 	}
 
@@ -464,9 +455,6 @@ func (s *SchemaService) UpdateField(ctx context.Context, ac audited.AuditContext
 	// Default empty JSON.
 	if params.Data == "" {
 		params.Data = types.EmptyJSON
-	}
-	if params.Validation == "" {
-		params.Validation = types.EmptyJSON
 	}
 	if params.UIConfig == "" {
 		params.UIConfig = types.EmptyJSON
@@ -791,9 +779,6 @@ func (s *SchemaService) CreateAdminField(ctx context.Context, ac audited.AuditCo
 	if !params.DateModified.Valid {
 		params.DateModified = now
 	}
-	if params.Validation == "" {
-		params.Validation = types.EmptyJSON
-	}
 	if params.UIConfig == "" {
 		params.UIConfig = types.EmptyJSON
 	}
@@ -821,9 +806,6 @@ func (s *SchemaService) UpdateAdminField(ctx context.Context, ac audited.AuditCo
 	params.DateCreated = existing.DateCreated
 	params.DateModified = nowUTC()
 
-	if params.Validation == "" {
-		params.Validation = types.EmptyJSON
-	}
 	if params.UIConfig == "" {
 		params.UIConfig = types.EmptyJSON
 	}

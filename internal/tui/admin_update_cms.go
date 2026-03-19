@@ -241,6 +241,74 @@ func (m Model) UpdateAdminCms(msg tea.Msg) (Model, tea.Cmd) {
 			AdminFieldTypesFetchCmd(),
 		)
 
+	// =========================================================================
+	// VALIDATION REQUEST MESSAGES -> dispatch to handlers
+	// =========================================================================
+	case CreateValidationFromDialogRequestMsg:
+		return m, m.HandleCreateValidationFromDialog(msg)
+	case UpdateValidationFromDialogRequestMsg:
+		return m, m.HandleUpdateValidationFromDialog(msg)
+	case DeleteValidationRequestMsg:
+		return m, m.HandleDeleteValidation(msg)
+
+	// =========================================================================
+	// VALIDATION RESULT MESSAGES -> re-fetch data
+	// =========================================================================
+	case ValidationCreatedFromDialogMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Validation created: %s", msg.Name)),
+			ValidationsFetchCmd(),
+		)
+	case ValidationUpdatedFromDialogMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Validation updated: %s", msg.Name)),
+			ValidationsFetchCmd(),
+		)
+	case ValidationDeletedMsg:
+		newModel := m
+		newModel.Cursor = 0
+		return newModel, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Validation deleted: %s", msg.ValidationID)),
+			ValidationsFetchCmd(),
+		)
+
+	// =========================================================================
+	// ADMIN VALIDATION REQUEST MESSAGES -> dispatch to handlers
+	// =========================================================================
+	case CreateAdminValidationFromDialogRequestMsg:
+		return m, m.HandleCreateAdminValidationFromDialog(msg)
+	case UpdateAdminValidationFromDialogRequestMsg:
+		return m, m.HandleUpdateAdminValidationFromDialog(msg)
+	case DeleteAdminValidationRequestMsg:
+		return m, m.HandleDeleteAdminValidation(msg)
+
+	// =========================================================================
+	// ADMIN VALIDATION RESULT MESSAGES -> re-fetch data
+	// =========================================================================
+	case AdminValidationCreatedFromDialogMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin validation created: %s", msg.Name)),
+			AdminValidationsFetchCmd(),
+		)
+	case AdminValidationUpdatedFromDialogMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin validation updated: %s", msg.Name)),
+			AdminValidationsFetchCmd(),
+		)
+	case AdminValidationDeletedMsg:
+		newModel := m
+		newModel.Cursor = 0
+		return newModel, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin validation deleted: %s", msg.AdminValidationID)),
+			AdminValidationsFetchCmd(),
+		)
+
 	default:
 		return m, nil
 	}

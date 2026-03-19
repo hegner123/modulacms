@@ -28,6 +28,8 @@ export type {
   RouteID,
   SessionID,
   UserOauthID,
+  ValidationID,
+  AdminValidationID,
   Slug,
   Email,
   URL,

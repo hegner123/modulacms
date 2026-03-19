@@ -21,8 +21,8 @@ CREATE TABLE IF NOT EXISTS backups (
     triggered_by    VARCHAR(64),
     error_message   TEXT,
     metadata        JSON,
-    CONSTRAINT chk_backup_type CHECK (backup_type IN ('full', 'incremental', 'snapshot')),
-    CONSTRAINT chk_backup_status CHECK (status IN ('started', 'completed', 'failed', 'verified'))
+    CONSTRAINT chk_backup_type CHECK (backup_type IN ('full', 'incremental', 'differential')),
+    CONSTRAINT chk_backup_status CHECK (status IN ('pending', 'in_progress', 'completed', 'failed'))
 );
 
 CREATE INDEX idx_backups_node ON backups(node_id, started_at DESC);
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
-    validation TEXT NOT NULL,
+    validation_id VARCHAR(26) NULL,
     ui_config TEXT NOT NULL,
     type VARCHAR(20) DEFAULT 'text' NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     translatable TINYINT NOT NULL DEFAULT 0,
@@ -122,11 +122,15 @@ CREATE TABLE IF NOT EXISTS admin_fields (
             ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_admin_fields_users_user_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_admin_fields_admin_validations
+        FOREIGN KEY (validation_id) REFERENCES admin_validations (admin_validation_id)
             ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE INDEX idx_admin_fields_parent ON admin_fields(parent_id);
 CREATE INDEX idx_admin_fields_author ON admin_fields(author_id);
+CREATE INDEX idx_admin_fields_validation ON admin_fields(validation_id);
 
 -- ===== 11_tokens =====
 
@@ -195,16 +199,21 @@ CREATE TABLE IF NOT EXISTS media (
     focal_x FLOAT NULL,
     focal_y FLOAT NULL,
     author_id VARCHAR(26) NULL,
+    folder_id VARCHAR(26) NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT url
         UNIQUE (url),
     CONSTRAINT fk_media_users_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_media_media_folders_folder_id
+        FOREIGN KEY (folder_id) REFERENCES media_folders (folder_id)
             ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE INDEX idx_media_author ON media(author_id);
+CREATE INDEX idx_media_folder ON media(folder_id);
 
 -- ===== 15_sessions =====
 
@@ -233,6 +242,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     next_sibling_id VARCHAR(26) NULL,
     prev_sibling_id VARCHAR(26) NULL,
     route_id VARCHAR(26) NULL,
+    root_id VARCHAR(26) NULL,
     datatype_id VARCHAR(26) NULL,
     author_id VARCHAR(26) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'draft',
@@ -264,6 +274,9 @@ CREATE TABLE IF NOT EXISTS content_data (
     CONSTRAINT fk_content_data_route_id
         FOREIGN KEY (route_id) REFERENCES routes (route_id)
             ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_content_data_root_id
+        FOREIGN KEY (root_id) REFERENCES content_data (content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_content_data_users_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
             ON UPDATE CASCADE ON DELETE RESTRICT
@@ -271,6 +284,7 @@ CREATE TABLE IF NOT EXISTS content_data (
 
 CREATE INDEX idx_content_data_parent ON content_data(parent_id);
 CREATE INDEX idx_content_data_route ON content_data(route_id);
+CREATE INDEX idx_content_data_root ON content_data(root_id);
 CREATE INDEX idx_content_data_datatype ON content_data(datatype_id);
 CREATE INDEX idx_content_data_author ON content_data(author_id);
 
@@ -279,6 +293,7 @@ CREATE INDEX idx_content_data_author ON content_data(author_id);
 CREATE TABLE IF NOT EXISTS content_fields (
     content_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     route_id VARCHAR(26) NULL,
+    root_id VARCHAR(26) NULL,
     content_data_id VARCHAR(26) NOT NULL,
     field_id VARCHAR(26) NOT NULL,
     field_value TEXT NOT NULL,
@@ -287,6 +302,9 @@ CREATE TABLE IF NOT EXISTS content_fields (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_content_field_root_id
+        FOREIGN KEY (root_id) REFERENCES content_data (content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_content_field_content_data
         FOREIGN KEY (content_data_id) REFERENCES content_data (content_data_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -302,6 +320,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
 );
 
 CREATE INDEX idx_content_fields_route ON content_fields(route_id);
+CREATE INDEX idx_content_fields_root ON content_fields(root_id);
 CREATE INDEX idx_content_fields_content ON content_fields(content_data_id);
 CREATE INDEX idx_content_fields_field ON content_fields(field_id);
 CREATE INDEX idx_content_fields_author ON content_fields(author_id);
@@ -315,6 +334,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     first_child_id VARCHAR(26) NULL,
     next_sibling_id VARCHAR(26) NULL,
     prev_sibling_id VARCHAR(26) NULL,
+    root_id VARCHAR(26) NULL,
     admin_route_id VARCHAR(26) NOT NULL,
     admin_datatype_id VARCHAR(26) NOT NULL,
     author_id VARCHAR(26) NOT NULL,
@@ -341,6 +361,9 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     CONSTRAINT fk_admin_content_data_prev_sibling_id
         FOREIGN KEY (prev_sibling_id) REFERENCES admin_content_data (admin_content_data_id)
              ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_data_root_id
+        FOREIGN KEY (root_id) REFERENCES admin_content_data (admin_content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_admin_content_data_admin_datatypes
         FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes (admin_datatype_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -353,6 +376,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
 );
 
 CREATE INDEX idx_admin_content_data_parent ON admin_content_data(parent_id);
+CREATE INDEX idx_admin_content_data_root ON admin_content_data(root_id);
 CREATE INDEX idx_admin_content_data_route ON admin_content_data(admin_route_id);
 CREATE INDEX idx_admin_content_data_datatype ON admin_content_data(admin_datatype_id);
 CREATE INDEX idx_admin_content_data_author ON admin_content_data(author_id);
@@ -362,6 +386,7 @@ CREATE INDEX idx_admin_content_data_author ON admin_content_data(author_id);
 CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     admin_route_id VARCHAR(26) NULL,
+    root_id VARCHAR(26) NULL,
     admin_content_data_id VARCHAR(26) NOT NULL,
     admin_field_id VARCHAR(26) NOT NULL,
     admin_field_value TEXT NOT NULL,
@@ -370,6 +395,9 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_admin_content_field_root_id
+        FOREIGN KEY (root_id) REFERENCES admin_content_data (admin_content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_admin_content_field_admin_content_data
         FOREIGN KEY (admin_content_data_id) REFERENCES admin_content_data (admin_content_data_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -385,6 +413,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
 );
 
 CREATE INDEX idx_admin_content_fields_route ON admin_content_fields(admin_route_id);
+CREATE INDEX idx_admin_content_fields_root ON admin_content_fields(root_id);
 CREATE INDEX idx_admin_content_fields_content ON admin_content_fields(admin_content_data_id);
 CREATE INDEX idx_admin_content_fields_field ON admin_content_fields(admin_field_id);
 CREATE INDEX idx_admin_content_fields_author ON admin_content_fields(author_id);
@@ -665,6 +694,78 @@ CREATE INDEX idx_wd_webhook ON webhook_deliveries(webhook_id);
 CREATE INDEX idx_wd_status ON webhook_deliveries(status);
 CREATE INDEX idx_wd_retry ON webhook_deliveries(next_retry_at);
 
+-- ===== 36_field_plugin_config =====
+
+CREATE TABLE IF NOT EXISTS field_plugin_config (
+    field_id         VARCHAR(26) PRIMARY KEY NOT NULL,
+    plugin_name      VARCHAR(255) NOT NULL,
+    plugin_interface VARCHAR(255) NOT NULL,
+    plugin_version   VARCHAR(255) NOT NULL DEFAULT '',
+    date_created     TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT fk_fpc_field FOREIGN KEY (field_id) REFERENCES fields(field_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS admin_field_plugin_config (
+    field_id         VARCHAR(26) PRIMARY KEY NOT NULL,
+    plugin_name      VARCHAR(255) NOT NULL,
+    plugin_interface VARCHAR(255) NOT NULL,
+    plugin_version   VARCHAR(255) NOT NULL DEFAULT '',
+    date_created     TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT fk_afpc_field FOREIGN KEY (field_id) REFERENCES admin_fields(field_id) ON DELETE CASCADE
+);
+
+-- ===== 37_media_folders =====
+
+CREATE TABLE IF NOT EXISTS media_folders (
+    folder_id     VARCHAR(26) PRIMARY KEY NOT NULL,
+    name          VARCHAR(255) NOT NULL,
+    parent_id     VARCHAR(26) NULL,
+    date_created  TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT fk_media_folders_parent FOREIGN KEY (parent_id) REFERENCES media_folders(folder_id) ON DELETE RESTRICT
+);
+CREATE INDEX idx_media_folders_parent ON media_folders(parent_id);
+
+-- ===== 38_validations =====
+
+CREATE TABLE IF NOT EXISTS validations (
+    validation_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    name          VARCHAR(255) NOT NULL,
+    description   TEXT NOT NULL,
+    config        TEXT NOT NULL,
+    author_id     VARCHAR(26) NULL,
+    date_created  TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+
+    CONSTRAINT fk_validations_users_author_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+CREATE INDEX idx_validations_name ON validations(name);
+CREATE INDEX idx_validations_author ON validations(author_id);
+
+-- ===== 39_admin_validations =====
+
+CREATE TABLE IF NOT EXISTS admin_validations (
+    admin_validation_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    name                VARCHAR(255) NOT NULL,
+    description         TEXT NOT NULL,
+    config              TEXT NOT NULL,
+    author_id           VARCHAR(26) NULL,
+    date_created        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+
+    CONSTRAINT fk_admin_validations_users_author_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+CREATE INDEX idx_admin_validations_name ON admin_validations(name);
+CREATE INDEX idx_admin_validations_author ON admin_validations(author_id);
+
 -- ===== 4_users =====
 
 CREATE TABLE IF NOT EXISTS users (
@@ -728,6 +829,7 @@ CREATE INDEX idx_routes_author ON routes(author_id);
 CREATE TABLE IF NOT EXISTS datatypes (
     datatype_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    sort_order INT NOT NULL DEFAULT 0,
     name VARCHAR(255) NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -756,7 +858,7 @@ CREATE TABLE IF NOT EXISTS fields (
     name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
-    validation TEXT NOT NULL,
+    validation_id VARCHAR(26) NULL,
     ui_config TEXT NOT NULL,
     type VARCHAR(20) NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     translatable TINYINT NOT NULL DEFAULT 0,
@@ -770,17 +872,22 @@ CREATE TABLE IF NOT EXISTS fields (
             ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_fields_users_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_fields_validations
+        FOREIGN KEY (validation_id) REFERENCES validations (validation_id)
             ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE INDEX idx_fields_parent ON fields(parent_id);
 CREATE INDEX idx_fields_author ON fields(author_id);
+CREATE INDEX idx_fields_validation ON fields(validation_id);
 
 -- ===== 9_admin_datatypes =====
 
 CREATE TABLE IF NOT EXISTS admin_datatypes (
     admin_datatype_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    sort_order INT NOT NULL DEFAULT 0,
     name VARCHAR(255) NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,

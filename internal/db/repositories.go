@@ -599,6 +599,31 @@ type MediaFolderRepository interface {
 	ValidateMediaFolderMove(types.MediaFolderID, types.NullableMediaFolderID) error
 }
 
+// ValidationRepository manages reusable validation configs referenced by fields.
+type ValidationRepository interface {
+	// Validations
+	CountValidations() (*int64, error)
+	CreateValidation(context.Context, audited.AuditContext, CreateValidationParams) (*Validation, error)
+	CreateValidationTable() error
+	DeleteValidation(context.Context, audited.AuditContext, types.ValidationID) error
+	GetValidation(types.ValidationID) (*Validation, error)
+	ListValidations() (*[]Validation, error)
+	ListValidationsPaginated(PaginationParams) (*[]Validation, error)
+	UpdateValidation(context.Context, audited.AuditContext, UpdateValidationParams) (*string, error)
+	ListValidationsByName(string) (*[]Validation, error)
+
+	// AdminValidations
+	CountAdminValidations() (*int64, error)
+	CreateAdminValidation(context.Context, audited.AuditContext, CreateAdminValidationParams) (*AdminValidation, error)
+	CreateAdminValidationTable() error
+	DeleteAdminValidation(context.Context, audited.AuditContext, types.AdminValidationID) error
+	GetAdminValidation(types.AdminValidationID) (*AdminValidation, error)
+	ListAdminValidations() (*[]AdminValidation, error)
+	ListAdminValidationsPaginated(PaginationParams) (*[]AdminValidation, error)
+	UpdateAdminValidation(context.Context, audited.AuditContext, UpdateAdminValidationParams) (*string, error)
+	ListAdminValidationsByName(string) (*[]AdminValidation, error)
+}
+
 // FieldPluginConfigRepository manages the field_plugin_config extension table
 // that binds plugin field types to their plugin and interface definitions.
 type FieldPluginConfigRepository interface {

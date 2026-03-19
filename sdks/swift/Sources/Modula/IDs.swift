@@ -199,6 +199,18 @@ public struct WebhookDeliveryID: ResourceID {
     public init(_ rawValue: String) { self.rawValue = rawValue }
 }
 
+// MARK: - Validation IDs
+
+public struct ValidationID: ResourceID {
+    public let rawValue: String
+    public init(_ rawValue: String) { self.rawValue = rawValue }
+}
+
+public struct AdminValidationID: ResourceID {
+    public let rawValue: String
+    public init(_ rawValue: String) { self.rawValue = rawValue }
+}
+
 // MARK: - Other IDs
 
 public struct TableID: ResourceID {

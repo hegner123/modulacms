@@ -353,7 +353,7 @@ func BuildAdminTree(cd []db.AdminContentData, dt []db.AdminDatatypes, cf []db.Ad
 			FieldID:      types.FieldID(df[i].AdminFieldID.String()),
 			Label:        df[i].Label,
 			Data:         df[i].Data,
-			Validation:   df[i].Validation,
+			ValidationID: types.NullableValidationID{ID: types.ValidationID(df[i].ValidationID.ID.String()), Valid: df[i].ValidationID.Valid},
 			UIConfig:     df[i].UIConfig,
 			Type:         df[i].Type,
 			AuthorID:     df[i].AuthorID,

@@ -73,6 +73,10 @@ public final class ModulaClient: Sendable {
     // Webhook resources
     public let webhooks: WebhookResource
 
+    // Validation resources
+    public let validations: ValidationsResource
+    public let adminValidations: AdminValidationsResource
+
     // Content query
     public let query: QueryResource
 
@@ -169,6 +173,10 @@ public final class ModulaClient: Sendable {
 
         // Webhooks
         webhooks = WebhookResource(http: http)
+
+        // Validations
+        validations = ValidationsResource(http: http)
+        adminValidations = AdminValidationsResource(http: http)
 
         // Content query
         query = QueryResource(http: http)

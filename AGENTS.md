@@ -159,7 +159,7 @@ internal/
   router/                     # HTTP route registration with stdlib ServeMux (Go 1.22+ patterns)
   middleware/                  # CORS, rate limiting, sessions, panic recovery, HTTP metrics, RBAC authorization
   auth/                       # Authentication (password + OAuth with Google/GitHub/Azure)
-  config/                     # Config struct, file provider, defaults
+  config/                     # Config struct, file/layered providers, merge, defaults
   media/                      # Image optimization, preset dimensions, S3 upload
   backup/                     # Backup/restore (SQL dump + media)
   definitions/                # Schema definitions for installations and code generation
@@ -534,9 +534,9 @@ SPM package. Platforms: iOS 16+, macOS 13+, tvOS 16+, watchOS 9+. Swift 5.9+, ze
 
 ## Configuration
 
-Loaded from `config.json` at project root. Key fields:
+Loaded from `modula.config.json` at project root. Key fields:
 
-- `db_driver` — `sqlite`, `mysql`, `psql`
+- `db_driver` — `sqlite`, `mysql`, `postgres`
 - `port`, `ssl_port`, `ssh_port` — server ports
 - `bucket_*` — S3 settings
 - `oauth_*` — OAuth provider settings (Google, GitHub, Azure)
@@ -544,7 +544,39 @@ Loaded from `config.json` at project root. Key fields:
 - `plugin_*` — Plugin system settings
 - `observability_*` — Metrics and tracing
 
-Environment variables can be referenced via `${VAR}` syntax in config.json.
+Environment variables can be referenced via `${VAR}` syntax in config values.
+
+### Config Layering
+
+For multi-environment setups, use the `--overlay` flag to merge a per-environment overlay file on top of the base config. Overlay files contain only the fields that differ:
+
+```bash
+# Base config has all ~223 fields; overlay has only the 5-10 that differ
+./modula serve --overlay modula.config.prod.json
+```
+
+```json
+// modula.config.prod.json — 10 lines instead of 250+
+{
+  "environment": "prod",
+  "db_driver": "postgres",
+  "db_url": "postgres",
+  "db_password": "${POSTGRES_PASSWORD}",
+  "port": ":8080",
+  "bucket_secret_key": "${MINIO_ROOT_PASSWORD}"
+}
+```
+
+Merge behavior: overlay keys overwrite base keys. Absent overlay keys preserve base values. Maps and slices are replaced entirely (not deep-merged).
+
+CLI commands for layered configs:
+- `config show --overlay <path>` — show merged result
+- `config show --overlay <path> --raw` — show overlay file only
+- `config set <key> <value> --overlay <path>` — write to overlay
+- `config set <key> <value> --overlay <path> --base` — write to base
+- `config overlay --env <name>` — scaffold a minimal `modula.config.<name>.json`
+
+Key types: `FileProvider` (single file), `LayeredFileProvider` (base + overlay), `Manager` (load/update/save with hot-reload callbacks). `MergeMaps()` is the shared shallow-merge helper used by both `LayeredFileProvider.Get()` and `Manager.Update()`.
 
 ---
 

@@ -98,6 +98,10 @@ func (m Model) screenForPage(page Page) Screen {
 		return NewFieldTypesScreen(false, nil, nil)
 	case ADMINFIELDTYPES:
 		return NewFieldTypesScreen(true, nil, nil)
+	case VALIDATIONS:
+		return NewValidationsScreen(false, nil, nil)
+	case ADMINVALIDATIONS:
+		return NewValidationsScreen(true, nil, nil)
 	case PLUGINSPAGE:
 		return NewPluginsScreen(nil)
 	case ROUTES:

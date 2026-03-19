@@ -196,7 +196,7 @@ type Field struct {
 	Name         string      `json:"name"`
 	Label        string      `json:"label"`
 	Data         string      `json:"data"`
-	Validation   string      `json:"validation"`
+	ValidationID string      `json:"validation_id"`
 	UIConfig     string      `json:"ui_config"`
 	Type         FieldType   `json:"type"`
 	Translatable bool        `json:"translatable"`
@@ -210,33 +210,33 @@ type Field struct {
 // ParentID links the field to a Datatype. Name, Label, and Type are required.
 // FieldID is optional; the server generates one if omitted.
 type CreateFieldParams struct {
-	FieldID    *FieldID    `json:"field_id,omitempty"`
-	ParentID   *DatatypeID `json:"parent_id"`
-	SortOrder  int64       `json:"sort_order"`
-	Name       string      `json:"name"`
-	Label      string      `json:"label"`
-	Data       string      `json:"data"`
-	Validation string      `json:"validation"`
-	UIConfig   string      `json:"ui_config"`
-	Type       FieldType   `json:"type"`
-	Roles      []string    `json:"roles,omitempty"` // nil = unrestricted
-	AuthorID   *UserID     `json:"author_id"`
+	FieldID      *FieldID    `json:"field_id,omitempty"`
+	ParentID     *DatatypeID `json:"parent_id"`
+	SortOrder    int64       `json:"sort_order"`
+	Name         string      `json:"name"`
+	Label        string      `json:"label"`
+	Data         string      `json:"data"`
+	ValidationID string      `json:"validation_id"`
+	UIConfig     string      `json:"ui_config"`
+	Type         FieldType   `json:"type"`
+	Roles        []string    `json:"roles,omitempty"` // nil = unrestricted
+	AuthorID     *UserID     `json:"author_id"`
 }
 
 // UpdateFieldParams contains parameters for updating an existing field definition.
 // FieldID identifies the record to update. All fields are set to their new values.
 type UpdateFieldParams struct {
-	FieldID    FieldID     `json:"field_id"`
-	ParentID   *DatatypeID `json:"parent_id"`
-	SortOrder  int64       `json:"sort_order"`
-	Name       string      `json:"name"`
-	Label      string      `json:"label"`
-	Data       string      `json:"data"`
-	Validation string      `json:"validation"`
-	UIConfig   string      `json:"ui_config"`
-	Type       FieldType   `json:"type"`
-	Roles      []string    `json:"roles,omitempty"` // nil = unrestricted
-	AuthorID   *UserID     `json:"author_id"`
+	FieldID      FieldID     `json:"field_id"`
+	ParentID     *DatatypeID `json:"parent_id"`
+	SortOrder    int64       `json:"sort_order"`
+	Name         string      `json:"name"`
+	Label        string      `json:"label"`
+	Data         string      `json:"data"`
+	ValidationID string      `json:"validation_id"`
+	UIConfig     string      `json:"ui_config"`
+	Type         FieldType   `json:"type"`
+	Roles        []string    `json:"roles,omitempty"` // nil = unrestricted
+	AuthorID     *UserID     `json:"author_id"`
 }
 
 // ---------------------------------------------------------------------------
@@ -897,7 +897,7 @@ type AdminField struct {
 	Name         string           `json:"name"`
 	Label        string           `json:"label"`
 	Data         string           `json:"data"`
-	Validation   string           `json:"validation"`
+	ValidationID string           `json:"validation_id"`
 	UIConfig     string           `json:"ui_config"`
 	Type         FieldType        `json:"type"`
 	Translatable bool             `json:"translatable"`
@@ -910,16 +910,16 @@ type AdminField struct {
 // CreateAdminFieldParams contains parameters for creating a new admin field definition.
 // ParentID links the field to an AdminDatatype. Name, Label, and Type are required.
 type CreateAdminFieldParams struct {
-	ParentID   *AdminDatatypeID `json:"parent_id"`
-	SortOrder  int64            `json:"sort_order"`
-	Name       string           `json:"name"`
-	Label      string           `json:"label"`
-	Data       string           `json:"data"`
-	Validation string           `json:"validation"`
-	UIConfig   string           `json:"ui_config"`
-	Type       FieldType        `json:"type"`
-	Roles      []string         `json:"roles,omitempty"` // nil = unrestricted
-	AuthorID   *UserID          `json:"author_id"`
+	ParentID     *AdminDatatypeID `json:"parent_id"`
+	SortOrder    int64            `json:"sort_order"`
+	Name         string           `json:"name"`
+	Label        string           `json:"label"`
+	Data         string           `json:"data"`
+	ValidationID string           `json:"validation_id"`
+	UIConfig     string           `json:"ui_config"`
+	Type         FieldType        `json:"type"`
+	Roles        []string         `json:"roles,omitempty"` // nil = unrestricted
+	AuthorID     *UserID          `json:"author_id"`
 }
 
 // UpdateAdminFieldParams contains parameters for updating an existing admin field definition.
@@ -931,7 +931,7 @@ type UpdateAdminFieldParams struct {
 	Name         string           `json:"name"`
 	Label        string           `json:"label"`
 	Data         string           `json:"data"`
-	Validation   string           `json:"validation"`
+	ValidationID string           `json:"validation_id"`
 	UIConfig     string           `json:"ui_config"`
 	Type         FieldType        `json:"type"`
 	Roles        []string         `json:"roles,omitempty"` // nil = unrestricted
@@ -1531,4 +1531,71 @@ type MediaReferenceScanResponse struct {
 	MediaID        string               `json:"media_id"`
 	References     []MediaReferenceInfo `json:"references"`
 	ReferenceCount int                  `json:"reference_count"`
+}
+
+// ---------------------------------------------------------------------------
+// Validations
+// ---------------------------------------------------------------------------
+
+// Validation represents a reusable validation configuration that fields can reference.
+// Validations define rules for user input (e.g., required, min/max length, patterns).
+// The Config field holds a JSON string encoding the specific validation rules.
+type Validation struct {
+	ValidationID ValidationID `json:"validation_id"`
+	Name         string       `json:"name"`
+	Description  string       `json:"description"`
+	Config       string       `json:"config"`
+	AuthorID     string       `json:"author_id"`
+	DateCreated  Timestamp    `json:"date_created"`
+	DateModified Timestamp    `json:"date_modified"`
+}
+
+// CreateValidationParams contains parameters for creating a new validation configuration.
+// Name is required. Config holds a JSON string encoding the validation rules.
+type CreateValidationParams struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Config      string `json:"config"`
+}
+
+// UpdateValidationParams contains parameters for updating an existing validation.
+// ValidationID identifies the record to update.
+type UpdateValidationParams struct {
+	ValidationID ValidationID `json:"validation_id"`
+	Name         string       `json:"name"`
+	Description  string       `json:"description"`
+	Config       string       `json:"config"`
+}
+
+// ---------------------------------------------------------------------------
+// Admin Validations
+// ---------------------------------------------------------------------------
+
+// AdminValidation represents a validation configuration in the admin content namespace.
+// Mirrors [Validation] but operates on admin-side field definitions.
+type AdminValidation struct {
+	AdminValidationID AdminValidationID `json:"admin_validation_id"`
+	Name              string            `json:"name"`
+	Description       string            `json:"description"`
+	Config            string            `json:"config"`
+	AuthorID          string            `json:"author_id"`
+	DateCreated       Timestamp         `json:"date_created"`
+	DateModified      Timestamp         `json:"date_modified"`
+}
+
+// CreateAdminValidationParams contains parameters for creating a new admin validation.
+// Name is required. Config holds a JSON string encoding the validation rules.
+type CreateAdminValidationParams struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Config      string `json:"config"`
+}
+
+// UpdateAdminValidationParams contains parameters for updating an existing admin validation.
+// AdminValidationID identifies the record to update.
+type UpdateAdminValidationParams struct {
+	AdminValidationID AdminValidationID `json:"admin_validation_id"`
+	Name              string            `json:"name"`
+	Description       string            `json:"description"`
+	Config            string            `json:"config"`
 }

@@ -402,7 +402,7 @@ func (m Model) HandleFetchContentForEdit(msg FetchContentForEditMsg) tea.Cmd {
 					Widget:         uc.Widget,
 					Placeholder:    uc.Placeholder,
 					Value:          "",
-					ValidationJSON: field.Validation,
+					ValidationJSON: "", // TODO: resolve from validation table
 					DataJSON:       field.Data,
 					HelpText:       uc.HelpText,
 					Hidden:         uc.Hidden,
@@ -572,7 +572,7 @@ func LoadContentFieldsCmd(cfg *config.Config, contentDataID types.ContentID, dat
 					FieldID:        field.FieldID,
 					Label:          field.Label,
 					Type:           string(field.Type),
-					ValidationJSON: field.Validation,
+					ValidationJSON: "", // TODO: resolve from validation table
 					DataJSON:       field.Data,
 				}
 				if cf, ok := cfMap[string(field.FieldID)]; ok {
@@ -635,7 +635,7 @@ func LoadContentFieldsForLocaleCmd(cfg *config.Config, contentDataID types.Conte
 					FieldID:        field.FieldID,
 					Label:          field.Label,
 					Type:           string(field.Type),
-					ValidationJSON: field.Validation,
+					ValidationJSON: "", // TODO: resolve from validation table
 					DataJSON:       field.Data,
 				}
 				if cf, ok := cfMap[string(field.FieldID)]; ok {

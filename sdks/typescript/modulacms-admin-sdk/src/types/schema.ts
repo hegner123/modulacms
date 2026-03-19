@@ -114,8 +114,8 @@ export type CreateFieldParams = {
   label: string
   /** Additional metadata (JSON-encoded). */
   data: string
-  /** Validation rules (JSON-encoded). */
-  validation: string
+  /** ID of the validation config to apply, or `null` for none. */
+  validation_id?: string | null
   /** UI configuration (JSON-encoded). */
   ui_config: string
   /** The data type of this field. */
@@ -170,8 +170,8 @@ export type UpdateFieldParams = {
   label: string
   /** Updated metadata (JSON-encoded). */
   data: string
-  /** Updated validation rules (JSON-encoded). */
-  validation: string
+  /** Updated validation config ID, or `null` for none. */
+  validation_id?: string | null
   /** Updated UI configuration (JSON-encoded). */
   ui_config: string
   /** Updated field type. */

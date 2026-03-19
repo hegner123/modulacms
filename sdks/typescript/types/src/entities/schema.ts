@@ -56,8 +56,8 @@ export type Field = {
   label: string
   /** Additional field metadata (JSON-encoded). */
   data: string
-  /** Validation rules (JSON-encoded). */
-  validation: string
+  /** ID of the validation config applied to this field, or `null` for none. */
+  validation_id: string | null
   /** UI widget configuration (JSON-encoded). */
   ui_config: string
   /** The data type of this field. */

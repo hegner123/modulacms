@@ -489,6 +489,30 @@ func (id WebhookDeliveryID) String() string { return string(id) }
 // IsZero reports whether the webhook delivery ID is empty (unset).
 func (id WebhookDeliveryID) IsZero() bool { return id == "" }
 
+// --- Validation IDs ---
+
+// ValidationID identifies a reusable validation configuration.
+// Validations define rules that fields can reference to validate user input
+// (e.g., required, min/max length, regex patterns, custom validators).
+type ValidationID string
+
+// String returns the raw ULID string for this validation ID.
+func (id ValidationID) String() string { return string(id) }
+
+// IsZero reports whether the validation ID is empty (unset).
+func (id ValidationID) IsZero() bool { return id == "" }
+
+// AdminValidationID identifies an admin-side validation configuration.
+// Admin validations serve the same purpose as public validations but operate
+// within the admin content namespace.
+type AdminValidationID string
+
+// String returns the raw ULID string for this admin validation ID.
+func (id AdminValidationID) String() string { return string(id) }
+
+// IsZero reports whether the admin validation ID is empty (unset).
+func (id AdminValidationID) IsZero() bool { return id == "" }
+
 // --- Value Types ---
 //
 // Value types are branded string wrappers for non-ID values that benefit from

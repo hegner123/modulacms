@@ -596,6 +596,46 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 		WebhookDeliveryRetryHandler(w, r, svc)
 	})))
 
+	// Validations — public validation config CRUD
+	mux.Handle("GET /api/v1/validations", middleware.RequirePermission("validations:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ValidationListHandler(w, r, svc)
+	})))
+	mux.Handle("POST /api/v1/validations", middleware.RequirePermission("validations:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ValidationCreateHandler(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/validations/search", middleware.RequirePermission("validations:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ValidationSearchHandler(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/validations/{id}", middleware.RequirePermission("validations:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ValidationGetHandler(w, r, svc)
+	})))
+	mux.Handle("PUT /api/v1/validations/{id}", middleware.RequirePermission("validations:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ValidationUpdateHandler(w, r, svc)
+	})))
+	mux.Handle("DELETE /api/v1/validations/{id}", middleware.RequirePermission("validations:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ValidationDeleteHandler(w, r, svc)
+	})))
+
+	// Admin Validations — admin validation config CRUD
+	mux.Handle("GET /api/v1/admin/validations", middleware.RequirePermission("admin_validations:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminValidationListHandler(w, r, svc)
+	})))
+	mux.Handle("POST /api/v1/admin/validations", middleware.RequirePermission("admin_validations:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminValidationCreateHandler(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/admin/validations/search", middleware.RequirePermission("admin_validations:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminValidationSearchHandler(w, r, svc)
+	})))
+	mux.Handle("GET /api/v1/admin/validations/{id}", middleware.RequirePermission("admin_validations:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminValidationGetHandler(w, r, svc)
+	})))
+	mux.Handle("PUT /api/v1/admin/validations/{id}", middleware.RequirePermission("admin_validations:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminValidationUpdateHandler(w, r, svc)
+	})))
+	mux.Handle("DELETE /api/v1/admin/validations/{id}", middleware.RequirePermission("admin_validations:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminValidationDeleteHandler(w, r, svc)
+	})))
+
 	// Translations — create locale translations for content data
 	mux.Handle("POST /api/v1/admin/contentdata/{id}/translations", middleware.RequirePermission("content:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		TranslationHandler(w, r, svc)
@@ -805,6 +845,13 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/field-types/{id}", mutating("field_types:update", adminhandlers.FieldTypeUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/field-types/{id}", mutating("field_types:delete", adminhandlers.FieldTypeDeleteHandler(svc)))
 
+	// validations
+	mux.Handle("GET /admin/validations", viewing("validations", adminhandlers.ValidationsListHandler(svc)))
+	mux.Handle("GET /admin/validations/{id}", viewing("validations", adminhandlers.ValidationDetailHandler(svc)))
+	mux.Handle("POST /admin/validations", mutating("validations:create", adminhandlers.ValidationCreateHandler(svc)))
+	mux.Handle("POST /admin/validations/{id}", mutating("validations:update", adminhandlers.ValidationUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/validations/{id}", mutating("validations:delete", adminhandlers.ValidationDeleteHandler(svc)))
+
 	// datatype field creation
 	mux.Handle("POST /admin/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeCreateFieldHandler(svc)))
 
@@ -855,6 +902,13 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/admin-field-types", mutating("field_types:create", adminhandlers.AdminFieldTypeCreateHandler(svc)))
 	mux.Handle("POST /admin/admin-field-types/{id}", mutating("field_types:update", adminhandlers.AdminFieldTypeUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/admin-field-types/{id}", mutating("field_types:delete", adminhandlers.AdminFieldTypeDeleteHandler(svc)))
+
+	// Admin Validations
+	mux.Handle("GET /admin/admin-validations", viewing("admin_validations", adminhandlers.AdminValidationsListHandler(svc)))
+	mux.Handle("GET /admin/admin-validations/{id}", viewing("admin_validations", adminhandlers.AdminValidationDetailHandler(svc)))
+	mux.Handle("POST /admin/admin-validations", mutating("admin_validations:create", adminhandlers.AdminValidationCreateHandler(svc)))
+	mux.Handle("POST /admin/admin-validations/{id}", mutating("admin_validations:update", adminhandlers.AdminValidationUpdateHandler(svc)))
+	mux.Handle("DELETE /admin/admin-validations/{id}", mutating("admin_validations:delete", adminhandlers.AdminValidationDeleteHandler(svc)))
 
 	// Admin Routes
 	mux.Handle("GET /admin/admin-routes", viewing("routes", adminhandlers.AdminSchemaRoutesListHandler(svc)))
