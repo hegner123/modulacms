@@ -276,6 +276,17 @@ func DeleteWebhookCmd(webhookID types.WebhookID) tea.Cmd {
 }
 
 // =============================================================================
+// UNLINK OAUTH
+// =============================================================================
+
+// UnlinkOauthContext stores context for an OAuth unlink operation.
+type UnlinkOauthContext struct {
+	UserOauthID types.UserOauthID
+	UserID      types.UserID
+	Provider    string
+}
+
+// =============================================================================
 // DELETE MEDIA DIMENSION
 // =============================================================================
 
@@ -952,6 +963,22 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
 				DeleteTokenCmd(tokenID),
+			)
+		}
+		return m, tea.Batch(
+			OverlayClearCmd(),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case DIALOGUNLINKOAUTH:
+		if ctx, ok := m.DCtx.Active.(*UnlinkOauthContext); ok {
+			oauthID := ctx.UserOauthID
+			userID := ctx.UserID
+			m.DCtx.Active = nil
+			return m, tea.Batch(
+				OverlayClearCmd(),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				UnlinkOauthCmd(oauthID, userID),
 			)
 		}
 		return m, tea.Batch(

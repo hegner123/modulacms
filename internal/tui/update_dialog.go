@@ -706,6 +706,20 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(PAGEFOCUS),
 		)
 
+	// --- User OAuth dialog messages ---
+	case ShowUnlinkOauthDialogMsg:
+		dialog := NewDialog("Unlink OAuth", fmt.Sprintf("Unlink %s OAuth connection?\nThe user will no longer be able to sign in with this provider.", msg.Provider), true, DIALOGUNLINKOAUTH)
+		dialog.SetButtons("Unlink", "Cancel")
+		m.DCtx.Active = &UnlinkOauthContext{
+			UserOauthID: msg.UserOauthID,
+			UserID:      msg.UserID,
+			Provider:    msg.Provider,
+		}
+		return m, tea.Batch(
+			OverlaySetCmd(&dialog),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+
 	// --- Media dimension dialog messages ---
 	case ShowMediaDimensionFormDialogMsg:
 		dialog := NewMediaDimensionFormDialog(msg.Title)

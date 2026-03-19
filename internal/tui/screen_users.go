@@ -22,8 +22,9 @@ var usersGrid = Grid{
 			{Height: 1.0, Title: "Users"},
 		}},
 		{Span: 9, Cells: []GridCell{
-			{Height: 0.45, Title: "Details"},
-			{Height: 0.55, Title: "Permissions"},
+			{Height: 0.35, Title: "Details"},
+			{Height: 0.25, Title: "OAuth"},
+			{Height: 0.40, Title: "Permissions"},
 		}},
 	},
 }
@@ -35,13 +36,55 @@ type UserPermissionsFetchedMsg struct {
 	Err    error
 }
 
+// UserOauthFetchedMsg delivers OAuth connections for a user.
+type UserOauthFetchedMsg struct {
+	UserID types.UserID
+	Data   []db.UserOauth
+	Err    error
+}
+
+// UserOauthDeletedMsg is sent after an OAuth connection is unlinked.
+type UserOauthDeletedMsg struct {
+	UserID      types.UserID
+	UserOauthID types.UserOauthID
+}
+
+// ShowUnlinkOauthDialogMsg triggers showing an unlink OAuth dialog.
+type ShowUnlinkOauthDialogMsg struct {
+	UserOauthID types.UserOauthID
+	UserID      types.UserID
+	Provider    string
+}
+
+// ShowUnlinkOauthDialogCmd creates a command to show the unlink dialog.
+func ShowUnlinkOauthDialogCmd(oauthID types.UserOauthID, userID types.UserID, provider string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowUnlinkOauthDialogMsg{UserOauthID: oauthID, UserID: userID, Provider: provider}
+	}
+}
+
+// UnlinkOauthRequestMsg triggers OAuth connection deletion.
+type UnlinkOauthRequestMsg struct {
+	UserOauthID types.UserOauthID
+	UserID      types.UserID
+}
+
+// UnlinkOauthCmd creates a command to unlink an OAuth connection.
+func UnlinkOauthCmd(oauthID types.UserOauthID, userID types.UserID) tea.Cmd {
+	return func() tea.Msg {
+		return UnlinkOauthRequestMsg{UserOauthID: oauthID, UserID: userID}
+	}
+}
+
 // UsersScreen implements Screen for the USERSADMIN page.
 type UsersScreen struct {
 	GridScreen
 	UsersList       []db.UserWithRoleLabelRow
 	RolesList       []db.Roles
-	PermissionCache map[types.RoleID][]string // role ID -> permission labels
-	LastPermRoleID  types.RoleID              // role ID of last permission fetch
+	PermissionCache map[types.RoleID][]string       // role ID -> permission labels
+	LastPermRoleID  types.RoleID                     // role ID of last permission fetch
+	OauthCache      map[types.UserID][]db.UserOauth  // user ID -> OAuth connections
+	LastOauthUserID types.UserID                     // user ID of last OAuth fetch
 }
 
 // NewUsersScreen creates a UsersScreen with the given users and roles data.
@@ -58,6 +101,7 @@ func NewUsersScreen(users []db.UserWithRoleLabelRow, roles []db.Roles) *UsersScr
 		UsersList:       users,
 		RolesList:       roles,
 		PermissionCache: make(map[types.RoleID][]string),
+		OauthCache:      make(map[types.UserID][]db.UserOauth),
 	}
 }
 
@@ -108,6 +152,34 @@ func (s *UsersScreen) fetchPermissionsIfNeeded(driver db.DbDriver) tea.Cmd {
 	}
 }
 
+// fetchOauthIfNeeded returns a command to fetch OAuth connections for the
+// selected user, or nil if already cached.
+func (s *UsersScreen) fetchOauthIfNeeded(driver db.DbDriver) tea.Cmd {
+	user := s.selectedUser()
+	if user == nil || driver == nil {
+		return nil
+	}
+	userID := user.UserID
+	if userID == s.LastOauthUserID {
+		return nil
+	}
+	s.LastOauthUserID = userID
+	if _, ok := s.OauthCache[userID]; ok {
+		return nil
+	}
+	return func() tea.Msg {
+		result, err := driver.GetUserOauthByUserId(types.NullableUserID{ID: userID, Valid: true})
+		if err != nil {
+			// No OAuth connection is not an error — return empty
+			return UserOauthFetchedMsg{UserID: userID, Data: []db.UserOauth{}}
+		}
+		if result == nil {
+			return UserOauthFetchedMsg{UserID: userID, Data: []db.UserOauth{}}
+		}
+		return UserOauthFetchedMsg{UserID: userID, Data: []db.UserOauth{*result}}
+	}
+}
+
 func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -130,6 +202,16 @@ func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			}
 		}
 
+		// Unlink OAuth connection
+		if key == "u" {
+			if user := s.selectedUser(); user != nil {
+				if oauths, ok := s.OauthCache[user.UserID]; ok && len(oauths) > 0 {
+					oa := oauths[0]
+					return s, ShowUnlinkOauthDialogCmd(oa.UserOauthID, user.UserID, oa.OauthProvider)
+				}
+			}
+		}
+
 		// Delete user dialog
 		if km.Matches(key, config.ActionDelete) {
 			if len(s.UsersList) > 0 && s.Cursor < len(s.UsersList) {
@@ -144,12 +226,36 @@ func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		if handled {
 			s.Cursor = newCursor
 			if s.Cursor != prevCursor {
-				if permCmd := s.fetchPermissionsIfNeeded(ctx.DB); permCmd != nil {
-					return s, tea.Batch(cmd, permCmd)
+				var cmds []tea.Cmd
+				if cmd != nil {
+					cmds = append(cmds, cmd)
 				}
+				if permCmd := s.fetchPermissionsIfNeeded(ctx.DB); permCmd != nil {
+					cmds = append(cmds, permCmd)
+				}
+				if oauthCmd := s.fetchOauthIfNeeded(ctx.DB); oauthCmd != nil {
+					cmds = append(cmds, oauthCmd)
+				}
+				if len(cmds) > 0 {
+					return s, tea.Batch(cmds...)
+				}
+				return s, nil
 			}
 			return s, cmd
 		}
+
+	// OAuth connections fetched
+	case UserOauthFetchedMsg:
+		if msg.Err == nil {
+			s.OauthCache[msg.UserID] = msg.Data
+		}
+		return s, nil
+
+	// OAuth unlinked — invalidate cache and re-fetch
+	case UserOauthDeletedMsg:
+		delete(s.OauthCache, msg.UserID)
+		s.LastOauthUserID = ""
+		return s, s.fetchOauthIfNeeded(ctx.DB)
 
 	// Permission labels fetched
 	case UserPermissionsFetchedMsg:
@@ -179,9 +285,13 @@ func (s *UsersScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		s.Cursor = 0
 		s.updateCursorMax()
 		s.LastPermRoleID = ""
+		s.LastOauthUserID = ""
 		cmds := []tea.Cmd{LoadingStopCmd()}
 		if permCmd := s.fetchPermissionsIfNeeded(ctx.DB); permCmd != nil {
 			cmds = append(cmds, permCmd)
+		}
+		if oauthCmd := s.fetchOauthIfNeeded(ctx.DB); oauthCmd != nil {
+			cmds = append(cmds, oauthCmd)
 		}
 		return s, tea.Batch(cmds...)
 	case RolesFetchMsg:
@@ -225,6 +335,7 @@ func (s *UsersScreen) KeyHints(km config.KeyMap) []KeyHint {
 		{km.HintString(config.ActionNew), "new"},
 		{km.HintString(config.ActionEdit), "edit"},
 		{km.HintString(config.ActionDelete), "del"},
+		{"u", "unlink oauth"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionBack), "back"},
 		{km.HintString(config.ActionQuit), "quit"},
@@ -235,6 +346,7 @@ func (s *UsersScreen) View(ctx AppContext) string {
 	cells := []CellContent{
 		{Content: s.renderUsersList()},
 		{Content: s.renderUserDetail()},
+		{Content: s.renderOAuth()},
 		{Content: s.renderPermissions()},
 	}
 	return s.RenderGrid(ctx, cells)
@@ -277,6 +389,33 @@ func (s *UsersScreen) renderUserDetail() string {
 		faint.Render(fmt.Sprintf(" ID        %s", user.UserID)),
 		faint.Render(fmt.Sprintf(" Created   %s", user.DateCreated)),
 		faint.Render(fmt.Sprintf(" Modified  %s", user.DateModified)),
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (s *UsersScreen) renderOAuth() string {
+	user := s.selectedUser()
+	if user == nil {
+		return " No user selected"
+	}
+
+	faint := lipgloss.NewStyle().Faint(true)
+	accent := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent)
+
+	oauths, ok := s.OauthCache[user.UserID]
+	if !ok {
+		return faint.Render(" Loading OAuth connections...")
+	}
+
+	if len(oauths) == 0 {
+		return faint.Render(" No OAuth connections")
+	}
+
+	lines := make([]string, 0)
+	for _, oa := range oauths {
+		lines = append(lines, accent.Render(fmt.Sprintf(" %s", oa.OauthProvider)))
+		lines = append(lines, fmt.Sprintf("   ID      %s", oa.OauthProviderUserID))
+		lines = append(lines, faint.Render(fmt.Sprintf("   Linked  %s", oa.DateCreated.String())))
 	}
 	return strings.Join(lines, "\n")
 }

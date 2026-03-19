@@ -516,6 +516,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// the screen needs to display, so it must reach the screen directly.
 	// TokenDeletedMsg similarly refreshes the list via the screen.
 
+	// User OAuth dialog messages → UpdateDialog.
+	case ShowUnlinkOauthDialogMsg:
+		return m.UpdateDialog(msg)
+
+	// User OAuth CRUD requests → UpdateCms.
+	case UnlinkOauthRequestMsg:
+		return m.UpdateCms(msg)
+
+	// User OAuth results → screen (fall through to ActiveScreen.Update).
+
 	// Media dimension dialog messages → UpdateDialog.
 	case ShowMediaDimensionFormDialogMsg:
 		return m.UpdateDialog(msg)
