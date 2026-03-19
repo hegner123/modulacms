@@ -1,4 +1,0 @@
-version: 2
-includes:
-  - from_url:
-      url: charmbracelet/meta/main/goreleaser-lib.yaml
