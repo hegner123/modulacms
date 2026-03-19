@@ -544,7 +544,7 @@ public struct Media: Codable, Sendable {
     public let folderID: MediaFolderID?
     public let dateCreated: Timestamp
     public let dateModified: Timestamp
-    public let downloadURL: String
+    public let downloadURL: String?
 
     enum CodingKeys: String, CodingKey {
         case mediaID = "media_id"
