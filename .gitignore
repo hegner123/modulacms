@@ -55,6 +55,7 @@ references/
 public/media/
 plugins/
 !internal/plugin/testdata/plugins/
+!ai/plugins/
 /tests/
 backups/
 legacydb/
