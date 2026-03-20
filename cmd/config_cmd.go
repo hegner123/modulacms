@@ -102,6 +102,17 @@ Examples:
 
 		cfg, err := loadConfigPtr()
 		if err != nil {
+			jsonOutput, _ := cmd.Flags().GetBool("json")
+			if jsonOutput {
+				result := struct {
+					Valid  bool     `json:"valid"`
+					Errors []string `json:"errors"`
+				}{
+					Valid:  false,
+					Errors: []string{err.Error()},
+				}
+				return json.NewEncoder(cmd.OutOrStdout()).Encode(result)
+			}
 			return fmt.Errorf("configuration is invalid: %w", err)
 		}
 
@@ -119,6 +130,18 @@ Examples:
 		}
 		if cfg.SSH_Port == "" {
 			errs = append(errs, "ssh_port is required")
+		}
+
+		jsonOutput, _ := cmd.Flags().GetBool("json")
+		if jsonOutput {
+			result := struct {
+				Valid  bool     `json:"valid"`
+				Errors []string `json:"errors"`
+			}{
+				Valid:  len(errs) == 0,
+				Errors: errs,
+			}
+			return json.NewEncoder(cmd.OutOrStdout()).Encode(result)
 		}
 
 		if len(errs) > 0 {
@@ -420,6 +443,7 @@ func init() {
 	configParentCmd.AddCommand(configTemplateCmd)
 	configParentCmd.AddCommand(configOverlayCmd)
 
+	configValidateCmd.Flags().Bool("json", false, "Output as JSON")
 	configShowCmd.Flags().Bool("raw", false, "show overlay file contents only (requires --overlay)")
 	configSetCmd.Flags().Bool("base", false, "write to base config instead of overlay (requires --overlay)")
 	configOverlayCmd.Flags().String("env", "", "environment name for the overlay file (required)")

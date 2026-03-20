@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"text/tabwriter"
@@ -67,8 +68,17 @@ Examples:
 		}
 
 		if pipelines == nil || len(*pipelines) == 0 {
+			jsonOutput, _ := cmd.Flags().GetBool("json")
+			if jsonOutput {
+				return json.NewEncoder(cmd.OutOrStdout()).Encode([]struct{}{})
+			}
 			fmt.Fprintln(cmd.OutOrStdout(), "No pipelines found.")
 			return nil
+		}
+
+		jsonOutput, _ := cmd.Flags().GetBool("json")
+		if jsonOutput {
+			return json.NewEncoder(cmd.OutOrStdout()).Encode(*pipelines)
 		}
 
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
@@ -119,8 +129,17 @@ Examples:
 		}
 
 		if pipelines == nil || len(*pipelines) == 0 {
+			jsonOutput, _ := cmd.Flags().GetBool("json")
+			if jsonOutput {
+				return json.NewEncoder(cmd.OutOrStdout()).Encode([]struct{}{})
+			}
 			fmt.Fprintf(cmd.OutOrStdout(), "No pipelines found for table %q.\n", tableName)
 			return nil
+		}
+
+		jsonOutput, _ := cmd.Flags().GetBool("json")
+		if jsonOutput {
+			return json.NewEncoder(cmd.OutOrStdout()).Encode(*pipelines)
 		}
 
 		// Group pipelines by operation.
@@ -291,6 +310,9 @@ Examples:
 }
 
 func init() {
+	pipelineListCmd.Flags().Bool("json", false, "Output as JSON")
+	pipelineShowCmd.Flags().Bool("json", false, "Output as JSON")
+
 	pipelineCmd.AddCommand(pipelineListCmd)
 	pipelineCmd.AddCommand(pipelineShowCmd)
 	pipelineCmd.AddCommand(pipelineEnableCmd)

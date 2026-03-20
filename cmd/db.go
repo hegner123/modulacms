@@ -287,14 +287,24 @@ var dbExportCmd = &cobra.Command{
 	Short: "Dump database SQL to file",
 	Long: `Export the full database schema and data as a SQL file.
 
-The output file location depends on the database driver configuration.
+By default, the output file is written to the current directory with a
+timestamped name (e.g., sqlite2026-03-20T14:30:00Z.sql). Use --file to
+specify a custom output path.
+
 This produces a plain SQL dump (not a backup archive). For full backup
 archives with metadata, use "modula backup create" instead.
 
+Flags:
+  --file     Output file path (optional; default: timestamped file in current directory)
+
 Examples:
-  modula db export`,
+  modula db export
+  modula db export --file backup.sql
+  modula db export --file /tmp/dump.sql`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
+
+		outFile, _ := cmd.Flags().GetString("file")
 
 		mgr, _, err := loadConfigAndDB()
 		if err != nil {
@@ -308,7 +318,7 @@ Examples:
 		}
 
 		driver := db.ConfigDB(*cfg)
-		if err := driver.DumpSql(*cfg); err != nil {
+		if err := driver.DumpSql(*cfg, outFile); err != nil {
 			return fmt.Errorf("database export failed: %w", err)
 		}
 
@@ -323,4 +333,6 @@ func init() {
 	dbCmd.AddCommand(dbWipeRedeployCmd)
 	dbCmd.AddCommand(dbResetCmd)
 	dbCmd.AddCommand(dbExportCmd)
+
+	dbExportCmd.Flags().String("file", "", "Output file path (default: timestamped file in current directory)")
 }

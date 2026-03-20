@@ -223,8 +223,32 @@ Examples:
 		}
 
 		if len(rows) == 0 {
+			jsonOutput, _ := cmd.Flags().GetBool("json")
+			if jsonOutput {
+				return json.NewEncoder(cmd.OutOrStdout()).Encode([]struct{}{})
+			}
 			fmt.Fprintln(cmd.OutOrStdout(), "No plugins found.")
 			return nil
+		}
+
+		jsonOutput, _ := cmd.Flags().GetBool("json")
+		if jsonOutput {
+			type pluginJSON struct {
+				Name        string `json:"name"`
+				Version     string `json:"version"`
+				Description string `json:"description"`
+				Valid       bool   `json:"valid"`
+			}
+			jsonRows := make([]pluginJSON, len(rows))
+			for i, r := range rows {
+				jsonRows[i] = pluginJSON{
+					Name:        r.name,
+					Version:     r.version,
+					Description: r.desc,
+					Valid:       !r.invalid,
+				}
+			}
+			return json.NewEncoder(cmd.OutOrStdout()).Encode(jsonRows)
 		}
 
 		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
@@ -615,6 +639,13 @@ Examples:
 
 		if decErr := json.NewDecoder(resp.Body).Decode(&info); decErr != nil {
 			return fmt.Errorf("decoding response: %w", decErr)
+		}
+
+		jsonOutput, _ := cmd.Flags().GetBool("json")
+		if jsonOutput {
+			enc := json.NewEncoder(cmd.OutOrStdout())
+			enc.SetIndent("", "  ")
+			return enc.Encode(info)
 		}
 
 		// Print readable key: value output.
@@ -1330,6 +1361,10 @@ func init() {
 
 	// Non-interactive flag for plugin install.
 	pluginInstallCmd.Flags().BoolVar(&pluginInstallYes, "yes", false, "Skip confirmation prompt")
+
+	// JSON output flags.
+	pluginListCmd.Flags().Bool("json", false, "Output as JSON")
+	pluginInfoCmd.Flags().Bool("json", false, "Output as JSON")
 
 	// Register all subcommands.
 	pluginCmd.AddCommand(pluginListCmd)

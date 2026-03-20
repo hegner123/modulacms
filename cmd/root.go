@@ -52,7 +52,6 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable debug logging")
 
 	rootCmd.AddCommand(serveCmd)
-	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(updateCmd)

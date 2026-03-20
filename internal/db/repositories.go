@@ -20,7 +20,7 @@ type SchemaRepository interface {
 	CreateBootstrapData(adminHash string) error
 	CleanupBootstrapData() error
 	DropAllTables() error
-	DumpSql(config.Config) error
+	DumpSql(config.Config, string) error
 	SortTables() error
 	ValidateBootstrapData() error
 }

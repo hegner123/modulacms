@@ -3729,7 +3729,7 @@ func (d PsqlDatabase) SortTables() error {
 	return nil
 }
 
-func (d Database) DumpSql(c config.Config) error {
+func (d Database) DumpSql(c config.Config, outFile string) error {
 
 	// Read the embedded Bash script.
 	script, err := sqlFiles.ReadFile("sql/dump_sql.sh")
@@ -3768,9 +3768,13 @@ func (d Database) DumpSql(c config.Config) error {
 		return err
 	}
 
+	// Use provided output file or generate a timestamped default.
+	if outFile == "" {
+		outFile = "sqlite" + utility.TimestampReadable() + ".sql"
+	}
+
 	// Execute the Bash script using /bin/bash.
-	t := utility.TimestampReadable()
-	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_Name, "sqlite"+t+".sql")
+	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_Name, outFile)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		utility.DefaultLogger.Ferror("failed to execute script: %v, output: %s", err, output)
@@ -3779,7 +3783,7 @@ func (d Database) DumpSql(c config.Config) error {
 	return nil
 
 }
-func (d MysqlDatabase) DumpSql(c config.Config) error {
+func (d MysqlDatabase) DumpSql(c config.Config, outFile string) error {
 
 	// Read the embedded Bash script.
 	script, err := sqlFiles.ReadFile("sql/dump_mysql.sh")
@@ -3818,9 +3822,13 @@ func (d MysqlDatabase) DumpSql(c config.Config) error {
 		return err
 	}
 
+	// Use provided output file or generate a timestamped default.
+	if outFile == "" {
+		outFile = "mysql" + utility.TimestampReadable() + ".sql"
+	}
+
 	// Execute the Bash script using /bin/bash.
-	t := utility.TimestampReadable()
-	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_User, c.Db_Password, c.Db_Name, "mysql"+t+".sql")
+	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_User, c.Db_Password, c.Db_Name, outFile)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		utility.DefaultLogger.Ferror("failed to execute script: %v, output: %s", err, string(output))
@@ -3829,7 +3837,7 @@ func (d MysqlDatabase) DumpSql(c config.Config) error {
 	return nil
 
 }
-func (d PsqlDatabase) DumpSql(c config.Config) error {
+func (d PsqlDatabase) DumpSql(c config.Config, outFile string) error {
 
 	// Read the embedded Bash script.
 	script, err := sqlFiles.ReadFile("sql/dump_psql.sh")
@@ -3868,9 +3876,13 @@ func (d PsqlDatabase) DumpSql(c config.Config) error {
 		return err
 	}
 
+	// Use provided output file or generate a timestamped default.
+	if outFile == "" {
+		outFile = "psql" + utility.TimestampReadable() + ".sql"
+	}
+
 	// Execute the Bash script using /bin/bash.
-	t := utility.TimestampReadable()
-	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_Name, "sqlite"+t+".sql")
+	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_Name, outFile)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		utility.DefaultLogger.Ferror("failed to execute script: %v, output: %s", err, output)

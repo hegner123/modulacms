@@ -167,7 +167,7 @@ func (r *RemoteDriver) DropAllTables() error {
 	return ErrNotSupported{Method: "DropAllTables"}
 }
 
-func (r *RemoteDriver) DumpSql(_ config.Config) error {
+func (r *RemoteDriver) DumpSql(_ config.Config, _ string) error {
 	return ErrNotSupported{Method: "DumpSql"}
 }
 

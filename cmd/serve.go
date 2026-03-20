@@ -27,6 +27,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/install"
+	"github.com/hegner123/modulacms/internal/registry"
 	mcpserver "github.com/hegner123/modulacms/internal/mcp"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/plugin"
@@ -50,13 +51,19 @@ func init() {
 
 // serveCmd starts the HTTP, HTTPS, and SSH servers for Modula.
 var serveCmd = &cobra.Command{
-	Use:   "serve",
+	Use:   "serve [project] [environment]",
 	Short: "Start the HTTP, HTTPS, and SSH servers",
 	Long: `Start all three Modula servers concurrently: HTTP, HTTPS, and SSH.
 
 HTTP serves the REST API and admin panel. HTTPS uses autocert (Let's Encrypt)
 in production or self-signed certificates locally. SSH runs the Bubbletea TUI
 for terminal-based content management.
+
+If positional arguments are given, the config path is resolved from the global
+project registry (~/.modula/configs.json). The first argument is the project
+name and the second is the environment name. If only a project name is given,
+the project's default environment is used. If neither is given, the --config
+flag or ./modula.config.json is used as before.
 
 If no modula.config.json exists, an automatic setup runs with generated defaults and
 prints the system admin password. Use --wizard for an interactive setup instead.
@@ -71,11 +78,38 @@ Flags:
 
 Examples:
   modula serve                        # start with existing or auto-generated config
+  modula serve mysite                 # start project "mysite" with its default environment
+  modula serve mysite production      # start project "mysite" with "production" environment
   modula serve --wizard               # run interactive setup first
   modula serve --config /etc/modula/modula.config.json
   modula serve --verbose              # start with debug logging`,
+	Args: cobra.MaximumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
+
+		// Resolve config path from registry when positional args are given.
+		// Positional args take priority over the default --config value but
+		// an explicit --config flag overrides everything.
+		if len(args) > 0 && !cmd.Flags().Changed("config") {
+			reg, regErr := registry.Load()
+			if regErr != nil {
+				return fmt.Errorf("loading project registry: %w", regErr)
+			}
+
+			var projName, envName string
+			projName = args[0]
+			if len(args) > 1 {
+				envName = args[1]
+			}
+
+			resolved, resolveErr := reg.Resolve(projName, envName)
+			if resolveErr != nil {
+				return fmt.Errorf("resolving config: %w", resolveErr)
+			}
+
+			cfgPath = resolved
+			utility.DefaultLogger.Info("Using config from registry", "project", projName, "environment", envName, "path", cfgPath)
+		}
 
 		rootCtx, rootCancel := context.WithCancel(context.Background())
 		defer rootCancel()

@@ -282,7 +282,7 @@ func runDBReset(cfg *config.Config) tea.Cmd {
 func runDBExport(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
 		driver := db.ConfigDB(*cfg)
-		if err := driver.DumpSql(*cfg); err != nil {
+		if err := driver.DumpSql(*cfg, ""); err != nil {
 			return ActionResultMsg{
 				Title:   "DB Export Failed",
 				Message: fmt.Sprintf("Database export failed:\n%s", err),
