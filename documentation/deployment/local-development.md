@@ -9,7 +9,7 @@ Set up HTTPS for local development to test secure cookies, OAuth flows, and othe
 **Option A: Built-in generator (recommended)**
 
 ```bash
-./modulacms-x86 --gen-certs
+modula --gen-certs
 ```
 
 This creates `certs/localhost.crt` and `certs/localhost.key`.
@@ -54,7 +54,7 @@ Key settings:
 
 ```bash
 just dev
-./modulacms-x86
+modula
 ```
 
 Output:
@@ -185,7 +185,7 @@ mkcert -key-file certs/localhost.key -cert-file certs/localhost.crt modulacms.lo
 Running on ports 80 and 443 requires elevated privileges:
 
 ```bash
-sudo ./modulacms-x86
+sudo modula
 ```
 
 ## Environment Modes
@@ -231,7 +231,7 @@ kill <PID>
 Check for certificate-related errors in the output:
 
 ```bash
-./modulacms-x86 2>&1 | grep -i cert
+modula 2>&1 | grep -i cert
 ```
 
 Verify file permissions: `chmod 644 certs/localhost.crt` and `chmod 600 certs/localhost.key`.

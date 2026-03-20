@@ -7,7 +7,7 @@ All settings live in a single `modula.config.json` file, created automatically o
 ModulaCMS looks for `modula.config.json` in the working directory. Override the path with the `--config` flag:
 
 ```bash
-./modula-x86 serve --config /etc/modulacms/modula.config.json
+modula serve --config /etc/modulacms/modula.config.json
 ```
 
 ## Config Layering (Multi-Environment)
@@ -15,7 +15,7 @@ ModulaCMS looks for `modula.config.json` in the working directory. Override the 
 When you maintain multiple environments (dev, staging, prod), you don't need to duplicate the entire config file. Create a small overlay file containing only the fields that differ, then merge it on top of the base config with `--overlay`:
 
 ```bash
-./modula-x86 serve --overlay modula.config.prod.json
+modula serve --overlay modula.config.prod.json
 ```
 
 The overlay file only needs the fields you want to override:
@@ -38,7 +38,7 @@ At load time, overlay keys overwrite base keys. Fields absent from the overlay k
 Generate a minimal overlay file for a new environment:
 
 ```bash
-./modula-x86 config overlay --env staging
+modula config overlay --env staging
 # Creates modula.config.staging.json with {"environment": "staging"}
 ```
 
@@ -48,10 +48,10 @@ Then add only the fields that differ from your base config.
 
 ```bash
 # Show the merged result (base + overlay)
-./modula-x86 config show --overlay modula.config.prod.json
+modula config show --overlay modula.config.prod.json
 
 # Show the overlay file contents only
-./modula-x86 config show --overlay modula.config.prod.json --raw
+modula config show --overlay modula.config.prod.json --raw
 ```
 
 ### Updating Layered Config
@@ -60,23 +60,47 @@ When `--overlay` is set, `config set` writes to the overlay file by default (you
 
 ```bash
 # Write to overlay (default when layered)
-./modula-x86 config set db_password "newpass" --overlay modula.config.prod.json
+modula config set db_password "newpass" --overlay modula.config.prod.json
 
 # Write to base config
-./modula-x86 config set port ":8080" --overlay modula.config.prod.json --base
+modula config set port ":8080" --overlay modula.config.prod.json --base
 ```
 
 ## Viewing and Validating
 
 ```bash
 # Show current configuration (sensitive fields are redacted)
-./modula-x86 config show
+modula config show
 
 # Validate configuration
-./modula-x86 config validate
+modula config validate
+
+# Machine-readable validation for CI scripts
+modula config validate --json
+# Output: {"valid": true, "errors": []}
 ```
 
 Validation checks that required fields (`db_driver`, `db_url`, `port`, `ssh_port`) are present and that `db_driver` and `output_format` contain valid values.
+
+## Project Registry
+
+When you run `modula init`, the project is registered in `~/.modula/configs.json`. This lets you start any project's server or TUI from any directory:
+
+```bash
+modula serve mysite              # start mysite's default environment
+modula serve mysite production   # start a specific environment
+modula tui mysite                # launch TUI for mysite
+```
+
+Manage environments with `modula connect`:
+
+```bash
+modula connect set mysite staging /path/to/modula.config.staging.json
+modula connect default mysite staging
+modula connect list
+```
+
+> **Good to know**: The project registry and config overlays serve different purposes. Overlays merge fields within a single config file for per-environment deltas. The registry maps project names to entirely separate config files, potentially on different machines. Use overlays for small differences (different DB password), use the registry for separate projects or servers.
 
 ## Server Settings
 

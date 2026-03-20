@@ -32,7 +32,7 @@ Set the `MODULACMS_DEBUG` environment variable to enable debug-level logging:
 
 ```bash
 export MODULACMS_DEBUG=true
-./modulacms-x86
+modula
 ```
 
 ## Diagnose Database Issues

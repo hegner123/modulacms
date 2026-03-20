@@ -135,7 +135,7 @@ Build and verify locally before deploying:
 ```bash
 # Build for local testing
 just dev
-./modulacms-x86
+modula
 
 # Run the full test suite
 just test

@@ -51,8 +51,9 @@ curl http://localhost:8080/api/v1/datatype -b cookies.txt
 Once the project is registered, you can manage it from any directory:
 
 ```bash
-modula connect              # uses default project
-modula connect mysite       # explicit project name
+modula serve mysite         # start the server for this project
+modula tui mysite           # launch TUI for this project
+modula connect mysite       # connect via SSH/TUI
 ```
 
 ## Next steps

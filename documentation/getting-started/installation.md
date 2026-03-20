@@ -104,13 +104,15 @@ ModulaCMS prints the system admin credentials to the log:
 Generated system admin password  email=system@modulacms.local  password=<random-string>
 ```
 
-### Install without registration
+### Non-interactive setup (Docker / CI)
 
-`modula install` runs the same wizard without the registry step. Use this for Docker containers or ephemeral environments:
+For Docker containers or ephemeral environments where registry is not needed:
 
 ```bash
-modula install --yes --admin-password your-password
+modula init --yes --admin-password your-password
 ```
+
+> **Good to know**: The `modula install` command is deprecated. Use `modula init` instead. Both run the same setup wizard; `init` also registers the project in the global registry.
 
 ## Project Registry
 
