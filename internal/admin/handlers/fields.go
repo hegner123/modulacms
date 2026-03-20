@@ -16,11 +16,12 @@ import (
 )
 
 // FieldsListHandler handles GET /admin/fields.
-// Lists all fields with pagination.
-// HTMX nav requests receive partial content only.
+// Lists all fields with pagination, search, and sorting.
+// HTMX requests receive partial table rows only.
 func FieldsListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		limit, offset := ParsePagination(r)
+		search := strings.TrimSpace(r.URL.Query().Get("search"))
+		sortBy := r.URL.Query().Get("sort")
 
 		user := middleware.AuthenticatedUser(r.Context())
 		isAdmin := middleware.ContextIsAdmin(r.Context())
@@ -29,17 +30,61 @@ func FieldsListHandler(svc *service.Registry) http.HandlerFunc {
 			roleID = user.Role
 		}
 
-		result, err := svc.Schema.ListFieldsPaginated(r.Context(), db.PaginationParams{
-			Limit:  limit,
-			Offset: offset,
-		}, roleID, isAdmin)
+		all, err := svc.Schema.ListFieldsFiltered(r.Context(), roleID, isAdmin)
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list fields", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
-		pd := NewPaginationData(result.Total, limit, offset, "#fields-table-body", "/admin/fields")
+		list := make([]db.Fields, len(all))
+		copy(list, all)
+
+		// Fuzzy search: ranked results supersede user sort.
+		if search != "" {
+			results := utility.FuzzyFind(search, list, func(f db.Fields) []string {
+				return []string{f.Name, f.Label, f.Type.String()}
+			})
+			ranked := make([]db.Fields, len(results))
+			for i, r := range results {
+				ranked[i] = list[r.Index]
+			}
+			list = ranked
+			sortBy = ""
+		}
+
+		// Sort (skipped when fuzzy search is active)
+		switch sortBy {
+		case "name-asc":
+			sortFields(list, func(a, b db.Fields) bool { return strings.ToLower(a.Name) < strings.ToLower(b.Name) })
+		case "name-desc":
+			sortFields(list, func(a, b db.Fields) bool { return strings.ToLower(a.Name) > strings.ToLower(b.Name) })
+		case "type-asc":
+			sortFields(list, func(a, b db.Fields) bool { return a.Type.String() < b.Type.String() })
+		case "type-desc":
+			sortFields(list, func(a, b db.Fields) bool { return a.Type.String() > b.Type.String() })
+		case "modified-desc":
+			sortFields(list, func(a, b db.Fields) bool { return a.DateModified.Time.After(b.DateModified.Time) })
+		case "modified-asc":
+			sortFields(list, func(a, b db.Fields) bool { return a.DateModified.Time.Before(b.DateModified.Time) })
+		}
+
+		// Paginate
+		limit, offset := ParsePagination(r)
+		total := int64(len(list))
+		off := int(offset)
+		lim := int(limit)
+		if off < len(list) {
+			end := off + lim
+			if end > len(list) {
+				end = len(list)
+			}
+			list = list[off:end]
+		} else {
+			list = nil
+		}
+
+		pd := NewPaginationData(total, limit, offset, "#fields-table-body", "/admin/fields")
 		pg := partials.PaginationPageData{
 			Current:    pd.Current,
 			TotalPages: pd.TotalPages,
@@ -50,18 +95,51 @@ func FieldsListHandler(svc *service.Registry) http.HandlerFunc {
 
 		if IsNavHTMX(r) {
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Fields"}`)
-			Render(w, r, pages.FieldsListContent(result.Data, pg))
+			Render(w, r, pages.FieldsListContent(list, pg))
 			return
 		}
 
 		if IsHTMX(r) {
-			Render(w, r, pages.FieldsListContent(result.Data, pg))
+			Render(w, r, partials.FieldsTableRows(list, pg))
 			return
 		}
 
 		layout := NewAdminData(r, "Fields")
-		Render(w, r, pages.FieldsList(layout, result.Data, pg))
+		Render(w, r, pages.FieldsList(layout, list, pg))
 	}
+}
+
+func sortFields(s []db.Fields, less func(a, b db.Fields) bool) {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && less(s[j], s[j-1]); j-- {
+			s[j], s[j-1] = s[j-1], s[j]
+		}
+	}
+}
+
+// fetchFieldTypes loads public field types from the database, returning an empty
+// slice on error so callers can continue rendering without blocking the page.
+func fetchFieldTypes(svc *service.Registry, r *http.Request) []db.FieldTypes {
+	fieldTypes, err := svc.Schema.ListFieldTypes(r.Context())
+	if err != nil {
+		utility.DefaultLogger.Error("failed to list field types for dropdown", err)
+		return []db.FieldTypes{}
+	}
+	return fieldTypes
+}
+
+// fetchValidations loads public validations from the database, returning an empty
+// slice on error so callers can continue rendering without blocking the page.
+func fetchValidations(svc *service.Registry) []db.Validation {
+	validationsPtr, err := svc.Driver().ListValidations()
+	if err != nil {
+		utility.DefaultLogger.Error("failed to list validations for dropdown", err)
+		return []db.Validation{}
+	}
+	if validationsPtr == nil {
+		return []db.Validation{}
+	}
+	return *validationsPtr
 }
 
 // FieldCreatePageHandler handles GET /admin/fields/new.
@@ -74,11 +152,13 @@ func FieldCreatePageHandler(svc *service.Registry) http.HandlerFunc {
 			allRoles = *rolesList
 		}
 
+		fieldTypes := fetchFieldTypes(svc, r)
+
 		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "New Field")
 		RenderNav(w, r, "New Field",
-			pages.FieldCreateContent("", "", "", "", "", "", allRoles, nil, csrfToken),
-			pages.FieldCreate(layout, allRoles, csrfToken))
+			pages.FieldCreateContent("", "", "", "", "", "", allRoles, nil, csrfToken, fieldTypes),
+			pages.FieldCreate(layout, allRoles, csrfToken, fieldTypes))
 	}
 }
 
@@ -95,7 +175,7 @@ func FieldCreateHandler(svc *service.Registry) http.HandlerFunc {
 		label := strings.TrimSpace(r.FormValue("label"))
 		fieldType := strings.TrimSpace(r.FormValue("type"))
 		data := strings.TrimSpace(r.FormValue("data"))
-		validation := strings.TrimSpace(r.FormValue("validation")) // kept for form re-render
+		validationIDStr := strings.TrimSpace(r.FormValue("validation_id"))
 		uiConfig := strings.TrimSpace(r.FormValue("ui_config"))
 
 		ac, acErr := svc.AuditCtx(r.Context())
@@ -120,16 +200,17 @@ func FieldCreateHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		created, err := svc.Schema.CreateField(r.Context(), ac, db.CreateFieldParams{
-			Name:       name,
-			Label:      label,
-			Type:       types.FieldType(fieldType),
-			Data:       data,
-			ValidationID: types.NullableValidationID{}, // TODO: parse validation_id from form
-			UIConfig:   uiConfig,
-			Roles:      rolesParam,
-			AuthorID:   authorID,
+			Name:         name,
+			Label:        label,
+			Type:         types.FieldType(fieldType),
+			Data:         data,
+			ValidationID: parseNullableValidationID(validationIDStr),
+			UIConfig:     uiConfig,
+			Roles:        rolesParam,
+			AuthorID:     authorID,
 		})
 		if err != nil {
+			fieldTypes := fetchFieldTypes(svc, r)
 			var ve *service.ValidationError
 			if errors.As(err, &ve) {
 				errs := make(map[string]string, len(ve.Errors))
@@ -143,7 +224,7 @@ func FieldCreateHandler(svc *service.Registry) http.HandlerFunc {
 				}
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				csrfToken := CSRFTokenFromContext(r.Context())
-				Render(w, r, pages.FieldCreateForm(name, label, fieldType, data, validation, uiConfig, allRoles, errs, csrfToken))
+				Render(w, r, pages.FieldCreateForm(name, label, fieldType, data, validationIDStr, uiConfig, allRoles, errs, csrfToken, fieldTypes))
 				return
 			}
 			utility.DefaultLogger.Error("failed to create field", err)
@@ -154,7 +235,7 @@ func FieldCreateHandler(svc *service.Registry) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, pages.FieldCreateForm(name, label, fieldType, data, validation, uiConfig, allRoles, map[string]string{"_": "Failed to create field"}, csrfToken))
+			Render(w, r, pages.FieldCreateForm(name, label, fieldType, data, validationIDStr, uiConfig, allRoles, map[string]string{"_": "Failed to create field"}, csrfToken, fieldTypes))
 			return
 		}
 
@@ -216,11 +297,14 @@ func FieldDetailHandler(svc *service.Registry) http.HandlerFunc {
 			allRoles = *rolesList
 		}
 
+		fieldTypes := fetchFieldTypes(svc, r)
+		validations := fetchValidations(svc)
+
 		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Field: "+field.Label)
 		RenderNav(w, r, "Field: "+field.Label,
-			pages.FieldDetailContent(*field, allRoles, csrfToken, i18nEnabled),
-			pages.FieldDetail(layout, *field, allRoles, csrfToken, i18nEnabled))
+			pages.FieldDetailContent(*field, allRoles, csrfToken, i18nEnabled, fieldTypes, validations),
+			pages.FieldDetail(layout, *field, allRoles, csrfToken, i18nEnabled, fieldTypes, validations))
 	}
 }
 
@@ -243,7 +327,7 @@ func FieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		label := strings.TrimSpace(r.FormValue("label"))
 		fieldType := strings.TrimSpace(r.FormValue("type"))
 		data := strings.TrimSpace(r.FormValue("data"))
-		validation := strings.TrimSpace(r.FormValue("validation")) // kept for form re-render
+		validationIDStr := strings.TrimSpace(r.FormValue("validation_id"))
 		uiConfig := strings.TrimSpace(r.FormValue("ui_config"))
 
 		ac, acErr := svc.AuditCtx(r.Context())
@@ -276,12 +360,13 @@ func FieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			Label:        label,
 			Type:         types.FieldType(fieldType),
 			Data:         data,
-			ValidationID: types.NullableValidationID{}, // TODO: parse validation_id from form
+			ValidationID: parseNullableValidationID(validationIDStr),
 			UIConfig:     uiConfig,
 			Translatable: translatable,
 			Roles:        rolesParam,
 		})
 		if err != nil {
+			fieldTypes := fetchFieldTypes(svc, r)
 			var ve *service.ValidationError
 			if errors.As(err, &ve) {
 				errs := make(map[string]string, len(ve.Errors))
@@ -290,7 +375,7 @@ func FieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 				}
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				csrfToken := CSRFTokenFromContext(r.Context())
-				Render(w, r, partials.FieldEditForm(id, name, label, fieldType, data, validation, uiConfig, errs, csrfToken))
+				Render(w, r, partials.FieldEditForm(id, name, label, fieldType, data, validationIDStr, uiConfig, errs, csrfToken, fieldTypes))
 				return
 			}
 			var nfe *service.NotFoundError
@@ -301,7 +386,7 @@ func FieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to update field", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.FieldEditForm(id, name, label, fieldType, data, validation, uiConfig, map[string]string{"_": "Failed to update field"}, csrfToken))
+			Render(w, r, partials.FieldEditForm(id, name, label, fieldType, data, validationIDStr, uiConfig, map[string]string{"_": "Failed to update field"}, csrfToken, fieldTypes))
 			return
 		}
 
@@ -349,4 +434,12 @@ func FieldDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Field deleted", "type": "success"}}`)
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+// parseNullableValidationID converts a form string to a NullableValidationID.
+func parseNullableValidationID(s string) types.NullableValidationID {
+	if s == "" {
+		return types.NullableValidationID{}
+	}
+	return types.NullableValidationID{ID: types.ValidationID(s), Valid: true}
 }

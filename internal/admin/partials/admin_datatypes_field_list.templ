@@ -11,17 +11,46 @@ templ AdminDatatypeFieldList(datatypeID string, fields []db.AdminFields, csrfTok
         <table class="min-w-full divide-y divide-white/10">
             <thead class="sr-only">
                 <tr>
+                    <th>Order</th>
                     <th>Name</th>
                     <th>Type</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
-                for _, f := range fields {
-                    <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/admin-fields/" + f.AdminFieldID.String() }>
-                        <td class="py-3 pr-3 pl-4 text-sm sm:pl-6">
-                            <div class="font-medium text-white">{ f.Name }</div>
-                            <div class="mt-0.5 text-gray-400">{ f.Label }</div>
+                for i, f := range fields {
+                    <tr class="group cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/admin-fields/" + f.AdminFieldID.String() }>
+                        <td class="py-3 pl-3 text-sm whitespace-nowrap w-8">
+                            <div class="flex flex-col gap-0.5">
+                                if i > 0 {
+                                    <button type="button"
+                                            class="text-gray-500 hover:text-white p-0.5"
+                                            hx-post={ "/admin/admin-datatypes/" + datatypeID + "/fields/reorder" }
+                                            hx-vals={ `{"field_id": "` + f.AdminFieldID.String() + `", "direction": "up"}` }
+                                            hx-headers={ `{"X-CSRF-Token": "` + csrfToken + `"}` }
+                                            hx-target={ "#admin-linked-fields-list" }
+                                            hx-swap="innerHTML"
+                                            onclick="event.stopPropagation()">
+                                        <svg class="size-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.47 6.47a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 1 1-1.06 1.06L10 8.06l-3.72 3.72a.75.75 0 0 1-1.06-1.06l4.25-4.25Z" clip-rule="evenodd"/></svg>
+                                    </button>
+                                }
+                                if i < len(fields) - 1 {
+                                    <button type="button"
+                                            class="text-gray-500 hover:text-white p-0.5"
+                                            hx-post={ "/admin/admin-datatypes/" + datatypeID + "/fields/reorder" }
+                                            hx-vals={ `{"field_id": "` + f.AdminFieldID.String() + `", "direction": "down"}` }
+                                            hx-headers={ `{"X-CSRF-Token": "` + csrfToken + `"}` }
+                                            hx-target={ "#admin-linked-fields-list" }
+                                            hx-swap="innerHTML"
+                                            onclick="event.stopPropagation()">
+                                        <svg class="size-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.53 13.53a.75.75 0 0 1-1.06 0l-4.25-4.25a.75.75 0 1 1 1.06-1.06L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25Z" clip-rule="evenodd"/></svg>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                        <td class="py-3 pr-3 pl-2 text-sm">
+                            <div class="font-medium text-white">{ f.Label }</div>
+                            <div class="mt-0.5 text-gray-400">{ f.Name }</div>
                         </td>
                         <td class="px-3 py-3 text-sm whitespace-nowrap">
                             <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ f.Type.String() }</span>

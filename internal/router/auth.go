@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/hegner123/modulacms/internal/auth"
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/service"
@@ -106,23 +107,30 @@ func MeHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 		return
 	}
 
-	cookie, err := r.Cookie(cfg.Cookie_Name)
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Not authenticated"})
+	// Try cookie auth first.
+	cookie, cookieErr := r.Cookie(cfg.Cookie_Name)
+	if cookieErr == nil {
+		user, authErr := middleware.UserIsAuth(r, cookie, cfg)
+		if authErr == nil {
+			writeMeResponse(w, user)
+			return
+		}
+		utility.DefaultLogger.Error("Session validation failed", authErr)
+	}
+
+	// Fall back to API key auth (used by MCP and other programmatic clients).
+	_, user := middleware.APIKeyAuth(r, cfg)
+	if user != nil {
+		writeMeResponse(w, user)
 		return
 	}
 
-	user, err := middleware.UserIsAuth(r, cookie, cfg)
-	if err != nil {
-		utility.DefaultLogger.Error("Session validation failed", err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Not authenticated"})
-		return
-	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnauthorized)
+	json.NewEncoder(w).Encode(map[string]string{"error": "Not authenticated"})
+}
 
+func writeMeResponse(w http.ResponseWriter, user *db.Users) {
 	response := map[string]any{
 		"user_id":  user.UserID,
 		"email":    user.Email,
@@ -130,7 +138,6 @@ func MeHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 		"name":     user.Name,
 		"role":     user.Role,
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)

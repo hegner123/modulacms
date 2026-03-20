@@ -84,8 +84,8 @@ templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData,
                     <table class="min-w-full divide-y divide-white/10">
                         <thead class="bg-white/5">
                             <tr>
-                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Name</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Label</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Name</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Type</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Modified</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Actions</th>
@@ -96,39 +96,13 @@ templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData,
                                hx-get="/admin/datatypes"
                                hx-trigger="refreshTable from:body"
                                hx-swap="innerHTML">
-                            if len(items) == 0 {
-                                <tr>
-                                    <td colspan="5" class="py-10 text-center text-sm text-gray-400">No datatypes found.</td>
-                                </tr>
-                            } else {
-                                for _, dt := range items {
-                                    <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/datatypes/" + dt.DatatypeID.String() }>
-                                        <td class="py-4 pr-3 pl-4 text-sm font-medium whitespace-nowrap text-white sm:pl-6">{ dt.Name }</td>
-                                        <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ dt.Label }</td>
-                                        <td class="px-3 py-4 text-sm whitespace-nowrap">
-                                            <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ dt.Type }</span>
-                                        </td>
-                                        <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ dt.DateModified.Time.UTC().Format("Jan 2, 2006 15:04") }</td>
-                                        <td class="py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6">
-                                            <mcms-confirm
-                                                label="Delete"
-                                                message="Delete this datatype? This cannot be undone."
-                                                button-class="text-red-400 hover:text-red-300"
-                                                hx-delete={ "/admin/datatypes/" + dt.DatatypeID.String() }
-                                                hx-target="closest tr"
-                                                hx-swap="outerHTML swap:300ms"
-                                            ></mcms-confirm>
-                                        </td>
-                                    </tr>
-                                }
-                            }
+                            @partials.DatatypesTableRows(items, pg)
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-    @partials.Pagination(pg.Current, pg.TotalPages, "#datatypes-table-body", "/admin/datatypes", pg.Limit)
 }
 
 

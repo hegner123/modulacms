@@ -1,26 +1,58 @@
 package partials
 
+import "strconv"
+
 templ Pagination(current int, totalPages int, target string, baseURL string, limit int64) {
-	if totalPages > 1 {
-		<nav class="flex items-center justify-between border-t border-white/10 px-4 py-3 sm:px-6">
-			<div class="hidden sm:block">
-				<p class="text-sm text-gray-400">Showing page <span class="font-medium text-white">{ IntToStr(current) }</span> of <span class="font-medium text-white">{ IntToStr(totalPages) }</span></p>
-			</div>
-			<div class="flex flex-1 justify-between gap-x-3 sm:justify-end">
-				for _, page := range pages(totalPages) {
-					if page == current {
-						<span class="inline-flex items-center rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-semibold text-white">{ IntToStr(page) }</span>
-					} else {
-						<a hx-get={ urlForPage(baseURL, page, limit) }
-						   hx-target={ target }
-						   hx-swap="innerHTML"
-						   hx-push-url="true"
-						   class="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white">
-							{ IntToStr(page) }
-						</a>
-					}
-				}
-			</div>
-		</nav>
-	}
+    if totalPages >= 1 {
+        <nav class="flex items-center justify-between border-t border-white/10 px-4 py-3 sm:px-6">
+            <div class="flex items-center gap-x-4">
+                <!-- Per-page selector -->
+                <div class="flex items-center gap-x-2">
+                    <span class="text-xs text-gray-500">Show</span>
+                    <div class="grid grid-cols-1">
+                        <select
+                            hx-get={ baseURL }
+                            hx-target={ target }
+                            hx-swap="innerHTML"
+                            hx-trigger="change"
+                            hx-vals='{"offset": "0"}'
+                            name="limit"
+                            class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1 pr-7 pl-2.5 text-xs text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]"
+                        >
+                            @limitOptions(limit)
+                        </select>
+                        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" class="pointer-events-none col-start-1 row-start-1 mr-1.5 size-4 self-center justify-self-end text-gray-500">
+                            <path d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" fill-rule="evenodd"/>
+                        </svg>
+                    </div>
+                </div>
+                <!-- Page info -->
+                if totalPages > 1 {
+                    <p class="hidden text-xs text-gray-500 sm:block">Page <span class="font-medium text-white">{ IntToStr(current) }</span> of <span class="font-medium text-white">{ IntToStr(totalPages) }</span></p>
+                }
+            </div>
+            if totalPages > 1 {
+                <div class="flex flex-1 justify-end gap-x-3">
+                    for _, page := range pages(totalPages) {
+                        if page == current {
+                            <span class="inline-flex items-center rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-semibold text-white">{ IntToStr(page) }</span>
+                        } else {
+                            <a hx-get={ urlForPage(baseURL, page, limit) }
+                               hx-target={ target }
+                               hx-swap="innerHTML"
+                               class="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white cursor-pointer">
+                                { IntToStr(page) }
+                            </a>
+                        }
+                    }
+                </div>
+            }
+        </nav>
+    }
+}
+
+templ limitOptions(current int64) {
+    for _, size := range pageSizes() {
+        <option value={ strconv.FormatInt(int64(size), 10) } selected?={ int64(size) == current }>{ strconv.Itoa(size) }</option>
+    }
 }

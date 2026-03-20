@@ -598,8 +598,9 @@ func TestRootCommand_Structure(t *testing.T) {
 
 	// Verify all expected subcommands are registered.
 	expectedSubcommands := []string{
-		"serve", "install", "version", "update", "tui",
+		"serve", "init", "version", "update", "tui",
 		"cert", "db", "config", "backup", "plugin", "deploy",
+		"connect", "mcp", "pipeline",
 	}
 
 	subCmds := rootCmd.Commands()
@@ -860,27 +861,6 @@ func TestServeCommand_WizardFlag(t *testing.T) {
 	}
 	if wizardFlag.DefValue != "false" {
 		t.Errorf("wizard flag default: got %q, want %q", wizardFlag.DefValue, "false")
-	}
-}
-
-// ---------------------------------------------------------------------------
-// Install command flags
-// ---------------------------------------------------------------------------
-
-func TestInstallCommand_Flags(t *testing.T) {
-	t.Parallel()
-
-	yesFlag := installCmd.Flags().Lookup("yes")
-	if yesFlag == nil {
-		t.Fatal("expected flag 'yes' on install command")
-	}
-	if yesFlag.Shorthand != "y" {
-		t.Errorf("yes flag shorthand: got %q, want %q", yesFlag.Shorthand, "y")
-	}
-
-	pwFlag := installCmd.Flags().Lookup("admin-password")
-	if pwFlag == nil {
-		t.Fatal("expected flag 'admin-password' on install command")
 	}
 }
 

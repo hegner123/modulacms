@@ -59,11 +59,14 @@ HTTP serves the REST API and admin panel. HTTPS uses autocert (Let's Encrypt)
 in production or self-signed certificates locally. SSH runs the Bubbletea TUI
 for terminal-based content management.
 
-If positional arguments are given, the config path is resolved from the global
-project registry (~/.modula/configs.json). The first argument is the project
-name and the second is the environment name. If only a project name is given,
-the project's default environment is used. If neither is given, the --config
-flag or ./modula.config.json is used as before.
+If positional arguments are given, the config is resolved from the project
+registry (~/.modula/configs.json). The project's base config is loaded first,
+then the environment overlay is layered on top. If only a project name is
+given, the project's default environment is used. If neither is given, the
+--config flag or ./modula.config.json is used.
+
+You can also use --config and --overlay directly without the registry:
+  modula serve --config base.json --overlay prod.json
 
 If no modula.config.json exists, an automatic setup runs with generated defaults and
 prints the system admin password. Use --wizard for an interactive setup instead.
@@ -72,17 +75,18 @@ Graceful shutdown: first SIGINT/SIGTERM triggers a 30-second drain; a second
 signal forces immediate exit.
 
 Flags:
-  --wizard   Run the interactive configuration wizard before starting
-  --config   Path to modula.config.json (default: ./modula.config.json)
-  --verbose  Enable debug-level log output
+  --wizard    Run the interactive configuration wizard before starting
+  --config    Path to base config (default: ./modula.config.json)
+  --overlay   Environment overlay config (merged on top of --config)
+  --verbose   Enable debug-level log output
 
 Examples:
-  modula serve                        # start with existing or auto-generated config
-  modula serve mysite                 # start project "mysite" with its default environment
-  modula serve mysite production      # start project "mysite" with "production" environment
-  modula serve --wizard               # run interactive setup first
-  modula serve --config /etc/modula/modula.config.json
-  modula serve --verbose              # start with debug logging`,
+  modula serve                                      # existing or auto-generated config
+  modula serve mysite                               # base + default env overlay
+  modula serve mysite production                    # base + production overlay
+  modula serve --overlay modula.config.prod.json    # explicit overlay
+  modula serve --wizard                             # interactive setup first
+  modula serve --verbose                            # debug logging`,
 	Args: cobra.MaximumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
@@ -107,9 +111,25 @@ Examples:
 				return fmt.Errorf("resolving config: %w", resolveErr)
 			}
 
-			cfgPath = resolved
-			utility.DefaultLogger.Info("Using config from registry", "project", projName, "environment", envName, "path", cfgPath)
+			cfgPath = resolved.Base
+			if resolved.Overlay != "" {
+				overlayPath = resolved.Overlay
+			}
+			utility.DefaultLogger.Info("Using config from registry", "project", projName, "environment", envName, "config", cfgPath)
 		}
+
+		// Root the process in the config file's directory so relative paths
+		// (db_url, cert_dir, log_path, etc.) resolve predictably.
+		absCfg, absErr := filepath.Abs(cfgPath)
+		if absErr != nil {
+			return fmt.Errorf("resolving config path: %w", absErr)
+		}
+		cfgDir := filepath.Dir(absCfg)
+		if err := os.Chdir(cfgDir); err != nil {
+			return fmt.Errorf("changing to config directory %s: %w", cfgDir, err)
+		}
+		cfgPath = filepath.Base(absCfg)
+		utility.DefaultLogger.Info("Working directory set", "path", cfgDir)
 
 		rootCtx, rootCancel := context.WithCancel(context.Background())
 		defer rootCancel()
@@ -179,6 +199,14 @@ Examples:
 		cfg, err := mgr.Config()
 		if err != nil {
 			return err
+		}
+
+		utility.DefaultLogger.Info("Base config loaded", "path", cfgPath)
+		if overlayPath != "" {
+			utility.DefaultLogger.Info("Overlay applied", "path", overlayPath)
+		}
+		if cfg.Log_Path != "" {
+			utility.DefaultLogger.Info("Log file configured", "path", cfg.Log_Path)
 		}
 
 		// Initialize isolated plugin database pool

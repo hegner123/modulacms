@@ -877,8 +877,9 @@ func (n NullableValidationID) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON parses JSON data into the NullableValidationID.
+// Treats null and empty string as not-set (Valid=false).
 func (n *NullableValidationID) UnmarshalJSON(data []byte) error {
-	if string(data) == "null" {
+	if string(data) == "null" || string(data) == `""` {
 		n.Valid = false
 		n.ID = ""
 		return nil
@@ -940,8 +941,9 @@ func (n NullableAdminValidationID) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON parses JSON data into the NullableAdminValidationID.
+// Treats null and empty string as not-set (Valid=false).
 func (n *NullableAdminValidationID) UnmarshalJSON(data []byte) error {
-	if string(data) == "null" {
+	if string(data) == "null" || string(data) == `""` {
 		n.Valid = false
 		n.ID = ""
 		return nil

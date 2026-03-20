@@ -867,8 +867,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/datatypes/{id}", mutating("datatypes:update", adminhandlers.DatatypeUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/datatypes/{id}", mutating("datatypes:delete", adminhandlers.DatatypeDeleteHandler(svc)))
 
-	// fields
-	mux.Handle("GET /admin/fields", viewing("fields", adminhandlers.FieldsListHandler(svc)))
+	// fields (accessed via datatype detail, no standalone list page)
 	mux.Handle("GET /admin/fields/new", viewing("fields", adminhandlers.FieldCreatePageHandler(svc)))
 	mux.Handle("POST /admin/fields", mutating("fields:create", adminhandlers.FieldCreateHandler(svc)))
 	mux.Handle("GET /admin/fields/{id}", viewing("fields", adminhandlers.FieldDetailHandler(svc)))
@@ -891,6 +890,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 
 	// datatype field creation
 	mux.Handle("POST /admin/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeCreateFieldHandler(svc)))
+	mux.Handle("POST /admin/datatypes/{id}/fields/reorder", mutating("fields:update", adminhandlers.DatatypeFieldReorderHandler(svc)))
 
 	// Media
 	mux.Handle("GET /admin/media", viewing("media", adminhandlers.MediaListHandler(svc)))
@@ -941,6 +941,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/admin-datatypes/{id}", mutating("datatypes:update", adminhandlers.AdminDatatypeUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/admin-datatypes/{id}", mutating("datatypes:delete", adminhandlers.AdminDatatypeDeleteHandler(svc)))
 	mux.Handle("POST /admin/admin-datatypes/{id}/fields", mutating("fields:create", adminhandlers.AdminDatatypeCreateFieldHandler(svc)))
+	mux.Handle("POST /admin/admin-datatypes/{id}/fields/reorder", mutating("fields:update", adminhandlers.AdminDatatypeFieldReorderHandler(svc)))
 
 	// Admin Fields (detail/update/delete only — fields are created per admin datatype)
 	mux.Handle("GET /admin/admin-fields/{id}", viewing("fields", adminhandlers.AdminFieldDetailHandler(svc)))

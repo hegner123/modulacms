@@ -3,7 +3,6 @@ package main
 import (
 	"path/filepath"
 
-	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/spf13/cobra"
 )
@@ -42,6 +41,9 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
+		// Root the process in the config directory so relative paths resolve correctly.
+		resolveConfigDir()
+
 		utility.DefaultLogger.Info("Generating self-signed SSL certificates...")
 
 		// Defaults
@@ -49,10 +51,9 @@ Examples:
 		domain := "localhost"
 
 		// Try to read config for cert_dir and domain settings (graceful fallback)
-		configProvider := config.NewFileProvider(cfgPath)
-		configManager := config.NewManager(configProvider)
-		if err := configManager.Load(); err == nil {
-			if cfg, err := configManager.Config(); err == nil {
+		mgr, loadErr := loadConfig()
+		if loadErr == nil {
+			if cfg, cfgErr := mgr.Config(); cfgErr == nil {
 				if cfg.Cert_Dir != "" {
 					certDir = cfg.Cert_Dir
 				}

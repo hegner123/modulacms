@@ -14,6 +14,29 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// fetchAdminFieldTypes loads admin field types from the database, returning an empty
+// slice on error so callers can continue rendering without blocking the page.
+func fetchAdminFieldTypes(svc *service.Registry, r *http.Request) []db.AdminFieldTypes {
+	fieldTypes, err := svc.Schema.ListAdminFieldTypes(r.Context())
+	if err != nil {
+		utility.DefaultLogger.Error("failed to list admin field types for dropdown", err)
+		return []db.AdminFieldTypes{}
+	}
+	return fieldTypes
+}
+
+func fetchAdminValidations(svc *service.Registry) []db.AdminValidation {
+	validationsPtr, err := svc.Driver().ListAdminValidations()
+	if err != nil {
+		utility.DefaultLogger.Error("failed to list admin validations for dropdown", err)
+		return []db.AdminValidation{}
+	}
+	if validationsPtr == nil {
+		return []db.AdminValidation{}
+	}
+	return *validationsPtr
+}
+
 // AdminFieldDetailHandler handles GET /admin/admin-fields/{id}.
 // Shows admin field detail with configuration, validation, and linked datatypes.
 // When i18n is enabled, shows a "Translatable" checkbox on the edit form.
@@ -50,11 +73,14 @@ func AdminFieldDetailHandler(svc *service.Registry) http.HandlerFunc {
 			allRoles = *rolesList
 		}
 
+		fieldTypes := fetchAdminFieldTypes(svc, r)
+		validations := fetchAdminValidations(svc)
+
 		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Admin Field: "+field.Label)
 		RenderNav(w, r, "Admin Field: "+field.Label,
-			pages.AdminFieldDetailContent(*field, allRoles, csrfToken, i18nEnabled),
-			pages.AdminFieldDetail(layout, *field, allRoles, csrfToken, i18nEnabled))
+			pages.AdminFieldDetailContent(*field, allRoles, csrfToken, i18nEnabled, fieldTypes, validations),
+			pages.AdminFieldDetail(layout, *field, allRoles, csrfToken, i18nEnabled, fieldTypes, validations))
 	}
 }
 
@@ -116,6 +142,7 @@ func AdminFieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			Roles:        rolesParam,
 		})
 		if err != nil {
+			fieldTypes := fetchAdminFieldTypes(svc, r)
 			var ve *service.ValidationError
 			if errors.As(err, &ve) {
 				errs := make(map[string]string, len(ve.Errors))
@@ -124,7 +151,7 @@ func AdminFieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 				}
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				csrfToken := CSRFTokenFromContext(r.Context())
-				Render(w, r, partials.AdminFieldEditForm(id, name, label, fieldType, data, validation, uiConfig, errs, csrfToken))
+				Render(w, r, partials.AdminFieldEditForm(id, name, label, fieldType, data, validation, uiConfig, errs, csrfToken, fieldTypes))
 				return
 			}
 			var nfe *service.NotFoundError
@@ -135,7 +162,7 @@ func AdminFieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to update admin field", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminFieldEditForm(id, name, label, fieldType, data, validation, uiConfig, map[string]string{"_": "Failed to update field"}, csrfToken))
+			Render(w, r, partials.AdminFieldEditForm(id, name, label, fieldType, data, validation, uiConfig, map[string]string{"_": "Failed to update field"}, csrfToken, fieldTypes))
 			return
 		}
 

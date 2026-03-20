@@ -1,8 +1,10 @@
 package partials
 
+import "github.com/hegner123/modulacms/internal/db"
+
 // AdminFieldEditForm renders the edit admin field form fields.
 // Used as an HTMX partial for validation error responses on the detail page.
-templ AdminFieldEditForm(id string, name string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
+templ AdminFieldEditForm(id string, name string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string, fieldTypes []db.AdminFieldTypes) {
     <form hx-post={ "/admin/admin-fields/" + id }
           hx-target="#admin-field-edit-form"
           hx-swap="innerHTML">
@@ -26,20 +28,9 @@ templ AdminFieldEditForm(id string, name string, label string, fieldType string,
             <div class="mt-2">
                 <select id="type" name="type"
                     class={ "block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-inset placeholder:text-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6", templ.KV("ring-red-500", errs["type"] != ""), templ.KV("ring-white/10", errs["type"] == "") }>
-                    <option value="text" selected?={ fieldType == "text" }>Text</option>
-                    <option value="textarea" selected?={ fieldType == "textarea" }>Textarea</option>
-                    <option value="richtext" selected?={ fieldType == "richtext" }>Rich Text</option>
-                    <option value="number" selected?={ fieldType == "number" }>Number</option>
-                    <option value="boolean" selected?={ fieldType == "boolean" }>Boolean</option>
-                    <option value="date" selected?={ fieldType == "date" }>Date</option>
-                    <option value="datetime" selected?={ fieldType == "datetime" }>Datetime</option>
-                    <option value="select" selected?={ fieldType == "select" }>Select</option>
-                    <option value="media" selected?={ fieldType == "media" }>Media</option>
-                    <option value="relation" selected?={ fieldType == "relation" }>Relation</option>
-                    <option value="json" selected?={ fieldType == "json" }>JSON</option>
-                    <option value="slug" selected?={ fieldType == "slug" }>Slug</option>
-                    <option value="email" selected?={ fieldType == "email" }>Email</option>
-                    <option value="url" selected?={ fieldType == "url" }>URL</option>
+                    for _, ft := range fieldTypes {
+                        <option value={ ft.Type } selected?={ fieldType == ft.Type }>{ ft.Label }</option>
+                    }
                 </select>
             </div>
             if errs["type"] != "" {

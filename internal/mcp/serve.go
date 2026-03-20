@@ -4,6 +4,7 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/server"
@@ -11,12 +12,17 @@ import (
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
-	modula "github.com/hegner123/modulacms/sdks/go"
 )
 
 // newServer creates an MCPServer with all tools registered.
-func newServer(backends *Backends) *server.MCPServer {
+// If cm is non-nil, connection management tools (list_projects,
+// switch_project, get_connection) are also registered.
+func newServer(backends *Backends, cm *ConnectionManager) *server.MCPServer {
 	srv := server.NewMCPServer("modula", utility.Version)
+
+	if cm != nil {
+		registerConnectionTools(srv, cm)
+	}
 
 	registerContentTools(srv, backends.Content)
 	registerSchemaTools(srv, backends.Schema)
@@ -44,49 +50,45 @@ func newServer(backends *Backends) *server.MCPServer {
 	return srv
 }
 
-// Serve creates an MCP server connected to a remote Modula instance and serves over stdio.
-// This mode makes real HTTP calls to the CMS at the given URL.
-func Serve(url, apiKey string) error {
-	client, err := modula.NewClient(modula.ClientConfig{
-		BaseURL: url,
-		APIKey:  apiKey,
-	})
+// ServeWithRegistry creates an MCP server backed by the project registry.
+// It loads ~/.modula/configs.json and exposes tools for listing projects and
+// switching the active connection at runtime. If initialProject is non-empty,
+// the server connects to that project immediately; otherwise it attempts to
+// auto-detect a project from the working directory.
+func ServeWithRegistry(initialProject, initialEnv string) error {
+	cm, err := NewConnectionManager()
 	if err != nil {
-		return fmt.Errorf("create SDK client: %w", err)
+		return err
 	}
 
-	return server.ServeStdio(newServer(NewSDKBackends(client)))
+	// Try to connect: explicit project > cwd detection > stay disconnected.
+	if initialProject != "" {
+		if connErr := cm.SwitchProject(initialProject, initialEnv); connErr != nil {
+			return connErr
+		}
+	} else {
+		// Best-effort: connect to whatever project matches the cwd.
+		if _, cwdErr := cm.ConnectFromCwd(); cwdErr != nil {
+			fmt.Fprintf(os.Stderr, "warning: auto-connect from cwd failed: %v\n", cwdErr)
+		}
+	}
+
+	backends := NewProxyBackends(cm)
+	return server.ServeStdio(newServer(backends, cm))
 }
 
 // ServeDirect creates an MCP server that calls services directly and serves over stdio.
 func ServeDirect(svc *service.Registry, ac audited.AuditContext) error {
-	return server.ServeStdio(newServer(NewServiceBackends(svc, ac)))
+	return server.ServeStdio(newServer(NewServiceBackends(svc, ac), nil))
 }
 
 // DirectHandler returns an http.Handler that serves the MCP protocol over
 // Streamable HTTP, calling services directly without HTTP round-trips.
 func DirectHandler(svc *service.Registry, ac audited.AuditContext) http.Handler {
 	return server.NewStreamableHTTPServer(
-		newServer(NewServiceBackends(svc, ac)),
+		newServer(NewServiceBackends(svc, ac), nil),
 		server.WithEndpointPath("/mcp"),
 	)
-}
-
-// RemoteHandler returns an http.Handler that serves the MCP protocol over
-// Streamable HTTP, proxying calls to a remote CMS via the Go SDK.
-func RemoteHandler(url, apiKey string) (http.Handler, error) {
-	client, err := modula.NewClient(modula.ClientConfig{
-		BaseURL: url,
-		APIKey:  apiKey,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("create SDK client: %w", err)
-	}
-
-	return server.NewStreamableHTTPServer(
-		newServer(NewSDKBackends(client)),
-		server.WithEndpointPath("/mcp"),
-	), nil
 }
 
 // APIKeyAuth wraps an http.Handler with Bearer token authentication for the

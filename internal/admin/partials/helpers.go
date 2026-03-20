@@ -141,6 +141,11 @@ func pages(totalPages int) []int {
 	return p
 }
 
+// pageSizes returns the available items-per-page options.
+func pageSizes() []int {
+	return []int{10, 25, 50, 100}
+}
+
 // urlForPage builds a paginated URL with limit and offset query parameters.
 func urlForPage(baseURL string, page int, limit int64) string {
 	offset := int64(page-1) * limit

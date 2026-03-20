@@ -7,6 +7,7 @@ import (
 )
 
 templ FieldsListContent(items []db.Fields, pg partials.PaginationPageData) {
+    <!-- Page heading -->
     <div class="sm:flex sm:items-center">
         <div class="sm:flex-auto">
             <h1 class="text-base/7 font-semibold text-white">Fields</h1>
@@ -17,11 +18,49 @@ templ FieldsListContent(items []db.Fields, pg partials.PaginationPageData) {
                hx-get="/admin/fields/new"
                hx-target="#main-content"
                hx-push-url="true"
-               class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white no-underline shadow-xs hover:bg-[var(--color-primary-hover)] hover:no-underline">
+               hx-swap="innerHTML show:window:top"
+               class="block rounded-md bg-[var(--color-primary)] px-3 py-2 text-center text-sm font-semibold text-white no-underline shadow-xs hover:bg-[var(--color-primary-hover)] hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]">
                 New Field
             </a>
         </div>
     </div>
+    <!-- Toolbar -->
+    <div class="mt-4 flex items-center gap-x-3">
+        <input
+            type="search"
+            name="search"
+            placeholder="Search fields..."
+            hx-get="/admin/fields"
+            hx-target="#fields-table-body"
+            hx-trigger="input changed delay:300ms"
+            hx-include="[name='sort']"
+            hx-push-url="false"
+            class="block w-64 rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]"
+            data-search-input
+        />
+        <div class="grid grid-cols-1">
+            <select
+                name="sort"
+                hx-get="/admin/fields"
+                hx-target="#fields-table-body"
+                hx-trigger="change"
+                hx-include="[name='search']"
+                class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]"
+            >
+                <option value="">Default</option>
+                <option value="name-asc">Name A-Z</option>
+                <option value="name-desc">Name Z-A</option>
+                <option value="type-asc">Type A-Z</option>
+                <option value="type-desc">Type Z-A</option>
+                <option value="modified-desc">Newest</option>
+                <option value="modified-asc">Oldest</option>
+            </select>
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" class="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4">
+                <path d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" fill-rule="evenodd"/>
+            </svg>
+        </div>
+    </div>
+    <!-- Table -->
     <div class="mt-8 flow-root">
         <div class="overflow-x-auto">
             <div class="min-w-full py-2 align-middle">
@@ -29,51 +68,25 @@ templ FieldsListContent(items []db.Fields, pg partials.PaginationPageData) {
                     <table class="min-w-full divide-y divide-white/10">
                         <thead class="bg-white/5">
                             <tr>
-                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Name</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Label</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Name</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Type</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Modified</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="fields-table-body"
-                               class="divide-y divide-white/5"
+                               class="divide-y divide-white/10"
                                hx-get="/admin/fields"
                                hx-trigger="refreshTable from:body"
                                hx-swap="innerHTML">
-                            if len(items) == 0 {
-                                <tr>
-                                    <td colspan="5">
-                                        @partials.EmptyState("No fields found. Create your first field to define content properties.")
-                                    </td>
-                                </tr>
-                            } else {
-                                for _, f := range items {
-                                    <tr class="cursor-pointer hover:bg-white/5 transition-colors" data-clickable-row data-href={ "/admin/fields/" + f.FieldID.String() }>
-                                        <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ f.Name }</td>
-                                        <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ f.Label }</td>
-                                        <td class="whitespace-nowrap px-4 py-4 text-sm"><span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-gray-400/20 ring-inset">{ f.Type.String() }</span></td>
-                                        <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-400">{ f.DateModified.String() }</td>
-                                        <td class="whitespace-nowrap px-4 py-4 text-sm">
-                                            <mcms-confirm
-                                                label="Delete"
-                                                message="Delete this field? This cannot be undone."
-                                                button-class="text-sm text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]"
-                                                hx-delete={ "/admin/fields/" + f.FieldID.String() }
-                                                hx-target="closest tr"
-                                                hx-swap="outerHTML swap:300ms"
-                                            ></mcms-confirm>
-                                        </td>
-                                    </tr>
-                                }
-                            }
+                            @partials.FieldsTableRows(items, pg)
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-    @partials.Pagination(pg.Current, pg.TotalPages, "#fields-table-body", "/admin/fields", pg.Limit)
 }
 
 templ FieldsList(layout layouts.AdminData, items []db.Fields, pg partials.PaginationPageData) {

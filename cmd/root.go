@@ -9,6 +9,7 @@ var (
 	cfgPath     string
 	overlayPath string
 	verbose     bool
+	yesFlag     bool
 )
 
 var rootCmd = &cobra.Command{
@@ -41,15 +42,18 @@ Management commands:
 Global flags:
   --config   Path to modula.config.json (default: ./modula.config.json)
   --overlay  Overlay config file (merged on top of --config)
-  --verbose  Enable debug-level log output`,
+  --verbose  Enable debug-level log output
+  --yes, -y  Auto-accept all prompts (non-interactive mode)`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
+	RunE:          runDefaultCommand,
 }
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgPath, "config", config.DefaultConfigFilename, "Path to configuration file")
 	rootCmd.PersistentFlags().StringVar(&overlayPath, "overlay", "", "Overlay config file (merged on top of --config)")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable debug logging")
+	rootCmd.PersistentFlags().BoolVarP(&yesFlag, "yes", "y", false, "Auto-accept all prompts")
 
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(initCmd)

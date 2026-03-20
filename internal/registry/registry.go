@@ -12,10 +12,19 @@ import (
 	"sort"
 )
 
-// Project holds the environments for a single registered project.
+// Project holds the base config and per-environment overlays for a registered project.
+// Base is the shared project-level config. Envs maps environment names to overlay
+// file paths that are layered on top of the base config.
 type Project struct {
+	Base       string            `json:"base"`
 	Envs       map[string]string `json:"envs"`
 	DefaultEnv string            `json:"default_env"`
+}
+
+// ResolvedConfig holds the base and overlay paths returned by Resolve.
+type ResolvedConfig struct {
+	Base    string // absolute path to the base config file
+	Overlay string // absolute path to the overlay file (empty if no environment overlay)
 }
 
 // Registry maps project names to their environments and config paths.
@@ -83,35 +92,72 @@ func (r *Registry) Save() error {
 	return nil
 }
 
-// Resolve returns the absolute config path for the given project and environment.
-// If name is empty, it uses the default project. If env is empty, it uses the
-// project's default environment. Returns an error if the project or environment
-// is not found.
-func (r *Registry) Resolve(name, env string) (string, error) {
+// Resolve returns the base config path and optional overlay path for the given
+// project and environment. If name is empty, it uses the default project. If env
+// is empty, it uses the project's default environment.
+//
+// When the project has a Base path, it is returned as ResolvedConfig.Base and the
+// environment entry is the overlay. When no Base is set (legacy registry entries),
+// the environment entry is returned as the base config with no overlay.
+func (r *Registry) Resolve(name, env string) (ResolvedConfig, error) {
 	if name == "" {
 		if r.Default == "" {
-			return "", fmt.Errorf("no project name specified and no default set")
+			return ResolvedConfig{}, fmt.Errorf("no project name specified and no default set")
 		}
 		name = r.Default
 	}
 
 	proj, ok := r.Projects[name]
 	if !ok {
-		return "", fmt.Errorf("project %q not found in registry", name)
+		return ResolvedConfig{}, fmt.Errorf("project %q not found in registry", name)
 	}
 
 	if env == "" {
 		if proj.DefaultEnv == "" {
-			return "", fmt.Errorf("project %q has no default environment set", name)
+			return ResolvedConfig{}, fmt.Errorf("project %q has no default environment set", name)
 		}
 		env = proj.DefaultEnv
 	}
 
-	p, ok := proj.Envs[env]
+	envPath, ok := proj.Envs[env]
 	if !ok {
-		return "", fmt.Errorf("environment %q not found in project %q", env, name)
+		return ResolvedConfig{}, fmt.Errorf("environment %q not found in project %q", env, name)
 	}
-	return p, nil
+
+	// New model: base + overlay
+	if proj.Base != "" {
+		return ResolvedConfig{Base: proj.Base, Overlay: envPath}, nil
+	}
+
+	// Legacy: environment entry is the full config (no overlay)
+	return ResolvedConfig{Base: envPath}, nil
+}
+
+// SetBase sets the base config path for a project. Creates the project if
+// it does not exist. The base config is the shared project-level config that
+// environment overlays are layered on top of.
+func (r *Registry) SetBase(name, configPath string) error {
+	if name == "" {
+		return fmt.Errorf("project name cannot be empty")
+	}
+
+	abs, err := filepath.Abs(configPath)
+	if err != nil {
+		return fmt.Errorf("resolving path %q: %w", configPath, err)
+	}
+
+	if _, err := os.Stat(abs); err != nil {
+		return fmt.Errorf("config file not found: %s", abs)
+	}
+
+	proj, ok := r.Projects[name]
+	if !ok {
+		proj = &Project{Envs: make(map[string]string)}
+		r.Projects[name] = proj
+	}
+
+	proj.Base = abs
+	return r.Save()
 }
 
 // Set creates or updates an environment for a project. The configPath is resolved
@@ -242,6 +288,56 @@ func (r *Registry) SetDefaultEnv(name, env string) error {
 
 	proj.DefaultEnv = env
 	return r.Save()
+}
+
+// FindByDir searches for a project related to the given directory.
+// Matches when cwd is the config directory, is inside it, or is a parent of it
+// (e.g., cwd is the project root and config lives in a modula/ subdirectory).
+// Returns the project name and pointer, or empty string and nil if no match.
+// When multiple projects match, the one with the longest base directory wins.
+func (r *Registry) FindByDir(dir string) (string, *Project) {
+	dir, _ = filepath.Abs(dir)
+	dir = filepath.Clean(dir)
+
+	var bestName string
+	var bestProj *Project
+	bestLen := 0
+
+	for name, proj := range r.Projects {
+		base := proj.Base
+		if base == "" {
+			// Legacy entry: use the first env path's directory as a heuristic.
+			for _, p := range proj.Envs {
+				base = p
+				break
+			}
+		}
+		if base == "" {
+			continue
+		}
+
+		projDir := filepath.Clean(filepath.Dir(base))
+
+		// Match if cwd equals, is inside, or is a parent of the config directory.
+		matched := false
+		if dir == projDir {
+			matched = true
+		} else if len(dir) > len(projDir) && dir[len(projDir)] == filepath.Separator && dir[:len(projDir)] == projDir {
+			// cwd is inside the config directory
+			matched = true
+		} else if len(projDir) > len(dir) && projDir[len(dir)] == filepath.Separator && projDir[:len(dir)] == dir {
+			// config directory is inside cwd (e.g., cwd is project root, config in modula/)
+			matched = true
+		}
+
+		if matched && len(projDir) > bestLen {
+			bestLen = len(projDir)
+			bestName = name
+			bestProj = proj
+		}
+	}
+
+	return bestName, bestProj
 }
 
 // EnvNames returns the sorted environment names for a project.

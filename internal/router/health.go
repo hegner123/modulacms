@@ -75,7 +75,7 @@ func HealthHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if resp.Status != "ok" {
+	if resp.Status != "ok" && r.Header.Get("X-Modula-MCP") == "" {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
 	// Encode error is non-recoverable (client disconnected or similar);

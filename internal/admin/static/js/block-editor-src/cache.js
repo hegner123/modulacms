@@ -8,7 +8,7 @@ const _dtCache = {
 };
 
 // System types that are not selectable blocks
-var SYSTEM_TYPES = { '_root': true, '_nested_root': true, '_system_log': true, '_reference': true };
+var SYSTEM_TYPES = { '_root': true, '_nested_root': true, '_system_log': true };
 
 export function fetchDatatypes() {
         var now = Date.now();

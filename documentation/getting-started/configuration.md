@@ -100,7 +100,196 @@ modula connect default mysite staging
 modula connect list
 ```
 
-> **Good to know**: The project registry and config overlays serve different purposes. Overlays merge fields within a single config file for per-environment deltas. The registry maps project names to entirely separate config files, potentially on different machines. Use overlays for small differences (different DB password), use the registry for separate projects or servers.
+### Registry + Overlays
+
+The project registry and config overlays work together. Register a base config for your project, then register per-environment overlays:
+
+```bash
+# Set the shared base config
+modula connect set --base mysite ./modula.config.json
+
+# Add environment overlays
+modula connect set mysite dev ./modula.config.dev.json
+modula connect set mysite prod ./modula.config.prod.json
+
+# Set default environment
+modula connect default mysite dev
+```
+
+Now `modula serve mysite prod` loads `modula.config.json` as the base and layers `modula.config.prod.json` on top — the same as `modula serve --config modula.config.json --overlay modula.config.prod.json`.
+
+```bash
+modula connect list
+# Output:
+#   mysite (default)
+#     base -> /home/user/mysite/modula.config.json
+#     dev  -> /home/user/mysite/modula.config.dev.json *
+#     prod -> /home/user/mysite/modula.config.prod.json
+```
+
+> **Good to know**: Existing registry entries without a base config still work. The environment path is used as the full config with no overlay (legacy behavior). To migrate, run `modula connect set --base <project> <path-to-base-config>`.
+
+## Config Organization Strategy
+
+The base config file (`modula.config.json`) holds settings that are the same across all environments. Per-environment overlay files hold only what differs. This keeps your configs DRY and makes it obvious what changes between environments.
+
+### What goes in the base config (project-level)
+
+These settings define your project and rarely change between environments:
+
+| Category | Fields |
+|----------|--------|
+| **Plugins** | `plugin_enabled`, `plugin_directory`, `plugin_max_vms`, `plugin_timeout`, `plugin_max_ops`, `plugin_hook_*`, `plugin_request_*`, `plugin_hot_reload`, `plugin_max_failures`, `plugin_reset_interval` |
+| **Email provider** | `email_enabled`, `email_provider`, `email_from_address`, `email_from_name`, `email_host`, `email_port`, `email_tls`, `email_reply_to` |
+| **S3 bucket names** | `bucket_region`, `bucket_media`, `bucket_backup`, `bucket_admin_media`, `bucket_default_acl`, `bucket_force_path_style` |
+| **Content behavior** | `composition_max_depth`, `publish_schedule_interval`, `version_max_per_content`, `node_level_publish`, `richtext_toolbar` |
+| **OAuth structure** | `oauth_scopes`, `oauth_provider_name`, `oauth_endpoint` |
+| **CORS** | `cors_origins`, `cors_methods`, `cors_headers`, `cors_credentials` |
+| **Webhooks** | `webhook_enabled`, `webhook_timeout`, `webhook_max_retries`, `webhook_workers`, `webhook_allow_http`, `webhook_delivery_retention_days` |
+| **i18n** | `i18n_enabled`, `i18n_default_locale` |
+| **Search** | `search_enabled`, `search_path` |
+| **MCP** | `mcp_enabled` |
+| **Keybindings** | `keybindings` |
+| **Backup paths** | `backup_option`, `backup_paths` |
+
+### What goes in overlay files (per-environment)
+
+These settings change between development, staging, and production:
+
+| Category | Fields | Why it differs |
+|----------|--------|----------------|
+| **Environment mode** | `environment` | Controls TLS behavior, S3 URL scheme, bind address |
+| **Ports** | `port`, `ssl_port`, `ssh_port`, `ssh_host` | Different ports per environment |
+| **Hostnames** | `client_site`, `admin_site`, `environment_hosts` | Each environment has its own domain |
+| **Database** | `db_driver`, `db_url`, `db_name`, `db_username`, `db_password` | Different DB per environment |
+| **S3 credentials** | `bucket_endpoint`, `bucket_access_key`, `bucket_secret_key`, `bucket_public_url`, `bucket_admin_endpoint`, `bucket_admin_access_key`, `bucket_admin_secret_key`, `bucket_admin_public_url` | Different storage per environment |
+| **Email credentials** | `email_username`, `email_password`, `email_api_key`, `email_api_endpoint`, `email_aws_access_key_id`, `email_aws_secret_access_key` | Credentials differ per environment |
+| **OAuth credentials** | `oauth_client_id`, `oauth_client_secret`, `oauth_redirect_url`, `oauth_success_redirect` | Different OAuth app per environment |
+| **Deploy targets** | `deploy_environments`, `deploy_snapshot_dir` | Each environment pushes/pulls to different targets |
+| **Secrets** | `auth_salt`, `mcp_api_key`, `remote_api_key` | Unique per environment |
+| **TLS** | `cert_dir` | Different cert paths |
+| **Observability** | `observability_*` | Different DSN, sample rates, environment tags |
+| **Logging** | `log_path` | Different log locations |
+
+### Example: three-environment setup
+
+**Base config** (`modula.config.json`) — checked into git:
+
+```json
+{
+  "plugin_enabled": true,
+  "plugin_directory": "./plugins/",
+  "plugin_max_vms": 4,
+  "plugin_timeout": 5,
+  "bucket_region": "us-east-1",
+  "bucket_media": "media",
+  "bucket_backup": "backups",
+  "bucket_force_path_style": true,
+  "email_enabled": true,
+  "email_provider": "smtp",
+  "email_from_address": "noreply@example.com",
+  "email_from_name": "My CMS",
+  "cors_origins": ["http://localhost:3000"],
+  "cors_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  "cors_headers": ["Content-Type", "Authorization"],
+  "composition_max_depth": 10,
+  "publish_schedule_interval": 60,
+  "version_max_per_content": 50,
+  "search_enabled": true,
+  "search_path": "search.index",
+  "i18n_enabled": false,
+  "i18n_default_locale": "en",
+  "webhook_enabled": true,
+  "webhook_timeout": 10,
+  "webhook_max_retries": 3,
+  "webhook_workers": 4
+}
+```
+
+**Development overlay** (`modula.config.dev.json`) — checked into git:
+
+```json
+{
+  "environment": "http-only",
+  "port": ":8080",
+  "ssl_port": ":4000",
+  "ssh_port": "2233",
+  "client_site": "localhost",
+  "admin_site": "localhost",
+  "db_driver": "sqlite",
+  "db_url": "./modula.db",
+  "bucket_endpoint": "localhost:9000",
+  "bucket_access_key": "minioadmin",
+  "bucket_secret_key": "minioadmin",
+  "bucket_public_url": "http://localhost:9000",
+  "email_host": "localhost",
+  "email_port": 1025,
+  "log_path": ""
+}
+```
+
+**Production overlay** (`modula.config.prod.json`) — **not** in git, uses env var expansion:
+
+```json
+{
+  "environment": "production",
+  "port": ":8080",
+  "ssl_port": ":443",
+  "ssh_port": "2233",
+  "ssh_host": "0.0.0.0",
+  "client_site": "cms.example.com",
+  "admin_site": "cms.example.com",
+  "cert_dir": "/etc/letsencrypt/live/cms.example.com",
+  "db_driver": "postgres",
+  "db_url": "${DB_HOST}:5432",
+  "db_name": "modulacms",
+  "db_username": "${DB_USER}",
+  "db_password": "${DB_PASSWORD}",
+  "bucket_endpoint": "s3.amazonaws.com",
+  "bucket_access_key": "${AWS_ACCESS_KEY_ID}",
+  "bucket_secret_key": "${AWS_SECRET_ACCESS_KEY}",
+  "bucket_public_url": "https://cdn.example.com",
+  "bucket_force_path_style": false,
+  "auth_salt": "${AUTH_SALT}",
+  "cors_origins": ["https://www.example.com", "https://cms.example.com"],
+  "deploy_environments": [
+    {
+      "name": "staging",
+      "url": "https://staging-cms.example.com",
+      "api_key": "${STAGING_DEPLOY_KEY}"
+    }
+  ],
+  "deploy_snapshot_dir": "/var/modulacms/snapshots",
+  "observability_enabled": true,
+  "observability_provider": "sentry",
+  "observability_dsn": "${SENTRY_DSN}",
+  "observability_environment": "production",
+  "log_path": "/var/log/modulacms"
+}
+```
+
+### Running each environment
+
+```bash
+# Development (default — no overlay needed)
+modula serve
+
+# Development with explicit overlay
+modula serve --overlay modula.config.dev.json
+
+# Production
+modula serve --overlay modula.config.prod.json
+
+# Or via the project registry
+modula serve mysite production
+```
+
+### Rules of thumb
+
+- **If it defines what your project does**, put it in the base config (plugins, email provider, content settings, CORS methods, webhooks).
+- **If it defines where or how your project runs**, put it in an overlay (database, credentials, hostnames, ports, TLS, deploy targets).
+- **Never commit secrets.** Use `${ENV_VAR}` expansion in overlay files for passwords, API keys, and salts. Or keep production overlays out of version control entirely.
+- **Keep overlays small.** A good overlay has 10-20 fields. If it has 50+, you're duplicating the base.
 
 ## Server Settings
 

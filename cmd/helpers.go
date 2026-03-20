@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
@@ -13,6 +14,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/email"
 	"github.com/hegner123/modulacms/internal/plugin"
+	"github.com/hegner123/modulacms/internal/registry"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -32,6 +34,44 @@ func configureLogger() {
 	} else {
 		utility.DefaultLogger.SetLevel(utility.INFO)
 	}
+}
+
+// resolveConfigDir resolves the config file path and changes the working
+// directory to the config file's parent directory. This ensures relative paths
+// in the config (db_url, cert_dir, etc.) resolve predictably. If the config
+// path was not explicitly set via --config, it tries the project registry first.
+// Errors are logged as warnings; the function is best-effort.
+func resolveConfigDir() {
+	// If --config was not explicitly changed, try the registry
+	if cfgPath == config.DefaultConfigFilename {
+		cwd, err := os.Getwd()
+		if err == nil {
+			reg, regErr := registry.Load()
+			if regErr == nil {
+				name, proj := reg.FindByDir(cwd)
+				if proj != nil {
+					resolved, resErr := reg.Resolve(name, "")
+					if resErr == nil {
+						cfgPath = resolved.Base
+						if resolved.Overlay != "" {
+							overlayPath = resolved.Overlay
+						}
+					}
+				}
+			}
+		}
+	}
+
+	absCfg, err := filepath.Abs(cfgPath)
+	if err != nil {
+		return
+	}
+	cfgDir := filepath.Dir(absCfg)
+	if chErr := os.Chdir(cfgDir); chErr != nil {
+		utility.DefaultLogger.Warn("Failed to change to config directory", chErr, "path", cfgDir)
+		return
+	}
+	cfgPath = filepath.Base(absCfg)
 }
 
 // loadConfig loads the configuration from cfgPath (and overlayPath if set)

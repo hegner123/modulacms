@@ -220,8 +220,8 @@ func TestResolve(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Resolve error: %v", err)
 		}
-		if p != "/y/config.json" {
-			t.Errorf("got %q, want %q", p, "/y/config.json")
+		if p.Base != "/y/config.json" {
+			t.Errorf("got Base %q, want %q", p.Base, "/y/config.json")
 		}
 	})
 
@@ -230,8 +230,8 @@ func TestResolve(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Resolve error: %v", err)
 		}
-		if p != "/x/config.json" {
-			t.Errorf("got %q, want %q", p, "/x/config.json")
+		if p.Base != "/x/config.json" {
+			t.Errorf("got Base %q, want %q", p.Base, "/x/config.json")
 		}
 	})
 
@@ -240,8 +240,8 @@ func TestResolve(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Resolve error: %v", err)
 		}
-		if p != "/x/config.json" {
-			t.Errorf("got %q, want %q", p, "/x/config.json")
+		if p.Base != "/x/config.json" {
+			t.Errorf("got Base %q, want %q", p.Base, "/x/config.json")
 		}
 	})
 

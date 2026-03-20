@@ -6,14 +6,23 @@ import (
     "github.com/hegner123/modulacms/internal/db"
 )
 
-templ AdminFieldDetailContent(field db.AdminFields, availableRoles []db.Roles, csrfToken string, i18nEnabled bool) {
+templ AdminFieldDetailContent(field db.AdminFields, availableRoles []db.Roles, csrfToken string, i18nEnabled bool, fieldTypes []db.AdminFieldTypes, validations []db.AdminValidation) {
     <!-- Page Header -->
     <div class="border-b border-white/10 pb-5" data-page-header>
         <div class="flex items-center gap-x-3">
-            <a href="/admin/admin-fields" class="text-sm text-gray-400 hover:text-white"
-               hx-get="/admin/admin-fields"
-               hx-target="#main-content"
-               hx-push-url="true">&larr; Back</a>
+            if field.ParentID.Valid {
+                <a href={ templ.SafeURL("/admin/admin-datatypes/" + field.ParentID.ID.String()) } class="text-sm text-gray-400 hover:text-white"
+                   hx-get={ "/admin/admin-datatypes/" + field.ParentID.ID.String() }
+                   hx-target="#main-content"
+                   hx-push-url="true"
+                   hx-swap="innerHTML show:window:top">&larr; Back to Datatype</a>
+            } else {
+                <a href="/admin/admin-datatypes" class="text-sm text-gray-400 hover:text-white"
+                   hx-get="/admin/admin-datatypes"
+                   hx-target="#main-content"
+                   hx-push-url="true"
+                   hx-swap="innerHTML show:window:top">&larr; Back to Datatypes</a>
+            }
         </div>
         <div class="mt-2 flex items-center justify-between">
             <div class="flex items-center gap-x-3">
@@ -48,20 +57,9 @@ templ AdminFieldDetailContent(field db.AdminFields, availableRoles []db.Roles, c
                                 <label for="type" class="block text-sm font-medium text-white">Type</label>
                                 <div class="mt-2">
                                     <select id="type" name="type" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">
-                                        <option value="text" selected?={ field.Type.String() == "text" }>Text</option>
-                                        <option value="textarea" selected?={ field.Type.String() == "textarea" }>Textarea</option>
-                                        <option value="richtext" selected?={ field.Type.String() == "richtext" }>Rich Text</option>
-                                        <option value="number" selected?={ field.Type.String() == "number" }>Number</option>
-                                        <option value="boolean" selected?={ field.Type.String() == "boolean" }>Boolean</option>
-                                        <option value="date" selected?={ field.Type.String() == "date" }>Date</option>
-                                        <option value="datetime" selected?={ field.Type.String() == "datetime" }>Datetime</option>
-                                        <option value="select" selected?={ field.Type.String() == "select" }>Select</option>
-                                        <option value="media" selected?={ field.Type.String() == "media" }>Media</option>
-                                        <option value="relation" selected?={ field.Type.String() == "relation" }>Relation</option>
-                                        <option value="json" selected?={ field.Type.String() == "json" }>JSON</option>
-                                        <option value="slug" selected?={ field.Type.String() == "slug" }>Slug</option>
-                                        <option value="email" selected?={ field.Type.String() == "email" }>Email</option>
-                                        <option value="url" selected?={ field.Type.String() == "url" }>URL</option>
+                                        for _, ft := range fieldTypes {
+                                            <option value={ ft.Type } selected?={ field.Type.String() == ft.Type }>{ ft.Label }</option>
+                                        }
                                     </select>
                                 </div>
                             </div>
@@ -94,20 +92,21 @@ templ AdminFieldDetailContent(field db.AdminFields, availableRoles []db.Roles, c
                                 </div>
                                 <p class="mt-2 text-xs text-gray-400">Leave empty for unrestricted access. Select roles to limit visibility.</p>
                             </div>
+                            <div class="sm:col-span-3">
+                                <label for="validation_id" class="block text-sm font-medium text-white">Validation</label>
+                                <div class="mt-2">
+                                    <select id="validation_id" name="validation_id" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">
+                                        <option value="">None</option>
+                                        for _, v := range validations {
+                                            <option value={ v.AdminValidationID.String() } selected?={ field.ValidationID.Valid && field.ValidationID.ID.String() == v.AdminValidationID.String() }>{ v.Name }</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
                             <div class="sm:col-span-6">
                                 <label for="data" class="block text-sm font-medium text-white">Data (JSON)</label>
                                 <div class="mt-2">
                                     <textarea id="data" name="data" rows="4" class="block w-full rounded-md border-0 bg-white/5 px-3 py-1.5 font-mono text-white shadow-xs outline-none ring-1 ring-white/10 ring-inset focus:ring-2 focus:ring-[var(--color-primary)] sm:text-sm/6">{ field.Data }</textarea>
-                                </div>
-                            </div>
-                            <div class="sm:col-span-6">
-                                <label class="block text-sm font-medium text-white">Validation</label>
-                                <div class="mt-2">
-                                    <mcms-validation-wizard
-                                        value={ field.ValidationID.String() }
-                                        textarea-id="validation"
-                                    ></mcms-validation-wizard>
-                                    <textarea id="validation" name="validation" rows="4" style="display:none">{ field.ValidationID.String() }</textarea>
                                 </div>
                             </div>
                             <div class="sm:col-span-6">
@@ -146,8 +145,8 @@ templ AdminFieldDetailContent(field db.AdminFields, availableRoles []db.Roles, c
     </div>
 }
 
-templ AdminFieldDetail(layout layouts.AdminData, field db.AdminFields, availableRoles []db.Roles, csrfToken string, i18nEnabled bool) {
+templ AdminFieldDetail(layout layouts.AdminData, field db.AdminFields, availableRoles []db.Roles, csrfToken string, i18nEnabled bool, fieldTypes []db.AdminFieldTypes, validations []db.AdminValidation) {
     @layouts.Admin(layout) {
-        @AdminFieldDetailContent(field, availableRoles, csrfToken, i18nEnabled)
+        @AdminFieldDetailContent(field, availableRoles, csrfToken, i18nEnabled, fieldTypes, validations)
     }
 }

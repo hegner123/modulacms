@@ -14,7 +14,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-func DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, allDatatypes []db.Datatypes, csrfToken string) templ.Component {
+func DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, allDatatypes []db.Datatypes, csrfToken string, fieldTypes []db.FieldTypes) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -153,7 +153,7 @@ func DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, allDatatyp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</dd></div></dl></div></div><!-- Fields sidebar (1/3) --><div><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><div class=\"flex items-center justify-between bg-gray-800/75 px-4 py-3.5 sm:px-6\"><h3 class=\"text-sm font-semibold text-gray-200\">Fields</h3><button type=\"button\" class=\"rounded-md bg-[var(--color-primary)] px-2.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\" onclick=\"document.getElementById('add-field-dialog').open()\">Add Field</button></div><div id=\"linked-fields-list\" class=\"bg-gray-800/50\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</dd></div></dl></div></div><!-- Fields sidebar (1/3) --><div><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><div class=\"flex items-center justify-between bg-white/5 px-4 py-3.5 sm:px-6\"><h3 class=\"text-sm font-semibold text-white\">Fields</h3><button type=\"button\" class=\"rounded-md bg-[var(--color-primary)] px-2.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\" onclick=\"document.getElementById('add-field-dialog').open()\">Add Field</button></div><div id=\"linked-fields-list\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -169,7 +169,7 @@ func DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, allDatatyp
 	})
 }
 
-func DatatypeAddFieldDialog(datatypeID string, csrfToken string) templ.Component {
+func DatatypeAddFieldDialog(datatypeID string, csrfToken string, fieldTypes []db.FieldTypes, validations []db.Validation) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -207,7 +207,7 @@ func DatatypeAddFieldDialog(datatypeID string, csrfToken string) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.DatatypeCreateFieldForm(datatypeID, "", "", "", "", "", "", nil, csrfToken).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = partials.DatatypeCreateFieldForm(datatypeID, "", "", "", "", "", "", nil, csrfToken, fieldTypes, validations).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -219,7 +219,7 @@ func DatatypeAddFieldDialog(datatypeID string, csrfToken string) templ.Component
 	})
 }
 
-func DatatypeDetail(layout layouts.AdminData, dt db.Datatypes, linkedFields []db.Fields, allDatatypes []db.Datatypes, csrfToken string) templ.Component {
+func DatatypeDetail(layout layouts.AdminData, dt db.Datatypes, linkedFields []db.Fields, allDatatypes []db.Datatypes, csrfToken string, fieldTypes []db.FieldTypes, validations []db.Validation) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -252,13 +252,13 @@ func DatatypeDetail(layout layouts.AdminData, dt db.Datatypes, linkedFields []db
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = DatatypeDetailContent(dt, linkedFields, allDatatypes, csrfToken).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = DatatypeDetailContent(dt, linkedFields, allDatatypes, csrfToken, fieldTypes).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layouts.Admin(layout.WithDialogs(DatatypeAddFieldDialog(dt.DatatypeID.String(), csrfToken))).Render(templ.WithChildren(ctx, templ_7745c5c3_Var11), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layouts.Admin(layout.WithDialogs(DatatypeAddFieldDialog(dt.DatatypeID.String(), csrfToken, fieldTypes, validations))).Render(templ.WithChildren(ctx, templ_7745c5c3_Var11), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

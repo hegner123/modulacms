@@ -18,23 +18,23 @@ import (
 var connectCmd = &cobra.Command{
 	Use:   "connect [name] [env]",
 	Short: "Launch TUI for a registered project",
-	Long: `Open the SSH TUI connected to a registered project's config file.
+	Long: `Open the SSH TUI connected to a registered project.
 
-Each project can have multiple environments (local, dev, staging, prod, etc.),
-each pointing to a different modula.config.json. The command resolves which config to
-use based on the project name and environment you provide.
+Each project has a base config (shared settings) and per-environment overlays
+(database, credentials, ports). The command loads the base config and layers
+the environment overlay on top.
 
 Resolution order:
-  1. If both name and env are given, use that exact project + environment.
-  2. If only name is given, use that project's default environment.
+  1. If both name and env are given, use that project's base + env overlay.
+  2. If only name is given, use the project's base + default env overlay.
   3. If neither is given, use the default project's default environment.
   4. If the registry is empty, look for modula.config.json in the current directory.
 
 Examples:
   modula connect                      # default project, default env
   modula connect mysite               # "mysite" project, its default env
-  modula connect mysite prod          # "mysite" project, "prod" env
-  modula connect mysite local         # "mysite" project, "local" env`,
+  modula connect mysite prod          # "mysite" base + prod overlay
+  modula connect mysite local         # "mysite" base + local overlay`,
 	Args: cobra.MaximumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
@@ -52,7 +52,7 @@ Examples:
 			env = args[1]
 		}
 
-		configPath, err := reg.Resolve(name, env)
+		resolved, err := reg.Resolve(name, env)
 		if err != nil {
 			// Auto-detect: when no name given and registry has no default,
 			// check for modula.config.json in the current working directory
@@ -63,7 +63,7 @@ Examples:
 				}
 				localCfg := filepath.Join(cwd, config.DefaultConfigFilename)
 				if _, statErr := os.Stat(localCfg); statErr == nil {
-					configPath = localCfg
+					resolved = registry.ResolvedConfig{Base: localCfg}
 				} else {
 					return fmt.Errorf("no project specified and no %s in current directory", config.DefaultConfigFilename)
 				}
@@ -73,13 +73,16 @@ Examples:
 		}
 
 		// chdir to project root so relative paths in config resolve correctly
-		projectDir := filepath.Dir(configPath)
+		projectDir := filepath.Dir(resolved.Base)
 		if err := os.Chdir(projectDir); err != nil {
 			return fmt.Errorf("changing to project directory %s: %w", projectDir, err)
 		}
 
-		// Override the global cfgPath so loadConfig reads the right file
-		cfgPath = filepath.Base(configPath)
+		// Override the global paths so loadConfig reads the right files
+		cfgPath = filepath.Base(resolved.Base)
+		if resolved.Overlay != "" {
+			overlayPath = resolved.Overlay
+		}
 
 		mgr, err := loadConfig()
 		if err != nil {
@@ -133,41 +136,55 @@ Examples:
 	},
 }
 
+var connectSetBase bool
+
 var connectSetCmd = &cobra.Command{
-	Use:   "set <name> <env> <config-path>",
-	Short: "Register or update an environment for a project",
-	Long: `Set the config path for a project environment in the registry.
+	Use:   "set <name> <env-or-path> [config-path]",
+	Short: "Register or update a project's base config or environment overlay",
+	Long: `Set the base config or an environment overlay for a project.
 
-Creates the project if it does not exist. Creates the environment if it does not
-exist. Overwrites the config path if the environment already exists. The first
-environment added to a new project becomes its default.
+With --base, registers the shared base config for a project (two args: name + path):
+  modula connect set --base mysite ./modula.config.json
 
-The config-path must point to an existing modula.config.json file. Relative paths are
-resolved against the current working directory and stored as absolute paths in
-the registry, so "./modula.config.json" and "/full/path/modula.config.json" are equivalent.
+Without --base, registers an environment overlay (three args: name + env + path):
+  modula connect set mysite prod ./modula.config.prod.json
 
-Arguments:
-  name         Project name (e.g. mysite, blog, docs)
-  env          Environment label (e.g. local, dev, staging, prod)
-  config-path  Path to the environment's modula.config.json (relative or absolute)
+The base config holds project-level settings (plugins, email, content behavior).
+Environment overlays hold per-environment deltas (database, credentials, ports).
+When serving, the overlay is layered on top of the base config.
+
+Relative paths are resolved to absolute paths before storing.
 
 Examples:
-  modula connect set mysite local ./modula.config.json           # register new project + env
-  modula connect set mysite prod /srv/mysite/modula.config.json  # add another env
-  modula connect set mysite local /new/path/modula.config.json   # update existing env path`,
-	Args: cobra.ExactArgs(3),
+  modula connect set --base mysite ./modula.config.json              # set base config
+  modula connect set mysite dev ./modula.config.dev.json             # add dev overlay
+  modula connect set mysite prod /srv/mysite/modula.config.prod.json # add prod overlay`,
+	Args: cobra.RangeArgs(2, 3),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reg, err := registry.Load()
 		if err != nil {
 			return fmt.Errorf("loading registry: %w", err)
 		}
 
-		if err := reg.Set(args[0], args[1], args[2]); err != nil {
-			return err
+		if connectSetBase {
+			if len(args) != 2 {
+				return fmt.Errorf("--base requires exactly 2 arguments: <name> <config-path>")
+			}
+			if err := reg.SetBase(args[0], args[1]); err != nil {
+				return err
+			}
+			abs, _ := filepath.Abs(args[1])
+			fmt.Printf("Set project %q base config -> %s\n", args[0], abs)
+		} else {
+			if len(args) != 3 {
+				return fmt.Errorf("without --base, requires 3 arguments: <name> <env> <overlay-path>")
+			}
+			if err := reg.Set(args[0], args[1], args[2]); err != nil {
+				return err
+			}
+			abs, _ := filepath.Abs(args[2])
+			fmt.Printf("Set project %q env %q -> %s\n", args[0], args[1], abs)
 		}
-
-		abs, _ := filepath.Abs(args[2])
-		fmt.Printf("Set project %q env %q -> %s\n", args[0], args[1], abs)
 		return nil
 	},
 }
@@ -175,17 +192,20 @@ Examples:
 var connectListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List registered projects and environments",
-	Long: `Show all registered projects and their environments.
+	Long: `Show all registered projects, their base configs, and environment overlays.
 
 The default project is marked with "(default)". Each project's default
-environment is marked with an asterisk (*).
+environment is marked with an asterisk (*). The base config line shows the
+shared project-level config that overlays are layered on top of.
 
 Example output:
   mysite (default)
-    local -> /home/user/mysite/modula.config.json *
-    prod  -> /srv/mysite/prod-config.json
+    base -> /home/user/mysite/modula.config.json
+    dev  -> /home/user/mysite/modula.config.dev.json *
+    prod -> /srv/mysite/modula.config.prod.json
   blog
-    dev   -> /home/user/blog/dev-config.json *`,
+    base -> /home/user/blog/modula.config.json
+    dev  -> /home/user/blog/modula.config.dev.json *`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reg, err := registry.Load()
 		if err != nil {
@@ -203,6 +223,10 @@ Example output:
 				projectMarker = " (default)"
 			}
 			fmt.Printf("  %s%s\n", name, projectMarker)
+
+			if proj.Base != "" {
+				fmt.Printf("    base -> %s\n", proj.Base)
+			}
 
 			for _, env := range reg.EnvNames(name) {
 				envMarker := ""
@@ -315,5 +339,6 @@ func init() {
 	connectCmd.AddCommand(connectRemoveCmd)
 	connectCmd.AddCommand(connectDefaultCmd)
 
+	connectSetCmd.Flags().BoolVar(&connectSetBase, "base", false, "Set the project's base config instead of an environment overlay")
 	connectRemoveCmd.Flags().String("env", "", "remove a single environment instead of the entire project")
 }

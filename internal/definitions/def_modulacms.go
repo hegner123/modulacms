@@ -20,13 +20,11 @@ func init() {
 				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
 					{Name: "title", Label: "Title", Type: types.FieldTypeTitle},
-					{Name: "slug", Label: "Slug", Type: types.FieldTypeSlug},
 					{Name: "description", Label: "Description", Type: types.FieldTypeTextarea},
 					{Name: "featured_image", Label: "Featured Image", Type: types.FieldTypeMedia},
 					{Name: "meta_title", Label: "Meta Title", Type: types.FieldTypeText},
 					{Name: "meta_description", Label: "Meta Description", Type: types.FieldTypeTextarea},
 					{Name: "og_image", Label: "OG Image", Type: types.FieldTypeMedia},
-					{Name: "published", Label: "Published", Type: types.FieldTypeBoolean},
 				},
 			},
 
@@ -159,6 +157,21 @@ func init() {
 				FieldRefs: []FieldDef{
 					{Name: "title", Label: "Title", Type: types.FieldTypeText},
 					{Name: "description", Label: "Description", Type: types.FieldTypeTextarea},
+					{Name: "image", Label: "Image", Type: types.FieldTypeMedia},
+					{Name: "link_url", Label: "Link URL", Type: types.FieldTypeURL},
+				},
+			},
+
+			// Hero
+
+			"hero": {
+				Name:      "hero",
+				Label:     "Hero",
+				Type:      types.NewNullableString("content"),
+				ParentRef: "page",
+				FieldRefs: []FieldDef{
+					{Name: "header", Label: "Header", Type: types.FieldTypeText},
+					{Name: "subtitle", Label: "Subtitle", Type: types.FieldTypeTextarea},
 					{Name: "image", Label: "Image", Type: types.FieldTypeMedia},
 					{Name: "link_url", Label: "Link URL", Type: types.FieldTypeURL},
 				},

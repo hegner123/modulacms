@@ -1,56 +1,46 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 
 	mcpserver "github.com/hegner123/modulacms/internal/mcp"
 )
 
 var mcpCmd = &cobra.Command{
-	Use:   "mcp",
+	Use:   "mcp [project] [environment]",
 	Short: "Start the MCP server over stdio",
 	Long: `Start the Model Context Protocol server for AI-assisted content management.
 
-The MCP server connects to a running Modula instance via the Go SDK and exposes
-40+ tools for content CRUD, schema management, media, users, roles, permissions,
-configuration, and import.
+The MCP server loads the project registry (~/.modula/configs.json) and connects
+to a running Modula instance via the Go SDK, exposing 40+ tools for content
+CRUD, schema management, media, users, roles, permissions, configuration, and
+import.
 
-Connection is configured via environment variables:
+Connection is resolved from the project registry:
 
-  MODULA_URL      Base URL of the Modula server (e.g. http://localhost:8080)
-  MODULA_API_KEY  API key for authentication
+  modula mcp                         Auto-detect project from working directory
+  modula mcp mysite                  Connect to project "mysite" (default env)
+  modula mcp mysite production       Connect to "mysite" production environment
 
-Or via flags:
+The URL and API key are read from the project's modula.config.json (port field
+for URL, mcp_api_key for authentication). When overlays are configured, the
+overlay values take precedence.
 
-  --url       Base URL of the Modula server
-  --api-key   API key for authentication
-
-Flags take precedence over environment variables.`,
+Three connection management tools are always available:
+  list_projects    — list all registered projects and environments
+  switch_project   — change the active CMS connection at runtime
+  get_connection   — show the current project, environment, and URL`,
 	SilenceUsage: true,
+	Args:         cobra.MaximumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		url, _ := cmd.Flags().GetString("url")
-		apiKey, _ := cmd.Flags().GetString("api-key")
-
-		if url == "" {
-			url = os.Getenv("MODULA_URL")
+		var project, env string
+		if len(args) > 0 {
+			project = args[0]
 		}
-		if apiKey == "" {
-			apiKey = os.Getenv("MODULA_API_KEY")
+		if len(args) > 1 {
+			env = args[1]
 		}
 
-		if url == "" || apiKey == "" {
-			fmt.Fprintln(os.Stderr, "MODULA_URL and MODULA_API_KEY are required (via flags or environment variables)")
-			os.Exit(1)
-		}
-
-		return mcpserver.Serve(url, apiKey)
+		return mcpserver.ServeWithRegistry(project, env)
 	},
-}
-
-func init() {
-	mcpCmd.Flags().String("url", "", "Base URL of the Modula server")
-	mcpCmd.Flags().String("api-key", "", "API key for authentication")
 }

@@ -73,6 +73,8 @@ type AdminFieldStore interface {
 	DeleteAdminField(context.Context, audited.AuditContext, types.AdminFieldID) error
 	ListAdminFieldsPaginated(db.PaginationParams) (*[]db.AdminFields, error)
 	CountAdminFields() (*int64, error)
+	ListAdminFieldsByDatatypeID(types.NullableAdminDatatypeID) (*[]db.AdminFields, error)
+	UpdateAdminFieldSortOrder(context.Context, audited.AuditContext, db.UpdateAdminFieldSortOrderParams) error
 }
 
 // AdminFieldTypeStore defines database operations for admin field types.
@@ -833,6 +835,26 @@ func (s *SchemaService) DeleteAdminField(ctx context.Context, ac audited.AuditCo
 		return &InternalError{Err: fmt.Errorf("delete admin field: %w", err)}
 	}
 	return nil
+}
+
+// UpdateAdminFieldSortOrder updates the sort order for a specific admin field.
+func (s *SchemaService) UpdateAdminFieldSortOrder(ctx context.Context, ac audited.AuditContext, params db.UpdateAdminFieldSortOrderParams) error {
+	if err := params.AdminFieldID.Validate(); err != nil {
+		return NewValidationError("admin_field_id", err.Error())
+	}
+	if err := s.store.UpdateAdminFieldSortOrder(ctx, ac, params); err != nil {
+		return &InternalError{Err: fmt.Errorf("update admin field sort order: %w", err)}
+	}
+	return nil
+}
+
+// ListAdminFieldsByDatatypeID returns admin fields filtered by parent datatype.
+func (s *SchemaService) ListAdminFieldsByDatatypeID(ctx context.Context, parentID types.NullableAdminDatatypeID) ([]db.AdminFields, error) {
+	items, err := s.store.ListAdminFieldsByDatatypeID(parentID)
+	if err != nil {
+		return nil, &InternalError{Err: fmt.Errorf("list admin fields by datatype: %w", err)}
+	}
+	return nilSafeSlice(items), nil
 }
 
 // ListAdminFieldsPaginated returns a paginated list of admin fields.

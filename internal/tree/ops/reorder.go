@@ -12,10 +12,20 @@ import (
 // share the same parentID. If parentID is valid, the parent's FirstChildID
 // is updated to orderedIDs[0].
 //
+// Safety: when parentID is valid, the function walks the existing sibling
+// chain and verifies that every current child is present in orderedIDs.
+// Missing children cause an error rather than silent orphaning.
+//
 // Returns the number of nodes updated.
 func Reorder[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend[ID], parentID NullableID[ID], orderedIDs []ID) (int, error) {
 	if len(orderedIDs) == 0 {
 		return 0, fmt.Errorf("reorder: ordered_ids must not be empty")
+	}
+
+	// Build lookup set for the provided IDs.
+	provided := make(map[string]struct{}, len(orderedIDs))
+	for _, id := range orderedIDs {
+		provided[string(id)] = struct{}{}
 	}
 
 	// Verify all nodes exist and belong to the stated parent
@@ -31,12 +41,41 @@ func Reorder[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend
 		nodes = append(nodes, node)
 	}
 
-	// Update parent's first_child_id if parent is non-null
+	// Walk existing sibling chain to detect missing children.
+	// This prevents silent orphaning when the caller omits siblings.
 	if parentID.Valid {
 		parent, err := b.GetNode(ctx, parentID.Value)
 		if err != nil {
 			return 0, fmt.Errorf("reorder: get parent: %w", err)
 		}
+		if parent.FirstChildID.Valid {
+			var missing []string
+			visited := make(map[string]bool)
+			cur := parent.FirstChildID.Value
+			for {
+				key := string(cur)
+				if visited[key] {
+					break // cycle guard
+				}
+				visited[key] = true
+				if _, ok := provided[key]; !ok {
+					missing = append(missing, key)
+				}
+				sibling, err := b.GetNode(ctx, cur)
+				if err != nil {
+					break // node deleted or inaccessible, skip
+				}
+				if !sibling.NextSiblingID.Valid {
+					break
+				}
+				cur = sibling.NextSiblingID.Value
+			}
+			if len(missing) > 0 {
+				return 0, fmt.Errorf("reorder: ordered_ids is missing existing children: %v — include all siblings to prevent orphans", missing)
+			}
+		}
+
+		// Update parent's first_child_id
 		err = b.UpdatePointers(ctx, ac, parent.ID, Pointers[ID]{
 			ParentID:      parent.ParentID,
 			FirstChildID:  NullID(orderedIDs[0]),

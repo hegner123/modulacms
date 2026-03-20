@@ -230,7 +230,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("environment", "Environment", cfg.Environment, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("environment", "Environment", cfg.Environment, "Runtime mode: 'http-only' disables TLS, 'development' uses self-signed certs, 'production' enables Let's Encrypt").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -238,7 +238,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("os", "OS", cfg.OS, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("os", "OS", cfg.OS, "Operating system identifier, set automatically at startup").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -246,7 +246,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("port", "HTTP Port", cfg.Port, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("port", "HTTP Port", cfg.Port, "HTTP server listen address (e.g. :8080)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -254,7 +254,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("ssl_port", "HTTPS Port", cfg.SSL_Port, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("ssl_port", "HTTPS Port", cfg.SSL_Port, "HTTPS server listen address (e.g. :4000)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -262,7 +262,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("cert_dir", "Certificate Directory", cfg.Cert_Dir, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("cert_dir", "Certificate Directory", cfg.Cert_Dir, "Directory for TLS certificates. Auto-provisioned via Let's Encrypt in production").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -270,7 +270,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("ssh_host", "SSH Host", cfg.SSH_Host, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("ssh_host", "SSH Host", cfg.SSH_Host, "SSH server bind address for TUI access").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -278,7 +278,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("ssh_port", "SSH Port", cfg.SSH_Port, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("ssh_port", "SSH Port", cfg.SSH_Port, "SSH server listen port for TUI access").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -286,7 +286,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("client_site", "Client Site URL", cfg.Client_Site, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("client_site", "Client Site URL", cfg.Client_Site, "Public-facing site hostname used for CORS and URL generation").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -294,7 +294,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("admin_site", "Admin Site URL", cfg.Admin_Site, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("admin_site", "Admin Site URL", cfg.Admin_Site, "Admin panel hostname, used for cookie domain and CORS").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -302,7 +302,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("log_path", "Log Path", cfg.Log_Path, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("log_path", "Log Path", cfg.Log_Path, "File path for server logs. Empty uses stdout").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -310,7 +310,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("output_format", "Output Format", string(cfg.Output_Format), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("output_format", "Output Format", string(cfg.Output_Format), "Default API response format: contentful, sanity, strapi, wordpress, clean, or raw").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -318,7 +318,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("custom_style_path", "Custom Style Path", cfg.Custom_Style_Path, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("custom_style_path", "Custom Style Path", cfg.Custom_Style_Path, "Path to custom CSS file loaded in the admin panel").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -326,7 +326,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("node_id", "Node ID", cfg.Node_ID, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("node_id", "Node ID", cfg.Node_ID, "Unique node identifier for distributed deployments").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -334,7 +334,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("space_id", "Space ID", cfg.Space_ID, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("space_id", "Space ID", cfg.Space_ID, "Logical space/tenant identifier").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -342,7 +342,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsJSONField("environment_hosts", "Environment Hosts", toJSONMap(cfg.Environment_Hosts), "JSON map of environment name to host URL").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsJSONField("environment_hosts", "Environment Hosts", toJSONMap(cfg.Environment_Hosts), "JSON map of environment name to host URL", "Map environment names to hostnames for multi-environment routing").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -350,7 +350,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsJSONField("options", "Options", toJSONMap(cfg.Options), "JSON map of option keys to value arrays").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsJSONField("options", "Options", toJSONMap(cfg.Options), "JSON map of option keys to value arrays", "Custom key-value options available to templates and plugins").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -366,7 +366,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("db_driver", "Driver", string(cfg.Db_Driver), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("db_driver", "Driver", string(cfg.Db_Driver), "Database backend: sqlite, mysql, or postgres").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -374,7 +374,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("db_url", "URL", cfg.Db_URL, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("db_url", "URL", cfg.Db_URL, "Database connection URL or file path (SQLite)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -382,7 +382,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("db_name", "Database Name", cfg.Db_Name, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("db_name", "Database Name", cfg.Db_Name, "Database name (MySQL/PostgreSQL only)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -390,7 +390,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("db_username", "Username", cfg.Db_User, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("db_username", "Username", cfg.Db_User, "Database user (MySQL/PostgreSQL only)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -398,7 +398,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("db_password", "Password", cfg.Db_Password).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("db_password", "Password", cfg.Db_Password, "Database password (MySQL/PostgreSQL only)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -414,7 +414,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("remote_url", "Remote URL", cfg.Remote_URL, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("remote_url", "Remote URL", cfg.Remote_URL, "URL of the remote CMS instance for deploy sync").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -422,7 +422,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("remote_api_key", "Remote API Key", cfg.Remote_API_Key).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("remote_api_key", "Remote API Key", cfg.Remote_API_Key, "API key for authenticating with the remote CMS").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -438,7 +438,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("bucket_region", "Region", cfg.Bucket_Region, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("bucket_region", "Region", cfg.Bucket_Region, "AWS region or S3-compatible region").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -446,7 +446,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("bucket_media", "Media Bucket", cfg.Bucket_Media, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("bucket_media", "Media Bucket", cfg.Bucket_Media, "Bucket name for uploaded media files").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -454,7 +454,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("bucket_backup", "Backup Bucket", cfg.Bucket_Backup, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("bucket_backup", "Backup Bucket", cfg.Bucket_Backup, "Bucket name for backup archives").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -462,7 +462,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("bucket_endpoint", "Endpoint", cfg.Bucket_Endpoint, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("bucket_endpoint", "Endpoint", cfg.Bucket_Endpoint, "S3-compatible endpoint URL (e.g. MinIO)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -470,7 +470,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("bucket_access_key", "Access Key", cfg.Bucket_Access_Key).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("bucket_access_key", "Access Key", cfg.Bucket_Access_Key, "S3 access key ID").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -478,7 +478,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("bucket_secret_key", "Secret Key", cfg.Bucket_Secret_Key).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("bucket_secret_key", "Secret Key", cfg.Bucket_Secret_Key, "S3 secret access key").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -486,7 +486,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("bucket_public_url", "Public URL", cfg.Bucket_Public_URL, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("bucket_public_url", "Public URL", cfg.Bucket_Public_URL, "Public URL prefix for serving media (e.g. CDN URL)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -494,7 +494,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("bucket_default_acl", "Default ACL", cfg.Bucket_Default_ACL, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("bucket_default_acl", "Default ACL", cfg.Bucket_Default_ACL, "Default ACL for uploaded objects (e.g. public-read)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -502,7 +502,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("bucket_force_path_style", "Force Path Style", cfg.Bucket_Force_Path_Style).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("bucket_force_path_style", "Force Path Style", cfg.Bucket_Force_Path_Style, "Use path-style URLs instead of virtual-hosted-style (required for MinIO)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -510,7 +510,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("max_upload_size", "Max Upload Size (bytes)", fmtInt64(cfg.MaxUploadSize()), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("max_upload_size", "Max Upload Size (bytes)", fmtInt64(cfg.MaxUploadSize()), "Maximum file upload size in bytes").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -526,7 +526,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("backup_option", "Backup Option", cfg.Backup_Option, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("backup_option", "Backup Option", cfg.Backup_Option, "Backup storage: 'local', 's3', or 'both'").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -534,7 +534,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsListField("backup_paths", "Backup Paths", joinSlice(cfg.Backup_Paths), "Comma-separated list of local backup directories").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsListField("backup_paths", "Backup Paths", joinSlice(cfg.Backup_Paths), "Comma-separated list of local backup directories", "Local directories for backup storage").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -550,7 +550,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("auth_salt", "Auth Salt", cfg.Auth_Salt).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("auth_salt", "Auth Salt", cfg.Auth_Salt, "Salt used for password hashing. Changing this invalidates all existing passwords").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -558,7 +558,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("cookie_name", "Cookie Name", cfg.Cookie_Name, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("cookie_name", "Cookie Name", cfg.Cookie_Name, "Name of the session cookie").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -566,7 +566,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("cookie_duration", "Cookie Duration", cfg.Cookie_Duration, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("cookie_duration", "Cookie Duration", cfg.Cookie_Duration, "Session cookie lifetime (e.g. 24h, 720h)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -574,7 +574,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("cookie_secure", "Secure Cookie", cfg.Cookie_Secure).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("cookie_secure", "Secure Cookie", cfg.Cookie_Secure, "Set Secure flag on cookies (requires HTTPS)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -582,7 +582,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("cookie_samesite", "SameSite", cfg.Cookie_SameSite, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("cookie_samesite", "SameSite", cfg.Cookie_SameSite, "SameSite cookie attribute: Strict, Lax, or None").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -598,7 +598,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("oauth_provider_name", "Provider Name", cfg.Oauth_Provider_Name, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("oauth_provider_name", "Provider Name", cfg.Oauth_Provider_Name, "OAuth provider identifier (e.g. google, github, azure)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -606,7 +606,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("oauth_client_id", "Client ID", cfg.Oauth_Client_Id).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("oauth_client_id", "Client ID", cfg.Oauth_Client_Id, "OAuth application client ID").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -614,7 +614,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("oauth_client_secret", "Client Secret", cfg.Oauth_Client_Secret).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("oauth_client_secret", "Client Secret", cfg.Oauth_Client_Secret, "OAuth application client secret").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -622,7 +622,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("oauth_redirect_url", "Redirect URL", cfg.Oauth_Redirect_URL, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("oauth_redirect_url", "Redirect URL", cfg.Oauth_Redirect_URL, "Callback URL registered with the OAuth provider").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -630,7 +630,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("oauth_success_redirect", "Success Redirect", cfg.Oauth_Success_Redirect, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("oauth_success_redirect", "Success Redirect", cfg.Oauth_Success_Redirect, "URL to redirect to after successful OAuth login").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -638,7 +638,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsListField("oauth_scopes", "Scopes", joinSlice(cfg.Oauth_Scopes), "Comma-separated OAuth scopes").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsListField("oauth_scopes", "Scopes", joinSlice(cfg.Oauth_Scopes), "Comma-separated OAuth scopes", "OAuth scopes to request from the provider").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -646,7 +646,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("oauth_auth_url", "Auth URL", oauthEndpointValue(cfg.Oauth_Endpoint, config.OauthAuthURL), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("oauth_auth_url", "Auth URL", oauthEndpointValue(cfg.Oauth_Endpoint, config.OauthAuthURL), "OAuth authorization endpoint URL").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -654,7 +654,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("oauth_token_url", "Token URL", oauthEndpointValue(cfg.Oauth_Endpoint, config.OauthTokenURL), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("oauth_token_url", "Token URL", oauthEndpointValue(cfg.Oauth_Endpoint, config.OauthTokenURL), "OAuth token exchange endpoint URL").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -662,7 +662,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("oauth_userinfo_url", "User Info URL", oauthEndpointValue(cfg.Oauth_Endpoint, config.OauthUserInfoURL), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("oauth_userinfo_url", "User Info URL", oauthEndpointValue(cfg.Oauth_Endpoint, config.OauthUserInfoURL), "OAuth user info endpoint URL").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -678,7 +678,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsListField("cors_origins", "Allowed Origins", joinSlice(cfg.Cors_Origins), "Comma-separated origin URLs (e.g. https://example.com)").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsListField("cors_origins", "Allowed Origins", joinSlice(cfg.Cors_Origins), "Comma-separated origin URLs (e.g. https://example.com)", "Origins allowed to make cross-origin requests").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -686,7 +686,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsListField("cors_methods", "Allowed Methods", joinSlice(cfg.Cors_Methods), "Comma-separated HTTP methods (e.g. GET, POST, PUT, DELETE)").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsListField("cors_methods", "Allowed Methods", joinSlice(cfg.Cors_Methods), "Comma-separated HTTP methods (e.g. GET, POST, PUT, DELETE)", "HTTP methods allowed in cross-origin requests").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -694,7 +694,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsListField("cors_headers", "Allowed Headers", joinSlice(cfg.Cors_Headers), "Comma-separated header names").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsListField("cors_headers", "Allowed Headers", joinSlice(cfg.Cors_Headers), "Comma-separated header names", "Headers allowed in cross-origin requests").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -702,7 +702,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("cors_credentials", "Allow Credentials", cfg.Cors_Credentials).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("cors_credentials", "Allow Credentials", cfg.Cors_Credentials, "Allow cookies and auth headers in cross-origin requests").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -718,7 +718,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("email_enabled", "Enabled", cfg.Email_Enabled).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("email_enabled", "Enabled", cfg.Email_Enabled, "Enable transactional email sending").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -726,7 +726,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("email_provider", "Provider", string(cfg.Email_Provider), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("email_provider", "Provider", string(cfg.Email_Provider), "Email provider: smtp, sendgrid, ses, or postmark").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -734,7 +734,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("email_from_address", "From Address", cfg.Email_From_Address, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("email_from_address", "From Address", cfg.Email_From_Address, "Sender email address for outgoing mail").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -742,7 +742,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("email_from_name", "From Name", cfg.Email_From_Name, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("email_from_name", "From Name", cfg.Email_From_Name, "Display name for outgoing mail").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -750,7 +750,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("email_host", "SMTP Host", cfg.Email_Host, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("email_host", "SMTP Host", cfg.Email_Host, "SMTP server hostname").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -758,7 +758,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("email_port", "SMTP Port", fmtInt(cfg.Email_Port), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("email_port", "SMTP Port", fmtInt(cfg.Email_Port), "SMTP server port").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -766,7 +766,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("email_username", "Username", cfg.Email_Username, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("email_username", "Username", cfg.Email_Username, "SMTP authentication username").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -774,7 +774,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("email_password", "Password", cfg.Email_Password).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("email_password", "Password", cfg.Email_Password, "SMTP authentication password").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -782,7 +782,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("email_tls", "Use TLS", cfg.Email_TLS).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("email_tls", "Use TLS", cfg.Email_TLS, "Use TLS for SMTP connection").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -790,7 +790,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("email_api_key", "API Key", cfg.Email_API_Key).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("email_api_key", "API Key", cfg.Email_API_Key, "API key for SendGrid/Postmark").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -798,7 +798,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("email_api_endpoint", "API Endpoint", cfg.Email_API_Endpoint, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("email_api_endpoint", "API Endpoint", cfg.Email_API_Endpoint, "Custom API endpoint for the email provider").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -806,7 +806,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("email_reply_to", "Reply-To", cfg.Email_Reply_To, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("email_reply_to", "Reply-To", cfg.Email_Reply_To, "Reply-To address for outgoing mail").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -814,7 +814,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("password_reset_url", "Password Reset URL", cfg.Password_Reset_URL, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("password_reset_url", "Password Reset URL", cfg.Password_Reset_URL, "Frontend URL for password reset flow. Token is appended as query param").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -822,7 +822,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("email_aws_access_key_id", "AWS Access Key ID", cfg.Email_AWS_Access_Key_ID).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("email_aws_access_key_id", "AWS Access Key ID", cfg.Email_AWS_Access_Key_ID, "AWS access key for SES").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -830,7 +830,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("email_aws_secret_access_key", "AWS Secret Access Key", cfg.Email_AWS_Secret_Access_Key).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("email_aws_secret_access_key", "AWS Secret Access Key", cfg.Email_AWS_Secret_Access_Key, "AWS secret key for SES").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -846,7 +846,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("composition_max_depth", "Composition Max Depth", fmtInt(cfg.CompositionMaxDepth()), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("composition_max_depth", "Composition Max Depth", fmtInt(cfg.CompositionMaxDepth()), "Maximum nesting depth for composed/reference content").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -854,7 +854,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("publish_schedule_interval", "Publish Schedule Interval (min)", fmtInt(cfg.PublishScheduleInterval()), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("publish_schedule_interval", "Publish Schedule Interval (min)", fmtInt(cfg.PublishScheduleInterval()), "How often (minutes) to check for scheduled publishes").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -862,7 +862,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("version_max_per_content", "Max Versions Per Content", fmtInt(cfg.VersionMaxPerContent()), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("version_max_per_content", "Max Versions Per Content", fmtInt(cfg.VersionMaxPerContent()), "Maximum version snapshots kept per content item. Oldest are pruned").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -870,7 +870,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsListField("richtext_toolbar", "Rich Text Toolbar", joinSlice(cfg.RichtextToolbar()), "Comma-separated toolbar actions (e.g. bold, italic, link, image)").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsListField("richtext_toolbar", "Rich Text Toolbar", joinSlice(cfg.RichtextToolbar()), "Comma-separated toolbar actions (e.g. bold, italic, link, image)", "Toolbar buttons available in the rich text editor").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -886,7 +886,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("plugin_enabled", "Enabled", cfg.Plugin_Enabled).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("plugin_enabled", "Enabled", cfg.Plugin_Enabled, "Enable the Lua plugin system").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -894,7 +894,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("plugin_hot_reload", "Hot Reload", cfg.Plugin_Hot_Reload).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("plugin_hot_reload", "Hot Reload", cfg.Plugin_Hot_Reload, "Watch plugin files and reload on change").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -902,7 +902,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_directory", "Plugin Directory", cfg.Plugin_Directory, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_directory", "Plugin Directory", cfg.Plugin_Directory, "Directory containing plugin folders").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -910,7 +910,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_max_vms", "Max VMs Per Plugin", fmtInt(cfg.Plugin_Max_VMs), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_max_vms", "Max VMs Per Plugin", fmtInt(cfg.Plugin_Max_VMs), "Maximum Lua VMs pooled per plugin").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -918,7 +918,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_timeout", "Timeout (seconds)", fmtInt(cfg.Plugin_Timeout), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_timeout", "Timeout (seconds)", fmtInt(cfg.Plugin_Timeout), "Plugin execution timeout in seconds").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -926,7 +926,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_max_ops", "Max Ops", fmtInt(cfg.Plugin_Max_Ops), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_max_ops", "Max Ops", fmtInt(cfg.Plugin_Max_Ops), "Maximum Lua operations per execution (prevents infinite loops)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -934,7 +934,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_rate_limit", "Rate Limit (req/min)", fmtInt(cfg.Plugin_Rate_Limit), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_rate_limit", "Rate Limit (req/min)", fmtInt(cfg.Plugin_Rate_Limit), "Per-plugin rate limit for route requests per minute").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -942,7 +942,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_max_routes", "Max Routes", fmtInt(cfg.Plugin_Max_Routes), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_max_routes", "Max Routes", fmtInt(cfg.Plugin_Max_Routes), "Maximum HTTP routes a single plugin can register").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -950,7 +950,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_max_failures", "Max Failures", fmtInt(cfg.Plugin_Max_Failures), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_max_failures", "Max Failures", fmtInt(cfg.Plugin_Max_Failures), "Failures before a plugin is auto-disabled").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -958,7 +958,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_max_request_body", "Max Request Body (bytes)", fmtInt64(cfg.Plugin_Max_Request_Body), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_max_request_body", "Max Request Body (bytes)", fmtInt64(cfg.Plugin_Max_Request_Body), "Maximum request body size for plugin routes").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -966,7 +966,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_max_response_body", "Max Response Body (bytes)", fmtInt64(cfg.Plugin_Max_Response_Body), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_max_response_body", "Max Response Body (bytes)", fmtInt64(cfg.Plugin_Max_Response_Body), "Maximum response body size for plugin routes").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -974,7 +974,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_db_max_open_conns", "DB Max Open Conns", fmtInt(cfg.Plugin_DB_MaxOpenConns), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_db_max_open_conns", "DB Max Open Conns", fmtInt(cfg.Plugin_DB_MaxOpenConns), "Maximum open database connections for plugin queries").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -982,7 +982,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_db_max_idle_conns", "DB Max Idle Conns", fmtInt(cfg.Plugin_DB_MaxIdleConns), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_db_max_idle_conns", "DB Max Idle Conns", fmtInt(cfg.Plugin_DB_MaxIdleConns), "Maximum idle database connections for plugin queries").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -990,7 +990,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_db_conn_max_lifetime", "DB Conn Max Lifetime", cfg.Plugin_DB_ConnMaxLifetime, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_db_conn_max_lifetime", "DB Conn Max Lifetime", cfg.Plugin_DB_ConnMaxLifetime, "Maximum connection lifetime (e.g. 5m, 1h)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -998,7 +998,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_reset_interval", "Reset Interval", cfg.Plugin_Reset_Interval, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_reset_interval", "Reset Interval", cfg.Plugin_Reset_Interval, "Duration before failure count resets (e.g. 5m)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1006,7 +1006,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_sync_interval", "Sync Interval", cfg.Plugin_Sync_Interval, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_sync_interval", "Sync Interval", cfg.Plugin_Sync_Interval, "Interval between plugin state sync checks (e.g. 30s)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1014,7 +1014,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsListField("plugin_trusted_proxies", "Trusted Proxies", joinSlice(cfg.Plugin_Trusted_Proxies), "Comma-separated proxy IPs/CIDRs").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsListField("plugin_trusted_proxies", "Trusted Proxies", joinSlice(cfg.Plugin_Trusted_Proxies), "Comma-separated proxy IPs/CIDRs", "Trusted proxy IPs/CIDRs for X-Forwarded-For headers").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1022,7 +1022,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_hook_reserve_vms", "Reserve VMs", fmtInt(cfg.Plugin_Hook_Reserve_VMs), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_hook_reserve_vms", "Reserve VMs", fmtInt(cfg.Plugin_Hook_Reserve_VMs), "VMs reserved exclusively for hook execution").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1030,7 +1030,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_hook_max_ops", "Max Ops", fmtInt(cfg.Plugin_Hook_Max_Ops), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_hook_max_ops", "Max Ops", fmtInt(cfg.Plugin_Hook_Max_Ops), "Maximum Lua operations per hook execution").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1038,7 +1038,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_hook_timeout_ms", "Timeout (ms)", fmtInt(cfg.Plugin_Hook_Timeout_Ms), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_hook_timeout_ms", "Timeout (ms)", fmtInt(cfg.Plugin_Hook_Timeout_Ms), "Hook execution timeout in milliseconds").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1046,7 +1046,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_hook_event_timeout_ms", "Event Timeout (ms)", fmtInt(cfg.Plugin_Hook_Event_Timeout_Ms), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_hook_event_timeout_ms", "Event Timeout (ms)", fmtInt(cfg.Plugin_Hook_Event_Timeout_Ms), "Async event hook timeout in milliseconds").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1054,7 +1054,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_hook_max_consecutive_aborts", "Max Consecutive Aborts", fmtInt(cfg.Plugin_Hook_Max_Consecutive_Aborts), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_hook_max_consecutive_aborts", "Max Consecutive Aborts", fmtInt(cfg.Plugin_Hook_Max_Consecutive_Aborts), "Consecutive aborts before hook is suspended").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1062,7 +1062,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_hook_max_concurrent_after", "Max Concurrent After", fmtInt(cfg.Plugin_Hook_Max_Concurrent_After), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_hook_max_concurrent_after", "Max Concurrent After", fmtInt(cfg.Plugin_Hook_Max_Concurrent_After), "Maximum concurrent after-hooks running in parallel").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1070,7 +1070,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_request_timeout", "Timeout (seconds)", fmtInt(cfg.Plugin_Request_Timeout), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_request_timeout", "Timeout (seconds)", fmtInt(cfg.Plugin_Request_Timeout), "Timeout for outbound HTTP requests from plugins").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1078,7 +1078,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_request_rate_limit", "Rate Limit", fmtInt(cfg.Plugin_Request_Rate_Limit), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_request_rate_limit", "Rate Limit", fmtInt(cfg.Plugin_Request_Rate_Limit), "Per-plugin outbound request rate limit").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1086,7 +1086,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_request_global_rate", "Global Rate Limit", fmtInt(cfg.Plugin_Request_Global_Rate), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_request_global_rate", "Global Rate Limit", fmtInt(cfg.Plugin_Request_Global_Rate), "Global outbound request rate limit across all plugins").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1094,7 +1094,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_request_max_response", "Max Response (bytes)", fmtInt64(cfg.Plugin_Request_Max_Response), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_request_max_response", "Max Response (bytes)", fmtInt64(cfg.Plugin_Request_Max_Response), "Maximum response body size for outbound requests").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1102,7 +1102,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_request_max_body", "Max Body (bytes)", fmtInt64(cfg.Plugin_Request_Max_Body), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_request_max_body", "Max Body (bytes)", fmtInt64(cfg.Plugin_Request_Max_Body), "Maximum request body size for outbound requests").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1110,7 +1110,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_request_cb_failures", "Circuit Breaker Failures", fmtInt(cfg.Plugin_Request_CB_Failures), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_request_cb_failures", "Circuit Breaker Failures", fmtInt(cfg.Plugin_Request_CB_Failures), "Failures before circuit breaker opens for a host").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1118,7 +1118,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("plugin_request_cb_reset", "Circuit Breaker Reset (s)", fmtInt(cfg.Plugin_Request_CB_Reset), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("plugin_request_cb_reset", "Circuit Breaker Reset (s)", fmtInt(cfg.Plugin_Request_CB_Reset), "Seconds before circuit breaker resets after opening").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1126,7 +1126,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("plugin_request_allow_local", "Allow Local Requests", cfg.Plugin_Request_Allow_Local).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("plugin_request_allow_local", "Allow Local Requests", cfg.Plugin_Request_Allow_Local, "Allow plugins to make requests to localhost/private IPs").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1142,7 +1142,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("observability_enabled", "Enabled", cfg.Observability_Enabled).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("observability_enabled", "Enabled", cfg.Observability_Enabled, "Enable error tracking and performance monitoring").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1150,7 +1150,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("observability_debug", "Debug Mode", cfg.Observability_Debug).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("observability_debug", "Debug Mode", cfg.Observability_Debug, "Enable verbose observability debug logging").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1158,7 +1158,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("observability_provider", "Provider", cfg.Observability_Provider, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("observability_provider", "Provider", cfg.Observability_Provider, "Observability backend (e.g. sentry)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1166,7 +1166,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("observability_dsn", "DSN", cfg.Observability_DSN).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("observability_dsn", "DSN", cfg.Observability_DSN, "Data Source Name for the observability provider").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1174,7 +1174,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("observability_environment", "Environment", cfg.Observability_Environment, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("observability_environment", "Environment", cfg.Observability_Environment, "Environment tag sent with events (e.g. production)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1182,7 +1182,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("observability_release", "Release", cfg.Observability_Release, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("observability_release", "Release", cfg.Observability_Release, "Release/version tag sent with events").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1190,7 +1190,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("observability_server_name", "Server Name", cfg.Observability_Server_Name, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("observability_server_name", "Server Name", cfg.Observability_Server_Name, "Server name tag for multi-node deployments").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1198,7 +1198,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("observability_flush_interval", "Flush Interval", cfg.Observability_Flush_Interval, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("observability_flush_interval", "Flush Interval", cfg.Observability_Flush_Interval, "How often to flush events (e.g. 2s, 5s)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1206,7 +1206,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("observability_sample_rate", "Sample Rate", fmtFloat(cfg.Observability_Sample_Rate), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("observability_sample_rate", "Sample Rate", fmtFloat(cfg.Observability_Sample_Rate), "Error event sample rate (0.0 to 1.0)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1214,7 +1214,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("observability_traces_rate", "Traces Rate", fmtFloat(cfg.Observability_Traces_Rate), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("observability_traces_rate", "Traces Rate", fmtFloat(cfg.Observability_Traces_Rate), "Performance trace sample rate (0.0 to 1.0)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1222,7 +1222,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("observability_send_pii", "Send PII", cfg.Observability_Send_PII).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("observability_send_pii", "Send PII", cfg.Observability_Send_PII, "Include personally identifiable information in events").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1230,7 +1230,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsJSONField("observability_tags", "Tags", toJSONMap(cfg.Observability_Tags), "JSON map of tag key to value").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsJSONField("observability_tags", "Tags", toJSONMap(cfg.Observability_Tags), "JSON map of tag key to value", "Custom tags attached to all events").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1246,7 +1246,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("update_auto_enabled", "Auto-Update Enabled", cfg.Update_Auto_Enabled).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("update_auto_enabled", "Auto-Update Enabled", cfg.Update_Auto_Enabled, "Automatically check for new CMS versions").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1254,7 +1254,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("update_notify_only", "Notify Only", cfg.Update_Notify_Only).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("update_notify_only", "Notify Only", cfg.Update_Notify_Only, "Only notify about updates, don't auto-install").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1262,7 +1262,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("update_check_interval", "Check Interval", cfg.Update_Check_Interval, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("update_check_interval", "Check Interval", cfg.Update_Check_Interval, "How often to check for updates (e.g. 24h)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1270,7 +1270,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("update_channel", "Channel", cfg.Update_Channel, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("update_channel", "Channel", cfg.Update_Channel, "Update channel: stable or beta").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1286,7 +1286,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("deploy_snapshot_dir", "Snapshot Directory", cfg.Deploy_Snapshot_Dir, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("deploy_snapshot_dir", "Snapshot Directory", cfg.Deploy_Snapshot_Dir, "").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1328,7 +1328,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("mcp_enabled", "Enabled", cfg.MCP_Enabled).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("mcp_enabled", "Enabled", cfg.MCP_Enabled, "Enable the MCP server for AI tool integration").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1336,7 +1336,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("mcp_api_key", "API Key", cfg.MCP_API_Key).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("mcp_api_key", "API Key", cfg.MCP_API_Key, "API key for authenticating MCP requests").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1352,7 +1352,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("search_enabled", "Enabled", cfg.Search_Enabled).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("search_enabled", "Enabled", cfg.Search_Enabled, "Enable the built-in full-text search engine").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1360,7 +1360,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("search_path", "Index Path", cfg.Search_Path, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("search_path", "Index Path", cfg.Search_Path, "File path for the search index on disk").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1430,7 +1430,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("i18n_enabled", "Enabled", cfg.I18n_Enabled).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("i18n_enabled", "Enabled", cfg.I18n_Enabled, "Enable multi-language content support").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1438,7 +1438,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("i18n_default_locale", "Default Locale", cfg.I18n_Default_Locale, "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("i18n_default_locale", "Default Locale", cfg.I18n_Default_Locale, "Default locale code (e.g. en, fr, de)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1454,7 +1454,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("webhook_enabled", "Enabled", cfg.Webhook_Enabled).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("webhook_enabled", "Enabled", cfg.Webhook_Enabled, "Enable webhook delivery for content events").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1462,7 +1462,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsCheckbox("webhook_allow_http", "Allow HTTP", cfg.Webhook_Allow_HTTP).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsCheckbox("webhook_allow_http", "Allow HTTP", cfg.Webhook_Allow_HTTP, "Allow non-HTTPS webhook URLs (not recommended for production)").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1470,7 +1470,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("webhook_timeout", "Timeout (seconds)", fmtInt(cfg.Webhook_Timeout), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("webhook_timeout", "Timeout (seconds)", fmtInt(cfg.Webhook_Timeout), "Timeout for webhook delivery attempts").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1478,7 +1478,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("webhook_max_retries", "Max Retries", fmtInt(cfg.Webhook_Max_Retries), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("webhook_max_retries", "Max Retries", fmtInt(cfg.Webhook_Max_Retries), "Maximum retry attempts for failed deliveries").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1486,7 +1486,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("webhook_workers", "Workers", fmtInt(cfg.Webhook_Workers), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("webhook_workers", "Workers", fmtInt(cfg.Webhook_Workers), "Number of concurrent webhook delivery workers").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1494,7 +1494,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("webhook_delivery_retention_days", "Delivery Retention (days)", fmtInt(cfg.Webhook_Delivery_Retention_Days), "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("webhook_delivery_retention_days", "Delivery Retention (days)", fmtInt(cfg.Webhook_Delivery_Retention_Days), "Days to retain delivery logs before cleanup").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1510,7 +1510,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsJSONField("keybindings", "Key Map", toJSONMap(cfg.KeyBindings), "JSON map of action names to key binding arrays").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsJSONField("keybindings", "Key Map", toJSONMap(cfg.KeyBindings), "JSON map of action names to key binding arrays", "").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1571,7 +1571,7 @@ func Settings(layout layouts.AdminData, cfg *config.Config, searchStatus SearchI
 
 // settingsPasswordField renders a password field that masks sensitive values.
 // Shows "********" for non-empty values so secrets are not leaked to the browser.
-func settingsPasswordField(name string, label string, value string) templ.Component {
+func settingsPasswordField(name string, label string, value string, tooltip string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -1612,9 +1612,13 @@ func settingsPasswordField(name string, label string, value string) templ.Compon
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 746, Col: 80}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 747, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = settingsTooltip(tooltip).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1630,7 +1634,7 @@ func settingsPasswordField(name string, label string, value string) templ.Compon
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 749, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 752, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -1643,7 +1647,7 @@ func settingsPasswordField(name string, label string, value string) templ.Compon
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 749, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 752, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -1661,7 +1665,7 @@ func settingsPasswordField(name string, label string, value string) templ.Compon
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 751, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 754, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -1674,7 +1678,7 @@ func settingsPasswordField(name string, label string, value string) templ.Compon
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 751, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 754, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -1694,7 +1698,7 @@ func settingsPasswordField(name string, label string, value string) templ.Compon
 }
 
 // settingsCheckbox renders a checkbox with a hidden companion field for proper form submission.
-func settingsCheckbox(name string, label string, checked bool) templ.Component {
+func settingsCheckbox(name string, label string, checked bool, tooltip string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -1727,7 +1731,7 @@ func settingsCheckbox(name string, label string, checked bool) templ.Component {
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 762, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 765, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -1740,7 +1744,7 @@ func settingsCheckbox(name string, label string, checked bool) templ.Component {
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 763, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 766, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -1758,7 +1762,7 @@ func settingsCheckbox(name string, label string, checked bool) templ.Component {
 			var templ_7745c5c3_Var24 string
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 765, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 768, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
@@ -1771,7 +1775,7 @@ func settingsCheckbox(name string, label string, checked bool) templ.Component {
 			var templ_7745c5c3_Var25 string
 			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 766, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 769, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 			if templ_7745c5c3_Err != nil {
@@ -1785,9 +1789,13 @@ func settingsCheckbox(name string, label string, checked bool) templ.Component {
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 768, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 771, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = settingsTooltip(tooltip).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1800,7 +1808,7 @@ func settingsCheckbox(name string, label string, checked bool) templ.Component {
 }
 
 // settingsJSONField renders a textarea for complex JSON values (maps, arrays of objects).
-func settingsJSONField(name string, label string, value string, description string) templ.Component {
+func settingsJSONField(name string, label string, value string, description string, tooltip string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -1828,7 +1836,7 @@ func settingsJSONField(name string, label string, value string, description stri
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 776, Col: 25}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 780, Col: 25}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
@@ -1841,9 +1849,13 @@ func settingsJSONField(name string, label string, value string, description stri
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 776, Col: 80}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 781, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = settingsTooltip(tooltip).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1854,7 +1866,7 @@ func settingsJSONField(name string, label string, value string, description stri
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 778, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 785, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -1867,7 +1879,7 @@ func settingsJSONField(name string, label string, value string, description stri
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 778, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 785, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -1880,7 +1892,7 @@ func settingsJSONField(name string, label string, value string, description stri
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 778, Col: 325}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 785, Col: 325}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -1893,7 +1905,7 @@ func settingsJSONField(name string, label string, value string, description stri
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 780, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 787, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -1908,7 +1920,7 @@ func settingsJSONField(name string, label string, value string, description stri
 }
 
 // settingsListField renders a textarea for comma-separated list values ([]string config fields).
-func settingsListField(name string, label string, value string, placeholder string) templ.Component {
+func settingsListField(name string, label string, value string, placeholder string, tooltip string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -1936,7 +1948,7 @@ func settingsListField(name string, label string, value string, placeholder stri
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 787, Col: 25}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 794, Col: 25}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
@@ -1949,9 +1961,13 @@ func settingsListField(name string, label string, value string, placeholder stri
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 787, Col: 80}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 795, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = settingsTooltip(tooltip).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1962,7 +1978,7 @@ func settingsListField(name string, label string, value string, placeholder stri
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 789, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 799, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
@@ -1975,7 +1991,7 @@ func settingsListField(name string, label string, value string, placeholder stri
 		var templ_7745c5c3_Var38 string
 		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 789, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 799, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {
@@ -1988,7 +2004,7 @@ func settingsListField(name string, label string, value string, placeholder stri
 		var templ_7745c5c3_Var39 string
 		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(placeholder)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 789, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 799, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 		if templ_7745c5c3_Err != nil {
@@ -2001,13 +2017,155 @@ func settingsListField(name string, label string, value string, placeholder stri
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 789, Col: 334}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 799, Col: 334}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 199, "</textarea></div><p class=\"mt-1 text-xs text-gray-500\">Separate multiple values with commas.</p></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func settingsTooltip(text string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var41 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var41 == nil {
+			templ_7745c5c3_Var41 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		if text != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 200, "<span class=\"group/tip relative ml-1\"><svg class=\"inline size-3.5 text-gray-500 group-hover/tip:text-gray-300 cursor-help\" viewBox=\"0 0 20 20\" fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM8.94 6.94a.75.75 0 1 1-1.061-1.061.75.75 0 0 1 1.06 1.06ZM10 15a1 1 0 0 1-1-1v-3a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1Z\" clip-rule=\"evenodd\"></path></svg> <span class=\"invisible group-hover/tip:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 rounded-md bg-gray-900 px-3 py-2 text-xs text-gray-300 shadow-lg ring-1 ring-white/10 z-50 text-center\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var42 string
+			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(text)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 810, Col: 22}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 201, "</span></span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		return nil
+	})
+}
+
+func settingsField(name string, label string, value string, tooltip string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var43 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var43 == nil {
+			templ_7745c5c3_Var43 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 202, "<div><label for=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var44 string
+		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(name)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 818, Col: 25}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 203, "\" class=\"block text-sm/6 font-medium text-white\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var45 string
+		templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 819, Col: 19}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = settingsTooltip(tooltip).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 204, "</label><div class=\"mt-2\"><input type=\"text\" id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var46 string
+		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(name)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 823, Col: 40}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 205, "\" name=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var47 string
+		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(name)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 823, Col: 54}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 206, "\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var48 string
+		templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/settings.templ`, Line: 823, Col: 70}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 207, "\" class=\"block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)] sm:text-sm/6\"></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

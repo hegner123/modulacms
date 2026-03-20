@@ -1455,6 +1455,29 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 		}
 
 		// --- Phase 4: Field value updates ---
+		// Pre-fetch existing content fields for all affected content_data_ids
+		// so we can detect existing fields when content_field_id is empty (upsert).
+		existingFieldsByCD := make(map[string]map[string]db.ContentFields) // content_data_id -> field_id -> ContentFields
+		for _, fu := range req.FieldUpdates {
+			cdIDStr := fu.ContentDataID
+			if mapped, ok := idMap[cdIDStr]; ok {
+				cdIDStr = mapped
+			}
+			if _, loaded := existingFieldsByCD[cdIDStr]; !loaded {
+				cdID := types.NullableContentID{ID: types.ContentID(cdIDStr), Valid: true}
+				existing, listErr := driver.ListContentFieldsByContentData(cdID)
+				fieldMap := make(map[string]db.ContentFields)
+				if listErr == nil && existing != nil {
+					for _, cf := range *existing {
+						if cf.FieldID.Valid {
+							fieldMap[cf.FieldID.ID.String()] = cf
+						}
+					}
+				}
+				existingFieldsByCD[cdIDStr] = fieldMap
+			}
+		}
+
 		saveIsAdmin := middleware.ContextIsAdmin(r.Context())
 		saveRoleID := user.Role
 		for _, fu := range req.FieldUpdates {
@@ -1527,9 +1550,34 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 					resp.Errors = append(resp.Errors, fmt.Sprintf("update field %s: %v", fu.ContentFieldID, updateErr))
 					continue
 				}
-			} else {
-				// Create new ContentField for newly created blocks
-				_, createErr := driver.CreateContentField(ctx, ac, db.CreateContentFieldParams{
+			} else if fu.FieldID != "" {
+				// No content_field_id provided — check if a content field already
+				// exists for this content_data + field_id pair (upsert).
+				if fieldMap, ok := existingFieldsByCD[cdIDStr]; ok {
+					if existingCF, found := fieldMap[fu.FieldID]; found {
+						// Update the existing content field instead of creating a duplicate.
+						_, updateErr := driver.UpdateContentField(ctx, ac, db.UpdateContentFieldParams{
+							ContentFieldID: existingCF.ContentFieldID,
+							ContentDataID:  existingCF.ContentDataID,
+							FieldID:        existingCF.FieldID,
+							FieldValue:     fu.Value,
+							AuthorID:       user.UserID,
+							RouteID:        existingCF.RouteID,
+							DateCreated:    existingCF.DateCreated,
+							DateModified:   now,
+						})
+						if updateErr != nil {
+							utility.DefaultLogger.Error(fmt.Sprintf("tree-save: upsert-update content field %s failed", existingCF.ContentFieldID), updateErr)
+							resp.Errors = append(resp.Errors, fmt.Sprintf("upsert field %s: %v", existingCF.ContentFieldID, updateErr))
+							continue
+						}
+						resp.FieldsUpdated++
+						continue
+					}
+				}
+
+				// No existing content field — create a new one.
+				created, createErr := driver.CreateContentField(ctx, ac, db.CreateContentFieldParams{
 					ContentDataID: types.NullableContentID{ID: types.ContentID(cdIDStr), Valid: true},
 					FieldID:       types.NullableFieldID{ID: types.FieldID(fu.FieldID), Valid: true},
 					FieldValue:    fu.Value,
@@ -1542,6 +1590,12 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 					utility.DefaultLogger.Error(fmt.Sprintf("tree-save: create content field for %s failed", cdIDStr), createErr)
 					resp.Errors = append(resp.Errors, fmt.Sprintf("create field for %s: %v", cdIDStr, createErr))
 					continue
+				}
+				// Update the lookup map so subsequent saves in this batch don't duplicate.
+				if created != nil && created.ContentFieldID != "" {
+					if fieldMap, ok := existingFieldsByCD[cdIDStr]; ok {
+						fieldMap[fu.FieldID] = *created
+					}
 				}
 			}
 			resp.FieldsUpdated++

@@ -1184,7 +1184,7 @@ var _dtCache = {
   pending: null
   // in-flight promise to deduplicate concurrent fetches
 };
-var SYSTEM_TYPES = { "_root": true, "_nested_root": true, "_system_log": true, "_reference": true };
+var SYSTEM_TYPES = { "_root": true, "_nested_root": true, "_system_log": true };
 function fetchDatatypes() {
   var now = Date.now();
   if (_dtCache.data && now - _dtCache.fetchedAt < _dtCache.ttl) {

@@ -174,17 +174,31 @@ func AdminDatatypeDetailHandler(svc *service.Registry) http.HandlerFunc {
 			allDatatypes = []db.AdminDatatypes{}
 		}
 
+		fieldTypes := fetchAdminFieldTypes(svc, r)
+
+		// Fetch admin validations for the field form dropdown
+		validationsPtr, valErr := svc.Driver().ListAdminValidations()
+		var validations []db.AdminValidation
+		if valErr != nil {
+			utility.DefaultLogger.Error("failed to list admin validations", valErr)
+			validations = []db.AdminValidation{}
+		} else if validationsPtr != nil {
+			validations = *validationsPtr
+		} else {
+			validations = []db.AdminValidation{}
+		}
+
 		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Admin Datatype: "+dt.Label)
 
 		if IsNavHTMX(r) {
 			safeTitle := "Admin Datatype: " + dt.Label
 			w.Header().Set("HX-Trigger", `{"pageTitle": "`+safeTitle+`"}`)
-			RenderWithOOB(w, r, pages.AdminDatatypeDetailContent(*dt, linkedFields, allDatatypes, csrfToken),
-				OOBSwap{TargetID: "admin-dialogs", Component: pages.AdminDatatypeAddFieldDialog(dt.AdminDatatypeID.String(), csrfToken)})
+			RenderWithOOB(w, r, pages.AdminDatatypeDetailContent(*dt, linkedFields, allDatatypes, csrfToken, fieldTypes),
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.AdminDatatypeAddFieldDialog(dt.AdminDatatypeID.String(), csrfToken, fieldTypes, validations)})
 			return
 		}
-		Render(w, r, pages.AdminDatatypeDetail(layout, *dt, linkedFields, allDatatypes, csrfToken))
+		Render(w, r, pages.AdminDatatypeDetail(layout, *dt, linkedFields, allDatatypes, csrfToken, fieldTypes, validations))
 	}
 }
 
@@ -386,7 +400,7 @@ func AdminDatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 		label := strings.TrimSpace(r.FormValue("label"))
 		fieldType := strings.TrimSpace(r.FormValue("type"))
 		data := strings.TrimSpace(r.FormValue("data"))
-		validationJSON := strings.TrimSpace(r.FormValue("validation"))
+		validationIDStr := strings.TrimSpace(r.FormValue("validation_id"))
 		uiConfig := strings.TrimSpace(r.FormValue("ui_config"))
 
 		ac, acErr := svc.AuditCtx(r.Context())
@@ -396,18 +410,29 @@ func AdminDatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
+		var validationID types.NullableAdminValidationID
+		if validationIDStr != "" {
+			validationID = types.NullableAdminValidationID{ID: types.AdminValidationID(validationIDStr), Valid: true}
+		}
+
 		user := middleware.AuthenticatedUser(r.Context())
 		_, err := svc.Schema.CreateAdminField(r.Context(), ac, db.CreateAdminFieldParams{
-			ParentID:   types.NullableAdminDatatypeID{ID: types.AdminDatatypeID(id), Valid: true},
-			Name:       name,
-			Label:      label,
-			Type:       types.FieldType(fieldType),
-			Data:       data,
-			ValidationID: types.NullableAdminValidationID{}, // TODO: parse validation_id from form
-			UIConfig:   uiConfig,
-			AuthorID:   types.NullableUserID{ID: user.UserID, Valid: true},
+			ParentID:     types.NullableAdminDatatypeID{ID: types.AdminDatatypeID(id), Valid: true},
+			Name:         name,
+			Label:        label,
+			Type:         types.FieldType(fieldType),
+			Data:         data,
+			ValidationID: validationID,
+			UIConfig:     uiConfig,
+			AuthorID:     types.NullableUserID{ID: user.UserID, Valid: true},
 		})
 		if err != nil {
+			fieldTypes := fetchAdminFieldTypes(svc, r)
+			validationsPtr, _ := svc.Driver().ListAdminValidations()
+			var validations []db.AdminValidation
+			if validationsPtr != nil {
+				validations = *validationsPtr
+			}
 			var ve *service.ValidationError
 			if errors.As(err, &ve) {
 				errs := make(map[string]string, len(ve.Errors))
@@ -416,13 +441,13 @@ func AdminDatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 				}
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				csrfToken := CSRFTokenFromContext(r.Context())
-				Render(w, r, partials.AdminDatatypeCreateFieldForm(id, name, label, fieldType, data, validationJSON, uiConfig, errs, csrfToken))
+				Render(w, r, partials.AdminDatatypeCreateFieldForm(id, name, label, fieldType, data, validationIDStr, uiConfig, errs, csrfToken, fieldTypes, validations))
 				return
 			}
 			utility.DefaultLogger.Error("failed to create admin field for admin datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminDatatypeCreateFieldForm(id, name, label, fieldType, data, validationJSON, uiConfig, map[string]string{"_": "Failed to create field"}, csrfToken))
+			Render(w, r, partials.AdminDatatypeCreateFieldForm(id, name, label, fieldType, data, validationIDStr, uiConfig, map[string]string{"_": "Failed to create field"}, csrfToken, fieldTypes, validations))
 			return
 		}
 
@@ -433,5 +458,107 @@ func AdminDatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Field created", "type": "success"}}`)
 		w.Header().Set("HX-Redirect", "/admin/admin-datatypes/"+id)
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// AdminDatatypeFieldReorderHandler handles POST /admin/admin-datatypes/{id}/fields/reorder.
+// Swaps the sort order of an admin field with its neighbor in the given direction.
+// Returns the refreshed field list partial.
+func AdminDatatypeFieldReorderHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		datatypeID := r.PathValue("id")
+		if datatypeID == "" {
+			http.Error(w, "Missing datatype ID", http.StatusBadRequest)
+			return
+		}
+
+		if parseErr := r.ParseForm(); parseErr != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		fieldID := strings.TrimSpace(r.FormValue("field_id"))
+		direction := strings.TrimSpace(r.FormValue("direction"))
+		if fieldID == "" || (direction != "up" && direction != "down") {
+			http.Error(w, "field_id and direction (up/down) required", http.StatusBadRequest)
+			return
+		}
+
+		parentID := types.NullableAdminDatatypeID{ID: types.AdminDatatypeID(datatypeID), Valid: true}
+		fields, err := svc.Schema.ListAdminFieldsByDatatypeID(r.Context(), parentID)
+		if err != nil {
+			utility.DefaultLogger.Error("failed to list admin fields for reorder", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		targetIdx := -1
+		for i, f := range fields {
+			if f.AdminFieldID.String() == fieldID {
+				targetIdx = i
+				break
+			}
+		}
+		if targetIdx == -1 {
+			http.Error(w, "Field not found in datatype", http.StatusNotFound)
+			return
+		}
+
+		swapIdx := -1
+		if direction == "up" && targetIdx > 0 {
+			swapIdx = targetIdx - 1
+		} else if direction == "down" && targetIdx < len(fields)-1 {
+			swapIdx = targetIdx + 1
+		}
+		if swapIdx == -1 {
+			csrfToken := CSRFTokenFromContext(r.Context())
+			Render(w, r, partials.AdminDatatypeFieldList(datatypeID, fields, csrfToken))
+			return
+		}
+
+		ac, acErr := svc.AuditCtx(r.Context())
+		if acErr != nil {
+			utility.DefaultLogger.Error("failed to build audit context", acErr)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		targetSort := fields[targetIdx].SortOrder
+		swapSort := fields[swapIdx].SortOrder
+		if targetSort == swapSort {
+			swapSort = targetSort + 1
+			if direction == "up" {
+				swapSort = targetSort - 1
+			}
+		}
+
+		err = svc.Schema.UpdateAdminFieldSortOrder(r.Context(), ac, db.UpdateAdminFieldSortOrderParams{
+			AdminFieldID: fields[targetIdx].AdminFieldID,
+			SortOrder:    swapSort,
+		})
+		if err != nil {
+			utility.DefaultLogger.Error("failed to update admin field sort order", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		err = svc.Schema.UpdateAdminFieldSortOrder(r.Context(), ac, db.UpdateAdminFieldSortOrderParams{
+			AdminFieldID: fields[swapIdx].AdminFieldID,
+			SortOrder:    targetSort,
+		})
+		if err != nil {
+			utility.DefaultLogger.Error("failed to update swap admin field sort order", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		refreshed, err := svc.Schema.ListAdminFieldsByDatatypeID(r.Context(), parentID)
+		if err != nil {
+			utility.DefaultLogger.Error("failed to re-list admin fields after reorder", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+		Render(w, r, partials.AdminDatatypeFieldList(datatypeID, refreshed, csrfToken))
 	}
 }
