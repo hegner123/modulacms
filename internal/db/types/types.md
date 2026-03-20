@@ -226,6 +226,90 @@ Uniquely identifies an admin content relation. Links admin content nodes through
 
 Methods: `NewAdminContentRelationID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseAdminContentRelationID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
 
+### ContentVersionID
+
+Uniquely identifies a content version. Represents a snapshot of content state at a point in time for version history.
+
+Methods: `NewContentVersionID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseContentVersionID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### AdminContentVersionID
+
+Uniquely identifies an admin content version. Represents a snapshot of admin content state for version history.
+
+Methods: `NewAdminContentVersionID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseAdminContentVersionID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### RolePermissionID
+
+Uniquely identifies a role-permission assignment. Represents a junction record linking a role to a permission.
+
+Methods: `NewRolePermissionID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseRolePermissionID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### FieldTypeID
+
+Uniquely identifies a field type definition. Represents a registered field type available for content fields.
+
+Methods: `NewFieldTypeID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseFieldTypeID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### PluginID
+
+Uniquely identifies a plugin. Represents an installed Lua plugin in the plugin system.
+
+Methods: `NewPluginID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParsePluginID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### PipelineID
+
+Uniquely identifies a pipeline. Represents a processing pipeline for content or media operations.
+
+Methods: `NewPipelineID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParsePipelineID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### AdminFieldTypeID
+
+Uniquely identifies an admin field type definition. Represents a registered field type for admin content fields.
+
+Methods: `NewAdminFieldTypeID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseAdminFieldTypeID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### LocaleID
+
+Uniquely identifies a locale. Represents a language/region configuration for internationalized content.
+
+Methods: `NewLocaleID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseLocaleID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### WebhookID
+
+Uniquely identifies a webhook. Represents a configured webhook endpoint for event notifications.
+
+Methods: `NewWebhookID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseWebhookID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### WebhookDeliveryID
+
+Uniquely identifies a webhook delivery. Represents a single delivery attempt to a webhook endpoint.
+
+Methods: `NewWebhookDeliveryID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseWebhookDeliveryID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### ValidationID
+
+Uniquely identifies a validation record. Represents a validation configuration for content fields.
+
+Methods: `NewValidationID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseValidationID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### AdminValidationID
+
+Uniquely identifies an admin validation record. Represents a validation configuration for admin content fields.
+
+Methods: `NewAdminValidationID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseAdminValidationID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### AdminMediaID
+
+Uniquely identifies an admin media asset. Represents an uploaded file in admin-specific S3 storage.
+
+Methods: `NewAdminMediaID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseAdminMediaID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
+### AdminMediaFolderID
+
+Uniquely identifies an admin media folder. Represents a folder in the admin media organization hierarchy.
+
+Methods: `NewAdminMediaFolderID`, `String`, `IsZero`, `Validate`, `ULID`, `Time`, `ParseAdminMediaFolderID`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
+
 ## Nullable ID Types
 
 Nullable versions of ID types for foreign keys that can be NULL. All nullable types have `ID` field and `Valid` bool field.
@@ -331,6 +415,30 @@ Methods: `Validate`, `String`, `IsZero`, `Value`, `Scan`, `MarshalJSON`, `Unmars
 ### NullableAdminFieldID
 
 Nullable foreign key to admin_fields table. Optional admin field references.
+
+Methods: `Validate`, `String`, `IsZero`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to NullableDatatypeID.
+
+### NullableValidationID
+
+Nullable foreign key to validations table. Optional validation configuration references.
+
+Methods: `Validate`, `String`, `IsZero`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to NullableDatatypeID.
+
+### NullableAdminValidationID
+
+Nullable foreign key to admin_validations table. Optional admin validation configuration references.
+
+Methods: `Validate`, `String`, `IsZero`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to NullableDatatypeID.
+
+### NullableAdminMediaID
+
+Nullable foreign key to admin_media table. Optional admin media asset references.
+
+Methods: `Validate`, `String`, `IsZero`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to NullableDatatypeID.
+
+### NullableAdminMediaFolderID
+
+Nullable foreign key to admin_media_folders table. Optional admin media folder references and parent hierarchy.
 
 Methods: `Validate`, `String`, `IsZero`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to NullableDatatypeID.
 

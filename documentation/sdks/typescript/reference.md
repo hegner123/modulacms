@@ -67,6 +67,8 @@ Every CRUD resource provides these standard methods:
 | `adminDatatypes` | `AdminDatatype` | `AdminDatatypeID` | `updateSortOrder`, `maxSortOrder` |
 | `adminFields` | `AdminField` | `AdminFieldID` | -- |
 | `adminFieldTypes` | `AdminFieldTypeInfo` | `AdminFieldTypeID` | -- |
+| `adminMedia` | `AdminMedia` | `AdminMediaID` | -- |
+| `adminMediaFolders` | `AdminMediaFolder` | `AdminMediaFolderID` | `tree`, `listMedia`, `moveMedia` |
 
 ### Specialized Resources
 
@@ -75,6 +77,7 @@ Every CRUD resource provides these standard methods:
 | `auth` | `login`, `logout`, `me`, `register`, `reset` |
 | `adminTree` | `get(slug, format?)` |
 | `mediaUpload` | `upload(file, opts?)` |
+| `adminMediaUpload` | `upload(file, opts?)` |
 | `sessions` | `update`, `remove` |
 | `sshKeys` | `list`, `create`, `remove` |
 | `rolePermissions` | `list`, `get`, `create`, `remove`, `listByRole` |
@@ -97,9 +100,9 @@ Every CRUD resource provides these standard methods:
 
 ### From `@modulacms/types`
 
-**IDs:** `UserID`, `ContentID`, `ContentFieldID`, `ContentRelationID`, `ContentVersionID`, `DatatypeID`, `FieldID`, `MediaID`, `MediaFolderID`, `RoleID`, `PermissionID`, `RolePermissionID`, `FieldTypeID`, `RouteID`, `SessionID`, `UserOauthID`, `AdminContentID`, `AdminContentFieldID`, `AdminContentRelationID`, `AdminContentVersionID`, `AdminDatatypeID`, `AdminFieldID`, `AdminRouteID`, `AdminFieldTypeID`, `LocaleID`, `WebhookID`, `WebhookDeliveryID`, `Slug`, `Email`, `URL`
+**IDs:** `UserID`, `ContentID`, `ContentFieldID`, `ContentRelationID`, `ContentVersionID`, `DatatypeID`, `FieldID`, `MediaID`, `MediaFolderID`, `AdminMediaID`, `AdminMediaFolderID`, `RoleID`, `PermissionID`, `RolePermissionID`, `FieldTypeID`, `RouteID`, `SessionID`, `UserOauthID`, `AdminContentID`, `AdminContentFieldID`, `AdminContentRelationID`, `AdminContentVersionID`, `AdminDatatypeID`, `AdminFieldID`, `AdminRouteID`, `AdminFieldTypeID`, `LocaleID`, `WebhookID`, `WebhookDeliveryID`, `Slug`, `Email`, `URL`
 
-**Entities:** `ContentData`, `ContentField`, `ContentRelation`, `ContentVersion`, `AdminContentVersion`, `Datatype`, `Field`, `FieldTypeInfo`, `AdminFieldTypeInfo`, `Route`, `Media` (includes `download_url` field), `MediaDimension`, `MediaFolder`, `Locale`, `Webhook`, `WebhookDelivery`
+**Entities:** `ContentData`, `ContentField`, `ContentRelation`, `ContentVersion`, `AdminContentVersion`, `Datatype`, `Field`, `FieldTypeInfo`, `AdminFieldTypeInfo`, `Route`, `Media` (includes `download_url` field), `MediaDimension`, `MediaFolder`, `AdminMedia`, `AdminMediaFolder`, `Locale`, `Webhook`, `WebhookDelivery`
 
 **Content tree:** `ContentTree`, `ContentNode`, `NodeDatatype`, `NodeField`
 

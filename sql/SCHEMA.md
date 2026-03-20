@@ -141,9 +141,9 @@ CREATE TABLE content_data (
     first_child_id TEXT REFERENCES content_data ON DELETE SET NULL,
     next_sibling_id TEXT REFERENCES content_data ON DELETE SET NULL,
     prev_sibling_id TEXT REFERENCES content_data ON DELETE SET NULL,
-    route_id TEXT NOT NULL REFERENCES routes ON DELETE CASCADE,
-    datatype_id TEXT NOT NULL REFERENCES datatypes ON DELETE SET NULL,
-    author_id TEXT NOT NULL REFERENCES users ON DELETE SET NULL,
+    route_id TEXT REFERENCES routes ON DELETE SET NULL,
+    datatype_id TEXT NOT NULL REFERENCES datatypes ON DELETE RESTRICT,
+    author_id TEXT NOT NULL REFERENCES users ON DELETE RESTRICT,
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
@@ -152,7 +152,7 @@ CREATE TABLE content_data (
 
 Columns: content_data_id is ULID primary key, parent_id points to parent node, first_child_id points to first child, next_sibling_id and prev_sibling_id form doubly-linked sibling list, route_id associates with URL route, datatype_id specifies content type, author_id tracks creator, status is draft, published, archived, or pending.
 
-Foreign keys: tree pointers reference content_data self, route_id references routes.route_id with RESTRICT on delete to prevent orphaned content, datatype_id references datatypes.datatype_id with RESTRICT, author_id references users.user_id.
+Foreign keys: tree pointers reference content_data self with SET NULL on delete, route_id references routes.route_id with SET NULL on delete (nullable), datatype_id references datatypes.datatype_id with RESTRICT on delete, author_id references users.user_id with RESTRICT on delete.
 
 Indexes: idx_content_data_parent on parent_id, idx_content_data_route on route_id, idx_content_data_datatype on datatype_id, idx_content_data_author on author_id.
 
@@ -222,7 +222,7 @@ CREATE TABLE media (
 
 Columns: media_id is ULID primary key, name is filename, display_name is human-readable label, alt is image alt text, caption and description provide metadata, class supports CSS classification, mimetype stores MIME type, dimensions stores image dimensions, url is S3 object URL with unique constraint, srcset stores responsive image URLs, folder_id is optional reference to a media_folders record for organization, focal_x and focal_y store focal point coordinates as floating-point values for image cropping, author_id tracks uploader.
 
-Foreign keys: author_id references users.user_id, folder_id references media_folders.id with SET NULL on delete.
+Foreign keys: author_id references users.user_id, folder_id references media_folders.folder_id with SET NULL on delete.
 
 Indexes: idx_media_author on author_id, idx_media_folder on folder_id.
 
@@ -232,17 +232,17 @@ Media folder hierarchy for organizing media assets into nested directories.
 
 ```sql
 CREATE TABLE media_folders (
-    id TEXT PRIMARY KEY CHECK (length(id) = 26),
+    folder_id TEXT PRIMARY KEY NOT NULL CHECK (length(folder_id) = 26),
     name TEXT NOT NULL,
-    parent_id TEXT DEFAULT NULL REFERENCES media_folders ON DELETE CASCADE,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    parent_id TEXT NULL REFERENCES media_folders(folder_id) ON DELETE RESTRICT,
+    date_created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-Columns: id is a 26-char ULID primary key, name is the folder display name, parent_id allows nested folder hierarchy with self-reference, created_at and updated_at track timestamps.
+Columns: folder_id is a 26-char ULID primary key, name is the folder display name, parent_id allows nested folder hierarchy with self-reference, date_created and date_modified track timestamps.
 
-Foreign keys: parent_id self-references media_folders.id with CASCADE on delete.
+Foreign keys: parent_id self-references media_folders.folder_id with RESTRICT on delete.
 
 Indexes: idx_media_folders_parent on parent_id.
 
@@ -348,33 +348,176 @@ Columns: user_ssh_key_id is ULID primary key, user_id references key owner, labe
 
 Foreign keys: user_id references users.user_id with CASCADE delete.
 
+### validations
+
+Validation rule definitions for content field validation.
+
+```sql
+CREATE TABLE validations (
+    validation_id TEXT PRIMARY KEY NOT NULL CHECK (length(validation_id) = 26),
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    config TEXT NOT NULL DEFAULT '{}',
+    author_id TEXT
+        REFERENCES users
+            ON DELETE SET NULL,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+Columns: validation_id is ULID primary key, name is the validation rule name, description provides context, config stores JSON validation configuration (rules, constraints, messages), author_id tracks creator.
+
+Foreign keys: author_id references users.user_id with SET NULL on delete.
+
+Indexes: idx_validations_name on name, idx_validations_author on author_id.
+
 ## Admin Tables
 
-Admin tables mirror content tables for draft/staging environments. They use admin_ prefix and separate IDs but follow identical structure to their production counterparts.
+Admin tables form a parallel content system that powers the admin panel UI itself. They are **not** a draft/staging pipeline for public content. Operators use admin tables to build and customize their admin interface, while public tables hold the site's actual content served to frontend clients. Each system has its own publish flow, versioning, and tree structure. The admin_ prefix and separate IDs distinguish them, but the schema structure is identical to their public counterparts.
 
 ### admin_routes
 
-Staging routes mirroring routes table structure.
+Admin panel routes mirroring routes table structure.
 
 ### admin_datatypes
 
-Staging datatypes mirroring datatypes table structure.
+Admin panel datatypes mirroring datatypes table structure.
 
 ### admin_fields
 
-Staging fields mirroring fields table structure.
+Admin panel fields mirroring fields table structure.
+
+### admin_field_types
+
+Admin panel field type definitions mirroring field_types table structure.
+
+```sql
+CREATE TABLE admin_field_types (
+    admin_field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_field_type_id) = 26),
+    type TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL
+);
+```
+
+Columns: admin_field_type_id is ULID primary key, type is unique field type identifier, label is display name.
 
 ### admin_content_data
 
-Staging content mirroring content_data table structure including tree pointers.
+Admin panel content mirroring content_data table structure including tree pointers.
 
 ### admin_content_fields
 
-Staging content field values mirroring content_fields table structure.
+Admin panel content field values mirroring content_fields table structure.
 
 ### admin_content_relations
 
-Staging content relations mirroring content_relations table structure.
+Admin panel content relations mirroring content_relations table structure.
+
+### admin_content_versions
+
+Admin panel content version snapshots mirroring content_versions table structure.
+
+```sql
+CREATE TABLE admin_content_versions (
+    admin_content_version_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_content_version_id) = 26),
+    admin_content_data_id TEXT NOT NULL
+        REFERENCES admin_content_data(admin_content_data_id)
+            ON DELETE CASCADE,
+    version_number INTEGER NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
+    snapshot TEXT NOT NULL,
+    trigger TEXT NOT NULL DEFAULT 'manual',
+    label TEXT NOT NULL DEFAULT '',
+    published INTEGER NOT NULL DEFAULT 0,
+    published_by TEXT
+        REFERENCES users(user_id)
+            ON DELETE SET NULL,
+    date_created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+Columns: admin_content_version_id is ULID primary key, admin_content_data_id references the admin content record, version_number is the sequential version, locale supports localized versions, snapshot stores JSON content snapshot, trigger records what caused the version (manual, publish, etc.), label is optional version label, published flags whether this version is live, published_by tracks who published it.
+
+Foreign keys: admin_content_data_id references admin_content_data.admin_content_data_id with CASCADE delete, published_by references users.user_id with SET NULL on delete.
+
+Indexes: idx_acv_content on admin_content_data_id, idx_acv_content_locale on admin_content_data_id and locale, idx_acv_published partial index on published rows.
+
+### admin_validations
+
+Admin panel validation rule definitions mirroring validations table structure.
+
+```sql
+CREATE TABLE admin_validations (
+    admin_validation_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_validation_id) = 26),
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    config TEXT NOT NULL DEFAULT '{}',
+    author_id TEXT
+        REFERENCES users
+            ON DELETE SET NULL,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+Columns: admin_validation_id is ULID primary key, name is the validation rule name, description provides context, config stores JSON validation configuration, author_id tracks creator.
+
+Foreign keys: author_id references users.user_id with SET NULL on delete.
+
+Indexes: idx_admin_validations_name on name, idx_admin_validations_author on author_id.
+
+### admin_media_folders
+
+Admin panel media folder hierarchy mirroring media_folders table structure.
+
+```sql
+CREATE TABLE admin_media_folders (
+    admin_folder_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_folder_id) = 26),
+    name TEXT NOT NULL,
+    parent_id TEXT NULL REFERENCES admin_media_folders(admin_folder_id) ON DELETE RESTRICT,
+    date_created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+Columns: admin_folder_id is ULID primary key, name is the folder display name, parent_id allows nested folder hierarchy, date_created and date_modified track timestamps.
+
+Foreign keys: parent_id self-references admin_media_folders.admin_folder_id with RESTRICT on delete.
+
+Indexes: idx_admin_media_folders_parent on parent_id.
+
+### admin_media
+
+Admin panel media assets mirroring media table structure.
+
+```sql
+CREATE TABLE admin_media (
+    admin_media_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_media_id) = 26),
+    name TEXT,
+    display_name TEXT,
+    alt TEXT,
+    caption TEXT,
+    description TEXT,
+    class TEXT,
+    mimetype TEXT,
+    dimensions TEXT,
+    url TEXT UNIQUE,
+    srcset TEXT,
+    focal_x REAL,
+    focal_y REAL,
+    author_id TEXT REFERENCES users ON DELETE SET NULL,
+    folder_id TEXT NULL REFERENCES admin_media_folders(admin_folder_id) ON DELETE SET NULL,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+Columns: admin_media_id is ULID primary key, name is filename, display_name is human-readable label, alt is image alt text, caption and description provide metadata, class supports CSS classification, mimetype stores MIME type, dimensions stores image dimensions, url is unique object URL, srcset stores responsive image URLs, focal_x and focal_y store focal point coordinates, author_id tracks uploader, folder_id is optional reference to admin_media_folders.
+
+Foreign keys: author_id references users.user_id with SET NULL on delete, folder_id references admin_media_folders.admin_folder_id with SET NULL on delete.
+
+Indexes: idx_admin_media_author on author_id, idx_admin_media_folder on folder_id.
 
 ## Distributed System Tables
 

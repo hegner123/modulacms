@@ -96,7 +96,7 @@ The `sdks/go/` directory contains the Go SDK (`package modulacms`).
 
 | File | Purpose |
 |------|---------|
-| `modulacms.go` | Client, ClientConfig, NewClient |
+| `modula.go` | Client, ClientConfig, NewClient |
 | `resource.go` | Generic `Resource[E, C, U, ID]` CRUD |
 | `httpclient.go` | Internal HTTP transport |
 | `types.go` | All entity structs + Create/Update params |
@@ -135,6 +135,10 @@ The `sdks/go/` directory contains the Go SDK (`package modulacms`).
 | `search.go` | Content search |
 | `user_composite.go` | Composite user operations |
 | `users_full.go` | Full user details with roles |
+| `admin_media.go` | Admin media operations |
+| `admin_media_folders.go` | Admin media folder operations |
+| `config.go` | Server configuration |
+| `validations.go` | Validation management |
 | `webhooks.go` | Webhook management |
 
 Import path: `import modulacms "github.com/hegner123/modulacms/sdks/go"`
@@ -186,6 +190,10 @@ The `sdks/swift/` directory contains the Swift SDK as a single SPM package.
 | `SearchResource.swift` | Content search |
 | `SortOrderResource.swift` | Content sort ordering |
 | `UserCompositeResource.swift` | Composite user operations |
+| `AdminMediaResource.swift` | Admin media operations |
+| `AdminMediaFoldersResource.swift` | Admin media folder operations |
+| `AdminValidationsResource.swift` | Admin validation operations |
+| `ValidationsResource.swift` | Validation management |
 | `WebhookResource.swift` | Webhook management |
 
 Platforms: iOS 16+, macOS 13+, tvOS 16+, watchOS 9+. Swift 5.9+, zero dependencies.
@@ -424,7 +432,7 @@ Client -> Middleware Chain (Recovery, RequestID, ClientIP, UserAgent, Logging, H
 ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `modula.config.json`'s `db_driver` field. The architecture:
 
 1. **sqlc generates** per-database Go code from SQL queries in `sql/schema/` into `internal/db-sqlite/`, `internal/db-mysql/`, `internal/db-psql/`
-2. **`internal/db/db.go`** defines the `DbDriver` interface (450+ methods across 24 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`) that each implement it
+2. **`internal/db/db.go`** defines the `DbDriver` interface (517 methods across 27 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`) that each implement it
 3. **Wrapper methods** in `internal/db/*.go` (e.g., `datatype.go`, `content_data.go`, `media.go`) convert between sqlc-generated types and application-level types, handling NULL conversions and type width differences (SQLite uses int64, MySQL/PostgreSQL use int32)
 4. **`db.DefaultDriver`** is set at startup based on config and injected into handlers
 
@@ -457,7 +465,7 @@ Built with Charmbracelet Bubbletea v2 (Elm Architecture: Model-Update-View). Key
 
 ### RBAC Authorization (internal/middleware/authorization.go)
 
-Role-based access control with `resource:operation` granular permissions. Three bootstrap roles: **admin** (all 72 permissions, bypasses checks), **editor** (36 permissions), **viewer** (5 read-only permissions).
+Role-based access control with `resource:operation` granular permissions. Three bootstrap roles: **admin** (all 112 permissions, bypasses checks), **editor** (60 permissions), **viewer** (5 read-only permissions).
 
 Key components:
 - `PermissionCache` -- in-memory role-to-permissions map, loaded at startup, refreshed every 60s via `StartPeriodicRefresh`. Uses build-then-swap for lock-free reads.
@@ -481,7 +489,7 @@ internal/admin/handlers/  # Render, RenderWithOOB, NewAdminData, CSRFTokenFromCo
 internal/admin/layouts/   # templ layouts (base, admin, auth) + AdminData type
 internal/admin/pages/     # templ full-page components
 internal/admin/partials/  # templ HTMX swap targets
-internal/admin/components/# templ shared UI components (sidebar, topbar, nav, icon, status_badge)
+internal/admin/components/# templ shared UI components (sidebar, topbar, icon, spinner, status_badge) + nav.go
 internal/admin/static/    # CSS, JS, web components (go:embed)
 ```
 
@@ -534,7 +542,7 @@ Loaded from `modula.config.json` at project root. Key fields: `db_driver`, `port
 
 ## SQL Schema Organization
 
-Schemas live in `sql/schema/` as 38 numbered directories (0-37). Each directory contains six files:
+Schemas live in `sql/schema/` as 42 numbered directories (0-41). Each directory contains six files:
 
 ```
 sql/schema/{N}_{name}/
@@ -564,11 +572,11 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `internal/admin/` | HTMX admin panel: CSRF, auth middleware, static file embed |
 | `internal/admin/handlers/` | Admin page handlers (render, auth, CRUD for all resources) |
 | `internal/admin/layouts/` | templ layouts (base, admin, auth) and AdminData type |
-| `internal/admin/pages/` | templ full-page components (~45 pages) |
-| `internal/admin/partials/` | templ HTMX swap targets (~46 partials) |
-| `internal/admin/components/` | templ shared UI: sidebar, topbar, nav, icon, status_badge |
+| `internal/admin/pages/` | templ full-page components (51 pages) |
+| `internal/admin/partials/` | templ HTMX swap targets (48 partials) |
+| `internal/admin/components/` | templ shared UI: sidebar, topbar, icon, spinner, status_badge + nav.go |
 | `internal/admin/static/` | CSS, JS, HTMX, web components (go:embed) |
-| `internal/tui/` | Bubbletea TUI (140+ files, Elm Architecture) |
+| `internal/tui/` | Bubbletea TUI (173 files, Elm Architecture) |
 | `internal/router/` | HTTP route registration with stdlib ServeMux |
 | `internal/middleware/` | CORS, rate limiting, sessions, panic recovery, HTTP metrics, RBAC authorization |
 | `internal/auth/` | Authentication (password + OAuth with Google/GitHub/Azure) |
@@ -592,6 +600,7 @@ Combined schemas (`sql/all_schema*.sql`) are used for fresh installs; regenerate
 | `internal/tree/` | Content tree operations |
 | `internal/update/` | Self-update checker |
 | `internal/validation/` | Input validation rules and type validators |
+| `internal/search/` | Full-text search engine: indexing, tokenization, scoring, snippets |
 | `internal/webhooks/` | Webhook dispatcher, events, signing |
 | `internal/utility/` | Logging (slog), version info, helpers, metrics, observability, runtime metrics |
 | `sdks/typescript/types/` | `@modulacms/types` -- shared TypeScript entity types, branded IDs, enums |

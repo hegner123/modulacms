@@ -40,7 +40,9 @@ Constants: `Open`, `Closed`, `Err`.
 
 ### DbDriver
 
-Unified interface for all database operations across SQLite, MySQL, PostgreSQL. Composes 24 focused repository interfaces defined in repositories.go. Provides connection management, table operations, and CRUD methods for all ModulaCMS tables. Each method group handles a specific entity type with consistent naming patterns.
+Unified interface for all database operations across SQLite, MySQL, PostgreSQL. Composes 27 focused repository interfaces defined in repositories.go. Provides connection management, table operations, and CRUD methods for all ModulaCMS tables. Each method group handles a specific entity type with consistent naming patterns.
+
+Embedded interfaces: SchemaRepository, ConnectionRepository, ContentDataRepository, ContentFieldRepository, AdminContentDataRepository, AdminContentFieldRepository, DatatypeRepository, AdminDatatypeRepository, FieldRepository, AdminFieldRepository, RouteRepository, AdminRouteRepository, MediaRepository, UserRepository, AuthRepository, RBACRepository, BackupRepository, ChangeEventRepository, TableRepository, PluginRepository, LocaleRepository, ValidationRepository, WebhookRepository, MediaFolderRepository, AdminMediaRepository, AdminMediaFolderRepository, FieldPluginConfigRepository.
 
 ## Connection Methods
 

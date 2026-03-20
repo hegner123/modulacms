@@ -311,6 +311,146 @@ ModulaCMS supports external error tracking and metrics through Sentry, Datadog, 
 
 All observability fields are hot-reloadable.
 
+## Admin S3 Storage Settings
+
+When admin media needs a separate bucket or S3 endpoint from public media, configure these fields. If left empty, they fall back to the shared S3 settings above.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `bucket_admin_media` | string | (falls back to `bucket_media`) | Bucket name for admin media assets |
+| `bucket_admin_endpoint` | string | (falls back to `bucket_endpoint`) | S3 endpoint for admin media |
+| `bucket_admin_access_key` | string | (falls back to `bucket_access_key`) | S3 access key for admin media |
+| `bucket_admin_secret_key` | string | (falls back to `bucket_secret_key`) | S3 secret key for admin media |
+| `bucket_admin_public_url` | string | (falls back to `bucket_public_url`) | Public URL for admin media links |
+
+All admin bucket fields are hot-reloadable.
+
+## Remote Connection Settings
+
+Used by the `connect` command to operate against a remote ModulaCMS instance over HTTPS instead of a local database.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `remote_url` | string | `""` | Base URL of the remote ModulaCMS instance |
+| `remote_api_key` | string | `""` | API key for authenticating with the remote instance |
+
+These fields are mutually exclusive with `db_driver` when using the `connect` command.
+
+## Deploy Settings
+
+Configure remote environments for content sync operations.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `deploy_environments` | array | `[]` | List of remote environments (each with `name`, `url`, `api_key`) |
+| `deploy_snapshot_dir` | string | `""` | Local directory for deploy snapshots |
+
+Each entry in `deploy_environments` is an object:
+
+```json
+{
+  "deploy_environments": [
+    { "name": "staging", "url": "https://staging.example.com", "api_key": "${STAGING_API_KEY}" },
+    { "name": "production", "url": "https://cms.example.com", "api_key": "${PROD_API_KEY}" }
+  ]
+}
+```
+
+## Publishing Settings
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `publish_schedule_interval` | integer | `60` | Seconds between scheduled publish ticks |
+| `version_max_per_content` | integer | `50` | Maximum versions per content item (0 = unlimited) |
+| `node_level_publish` | bool | `false` | When false, publish propagates to all descendants; when true, publish is per-node |
+
+## Webhook Settings
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `webhook_enabled` | bool | `false` | Enable webhook delivery |
+| `webhook_timeout` | integer | `10` | HTTP timeout in seconds for deliveries |
+| `webhook_max_retries` | integer | `3` | Maximum retry attempts per delivery |
+| `webhook_workers` | integer | `4` | Concurrent delivery workers |
+| `webhook_allow_http` | bool | `false` | Allow non-TLS webhook URLs (dev only) |
+| `webhook_delivery_retention_days` | integer | `30` | Days to retain completed deliveries |
+
+## Internationalization Settings
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `i18n_enabled` | bool | `false` | Enable internationalization |
+| `i18n_default_locale` | string | `"en"` | Default locale code |
+
+## Search Settings
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `search_enabled` | bool | `false` | Enable full-text search |
+| `search_path` | string | `""` | Path for the search index directory |
+
+## MCP Settings
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `mcp_enabled` | bool | `false` | Enable the MCP server (Model Context Protocol for AI tooling) |
+| `mcp_api_key` | string | `""` | API key for authenticating MCP clients |
+
+## Composition Settings
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `composition_max_depth` | integer | `10` | Maximum depth for reference datatype composition |
+
+## Richtext Settings
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `richtext_toolbar` | string[] | `["bold","italic","h1","h2","h3","link","ul","ol","preview"]` | Default toolbar buttons for richtext fields |
+
+## Extended Plugin Settings
+
+In addition to the base plugin fields above, these control database pooling, content hooks, outbound requests, and production hardening.
+
+### Plugin Database Pool
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `plugin_db_max_open_conns` | integer | (driver default) | Max open database connections for plugins |
+| `plugin_db_max_idle_conns` | integer | (driver default) | Max idle database connections for plugins |
+| `plugin_db_conn_max_lifetime` | string | (driver default) | Max connection lifetime (e.g., `"5m"`) |
+
+### Plugin Hook Configuration
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `plugin_hook_reserve_vms` | integer | `1` | VMs reserved for hooks per plugin |
+| `plugin_hook_max_consecutive_aborts` | integer | `10` | Circuit breaker threshold for hook failures |
+| `plugin_hook_max_ops` | integer | `100` | Reduced op budget for after-hooks |
+| `plugin_hook_max_concurrent_after` | integer | `10` | Max concurrent after-hook goroutines |
+| `plugin_hook_timeout_ms` | integer | `2000` | Per-hook timeout in before-hooks (ms) |
+| `plugin_hook_event_timeout_ms` | integer | `5000` | Total timeout for before-hook chain per event (ms) |
+
+### Plugin Outbound Request Engine
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `plugin_request_timeout` | integer | `10` | Outbound request timeout in seconds |
+| `plugin_request_max_response` | integer | `1048576` | Max response body size in bytes (1 MB) |
+| `plugin_request_max_body` | integer | `1048576` | Max request body size in bytes (1 MB) |
+| `plugin_request_rate_limit` | integer | `60` | Requests per plugin per domain per minute |
+| `plugin_request_global_rate` | integer | `600` | Aggregate requests per minute (0 = unlimited) |
+| `plugin_request_cb_failures` | integer | `5` | Consecutive failures to trip circuit breaker |
+| `plugin_request_cb_reset` | integer | `60` | Seconds before half-open probe |
+| `plugin_request_allow_local` | bool | `false` | Allow HTTP to localhost (dev only) |
+
+### Plugin Production Hardening
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `plugin_sync_interval` | string | `"10s"` | DB state polling interval for multi-instance sync (`"0"` disables) |
+| `plugin_trusted_proxies` | string[] | `[]` | CIDR list for trusted proxies (empty = use RemoteAddr only) |
+
 ## Update Settings
 
 | Field | Type | Default | Description |
@@ -345,12 +485,19 @@ Fields that are hot-reloadable (take effect immediately):
 - CORS settings
 - Cookie settings
 - OAuth settings
-- S3 storage settings
+- S3 storage settings (including admin bucket fields)
 - Email settings
 - Observability settings
-- Plugin runtime limits (VMs, timeout, rate limits)
+- Plugin runtime limits (VMs, timeout, rate limits, hooks, requests)
 - Update settings
 - Output format and upload size
+- Webhook settings
+- Search settings
+- Internationalization settings
+- Composition settings
+- Richtext toolbar
+- Publishing settings
+- MCP settings
 
 Update hot-reloadable fields through the admin panel at `/admin/settings`, through the REST API, or by editing `modula.config.json` directly. Changes made via the API or admin panel save to `modula.config.json` and take effect immediately. Changes made by editing the file directly require the config to be reloaded.
 
@@ -394,6 +541,9 @@ ModulaCMS redacts the following fields (replacing them with `********`) when ret
 - `db_password`
 - `bucket_access_key`
 - `bucket_secret_key`
+- `bucket_admin_access_key`
+- `bucket_admin_secret_key`
+- `remote_api_key`
 - `oauth_client_id`
 - `oauth_client_secret`
 - `observability_dsn`
@@ -401,6 +551,7 @@ ModulaCMS redacts the following fields (replacing them with `********`) when ret
 - `email_api_key`
 - `email_aws_access_key_id`
 - `email_aws_secret_access_key`
+- `mcp_api_key`
 
 > **Good to know**: When you update configuration via the API, redacted values (`********`) are skipped automatically to prevent overwriting secrets with the placeholder.
 
@@ -447,7 +598,7 @@ ModulaCMS redacts the following fields (replacing them with `********`) when ret
 }
 ```
 
-Fields not shown here (database credentials, S3 credentials, OAuth endpoints, email credentials) default to empty strings and need to be set for their respective features.
+Fields not shown here (database credentials, S3 credentials, OAuth endpoints, email credentials, admin bucket settings, remote connection, deploy environments, MCP, search, webhook, i18n, richtext, composition) default to empty strings, empty arrays, zero values, or false and need to be set for their respective features.
 
 ## Next steps
 

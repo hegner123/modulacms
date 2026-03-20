@@ -584,39 +584,75 @@ Query parameters: sort (field name, prefix - for descending), limit (default 20,
 
 ## Publishing Handlers
 
-### PublishContentHandler
+### PublishHandler
 
-Handles POST /api/v1/admin/content/publish. Requires content:publish permission. Publishes content by creating a snapshot.
+Handles POST /api/v1/content/publish. Requires content:publish permission. Publishes content by creating a snapshot.
 
-### UnpublishContentHandler
+### UnpublishHandler
 
-Handles POST /api/v1/admin/content/unpublish. Requires content:publish permission. Removes published state from content.
+Handles POST /api/v1/content/unpublish. Requires content:publish permission. Removes published state from content.
 
-### ScheduleContentHandler
+### ScheduleHandler
 
-Handles POST /api/v1/admin/content/schedule. Requires content:publish permission. Schedules content for future publication.
+Handles POST /api/v1/content/schedule. Requires content:publish permission. Schedules content for future publication.
+
+### AdminPublishHandler
+
+Handles POST /api/v1/admin/content/publish. Requires content:publish permission. Publishes admin content by creating a snapshot.
+
+### AdminUnpublishHandler
+
+Handles POST /api/v1/admin/content/unpublish. Requires content:publish permission. Removes published state from admin content.
+
+### AdminScheduleHandler
+
+Handles POST /api/v1/admin/content/schedule. Requires content:publish permission. Schedules admin content for future publication.
 
 ## Content Version Handlers
 
 ### ContentVersionsListHandler
 
-Handles GET /api/v1/admin/content/versions. Requires content:read permission. Lists all content versions.
+Handles GET /api/v1/contentversions. Requires content:read permission. Lists content versions filtered by content_id query parameter.
 
-### ContentVersionGetHandler
+### ListVersionsHandler
 
-Handles GET /api/v1/admin/content/versions/. Requires content:read permission. Gets a specific content version by ID via query parameter q.
+Handles GET /api/v1/content/versions. Requires content:read permission. Lists all content versions.
 
-### ContentVersionCreateHandler
+### GetVersionHandler
 
-Handles POST /api/v1/admin/content/versions. Requires content:update permission. Creates a version snapshot of current content state.
+Handles GET /api/v1/content/versions/. Requires content:read permission. Gets a specific content version by ID.
 
-### ContentVersionDeleteHandler
+### CreateManualVersionHandler
 
-Handles DELETE /api/v1/admin/content/versions/. Requires content:delete permission. Deletes a specific content version.
+Handles POST /api/v1/content/versions. Requires content:update permission. Creates a version snapshot of current content state.
 
-### ContentRestoreHandler
+### DeleteVersionHandler
 
-Handles POST /api/v1/admin/content/restore. Requires content:update permission. Restores content to a previous version state.
+Handles DELETE /api/v1/content/versions/. Requires content:delete permission. Deletes a specific content version.
+
+### RestoreVersionHandler
+
+Handles POST /api/v1/content/restore. Requires content:update permission. Restores content to a previous version state.
+
+### AdminListVersionsHandler
+
+Handles GET /api/v1/admin/content/versions. Requires content:read permission. Lists all admin content versions.
+
+### AdminGetVersionHandler
+
+Handles GET /api/v1/admin/content/versions/. Requires content:read permission. Gets a specific admin content version by ID.
+
+### AdminCreateManualVersionHandler
+
+Handles POST /api/v1/admin/content/versions. Requires content:update permission. Creates a version snapshot of current admin content state.
+
+### AdminDeleteVersionHandler
+
+Handles DELETE /api/v1/admin/content/versions/. Requires content:delete permission. Deletes a specific admin content version.
+
+### AdminRestoreVersionHandler
+
+Handles POST /api/v1/admin/content/restore. Requires content:update permission. Restores admin content to a previous version state.
 
 ## Locale Handlers
 
@@ -654,7 +690,7 @@ Handles DELETE /api/v1/admin/webhooks/{id}. Requires webhook:delete permission. 
 
 Handles POST /api/v1/admin/webhooks/{id}/test. Requires webhook:update permission. Sends a test delivery to the webhook endpoint.
 
-### WebhookDeliveriesHandler
+### WebhookDeliveryListHandler
 
 Handles GET /api/v1/admin/webhooks/{id}/deliveries. Requires webhook:read permission. Lists delivery history for a webhook.
 
@@ -664,11 +700,11 @@ Handles POST /api/v1/admin/webhooks/deliveries/{id}/retry. Requires webhook:upda
 
 ## Translation Handlers
 
-### CreateContentTranslationHandler
+### TranslationHandler
 
 Handles POST /api/v1/admin/contentdata/{id}/translations. Requires content:create permission. Creates a translation of a content node for a specified locale.
 
-### CreateAdminContentTranslationHandler
+### AdminTranslationHandler
 
 Handles POST /api/v1/admin/admincontentdata/{id}/translations. Requires content:create permission. Creates a translation of an admin content node.
 
@@ -682,13 +718,315 @@ Handles GET /api/v1/users/full. Requires users:read permission. Returns all user
 
 Handles GET /api/v1/users/full/. Requires users:read permission. Returns a single user with role details by ID via query parameter q.
 
-### ReassignDeleteHandler
+### UserReassignDeleteHandler
 
 Handles POST /api/v1/users/reassign-delete. Requires users:delete permission. Reassigns the user's content to another user and then deletes the user.
 
-### UserSessionsHandler
+### UserSessionHandler
 
 Handles GET /api/v1/users/sessions. Requires sessions:read permission. Lists sessions for the authenticated user.
+
+## Content Tree Handlers
+
+### ContentTreeSaveHandler
+
+Handles POST /api/v1/content/tree. Requires content:update permission. Bulk pointer updates and deletes for content tree restructuring.
+
+### ContentTreeGetHandler
+
+Handles GET /api/v1/content/tree/{routeID}. Requires content:read permission. Returns the content tree structure for a given route.
+
+## Content Reorder Handlers
+
+### ContentDataReorderHandler
+
+Handles POST /api/v1/contentdata/reorder. Requires content:update permission. Reorders content data sibling nodes.
+
+### AdminContentDataReorderHandler
+
+Handles POST /api/v1/admincontentdatas/reorder. Requires content:update permission. Reorders admin content data sibling nodes.
+
+## Content Move Handlers
+
+### ContentDataMoveHandler
+
+Handles POST /api/v1/contentdata/move. Requires content:update permission. Moves content node to a different parent (cross-parent move).
+
+### AdminContentDataMoveHandler
+
+Handles POST /api/v1/admincontentdatas/move. Requires content:update permission. Moves admin content node to a different parent (cross-parent move).
+
+## Content Heal Handler
+
+### ContentHealHandler
+
+Handles POST /api/v1/admin/content/heal. Requires content:update permission. Admin repair operation for malformed content tree IDs and pointer inconsistencies.
+
+## Content Create Handler (Composite)
+
+### ContentCreateHandler
+
+Handles POST /api/v1/content/create. Requires content:create permission. Creates content node with fields in a single composite operation.
+
+## Content Data Full Handlers
+
+### ContentDataFullHandler
+
+Handles GET /api/v1/contentdata/full. Requires content:read permission. Returns content data with additional joined details.
+
+### ContentDataByRouteHandler
+
+Handles GET /api/v1/contentdata/by-route. Requires content:read permission. Returns content data filtered by route.
+
+### AdminContentDataFullHandler
+
+Handles GET /api/v1/admincontentdatas/full. Requires content:read permission. Returns admin content data with additional joined details.
+
+## Datatype Full Handlers
+
+### DatatypeFullHandler
+
+Handles GET /api/v1/datatype/full. Requires datatypes:read permission. Returns a single datatype with full field details.
+
+### DatatypesFullListHandler
+
+Handles GET /api/v1/datatype/full/list. Requires datatypes:read permission. Returns all datatypes with full field details.
+
+### DatatypeMaxSortOrderHandler
+
+Handles GET /api/v1/datatype/max-sort-order. Requires datatypes:read permission. Returns the maximum sort order value for datatypes under a parent.
+
+### DatatypeSortOrderHandler
+
+Handles PUT /api/v1/datatype/{id}/sort-order. Requires datatypes:update permission. Updates the sort order of a datatype.
+
+### AdminDatatypeFullHandler
+
+Handles GET /api/v1/admindatatypes/full. Requires datatypes:read permission. Returns a single admin datatype with full field details.
+
+### AdminDatatypeMaxSortOrderHandler
+
+Handles GET /api/v1/admindatatypes/max-sort-order. Requires datatypes:read permission. Returns the maximum sort order value for admin datatypes under a parent.
+
+### AdminDatatypeSortOrderHandler
+
+Handles PUT /api/v1/admindatatypes/{id}/sort-order. Requires datatypes:update permission. Updates the sort order of an admin datatype.
+
+## Field Sort Order Handlers
+
+### FieldSortOrderHandler
+
+Handles PUT /api/v1/fields/{id}/sort-order. Requires fields:update permission. Updates the sort order of a field.
+
+### FieldMaxSortOrderHandler
+
+Handles GET /api/v1/fields/max-sort-order. Requires fields:read permission. Returns the maximum sort order value for fields under a parent datatype.
+
+## Route Full Handler
+
+### RouteFullHandler
+
+Handles GET /api/v1/routes/full. Requires routes:read permission. Returns routes with additional joined details.
+
+## Field Type Handlers
+
+### FieldTypesHandler
+
+Collection endpoint at /api/v1/fieldtypes supporting GET to list and POST to create. Requires field_types resource permission.
+
+### FieldTypeHandler
+
+Individual resource endpoint at /api/v1/fieldtypes/ supporting GET, PUT, DELETE for specific field type. Requires field_types resource permission.
+
+### AdminFieldTypesHandler
+
+Collection endpoint at /api/v1/adminfieldtypes supporting GET to list and POST to create. Requires admin_field_types resource permission.
+
+### AdminFieldTypeHandler
+
+Individual resource endpoint at /api/v1/adminfieldtypes/ supporting GET, PUT, DELETE for specific admin field type. Requires admin_field_types resource permission.
+
+## Admin Media Handlers
+
+### AdminMediasHandler
+
+Collection endpoint at /api/v1/adminmedia supporting GET with optional pagination and POST to upload admin media file. Requires media resource permission.
+
+### AdminMediaHandler
+
+Individual resource endpoint at /api/v1/adminmedia/ supporting GET, PUT, DELETE for specific admin media item. Requires media resource permission.
+
+### apiDownloadAdminMedia
+
+Handles GET /api/v1/adminmedia/{id}/download. Requires media:read permission. Generates a pre-signed S3 URL for admin media download and redirects the client.
+
+### apiBatchMoveAdminMedia
+
+Handles POST /api/v1/adminmedia/move. Requires media:update permission. Moves multiple admin media items to a folder or to root.
+
+## Admin Media Folder Handlers
+
+### apiListAdminMediaFolders
+
+Handles GET /api/v1/adminmedia-folders. Returns root admin media folders by default, or children of a specified parent. Requires media:read permission.
+
+### apiAdminMediaFolderTree
+
+Handles GET /api/v1/adminmedia-folders/tree. Returns the full admin media folder hierarchy as a nested tree structure. Requires media:read permission.
+
+### apiCreateAdminMediaFolder
+
+Handles POST /api/v1/adminmedia-folders. Creates a new admin media folder. Requires media:create permission.
+
+### apiGetAdminMediaFolder
+
+Handles GET /api/v1/adminmedia-folders/{id}. Returns a single admin media folder by ID. Requires media:read permission.
+
+### apiUpdateAdminMediaFolder
+
+Handles PUT /api/v1/adminmedia-folders/{id}. Updates an existing admin media folder. Requires media:update permission.
+
+### apiDeleteAdminMediaFolder
+
+Handles DELETE /api/v1/adminmedia-folders/{id}. Deletes an admin media folder. Requires media:delete permission.
+
+### apiAdminMediaFolderMedia
+
+Handles GET /api/v1/adminmedia-folders/{id}/media. Returns media items within an admin media folder. Requires media:read permission.
+
+## Validation Handlers
+
+### ValidationListHandler
+
+Handles GET /api/v1/validations. Requires validations:read permission. Lists all validation configurations.
+
+### ValidationCreateHandler
+
+Handles POST /api/v1/validations. Requires validations:create permission. Creates a new validation configuration.
+
+### ValidationSearchHandler
+
+Handles GET /api/v1/validations/search. Requires validations:read permission. Searches validation configurations.
+
+### ValidationGetHandler
+
+Handles GET /api/v1/validations/{id}. Requires validations:read permission. Returns a specific validation by ID.
+
+### ValidationUpdateHandler
+
+Handles PUT /api/v1/validations/{id}. Requires validations:update permission. Updates a validation configuration.
+
+### ValidationDeleteHandler
+
+Handles DELETE /api/v1/validations/{id}. Requires validations:delete permission. Deletes a validation configuration.
+
+## Admin Validation Handlers
+
+### AdminValidationListHandler
+
+Handles GET /api/v1/admin/validations. Requires admin_validations:read permission. Lists all admin validation configurations.
+
+### AdminValidationCreateHandler
+
+Handles POST /api/v1/admin/validations. Requires admin_validations:create permission. Creates a new admin validation configuration.
+
+### AdminValidationSearchHandler
+
+Handles GET /api/v1/admin/validations/search. Requires admin_validations:read permission. Searches admin validation configurations.
+
+### AdminValidationGetHandler
+
+Handles GET /api/v1/admin/validations/{id}. Requires admin_validations:read permission. Returns a specific admin validation by ID.
+
+### AdminValidationUpdateHandler
+
+Handles PUT /api/v1/admin/validations/{id}. Requires admin_validations:update permission. Updates an admin validation configuration.
+
+### AdminValidationDeleteHandler
+
+Handles DELETE /api/v1/admin/validations/{id}. Requires admin_validations:delete permission. Deletes an admin validation configuration.
+
+## Permission Handlers
+
+### PermissionsHandler
+
+Collection endpoint at /api/v1/permissions supporting GET to list and POST to create. Requires permissions resource permission.
+
+### PermissionHandler
+
+Individual resource endpoint at /api/v1/permissions/ supporting GET, PUT, DELETE for specific permission. Requires permissions resource permission.
+
+## Role-Permission Handlers
+
+### RolePermissionsHandler
+
+Collection endpoint at /api/v1/role-permissions supporting GET to list and POST to create. Requires roles resource permission.
+
+### RolePermissionHandler
+
+Individual resource endpoint at /api/v1/role-permissions/ supporting GET, PUT, DELETE for specific role-permission junction record. Requires roles resource permission.
+
+### RolePermissionsByRoleHandler
+
+Handles GET /api/v1/role-permissions/role/. Requires roles:read permission. Returns all permissions assigned to a specific role.
+
+## Deploy Handlers
+
+### deploy.DeployHealthHandler
+
+Handles GET /api/v1/deploy/health. Requires deploy:read permission. Returns deploy health status for the environment.
+
+### deploy.DeployExportHandler
+
+Handles POST /api/v1/deploy/export. Requires deploy:read permission. Exports content data for deployment sync.
+
+### deploy.DeployImportHandler
+
+Handles POST /api/v1/deploy/import. Requires deploy:create permission. Imports content data from a deployment sync export.
+
+## Config Handlers
+
+### ConfigGetHandler
+
+Handles GET /api/v1/admin/config. Requires config:read permission with authenticated chain. Returns current server configuration.
+
+### ConfigUpdateHandler
+
+Handles PATCH /api/v1/admin/config. Requires config:update permission with authenticated chain. Updates server configuration fields.
+
+### ConfigMetaHandler
+
+Handles GET /api/v1/admin/config/meta. Requires config:read permission with authenticated chain. Returns configuration field metadata.
+
+### ConfigSearchIndexHandler
+
+Handles GET /api/v1/admin/config/search-index. Requires config:read permission with authenticated chain. Returns search index configuration.
+
+## Metrics Handler
+
+Handles GET /api/v1/admin/metrics. Requires config:read permission with authenticated chain. Returns runtime metrics snapshot as JSON.
+
+## Activity Handler
+
+### ActivityRecentHandler
+
+Handles GET /api/v1/activity/recent. Requires audit:read permission. Returns recent activity feed from change events.
+
+## Public Locales Handler
+
+### LocalesPublicHandler
+
+Handles GET /api/v1/locales. Public endpoint (no auth required) with CORS. Returns enabled locales for client consumption.
+
+## Password Reset Handlers
+
+### RequestPasswordResetHandler
+
+Handles POST /api/v1/auth/request-password-reset. Public endpoint with CORS and rate limiting. Initiates a password reset flow by sending a reset email.
+
+### ConfirmPasswordResetHandler
+
+Handles POST /api/v1/auth/confirm-password-reset. Public endpoint with CORS and rate limiting. Confirms a password reset using a token from email.
 
 ## Utilities
 

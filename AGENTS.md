@@ -151,11 +151,11 @@ internal/
   admin/                      # HTMX admin panel: CSRF, auth middleware, static file embed
     handlers/                 # Admin page handlers (render, auth, CRUD for all resources)
     layouts/                  # templ layouts (base, admin, auth) and AdminData type
-    pages/                    # templ full-page components (~45 pages)
-    partials/                 # templ HTMX swap targets (~46 partials)
-    components/               # templ shared UI: sidebar, topbar, nav, icon, status_badge
+    pages/                    # templ full-page components (51 pages)
+    partials/                 # templ HTMX swap targets (48 partials)
+    components/               # templ shared UI: sidebar, topbar, icon, spinner, status_badge + nav.go
     static/                   # CSS, JS, HTMX, web components (go:embed)
-  tui/                        # Bubbletea TUI (140+ files, Elm Architecture)
+  tui/                        # Bubbletea TUI (173 files, Elm Architecture)
   router/                     # HTTP route registration with stdlib ServeMux (Go 1.22+ patterns)
   middleware/                  # CORS, rate limiting, sessions, panic recovery, HTTP metrics, RBAC authorization
   auth/                       # Authentication (password + OAuth with Google/GitHub/Azure)
@@ -175,21 +175,24 @@ internal/
   transform/                  # Response format transformers (Contentful, Sanity, Strapi, WordPress, Clean, Raw)
   validation/                 # Input validation rules and type validators
   bucket/                     # S3-compatible storage client
+  search/                     # Full-text search engine: indexing, tokenization, scoring, snippets
+  registry/                   # Project registry (~/.modula/configs.json) for connect command
+  remote/                     # RemoteDriver -- DbDriver over Go SDK (HTTPS) with retry and connection tracking
   service/                    # Service layer for business logic orchestration
   utility/                    # Logging (slog), version info, helpers, metrics, observability
   email/                      # Email service (SMTP, SendGrid, SES, Postmark)
-  tui/                        # TUI layout framework (header, panel, statusbar, layers)
   update/                     # Self-update checker
 sdks/
   typescript/                 # pnpm workspace monorepo: @modulacms/types, @modulacms/tree, @modulacms/sdk, @modulacms/admin-sdk, @modulacms/plugin-sdk, @modulacms/admin-ui
   go/                         # Go SDK (modulacms package)
   swift/                      # Swift SDK (SPM package, Apple platforms)
 sql/
-  schema/                     # 38 numbered directories (0-37), each with 6 files (3 schema + 3 queries per DB engine)
+  schema/                     # 42 numbered directories (0-41), each with 6 files (3 schema + 3 queries per DB engine)
   sqlc.yml                    # sqlc configuration (generated — do not hand-edit)
   all_schema*.sql             # Combined schemas for fresh installs
 tools/
   dbgen/                      # DB wrapper code generator
+  drivergen/                  # MySQL/PostgreSQL variant generator from SQLite custom wrappers
   sqlcgen/                    # sqlc.yml generator from shared definitions
   transform_cud/              # CUD transform generator
   transform_bootstrap/        # Bootstrap data generator
@@ -207,7 +210,7 @@ deploy/                       # Docker compose files and deployment configs
 ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `config.json`'s `db_driver` field:
 
 1. **sqlc generates** per-database Go code from SQL queries in `sql/schema/` into `internal/db-sqlite/` (package `mdb`), `internal/db-mysql/` (package `mdbm`), `internal/db-psql/` (package `mdbp`)
-2. **`internal/db/db.go`** defines the `DbDriver` interface (400+ methods across 24 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`)
+2. **`internal/db/db.go`** defines the `DbDriver` interface (517 methods across 27 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`)
 3. **Wrapper methods** in `internal/db/*.go` convert between sqlc types and application types, handling NULL conversions and type width differences (SQLite uses int64, MySQL/PostgreSQL use int32)
 4. **`db.DefaultDriver`** is set at startup based on config and injected into handlers
 
@@ -291,7 +294,7 @@ Client → Middleware Chain (Recovery, RequestID, ClientIP, UserAgent, Logging, 
 
 Role-based access control with `resource:operation` granular permissions (`internal/middleware/authorization.go`):
 
-- **Three bootstrap roles**: admin (all 72 permissions, bypasses checks), editor (36), viewer (5 read-only)
+- **Three bootstrap roles**: admin (all 112 permissions, bypasses checks), editor (60), viewer (5 read-only)
 - **`PermissionCache`** — in-memory role-to-permissions map, loaded at startup, refreshed every 60s. Build-then-swap for lock-free reads.
 - **Permission middleware**: `RequirePermission("resource:operation")`, `RequireResourcePermission("resource")` (auto-maps HTTP method → operation), `RequireAnyPermission(...)`, `RequireAllPermissions(...)`
 - **Admin bypass** via `ContextIsAdmin()` boolean, not wildcard
@@ -396,7 +399,7 @@ Focus system: `PAGEFOCUS`, `TABLEFOCUS`, `FORMFOCUS`, `DIALOGFOCUS` — determin
 
 ## SQL Schema
 
-Schemas live in `sql/schema/` as 38 numbered directories (0-37). Each directory contains up to 6 files:
+Schemas live in `sql/schema/` as 42 numbered directories (0-41). Each directory contains up to 6 files:
 
 ```
 sql/schema/{N}_{name}/

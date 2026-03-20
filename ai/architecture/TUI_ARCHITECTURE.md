@@ -73,37 +73,76 @@ User Input → Message → Update → New State → View → Render → Wait for
 
 The Model is a struct containing ALL application state.
 
-**Example from ModulaCMS:**
+**Actual Model from ModulaCMS (`internal/tui/model.go`):**
 ```go
 type Model struct {
-    // Database connection
-    db db.DbDriver
+    DB                db.DbDriver
+    Config            *config.Config
+    Logger            Logger
+    Status            ApplicationState
+    TitleFont         int
+    Titles            []string
+    Width             int
+    Height            int
+    PageRouteId       types.RouteID
+    Loading           bool
+    Cursor            int
+    Paginator         paginator.Model
+    Page              Page
+    PageMenu          []Page
+    Pages             []Page
+    PageMap           map[PageIndex]Page
+    FormState         *FormModel
+    TableState        *TableModel
+    DatabaseMode      DatabaseMode
+    Focus             FocusKey
+    Verbose           bool
+    Ready             bool
+    Err               error
+    Spinner           spinner.Model
+    Viewport          viewport.Model
+    History           []PageHistory
+    ActiveOverlay     ModalOverlay
+    FilePicker        filepicker.Model
+    FilePickerActive  bool
+    FilePickerPurpose FilePickerPurpose
+    PluginManager     *plugin.Manager
+    ConfigManager     *config.Manager
 
-    // Content tree state
-    contentTree  *TreeRoot
-    selectedNode *TreeNode
-    cursor       int
-    scrollOffset int
+    // SSH User Provisioning
+    NeedsProvisioning bool
+    SSHFingerprint    string
+    SSHKeyType        string
+    SSHPublicKey      string
+    UserID            types.UserID
 
-    // UI components
-    viewport viewport.Model
-    spinner  spinner.Model
-    form     *huh.Form
+    // Webhook management
+    Dispatcher publishing.WebhookDispatcher
 
-    // Application mode
-    mode AppMode
+    // i18n locale state
+    ActiveLocale string
 
-    // UI state
-    width  int
-    height int
-    ready  bool
+    // Screen mode state
+    ScreenMode       ScreenMode
+    ScreenModeManual bool
+    AccordionEnabled bool
 
-    // User feedback
-    errorMessage   string
-    successMessage string
+    // AdminMode toggles between client and admin CMS pages.
+    AdminMode bool
 
-    // Async state
-    loading bool
+    // ActiveScreen holds the Screen implementation for the current page.
+    ActiveScreen Screen
+
+    // Connection mode flags
+    IsRemote  bool
+    IsSSH     bool
+    RemoteURL string
+
+    // DB readiness channel for serve command
+    DBReadyCh chan struct{}
+
+    // Per-session dialog context
+    DCtx DialogContext
 }
 ```
 
@@ -111,7 +150,40 @@ type Model struct {
 - Everything needed to render UI
 - No hidden state
 - Self-contained
-- Can be serialized (in theory)
+- ActiveScreen dispatches to screen-specific logic
+- DialogContext replaces former package-level vars for SSH session safety
+
+### Screen Interface
+
+The Screen interface (`internal/tui/screen.go`) is the contract for self-contained TUI pages. Each screen owns its state, update logic, and rendering. Screens receive an AppContext snapshot (read-only shared state) and return commands -- they never mutate the root Model directly.
+
+```go
+type Screen interface {
+    // Update processes a message and returns the (possibly new) Screen plus
+    // any commands to execute. The AppContext provides read-only access to
+    // shared state; mutations to Model fields (like PanelFocus or overlays)
+    // are performed via returned tea.Cmd messages.
+    Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd)
+
+    // View renders the screen content. For panel-based screens this is the
+    // full panel layout; for single-panel screens it fills the available area.
+    View(ctx AppContext) string
+
+    // PageIndex returns the PageIndex constant for this screen, used to
+    // keep Model.Page in sync during the coexistence period.
+    PageIndex() PageIndex
+}
+```
+
+Screens can optionally implement `KeyHinter` to provide context-aware statusbar key hints:
+
+```go
+type KeyHinter interface {
+    KeyHints(km config.KeyMap) []KeyHint
+}
+```
+
+The root Model dispatches messages to `ActiveScreen.Update()` for screen-specific logic. Global concerns (window resize, provisioning, dialog overlays) are handled by the root Model before delegation. Screen transitions are handled via `screenForPage()` which maps PageIndex constants to Screen constructors.
 
 ### 2. Update: State Transitions
 

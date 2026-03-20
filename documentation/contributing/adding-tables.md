@@ -24,10 +24,10 @@ Schema directories in `sql/schema/` are numbered sequentially. List the existing
 ls -1 sql/schema/
 ```
 
-If the highest is `37_media_folders/`, your new table is `38_comments/`.
+If the highest is `41_admin_media/`, your new table is `42_comments/`.
 
 ```bash
-mkdir sql/schema/38_comments
+mkdir sql/schema/42_comments
 ```
 
 ## Step 2: Create Schema Files
@@ -35,7 +35,7 @@ mkdir sql/schema/38_comments
 Each migration directory contains six files -- three schema files and three query files:
 
 ```
-38_comments/
+42_comments/
   schema.sql           # SQLite
   schema_mysql.sql     # MySQL
   schema_psql.sql      # PostgreSQL
@@ -48,11 +48,14 @@ Each migration directory contains six files -- three schema files and three quer
 
 ```sql
 CREATE TABLE IF NOT EXISTS comments (
-    comment_id INTEGER PRIMARY KEY,
-    content_data_id INTEGER NOT NULL
-        REFERENCES content_data ON DELETE CASCADE,
-    author_id INTEGER NOT NULL
-        REFERENCES users ON DELETE SET DEFAULT,
+    comment_id TEXT NOT NULL
+        PRIMARY KEY CHECK (length(comment_id) = 26),
+    content_data_id TEXT NOT NULL
+        REFERENCES content_data(content_data_id)
+            ON DELETE CASCADE,
+    author_id TEXT NOT NULL
+        REFERENCES users(user_id)
+            ON DELETE SET NULL,
     comment_text TEXT NOT NULL,
     status TEXT DEFAULT 'pending',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -60,13 +63,16 @@ CREATE TABLE IF NOT EXISTS comments (
 );
 ```
 
+All primary keys use ULID format: 26-character lexicographically sortable unique identifiers stored as TEXT.
+
 ### MySQL Schema (schema_mysql.sql)
 
 ```sql
 CREATE TABLE IF NOT EXISTS comments (
-    comment_id INT AUTO_INCREMENT PRIMARY KEY,
-    content_data_id INT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    comment_id VARCHAR(26) NOT NULL
+        PRIMARY KEY,
+    content_data_id VARCHAR(26) NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     comment_text TEXT NOT NULL,
     status VARCHAR(50) DEFAULT 'pending',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -76,7 +82,7 @@ CREATE TABLE IF NOT EXISTS comments (
             ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_comments_author
         FOREIGN KEY (author_id) REFERENCES users (user_id)
-            ON UPDATE CASCADE ON DELETE SET DEFAULT
+            ON UPDATE CASCADE ON DELETE SET NULL
 );
 ```
 
@@ -84,15 +90,16 @@ CREATE TABLE IF NOT EXISTS comments (
 
 ```sql
 CREATE TABLE IF NOT EXISTS comments (
-    comment_id SERIAL PRIMARY KEY,
-    content_data_id INTEGER NOT NULL
+    comment_id VARCHAR(26) NOT NULL
+        PRIMARY KEY,
+    content_data_id VARCHAR(26) NOT NULL
         CONSTRAINT fk_comments_content_data
-            REFERENCES content_data
+            REFERENCES content_data(content_data_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
-    author_id INTEGER NOT NULL
+    author_id VARCHAR(26) NOT NULL
         CONSTRAINT fk_comments_author
-            REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            REFERENCES users(user_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     comment_text TEXT NOT NULL,
     status VARCHAR(50) DEFAULT 'pending',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -104,7 +111,7 @@ CREATE TABLE IF NOT EXISTS comments (
 
 | Feature | SQLite | MySQL | PostgreSQL |
 |---------|--------|-------|------------|
-| Auto-increment | `INTEGER PRIMARY KEY` | `INT AUTO_INCREMENT` | `SERIAL` |
+| Primary key | `TEXT NOT NULL PRIMARY KEY CHECK (length(...) = 26)` | `VARCHAR(26) NOT NULL PRIMARY KEY` | `VARCHAR(26) NOT NULL PRIMARY KEY` |
 | Timestamps | `TEXT` | `TIMESTAMP` | `TIMESTAMP` |
 | Auto-update timestamp | Application-side | `ON UPDATE CURRENT_TIMESTAMP` | Application-side or trigger |
 | Placeholders | `?` | `?` | `$1, $2, $3` |
@@ -177,13 +184,11 @@ Fresh installations use combined schema files. Add your table's CREATE statement
 - `sql/all_schema_mysql.sql` (MySQL)
 - `sql/all_schema_psql.sql` (PostgreSQL)
 
-Helper scripts in `sql/schema/` can regenerate these from the individual files:
+A helper script in `sql/` regenerates all three from the individual files:
 
 ```bash
-cd sql/schema
-./read_sql.sh > ../all_schema.sql
-./read_mysql.sh > ../all_schema_mysql.sql
-./read_psql.sh > ../all_schema_psql.sql
+cd sql
+./generate_combined.sh
 ```
 
 ## Step 5: Generate Go Code
@@ -195,6 +200,18 @@ just sqlc
 This produces type-safe Go code in three packages (`internal/db-sqlite/`, `internal/db-mysql/`, `internal/db-psql/`). Each package gets updated struct definitions and query function files.
 
 > **Good to know**: Never edit files in these three directories by hand -- they are overwritten on each generation.
+
+### Code Generation Tools
+
+ModulaCMS has three code generators that eliminate most hand-written boilerplate:
+
+| Tool | Command | Source | Output |
+|------|---------|--------|--------|
+| **sqlcgen** | `just sqlc-config` | `tools/sqlcgen/definitions.go` | `sql/sqlc.yml` (type overrides for cross-DB mismatches) |
+| **dbgen** | `just dbgen` | `tools/dbgen/definitions.go` | `internal/db/{entity}_gen.go` (wrapper structs, mappers, CRUD methods for all 3 drivers) |
+| **drivergen** | `just drivergen` | `internal/db/*_custom.go` | MySQL/PostgreSQL method variants from the SQLite (canonical) custom methods |
+
+After generating sqlc code, add an entity definition to `tools/dbgen/definitions.go` and run `just dbgen` to generate the wrapper code. If you add custom methods in `_custom.go` files, only edit the SQLite (`Database` receiver) method, then run `just drivergen` to generate the MySQL and PostgreSQL variants automatically.
 
 ## Step 6: Create Application-Level Types
 
@@ -216,13 +233,16 @@ type DbDriver interface {
 
     // Comments
     CountComments() (*int64, error)
-    CreateComment(s CreateCommentParams) Comment
-    DeleteComment(id int64) error
-    GetComment(id int64) (*Comment, error)
-    ListComments() ([]Comment, error)
-    UpdateComment(s UpdateCommentParams) error
+    CreateCommentTable() error
+    CreateComment(context.Context, audited.AuditContext, CreateCommentParams) (*Comments, error)
+    DeleteComment(context.Context, audited.AuditContext, types.CommentID) error
+    GetComment(types.CommentID) (*Comments, error)
+    ListComments() (*[]Comments, error)
+    UpdateComment(context.Context, audited.AuditContext, UpdateCommentParams) (*string, error)
 }
 ```
+
+Mutating operations (`Create`, `Update`, `Delete`) take `context.Context` and `audited.AuditContext` parameters for audit trail recording. Read operations (`Get`, `List`, `Count`) do not.
 
 ## Step 8: Implement on All Three Drivers
 
@@ -233,7 +253,7 @@ Implement the interface methods on each driver struct (`Database`, `MysqlDatabas
 3. Calls the generated query function
 4. Maps the sqlc result back to your application type
 
-Also add the `CreateCommentTable` call to each driver's `CreateAllTables()` method so the table is created on fresh installations.
+Also add the `CreateCommentTable` call to each driver's `CreateAllTables()` method in `internal/db/db.go` so the table is created on fresh installations. Add the corresponding `DropCommentTable` call to `DropAllTables()` in `internal/db/wipe.go` in reverse dependency order.
 
 ## Step 9: Write Tests
 

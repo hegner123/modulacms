@@ -297,6 +297,29 @@ print("\(refs.references.count) content fields reference this media")
 try await client.mediaComposite.deleteWithCleanup(id: MediaID("01HXYZ..."))
 ```
 
+### Admin Media
+
+Admin media items are stored separately and power the admin panel UI. The API mirrors the public media resources:
+
+```swift
+// List and get admin media
+let adminItems = try await client.adminMedia.list()
+let item = try await client.adminMedia.get(id: AdminMediaID("01HXYZ..."))
+
+// Upload a file to admin media
+let uploaded = try await client.adminMediaUpload.upload(
+    data: imageData,
+    filename: "admin-logo.png"
+)
+
+// Admin media folders
+let tree = try await client.adminMediaFolders.tree()
+let folderMedia = try await client.adminMediaFolders.listMedia(
+    folderID: AdminMediaFolderID("01HXYZ..."),
+    params: PaginationParams(limit: 20, offset: 0)
+)
+```
+
 ## Publishing
 
 `PublishingResource` manages content lifecycle:

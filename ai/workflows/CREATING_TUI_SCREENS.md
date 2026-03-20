@@ -43,7 +43,7 @@ MYPAGE  // in the iota block
 MYPAGE: {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Left", "Center", "Right"}},
 ```
 
-Create the Page in `NewPages()`:
+Create the Page in `InitPages()`:
 
 ```go
 myPage := NewPage(MYPAGE, "My Page")
@@ -192,6 +192,18 @@ All screen files follow `screen_<name>.go`. Examples:
 - `screen_content.go` -- CONTENT / ADMINCONTENT
 - `screen_routes.go` -- ROUTES / ADMINROUTES
 - `screen_quickstart.go` -- QUICKSTARTPAGE
+- `screen_media.go` -- MEDIA (with `screen_media_view.go` for detail view)
+- `screen_admin_media.go` -- ADMINMEDIA (with `screen_admin_media_view.go` for detail view)
+- `screen_datatypes.go` -- DATATYPES (with `screen_datatypes_view.go` for detail view)
+- `screen_webhooks.go` -- WEBHOOKS
+- `screen_validations.go` -- VALIDATIONS
+- `screen_roles.go` -- ROLES
+- `screen_search.go` -- SEARCH
+- `screen_audit.go` -- AUDIT
+- `screen_deploy.go` -- DEPLOY
+- `screen_plugins.go` -- PLUGINS (with `screen_plugin_detail.go` and `screen_plugin_tui.go`)
+
+Admin variants share the same screen struct as their public counterpart when the behavior is identical (e.g., `screen_cms_menu.go` handles both CMSPAGE and ADMINCMSPAGE). When admin screens have distinct behavior (e.g., admin media with different folder references), they get their own file (e.g., `screen_admin_media.go`).
 
 ---
 
@@ -460,7 +472,7 @@ Commands perform async operations and return messages.
 **File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/commands_comment.go`
 
 ```go
-package cli
+package tui
 
 import (
     tea "charm.land/bubbletea/v2"
@@ -546,7 +558,7 @@ Handle messages specific to your page.
 **File:** `/Users/home/Documents/Code/Go_dev/modulacms/internal/tui/update_comment.go`
 
 ```go
-package cli
+package tui
 
 import (
     tea "charm.land/bubbletea/v2"
@@ -1253,7 +1265,7 @@ type CommentErrorMsg struct {
 
 **commands_comment.go:**
 ```go
-package cli
+package tui
 
 import (
     "fmt"
@@ -1320,7 +1332,7 @@ func CreateCommentCmd(c *config.Config, params db.CreateCommentParams) tea.Cmd {
 
 **update_comment.go:**
 ```go
-package cli
+package tui
 
 import (
     "fmt"

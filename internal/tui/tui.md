@@ -34,7 +34,7 @@ type Screen interface {
 
 ### AppContext
 
-Read-only snapshot of shared application state passed to Screen implementations. Contains DB, Config, Logger, UserID, Width, Height, ScreenMode, PluginManager, IsRemote, IsSSH, and other shared state. Built via Model.AppCtx().
+Read-only snapshot of shared application state passed to Screen implementations. Contains DB, Config, Logger, UserID, Width, Height, ScreenMode, PluginManager, ConfigManager, IsRemote, IsSSH, SSHFingerprint, SSHKeyType, SSHPublicKey, ActiveLocale, AccordionEnabled, AdminMode, and ActiveAccent. Built via Model.AppCtx().
 
 ### FocusKey
 
@@ -86,11 +86,13 @@ Each screen_*.go file implements the Screen interface:
 |------|--------|---------|
 | screen_home.go | HomeScreen | Dashboard with stats |
 | screen_content.go | ContentScreen | Content tree + field editing |
-| screen_content_view.go | ContentViewScreen | Content detail view |
+| screen_content_view.go | *(ContentScreen views)* | Content detail panel rendering |
 | screen_datatypes.go | DatatypesScreen | Datatype management |
-| screen_datatypes_view.go | DatatypesViewScreen | Datatype detail view |
+| screen_datatypes_view.go | *(DatatypesScreen views)* | Datatype detail panel rendering |
 | screen_media.go | MediaScreen | Media library |
-| screen_media_view.go | MediaViewScreen | Media detail view |
+| screen_media_view.go | *(MediaScreen views)* | Media detail panel rendering |
+| screen_admin_media.go | AdminMediaScreen | Admin media library |
+| screen_admin_media_view.go | *(AdminMediaScreen views)* | Admin media detail panel rendering |
 | screen_routes.go | RoutesScreen | Route management |
 | screen_users.go | UsersScreen | User management |
 | screen_plugins.go | PluginsScreen | Plugin listing |
@@ -100,11 +102,19 @@ Each screen_*.go file implements the Screen interface:
 | screen_database.go | DatabaseScreen | Direct DB operations |
 | screen_deploy.go | DeployScreen | Deploy/sync operations |
 | screen_actions.go | ActionsScreen | System actions menu |
-| screen_cms_menu.go | CmsMenuScreen | CMS navigation menu |
+| screen_cms_menu.go | CMSMenuScreen | CMS navigation menu |
 | screen_field_types.go | FieldTypesScreen | Field type management |
-| screen_pipelines.go | PipelinesScreen | Pipeline management |
+| screen_validations.go | ValidationsScreen | Validation rule management |
+| screen_pipelines.go | PipelinesScreen, PipelineDetailScreen | Pipeline management and detail |
 | screen_quickstart.go | QuickstartScreen | First-run guide |
 | screen_plugin_tui.go | PluginTUIScreen | Standalone plugin UI via coroutine bridge |
+| screen_tokens.go | TokensScreen | API token management |
+| screen_sessions.go | SessionsScreen | Session management |
+| screen_media_dimensions.go | MediaDimensionsScreen | Media dimension management |
+| screen_import.go | ImportScreen | Data import |
+| screen_roles.go | RolesScreen | Role management |
+| screen_audit.go | AuditScreen | Audit log viewer |
+| screen_search.go | SearchScreen | Content search |
 
 ## Dialogs
 
@@ -124,6 +134,18 @@ Dynamic content form with fields generated from datatype definitions.
 
 User CRUD form with username, name, email, role fields.
 
+### WebhookFormDialogModel
+
+Webhook CRUD form with URL, events, and secret fields.
+
+### TokenFormDialogModel
+
+API token CRUD form with name, expiration, and scope fields.
+
+### RoleFormDialogModel
+
+Role CRUD form with name and description fields.
+
 ### MediaFolderNameDialogModel
 
 Text input dialog for creating/renaming media folders.
@@ -131,6 +153,26 @@ Text input dialog for creating/renaming media folders.
 ### MoveMediaFolderDialogModel
 
 Selection dialog for moving media to a different folder.
+
+### AdminMediaFolderNameDialogModel
+
+Text input dialog for creating/renaming admin media folders.
+
+### MoveAdminMediaFolderDialogModel
+
+Selection dialog for moving admin media to a different folder.
+
+### MediaDimensionFormDialogModel
+
+Media dimension CRUD form with name, width, and height fields.
+
+### UIConfigFormDialogModel
+
+UI configuration editing form.
+
+### DatabaseFormDialogModel
+
+Database insert/update form for direct DB operations.
 
 ## Overlay Compositing
 

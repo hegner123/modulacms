@@ -2,7 +2,7 @@
 
 **Version:** v1
 **Base URL:** `/api/v1`
-**Last Updated:** 2026-01-30
+**Last Updated:** 2026-03-19
 
 ---
 
@@ -197,13 +197,15 @@ Returns 404 if the slug does not match an admin route.
 
 ### Content Data
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/contentdata` | List all |
-| GET | `/api/v1/contentdata/?q={ulid}` | Get by ID |
-| POST | `/api/v1/contentdata` | Create |
-| PUT | `/api/v1/contentdata/` | Update |
-| DELETE | `/api/v1/contentdata/?q={ulid}` | Delete |
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/contentdata` | `ContentDatasHandler` | `content:read` | List all |
+| GET | `/api/v1/contentdata/?q={ulid}` | `ContentDataHandler` | `content:read` | Get by ID |
+| GET | `/api/v1/contentdata/full` | `ContentDataFullHandler` | `content:read` | List all with full details |
+| GET | `/api/v1/contentdata/by-route` | `ContentDataByRouteHandler` | `content:read` | List content data by route |
+| POST | `/api/v1/contentdata` | `ContentDatasHandler` | `content:create` | Create |
+| PUT | `/api/v1/contentdata/` | `ContentDataHandler` | `content:update` | Update |
+| DELETE | `/api/v1/contentdata/?q={ulid}` | `ContentDataHandler` | `content:delete` | Delete |
 
 ### Content Fields
 
@@ -351,13 +353,15 @@ All media folder endpoints use `media:*` permissions (`media:read`, `media:creat
 
 ### User OAuth
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/usersoauth` | List all |
-| GET | `/api/v1/usersoauth/?q={ulid}` | Get by ID |
-| POST | `/api/v1/usersoauth` | Create |
-| PUT | `/api/v1/usersoauth/` | Update |
-| DELETE | `/api/v1/usersoauth/?q={ulid}` | Delete |
+Permission: `users:*` (user OAuth shares the users resource permission).
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/usersoauth` | `UserOauthsHandler` | `users:read` | List all |
+| GET | `/api/v1/usersoauth/?q={ulid}` | `UserOauthHandler` | `users:read` | Get by ID |
+| POST | `/api/v1/usersoauth` | `UserOauthsHandler` | `users:create` | Create |
+| PUT | `/api/v1/usersoauth/` | `UserOauthHandler` | `users:update` | Update |
+| DELETE | `/api/v1/usersoauth/?q={ulid}` | `UserOauthHandler` | `users:delete` | Delete |
 
 ### Sessions
 
@@ -373,11 +377,11 @@ POST is not allowed on session endpoints. Use `/api/v1/auth/login` and `/api/v1/
 
 Require authentication. Users can only manage their own keys.
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/ssh-keys` | List authenticated user's SSH keys |
-| POST | `/api/v1/ssh-keys` | Add SSH key |
-| DELETE | `/api/v1/ssh-keys/{id}` | Delete SSH key by ID |
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/ssh-keys` | `ListSSHKeysHandler` | `ssh_keys:read` | List authenticated user's SSH keys |
+| POST | `/api/v1/ssh-keys` | `AddSSHKeyHandler` | `ssh_keys:create` | Add SSH key |
+| DELETE | `/api/v1/ssh-keys/` | `DeleteSSHKeyHandler` | `ssh_keys:delete` | Delete SSH key by ID |
 
 **POST request:**
 ```json
@@ -409,13 +413,15 @@ GET response omits the full public key. DELETE returns 204 No Content. Returns 4
 
 ### Tables
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/tables` | List all |
-| GET | `/api/v1/tables/?q={ulid}` | Get by ID |
-| POST | `/api/v1/tables` | Create |
-| PUT | `/api/v1/tables/` | Update |
-| DELETE | `/api/v1/tables/?q={ulid}` | Delete |
+Permission: `datatypes:*` (tables share the datatypes resource permission).
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/tables` | `TablesHandler` | `datatypes:read` | List all |
+| GET | `/api/v1/tables/?q={ulid}` | `TableHandler` | `datatypes:read` | Get by ID |
+| POST | `/api/v1/tables` | `TablesHandler` | `datatypes:create` | Create |
+| PUT | `/api/v1/tables/` | `TableHandler` | `datatypes:update` | Update |
+| DELETE | `/api/v1/tables/?q={ulid}` | `TableHandler` | `datatypes:delete` | Delete |
 
 ---
 
@@ -538,6 +544,193 @@ Query parameters for GET: `q` (required), `type`, `locale`, `limit`, `offset`, `
 | GET | `/api/v1/query/{datatype}` | Query content by datatype name with filtering, sorting, pagination (PUBLIC) |
 
 Query parameters: `sort`, `limit`, `offset`, `locale`, `status`, plus arbitrary field filter keys.
+
+---
+
+## Content Composite Operations
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| POST | `/api/v1/content/create` | `ContentCreateHandler` | `content:create` | Create content with fields (composite) |
+| POST | `/api/v1/content/batch` | `ContentBatchHandler` | `content:update` | Batch update content fields |
+| POST | `/api/v1/content/tree` | `ContentTreeSaveHandler` | `content:update` | Save content tree (bulk pointer updates + deletes) |
+| GET | `/api/v1/content/tree/{routeID}` | `ContentTreeGetHandler` | `content:read` | Get content tree by route ID |
+| POST | `/api/v1/contentdata/reorder` | `ContentDataReorderHandler` | `content:update` | Reorder content nodes |
+| POST | `/api/v1/contentdata/move` | `ContentDataMoveHandler` | `content:update` | Move content node to new parent |
+| POST | `/api/v1/admincontentdatas/reorder` | `AdminContentDataReorderHandler` | `content:update` | Reorder admin content nodes |
+| POST | `/api/v1/admincontentdatas/move` | `AdminContentDataMoveHandler` | `content:update` | Move admin content node |
+| POST | `/api/v1/admin/content/heal` | `ContentHealHandler` | `content:update` | Repair content tree inconsistencies |
+
+## Content Versions (Non-Admin)
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/contentversions` | `ContentVersionsListHandler` | `content:read` | List content versions (filtered by content_id) |
+| GET | `/api/v1/content/versions` | `ListVersionsHandler` | `content:read` | List content versions |
+| GET | `/api/v1/content/versions/` | `GetVersionHandler` | `content:read` | Get specific version |
+| POST | `/api/v1/content/versions` | `CreateManualVersionHandler` | `content:update` | Create a version snapshot |
+| DELETE | `/api/v1/content/versions/` | `DeleteVersionHandler` | `content:delete` | Delete a version |
+| POST | `/api/v1/content/restore` | `RestoreVersionHandler` | `content:update` | Restore content from a version |
+
+## Publishing (Non-Admin)
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| POST | `/api/v1/content/publish` | `PublishHandler` | `content:publish` | Publish content |
+| POST | `/api/v1/content/unpublish` | `UnpublishHandler` | `content:publish` | Unpublish content |
+| POST | `/api/v1/content/schedule` | `ScheduleHandler` | `content:publish` | Schedule content for future publication |
+
+---
+
+## Routes (Extended)
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/routes/full` | `RouteFullHandler` | `routes:read` | List all routes with full details |
+
+---
+
+## Field Types
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/fieldtypes` | `FieldTypesHandler` | `field_types:read` | List all |
+| GET | `/api/v1/fieldtypes/?q={ulid}` | `FieldTypeHandler` | `field_types:read` | Get by ID |
+| POST | `/api/v1/fieldtypes` | `FieldTypesHandler` | `field_types:create` | Create |
+| PUT | `/api/v1/fieldtypes/` | `FieldTypeHandler` | `field_types:update` | Update |
+| DELETE | `/api/v1/fieldtypes/?q={ulid}` | `FieldTypeHandler` | `field_types:delete` | Delete |
+
+## Admin Field Types
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/adminfieldtypes` | `AdminFieldTypesHandler` | `admin_field_types:read` | List all |
+| GET | `/api/v1/adminfieldtypes/?q={ulid}` | `AdminFieldTypeHandler` | `admin_field_types:read` | Get by ID |
+| POST | `/api/v1/adminfieldtypes` | `AdminFieldTypesHandler` | `admin_field_types:create` | Create |
+| PUT | `/api/v1/adminfieldtypes/` | `AdminFieldTypeHandler` | `admin_field_types:update` | Update |
+| DELETE | `/api/v1/adminfieldtypes/?q={ulid}` | `AdminFieldTypeHandler` | `admin_field_types:delete` | Delete |
+
+---
+
+## Admin Media
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/adminmedia` | `AdminMediasHandler` | `media:read` | List all admin media |
+| GET | `/api/v1/adminmedia/?q={ulid}` | `AdminMediaHandler` | `media:read` | Get admin media by ID |
+| GET | `/api/v1/adminmedia/{id}/download` | `apiDownloadAdminMedia` | `media:read` | Download admin media file |
+| POST | `/api/v1/adminmedia` | `AdminMediasHandler` | `media:create` | Upload or create admin media |
+| POST | `/api/v1/adminmedia/move` | `apiBatchMoveAdminMedia` | `media:update` | Batch move admin media to folder |
+| PUT | `/api/v1/adminmedia/` | `AdminMediaHandler` | `media:update` | Update admin media metadata |
+| DELETE | `/api/v1/adminmedia/?q={ulid}` | `AdminMediaHandler` | `media:delete` | Delete admin media |
+
+## Admin Media Folders
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/adminmedia-folders` | `apiListAdminMediaFolders` | `media:read` | List admin media folders |
+| GET | `/api/v1/adminmedia-folders/tree` | `apiAdminMediaFolderTree` | `media:read` | Get full admin folder hierarchy |
+| POST | `/api/v1/adminmedia-folders` | `apiCreateAdminMediaFolder` | `media:create` | Create admin media folder |
+| GET | `/api/v1/adminmedia-folders/{id}` | `apiGetAdminMediaFolder` | `media:read` | Get admin folder by ID |
+| PUT | `/api/v1/adminmedia-folders/{id}` | `apiUpdateAdminMediaFolder` | `media:update` | Update admin folder |
+| DELETE | `/api/v1/adminmedia-folders/{id}` | `apiDeleteAdminMediaFolder` | `media:delete` | Delete admin folder |
+| GET | `/api/v1/adminmedia-folders/{id}/media` | `apiAdminMediaFolderMedia` | `media:read` | List media in admin folder |
+
+---
+
+## Validations
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/validations` | `ValidationListHandler` | `validations:read` | List all validations |
+| POST | `/api/v1/validations` | `ValidationCreateHandler` | `validations:create` | Create validation |
+| GET | `/api/v1/validations/search` | `ValidationSearchHandler` | `validations:read` | Search validations |
+| GET | `/api/v1/validations/{id}` | `ValidationGetHandler` | `validations:read` | Get validation by ID |
+| PUT | `/api/v1/validations/{id}` | `ValidationUpdateHandler` | `validations:update` | Update validation |
+| DELETE | `/api/v1/validations/{id}` | `ValidationDeleteHandler` | `validations:delete` | Delete validation |
+
+## Admin Validations
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/admin/validations` | `AdminValidationListHandler` | `admin_validations:read` | List all admin validations |
+| POST | `/api/v1/admin/validations` | `AdminValidationCreateHandler` | `admin_validations:create` | Create admin validation |
+| GET | `/api/v1/admin/validations/search` | `AdminValidationSearchHandler` | `admin_validations:read` | Search admin validations |
+| GET | `/api/v1/admin/validations/{id}` | `AdminValidationGetHandler` | `admin_validations:read` | Get admin validation by ID |
+| PUT | `/api/v1/admin/validations/{id}` | `AdminValidationUpdateHandler` | `admin_validations:update` | Update admin validation |
+| DELETE | `/api/v1/admin/validations/{id}` | `AdminValidationDeleteHandler` | `admin_validations:delete` | Delete admin validation |
+
+---
+
+## Permissions
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/permissions` | `PermissionsHandler` | `permissions:read` | List all permissions |
+| GET | `/api/v1/permissions/?q={ulid}` | `PermissionHandler` | `permissions:read` | Get permission by ID |
+| POST | `/api/v1/permissions` | `PermissionsHandler` | `permissions:create` | Create permission |
+| PUT | `/api/v1/permissions/` | `PermissionHandler` | `permissions:update` | Update permission |
+| DELETE | `/api/v1/permissions/?q={ulid}` | `PermissionHandler` | `permissions:delete` | Delete permission |
+
+System-protected permissions cannot be deleted or renamed.
+
+## Role-Permissions
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/role-permissions` | `RolePermissionsHandler` | `roles:read` | List all role-permission associations |
+| GET | `/api/v1/role-permissions/?q={ulid}` | `RolePermissionHandler` | `roles:read` | Get association by ID |
+| POST | `/api/v1/role-permissions` | `RolePermissionsHandler` | `roles:create` | Assign a permission to a role |
+| PUT | `/api/v1/role-permissions/` | `RolePermissionHandler` | `roles:update` | Update a role-permission association |
+| DELETE | `/api/v1/role-permissions/?q={ulid}` | `RolePermissionHandler` | `roles:delete` | Remove a permission from a role |
+| GET | `/api/v1/role-permissions/role/` | `RolePermissionsByRoleHandler` | `roles:read` | List all permissions for a specific role |
+
+---
+
+## Deploy
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/deploy/health` | `deploy.DeployHealthHandler` | `deploy:read` | Deployment health check |
+| POST | `/api/v1/deploy/export` | `deploy.DeployExportHandler` | `deploy:read` | Export site data |
+| POST | `/api/v1/deploy/import` | `deploy.DeployImportHandler` | `deploy:create` | Import site data |
+
+## Config
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/admin/config` | `ConfigGetHandler` | `config:read` | Get current configuration |
+| PATCH | `/api/v1/admin/config` | `ConfigUpdateHandler` | `config:update` | Update configuration fields |
+| GET | `/api/v1/admin/config/meta` | `ConfigMetaHandler` | `config:read` | Get configuration field metadata |
+| GET | `/api/v1/admin/config/search-index` | `ConfigSearchIndexHandler` | `config:read` | Get search index configuration |
+
+## Activity
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/activity/recent` | `ActivityRecentHandler` | `audit:read` | Get recent activity feed |
+
+## Public Locales
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/locales` | `LocalesPublicHandler` | PUBLIC | List enabled locales (no auth) |
+
+## Content Delivery (Slug-Based)
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/content/{slug}` | `SlugHandler` | PUBLIC | Get content tree by route slug |
+
+## Plugin Admin Routes
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| GET | `/api/v1/admin/plugins/routes` | `pluginRoutesListHandler` | `plugins:read` | List registered plugin routes |
+| POST | `/api/v1/admin/plugins/routes/approve` | `pluginRoutesApproveHandler` | `plugins:admin` | Approve plugin routes |
+| POST | `/api/v1/admin/plugins/routes/revoke` | `pluginRoutesRevokeHandler` | `plugins:admin` | Revoke plugin routes |
+
+Additional plugin management endpoints are mounted by `bridge.MountAdminEndpoints` and require `plugins:read` or `plugins:admin`.
 
 ---
 

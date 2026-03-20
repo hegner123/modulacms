@@ -34,6 +34,20 @@ const (
 
 DbDriver constants specify supported database backend drivers. Sqlite uses embedded SQLite, Mysql connects to MySQL servers, and Psql connects to PostgreSQL servers. The Db_Driver field in Config determines which driver the application uses at runtime.
 
+### EmailProvider Constants
+
+```go
+const (
+    EmailDisabled EmailProvider = ""         // Disabled (default, zero value)
+    EmailSmtp     EmailProvider = "smtp"     // Standard SMTP relay
+    EmailSendGrid EmailProvider = "sendgrid" // SendGrid HTTP API
+    EmailSES      EmailProvider = "ses"      // AWS SES HTTP API
+    EmailPostmark EmailProvider = "postmark" // Postmark HTTP API
+)
+```
+
+EmailProvider constants specify supported email sending backends. EmailDisabled (empty string) is the default zero value. EmailSmtp uses standard SMTP relay. EmailSendGrid, EmailSES, and EmailPostmark use their respective HTTP APIs.
+
 ### OutputFormat Constants
 
 ```go
@@ -160,6 +174,14 @@ type DbDriver string
 
 DbDriver identifies the database backend driver. Valid values are Sqlite, Mysql, and Psql constants. Determines which database abstraction implementation is loaded at startup. Affects connection string format and SQL dialect.
 
+### EmailProvider
+
+```go
+type EmailProvider string
+```
+
+EmailProvider identifies the email sending backend. Valid values are the Email* constants. Empty string means email is disabled.
+
 ### OutputFormat
 
 ```go
@@ -218,6 +240,7 @@ KeyMap maps semantic actions to physical key strings as reported by bubbletea's 
 
 ```go
 type Config struct {
+    // Server
     Environment           string
     OS                    string
     Environment_Hosts     map[string]string
@@ -235,40 +258,74 @@ type Config struct {
     Cookie_Duration       string
     Cookie_Secure         bool
     Cookie_SameSite       string
+
+    // Database
     Db_Driver             DbDriver
     Db_URL                string
     Db_Name               string
     Db_User               string
     Db_Password           string
-    Bucket_Region         string
-    Bucket_Media          string
-    Bucket_Backup         string
-    Bucket_Endpoint       string
-    Bucket_Access_Key     string
-    Bucket_Secret_Key     string
-    Bucket_Default_ACL    string
+
+    // Remote connection (mutually exclusive with Db_Driver for connect command)
+    Remote_URL            string
+    Remote_API_Key        string
+
+    // S3 storage (public media)
+    Bucket_Region           string
+    Bucket_Media            string
+    Bucket_Backup           string
+    Bucket_Endpoint         string
+    Bucket_Access_Key       string
+    Bucket_Secret_Key       string
+    Bucket_Public_URL       string
+    Bucket_Default_ACL      string
     Bucket_Force_Path_Style bool
+
+    // S3 storage (admin media — falls back to shared bucket if unset)
+    Bucket_Admin_Media      string
+    Bucket_Admin_Endpoint   string
+    Bucket_Admin_Access_Key string
+    Bucket_Admin_Secret_Key string
+    Bucket_Admin_Public_URL string
+
+    // Upload limits
+    Max_Upload_Size       int64  // bytes, default 10MB (10485760)
+
+    // Backup
     Backup_Option         string
     Backup_Paths          []string
-    Oauth_Client_Id       string
-    Oauth_Client_Secret   string
-    Oauth_Scopes          []string
-    Oauth_Endpoint        map[Endpoint]string
-    Oauth_Provider_Name   string
-    Oauth_Redirect_URL    string
+
+    // OAuth
+    Oauth_Client_Id        string
+    Oauth_Client_Secret    string
+    Oauth_Scopes           []string
+    Oauth_Endpoint         map[Endpoint]string
+    Oauth_Provider_Name    string
+    Oauth_Redirect_URL     string
     Oauth_Success_Redirect string
+
+    // CORS
     Cors_Origins          []string
     Cors_Methods          []string
     Cors_Headers          []string
     Cors_Credentials      bool
+
+    // TUI
     Custom_Style_Path     string
+    KeyBindings           KeyMap
+
+    // Update
     Update_Auto_Enabled   bool
     Update_Check_Interval string
     Update_Channel        string
     Update_Notify_Only    bool
+
+    // Output
     Output_Format         OutputFormat
     Space_ID              string
     Node_ID               string
+
+    // Observability
     Observability_Enabled        bool
     Observability_Provider       string
     Observability_DSN            string
@@ -281,19 +338,117 @@ type Config struct {
     Observability_Server_Name    string
     Observability_Flush_Interval string
     Observability_Tags           map[string]string
+
+    // Email
+    Email_Enabled               bool
+    Email_Provider              EmailProvider
+    Email_From_Address          string
+    Email_From_Name             string
+    Email_Host                  string
+    Email_Port                  int
+    Email_Username              string
+    Email_Password              string
+    Email_TLS                   bool
+    Email_API_Key               string
+    Email_API_Endpoint          string
+    Email_Reply_To              string
+    Email_AWS_Access_Key_ID     string
+    Email_AWS_Secret_Access_Key string
+    Password_Reset_URL          string
+
+    // Plugin runtime
     Plugin_Enabled        bool
     Plugin_Directory      string
     Plugin_Max_VMs        int
     Plugin_Timeout        int
     Plugin_Max_Ops        int
+
+    // Plugin database pool limits
     Plugin_DB_MaxOpenConns    int
     Plugin_DB_MaxIdleConns    int
     Plugin_DB_ConnMaxLifetime string
-    KeyBindings           KeyMap
+
+    // Plugin HTTP integration
+    Plugin_Max_Request_Body  int64
+    Plugin_Max_Response_Body int64
+    Plugin_Rate_Limit        int
+    Plugin_Max_Routes        int
+    Plugin_Trusted_Proxies   []string
+
+    // Plugin content hooks (Phase 3)
+    Plugin_Hook_Reserve_VMs            int
+    Plugin_Hook_Max_Consecutive_Aborts int
+    Plugin_Hook_Max_Ops                int
+    Plugin_Hook_Max_Concurrent_After   int
+    Plugin_Hook_Timeout_Ms             int
+    Plugin_Hook_Event_Timeout_Ms       int
+
+    // Plugin outbound requests
+    Plugin_Request_Timeout      int
+    Plugin_Request_Max_Response int64
+    Plugin_Request_Max_Body     int64
+    Plugin_Request_Rate_Limit   int
+    Plugin_Request_Global_Rate  int
+    Plugin_Request_CB_Failures  int
+    Plugin_Request_CB_Reset     int
+    Plugin_Request_Allow_Local  bool
+
+    // Plugin production hardening (Phase 4)
+    Plugin_Hot_Reload     bool
+    Plugin_Max_Failures   int
+    Plugin_Reset_Interval string
+    Plugin_Sync_Interval  string
+
+    // Deploy sync
+    Deploy_Environments []DeployEnvironmentConfig
+    Deploy_Snapshot_Dir string
+
+    // Tree composition
+    Composition_Max_Depth int
+
+    // Publishing
+    Publish_Schedule_Interval int
+    Version_Max_Per_Content   int
+    Node_Level_Publish        bool
+
+    // Richtext editor
+    Richtext_Toolbar []string
+
+    // Internationalization
+    I18n_Enabled        bool
+    I18n_Default_Locale string
+
+    // Webhooks
+    Webhook_Enabled                 bool
+    Webhook_Timeout                 int
+    Webhook_Max_Retries             int
+    Webhook_Workers                 int
+    Webhook_Allow_HTTP              bool
+    Webhook_Delivery_Retention_Days int
+
+    // MCP server
+    MCP_Enabled bool
+    MCP_API_Key string
+
+    // Search
+    Search_Enabled bool
+    Search_Path    string
 }
 ```
 
-Config holds all application configuration including server ports, database credentials, OAuth settings, S3 bucket configuration, CORS policy, observability provider integration, plugin runtime limits, and keybinding overrides. Loaded from JSON via Provider implementations.
+Config holds all application configuration including server ports, database credentials, remote connection, OAuth settings, S3 bucket configuration for both public and admin media, CORS policy, email provider settings, observability integration, plugin runtime limits (HTTP, hooks, requests, hardening), deploy sync, publishing, i18n, webhooks, MCP server, search, and keybinding overrides. Loaded from JSON via Provider implementations.
+
+### DeployEnvironmentConfig
+
+```go
+type DeployEnvironmentConfig struct {
+    Name   string
+    URL    string
+    APIKey string
+}
+```
+
+DeployEnvironmentConfig describes a remote Modula instance for deploy operations. APIKey supports `${VAR}` expansion via the existing config system.
 
 ### Provider
 
@@ -387,6 +542,174 @@ func (c Config) BucketEndpointURL() string
 ```
 
 BucketEndpointURL returns Bucket_Endpoint prefixed with the scheme determined by Environment. Non-TLS environments (http-only and docker) get http scheme. All other environments get https scheme. Returns empty string if Bucket_Endpoint is empty.
+
+#### Config.BucketPublicURL
+
+```go
+func (c Config) BucketPublicURL() string
+```
+
+BucketPublicURL returns the public-facing base URL for constructing browser-accessible media URLs. Falls back to BucketEndpointURL if Bucket_Public_URL is not configured. In Docker environments, Bucket_Endpoint is typically a container hostname that browsers cannot resolve.
+
+#### Config.AdminBucketMedia
+
+```go
+func (c Config) AdminBucketMedia() string
+```
+
+AdminBucketMedia returns the admin media bucket name. Falls back to Bucket_Media if Bucket_Admin_Media is not configured.
+
+#### Config.AdminBucketEndpoint
+
+```go
+func (c Config) AdminBucketEndpoint() string
+```
+
+AdminBucketEndpoint returns the admin media endpoint. Falls back to Bucket_Endpoint if Bucket_Admin_Endpoint is not configured.
+
+#### Config.AdminBucketEndpointURL
+
+```go
+func (c Config) AdminBucketEndpointURL() string
+```
+
+AdminBucketEndpointURL returns the full admin bucket endpoint URL with scheme. Uses AdminBucketEndpoint and applies the same scheme logic as BucketEndpointURL.
+
+#### Config.AdminBucketAccessKey
+
+```go
+func (c Config) AdminBucketAccessKey() string
+```
+
+AdminBucketAccessKey returns the admin media access key. Falls back to Bucket_Access_Key if Bucket_Admin_Access_Key is not configured.
+
+#### Config.AdminBucketSecretKey
+
+```go
+func (c Config) AdminBucketSecretKey() string
+```
+
+AdminBucketSecretKey returns the admin media secret key. Falls back to Bucket_Secret_Key if Bucket_Admin_Secret_Key is not configured.
+
+#### Config.AdminBucketPublicURL
+
+```go
+func (c Config) AdminBucketPublicURL() string
+```
+
+AdminBucketPublicURL returns the admin media public URL. Falls back to BucketPublicURL if Bucket_Admin_Public_URL is not configured.
+
+#### Config.CompositionMaxDepth
+
+```go
+func (c Config) CompositionMaxDepth() int
+```
+
+CompositionMaxDepth returns the configured maximum composition depth. Falls back to 10 if no positive value is configured.
+
+#### Config.PublishScheduleInterval
+
+```go
+func (c Config) PublishScheduleInterval() int
+```
+
+PublishScheduleInterval returns the configured interval in seconds between scheduler ticks for scheduled publishing. Falls back to 60 if not configured.
+
+#### Config.VersionMaxPerContent
+
+```go
+func (c Config) VersionMaxPerContent() int
+```
+
+VersionMaxPerContent returns the maximum number of versions to retain per content item. Falls back to 50 if not configured. 0 means unlimited.
+
+#### Config.RichtextToolbar
+
+```go
+func (c Config) RichtextToolbar() []string
+```
+
+RichtextToolbar returns the configured default toolbar buttons for richtext fields. Falls back to a sensible default set (bold, italic, h1, h2, h3, link, ul, ol, preview) if not configured.
+
+#### Config.WebhookEnabled
+
+```go
+func (c Config) WebhookEnabled() bool
+```
+
+WebhookEnabled returns whether webhooks are active.
+
+#### Config.WebhookTimeout
+
+```go
+func (c Config) WebhookTimeout() int
+```
+
+WebhookTimeout returns the HTTP timeout in seconds for webhook delivery. Falls back to 10 if not configured.
+
+#### Config.WebhookMaxRetries
+
+```go
+func (c Config) WebhookMaxRetries() int
+```
+
+WebhookMaxRetries returns the maximum number of delivery retry attempts. Falls back to 3 if not configured.
+
+#### Config.WebhookWorkers
+
+```go
+func (c Config) WebhookWorkers() int
+```
+
+WebhookWorkers returns the number of concurrent delivery workers. Falls back to 4 if not configured.
+
+#### Config.WebhookAllowHTTP
+
+```go
+func (c Config) WebhookAllowHTTP() bool
+```
+
+WebhookAllowHTTP returns whether non-TLS webhook URLs are allowed (dev only).
+
+#### Config.WebhookDeliveryRetentionDays
+
+```go
+func (c Config) WebhookDeliveryRetentionDays() int
+```
+
+WebhookDeliveryRetentionDays returns the number of days to retain completed deliveries. Falls back to 30 if not configured. 0 means unlimited retention.
+
+#### Config.SearchEnabled
+
+```go
+func (c Config) SearchEnabled() bool
+```
+
+SearchEnabled returns whether search is enabled.
+
+#### Config.I18nEnabled
+
+```go
+func (c Config) I18nEnabled() bool
+```
+
+I18nEnabled returns whether internationalization is active.
+
+#### Config.I18nDefaultLocale
+
+```go
+func (c Config) I18nDefaultLocale() string
+```
+
+I18nDefaultLocale returns the configured default locale code. Falls back to "en" if not configured.
+
+#### Config.MaxUploadSize
+
+```go
+func (c Config) MaxUploadSize() int64
+```
+
+MaxUploadSize returns the configured maximum upload size in bytes. Falls back to 10 MB if no positive value is configured.
 
 #### Config.JSON
 

@@ -26,7 +26,7 @@ type Screen interface {
 
 ### AppContext
 
-Read-only snapshot of shared application state passed to screens. Contains DB, Config, Logger, UserID, Width, Height, PluginManager, IsRemote, IsSSH, AdminMode, and other shared fields. Built via Model.AppCtx().
+Read-only snapshot of shared application state passed to screens. Contains DB, Config, Logger, UserID, Width, Height, ScreenMode, PluginManager, ConfigManager, IsRemote, IsSSH, SSHFingerprint, SSHKeyType, SSHPublicKey, ActiveLocale, AccordionEnabled, AdminMode, and ActiveAccent. Built via Model.AppCtx().
 
 ### FocusKey
 
@@ -38,7 +38,7 @@ Type for application status. Values: OK, EDITING, DELETING, WARN, ERROR.
 
 ### FilePickerPurpose
 
-Purpose enumeration for file picker. Values: FILEPICKER_MEDIA for media upload, FILEPICKER_RESTORE for backup restore.
+Purpose enumeration for file picker. Values: FILEPICKER_MEDIA for media upload, FILEPICKER_RESTORE for backup restore, FILEPICKER_IMPORT for data import, FILEPICKER_ADMINMEDIA for admin media upload.
 
 ## Initialization and Lifecycle
 
@@ -68,13 +68,13 @@ Returns tea.View (Bubbletea v2). Shows user provisioning form if needed. Otherwi
 
 ## Screen Implementations
 
-Screens are defined in screen_*.go files. Each implements the Screen interface and typically embeds GridScreen for multi-panel layouts. Screens include: HomeScreen, ContentScreen, DatatypesScreen, MediaScreen, RoutesScreen, UsersScreen, PluginsScreen, PluginTUIScreen, WebhooksScreen, ConfigScreen, DatabaseScreen, DeployScreen, ActionsScreen, FieldTypesScreen, PipelinesScreen, QuickstartScreen, and others.
+Screens are defined in screen_*.go files. Each implements the Screen interface and typically embeds GridScreen for multi-panel layouts. Screens include: HomeScreen, ContentScreen, DatatypesScreen, MediaScreen, AdminMediaScreen, RoutesScreen, UsersScreen, PluginsScreen, PluginDetailScreen, PluginTUIScreen, WebhooksScreen, ConfigScreen, DatabaseScreen, DeployScreen, ActionsScreen, FieldTypesScreen, ValidationsScreen, PipelinesScreen, PipelineDetailScreen, QuickstartScreen, CMSMenuScreen, TokensScreen, SessionsScreen, MediaDimensionsScreen, ImportScreen, RolesScreen, AuditScreen, and SearchScreen. View helper files (screen_content_view.go, screen_datatypes_view.go, screen_media_view.go, screen_admin_media_view.go) provide rendering methods for their parent screens.
 
 ## Page Management
 
 ### PageIndex
 
-Enumeration of page types including HOMEPAGE, CMSPAGE, ADMINCMSPAGE, DATABASEPAGE, CONFIGPAGE, DATATYPES, MEDIA, CONTENT, USERSADMIN, ROUTES, WEBHOOKS, PLUGINS, ACTIONSPAGE, DEPLOYPAGE, FIELDTYPES, PIPELINES, QUICKSTART, and more.
+Enumeration of page types: HOMEPAGE, CMSPAGE, ADMINCMSPAGE, DATABASEPAGE, CONFIGPAGE, READPAGE, DATATYPES, USERSADMIN, MEDIA, CONTENT, ACTIONSPAGE, ROUTES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT, PLUGINSPAGE, PLUGINDETAILPAGE, QUICKSTARTPAGE, FIELDTYPES, ADMINFIELDTYPES, DEPLOYPAGE, PIPELINESPAGE, PIPELINEDETAILPAGE, WEBHOOKSPAGE, PLUGINTUIPAGE, VALIDATIONS, ADMINVALIDATIONS, TOKENSPAGE, SESSIONSPAGE, MEDIADIMENSIONSPAGE, IMPORTPAGE, ROLESPAGE, AUDITPAGE, SEARCHPAGE, ADMINMEDIA.
 
 ### Page
 
@@ -87,8 +87,15 @@ Represents a navigable page with index and label.
 - **ContentFormDialogModel** — Dynamic content form from datatype field definitions
 - **UserFormDialogModel** — User CRUD form
 - **WebhookFormDialogModel** — Webhook CRUD form
+- **TokenFormDialogModel** — API token CRUD form
+- **RoleFormDialogModel** — Role CRUD form
 - **MediaFolderNameDialogModel** — Text input dialog for creating/renaming media folders
 - **MoveMediaFolderDialogModel** — Selection dialog for moving media to a different folder
+- **AdminMediaFolderNameDialogModel** — Text input dialog for creating/renaming admin media folders
+- **MoveAdminMediaFolderDialogModel** — Selection dialog for moving admin media to a different folder
+- **MediaDimensionFormDialogModel** — Media dimension CRUD form
+- **UIConfigFormDialogModel** — UI configuration form
+- **DatabaseFormDialogModel** — Database insert/update form
 
 ## Command Constructors
 

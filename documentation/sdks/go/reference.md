@@ -76,6 +76,9 @@ Admin resources mirror their public counterparts but operate on admin content. T
 | `AdminContentReorder` | `*AdminContentReorderResource` | Reorder, Move | Reorder and move admin content nodes. |
 | `AdminPublishing` | `*PublishingResource` | Publish, Unpublish, Schedule, Restore, ListVersions, GetVersion, CreateVersion, DeleteVersion | Publishing lifecycle for admin content. |
 | `AdminDatatypesExtra` | `*AdminDatatypesExtraResource` | UpdateSortOrder, MaxSortOrder | Sort order management for admin datatypes. |
+| `AdminMedia` | `*Resource[AdminMedia, any, UpdateAdminMediaParams, AdminMediaID]` | Get, Update, Delete, List, ListPaginated, Count | Admin media file metadata. Create via AdminMediaUpload. |
+| `AdminMediaUpload` | `*AdminMediaUploadResource` | Upload | Multipart file upload to admin media bucket. |
+| `AdminMediaFolders` | `*AdminMediaFoldersResource` | Tree, ListMedia, MoveMedia | Admin media folder hierarchy management. |
 
 ## Publishing Resources
 
@@ -143,6 +146,8 @@ All entity IDs are distinct `string`-based types. Each provides `String() string
 | `MediaID` | Media |
 | `MediaDimensionID` | MediaDimensions |
 | `MediaFolderID` | MediaFolders |
+| `AdminMediaID` | AdminMedia |
+| `AdminMediaFolderID` | AdminMediaFolders |
 | `UserID` | Users |
 | `RoleID` | Roles |
 | `SessionID` | Sessions |

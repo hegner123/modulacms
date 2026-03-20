@@ -14,7 +14,7 @@ Three distinct connection modes exposed via `Model.IsSSH` and `Model.IsRemote`:
 | SSH | true | false | `middleware.go` | no |
 | remote | false | true | `cmd/connect.go` | no |
 
-The home screen Site panel displays the current mode. Media upload (`n`) shows a help dialog when file picker is unavailable (SSH sessions). In remote mode, media uploads go through the SDK with progress tracking.
+The home screen Site panel displays the current mode. Media upload (`n`) shows a help dialog when file picker is unavailable (SSH sessions). In remote mode, media uploads go through the SDK with progress tracking. Admin media upload uses the FILEPICKER_ADMINMEDIA purpose and follows the same connection mode constraints.
 
 ### Remote Mode Guards
 
@@ -25,6 +25,7 @@ The status bar shows `[remote: <url>]` (cyan) or `[remote: disconnected]` (red) 
 | Home | full | Displays mode, remote connection status |
 | Content | full | CRUD via RemoteDriver |
 | Media | full | Upload via SDK with progress; file picker opens locally |
+| Admin Media | full | Upload via SDK with progress; file picker opens locally |
 | Routes | full | CRUD via RemoteDriver |
 | Datatypes | full | CRUD via RemoteDriver |
 | Field Types | full | CRUD via RemoteDriver |
@@ -47,13 +48,17 @@ Guard locations:
 
 ## Grid Layout System
 
-Screens use a 12-column grid (`grid.go`, `grid_screen.go`) with proportional cell heights. `GridScreen` base struct provides focus cycling and rendering. Migrated screens: Home, Actions, Content, Admin Content, Media, Field Types, Users, Quickstart, CMS Menu, Deploy, Plugins, Plugin Detail, Webhooks, Config, Database, Datatypes.
+Screens use a 12-column grid (`grid.go`, `grid_screen.go`) with proportional cell heights. `GridScreen` base struct provides focus cycling and rendering. Migrated screens: Home, Actions, Content, Admin Content, Media, Admin Media, Field Types, Validations, Users, Quickstart, CMS Menu, Deploy, Plugins, Plugin Detail, Plugin TUI, Webhooks, Config, Database, Datatypes, Pipelines, Pipeline Detail, Routes, Tokens, Sessions, Media Dimensions, Import, Roles, Audit, Search.
 
 ## Media Tree
 
 Media items are grouped into a URL-path-derived folder tree (`media_tree.go`). Folders are collapsible, and an inline search (`/`) live-filters items by name, display name, mimetype, or URL path. Tree is rebuilt from filtered results so folder structure reflects only matches.
 
 Folder management is supported via dedicated dialogs: folders can be created, renamed, and deleted, and media items can be moved between folders. `MediaFolderNameDialogModel` handles folder creation and renaming via a text input, while `MoveMediaFolderDialogModel` presents a folder selection list for relocating media.
+
+## Admin Media
+
+Admin media is a parallel media system for the admin panel (distinct from public media). The AdminMediaScreen (`screen_admin_media.go`) mirrors the MediaScreen with its own folder tree, upload flow (FILEPICKER_ADMINMEDIA purpose), and folder dialogs (`AdminMediaFolderNameDialogModel`, `MoveAdminMediaFolderDialogModel`). Admin media is accessible when AdminMode is enabled and uses admin-prefixed tables and API endpoints.
 
 ## Keybinding: ActionSearch
 

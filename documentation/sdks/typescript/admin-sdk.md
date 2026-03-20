@@ -204,6 +204,44 @@ const refs = await client.media.getReferences(mediaId)
 await client.media.deleteWithCleanup(mediaId)
 ```
 
+## Admin Media
+
+Admin media items are stored in a separate bucket and power the admin panel UI. The API mirrors the public media resources.
+
+```typescript
+// List and get admin media
+const adminMedia = await client.adminMedia.list()
+const adminAsset = await client.adminMedia.get(adminMediaId)
+
+// Upload a file to admin media
+const uploaded = await client.adminMediaUpload.upload(file)
+
+// Update admin media metadata
+await client.adminMedia.update({ admin_media_id: adminMediaId, alt: 'Logo' })
+
+// Delete admin media
+await client.adminMedia.remove(adminMediaId)
+```
+
+## Admin Media Folders
+
+```typescript
+// Get the full admin media folder tree
+const tree = await client.adminMediaFolders.tree()
+
+// List media in an admin folder
+const folderMedia = await client.adminMediaFolders.listMedia(folderId, {
+  limit: 20,
+  offset: 0,
+})
+
+// Move admin media items to a folder (or null for root)
+await client.adminMediaFolders.moveMedia({
+  media_ids: [id1, id2],
+  folder_id: targetFolderId,
+})
+```
+
 ## Users
 
 ```typescript

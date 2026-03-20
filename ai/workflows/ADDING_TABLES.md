@@ -20,7 +20,7 @@ Adding a new table in ModulaCMS involves:
 6. **Adding a dbgen entity definition** in `tools/dbgen/definitions.go`
 7. **Generating wrapper code** with `just dbgen`
 8. **Adding methods to DbDriver interface** in `internal/db/db.go`
-9. **Adding the table to CreateAllTables/DropAllTables** in `internal/db/wipe.go`
+9. **Adding the table to CreateAllTables** in `internal/db/db.go` **and DropAllTables** in `internal/db/wipe.go`
 10. **Optionally creating `{entity}_custom.go`** for extra types or custom queries
 11. **Writing tests** to verify functionality
 
@@ -66,18 +66,18 @@ Schema migrations are numbered sequentially in the `sql/schema/` directory.
 ls -1 /Users/home/Documents/Code/Go_dev/modulacms/sql/schema/
 ```
 
-Find the highest-numbered directory and increment by one. If the highest is `37_media_folders/`, your new table is `38_comments/`.
+Find the highest-numbered directory and increment by one. If the highest is `41_admin_media/`, your new table is `42_comments/`.
 
 ### Choose a Descriptive Name
 
 The directory name should be: `{number}_{table_name_plural}`
 
-**Example:** `38_comments/`
+**Example:** `42_comments/`
 
 ### Create the Directory
 
 ```bash
-mkdir /Users/home/Documents/Code/Go_dev/modulacms/sql/schema/38_comments
+mkdir /Users/home/Documents/Code/Go_dev/modulacms/sql/schema/42_comments
 ```
 
 ---
@@ -415,11 +415,11 @@ WHERE comment_id = $1;
 ModulaCMS maintains combined schema files for database initialization. Use the helper scripts to regenerate them:
 
 ```bash
-cd /Users/home/Documents/Code/Go_dev/modulacms/sql/schema
-./read_sql.sh > ../all_schema.sql
-./read_mysql.sh > ../all_schema_mysql.sql
-./read_psql.sh > ../all_schema_psql.sql
+cd /Users/home/Documents/Code/Go_dev/modulacms/sql
+./generate_combined.sh
 ```
+
+This single script regenerates all three combined schema files (`all_schema.sql`, `all_schema_mysql.sql`, `all_schema_psql.sql`) from the individual schema directories.
 
 ---
 
@@ -780,6 +780,8 @@ Common things that go in `_custom.go`:
 - **Complex queries** that join multiple tables or have non-standard logic
 - **Custom map functions** (when using `SkipMappers: true`)
 
+**Important:** After editing `_custom.go` files, run `just drivergen` to regenerate the MySQL and PostgreSQL method variants from the SQLite (canonical) version. Only edit the `Database` (SQLite) receiver methods -- the `MysqlDatabase` and `PsqlDatabase` variants are generated automatically. See the [Custom Wrapper Replication](#custom-wrapper-replication) section in CLAUDE.md for details on how drivergen works.
+
 ---
 
 ## Step 11: Write Tests
@@ -904,15 +906,13 @@ For reference, here is the full sequence of commands from start to finish:
 
 ```bash
 # 1. Create schema directory
-mkdir sql/schema/38_comments
+mkdir sql/schema/42_comments
 
 # 2. Create 6 SQL files (schema + queries for each DB)
 # (create files as shown in Steps 2-3)
 
 # 3. Regenerate combined schemas
-cd sql/schema && ./read_sql.sh > ../all_schema.sql
-./read_mysql.sh > ../all_schema_mysql.sql
-./read_psql.sh > ../all_schema_psql.sql
+cd sql && ./generate_combined.sh
 
 # 4. Add overrides to tools/sqlcgen/definitions.go (if needed)
 # 5. Add typed ID to internal/db/types/types_ids.go (if needed)
@@ -927,10 +927,13 @@ just dbgen
 # 9. Add methods to DbDriver interface in internal/db/db.go
 # 10. Add table to CreateAllTables (db.go) and DropAllTables (wipe.go)
 
-# 11. Write tests and run them
+# 11. If you created _custom.go files, regenerate driver variants
+just drivergen
+
+# 12. Write tests and run them
 go test -v ./internal/db -run TestCommentCRUD
 
-# 12. Verify everything compiles
+# 13. Verify everything compiles
 just check
 ```
 

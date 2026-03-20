@@ -40,6 +40,7 @@ Same `Resource` interface as above, operating on admin-scoped entities.
 | `adminRoutes` | `AdminRoute` | `CreateAdminRouteParams` | `UpdateAdminRouteParams` | `AdminRouteID` |
 | `fieldTypes` | `FieldTypeInfo` | `CreateFieldTypeParams` | `UpdateFieldTypeParams` | `FieldTypeID` |
 | `adminFieldTypes` | `AdminFieldTypeInfo` | `CreateAdminFieldTypeParams` | `UpdateAdminFieldTypeParams` | `AdminFieldTypeID` |
+| `adminMedia` | `AdminMedia` | `NoCreate` | `UpdateAdminMediaParams` | `AdminMediaID` |
 
 ### Specialized Resources
 
@@ -47,6 +48,8 @@ Same `Resource` interface as above, operating on admin-scoped entities.
 |----------|------|---------|
 | `auth` | `AuthResource` | `login`, `logout`, `me`, `register`, `resetPassword`, `requestPasswordReset`, `confirmPasswordReset` |
 | `mediaUpload` | `MediaUploadResource` | `upload(data:filename:options:)` |
+| `adminMediaUpload` | `AdminMediaUploadResource` | `upload(data:filename:options:)` |
+| `adminMediaFolders` | `AdminMediaFoldersResource` | `tree`, `listMedia`, `moveMedia` |
 | `adminTree` | `AdminTreeResource` | `get(slug:format:)` |
 | `content` | `ContentDeliveryResource` | `getPage(slug:format:locale:)` |
 | `sshKeys` | `SSHKeysResource` | `list`, `create`, `delete` |
@@ -129,6 +132,8 @@ Every `ResourceID` type provides:
 | `MediaID` | Media items |
 | `MediaDimensionID` | Media dimension presets |
 | `MediaFolderID` | Media folders |
+| `AdminMediaID` | Admin media items |
+| `AdminMediaFolderID` | Admin media folders |
 
 ### Auth IDs
 
