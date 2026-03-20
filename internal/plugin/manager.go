@@ -485,7 +485,22 @@ func (m *Manager) LoadAll(ctx context.Context) error {
 			for name, inst := range discovered {
 				dbRow, ok := dbByName[name]
 				if !ok {
-					continue
+					// Auto-register discovered plugins that have no DB record.
+					// Without a record the coordinator would evict them on the
+					// next reconciliation cycle ("removed from database").
+					newRow, regErr := m.autoRegisterPlugin(ctx, inst)
+					if regErr != nil {
+						utility.DefaultLogger.Warn(
+							fmt.Sprintf("plugin %q: auto-register failed: %s", name, regErr.Error()),
+							nil,
+						)
+						continue
+					}
+					dbByName[name] = newRow
+					dbRow = newRow
+					utility.DefaultLogger.Info(
+						fmt.Sprintf("plugin %q: auto-registered in database (status: %s)", name, newRow.Status),
+					)
 				}
 
 				// Enrich with approved_access.
@@ -1914,6 +1929,65 @@ func (m *Manager) StopCoordinator() {
 		m.coordinatorCancel()
 		m.coordinatorCancel = nil
 	}
+}
+
+// autoRegisterPlugin creates a DB record for a discovered plugin that has no
+// existing record. This prevents the coordinator from evicting plugins that
+// were discovered on the filesystem but never explicitly installed. The plugin
+// is registered with status "installed" (not "enabled") so it still requires
+// explicit enablement to run after the initial LoadAll completes.
+func (m *Manager) autoRegisterPlugin(ctx context.Context, inst *PluginInstance) (*db.Plugin, error) {
+	info := &inst.Info
+
+	hash, err := computeChecksum(inst.Dir)
+	if err != nil {
+		return nil, fmt.Errorf("computing manifest hash: %w", err)
+	}
+
+	capJSON, err := json.Marshal(info.Capabilities)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling capabilities: %w", err)
+	}
+	accessJSON, err := json.Marshal(info.CoreAccess)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling core access: %w", err)
+	}
+
+	ac := audited.Ctx(types.NodeID(m.cfg.NodeID), types.SystemUserID, "plugin-auto-register", "127.0.0.1")
+	record, err := m.driver.CreatePlugin(ctx, ac, db.CreatePluginParams{
+		Name:           info.Name,
+		Version:        info.Version,
+		Description:    info.Description,
+		Author:         info.Author,
+		Status:         types.PluginStatusInstalled,
+		Capabilities:   string(capJSON),
+		ApprovedAccess: string(accessJSON),
+		ManifestHash:   hash,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating plugin record: %w", err)
+	}
+
+	// Create pipeline entries from capabilities.
+	for _, cap := range info.Capabilities {
+		_, pipeErr := m.driver.CreatePipeline(ctx, ac, db.CreatePipelineParams{
+			PluginID:   record.PluginID,
+			TableName:  cap.Table,
+			Operation:  cap.Op,
+			PluginName: info.Name,
+			Handler:    cap.Handler,
+			Priority:   cap.Priority,
+			Enabled:    true,
+			Config:     types.NewJSONData("{}"),
+		})
+		if pipeErr != nil {
+			// Best-effort cleanup on failure.
+			_ = m.driver.DeletePlugin(ctx, ac, record.PluginID)
+			return nil, fmt.Errorf("creating pipeline for %s.%s: %w", cap.Table, cap.Op, pipeErr)
+		}
+	}
+
+	return record, nil
 }
 
 // InstallPlugin extracts the manifest for a discovered filesystem plugin, computes

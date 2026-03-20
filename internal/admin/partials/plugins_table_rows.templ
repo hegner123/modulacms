@@ -3,72 +3,64 @@ package partials
 import "github.com/hegner123/modulacms/internal/service"
 
 templ PluginsTableRowsInner(plugins []service.PluginSummary) {
-	for _, p := range plugins {
-		<tr>
-			<td class="whitespace-nowrap px-4 py-4 text-sm">
-				<a href={ templ.SafeURL("/admin/plugins/" + p.Name) }
-				   hx-get={ "/admin/plugins/" + p.Name }
-				   hx-target="#main-content"
-				   hx-push-url="true"
-				   class="font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">
-					{ p.Name }
-				</a>
-			</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ p.Version }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ p.Description }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm">
-				<span class={ "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset", pluginBadgeClassesTW(p.State) }>{ p.State }</span>
-			</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ p.CircuitBreakerState }</td>
-		</tr>
-	}
+    for _, p := range plugins {
+        <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/plugins/" + p.Name }>
+            <td class="py-4 pr-3 pl-4 text-sm font-medium whitespace-nowrap text-white sm:pl-6">{ p.Name }</td>
+            <td class="px-3 py-4 text-sm whitespace-nowrap">
+                <span class={ "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset", pluginBadgeClassesTW(p.State) }>{ p.State }</span>
+            </td>
+            <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ p.Description }</td>
+            <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ p.Version }</td>
+            <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ p.CircuitBreakerState }</td>
+        </tr>
+    }
 }
 
 templ PluginsTableRows(plugins []service.PluginSummary) {
-	@PluginsTableRowsInner(plugins)
+    @PluginsTableRowsInner(plugins)
 }
 
 func pluginStateClass(state string) string {
-	switch state {
-	case "running":
-		return "success"
-	case "failed":
-		return "error"
-	case "stopped", "discovered":
-		return "warning"
-	case "loading":
-		return "info"
-	default:
-		return "default"
-	}
+    switch state {
+    case "running":
+        return "success"
+    case "failed":
+        return "error"
+    case "stopped", "discovered":
+        return "warning"
+    case "loading":
+        return "info"
+    default:
+        return "default"
+    }
 }
 
 func pluginBadgeClasses(state string) string {
-	switch state {
-	case "running":
-		return "bg-[var(--color-success-100)] text-[var(--color-success)]"
-	case "failed":
-		return "bg-[var(--color-danger-100)] text-[var(--color-danger)]"
-	case "stopped", "discovered":
-		return "bg-yellow-500/10 text-yellow-500"
-	case "loading":
-		return "bg-blue-500/10 text-blue-400"
-	default:
-		return "bg-[var(--color-surface-hover)] text-[var(--color-text-muted)]"
-	}
+    switch state {
+    case "running":
+        return "bg-[var(--color-success-100)] text-[var(--color-success)]"
+    case "failed":
+        return "bg-[var(--color-danger-100)] text-[var(--color-danger)]"
+    case "stopped", "discovered":
+        return "bg-yellow-500/10 text-yellow-500"
+    case "loading":
+        return "bg-blue-500/10 text-blue-400"
+    default:
+        return "bg-[var(--color-surface-hover)] text-[var(--color-text-muted)]"
+    }
 }
 
 func pluginBadgeClassesTW(state string) string {
-	switch state {
-	case "running":
-		return "bg-green-400/10 text-green-400 ring-green-400/20"
-	case "failed":
-		return "bg-red-400/10 text-red-400 ring-red-400/20"
-	case "stopped", "discovered":
-		return "bg-yellow-400/10 text-yellow-400 ring-yellow-400/20"
-	case "loading":
-		return "bg-blue-400/10 text-blue-400 ring-blue-400/20"
-	default:
-		return "bg-gray-400/10 text-gray-400 ring-gray-400/20"
-	}
+    switch state {
+    case "running":
+        return "bg-green-400/10 text-green-400 ring-green-400/20"
+    case "failed":
+        return "bg-red-400/10 text-red-400 ring-red-400/20"
+    case "stopped", "discovered":
+        return "bg-yellow-400/10 text-yellow-400 ring-yellow-400/20"
+    case "loading":
+        return "bg-blue-400/10 text-blue-400 ring-blue-400/20"
+    default:
+        return "bg-gray-400/10 text-gray-400 ring-gray-400/20"
+    }
 }

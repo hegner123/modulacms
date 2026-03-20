@@ -1019,8 +1019,12 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/plugins/{name}/reload", mutating("plugins:admin", adminhandlers.PluginReloadHandler(svc)))
 	mux.Handle("POST /admin/plugins/routes/approve", mutating("plugins:admin", adminhandlers.PluginApproveRouteHandler(svc)))
 	mux.Handle("POST /admin/plugins/routes/revoke", mutating("plugins:admin", adminhandlers.PluginRevokeRouteHandler(svc)))
+	mux.Handle("POST /admin/plugins/routes/approve-all", mutating("plugins:admin", adminhandlers.PluginApproveAllRoutesHandler(svc)))
+	mux.Handle("POST /admin/plugins/routes/revoke-all", mutating("plugins:admin", adminhandlers.PluginRevokeAllRoutesHandler(svc)))
 	mux.Handle("POST /admin/plugins/hooks/approve", mutating("plugins:admin", adminhandlers.PluginApproveHookHandler(svc)))
 	mux.Handle("POST /admin/plugins/hooks/revoke", mutating("plugins:admin", adminhandlers.PluginRevokeHookHandler(svc)))
+	mux.Handle("POST /admin/plugins/hooks/approve-all", mutating("plugins:admin", adminhandlers.PluginApproveAllHooksHandler(svc)))
+	mux.Handle("POST /admin/plugins/hooks/revoke-all", mutating("plugins:admin", adminhandlers.PluginRevokeAllHooksHandler(svc)))
 
 	// Pipelines (read-only viewer, plugins:read permission)
 	mux.Handle("GET /admin/pipelines", viewing("plugins", adminhandlers.PipelinesListHandler(svc)))

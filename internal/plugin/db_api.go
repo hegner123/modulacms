@@ -171,6 +171,7 @@ func RegisterDBAPI(L *lua.LState, api *DatabaseAPI) {
 	dbTable.RawSetString("transaction", L.NewFunction(api.luaTransaction))
 	dbTable.RawSetString("ulid", L.NewFunction(luaULID))
 	dbTable.RawSetString("timestamp", L.NewFunction(luaTimestamp))
+	dbTable.RawSetString("timestamp_ago", L.NewFunction(luaTimestampAgo))
 	dbTable.RawSetString("define_table", L.NewFunction(
 		luaDefineTable(L, api.pluginName, api.conn, api.dialect, api.tableReg),
 	))
@@ -1537,6 +1538,17 @@ func luaULID(L *lua.LState) int {
 // This replaces os.date() which is sandboxed out.
 func luaTimestamp(L *lua.LState) int {
 	L.Push(lua.LString(time.Now().UTC().Format(time.RFC3339)))
+	return 1
+}
+
+// luaTimestampAgo implements db.timestamp_ago(seconds) -> string.
+// Returns (now - N seconds) as an RFC3339 UTC string.
+// Used for time window comparisons in Lua where os.time() is sandboxed out.
+// RFC3339 with zero-padded UTC fields sorts lexicographically.
+func luaTimestampAgo(L *lua.LState) int {
+	n := L.CheckInt(1)
+	t := time.Now().UTC().Add(-time.Duration(n) * time.Second)
+	L.Push(lua.LString(t.Format(time.RFC3339)))
 	return 1
 }
 

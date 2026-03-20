@@ -92,7 +92,8 @@ Returns a sequence table of row tables. Returns empty table `{}` on no matches (
 ```lua
 local tasks = db.query("tasks", {
     where    = { status = "todo", category_id = "01ABC..." },
-    order_by = "created_at DESC",
+    order_by = "created_at",
+    desc     = true,
     limit    = 50,
     offset   = 0,
 })
@@ -105,8 +106,9 @@ end
 **opts fields**:
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `where` | table | nil | Column=value equality filters (AND) |
-| `order_by` | string | nil | SQL ORDER BY clause |
+| `where` | table | nil | Column=value equality filters (AND). Values can be condition constructors: `db.gt(v)`, `db.gte(v)`, `db.lt(v)`, `db.lte(v)`, `db.like(v)`, `db.not_like(v)`, `db.in_list(t)`, `db.not_in(t)`, `db.between(a,b)`, `db.is_null()`, `db.is_not_null()` |
+| `order_by` | string | nil | Column name to sort by (must be a valid identifier, no spaces) |
+| `desc` | boolean | false | Sort descending when true (used with order_by) |
 | `limit` | number | 100 | Max rows returned |
 | `offset` | number | 0 | Skip N rows |
 
@@ -195,6 +197,19 @@ Returns current UTC time as RFC3339 string. Replaces `os.date` which is sandboxe
 
 ```lua
 local now = db.timestamp()  -- e.g., "2026-02-15T12:00:00Z"
+```
+
+### db.timestamp_ago(seconds) -> string
+
+Returns (now - N seconds) as an RFC3339 UTC string. Used for time window comparisons
+where `os.time()` is sandboxed out. RFC3339 with zero-padded UTC fields sorts
+lexicographically, so string comparison operators work correctly.
+
+```lua
+local one_hour_ago = db.timestamp_ago(3600)
+if record.created_at < one_hour_ago then
+    -- record is older than 1 hour
+end
 ```
 
 ---

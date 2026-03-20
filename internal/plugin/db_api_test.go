@@ -941,6 +941,102 @@ func TestDBAPI_Timestamp_IsUTC(t *testing.T) {
 	}
 }
 
+func TestDBAPI_TimestampAgo_ReturnsRFC3339(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+
+	L, _, cancel := newDBTestState(t, conn, "ts_ago_test")
+	defer L.Close()
+	defer cancel()
+
+	code := `return db.timestamp_ago(3600)`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("db.timestamp_ago failed: %v", err)
+	}
+	result := L.Get(-1)
+	s := result.String()
+	parsed, parseErr := time.Parse(time.RFC3339, s)
+	if parseErr != nil {
+		t.Errorf("db.timestamp_ago did not return valid RFC3339: %q", s)
+	}
+	// Should be approximately 1 hour ago (allow 5 second tolerance)
+	expected := time.Now().UTC().Add(-3600 * time.Second)
+	diff := parsed.Sub(expected)
+	if diff < -5*time.Second || diff > 5*time.Second {
+		t.Errorf("db.timestamp_ago(3600) returned %v, expected ~%v (diff: %v)", parsed, expected, diff)
+	}
+}
+
+func TestDBAPI_TimestampAgo_IsUTC(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+
+	L, _, cancel := newDBTestState(t, conn, "ts_ago_utc_test")
+	defer L.Close()
+	defer cancel()
+
+	code := `return db.timestamp_ago(60)`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("db.timestamp_ago failed: %v", err)
+	}
+	result := L.Get(-1)
+	s := result.String()
+	if !strings.HasSuffix(s, "Z") {
+		t.Errorf("expected UTC timestamp ending in 'Z', got %q", s)
+	}
+}
+
+func TestDBAPI_TimestampAgo_LexicographicSort(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+
+	L, _, cancel := newDBTestState(t, conn, "ts_ago_sort_test")
+	defer L.Close()
+	defer cancel()
+
+	// timestamp_ago(3600) should be lexicographically less than timestamp()
+	code := `
+		local ago = db.timestamp_ago(3600)
+		local now = db.timestamp()
+		if ago < now then
+			return "correct"
+		else
+			return "wrong: ago=" .. ago .. " now=" .. now
+		end
+	`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("lexicographic sort test failed: %v", err)
+	}
+	result := L.Get(-1)
+	if result.String() != "correct" {
+		t.Errorf("expected 'correct', got %q", result.String())
+	}
+}
+
+func TestDBAPI_TimestampAgo_ZeroSeconds(t *testing.T) {
+	conn := openTestDB(t)
+	defer conn.Close()
+
+	L, _, cancel := newDBTestState(t, conn, "ts_ago_zero_test")
+	defer L.Close()
+	defer cancel()
+
+	code := `
+		local ago = db.timestamp_ago(0)
+		local now = db.timestamp()
+		return ago
+	`
+	if err := L.DoString(code); err != nil {
+		t.Fatalf("db.timestamp_ago(0) failed: %v", err)
+	}
+	result := L.Get(-1)
+	s := result.String()
+	_, parseErr := time.Parse(time.RFC3339, s)
+	if parseErr != nil {
+		t.Errorf("db.timestamp_ago(0) did not return valid RFC3339: %q", s)
+	}
+}
+
 // -- Tests: Table name prefixing --
 
 func TestDBAPI_TablePrefixing(t *testing.T) {

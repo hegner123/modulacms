@@ -260,6 +260,178 @@ func PluginRevokeHookHandler(svc *service.Registry) http.HandlerFunc {
 	}
 }
 
+// PluginApproveAllRoutesHandler approves all pending routes for a plugin.
+func PluginApproveAllRoutesHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if parseErr := r.ParseForm(); parseErr != nil {
+			htmxError(w, r, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		pluginName := r.FormValue("plugin")
+		if pluginName == "" {
+			htmxError(w, r, "Missing plugin name", http.StatusBadRequest)
+			return
+		}
+
+		routes, err := svc.Plugins.ListRoutes(r.Context())
+		if err != nil {
+			htmxServiceError(w, r, "Failed to list routes", err)
+			return
+		}
+
+		user := middleware.AuthenticatedUser(r.Context())
+		approvedBy := ""
+		if user != nil {
+			approvedBy = user.Username
+		}
+
+		var pending []service.RouteApprovalInput
+		for _, rt := range routes {
+			if rt.PluginName == pluginName && !rt.Approved {
+				pending = append(pending, service.RouteApprovalInput{
+					Plugin: pluginName, Method: rt.Method, Path: rt.Path,
+				})
+			}
+		}
+
+		if len(pending) > 0 {
+			if approveErr := svc.Plugins.ApproveRoutes(r.Context(), pending, approvedBy); approveErr != nil {
+				htmxServiceError(w, r, "Failed to approve routes", approveErr)
+				return
+			}
+		}
+
+		renderPluginRoutes(w, r, svc, pluginName, fmt.Sprintf("Approved %d routes", len(pending)))
+	}
+}
+
+// PluginApproveAllHooksHandler approves all pending hooks for a plugin.
+func PluginApproveAllHooksHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if parseErr := r.ParseForm(); parseErr != nil {
+			htmxError(w, r, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		pluginName := r.FormValue("plugin")
+		if pluginName == "" {
+			htmxError(w, r, "Missing plugin name", http.StatusBadRequest)
+			return
+		}
+
+		hooks, err := svc.Plugins.ListHooks(r.Context())
+		if err != nil {
+			htmxServiceError(w, r, "Failed to list hooks", err)
+			return
+		}
+
+		user := middleware.AuthenticatedUser(r.Context())
+		approvedBy := ""
+		if user != nil {
+			approvedBy = user.Username
+		}
+
+		var pending []service.HookApprovalInput
+		for _, h := range hooks {
+			if h.PluginName == pluginName && !h.Approved {
+				pending = append(pending, service.HookApprovalInput{
+					PluginName: pluginName, Event: h.Event, Table: h.Table,
+				})
+			}
+		}
+
+		if len(pending) > 0 {
+			if approveErr := svc.Plugins.ApproveHooks(r.Context(), pending, approvedBy); approveErr != nil {
+				htmxServiceError(w, r, "Failed to approve hooks", approveErr)
+				return
+			}
+		}
+
+		renderPluginHooks(w, r, svc, pluginName, fmt.Sprintf("Approved %d hooks", len(pending)))
+	}
+}
+
+// PluginRevokeAllRoutesHandler revokes all approved routes for a plugin.
+func PluginRevokeAllRoutesHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if parseErr := r.ParseForm(); parseErr != nil {
+			htmxError(w, r, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		pluginName := r.FormValue("plugin")
+		if pluginName == "" {
+			htmxError(w, r, "Missing plugin name", http.StatusBadRequest)
+			return
+		}
+
+		routes, err := svc.Plugins.ListRoutes(r.Context())
+		if err != nil {
+			htmxServiceError(w, r, "Failed to list routes", err)
+			return
+		}
+
+		var approved []service.RouteApprovalInput
+		for _, rt := range routes {
+			if rt.PluginName == pluginName && rt.Approved {
+				approved = append(approved, service.RouteApprovalInput{
+					Plugin: pluginName, Method: rt.Method, Path: rt.Path,
+				})
+			}
+		}
+
+		if len(approved) > 0 {
+			if revokeErr := svc.Plugins.RevokeRoutes(r.Context(), approved); revokeErr != nil {
+				htmxServiceError(w, r, "Failed to revoke routes", revokeErr)
+				return
+			}
+		}
+
+		renderPluginRoutes(w, r, svc, pluginName, fmt.Sprintf("Revoked %d routes", len(approved)))
+	}
+}
+
+// PluginRevokeAllHooksHandler revokes all approved hooks for a plugin.
+func PluginRevokeAllHooksHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if parseErr := r.ParseForm(); parseErr != nil {
+			htmxError(w, r, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		pluginName := r.FormValue("plugin")
+		if pluginName == "" {
+			htmxError(w, r, "Missing plugin name", http.StatusBadRequest)
+			return
+		}
+
+		hooks, err := svc.Plugins.ListHooks(r.Context())
+		if err != nil {
+			htmxServiceError(w, r, "Failed to list hooks", err)
+			return
+		}
+
+		var approved []service.HookApprovalInput
+		for _, h := range hooks {
+			if h.PluginName == pluginName && h.Approved {
+				approved = append(approved, service.HookApprovalInput{
+					PluginName: pluginName, Event: h.Event, Table: h.Table,
+				})
+			}
+		}
+
+		if len(approved) > 0 {
+			if revokeErr := svc.Plugins.RevokeHooks(r.Context(), approved); revokeErr != nil {
+				htmxServiceError(w, r, "Failed to revoke hooks", revokeErr)
+				return
+			}
+		}
+
+		renderPluginHooks(w, r, svc, pluginName, fmt.Sprintf("Revoked %d hooks", len(approved)))
+	}
+}
+
 // --- Helpers ---
 
 // filterRoutesByPlugin returns only routes belonging to the named plugin.

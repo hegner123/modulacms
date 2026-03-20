@@ -153,8 +153,40 @@ templ PluginDetailContent(detail *service.PluginDetail, routes []service.PluginR
 		<div class="mt-8">
 			<div class="rounded-xl border border-white/10 bg-white/5 p-6">
 				<div class="flex items-center justify-between">
-					<h2 class="text-base font-semibold text-white">Routes</h2>
-					<span class="text-sm text-gray-400">{ fmt.Sprintf("%d registered", len(routes)) }</span>
+					<div class="flex items-center gap-x-3">
+						<h2 class="text-base font-semibold text-white">Routes</h2>
+						<span class="text-sm text-gray-400">{ fmt.Sprintf("%d registered", len(routes)) }</span>
+					</div>
+					if hasAdmin && len(routes) > 0 {
+						<div class="flex items-center gap-x-2">
+							if hasPendingRoutes(routes) {
+								<form
+									hx-post="/admin/plugins/routes/approve-all"
+									hx-target="#plugin-routes-body"
+									hx-swap="innerHTML"
+								>
+									<input type="hidden" name="_csrf" value={ csrfToken }/>
+									<input type="hidden" name="plugin" value={ detail.Name }/>
+									<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-green-500/10 px-3 py-1.5 text-sm font-medium text-green-400 ring-1 ring-green-400/20 ring-inset hover:bg-green-500/20">
+										Approve All
+									</button>
+								</form>
+							}
+							if hasApprovedRoutes(routes) {
+								<form
+									hx-post="/admin/plugins/routes/revoke-all"
+									hx-target="#plugin-routes-body"
+									hx-swap="innerHTML"
+								>
+									<input type="hidden" name="_csrf" value={ csrfToken }/>
+									<input type="hidden" name="plugin" value={ detail.Name }/>
+									<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-400 ring-1 ring-red-400/20 ring-inset hover:bg-red-500/20">
+										Revoke All
+									</button>
+								</form>
+							}
+						</div>
+					}
 				</div>
 				if len(routes) == 0 {
 					<p class="mt-4 text-sm text-gray-500">No routes registered by this plugin.</p>
@@ -185,8 +217,40 @@ templ PluginDetailContent(detail *service.PluginDetail, routes []service.PluginR
 		<div class="mt-8">
 			<div class="rounded-xl border border-white/10 bg-white/5 p-6">
 				<div class="flex items-center justify-between">
-					<h2 class="text-base font-semibold text-white">Hooks</h2>
-					<span class="text-sm text-gray-400">{ fmt.Sprintf("%d registered", len(hooks)) }</span>
+					<div class="flex items-center gap-x-3">
+						<h2 class="text-base font-semibold text-white">Hooks</h2>
+						<span class="text-sm text-gray-400">{ fmt.Sprintf("%d registered", len(hooks)) }</span>
+					</div>
+					if hasAdmin && len(hooks) > 0 {
+						<div class="flex items-center gap-x-2">
+							if hasPendingHooks(hooks) {
+								<form
+									hx-post="/admin/plugins/hooks/approve-all"
+									hx-target="#plugin-hooks-body"
+									hx-swap="innerHTML"
+								>
+									<input type="hidden" name="_csrf" value={ csrfToken }/>
+									<input type="hidden" name="plugin" value={ detail.Name }/>
+									<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-green-500/10 px-3 py-1.5 text-sm font-medium text-green-400 ring-1 ring-green-400/20 ring-inset hover:bg-green-500/20">
+										Approve All
+									</button>
+								</form>
+							}
+							if hasApprovedHooks(hooks) {
+								<form
+									hx-post="/admin/plugins/hooks/revoke-all"
+									hx-target="#plugin-hooks-body"
+									hx-swap="innerHTML"
+								>
+									<input type="hidden" name="_csrf" value={ csrfToken }/>
+									<input type="hidden" name="plugin" value={ detail.Name }/>
+									<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-400 ring-1 ring-red-400/20 ring-inset hover:bg-red-500/20">
+										Revoke All
+									</button>
+								</form>
+							}
+						</div>
+					}
 				</div>
 				if len(hooks) == 0 {
 					<p class="mt-4 text-sm text-gray-500">No hooks registered by this plugin.</p>
@@ -220,4 +284,40 @@ templ PluginDetail(layout layouts.AdminData, detail *service.PluginDetail, route
 	@layouts.Admin(layout) {
 		@PluginDetailContent(detail, routes, hooks, csrfToken, hasAdmin)
 	}
+}
+
+func hasPendingRoutes(routes []service.PluginRoute) bool {
+	for _, r := range routes {
+		if !r.Approved {
+			return true
+		}
+	}
+	return false
+}
+
+func hasPendingHooks(hooks []service.HookInfo) bool {
+	for _, h := range hooks {
+		if !h.Approved {
+			return true
+		}
+	}
+	return false
+}
+
+func hasApprovedRoutes(routes []service.PluginRoute) bool {
+	for _, r := range routes {
+		if r.Approved {
+			return true
+		}
+	}
+	return false
+}
+
+func hasApprovedHooks(hooks []service.HookInfo) bool {
+	for _, h := range hooks {
+		if h.Approved {
+			return true
+		}
+	}
+	return false
 }
