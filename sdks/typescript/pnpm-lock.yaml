@@ -27,6 +27,12 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  forms-components:
+    devDependencies:
+      jsdom:
+        specifier: ^26.0.0
+        version: 26.1.0
+
   modulacms-admin-sdk:
     dependencies:
       '@modulacms/types':

@@ -26,6 +26,7 @@ services:
       - ./config.postgres.json:/app/modula.config.json
       - ../../examples/plugins/hello_world:/app/plugins/hello_world:ro
       - ../../examples/plugins/task_tracker:/app/plugins/task_tracker:ro
+      - ../../plugins/forms:/app/plugins/forms:ro
     env_file:
       - .env
     depends_on:

@@ -5,3 +5,4 @@ packages:
   - 'modulacms-admin-sdk'
   - 'plugin-sdk'
   - 'admin-ui'
+  - 'forms-components'

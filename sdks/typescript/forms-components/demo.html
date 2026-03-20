@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ModulaCMS Forms — Demo</title>
+  <script src="dist/index.global.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      background: #f5f5f5;
+      color: #111827;
+    }
+
+    header {
+      background: #1e293b;
+      color: white;
+      padding: 1.5rem 2rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    header p {
+      margin: 0.25rem 0 0;
+      opacity: 0.7;
+      font-size: 0.875rem;
+    }
+
+    .config-bar {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 1rem 2rem;
+      display: flex;
+      gap: 1rem;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+
+    .config-bar label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .config-bar input {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      min-width: 200px;
+    }
+
+    .config-bar button {
+      padding: 0.5rem 1.25rem;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+
+    .config-bar button:hover { background: #1d4ed8; }
+
+    nav {
+      display: flex;
+      gap: 0;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 0 2rem;
+    }
+
+    nav button {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      font-size: 0.875rem;
+      color: #6b7280;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    nav button:hover { color: #111827; }
+    nav button.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .tab-panel {
+      display: none;
+      background: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 2rem;
+    }
+
+    .tab-panel.active { display: block; }
+
+    .tab-panel h2 {
+      margin: 0 0 0.25rem;
+      font-size: 1.125rem;
+    }
+
+    .tab-panel .subtitle {
+      color: #6b7280;
+      font-size: 0.875rem;
+      margin: 0 0 1.5rem;
+    }
+
+    .event-log {
+      margin-top: 1.5rem;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 1rem;
+    }
+
+    .event-log h3 {
+      font-size: 0.8125rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #6b7280;
+      margin: 0 0 0.5rem;
+    }
+
+    .event-log pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1rem;
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      max-height: 300px;
+      overflow-y: auto;
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .event-log .clear-btn {
+      float: right;
+      font-size: 0.75rem;
+      color: #6b7280;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Component style overrides */
+    modulacms-form {
+      --modulacms-primary-color: #2563eb;
+      --modulacms-border-radius: 0.5rem;
+      --modulacms-field-gap: 1.25rem;
+      --modulacms-button-padding: 0.75rem 2rem;
+      display: block;
+      max-width: 600px;
+    }
+
+    modulacms-entries {
+      --modulacms-primary-color: #2563eb;
+      display: block;
+    }
+
+    modulacms-form-builder {
+      --modulacms-primary-color: #2563eb;
+      display: block;
+      min-height: 500px;
+    }
+
+    .placeholder {
+      text-align: center;
+      padding: 3rem;
+      color: #9ca3af;
+    }
+
+    .placeholder p {
+      margin: 0.5rem 0 0;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ModulaCMS Forms</h1>
+  <p>Demo page for &lt;modulacms-form&gt;, &lt;modulacms-entries&gt;, and &lt;modulacms-form-builder&gt;</p>
+</header>
+
+<div class="config-bar">
+  <label>
+    API URL
+    <input type="text" id="cfg-api-url" value="http://localhost:8080" placeholder="https://cms.example.com">
+  </label>
+  <label>
+    API Key
+    <input type="text" id="cfg-api-key" value="" placeholder="Optional for public form">
+  </label>
+  <label>
+    Form ID
+    <input type="text" id="cfg-form-id" value="" placeholder="01HXYZ...">
+  </label>
+  <button onclick="loadComponents()">Load</button>
+</div>
+
+<nav id="tabs">
+  <button class="active" data-tab="form-tab">Form Renderer</button>
+  <button data-tab="entries-tab">Entries Viewer</button>
+  <button data-tab="builder-tab">Form Builder</button>
+</nav>
+
+<main>
+  <!-- Form Renderer -->
+  <div id="form-tab" class="tab-panel active">
+    <h2>Form Renderer</h2>
+    <p class="subtitle">Public-facing form that visitors fill out and submit.</p>
+    <div id="form-container">
+      <div class="placeholder">
+        <p>Enter a Form ID above and click Load.</p>
+      </div>
+    </div>
+    <div class="event-log">
+      <h3>Event Log <button class="clear-btn" onclick="clearLog('form-log')">Clear</button></h3>
+      <pre id="form-log"></pre>
+    </div>
+  </div>
+
+  <!-- Entries Viewer -->
+  <div id="entries-tab" class="tab-panel">
+    <h2>Entries Viewer</h2>
+    <p class="subtitle">Admin view of form submissions with sorting, filtering, and export.</p>
+    <div id="entries-container">
+      <div class="placeholder">
+        <p>Enter a Form ID and API Key above and click Load.</p>
+      </div>
+    </div>
+    <div class="event-log">
+      <h3>Event Log <button class="clear-btn" onclick="clearLog('entries-log')">Clear</button></h3>
+      <pre id="entries-log"></pre>
+    </div>
+  </div>
+
+  <!-- Form Builder -->
+  <div id="builder-tab" class="tab-panel">
+    <h2>Form Builder</h2>
+    <p class="subtitle">Drag-and-drop form editor for admin panels.</p>
+    <div id="builder-container">
+      <div class="placeholder">
+        <p>Enter a Form ID and API Key above and click Load.</p>
+      </div>
+    </div>
+    <div class="event-log">
+      <h3>Event Log <button class="clear-btn" onclick="clearLog('builder-log')">Clear</button></h3>
+      <pre id="builder-log"></pre>
+    </div>
+  </div>
+</main>
+
+<script>
+  // Tab switching
+  document.getElementById("tabs").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-tab]");
+    if (!btn) return;
+    document.querySelectorAll("#tabs button").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  });
+
+  // Event logging
+  function logEvent(logId, event) {
+    const pre = document.getElementById(logId);
+    const time = new Date().toLocaleTimeString();
+    const detail = event.detail ? JSON.stringify(event.detail, null, 2) : "—";
+    pre.textContent += `[${time}] ${event.type}\n${detail}\n\n`;
+    pre.scrollTop = pre.scrollHeight;
+  }
+
+  function clearLog(logId) {
+    document.getElementById(logId).textContent = "";
+  }
+
+  // Load components with current config
+  function loadComponents() {
+    const apiUrl = document.getElementById("cfg-api-url").value.trim();
+    const apiKey = document.getElementById("cfg-api-key").value.trim();
+    const formId = document.getElementById("cfg-form-id").value.trim();
+
+    if (!formId) {
+      alert("Enter a Form ID first.");
+      return;
+    }
+
+    // Form Renderer
+    const formContainer = document.getElementById("form-container");
+    formContainer.innerHTML = "";
+    const form = document.createElement("modulacms-form");
+    form.setAttribute("form-id", formId);
+    form.setAttribute("api-url", apiUrl);
+    if (apiKey) form.setAttribute("api-key", apiKey);
+
+    ["form:loaded", "form:submit", "form:success", "form:error", "field:change", "field:validate"]
+      .forEach(evt => form.addEventListener(evt, (e) => logEvent("form-log", e)));
+
+    formContainer.appendChild(form);
+
+    // Entries Viewer
+    const entriesContainer = document.getElementById("entries-container");
+    entriesContainer.innerHTML = "";
+    const entries = document.createElement("modulacms-entries");
+    entries.setAttribute("form-id", formId);
+    entries.setAttribute("api-url", apiUrl);
+    if (apiKey) entries.setAttribute("api-key", apiKey);
+    entries.setAttribute("page-size", "20");
+    entries.setAttribute("sortable", "");
+    entries.setAttribute("filterable", "");
+    entries.setAttribute("export-enabled", "");
+
+    ["entries:loaded", "entry:select", "entries:page-change", "entries:export"]
+      .forEach(evt => entries.addEventListener(evt, (e) => logEvent("entries-log", e)));
+
+    entriesContainer.appendChild(entries);
+
+    // Form Builder
+    const builderContainer = document.getElementById("builder-container");
+    builderContainer.innerHTML = "";
+    const builder = document.createElement("modulacms-form-builder");
+    builder.setAttribute("form-id", formId);
+    builder.setAttribute("api-url", apiUrl);
+    if (apiKey) builder.setAttribute("api-key", apiKey);
+
+    ["builder:loaded", "builder:save", "builder:change", "field:add", "field:remove", "field:reorder"]
+      .forEach(evt => builder.addEventListener(evt, (e) => logEvent("builder-log", e)));
+
+    builderContainer.appendChild(builder);
+  }
+</script>
+
+</body>
+</html>
