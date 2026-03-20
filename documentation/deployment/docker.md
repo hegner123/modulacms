@@ -59,7 +59,7 @@ just dc <backend> <action>
 | `fresh` | Delete volumes, rebuild, and start everything from scratch |
 | `logs` | Follow CMS container logs |
 | `destroy` | Stop containers, delete volumes, and remove all images (`full` backend only) |
-| `minio` | Restart just the MinIO container |
+| `minio-reset` | Reset the MinIO container (`postgres` backend only) |
 
 ### Examples
 

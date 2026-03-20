@@ -424,11 +424,15 @@ Nullable foreign key to validations table. Optional validation configuration ref
 
 Methods: `Validate`, `String`, `IsZero`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to NullableDatatypeID.
 
+`UnmarshalJSON` treats both JSON null and empty string (`""`) as null/not-set (Valid=false). The empty string handling was added to fix MCP field creation where the SDK sends `"validation_id": ""` instead of null.
+
 ### NullableAdminValidationID
 
 Nullable foreign key to admin_validations table. Optional admin validation configuration references.
 
 Methods: `Validate`, `String`, `IsZero`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to NullableDatatypeID.
+
+`UnmarshalJSON` treats both JSON null and empty string (`""`) as null/not-set (Valid=false). The empty string handling was added to fix MCP field creation where the SDK sends `"validation_id": ""` instead of null.
 
 ### NullableAdminMediaID
 

@@ -366,7 +366,7 @@ Regenerate with `just admin generate`. Watch mode: `just admin watch`.
 ### Static Assets
 
 - **Build tags**: `//go:build !dev` embeds `static/*` into binary; `-tags dev` serves from disk
-- **Web components**: Light DOM components prefixed `mcms-*` (command-palette, confirm, data-table, dialog, field-renderer, file-input, focal-point, media-grid, media-picker, publish-button, scroll, search, toast, tree-nav, validation-wizard)
+- **Web components**: Light DOM components prefixed `mcms-*` (command-palette, confirm, data-table, dialog, field-renderer, file-input, focal-point, media-grid, media-picker, publish-button, repeater, scroll, search, toast, tree-nav, validation-wizard)
 - **Block editor**: Source in `static/js/block-editor-src/`, bundled via esbuild to `static/js/block-editor.js`
 - **CSS**: tailwind.css → block-editor.css (Tailwind migration complete, legacy CSS files removed)
 
@@ -492,7 +492,7 @@ Each entity has `*TestFixture()` and `*UpdateParams()` helper functions that pro
 
 ### TypeScript (`sdks/typescript/`)
 
-pnpm workspace monorepo with six packages:
+pnpm workspace monorepo with seven packages:
 
 | Package | npm Name | Purpose |
 |---------|----------|---------|
@@ -501,6 +501,7 @@ pnpm workspace monorepo with six packages:
 | `modulacms-sdk/` | `@modulacms/sdk` | Read-only content delivery SDK |
 | `modulacms-admin-sdk/` | `@modulacms/admin-sdk` | Full admin CRUD SDK |
 | `plugin-sdk/` | `@modulacms/plugin-sdk` | Plugin UI SDK (Web Components, zero deps, browser-only) |
+| `forms-components/` | `@modulacms/forms` | Form builder Web Components (zero deps, browser-only) |
 | `admin-ui/` | `@modulacms/admin-ui` | Admin panel TypeScript (block editor state) |
 
 Tooling: TypeScript 5.7+, tsup (ESM+CJS dual builds), Vitest, pnpm 9+, Node 22+.

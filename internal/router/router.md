@@ -36,6 +36,8 @@ Returns currently authenticated user information via GET to /api/v1/auth/me. Val
 
 Returns JSON with user_id, email, username, name, role. Returns 401 Unauthorized if session invalid or missing.
 
+The `/auth/me` endpoint first attempts cookie-based session authentication. If that fails, it falls back to API key authentication via the `Authorization: Bearer` header, enabling programmatic and MCP clients to retrieve user identity.
+
 ### RegisterHandler
 
 Handles user registration via POST to /api/v1/auth/register. Delegates to ApiCreateUser for creation logic.
@@ -268,7 +270,7 @@ Individual resource endpoint at /api/v1/datatype/ supporting GET and PUT for spe
 
 ### FieldsHandler
 
-Collection endpoint at /api/v1/fields supporting GET with optional pagination and POST to create.
+Collection endpoint at /api/v1/fields supporting POST to create. `GET /admin/fields` (the standalone fields list page) has been removed; fields are now accessed exclusively through the parent datatype detail page.
 
 Create handler generates new FieldID if not provided, sets date_created and date_modified to current UTC timestamp if not provided, sets Validation and UIConfig to EmptyJSON if not provided.
 
@@ -568,6 +570,8 @@ Calls searchSvc.Rebuild() then searchSvc.Stats(). Returns JSON with status, docu
 
 Handles GET /api/v1/health. Public endpoint (no auth required). Returns JSON health check including database connectivity status and optional plugin health information.
 
+When the `X-Modula-MCP` header is present, the health endpoint returns 200 even if status is not 'ok', allowing MCP clients to receive health data without triggering error handling.
+
 ## Globals Handler
 
 ### GlobalsHandler
@@ -811,6 +815,16 @@ Handles GET /api/v1/admindatatypes/max-sort-order. Requires datatypes:read permi
 ### AdminDatatypeSortOrderHandler
 
 Handles PUT /api/v1/admindatatypes/{id}/sort-order. Requires datatypes:update permission. Updates the sort order of an admin datatype.
+
+## Field Reorder Handlers
+
+### FieldReorderHandler
+
+Handles POST /admin/datatypes/{id}/fields/reorder. Reorders fields under a datatype by swapping sort orders. Requires fields:update permission.
+
+### AdminFieldReorderHandler
+
+Handles POST /admin/admin-datatypes/{id}/fields/reorder. Reorders admin fields under an admin datatype by swapping sort orders. Requires fields:update permission.
 
 ## Field Sort Order Handlers
 
