@@ -207,6 +207,8 @@ block-editor .block-wrapper {
 
 block-editor .drag-overlay {
   position: fixed;
+  top: 0;
+  left: 0;
   pointer-events: none;
   opacity: 0.7;
   z-index: var(--z-login-overlay);
@@ -559,13 +561,11 @@ block-editor .insert-btn--empty:hover {
   display: grid;
   grid-template-columns: 5fr 7fr;
   gap: var(--space-5);
-  min-height: 70vh;
+  align-items: start;
 }
 
 .content-editor-tree {
   min-width: 0;
-  overflow-y: auto;
-  max-height: calc(100vh - var(--topbar-height) - 6rem);
 }
 
 .content-editor-panel {
@@ -573,8 +573,6 @@ block-editor .insert-btn--empty:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
-  overflow-y: auto;
-  max-height: calc(100vh - var(--topbar-height) - 6rem);
 }
 
 .content-editor-panel-header {
@@ -829,10 +827,6 @@ block-editor .insert-btn--empty:hover {
 @media (max-width: 1024px) {
   .content-editor-layout {
     grid-template-columns: 1fr;
-  }
-  .content-editor-tree,
-  .content-editor-panel {
-    max-height: none;
   }
 }
 

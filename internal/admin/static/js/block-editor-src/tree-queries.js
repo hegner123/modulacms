@@ -46,8 +46,15 @@ export function getDepth(state, blockId) {
 
 export function findLastSibling(state, blockId) {
         let currentId = blockId;
+        const visited = new Set();
+        visited.add(currentId);
         while (state.blocks[currentId]?.nextSiblingId) {
                 currentId = state.blocks[currentId].nextSiblingId;
+                if (visited.has(currentId)) {
+                        console.error('[block-editor] Cycle detected in sibling chain at block:', currentId);
+                        break;
+                }
+                visited.add(currentId);
         }
         return currentId;
 }

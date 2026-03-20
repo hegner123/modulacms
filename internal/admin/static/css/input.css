@@ -26,6 +26,8 @@
    all 400+ var() references across CSS files resolve.
    ======================================== */
 :root {
+  color-scheme: dark;
+
   /* Colors — core palette */
   --color-bg: #0a0a0a;
   --color-surface: #141414;

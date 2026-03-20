@@ -321,15 +321,19 @@ export function duplicateBlock(state, blockId) {
                 const newId = generateId();
                 idMap.set(originalId, newId);
 
-                const clone = {
+                // Clone all properties from the original, then override pointers.
+                // This preserves datatypeId, authorId, routeId, status, fields, etc.
+                const clone = Object.assign({}, original, {
                         id: newId,
-                        type: original.type,
                         parentId: null,
                         firstChildId: null,
                         prevSiblingId: null,
                         nextSiblingId: null,
-                        label: original.label,
-                };
+                });
+                // Deep-clone fields array so edits to the clone don't affect the original.
+                if (Array.isArray(original.fields)) {
+                        clone.fields = original.fields.map(function(f) { return Object.assign({}, f); });
+                }
                 state.blocks[newId] = clone;
 
                 // Clone children recursively via sibling chain

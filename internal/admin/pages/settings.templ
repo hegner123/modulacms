@@ -90,16 +90,26 @@ func oauthEndpointValue(endpoints map[config.Endpoint]string, key config.Endpoin
     return endpoints[key]
 }
 
+// deployEnvFields returns the JSON field definitions for the deploy environments repeater.
+func deployEnvFields() string {
+    return `[{"key":"name","label":"Name","type":"text","placeholder":"production"},{"key":"url","label":"URL","type":"text","placeholder":"https://cms.example.com"},{"key":"api_key","label":"API Key","type":"password","placeholder":"mcms_..."}]`
+}
+
+// sectionID converts a settings section title to a URL-friendly anchor ID.
+func sectionID(title string) string {
+    return "section-" + strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(title, " ", "-"), "(", ""))
+}
+
 templ settingsSection(title string, description string) {
-    <div>
+    <div id={ sectionID(title) } data-settings-section={ title }>
         <h2 class="text-base/7 font-semibold text-white">{ title }</h2>
         <p class="mt-1 text-sm/6 text-gray-400">{ description }</p>
     </div>
 }
 
 templ SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIndexStatus) {
-    <!-- Page Header -->
-    <div class="border-b border-white/10 pb-5" data-page-header>
+    <!-- Page Header (sticky within main scroll container) -->
+    <div class="sticky -top-6 z-10 -mx-6 border-b border-white/10 bg-[var(--color-bg)] px-6 pb-5 pt-6" data-page-header>
         <div class="flex items-center justify-between">
             <h1 class="text-lg font-semibold text-white">Settings</h1>
             <button type="submit" form="settings-form" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Save Settings</button>
@@ -587,14 +597,23 @@ templ SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchI
             </div>
             <!-- Deploy -->
             <div class="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-                @settingsSection("Deploy", "Content deployment snapshot directory.")
+                @settingsSection("Deploy", "Content deployment and environment sync settings.")
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
                         <div class="sm:col-span-6">
                             @partials.FormField("deploy_snapshot_dir", "Snapshot Directory", cfg.Deploy_Snapshot_Dir, "")
+                            <p class="mt-1 text-xs text-gray-500">Directory where pre-import snapshots are saved. A backup is created before each import so you can restore if needed. Use an absolute path or a path relative to the working directory. Defaults to <span class="font-mono text-gray-400">./deploy/snapshots</span> when empty.</p>
                         </div>
                         <div class="sm:col-span-6">
-                            @settingsJSONField("deploy_environments", "Environments", toJSONSlice(cfg.Deploy_Environments), "JSON array of {name, url, api_key} objects")
+                            <label class="block text-sm font-medium text-white">Environments</label>
+                            <p class="mt-1 text-xs text-gray-500">Configure target CMS instances for push/pull operations.</p>
+                            <div class="mt-3">
+                                <mcms-repeater
+                                    name="deploy_environments"
+                                    data-value={ toJSONSlice(cfg.Deploy_Environments) }
+                                    data-fields={ deployEnvFields() }>
+                                </mcms-repeater>
+                            </div>
                         </div>
                     </div>
                 </div>

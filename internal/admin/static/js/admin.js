@@ -419,6 +419,7 @@ const componentFiles = [
     '/admin/static/js/components/mcms-focal-point.js',
     '/admin/static/js/components/mcms-publish-button.js',
     '/admin/static/js/components/mcms-command-palette.js',
+    '/admin/static/js/components/mcms-repeater.js',
 ];
 
 for (const src of componentFiles) {

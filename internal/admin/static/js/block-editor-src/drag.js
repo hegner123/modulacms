@@ -135,10 +135,18 @@ export const dragMethods = {
                         // Mark original block as dragging
                         blockItem.classList.add('dragging');
 
+                        // Handle lost pointer capture (element removed from DOM during drag,
+                        // e.g. by a concurrent undo/redo triggering _render()).
+                        const onLostCapture = () => {
+                                blockItem.removeEventListener('lostpointercapture', onLostCapture);
+                                this._cleanupDrag();
+                        };
+
                         // Attach drag-mode handlers to the block header (capture routes all events here)
                         blockItem.addEventListener('pointermove', onDragMove);
                         blockItem.addEventListener('pointerup', onDragEnd);
                         blockItem.addEventListener('pointercancel', onDragEnd);
+                        blockItem.addEventListener('lostpointercapture', onLostCapture);
                 } catch (err) {
                         console.error('[block-editor] Error starting drag:', err);
                         this._cleanupDrag();
@@ -152,7 +160,7 @@ export const dragMethods = {
                 overlay.style.width = blockItem.getBoundingClientRect().width + 'px';
                 overlay.style.transform = 'translate(' + (clientX - grabOffsetX) + 'px, ' + (clientY - grabOffsetY) + 'px)';
 
-                // Append to shadow root so it renders above everything
+                // Append to the block-editor element
                 this.appendChild(overlay);
                 return overlay;
         },
@@ -371,6 +379,16 @@ export const dragMethods = {
                 // Patch DOM: move the block wrapper to its new position
                 const blockWrapper = this._wrapperRegistry.get(blockId);
                 const targetWrapper = this._wrapperRegistry.get(targetId);
+
+                if (!blockWrapper || !targetWrapper) {
+                        // Registry out of sync with state — DOM patch impossible.
+                        // Fall back to full re-render to reconcile.
+                        console.warn('[block-editor] Registry miss during drop, falling back to full render');
+                        this._render();
+                        this._selectBlock(blockId);
+                        this._updateSaveButton();
+                        return;
+                }
 
                 if (blockWrapper && targetWrapper) {
                         if (position === 'inside') {

@@ -452,6 +452,11 @@ if (isBrowser) {
                 // ---- Rendering ----
 
                 _render() {
+                        // Cancel any active drag before destroying the DOM it references.
+                        if (this._drag) {
+                                this._cleanupDrag();
+                        }
+
                         this.innerHTML = '';
                         this._elementRegistry.clear();
                         this._wrapperRegistry.clear();
@@ -731,19 +736,21 @@ if (isBrowser) {
                         document.body.appendChild(menu);
                         console.log('[kebab-debug] _openKebabMenu — menu appended to body, position:', menu.style.top, menu.style.left, 'items:', menu.querySelectorAll('[data-action]').length);
 
-                        // Close on outside click (next tick to avoid catching the opening click)
+                        // Close on outside click. Register synchronously but skip the
+                        // current event cycle via an armed flag to avoid catching the
+                        // opening click. This prevents a second kebab click during the
+                        // rAF gap from opening two menus simultaneously.
                         var self = this;
-                        requestAnimationFrame(function() {
-                                console.log('[kebab-debug] rAF fired — registering outside-click handler, menu still in DOM:', document.contains(menu));
-                                self._kebabOutsideHandler = function(evt) {
-                                        var inside = menu.contains(evt.target);
-                                        console.log('[kebab-debug] outside-click handler — target:', evt.target.tagName + '.' + evt.target.className, 'inside menu:', inside, 'menu in DOM:', document.contains(menu));
-                                        if (!inside) {
-                                                self._closeKebabMenu();
-                                        }
-                                };
-                                document.addEventListener('pointerdown', self._kebabOutsideHandler, true);
-                        });
+                        var armed = false;
+                        requestAnimationFrame(function() { armed = true; });
+                        self._kebabOutsideHandler = function(evt) {
+                                if (!armed) return;
+                                var inside = menu.contains(evt.target);
+                                if (!inside) {
+                                        self._closeKebabMenu();
+                                }
+                        };
+                        document.addEventListener('pointerdown', self._kebabOutsideHandler, true);
 
                         // Viewport overflow: flip up if clipped at bottom, nudge left if clipped at right
                         requestAnimationFrame(function() {
@@ -944,6 +951,11 @@ if (isBrowser) {
                         const block = this._state.blocks[id];
                         const wrapper = this._renderBlockWrapper(block, 0);
                         const blockList = this.querySelector('.block-list');
+
+                        // Remove empty-state insert button if present.
+                        const emptyInsert = blockList.querySelector('.insert-empty');
+                        if (emptyInsert) emptyInsert.remove();
+
                         blockList.appendChild(wrapper);
 
                         this._updateSaveButton();

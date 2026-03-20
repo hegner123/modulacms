@@ -146,6 +146,18 @@ var TOOLBAR_FALLBACK = ['bold', 'italic', 'h1', 'h2', 'h3', 'link', 'ul', 'ol', 
  *     console.log('Field changed:', e.detail.name, '=', e.detail.value);
  *   });
  */
+// Tailwind UI dark-mode input styles (from tailwind-ui/forms/input-groups).
+var FIELD_INPUT_CLASS = 'block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)] sm:text-sm/6';
+
+// Tailwind UI dark-mode textarea styles (from tailwind-ui/forms/textareas).
+var FIELD_TEXTAREA_CLASS = 'block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)] sm:text-sm/6';
+
+// Tailwind UI dark-mode select styles (from tailwind-ui/forms/select-menus).
+var FIELD_SELECT_CLASS = 'w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-base text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)] sm:text-sm/6';
+
+// Tailwind UI dark-mode checkbox styles (from tailwind-ui/forms/checkboxes).
+var FIELD_CHECKBOX_CLASS = 'size-4 appearance-none rounded-sm border border-white/10 bg-white/5 checked:border-[var(--color-primary)] checked:bg-[var(--color-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] forced-colors:appearance-auto';
+
 class McmsFieldRenderer extends HTMLElement {
     constructor() {
         super();
@@ -176,6 +188,7 @@ class McmsFieldRenderer extends HTMLElement {
         wrapper.className = 'flex flex-col gap-1';
 
         var labelEl = document.createElement('label');
+        labelEl.className = 'block text-sm/6 font-medium text-white';
         labelEl.textContent = label;
         labelEl.setAttribute('for', 'field-' + name);
         wrapper.appendChild(labelEl);
@@ -229,6 +242,7 @@ class McmsFieldRenderer extends HTMLElement {
         input.name = name;
         input.id = 'field-' + name;
         input.value = value;
+        input.className = FIELD_INPUT_CLASS;
         wrapper.appendChild(input);
         this._attachChangeListener(input, name);
     }
@@ -247,6 +261,7 @@ class McmsFieldRenderer extends HTMLElement {
         textarea.name = name;
         textarea.id = 'field-' + name;
         textarea.rows = 4;
+        textarea.className = FIELD_TEXTAREA_CLASS;
         textarea.textContent = value;
         wrapper.appendChild(textarea);
         this._autoResize(textarea);
@@ -297,7 +312,7 @@ class McmsFieldRenderer extends HTMLElement {
         textarea.name = name;
         textarea.id = 'field-' + name;
         textarea.rows = 8;
-        textarea.className = 'w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] outline-none font-mono';
+        textarea.className = FIELD_TEXTAREA_CLASS + ' font-mono';
         textarea.textContent = value;
         wrapper.appendChild(textarea);
 
@@ -463,12 +478,32 @@ class McmsFieldRenderer extends HTMLElement {
         var container = document.createElement('div');
         container.className = 'flex items-center gap-2';
 
+        // Tailwind UI checkbox pattern: grid overlay for custom check SVG
+        var checkWrap = document.createElement('div');
+        checkWrap.className = 'group grid size-4 grid-cols-1';
+
         var input = document.createElement('input');
         input.type = 'checkbox';
         input.name = name;
         input.id = 'field-' + name;
         input.checked = value === 'true';
-        container.appendChild(input);
+        input.className = FIELD_CHECKBOX_CLASS + ' col-start-1 row-start-1';
+        checkWrap.appendChild(input);
+
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 14 14');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('class', 'pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white');
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M3 8L6 11L11 3.5');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('class', 'opacity-0 group-has-checked:opacity-100');
+        svg.appendChild(path);
+        checkWrap.appendChild(svg);
+
+        container.appendChild(checkWrap);
 
         // Move the label into the container for inline layout
         var existingLabel = wrapper.querySelector('label');
@@ -476,6 +511,7 @@ class McmsFieldRenderer extends HTMLElement {
             existingLabel.removeAttribute('for');
             var inlineLabel = document.createElement('label');
             inlineLabel.setAttribute('for', 'field-' + name);
+            inlineLabel.className = 'text-sm/6 font-medium text-white select-none';
             inlineLabel.textContent = existingLabel.textContent;
             container.appendChild(inlineLabel);
         }
@@ -504,6 +540,7 @@ class McmsFieldRenderer extends HTMLElement {
         input.name = name;
         input.id = 'field-' + name;
         input.value = value;
+        input.className = FIELD_INPUT_CLASS;
 
         // Respect min, max, step from host element attributes
         var min = this.getAttribute('min');
@@ -531,6 +568,7 @@ class McmsFieldRenderer extends HTMLElement {
         input.name = name;
         input.id = 'field-' + name;
         input.value = value;
+        input.className = FIELD_INPUT_CLASS;
         wrapper.appendChild(input);
         this._attachChangeListener(input, name);
     }
@@ -551,6 +589,7 @@ class McmsFieldRenderer extends HTMLElement {
         var select = document.createElement('select');
         select.name = name;
         select.id = 'field-' + name;
+        select.className = FIELD_SELECT_CLASS;
 
         // Parse choices from attribute
         var choicesAttr = this.getAttribute('choices');
@@ -609,23 +648,25 @@ class McmsFieldRenderer extends HTMLElement {
 
         // Thumbnail preview area
         var thumbContainer = document.createElement('div');
-        thumbContainer.className = 'w-16 h-16 rounded-md overflow-hidden bg-[var(--color-bg)] border border-[var(--color-border)] flex items-center justify-center';
+        thumbContainer.className = 'w-24 h-24 shrink-0 rounded-md overflow-hidden bg-[var(--color-bg)] border border-[var(--color-border)] flex items-center justify-center';
         var mediaUrl = this.getAttribute('media-url') || '';
         var mediaAlt = this.getAttribute('media-alt') || '';
         if (mediaUrl) {
             var img = document.createElement('img');
             img.src = mediaUrl;
             img.alt = this._escapeText(mediaAlt);
+            img.className = 'w-full h-full object-cover';
             thumbContainer.appendChild(img);
         } else if (value) {
             var placeholder = document.createElement('span');
-            placeholder.className = 'text-xs text-[var(--color-text-muted)] truncate px-1';
-            placeholder.textContent = 'Media: ' + value;
+            placeholder.className = 'text-[10px] leading-tight text-center text-[var(--color-text-muted)] break-all px-1.5';
+            placeholder.textContent = value;
             thumbContainer.appendChild(placeholder);
         } else {
             var empty = document.createElement('span');
-            empty.className = 'text-xs text-[var(--color-text-dim)]';
-            empty.textContent = 'No media selected';
+            empty.className = 'text-xs text-center text-[var(--color-text-dim)]';
+            empty.textContent = 'No media';
+            empty.style.lineHeight = '1.3';
             thumbContainer.appendChild(empty);
         }
         container.appendChild(thumbContainer);
@@ -662,11 +703,12 @@ class McmsFieldRenderer extends HTMLElement {
                     var newImg = document.createElement('img');
                     newImg.src = detail.url;
                     newImg.alt = self._escapeText(detail.alt || '');
+                    newImg.className = 'w-full h-full object-cover';
                     thumbContainer.appendChild(newImg);
                 } else if (detail.id) {
                     var idSpan = document.createElement('span');
-                    idSpan.className = 'text-xs text-[var(--color-text-muted)] truncate px-1';
-                    idSpan.textContent = 'Media: ' + detail.id;
+                    idSpan.className = 'text-[10px] leading-tight text-center text-[var(--color-text-muted)] break-all px-1.5';
+                    idSpan.textContent = detail.id;
                     thumbContainer.appendChild(idSpan);
                 }
 

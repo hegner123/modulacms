@@ -17,11 +17,13 @@ export var pickerMethods = {
 
                 var self = this;
                 fetchDatatypesGrouped(this._rootDatatypeId).then(function(grouped) {
+                        // Guard against stale callback if picker was closed during fetch.
+                        if (!self._pickerOpen) return;
                         self._pickerData = grouped;
                         self._renderPicker();
                 }).catch(function(err) {
                         console.error('[block-editor] Failed to load datatypes for picker:', err);
-                        self._closePicker();
+                        if (self._pickerOpen) self._closePicker();
                 });
         },
 

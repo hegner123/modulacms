@@ -169,7 +169,49 @@ class McmsCommandPalette extends HTMLElement {
         if (pages.length === 0) {
             return this._defaultPages();
         }
+
+        // Add settings sections as searchable targets.
+        pages.push(...this._parseSettingsSections());
+
         return pages;
+    }
+
+    _parseSettingsSections() {
+        // Settings sections are rendered with [data-settings-section] attributes.
+        // These are only present when the settings page is loaded, so we use
+        // a static list that matches the settingsSection() calls in settings.templ.
+        const sections = [
+            { title: 'General', description: 'Ports, hosts, site URLs' },
+            { title: 'Database', description: 'Driver and connection' },
+            { title: 'Remote', description: 'Remote CMS sync' },
+            { title: 'Storage (S3)', description: 'Media and backup storage' },
+            { title: 'Backup', description: 'Backup paths' },
+            { title: 'Authentication', description: 'Cookies and auth salt' },
+            { title: 'OAuth', description: 'OAuth provider' },
+            { title: 'CORS', description: 'Cross-origin settings' },
+            { title: 'Email', description: 'SMTP and email providers' },
+            { title: 'Content', description: 'Publishing, versioning, composition' },
+            { title: 'Plugins', description: 'Plugin directory, VM limits, hooks' },
+            { title: 'Observability', description: 'Error tracking, performance' },
+            { title: 'Updates', description: 'Auto-update preferences' },
+            { title: 'Deploy', description: 'Deploy environments, snapshots' },
+            { title: 'MCP', description: 'Model Context Protocol server' },
+            { title: 'Search', description: 'Full-text search index' },
+            { title: 'Internationalization', description: 'Multi-language support' },
+            { title: 'Webhooks', description: 'Webhook delivery and retries' },
+            { title: 'Keybindings', description: 'TUI keyboard shortcuts' },
+        ];
+        return sections.map(s => {
+            const id = 'section-' + s.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
+            return {
+                type: 'section',
+                label: s.title,
+                description: s.description,
+                sectionId: id,
+                section: 'Settings',
+                searchText: (s.title + ' ' + s.description + ' settings').toLowerCase(),
+            };
+        });
     }
 
     _defaultPages() {
@@ -256,10 +298,13 @@ class McmsCommandPalette extends HTMLElement {
             }
         }
 
+        const typeOrder = { page: 0, section: 1, setting: 2 };
         results.sort((a, b) => {
-            // Pages before settings at equal score.
+            // Pages before sections before settings at equal score.
             if (b.score !== a.score) return b.score - a.score;
-            if (a.type !== b.type) return a.type === 'page' ? -1 : 1;
+            const ta = typeOrder[a.type] ?? 3;
+            const tb = typeOrder[b.type] ?? 3;
+            if (ta !== tb) return ta - tb;
             return a.label.localeCompare(b.label);
         });
 
@@ -304,8 +349,10 @@ class McmsCommandPalette extends HTMLElement {
         const fragment = document.createDocumentFragment();
 
         for (const item of this._results) {
-            // Section header when type changes.
-            const groupLabel = item.type === 'page' ? (defaultGroupLabel || 'Pages') : 'Settings';
+            // Group header when type changes.
+            const groupLabel = item.type === 'page' ? (defaultGroupLabel || 'Pages')
+                : item.type === 'section' ? 'Settings Sections'
+                : 'Settings';
             if (item.type !== currentType) {
                 currentType = item.type;
                 const header = document.createElement('h3');
@@ -324,6 +371,11 @@ class McmsCommandPalette extends HTMLElement {
                 el.innerHTML = `<svg class="size-5 shrink-0 text-gray-500 group-aria-selected:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>`
                     + `<span class="flex-auto truncate">${this._esc(item.label)}</span>`
                     + (item.section ? `<span class="shrink-0 text-xs text-gray-500 group-aria-selected:text-gray-300">${this._esc(item.section)}</span>` : '');
+            } else if (item.type === 'section') {
+                // Hash/anchor icon for settings sections.
+                el.innerHTML = `<svg class="size-5 shrink-0 text-gray-500 group-aria-selected:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5-3.9 19.5m-2.1-19.5-3.9 19.5"/></svg>`
+                    + `<span class="flex-auto truncate">${this._esc(item.label)}</span>`
+                    + `<span class="shrink-0 text-xs text-gray-500 group-aria-selected:text-gray-300">${this._esc(item.description)}</span>`;
             } else {
                 el.innerHTML = `<svg class="size-5 shrink-0 text-gray-500 group-aria-selected:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>`
                     + `<span class="flex-auto truncate">${this._esc(item.label)}</span>`
@@ -367,6 +419,8 @@ class McmsCommandPalette extends HTMLElement {
             this._navigateTo(item.href);
         } else if (item.type === 'setting') {
             this._navigateToSetting(item.key);
+        } else if (item.type === 'section') {
+            this._navigateToSection(item.sectionId);
         }
     }
 
@@ -417,6 +471,40 @@ class McmsCommandPalette extends HTMLElement {
                 });
             } else {
                 window.location.href = settingsPath + '#' + key;
+            }
+        }
+    }
+
+    _navigateToSection(sectionId) {
+        const settingsPath = '/admin/settings';
+        const currentPath = window.location.pathname;
+
+        const scrollToSection = () => {
+            requestAnimationFrame(() => {
+                const el = document.getElementById(sectionId);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Brief highlight on the section heading.
+                    el.classList.add('ring-2', 'ring-[var(--color-primary)]', 'rounded-lg', 'p-2', '-m-2');
+                    setTimeout(() => {
+                        el.classList.remove('ring-2', 'ring-[var(--color-primary)]', 'rounded-lg', 'p-2', '-m-2');
+                    }, 2000);
+                }
+            });
+        };
+
+        if (currentPath === settingsPath || currentPath === settingsPath + '/') {
+            scrollToSection();
+        } else {
+            if (typeof htmx !== 'undefined') {
+                htmx.ajax('GET', settingsPath, { target: '#main-content', swap: 'innerHTML show:window:top' });
+                history.pushState({}, '', settingsPath);
+                document.body.addEventListener('htmx:afterSettle', function onSwap() {
+                    document.body.removeEventListener('htmx:afterSettle', onSwap);
+                    scrollToSection();
+                });
+            } else {
+                window.location.href = settingsPath + '#' + sectionId;
             }
         }
     }

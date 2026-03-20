@@ -71,8 +71,15 @@ function getDepth(state, blockId) {
 }
 function findLastSibling(state, blockId) {
   let currentId = blockId;
+  const visited = /* @__PURE__ */ new Set();
+  visited.add(currentId);
   while (state.blocks[currentId]?.nextSiblingId) {
     currentId = state.blocks[currentId].nextSiblingId;
+    if (visited.has(currentId)) {
+      console.error("[block-editor] Cycle detected in sibling chain at block:", currentId);
+      break;
+    }
+    visited.add(currentId);
   }
   return currentId;
 }
@@ -330,15 +337,18 @@ function duplicateBlock(state, blockId) {
     if (!original) return null;
     const newId = generateId();
     idMap.set(originalId, newId);
-    const clone = {
+    const clone = Object.assign({}, original, {
       id: newId,
-      type: original.type,
       parentId: null,
       firstChildId: null,
       prevSiblingId: null,
-      nextSiblingId: null,
-      label: original.label
-    };
+      nextSiblingId: null
+    });
+    if (Array.isArray(original.fields)) {
+      clone.fields = original.fields.map(function(f) {
+        return Object.assign({}, f);
+      });
+    }
     state.blocks[newId] = clone;
     let childId = original.firstChildId;
     let prevCloneChildId = null;
@@ -875,9 +885,14 @@ var dragMethods = {
         // { blockId, position: 'before'|'after'|'inside' }
       };
       blockItem.classList.add("dragging");
+      const onLostCapture = () => {
+        blockItem.removeEventListener("lostpointercapture", onLostCapture);
+        this._cleanupDrag();
+      };
       blockItem.addEventListener("pointermove", onDragMove);
       blockItem.addEventListener("pointerup", onDragEnd);
       blockItem.addEventListener("pointercancel", onDragEnd);
+      blockItem.addEventListener("lostpointercapture", onLostCapture);
     } catch (err) {
       console.error("[block-editor] Error starting drag:", err);
       this._cleanupDrag();
@@ -1041,6 +1056,13 @@ var dragMethods = {
     this._devValidate();
     const blockWrapper = this._wrapperRegistry.get(blockId);
     const targetWrapper = this._wrapperRegistry.get(targetId);
+    if (!blockWrapper || !targetWrapper) {
+      console.warn("[block-editor] Registry miss during drop, falling back to full render");
+      this._render();
+      this._selectBlock(blockId);
+      this._updateSaveButton();
+      return;
+    }
     if (blockWrapper && targetWrapper) {
       if (position === "inside") {
         let childContainer = targetWrapper.querySelector(":scope > .children-container");
@@ -1259,11 +1281,12 @@ var pickerMethods = {
     this._pickerSelectedIndex = 0;
     var self = this;
     fetchDatatypesGrouped(this._rootDatatypeId).then(function(grouped) {
+      if (!self._pickerOpen) return;
       self._pickerData = grouped;
       self._renderPicker();
     }).catch(function(err) {
       console.error("[block-editor] Failed to load datatypes for picker:", err);
-      self._closePicker();
+      if (self._pickerOpen) self._closePicker();
     });
   },
   _closePicker: function() {
@@ -1932,6 +1955,9 @@ if (isBrowser) {
     }
     // ---- Rendering ----
     _render() {
+      if (this._drag) {
+        this._cleanupDrag();
+      }
       this.innerHTML = "";
       this._elementRegistry.clear();
       this._wrapperRegistry.clear();
@@ -2151,17 +2177,18 @@ if (isBrowser) {
       document.body.appendChild(menu);
       console.log("[kebab-debug] _openKebabMenu \u2014 menu appended to body, position:", menu.style.top, menu.style.left, "items:", menu.querySelectorAll("[data-action]").length);
       var self = this;
+      var armed = false;
       requestAnimationFrame(function() {
-        console.log("[kebab-debug] rAF fired \u2014 registering outside-click handler, menu still in DOM:", document.contains(menu));
-        self._kebabOutsideHandler = function(evt) {
-          var inside = menu.contains(evt.target);
-          console.log("[kebab-debug] outside-click handler \u2014 target:", evt.target.tagName + "." + evt.target.className, "inside menu:", inside, "menu in DOM:", document.contains(menu));
-          if (!inside) {
-            self._closeKebabMenu();
-          }
-        };
-        document.addEventListener("pointerdown", self._kebabOutsideHandler, true);
+        armed = true;
       });
+      self._kebabOutsideHandler = function(evt) {
+        if (!armed) return;
+        var inside = menu.contains(evt.target);
+        if (!inside) {
+          self._closeKebabMenu();
+        }
+      };
+      document.addEventListener("pointerdown", self._kebabOutsideHandler, true);
       requestAnimationFrame(function() {
         var menuRect = menu.getBoundingClientRect();
         if (menuRect.bottom > window.innerHeight - 8) {
@@ -2336,6 +2363,8 @@ if (isBrowser) {
       const block = this._state.blocks[id];
       const wrapper = this._renderBlockWrapper(block, 0);
       const blockList = this.querySelector(".block-list");
+      const emptyInsert = blockList.querySelector(".insert-empty");
+      if (emptyInsert) emptyInsert.remove();
       blockList.appendChild(wrapper);
       this._updateSaveButton();
       this.dispatchEvent(new CustomEvent("block-editor:change", {
