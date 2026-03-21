@@ -34,11 +34,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libwebp-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Layer 1: vendor (large, rarely changes — cached)
-COPY vendor/ vendor/
+# Layer 1: Go module files + local SDK (needed for replace directive)
 COPY go.mod go.sum ./
+COPY sdks/go/ sdks/go/
 
-# Layer 2: source (small, changes frequently)
+# Layer 2: vendor (large, rarely changes — cached)
+COPY vendor/ vendor/
+
+# Layer 3: source (small, changes frequently)
 COPY cmd/ cmd/
 COPY internal/ internal/
 COPY sql/ sql/
