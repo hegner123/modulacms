@@ -36,12 +36,11 @@ jobs:
         with:
           go-version: '1.26'
 
-      - name: Locate Go binary
-        id: go-path
+      - name: Capture Windows PATH
+        id: win-path
         shell: pwsh
         run: |
-          $gobin = (Get-Command go).Source | Split-Path
-          echo "gobin=$gobin" >> $env:GITHUB_OUTPUT
+          echo "path=$env:PATH" >> $env:GITHUB_OUTPUT
 
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
@@ -55,9 +54,13 @@ jobs:
           CGO_ENABLED: 1
           GOOS: windows
           GOARCH: ${{ matrix.goarch }}
-          WIN_GOBIN: ${{ steps.go-path.outputs.gobin }}
+          WPATH: ${{ steps.win-path.outputs.path }}
         run: |
-          export PATH="/${{ matrix.msystem == 'MINGW64' && 'mingw64' || 'clangarm64' }}/bin:$(cygpath "$WIN_GOBIN"):$PATH"
+          IFS=';' read -ra DIRS <<< "$WPATH"
+          for d in "${DIRS[@]}"; do
+            export PATH="$(cygpath "$d"):$PATH"
+          done
+          export PATH="/${{ matrix.msystem == 'MINGW64' && 'mingw64' || 'clangarm64' }}/bin:$PATH"
           export CC=gcc
           VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
           COMMIT=$(git rev-parse --short HEAD)
