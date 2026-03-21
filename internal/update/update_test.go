@@ -105,7 +105,7 @@ func TestGetDownloadURL(t *testing.T) {
 			{Name: "modulacms-linux-amd64", BrowserDownloadURL: "https://example.com/linux-amd64", Size: 10000000},
 			{Name: "modulacms-darwin-arm64", BrowserDownloadURL: "https://example.com/darwin-arm64", Size: 12000000},
 			{Name: "modulacms-darwin-amd64", BrowserDownloadURL: "https://example.com/darwin-amd64", Size: 11000000},
-			{Name: "modulacms-windows-amd64", BrowserDownloadURL: "https://example.com/windows-amd64", Size: 13000000},
+			{Name: "modulacms-windows-amd64.exe", BrowserDownloadURL: "https://example.com/windows-amd64", Size: 13000000},
 		},
 	}
 
@@ -309,6 +309,9 @@ func TestVerifyBinary(t *testing.T) {
 			name: "not executable",
 			setup: func(t *testing.T) string {
 				t.Helper()
+				if runtime.GOOS == "windows" {
+					t.Skip("Windows does not support Unix file permission bits")
+				}
 				return createTempFile(t, 2*1024*1024, 0644) // no exec bits
 			},
 			wantErr: "binary is not executable",
