@@ -1,0 +1,76 @@
+name: Windows
+
+on:
+  push:
+    branches: [ "main", "develop", "dev" ]
+    paths-ignore:
+      - 'sdks/**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - 'sdks/**'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goarch: amd64
+            msystem: MINGW64
+            mingw_prefix: mingw-w64-x86_64
+          - goarch: arm64
+            msystem: CLANGARM64
+            mingw_prefix: mingw-w64-clang-aarch64
+
+    runs-on: windows-latest
+    name: build-windows-${{ matrix.goarch }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Locate Go binary
+        id: go-path
+        shell: pwsh
+        run: |
+          $gobin = (Get-Command go).Source | Split-Path
+          echo "gobin=$gobin" >> $env:GITHUB_OUTPUT
+
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          install: ${{ matrix.mingw_prefix }}-gcc ${{ matrix.mingw_prefix }}-libwebp
+
+      - name: Build
+        shell: msys2 {0}
+        env:
+          CGO_ENABLED: 1
+          GOOS: windows
+          GOARCH: ${{ matrix.goarch }}
+          WIN_GOBIN: ${{ steps.go-path.outputs.gobin }}
+        run: |
+          export PATH="/${{ matrix.msystem == 'MINGW64' && 'mingw64' || 'clangarm64' }}/bin:$(cygpath "$WIN_GOBIN"):$PATH"
+          export CC=gcc
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+          COMMIT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
+
+          go build \
+            -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
+            -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
+            -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
+            -o modulacms-windows-${{ matrix.goarch }}.exe ./cmd
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: modulacms-windows-${{ matrix.goarch }}
+          path: modulacms-windows-${{ matrix.goarch }}.exe
