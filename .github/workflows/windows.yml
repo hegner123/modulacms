@@ -88,21 +88,49 @@ jobs:
       - name: Install llvm-mingw (ARM64 cross-compiler)
         shell: pwsh
         run: |
-          $version = "20250517"
+          $version = "20260311"
           $url = "https://github.com/mstorsjo/llvm-mingw/releases/download/$version/llvm-mingw-$version-ucrt-x86_64.zip"
           Invoke-WebRequest -Uri $url -OutFile llvm-mingw.zip
           Expand-Archive -Path llvm-mingw.zip -DestinationPath C:\llvm-mingw
           $dir = (Get-ChildItem C:\llvm-mingw -Directory)[0].FullName
           echo "LLVM_MINGW=$dir" >> $env:GITHUB_ENV
 
-      - name: Install libwebp for ARM64 cross-compilation
+      - name: Build libwebp for ARM64
         shell: pwsh
         run: |
-          $url = "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.5.0-windows-aarch64.zip"
-          Invoke-WebRequest -Uri $url -OutFile libwebp.zip
-          Expand-Archive -Path libwebp.zip -DestinationPath C:\libwebp
-          $dir = (Get-ChildItem C:\libwebp -Directory)[0].FullName
-          echo "LIBWEBP_DIR=$dir" >> $env:GITHUB_ENV
+          $webpVersion = "1.5.0"
+          $url = "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-$webpVersion.tar.gz"
+          Invoke-WebRequest -Uri $url -OutFile libwebp.tar.gz
+          tar xzf libwebp.tar.gz
+          $srcDir = "libwebp-$webpVersion"
+          $installDir = "C:\libwebp-arm64"
+          New-Item -ItemType Directory -Force -Path $installDir
+          $env:PATH = "$env:LLVM_MINGW\bin;$env:PATH"
+          Push-Location $srcDir
+          & aarch64-w64-mingw32-gcc -c -O2 -DWEBP_EXTERN= -I. `
+            src/enc/alpha_enc.c src/enc/analysis_enc.c src/enc/backward_references_cost_enc.c `
+            src/enc/backward_references_enc.c src/enc/config_enc.c src/enc/cost_enc.c `
+            src/enc/filter_enc.c src/enc/frame_enc.c src/enc/histogram_enc.c `
+            src/enc/iterator_enc.c src/enc/near_lossless_enc.c src/enc/picture_csp_enc.c `
+            src/enc/picture_enc.c src/enc/picture_psnr_enc.c src/enc/picture_rescale_enc.c `
+            src/enc/picture_tools_enc.c src/enc/predictor_enc.c src/enc/quant_enc.c `
+            src/enc/syntax_enc.c src/enc/token_enc.c src/enc/tree_enc.c `
+            src/enc/vp8l_enc.c src/enc/webp_enc.c `
+            src/dsp/alpha_processing.c src/dsp/cost.c src/dsp/enc.c `
+            src/dsp/enc_neon.c src/dsp/lossless_enc.c src/dsp/lossless_enc_neon.c `
+            src/dsp/ssim.c src/dsp/cpu.c `
+            src/utils/bit_reader_utils.c src/utils/bit_writer_utils.c `
+            src/utils/color_cache_utils.c src/utils/filters_utils.c `
+            src/utils/huffman_encode_utils.c src/utils/huffman_utils.c `
+            src/utils/quant_levels_utils.c src/utils/random_utils.c `
+            src/utils/rescaler_utils.c src/utils/thread_utils.c src/utils/utils.c
+          & aarch64-w64-mingw32-ar rcs libwebp.a *.o
+          Pop-Location
+          New-Item -ItemType Directory -Force -Path "$installDir\lib"
+          New-Item -ItemType Directory -Force -Path "$installDir\include\webp"
+          Copy-Item "$srcDir\libwebp.a" "$installDir\lib\"
+          Copy-Item "$srcDir\src\webp\*.h" "$installDir\include\webp\"
+          echo "LIBWEBP_DIR=$installDir" >> $env:GITHUB_ENV
 
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
