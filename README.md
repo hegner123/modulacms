@@ -61,37 +61,88 @@ Plugins always tell you what they need. Every plugin declares its capabilities a
 
 ## Requirements
 
-- Go 1.24+ with CGO enabled (for SQLite via `mattn/go-sqlite3`)
-- Linux or macOS
-- [just](https://github.com/casey/just) as the build runner
+| Requirement | Details |
+|-------------|---------|
+| Go | 1.24+ |
+| CGO | Must be enabled (`CGO_ENABLED=1`) |
+| C compiler | GCC or Clang (for the SQLite driver) |
+| OS | Linux or macOS |
+| Build runner | [just](https://github.com/casey/just#installation) |
+
+CGO is required because the SQLite driver (`mattn/go-sqlite3`) is a C library. Even if you use MySQL or PostgreSQL, the binary still compiles with the SQLite driver.
 
 ## Quick Start
 
+### 1. Build and install
+
 ```bash
-# Build and run (auto-creates modula.config.json with defaults on first run)
-just run
-
-# Or build a local binary
-just dev
-./modula-x86 serve
-
-# Interactive setup wizard
-./modula serve --wizard
+git clone https://github.com/hegner123/modulacms.git
+cd modulacms
+just build
+cp out/bin/modula-x86 /usr/local/bin/modula
 ```
 
-On first run without a `modula.config.json`, Modula generates one with defaults, creates the database schema, bootstraps RBAC roles (admin, editor, viewer), and logs a random admin password. The SSH server starts immediately; HTTP/HTTPS start once the database is ready.
+Verify: `modula version`
 
-**Default Ports:**
+### 2. Create a project
 
-| Server | Port |
-|--------|------|
-| HTTP   | 8080 |
-| HTTPS  | 8443 |
-| SSH    | 2222 |
+```bash
+mkdir ~/mysite && cd ~/mysite
+modula init
+```
 
-Connect to the TUI: `ssh localhost -p 2222`
+`modula init` runs an interactive setup wizard that prompts for database driver, connection details, ports, and admin credentials. It creates `modula.config.json`, initializes the database schema, seeds three bootstrap roles (admin, editor, viewer) with 72 permissions, and registers the project in `~/.modula/configs.json`.
 
-Access the admin panel: `http://localhost:8080/admin/`
+For non-interactive setup with defaults:
+
+```bash
+modula init --yes --admin-password your-password
+```
+
+Defaults: SQLite database (`modula.db` in working directory), HTTP on `:8080`, HTTPS on `:4000`, SSH on `:2233`, development environment. The admin credentials are printed to the startup log.
+
+### 3. Start the server
+
+```bash
+modula serve
+```
+
+Three servers start concurrently:
+
+| Server | Default Address | Purpose |
+|--------|-----------------|---------|
+| HTTP | `localhost:8080` | REST API + admin panel |
+| HTTPS | `localhost:4000` | TLS-secured API (autocert in production) |
+| SSH | `localhost:2233` | Terminal UI |
+
+Graceful shutdown: first SIGINT/SIGTERM triggers a 30-second shutdown; second signal forces exit.
+
+### 4. Connect
+
+**Web admin panel:** [http://localhost:8080/admin/](http://localhost:8080/admin/)
+
+Log in with `system@modulacms.local` and the password from init.
+
+**Terminal UI:** `ssh localhost -p 2233`
+
+**REST API:**
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "system@modulacms.local", "password": "YOUR_PASSWORD"}' \
+  -c cookies.txt
+
+curl http://localhost:8080/api/v1/datatype -b cookies.txt
+```
+
+Once registered, manage a project from any directory:
+
+```bash
+modula connect              # default project, default env
+modula connect mysite       # specific project
+modula connect mysite prod  # specific project + env
+```
 
 ## Build & Development
 
@@ -99,6 +150,8 @@ Access the admin panel: `http://localhost:8080/admin/`
 just dev              # Build local binary with version info via ldflags
 just run              # Build and run
 just build            # Production binary to out/bin/
+just build-target darwin arm64  # Cross-compile for specific OS/arch
+just build-all        # Build all release targets (darwin/linux, amd64/arm64)
 just check            # Compile-check without producing artifacts
 just clean            # Remove build artifacts
 just vendor           # Update vendor directory

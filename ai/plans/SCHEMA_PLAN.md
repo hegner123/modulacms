@@ -655,7 +655,9 @@ Schema_Auto_Sync bool   `json:"schema_auto_sync"`  // watch and sync on server s
 
 When `schema_auto_sync` is true and `schema/.build/schema.json` exists, the serve command starts the `SchemaWatcher` alongside existing server goroutines.
 
-## Phase 7: Justfile Commands
+## Phase 7: Justfile and CI
+
+### Justfile
 
 All commands go through the binary — no external dependencies.
 
@@ -675,6 +677,13 @@ schema action:
         *)              echo "Unknown action: {{action}}"; exit 1 ;;
     esac
 ```
+
+### GitHub Actions
+
+No workflow changes needed. The existing CI already covers the schema system:
+
+- **`go.yml`** runs `go test -v ./...` which picks up `internal/schema/*_test.go` (compiler, diff, sync, generate tests). Since the compiler is embedded Go code using esbuild + goja, no Node/Bun setup step is needed.
+- **`sdks.yml`** triggers on `sdks/typescript/**` changes, which covers the optional `@modulacms/schema` package if added later. Already runs pnpm install, build, typecheck, test.
 
 ## Phase 8: Integration
 

@@ -128,6 +128,49 @@ build:
         -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=${BUILD_DATE}'" \
         -o out/bin/{{x86_binary_name}} ./cmd
 
+# [Build] Cross-compile for a specific OS/arch: just build-target darwin arm64
+# Supported: darwin/amd64, darwin/arm64, linux/amd64, linux/arm64
+build-target goos goarch:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just admin bundle
+    VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+    COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
+    OUTFILE="out/bin/modula-{{goos}}-{{goarch}}"
+    echo "Building ${OUTFILE}..."
+    CGO_ENABLED=1 GOOS={{goos}} GOARCH={{goarch}} {{gocmd}} build -mod vendor \
+        -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=${VERSION}' \
+        -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=${COMMIT}' \
+        -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=${BUILD_DATE}'" \
+        -o "${OUTFILE}" ./cmd
+    chmod +x "${OUTFILE}"
+    echo "Built ${OUTFILE}"
+
+# [Build] Build all release targets (matches CI matrix)
+build-all:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just admin bundle
+    VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+    COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
+    LDFLAGS="-X 'github.com/hegner123/modulacms/internal/utility.Version=${VERSION}' \
+        -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=${COMMIT}' \
+        -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=${BUILD_DATE}'"
+    mkdir -p out/bin
+    for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64; do
+        GOOS="${target%/*}"
+        GOARCH="${target#*/}"
+        OUTFILE="out/bin/modula-${GOOS}-${GOARCH}"
+        echo "Building ${OUTFILE}..."
+        CGO_ENABLED=1 GOOS="${GOOS}" GOARCH="${GOARCH}" {{gocmd}} build -mod vendor \
+            -ldflags="${LDFLAGS}" -o "${OUTFILE}" ./cmd
+        chmod +x "${OUTFILE}"
+    done
+    echo "All targets built in out/bin/"
+    ls -lh out/bin/modula-*
+
 # [Build] Remove build artifacts
 clean:
     rm -fr ./bin
