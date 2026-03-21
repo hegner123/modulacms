@@ -63,7 +63,7 @@ coverage:
 
 # [Dev] Check compilation of cmd and internal packages (no artifacts)
 check:
-    GO111MODULE=on {{gocmd}} build -mod vendor -o /dev/null ./cmd
+    GO111MODULE=on {{gocmd}} build -mod vendor -o {{ if os_family() == "windows" { "NUL" } else { "/dev/null" } }} ./cmd
     {{gocmd}} build -mod vendor ./internal/...
     @echo "Build check passed"
 

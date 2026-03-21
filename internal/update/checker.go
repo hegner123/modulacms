@@ -162,8 +162,10 @@ func GetDownloadURL(release *ReleaseInfo, goos, goarch string) (string, error) {
 	// Build expected binary name
 	// Format: modulacms-{goos}-{goarch}
 	expectedName := fmt.Sprintf("modulacms-%s-%s", goos, goarch)
+	if goos == "windows" {
+		expectedName += ".exe"
+	}
 
-	// Search through assets
 	for _, asset := range release.Assets {
 		if asset.Name == expectedName {
 			return asset.BrowserDownloadURL, nil

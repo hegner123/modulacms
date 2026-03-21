@@ -5,8 +5,8 @@ package db
 import (
 	"context"
 	"database/sql"
-	"embed"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"sort"
@@ -17,9 +17,6 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 	utility "github.com/hegner123/modulacms/internal/utility"
 )
-
-//go:embed sql
-var sqlFiles embed.FS
 
 // Historied defines the interface for entities that track their modification history.
 type Historied interface {
@@ -3729,167 +3726,87 @@ func (d PsqlDatabase) SortTables() error {
 	return nil
 }
 
-func (d Database) DumpSql(c config.Config, outFile string) error {
-
-	// Read the embedded Bash script.
-	script, err := sqlFiles.ReadFile("sql/dump_sql.sh")
-	if err != nil {
-		utility.DefaultLogger.Ferror("failed to read embedded script: %v", err)
-		return err
-	}
-
-	// Create a temporary file for the script.
-	tmpFile, err := os.CreateTemp("", "embedded_script_*.sh")
-	if err != nil {
-		utility.DefaultLogger.Ferror("failed to create temporary file: %v", err)
-		return err
-	}
-	// Ensure the file is removed after execution.
-	defer func() {
-		if closeErr := os.Remove(tmpFile.Name()); closeErr != nil && err == nil {
-			err = closeErr
-		}
-	}()
-
-	// Write the embedded script contents to the temporary file.
-	if _, err := tmpFile.Write(script); err != nil {
-		utility.DefaultLogger.Ferror("failed to write script to file: %v", err)
-		return err
-	}
-	// Close the file so that it can be executed.
-	err = tmpFile.Close()
-	if err != nil {
-		return err
-	}
-
-	// Make the temporary file executable.
-	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
-		utility.DefaultLogger.Ferror("failed to chmod the temporary file: %v", err)
-		return err
-	}
-
-	// Use provided output file or generate a timestamped default.
+func (d Database) DumpSql(c config.Config, outFile string) (err error) {
 	if outFile == "" {
 		outFile = "sqlite" + utility.TimestampReadable() + ".sql"
 	}
 
-	// Execute the Bash script using /bin/bash.
-	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_Name, outFile)
-	output, err := cmd.CombinedOutput()
+	f, err := os.Create(outFile)
 	if err != nil {
-		utility.DefaultLogger.Ferror("failed to execute script: %v, output: %s", err, output)
-		return err
+		return fmt.Errorf("creating dump file: %w", err)
 	}
-	return nil
-
-}
-func (d MysqlDatabase) DumpSql(c config.Config, outFile string) error {
-
-	// Read the embedded Bash script.
-	script, err := sqlFiles.ReadFile("sql/dump_mysql.sh")
-	if err != nil {
-		utility.DefaultLogger.Ferror("failed to read embedded script: %v", err)
-		return err
-	}
-
-	// Create a temporary file for the script.
-	tmpFile, err := os.CreateTemp("", "embedded_script_*.sh")
-	if err != nil {
-		utility.DefaultLogger.Ferror("failed to create temporary file: %v", err)
-		return err
-	}
-	// Ensure the file is removed after execution.
 	defer func() {
-		if closeErr := os.Remove(tmpFile.Name()); closeErr != nil && err == nil {
-			err = closeErr
+		if cerr := f.Close(); cerr != nil && err == nil {
+			err = cerr
 		}
 	}()
 
-	// Write the embedded script contents to the temporary file.
-	if _, err := tmpFile.Write(script); err != nil {
-		utility.DefaultLogger.Ferror("failed to write script to file: %v", err)
-		return err
+	cmd := exec.Command("sqlite3", c.Db_Name, ".dump")
+	cmd.Stdout = f
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("sqlite3 dump failed: %w", err)
 	}
-	// Close the file so that it can be executed.
-	err = tmpFile.Close()
-	if err != nil {
-		return err
-	}
-
-	// Make the temporary file executable.
-	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
-		utility.DefaultLogger.Ferror("failed to chmod the temporary file: %v", err)
-		return err
-	}
-
-	// Use provided output file or generate a timestamped default.
+	return nil
+}
+func (d MysqlDatabase) DumpSql(c config.Config, outFile string) (err error) {
 	if outFile == "" {
 		outFile = "mysql" + utility.TimestampReadable() + ".sql"
 	}
 
-	// Execute the Bash script using /bin/bash.
-	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_User, c.Db_Password, c.Db_Name, outFile)
-	output, err := cmd.CombinedOutput()
+	f, err := os.Create(outFile)
 	if err != nil {
-		utility.DefaultLogger.Ferror("failed to execute script: %v, output: %s", err, string(output))
-		return err
+		return fmt.Errorf("creating dump file: %w", err)
 	}
-	return nil
-
-}
-func (d PsqlDatabase) DumpSql(c config.Config, outFile string) error {
-
-	// Read the embedded Bash script.
-	script, err := sqlFiles.ReadFile("sql/dump_psql.sh")
-	if err != nil {
-		utility.DefaultLogger.Ferror("failed to read embedded script: %v", err)
-		return err
-	}
-
-	// Create a temporary file for the script.
-	tmpFile, err := os.CreateTemp("", "embedded_script_*.sh")
-	if err != nil {
-		utility.DefaultLogger.Ferror("failed to create temporary file: %v", err)
-		return err
-	}
-	// Ensure the file is removed after execution.
 	defer func() {
-		if closeErr := os.Remove(tmpFile.Name()); closeErr != nil && err == nil {
-			err = closeErr
+		if cerr := f.Close(); cerr != nil && err == nil {
+			err = cerr
 		}
 	}()
 
-	// Write the embedded script contents to the temporary file.
-	if _, err := tmpFile.Write(script); err != nil {
-		utility.DefaultLogger.Ferror("failed to write script to file: %v", err)
-		return err
+	args := []string{"-u", c.Db_User}
+	if c.Db_URL != "" {
+		host, port, splitErr := net.SplitHostPort(c.Db_URL)
+		if splitErr == nil {
+			args = append(args, "-h", host, "-P", port)
+		} else {
+			args = append(args, "-h", c.Db_URL)
+		}
 	}
-	// Close the file so that it can be executed.
-	err = tmpFile.Close()
-	if err != nil {
-		return err
-	}
+	args = append(args, c.Db_Name)
 
-	// Make the temporary file executable.
-	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
-		utility.DefaultLogger.Ferror("failed to chmod the temporary file: %v", err)
-		return err
+	cmd := exec.Command("mysqldump", args...)
+	cmd.Env = append(os.Environ(), "MYSQL_PWD="+c.Db_Password)
+	cmd.Stdout = f
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("mysqldump failed: %w", err)
 	}
-
-	// Use provided output file or generate a timestamped default.
+	return nil
+}
+func (d PsqlDatabase) DumpSql(c config.Config, outFile string) error {
 	if outFile == "" {
 		outFile = "psql" + utility.TimestampReadable() + ".sql"
 	}
 
-	// Execute the Bash script using /bin/bash.
-	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_Name, outFile)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		utility.DefaultLogger.Ferror("failed to execute script: %v, output: %s", err, output)
-		return err
+	args := []string{"-U", c.Db_User}
+	if c.Db_URL != "" {
+		host, port, splitErr := net.SplitHostPort(c.Db_URL)
+		if splitErr == nil {
+			args = append(args, "-h", host, "-p", port)
+		} else {
+			args = append(args, "-h", c.Db_URL)
+		}
+	}
+	args = append(args, "-d", c.Db_Name, "-f", outFile)
+
+	cmd := exec.Command("pg_dump", args...)
+	cmd.Env = append(os.Environ(), "PGPASSWORD="+c.Db_Password)
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("pg_dump failed: %w", err)
 	}
 	return nil
-
 }
 
 // Query methods for database implementations

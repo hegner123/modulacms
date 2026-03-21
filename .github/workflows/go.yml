@@ -47,8 +47,45 @@ jobs:
         go test -v ./...
         rm -f testdb/*.db
 
+  test-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.26'
+
+    - name: Set up MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        install: mingw-w64-x86_64-gcc mingw-w64-x86_64-libwebp
+
+    - name: Prepare test directories
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path testdb
+        New-Item -ItemType Directory -Force -Path backups
+
+    - name: Test
+      shell: msys2 {0}
+      env:
+        CGO_ENABLED: 1
+      run: |
+        export PATH="/mingw64/bin:$PATH"
+        export CC=gcc
+        touch testdb/create_tests.db
+        touch testdb/testing2348263.db
+        rm -f testdb/*.db
+        touch backups/tmp.zip
+        rm -f backups/*.zip
+        go test -v ./...
+        rm -f testdb/*.db
+
   build:
-    needs: test
+    needs: [test, test-windows]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     strategy:
       fail-fast: false
@@ -69,6 +106,10 @@ jobs:
           - os: ubuntu-24.04-arm
             goos: linux
             goarch: arm64
+            cc: gcc
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
             cc: gcc
 
     runs-on: ${{ matrix.os }}
@@ -91,10 +132,18 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install webp
 
+      - name: Install system dependencies (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-libwebp
+
       - name: Download modules
         run: go mod download
 
-      - name: Build
+      - name: Build (Unix)
+        if: runner.os != 'Windows'
         env:
           CGO_ENABLED: 1
           GOOS: ${{ matrix.goos }}
@@ -115,11 +164,31 @@ jobs:
             -o modula-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd
           chmod +x modula-${{ matrix.goos }}-${{ matrix.goarch }}
 
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        env:
+          CGO_ENABLED: 1
+          GOOS: windows
+          GOARCH: amd64
+        run: |
+          export PATH="/mingw64/bin:$PATH"
+          export CC=gcc
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+          COMMIT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
+
+          go build \
+            -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
+            -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
+            -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
+            -o modula-windows-amd64.exe ./cmd
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: modula-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: modula-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: modula-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
 
   release:
     needs: build

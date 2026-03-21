@@ -3,6 +3,7 @@ package tui
 import (
 	"encoding/json"
 	"os"
+	"runtime"
 	"strings"
 
 	"charm.land/bubbles/v2/textinput"
@@ -428,6 +429,9 @@ func editorCommand() string {
 	}
 	if v := os.Getenv("EDITOR"); v != "" {
 		return v
+	}
+	if runtime.GOOS == "windows" {
+		return "notepad"
 	}
 	return "vi"
 }

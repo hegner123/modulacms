@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	"github.com/hegner123/modulacms/internal/registry"
 	"github.com/hegner123/modulacms/internal/tui"
@@ -83,16 +82,7 @@ Examples:
 		}
 		model, _ := tui.InitialModel(&verbose, cfg, driver, utility.DefaultLogger, nil, mgr, nil, nil)
 		if _, ok := tui.CliRun(&model); !ok {
-			process, err := os.FindProcess(os.Getpid())
-			if err != nil {
-				utility.DefaultLogger.Error("", err)
-				return err
-			}
-
-			if err := process.Signal(syscall.SIGTERM); err != nil {
-				utility.DefaultLogger.Error("", err)
-				return err
-			}
+			os.Exit(1)
 		}
 
 		return nil

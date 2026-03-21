@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"syscall"
 
 	"github.com/hegner123/modulacms/internal/utility"
@@ -120,7 +121,7 @@ func VerifyBinary(path string) error {
 
 	// Check file is executable
 	mode := info.Mode()
-	if mode&0111 == 0 {
+	if runtime.GOOS != "windows" && mode&0111 == 0 {
 		return fmt.Errorf("binary is not executable")
 	}
 
