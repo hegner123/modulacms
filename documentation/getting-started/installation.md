@@ -7,7 +7,7 @@ Install ModulaCMS from source and configure it for your environment.
 ```bash
 git clone https://github.com/hegner123/modulacms.git
 cd modulacms && just build
-cp out/bin/modula-x86 /usr/local/bin/modula
+cp out/bin/modula /usr/local/bin/modula
 mkdir ~/mysite && cd ~/mysite
 modula init
 modula serve
@@ -35,10 +35,10 @@ cd modulacms
 just build
 ```
 
-This produces the binary at `out/bin/modula-x86`. Copy it to your PATH:
+This produces the binary at `out/bin/modula`. Copy it to your PATH:
 
 ```bash
-cp out/bin/modula-x86 /usr/local/bin/modula
+cp out/bin/modula /usr/local/bin/modula
 ```
 
 Verify:
@@ -52,7 +52,7 @@ modula version
 For contributors working on ModulaCMS itself:
 
 ```bash
-just dev    # builds modula-x86 in project root
+just dev    # builds modula in project root
 just run    # builds and immediately runs
 just check  # compile-check without producing a binary
 ```

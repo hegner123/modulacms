@@ -666,14 +666,14 @@ schema action:
     #!/usr/bin/env bash
     set -euo pipefail
     case "{{action}}" in
-        init)           ./modula-x86 schema init ;;
-        generate-types) ./modula-x86 schema generate-types ;;
-        build)          ./modula-x86 schema build ;;
-        sync)           ./modula-x86 schema sync ;;
-        diff)           ./modula-x86 schema diff ;;
-        watch)          ./modula-x86 schema watch ;;
-        validate)       ./modula-x86 schema validate ;;
-        export)         ./modula-x86 schema export ;;
+        init)           ./modula schema init ;;
+        generate-types) ./modula schema generate-types ;;
+        build)          ./modula schema build ;;
+        sync)           ./modula schema sync ;;
+        diff)           ./modula schema diff ;;
+        watch)          ./modula schema watch ;;
+        validate)       ./modula schema validate ;;
+        export)         ./modula schema export ;;
         *)              echo "Unknown action: {{action}}"; exit 1 ;;
     esac
 ```

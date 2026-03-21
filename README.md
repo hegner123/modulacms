@@ -79,7 +79,7 @@ CGO is required because the SQLite driver (`mattn/go-sqlite3`) is a C library. E
 git clone https://github.com/hegner123/modulacms.git
 cd modulacms
 just build
-cp out/bin/modula-x86 /usr/local/bin/modula
+cp out/bin/modula /usr/local/bin/modula
 ```
 
 Verify: `modula version`

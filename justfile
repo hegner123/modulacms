@@ -3,8 +3,7 @@
 gocmd := "go"
 gotest := gocmd + " test"
 govet := gocmd + " vet"
-amd_binary_name := "modula-amd"
-x86_binary_name := "modula-x86"
+binary_name := if os_family() == "windows" { "modula.exe" } else { "modula" }
 version := env_var_or_default("VERSION", "0.0.0")
 service_port := env_var_or_default("SERVICE_PORT", "3000")
 docker_registry := env_var_or_default("DOCKER_REGISTRY", "")
@@ -79,11 +78,11 @@ dev:
         -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=${VERSION}' \
         -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=${COMMIT}' \
         -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=${BUILD_DATE}'" \
-        -o {{x86_binary_name}} ./cmd
+        -o {{binary_name}} ./cmd
 
 # [Dev] Build and run the application
 run: dev
-    ./{{x86_binary_name}}
+    ./{{binary_name}}
 
 # [Dev] Build and run with live CSS/JS from disk (no embed, no cache)
 # Uses air for hot reload: rebuilds on .go and .templ changes, runs templ generate as pre_cmd
@@ -111,7 +110,7 @@ dev-admin:
 
 # [Build] Build and install to /usr/local/bin/modula
 install: build
-    cp out/bin/{{x86_binary_name}} /usr/local/bin/modula
+    cp out/bin/{{binary_name}} /usr/local/bin/modula
     codesign -s - /usr/local/bin/modula
     @echo "Installed modula to /usr/local/bin/modula"
 
@@ -126,7 +125,7 @@ build:
         -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=${VERSION}' \
         -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=${COMMIT}' \
         -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=${BUILD_DATE}'" \
-        -o out/bin/{{x86_binary_name}} ./cmd
+        -o out/bin/{{binary_name}} ./cmd
 
 # [Build] Cross-compile for a specific OS/arch: just build-target darwin arm64
 # Supported: darwin/amd64, darwin/arm64, linux/amd64, linux/arm64
@@ -401,13 +400,13 @@ plugin action arg='':
     #!/usr/bin/env bash
     set -euo pipefail
     case "{{action}}" in
-        list)     ./{{x86_binary_name}} plugin list ;;
-        init)     [ -z "{{arg}}" ] && echo "Usage: just plugin init <name>" && exit 1; ./{{x86_binary_name}} plugin init "{{arg}}" ;;
-        validate) [ -z "{{arg}}" ] && echo "Usage: just plugin validate <path>" && exit 1; ./{{x86_binary_name}} plugin validate "{{arg}}" ;;
-        info)     [ -z "{{arg}}" ] && echo "Usage: just plugin info <name>" && exit 1; ./{{x86_binary_name}} plugin info "{{arg}}" ;;
-        reload)   [ -z "{{arg}}" ] && echo "Usage: just plugin reload <name>" && exit 1; ./{{x86_binary_name}} plugin reload "{{arg}}" ;;
-        enable)   [ -z "{{arg}}" ] && echo "Usage: just plugin enable <name>" && exit 1; ./{{x86_binary_name}} plugin enable "{{arg}}" ;;
-        disable)  [ -z "{{arg}}" ] && echo "Usage: just plugin disable <name>" && exit 1; ./{{x86_binary_name}} plugin disable "{{arg}}" ;;
+        list)     ./{{binary_name}} plugin list ;;
+        init)     [ -z "{{arg}}" ] && echo "Usage: just plugin init <name>" && exit 1; ./{{binary_name}} plugin init "{{arg}}" ;;
+        validate) [ -z "{{arg}}" ] && echo "Usage: just plugin validate <path>" && exit 1; ./{{binary_name}} plugin validate "{{arg}}" ;;
+        info)     [ -z "{{arg}}" ] && echo "Usage: just plugin info <name>" && exit 1; ./{{binary_name}} plugin info "{{arg}}" ;;
+        reload)   [ -z "{{arg}}" ] && echo "Usage: just plugin reload <name>" && exit 1; ./{{binary_name}} plugin reload "{{arg}}" ;;
+        enable)   [ -z "{{arg}}" ] && echo "Usage: just plugin enable <name>" && exit 1; ./{{binary_name}} plugin enable "{{arg}}" ;;
+        disable)  [ -z "{{arg}}" ] && echo "Usage: just plugin disable <name>" && exit 1; ./{{binary_name}} plugin disable "{{arg}}" ;;
         *)        echo "Unknown action: {{action}}"; echo "Actions: list, init, validate, info, reload, enable, disable"; exit 1 ;;
     esac
 
