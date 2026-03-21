@@ -13,20 +13,9 @@ on:
       - 'sdks/**'
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - goarch: amd64
-            msystem: MINGW64
-            mingw_prefix: mingw-w64-x86_64
-          - goarch: arm64
-            msystem: CLANGARM64
-            mingw_prefix: mingw-w64-clang-aarch64
-
+  build-amd64:
     runs-on: windows-latest
-    name: build-windows-${{ matrix.goarch }}
+    name: build-windows-amd64
 
     steps:
       - uses: actions/checkout@v4
@@ -45,22 +34,22 @@ jobs:
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          msystem: ${{ matrix.msystem }}
-          install: ${{ matrix.mingw_prefix }}-gcc ${{ matrix.mingw_prefix }}-libwebp
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-libwebp
 
       - name: Build
         shell: msys2 {0}
         env:
           CGO_ENABLED: 1
           GOOS: windows
-          GOARCH: ${{ matrix.goarch }}
+          GOARCH: amd64
           WPATH: ${{ steps.win-path.outputs.path }}
         run: |
           IFS=';' read -ra DIRS <<< "$WPATH"
           for d in "${DIRS[@]}"; do
             export PATH="$(cygpath "$d"):$PATH"
           done
-          export PATH="/${{ matrix.msystem == 'MINGW64' && 'mingw64' || 'clangarm64' }}/bin:$PATH"
+          export PATH="/mingw64/bin:$PATH"
           export CC=gcc
           VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
           COMMIT=$(git rev-parse --short HEAD)
@@ -70,10 +59,89 @@ jobs:
             -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
             -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
             -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
-            -o modulacms-windows-${{ matrix.goarch }}.exe ./cmd
+            -o modulacms-windows-amd64.exe ./cmd
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: modulacms-windows-${{ matrix.goarch }}
-          path: modulacms-windows-${{ matrix.goarch }}.exe
+          name: modulacms-windows-amd64
+          path: modulacms-windows-amd64.exe
+
+  build-arm64:
+    runs-on: windows-latest
+    name: build-windows-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Capture Windows PATH
+        id: win-path
+        shell: pwsh
+        run: |
+          echo "path=$env:PATH" >> $env:GITHUB_OUTPUT
+
+      - name: Install llvm-mingw (ARM64 cross-compiler)
+        shell: pwsh
+        run: |
+          $version = "20250517"
+          $url = "https://github.com/mstorsjo/llvm-mingw/releases/download/$version/llvm-mingw-$version-ucrt-x86_64.zip"
+          Invoke-WebRequest -Uri $url -OutFile llvm-mingw.zip
+          Expand-Archive -Path llvm-mingw.zip -DestinationPath C:\llvm-mingw
+          $dir = (Get-ChildItem C:\llvm-mingw -Directory)[0].FullName
+          echo "LLVM_MINGW=$dir" >> $env:GITHUB_ENV
+
+      - name: Install libwebp for ARM64 cross-compilation
+        shell: pwsh
+        run: |
+          $url = "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.5.0-windows-aarch64.zip"
+          Invoke-WebRequest -Uri $url -OutFile libwebp.zip
+          Expand-Archive -Path libwebp.zip -DestinationPath C:\libwebp
+          $dir = (Get-ChildItem C:\libwebp -Directory)[0].FullName
+          echo "LIBWEBP_DIR=$dir" >> $env:GITHUB_ENV
+
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: base
+
+      - name: Build
+        shell: msys2 {0}
+        env:
+          CGO_ENABLED: 1
+          GOOS: windows
+          GOARCH: arm64
+          WPATH: ${{ steps.win-path.outputs.path }}
+        run: |
+          IFS=';' read -ra DIRS <<< "$WPATH"
+          for d in "${DIRS[@]}"; do
+            export PATH="$(cygpath "$d"):$PATH"
+          done
+
+          LLVM_DIR=$(cygpath "$LLVM_MINGW")
+          WEBP_DIR=$(cygpath "$LIBWEBP_DIR")
+          export PATH="$LLVM_DIR/bin:$PATH"
+          export CC=aarch64-w64-mingw32-gcc
+          export CGO_CFLAGS="-I$WEBP_DIR/include"
+          export CGO_LDFLAGS="-L$WEBP_DIR/lib"
+
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+          COMMIT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
+
+          go build \
+            -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
+            -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
+            -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
+            -o modulacms-windows-arm64.exe ./cmd
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: modulacms-windows-arm64
+          path: modulacms-windows-arm64.exe
