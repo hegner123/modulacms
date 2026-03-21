@@ -10,6 +10,7 @@ func TestRegistryAllDefinitionsRegistered(t *testing.T) {
 		"contentful-starter",
 		"sanity-starter",
 		"strapi-starter",
+		"tailwind-marketing",
 		"wordpress-blog",
 	}
 
