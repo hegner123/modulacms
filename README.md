@@ -1,5 +1,8 @@
 # Modula
 
+[![CI/CD](https://github.com/hegner123/modulacms/actions/workflows/go.yml/badge.svg)](https://github.com/hegner123/modulacms/actions/workflows/go.yml)
+[![Windows](https://github.com/hegner123/modulacms/actions/workflows/windows.yml/badge.svg)](https://github.com/hegner123/modulacms/actions/workflows/windows.yml)
+
 A headless CMS written in Go, built on three core values: **performance**, **flexibility**, and **transparency**.
 
 ## Performance
