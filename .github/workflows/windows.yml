@@ -151,7 +151,7 @@ jobs:
           export PATH="$LLVM_DIR/bin:$PATH"
           export CC=aarch64-w64-mingw32-gcc
           export CGO_CFLAGS="-I$WEBP_DIR/include"
-          export CGO_LDFLAGS="-L$WEBP_DIR/lib"
+          export CGO_LDFLAGS="-L$WEBP_DIR/lib -lsharpyuv"
 
           VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
           COMMIT=$(git rev-parse --short HEAD)
