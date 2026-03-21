@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Windows platform support** — ModulaCMS now compiles and runs on Windows (amd64 and arm64)
+  - Replaced `process.Signal(syscall.SIGTERM)` self-signaling with `os.Exit(1)` for cross-platform shutdown
+  - Rewrote `DumpSql` methods as direct CLI calls (`sqlite3`, `mysqldump`, `pg_dump`) instead of bash scripts
+  - Added Windows editor fallback (`notepad`) in TUI when `$EDITOR`/`$VISUAL` are unset
+  - Added `.exe` suffix handling in self-updater asset matching
+  - Skipped Unix file permission checks on Windows in `VerifyBinary`
+  - Added `#cgo windows LDFLAGS` to vendored go-webp encoder for Windows linking
+  - Cross-platform `just check` recipe (`NUL` on Windows, `/dev/null` on Unix)
+- **Windows CI workflow** — separate `windows.yml` builds for amd64 (MINGW64) and arm64 (llvm-mingw cross-compilation with libwebp built from source)
+- **CI badges** — CI/CD and Windows build status badges in README
 - **Config layering** — `--overlay` CLI flag merges a per-environment overlay file on top of the base config. Overlay files contain only the fields that differ, replacing full config duplication across environments.
   - `LayeredFileProvider` reads base + overlay, shallow-merges at load time
   - `MergeMaps` shared helper extracted from `Manager.Update()`
@@ -19,6 +29,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - `Manager.Update()` refactored to use `MergeMaps` instead of inline merge loop
+
+### Fixed
+
+- `DumpSql` methods were broken on all platforms due to incorrect embed paths for bash scripts — rewritten in pure Go
 
 ## Earlier Changes
 
