@@ -25,14 +25,17 @@ templ SessionsTableRows(items []db.Sessions, userNames map[string]string) {
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.DateCreated.String() }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.ExpiresAt.String() }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm">
-                <mcms-confirm
-                    label="Revoke"
-                    message="Are you sure you want to revoke this session?"
-                    button-class="text-sm font-medium text-red-400 hover:text-red-300"
-                    hx-delete={ "/admin/sessions/" + item.SessionID.String() }
-                    hx-target={ "#session-row-" + item.SessionID.String() }
-                    hx-swap="outerHTML"
-                ></mcms-confirm>
+                <div class="flex items-center justify-end gap-3">
+                    @CopyIDButton(item.SessionID.String())
+                    <mcms-confirm
+                        label="Revoke"
+                        message="Are you sure you want to revoke this session?"
+                        button-class="text-sm font-medium text-red-400 hover:text-red-300"
+                        hx-delete={ "/admin/sessions/" + item.SessionID.String() }
+                        hx-target={ "#session-row-" + item.SessionID.String() }
+                        hx-swap="outerHTML"
+                    ></mcms-confirm>
+                </div>
             </td>
         </tr>
     }

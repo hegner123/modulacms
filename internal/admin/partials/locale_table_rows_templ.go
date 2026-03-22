@@ -143,33 +143,41 @@ func LocaleTableRows(locales []db.Locale, csrfToken string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><div class=\"flex items-center justify-end gap-3\"><button class=\"text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]\" hx-get=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><div class=\"flex items-center justify-end gap-3\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = CopyIDButton(locale.LocaleID.String()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<button class=\"text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]\" hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/settings/locales/" + locale.LocaleID.String() + "/edit")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/locale_table_rows.templ`, Line: 42, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/locale_table_rows.templ`, Line: 43, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" hx-target=\"#admin-dialogs\" hx-swap=\"innerHTML\">Edit</button> <mcms-confirm label=\"Delete\" message=\"Are you sure you want to delete this locale? This cannot be undone.\" button-class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" hx-target=\"#admin-dialogs\" hx-swap=\"innerHTML\">Edit</button> <mcms-confirm label=\"Delete\" message=\"Are you sure you want to delete this locale? This cannot be undone.\" button-class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/settings/locales/" + locale.LocaleID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/locale_table_rows.templ`, Line: 51, Col: 89}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/locale_table_rows.templ`, Line: 52, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" hx-target=\"#locale-table-body\" hx-swap=\"innerHTML\"></mcms-confirm></div></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" hx-target=\"#locale-table-body\" hx-swap=\"innerHTML\"></mcms-confirm></div></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

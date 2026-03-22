@@ -35,7 +35,7 @@ func AuditContent(events []db.ChangeEvent, pagination partials.PaginationPageDat
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Audit Log</h1><p class=\"mt-2 text-sm text-gray-400\">Track all changes made across the system.</p></div></div><div class=\"mt-8 flow-root\"><div class=\"overflow-x-auto\"><div class=\"min-w-full py-2 align-middle\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Timestamp</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Table</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Record</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Operation</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Action</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">User</th></tr></thead> <tbody id=\"audit-table-body\" class=\"divide-y divide-white/5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Audit Log</h1><p class=\"mt-2 text-sm text-gray-400\">Track all changes made across the system.</p></div></div><div class=\"mt-8 flow-root\"><div class=\"overflow-x-auto\"><div class=\"min-w-full py-2 align-middle\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Timestamp</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Table</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Record</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Operation</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Action</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">User</th><th scope=\"col\" class=\"relative px-4 py-3.5\"><span class=\"sr-only\">Actions</span></th></tr></thead> <tbody id=\"audit-table-body\" class=\"divide-y divide-white/5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -131,7 +131,7 @@ func AuditTableRowsPartial(events []db.ChangeEvent, pagination partials.Paginati
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<tr id=\"pagination\" hx-swap-oob=\"true\"><td colspan=\"6\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<tr id=\"pagination\" hx-swap-oob=\"true\"><td colspan=\"7\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

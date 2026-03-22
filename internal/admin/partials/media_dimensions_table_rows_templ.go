@@ -114,33 +114,41 @@ func MediaDimensionsTableRows(items []db.MediaDimensions) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><mcms-confirm label=\"Delete\" message=\"Delete this dimension preset? Existing media variants are not affected.\" button-class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><div class=\"flex items-center justify-end gap-3\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = CopyIDButton(item.MdID).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<mcms-confirm label=\"Delete\" message=\"Delete this dimension preset? Existing media variants are not affected.\" button-class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/media/dimensions/" + item.MdID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_dimensions_table_rows.templ`, Line: 27, Col: 55}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_dimensions_table_rows.templ`, Line: 29, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" hx-target=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" hx-target=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("#dimension-row-" + item.MdID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_dimensions_table_rows.templ`, Line: 28, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/media_dimensions_table_rows.templ`, Line: 30, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" hx-swap=\"outerHTML\"></mcms-confirm></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-swap=\"outerHTML\"></mcms-confirm></div></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

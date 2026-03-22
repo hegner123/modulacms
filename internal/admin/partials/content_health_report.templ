@@ -12,11 +12,12 @@ type HealthReportData struct {
 	MissingFields       int
 	DuplicateFields     int
 	OrphanedFields      int
+	DanglingPointers    int
 }
 
 // TotalIssues returns the total number of issues found.
 func (d HealthReportData) TotalIssues() int {
-	return d.ContentDataRepairs + d.ContentFieldRepairs + d.MissingFields + d.DuplicateFields + d.OrphanedFields
+	return d.ContentDataRepairs + d.ContentFieldRepairs + d.MissingFields + d.DuplicateFields + d.OrphanedFields + d.DanglingPointers
 }
 
 templ ContentHealthReport(title string, actionLabel string, data HealthReportData) {
@@ -76,6 +77,9 @@ templ healthReportSection(title string, actionLabel string, data HealthReportDat
 					}
 					if data.OrphanedFields > 0 {
 						@issueRow("Orphaned Fields", fmt.Sprintf("%d", data.OrphanedFields), "Content field rows referencing fields no longer in the datatype", !data.DryRun)
+					}
+					if data.DanglingPointers > 0 {
+						@issueRow("Dangling Pointers", fmt.Sprintf("%d", data.DanglingPointers), "Tree pointers referencing deleted content rows", !data.DryRun)
 					}
 					if data.ContentDataRepairs > 0 {
 						@issueRow("Invalid Content IDs", fmt.Sprintf("%d", data.ContentDataRepairs), "Content data rows with malformed ULID columns", !data.DryRun)

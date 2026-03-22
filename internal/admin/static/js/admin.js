@@ -996,140 +996,75 @@ document.addEventListener('block-editor:save', function(e) {
 // Dialog Utilities
 // ========================================
 
-// showConfirmDialog creates a temporary mcms-dialog, opens it, and returns
-// a Promise that resolves true on confirm, false on cancel.
+// showConfirmDialog creates a temporary mcms-dialog with confirm/cancel buttons,
+// opens it, and returns a Promise that resolves true on confirm, false on cancel.
+// Used by the block editor for delete-with-children confirmation.
 function showConfirmDialog(options) {
-    console.log('[confirm-debug] showConfirmDialog called', options);
-    var defined = customElements.get('mcms-dialog');
-    console.log('[confirm-debug] mcms-dialog defined:', !!defined);
+    var title = options.title || 'Confirm';
+    var confirmLabel = options.confirmLabel || 'Confirm';
+    var cancelLabel = options.cancelLabel || 'Cancel';
+    var destructive = !!options.destructive;
+
     return new Promise(function(resolve) {
         var dialog = document.createElement('mcms-dialog');
-        console.log('[confirm-debug] created dialog element, constructor:', dialog.constructor.name);
-        dialog.setAttribute('title', options.title || 'Confirm');
-        dialog.setAttribute('confirm-label', options.confirmLabel || 'Confirm');
-        dialog.setAttribute('cancel-label', options.cancelLabel || 'Cancel');
-        if (options.destructive) dialog.setAttribute('destructive', '');
+        var resolved = false;
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'p-6';
+
+        var h2 = document.createElement('h2');
+        h2.className = 'text-base font-semibold text-white';
+        h2.textContent = title;
+        wrapper.appendChild(h2);
 
         if (options.message) {
             var p = document.createElement('p');
+            p.className = 'mt-2 text-sm text-gray-300';
             p.textContent = options.message;
-            dialog.appendChild(p);
+            wrapper.appendChild(p);
         }
 
+        var actions = document.createElement('div');
+        actions.className = 'mt-6 flex justify-end gap-x-3';
+
+        var cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20';
+        cancelBtn.textContent = cancelLabel;
+
+        var confirmBtn = document.createElement('button');
+        confirmBtn.type = 'button';
+        if (destructive) {
+            confirmBtn.className = 'rounded-md bg-red-500 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-red-400';
+        } else {
+            confirmBtn.className = 'rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]';
+        }
+        confirmBtn.textContent = confirmLabel;
+
+        actions.appendChild(cancelBtn);
+        actions.appendChild(confirmBtn);
+        wrapper.appendChild(actions);
+        dialog.appendChild(wrapper);
+
         function cleanup(result) {
-            console.log('[confirm-debug] dialog resolved:', result);
-            dialog.removeEventListener('mcms-dialog:confirm', onConfirm);
-            dialog.removeEventListener('mcms-dialog:cancel', onCancel);
+            if (resolved) return;
+            resolved = true;
+            dialog.removeEventListener('mcms-dialog:close', onClose);
+            dialog.close();
             dialog.remove();
             resolve(result);
         }
 
-        function onConfirm() { cleanup(true); }
-        function onCancel() { cleanup(false); }
+        function onClose() { cleanup(false); }
 
-        dialog.addEventListener('mcms-dialog:confirm', onConfirm);
-        dialog.addEventListener('mcms-dialog:cancel', onCancel);
+        confirmBtn.addEventListener('click', function() { cleanup(true); });
+        cancelBtn.addEventListener('click', function() { cleanup(false); });
+        dialog.addEventListener('mcms-dialog:close', onClose);
 
         document.body.appendChild(dialog);
-        console.log('[confirm-debug] dialog appended to body, setting open');
-        dialog.setAttribute('open', '');
+        dialog.open();
     });
 }
-
-// ========================================
-// HTMX: replace native confirm() with mcms-dialog
-// ========================================
-
-document.body.addEventListener('htmx:confirm', function(e) {
-    console.log('[confirm-debug] htmx:confirm fired', {
-        question: e.detail.question,
-        path: e.detail.path,
-        target: e.target,
-        tagName: e.target.tagName,
-        classList: e.target.className,
-        hxConfirmAttr: e.target.getAttribute('hx-confirm'),
-        defaultPrevented: e.defaultPrevented,
-    });
-    // Only intercept requests that have an hx-confirm attribute
-    if (!e.detail.question) {
-        console.log('[confirm-debug] no question, skipping (native confirm will fire)');
-        return;
-    }
-    e.preventDefault();
-    console.log('[confirm-debug] preventDefault called, native confirm blocked');
-
-    var question = e.detail.question;
-    var path = e.detail.path || '';
-    var questionLower = question.toLowerCase();
-
-    // Infer dialog style from the question text and request path
-    var destructive = questionLower.indexOf('delete') !== -1
-        || questionLower.indexOf('revoke') !== -1
-        || path.indexOf('/unpublish') !== -1;
-
-    var title = 'Confirm';
-    var confirmLabel = 'Confirm';
-
-    if (questionLower.indexOf('delete') !== -1) {
-        title = 'Delete';
-        confirmLabel = 'Delete';
-    } else if (questionLower.indexOf('revoke') !== -1) {
-        title = 'Revoke';
-        confirmLabel = 'Revoke';
-    } else if (path.indexOf('/unpublish') !== -1) {
-        title = 'Unpublish';
-        confirmLabel = 'Unpublish';
-    } else if (path.indexOf('/publish') !== -1) {
-        title = 'Publish';
-        confirmLabel = 'Publish';
-    } else if (questionLower.indexOf('restore') !== -1) {
-        title = 'Restore';
-        confirmLabel = 'Restore';
-    }
-
-    console.log('[confirm-debug] opening dialog:', { title: title, confirmLabel: confirmLabel, destructive: destructive });
-
-    showConfirmDialog({
-        title: title,
-        message: question,
-        confirmLabel: confirmLabel,
-        destructive: destructive,
-    }).then(function(confirmed) {
-        console.log('[confirm-debug] dialog promise resolved, confirmed:', confirmed);
-        if (!confirmed) return;
-
-        // Save block editor before publish/unpublish
-        if (path.indexOf('/publish') !== -1) {
-            var editor = document.getElementById('content-block-editor');
-            console.log('[confirm-debug] publish path detected, editor:', !!editor, 'dirty:', editor && editor.dirty);
-            if (editor && editor.dirty) {
-                console.log('[confirm-debug] editor dirty, saving before publish');
-                function onSaveComplete(saveEvent) {
-                    editor.removeEventListener('block-editor:save-complete', onSaveComplete);
-                    console.log('[confirm-debug] save complete, success:', saveEvent.detail && saveEvent.detail.success);
-                    if (saveEvent.detail && saveEvent.detail.success) {
-                        e.detail.issueRequest();
-                    }
-                }
-                editor.addEventListener('block-editor:save-complete', onSaveComplete);
-                editor.save();
-                return;
-            }
-        }
-
-        console.log('[confirm-debug] issuing request');
-        e.detail.issueRequest();
-    });
-});
-
-// Log all htmx:confirm events at the document level (captures before body)
-document.addEventListener('htmx:confirm', function(e) {
-    console.log('[confirm-debug] htmx:confirm at DOCUMENT level', {
-        question: e.detail.question,
-        target: e.target.tagName + '.' + e.target.className,
-        defaultPrevented: e.defaultPrevented,
-    });
-}, true);
 
 function showBlockEditorToast(message, type) {
     var toast = document.querySelector('mcms-toast');

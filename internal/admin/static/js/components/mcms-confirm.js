@@ -156,20 +156,24 @@ class McmsConfirm extends HTMLElement {
         for (var j = 0; j < hxAttrs.length; j++) {
             confirmBtn.setAttribute(hxAttrs[j].name, hxAttrs[j].value);
         }
+        // Explicit click trigger prevents htmx.process() from auto-firing
+        if (!confirmBtn.hasAttribute('hx-trigger')) {
+            confirmBtn.setAttribute('hx-trigger', 'click');
+        }
 
         actions.appendChild(confirmBtn);
         dialog.appendChild(actions);
 
-        // Wire trigger
-        triggerBtn.addEventListener('click', function() { dialog.open(); });
+        // Wire trigger. stopPropagation prevents HTMX's pre-bound listener on
+        // the host element from firing — HTMX may have processed the hx-* attrs
+        // on <mcms-confirm> before connectedCallback removed them.
+        triggerBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dialog.open();
+        });
 
         this.appendChild(triggerBtn);
         this.appendChild(dialog);
-
-        // Let HTMX discover the hx-* attributes on the confirm button
-        if (typeof htmx !== 'undefined') {
-            htmx.process(confirmBtn);
-        }
 
         // Close dialog after successful HTMX request
         document.body.addEventListener('htmx:afterRequest', function(e) {

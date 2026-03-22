@@ -20,6 +20,7 @@ type AdminHealReport struct {
 	MissingFields       []MissingFieldReport        `json:"missing_fields"`
 	DuplicateFields     []DuplicateFieldReport      `json:"duplicate_fields"`
 	OrphanedFields      []AdminOrphanedFieldReport  `json:"orphaned_fields"`
+	DanglingPointers    []DanglingPointerReport     `json:"dangling_pointers"`
 }
 
 // AdminOrphanedFieldReport records a content_field row that references a field_id
@@ -31,12 +32,13 @@ type AdminOrphanedFieldReport struct {
 	Deleted        bool   `json:"deleted"`
 }
 
-// Heal performs a 5-pass repair of admin content data:
+// Heal performs a 6-pass repair of admin content data:
 //  1. Heal invalid ULIDs on admin_content_data rows
 //  2. Heal invalid ULIDs on admin_content_field rows
 //  3. Remove duplicate admin_content_field rows (keep best by value/date)
 //  4. Create missing admin_content_field rows for datatypes
 //  5. Remove orphaned admin_content_field rows (field no longer in datatype)
+//  6. Null out dangling tree pointers (parent, first_child, next/prev_sibling)
 //
 // When dryRun is true, the report describes what would be changed without modifying data.
 func (s *AdminContentService) Heal(ctx context.Context, ac audited.AuditContext, dryRun bool) (*AdminHealReport, error) {
@@ -47,6 +49,7 @@ func (s *AdminContentService) Heal(ctx context.Context, ac audited.AuditContext,
 		MissingFields:       []MissingFieldReport{},
 		DuplicateFields:     []DuplicateFieldReport{},
 		OrphanedFields:      []AdminOrphanedFieldReport{},
+		DanglingPointers:    []DanglingPointerReport{},
 	}
 
 	// --- Pass 1: Heal admin_content_data rows ---
@@ -129,6 +132,11 @@ func (s *AdminContentService) Heal(ctx context.Context, ac audited.AuditContext,
 	// --- Pass 5: Remove orphaned admin_content_field rows ---
 	if contentRows != nil && fieldRows != nil {
 		s.healAdminOrphanedFields(ctx, ac, *contentRows, *fieldRows, dryRun, report)
+	}
+
+	// --- Pass 6: Null out dangling tree pointers ---
+	if contentRows != nil {
+		s.healAdminDanglingPointers(ctx, ac, *contentRows, dryRun, report)
 	}
 
 	return report, nil
@@ -452,4 +460,83 @@ func healAdminContentFieldRow(row db.AdminContentFields) (repairs []HealRepair, 
 	}
 
 	return repairs, healed
+}
+
+// healAdminDanglingPointers checks each admin_content_data row's tree pointers
+// and nulls out any that reference an admin_content_data_id that does not exist.
+func (s *AdminContentService) healAdminDanglingPointers(ctx context.Context, ac audited.AuditContext, contentRows []db.AdminContentData, dryRun bool, report *AdminHealReport) {
+	existing := make(map[types.AdminContentID]bool, len(contentRows))
+	for _, row := range contentRows {
+		existing[row.AdminContentDataID] = true
+	}
+
+	type pointer struct {
+		column string
+		id     types.AdminContentID
+		valid  bool
+	}
+
+	for _, row := range contentRows {
+		ptrs := []pointer{
+			{"parent_id", row.ParentID.ID, row.ParentID.Valid},
+			{"first_child_id", row.FirstChildID.ID, row.FirstChildID.Valid},
+			{"next_sibling_id", row.NextSiblingID.ID, row.NextSiblingID.Valid},
+			{"prev_sibling_id", row.PrevSiblingID.ID, row.PrevSiblingID.Valid},
+		}
+
+		var danglingCols []string
+		for _, p := range ptrs {
+			if !p.valid {
+				continue
+			}
+			if existing[p.id] {
+				continue
+			}
+			danglingCols = append(danglingCols, p.column)
+			report.DanglingPointers = append(report.DanglingPointers, DanglingPointerReport{
+				ContentDataID: string(row.AdminContentDataID),
+				Column:        p.column,
+				TargetID:      string(p.id),
+				Nulled:        !dryRun,
+			})
+		}
+
+		if len(danglingCols) == 0 || dryRun {
+			continue
+		}
+
+		healed := row
+		for _, col := range danglingCols {
+			switch col {
+			case "parent_id":
+				healed.ParentID = types.NullableAdminContentID{Valid: false}
+			case "first_child_id":
+				healed.FirstChildID = types.NullableAdminContentID{Valid: false}
+			case "next_sibling_id":
+				healed.NextSiblingID = types.NullableAdminContentID{Valid: false}
+			case "prev_sibling_id":
+				healed.PrevSiblingID = types.NullableAdminContentID{Valid: false}
+			}
+		}
+
+		_, updateErr := s.driver.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
+			AdminContentDataID: healed.AdminContentDataID,
+			ParentID:           healed.ParentID,
+			FirstChildID:       healed.FirstChildID,
+			NextSiblingID:      healed.NextSiblingID,
+			PrevSiblingID:      healed.PrevSiblingID,
+			AdminRouteID:       healed.AdminRouteID,
+			AdminDatatypeID:    healed.AdminDatatypeID,
+			AuthorID:           healed.AuthorID,
+			Status:             healed.Status,
+			DateCreated:        healed.DateCreated,
+			DateModified:       types.TimestampNow(),
+		})
+		if updateErr != nil {
+			utility.DefaultLogger.Error(fmt.Sprintf("admin heal: failed to null dangling pointers on admin_content_data %s", healed.AdminContentDataID), updateErr)
+			for i := len(report.DanglingPointers) - len(danglingCols); i < len(report.DanglingPointers); i++ {
+				report.DanglingPointers[i].Nulled = false
+			}
+		}
+	}
 }

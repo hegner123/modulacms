@@ -3,24 +3,27 @@ package partials
 import "github.com/hegner123/modulacms/internal/db"
 
 templ AuditTableRows(events []db.ChangeEvent) {
-	if len(events) == 0 {
-		<tr>
-			<td colspan="6">
-				@EmptyState("No audit events found")
-			</td>
-		</tr>
-	}
-	for _, event := range events {
-		<tr class="hover:bg-white/5 transition-colors cursor-pointer"
-		    hx-get={ "/admin/audit/" + event.EventID.String() }
-		    hx-target="#main-content"
-		    hx-push-url="true">
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ event.WallTimestamp.String() }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ event.TableName }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(event.RecordID, 12) }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ string(event.Operation) }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ string(event.Action) }</td>
-			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(event.UserID.String(), 12) }</td>
-		</tr>
-	}
+    if len(events) == 0 {
+        <tr>
+            <td colspan="7">
+                @EmptyState("No audit events found")
+            </td>
+        </tr>
+    }
+    for _, event := range events {
+        <tr class="hover:bg-white/5 transition-colors cursor-pointer"
+            hx-get={ "/admin/audit/" + event.EventID.String() }
+            hx-target="#main-content"
+            hx-push-url="true">
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ event.WallTimestamp.String() }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ event.TableName }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(event.RecordID, 12) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ string(event.Operation) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ string(event.Action) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ truncateStr(event.UserID.String(), 12) }</td>
+            <td class="whitespace-nowrap px-4 py-4 text-sm">
+                @CopyIDButton(event.EventID.String())
+            </td>
+        </tr>
+    }
 }

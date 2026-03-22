@@ -101,7 +101,7 @@ func sectionID(title string) string {
 }
 
 templ settingsSection(title string, description string) {
-    <div id={ sectionID(title) } data-settings-section={ title }>
+    <div id={ sectionID(title) } data-settings-section={ title } class="scroll-mt-20">
         <h2 class="text-base/7 font-semibold text-white">{ title }</h2>
         <p class="mt-1 text-sm/6 text-gray-400">{ description }</p>
     </div>

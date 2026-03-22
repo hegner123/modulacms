@@ -177,7 +177,11 @@ func TokensTableRows(items []db.Tokens, userNames map[string]string) templ.Compo
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><div class=\"flex items-center justify-end gap-3\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = CopyIDButton(item.ID).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -189,7 +193,7 @@ func TokensTableRows(items []db.Tokens, userNames map[string]string) templ.Compo
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/users/tokens/" + item.ID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/tokens_table_rows.templ`, Line: 40, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/tokens_table_rows.templ`, Line: 42, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -202,7 +206,7 @@ func TokensTableRows(items []db.Tokens, userNames map[string]string) templ.Compo
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs("#token-row-" + item.ID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/tokens_table_rows.templ`, Line: 41, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/tokens_table_rows.templ`, Line: 43, Col: 63}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -213,7 +217,7 @@ func TokensTableRows(items []db.Tokens, userNames map[string]string) templ.Compo
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

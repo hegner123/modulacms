@@ -20,14 +20,17 @@ templ MediaDimensionsTableRows(items []db.MediaDimensions) {
 			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.Height.String() }</td>
 			<td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ utility.NullToString(item.AspectRatio.NullString) }</td>
 			<td class="whitespace-nowrap px-4 py-4 text-sm">
-				<mcms-confirm
-					label="Delete"
-					message="Delete this dimension preset? Existing media variants are not affected."
-					button-class="text-sm font-medium text-red-400 hover:text-red-300"
-					hx-delete={ "/admin/media/dimensions/" + item.MdID }
-					hx-target={ "#dimension-row-" + item.MdID }
-					hx-swap="outerHTML"
-				></mcms-confirm>
+				<div class="flex items-center justify-end gap-3">
+					@CopyIDButton(item.MdID)
+					<mcms-confirm
+						label="Delete"
+						message="Delete this dimension preset? Existing media variants are not affected."
+						button-class="text-sm font-medium text-red-400 hover:text-red-300"
+						hx-delete={ "/admin/media/dimensions/" + item.MdID }
+						hx-target={ "#dimension-row-" + item.MdID }
+						hx-swap="outerHTML"
+					></mcms-confirm>
+				</div>
 			</td>
 		</tr>
 	}

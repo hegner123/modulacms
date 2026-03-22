@@ -19,14 +19,17 @@ templ FieldsTableRows(items []db.Fields, pg PaginationPageData) {
                 </td>
                 <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-400">{ f.DateModified.Time.UTC().Format("Jan 2, 2006 15:04") }</td>
                 <td class="py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6">
-                    <mcms-confirm
-                        label="Delete"
-                        message="Delete this field? This cannot be undone."
-                        button-class="text-red-400 hover:text-red-300"
-                        hx-delete={ "/admin/fields/" + f.FieldID.String() }
-                        hx-target="closest tr"
-                        hx-swap="outerHTML swap:300ms"
-                    ></mcms-confirm>
+                    <div class="flex items-center justify-end gap-3">
+                        @CopyIDButton(f.FieldID.String())
+                        <mcms-confirm
+                            label="Delete"
+                            message="Delete this field? This cannot be undone."
+                            button-class="text-red-400 hover:text-red-300"
+                            hx-delete={ "/admin/fields/" + f.FieldID.String() }
+                            hx-target="closest tr"
+                            hx-swap="outerHTML swap:300ms"
+                        ></mcms-confirm>
+                    </div>
                 </td>
             </tr>
         }

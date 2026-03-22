@@ -143,20 +143,28 @@ func WebhookTableRows(webhooksList []db.Webhook, csrfToken string) templ.Compone
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><mcms-confirm label=\"Delete\" message=\"Are you sure you want to delete this webhook? This cannot be undone.\" button-class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><div class=\"flex items-center justify-end gap-3\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = CopyIDButton(wh.WebhookID.String()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<mcms-confirm label=\"Delete\" message=\"Are you sure you want to delete this webhook? This cannot be undone.\" button-class=\"text-sm font-medium text-red-400 hover:text-red-300\" hx-delete=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/settings/webhooks/" + wh.WebhookID.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/webhook_table_rows.templ`, Line: 42, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/webhook_table_rows.templ`, Line: 44, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" hx-target=\"#webhook-table-body\" hx-swap=\"innerHTML\"></mcms-confirm></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" hx-target=\"#webhook-table-body\" hx-swap=\"innerHTML\"></mcms-confirm></div></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

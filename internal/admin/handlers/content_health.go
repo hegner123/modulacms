@@ -59,6 +59,7 @@ func ContentHealthCheckHandler(svc *service.Registry) http.HandlerFunc {
 				MissingFields:       len(report.MissingFields),
 				DuplicateFields:     len(report.DuplicateFields),
 				OrphanedFields:      len(report.OrphanedFields),
+			DanglingPointers:    len(report.DanglingPointers),
 			}))
 
 		case "admin":
@@ -81,6 +82,7 @@ func ContentHealthCheckHandler(svc *service.Registry) http.HandlerFunc {
 				MissingFields:       len(report.MissingFields),
 				DuplicateFields:     len(report.DuplicateFields),
 				OrphanedFields:      len(report.OrphanedFields),
+			DanglingPointers:    len(report.DanglingPointers),
 			}))
 
 		case "all":
@@ -108,6 +110,7 @@ func ContentHealthCheckHandler(svc *service.Registry) http.HandlerFunc {
 				MissingFields:       len(pubReport.MissingFields),
 				DuplicateFields:     len(pubReport.DuplicateFields),
 				OrphanedFields:      len(pubReport.OrphanedFields),
+				DanglingPointers:    len(pubReport.DanglingPointers),
 			}
 			adminData := partials.HealthReportData{
 				DryRun:              adminReport.DryRun,
@@ -118,6 +121,7 @@ func ContentHealthCheckHandler(svc *service.Registry) http.HandlerFunc {
 				MissingFields:       len(adminReport.MissingFields),
 				DuplicateFields:     len(adminReport.DuplicateFields),
 				OrphanedFields:      len(adminReport.OrphanedFields),
+				DanglingPointers:    len(adminReport.DanglingPointers),
 			}
 			Render(w, r, partials.ContentHealthReportCombined(actionLabel, pubData, adminData))
 

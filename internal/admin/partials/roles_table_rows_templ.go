@@ -65,6 +65,10 @@ func RolesTableRows(roles []db.Roles, permissions []db.Permissions, rolePermMap 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+			templ_7745c5c3_Err = CopyIDButton(role.RoleID.String()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 			if role.SystemProtected {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<span class=\"inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-blue-400/20 ring-inset\">System</span> ")
 				if templ_7745c5c3_Err != nil {
@@ -78,7 +82,7 @@ func RolesTableRows(roles []db.Roles, permissions []db.Permissions, rolePermMap 
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(IntToStr(countPermissions(rolePermMap[role.RoleID])))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/roles_table_rows.templ`, Line: 18, Col: 78}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/roles_table_rows.templ`, Line: 19, Col: 78}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -132,7 +136,7 @@ func RoleForm(label string, errs map[string]string, csrfToken string) templ.Comp
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(errs["_"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/roles_table_rows.templ`, Line: 38, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/roles_table_rows.templ`, Line: 39, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -159,7 +163,7 @@ func RoleForm(label string, errs map[string]string, csrfToken string) templ.Comp
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/roles_table_rows.templ`, Line: 46, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/roles_table_rows.templ`, Line: 47, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -190,7 +194,7 @@ func RoleForm(label string, errs map[string]string, csrfToken string) templ.Comp
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(errs["label"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/roles_table_rows.templ`, Line: 50, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/roles_table_rows.templ`, Line: 51, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {

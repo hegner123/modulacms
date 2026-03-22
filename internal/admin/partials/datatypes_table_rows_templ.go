@@ -107,26 +107,34 @@ func DatatypesTableRows(items []db.Datatypes, pg PaginationPageData) templ.Compo
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</td><td class=\"py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6\"><mcms-confirm label=\"Delete\" message=\"Delete this datatype? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</td><td class=\"py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6\"><div class=\"flex items-center justify-end gap-3\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = CopyIDButton(dt.DatatypeID.String()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<mcms-confirm label=\"Delete\" message=\"Delete this datatype? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/datatypes/" + dt.DatatypeID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 28, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_table_rows.templ`, Line: 30, Col: 84}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></div></td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<tr><td colspan=\"5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<tr><td colspan=\"5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -134,7 +142,7 @@ func DatatypesTableRows(items []db.Datatypes, pg PaginationPageData) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</td></tr>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</td></tr>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

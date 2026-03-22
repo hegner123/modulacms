@@ -61,18 +61,14 @@ templ DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, has
 								</button>
 							</form>
 							<!-- Pull -->
-							<form
+							<mcms-confirm
+								label="Pull"
+								message={ "Pull from " + env.Name + "? This will overwrite local content with data from the remote environment." }
+								button-class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-500/10 px-3 py-1.5 text-sm font-semibold text-blue-400 ring-1 ring-blue-400/20 ring-inset hover:bg-blue-500/20"
 								hx-post={ "/admin/deploy/" + env.Name + "/pull" }
 								hx-target={ "#result-" + env.Name }
 								hx-swap="innerHTML"
-								hx-confirm={ "Pull from " + env.Name + "? This will overwrite local content with data from the remote environment." }
-							>
-								<input type="hidden" name="_csrf" value={ csrfToken }/>
-								<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-500/10 px-3 py-1.5 text-sm font-semibold text-blue-400 ring-1 ring-blue-400/20 ring-inset hover:bg-blue-500/20">
-									<svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-									Pull
-								</button>
-							</form>
+							></mcms-confirm>
 							<!-- Dry Run Push -->
 							<form
 								hx-post={ "/admin/deploy/" + env.Name + "/push?dry_run=true" }
@@ -85,18 +81,14 @@ templ DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, has
 								</button>
 							</form>
 							<!-- Push -->
-							<form
+							<mcms-confirm
+								label="Push"
+								message={ "Push to " + env.Name + "? This will overwrite remote content with your local data." }
+								button-class="inline-flex items-center gap-x-1.5 rounded-md bg-yellow-500/10 px-3 py-1.5 text-sm font-semibold text-yellow-400 ring-1 ring-yellow-400/20 ring-inset hover:bg-yellow-500/20"
 								hx-post={ "/admin/deploy/" + env.Name + "/push" }
 								hx-target={ "#result-" + env.Name }
 								hx-swap="innerHTML"
-								hx-confirm={ "Push to " + env.Name + "? This will overwrite remote content with your local data." }
-							>
-								<input type="hidden" name="_csrf" value={ csrfToken }/>
-								<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-yellow-500/10 px-3 py-1.5 text-sm font-semibold text-yellow-400 ring-1 ring-yellow-400/20 ring-inset hover:bg-yellow-500/20">
-									<svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-									Push
-								</button>
-							</form>
+							></mcms-confirm>
 						</div>
 					}
 					<!-- Result area -->

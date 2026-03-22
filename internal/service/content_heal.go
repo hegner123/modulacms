@@ -12,14 +12,15 @@ import (
 
 // HealReport is the result from ContentService.Heal.
 type HealReport struct {
-	DryRun              bool                   `json:"dry_run"`
-	ContentDataScanned  int                    `json:"content_data_scanned"`
-	ContentDataRepairs  []HealRepair           `json:"content_data_repairs"`
-	ContentFieldScanned int                    `json:"content_field_scanned"`
-	ContentFieldRepairs []HealRepair           `json:"content_field_repairs"`
-	MissingFields       []MissingFieldReport   `json:"missing_fields"`
-	DuplicateFields     []DuplicateFieldReport `json:"duplicate_fields"`
-	OrphanedFields      []OrphanedFieldReport  `json:"orphaned_fields"`
+	DryRun              bool                    `json:"dry_run"`
+	ContentDataScanned  int                     `json:"content_data_scanned"`
+	ContentDataRepairs  []HealRepair            `json:"content_data_repairs"`
+	ContentFieldScanned int                     `json:"content_field_scanned"`
+	ContentFieldRepairs []HealRepair            `json:"content_field_repairs"`
+	MissingFields       []MissingFieldReport    `json:"missing_fields"`
+	DuplicateFields     []DuplicateFieldReport  `json:"duplicate_fields"`
+	OrphanedFields      []OrphanedFieldReport   `json:"orphaned_fields"`
+	DanglingPointers    []DanglingPointerReport `json:"dangling_pointers"`
 }
 
 // OrphanedFieldReport records a content_field row that references a field_id
@@ -29,6 +30,15 @@ type OrphanedFieldReport struct {
 	ContentDataID  string `json:"content_data_id"`
 	FieldID        string `json:"field_id"`
 	Deleted        bool   `json:"deleted"`
+}
+
+// DanglingPointerReport records a tree pointer on a content_data row that
+// references a content_data_id that no longer exists.
+type DanglingPointerReport struct {
+	ContentDataID string `json:"content_data_id"`
+	Column        string `json:"column"`
+	TargetID      string `json:"target_id"`
+	Nulled        bool   `json:"nulled"`
 }
 
 // HealRepair records a single ID repair made (or that would be made in dry-run).
@@ -57,11 +67,13 @@ type DuplicateFieldReport struct {
 	Deleted        bool   `json:"deleted"`
 }
 
-// Heal performs a 4-pass repair of content data:
+// Heal performs a 6-pass repair of content data:
 //  1. Heal invalid ULIDs on content_data rows
 //  2. Heal invalid ULIDs on content_field rows
 //  3. Remove duplicate content_field rows (keep best by value/date)
 //  4. Create missing content_field rows for datatypes
+//  5. Remove orphaned content_field rows
+//  6. Null out dangling tree pointers (parent, first_child, next/prev_sibling)
 //
 // When dryRun is true, the report describes what would be changed without modifying data.
 func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryRun bool) (*HealReport, error) {
@@ -72,6 +84,7 @@ func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryR
 		MissingFields:       []MissingFieldReport{},
 		DuplicateFields:     []DuplicateFieldReport{},
 		OrphanedFields:      []OrphanedFieldReport{},
+		DanglingPointers:    []DanglingPointerReport{},
 	}
 
 	// --- Pass 1: Heal content_data rows ---
@@ -154,6 +167,11 @@ func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryR
 	// --- Pass 5: Remove orphaned content_field rows ---
 	if contentRows != nil && fieldRows != nil {
 		s.healOrphanedFields(ctx, ac, *contentRows, *fieldRows, dryRun, report)
+	}
+
+	// --- Pass 6: Null out dangling tree pointers ---
+	if contentRows != nil {
+		s.healDanglingPointers(ctx, ac, *contentRows, dryRun, report)
 	}
 
 	return report, nil
@@ -479,5 +497,88 @@ func (s *ContentService) healOrphanedFields(ctx context.Context, ac audited.Audi
 			}
 		}
 		report.OrphanedFields = append(report.OrphanedFields, entry)
+	}
+}
+
+// healDanglingPointers checks each content_data row's tree pointers
+// (parent_id, first_child_id, next_sibling_id, prev_sibling_id) and nulls
+// out any that reference a content_data_id that does not exist.
+func (s *ContentService) healDanglingPointers(ctx context.Context, ac audited.AuditContext, contentRows []db.ContentData, dryRun bool, report *HealReport) {
+	// Build a set of all existing content_data IDs.
+	existing := make(map[types.ContentID]bool, len(contentRows))
+	for _, row := range contentRows {
+		existing[row.ContentDataID] = true
+	}
+
+	type pointer struct {
+		column string
+		id     types.ContentID
+		valid  bool
+	}
+
+	for _, row := range contentRows {
+		ptrs := []pointer{
+			{"parent_id", row.ParentID.ID, row.ParentID.Valid},
+			{"first_child_id", row.FirstChildID.ID, row.FirstChildID.Valid},
+			{"next_sibling_id", row.NextSiblingID.ID, row.NextSiblingID.Valid},
+			{"prev_sibling_id", row.PrevSiblingID.ID, row.PrevSiblingID.Valid},
+		}
+
+		var danglingCols []string
+		for _, p := range ptrs {
+			if !p.valid {
+				continue
+			}
+			if existing[p.id] {
+				continue
+			}
+			danglingCols = append(danglingCols, p.column)
+			report.DanglingPointers = append(report.DanglingPointers, DanglingPointerReport{
+				ContentDataID: string(row.ContentDataID),
+				Column:        p.column,
+				TargetID:      string(p.id),
+				Nulled:        !dryRun,
+			})
+		}
+
+		if len(danglingCols) == 0 || dryRun {
+			continue
+		}
+
+		// Build the update with dangling pointers nulled out.
+		healed := row
+		for _, col := range danglingCols {
+			switch col {
+			case "parent_id":
+				healed.ParentID = types.NullableContentID{Valid: false}
+			case "first_child_id":
+				healed.FirstChildID = types.NullableContentID{Valid: false}
+			case "next_sibling_id":
+				healed.NextSiblingID = types.NullableContentID{Valid: false}
+			case "prev_sibling_id":
+				healed.PrevSiblingID = types.NullableContentID{Valid: false}
+			}
+		}
+
+		_, updateErr := s.driver.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+			ContentDataID: healed.ContentDataID,
+			ParentID:      healed.ParentID,
+			FirstChildID:  healed.FirstChildID,
+			NextSiblingID: healed.NextSiblingID,
+			PrevSiblingID: healed.PrevSiblingID,
+			RouteID:       healed.RouteID,
+			DatatypeID:    healed.DatatypeID,
+			AuthorID:      healed.AuthorID,
+			Status:        healed.Status,
+			DateCreated:   healed.DateCreated,
+			DateModified:  types.TimestampNow(),
+		})
+		if updateErr != nil {
+			utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to null dangling pointers on content_data %s", healed.ContentDataID), updateErr)
+			// Mark the entries as not nulled.
+			for i := len(report.DanglingPointers) - len(danglingCols); i < len(report.DanglingPointers); i++ {
+				report.DanglingPointers[i].Nulled = false
+			}
+		}
 	}
 }

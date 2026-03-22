@@ -79,20 +79,28 @@ func FieldTypesTableRows(fieldTypes []db.FieldTypes) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</code></td><td class=\"py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6\"><mcms-confirm label=\"Delete\" message=\"Delete this field type? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</code></td><td class=\"py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6\"><div class=\"flex items-center justify-end gap-3\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = CopyIDButton(ft.FieldTypeID.String()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<mcms-confirm label=\"Delete\" message=\"Delete this field type? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/field-types/" + ft.FieldTypeID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/field_types_table_rows.templ`, Line: 22, Col: 83}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/field_types_table_rows.templ`, Line: 24, Col: 87}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></div></td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -124,65 +132,73 @@ func AdminFieldTypesTableRows(fieldTypes []db.AdminFieldTypes) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(fieldTypes) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<tr><td colspan=\"3\" class=\"py-10 text-center text-sm text-gray-400\">No admin field types found.</td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<tr><td colspan=\"3\" class=\"py-10 text-center text-sm text-gray-400\">No admin field types found.</td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
 			for _, ft := range fieldTypes {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<tr class=\"cursor-pointer hover:bg-white/5\" data-clickable-row data-href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<tr class=\"cursor-pointer hover:bg-white/5\" data-clickable-row data-href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-field-types/" + ft.AdminFieldTypeID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/field_types_table_rows.templ`, Line: 39, Col: 145}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/field_types_table_rows.templ`, Line: 42, Col: 145}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"><td class=\"whitespace-nowrap px-4 py-4 text-sm text-white\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><td class=\"whitespace-nowrap px-4 py-4 text-sm text-white\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(ft.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/field_types_table_rows.templ`, Line: 40, Col: 85}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/field_types_table_rows.templ`, Line: 43, Col: 85}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><code class=\"rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono text-white\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><code class=\"rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono text-white\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(ft.Type)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/field_types_table_rows.templ`, Line: 41, Col: 149}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/field_types_table_rows.templ`, Line: 44, Col: 149}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</code></td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><mcms-confirm label=\"Delete\" message=\"Delete this admin field type? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</code></td><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><div class=\"flex items-center justify-end gap-3\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = CopyIDButton(ft.AdminFieldTypeID.String()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<mcms-confirm label=\"Delete\" message=\"Delete this admin field type? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-field-types/" + ft.AdminFieldTypeID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/field_types_table_rows.templ`, Line: 47, Col: 94}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/field_types_table_rows.templ`, Line: 52, Col: 98}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></div></td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
