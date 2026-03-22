@@ -18,6 +18,15 @@ type selectOption struct {
 // Returns an error message string, or empty string if valid.
 // Unknown field types return empty string (skip type validation).
 func validateType(ft types.FieldType, value string, data string) string {
+	// Handle _id prefix types (e.g. _id, _id_menu) before the switch.
+	if ft.IsIDRefType() {
+		id := types.ContentID(value)
+		if err := id.Validate(); err != nil {
+			return "must be a valid content reference (ULID)"
+		}
+		return ""
+	}
+
 	switch ft {
 	case types.FieldTypeText, types.FieldTypeTextarea, types.FieldTypeRichText:
 		// No type validation for text types.
@@ -27,13 +36,6 @@ func validateType(ft types.FieldType, value string, data string) string {
 		_, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			return "must be a valid number"
-		}
-		return ""
-
-	case types.FieldTypeIDRef:
-		id := types.ContentID(value)
-		if err := id.Validate(); err != nil {
-			return "must be a valid content reference (ULID)"
 		}
 		return ""
 

@@ -18,6 +18,11 @@ func TestDatatypeType_IsReserved(t *testing.T) {
 		{"page is not reserved", DatatypeType("page"), false},
 		{"empty is not reserved", DatatypeType(""), false},
 		{"unknown underscore is not reserved", DatatypeType("_unknown"), false},
+		// Suffixed reserved types
+		{"_reference_menu is reserved", DatatypeType("_reference_menu"), true},
+		{"_global_menu is reserved", DatatypeType("_global_menu"), true},
+		{"_collection_blog is reserved", DatatypeType("_collection_blog"), true},
+		{"_root_page is reserved", DatatypeType("_root_page"), true},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -57,6 +62,7 @@ func TestDatatypeType_IsRootType(t *testing.T) {
 	}{
 		{"_root is root type", DatatypeTypeRoot, true},
 		{"_nested_root is root type", DatatypeTypeNestedRoot, true},
+		{"_root_page is root type", DatatypeType("_root_page"), true},
 		{"_reference is not root type", DatatypeTypeReference, false},
 		{"_system_log is not root type", DatatypeTypeSystemLog, false},
 		{"page is not root type", DatatypeType("page"), false},
@@ -89,6 +95,10 @@ func TestValidateDatatypeType(t *testing.T) {
 		{"_unknown is error", "_unknown", true},
 		{"page is valid", "page", false},
 		{"hero_banner is valid", "hero_banner", false},
+		// Suffixed reserved types
+		{"_reference_menu is valid", "_reference_menu", false},
+		{"_global_menu is valid", "_global_menu", false},
+		{"_collection_blog is valid", "_collection_blog", false},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -129,6 +139,8 @@ func TestDatatypeType_IsGlobalType(t *testing.T) {
 		want bool
 	}{
 		{"_global is global", DatatypeTypeGlobal, true},
+		{"_global_menu is global", DatatypeType("_global_menu"), true},
+		{"_global_footer is global", DatatypeType("_global_footer"), true},
 		{"_root is not global", DatatypeTypeRoot, false},
 		{"page is not global", DatatypeType("page"), false},
 	}
@@ -187,6 +199,120 @@ func TestPluginDatatypeType(t *testing.T) {
 	want := DatatypeType("_plugin_analytics")
 	if got != want {
 		t.Errorf("PluginDatatypeType(\"analytics\") = %q, want %q", got, want)
+	}
+}
+
+func TestDatatypeType_BaseType(t *testing.T) {
+	tests := []struct {
+		name string
+		dt   DatatypeType
+		want DatatypeType
+	}{
+		{"_reference", DatatypeTypeReference, DatatypeTypeReference},
+		{"_reference_menu", DatatypeType("_reference_menu"), DatatypeTypeReference},
+		{"_global", DatatypeTypeGlobal, DatatypeTypeGlobal},
+		{"_global_menu", DatatypeType("_global_menu"), DatatypeTypeGlobal},
+		{"_global_footer", DatatypeType("_global_footer"), DatatypeTypeGlobal},
+		{"_collection_blog", DatatypeType("_collection_blog"), DatatypeTypeCollection},
+		{"_root", DatatypeTypeRoot, DatatypeTypeRoot},
+		{"_nested_root", DatatypeTypeNestedRoot, DatatypeTypeNestedRoot},
+		{"_system_log", DatatypeTypeSystemLog, DatatypeTypeSystemLog},
+		{"page (custom)", DatatypeType("page"), DatatypeType("page")},
+		{"empty", DatatypeType(""), DatatypeType("")},
+		{"_unknown", DatatypeType("_unknown"), DatatypeType("_unknown")},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.dt.BaseType(); got != tc.want {
+				t.Errorf("DatatypeType(%q).BaseType() = %q, want %q", tc.dt, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestDatatypeType_Suffix(t *testing.T) {
+	tests := []struct {
+		name string
+		dt   DatatypeType
+		want string
+	}{
+		{"_reference has no suffix", DatatypeTypeReference, ""},
+		{"_reference_menu", DatatypeType("_reference_menu"), "menu"},
+		{"_global_footer", DatatypeType("_global_footer"), "footer"},
+		{"_collection_blog", DatatypeType("_collection_blog"), "blog"},
+		{"page has no suffix", DatatypeType("page"), ""},
+		{"empty has no suffix", DatatypeType(""), ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.dt.Suffix(); got != tc.want {
+				t.Errorf("DatatypeType(%q).Suffix() = %q, want %q", tc.dt, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestDatatypeType_IsReferenceType(t *testing.T) {
+	tests := []struct {
+		name string
+		dt   DatatypeType
+		want bool
+	}{
+		{"_reference", DatatypeTypeReference, true},
+		{"_reference_menu", DatatypeType("_reference_menu"), true},
+		{"_reference_nav", DatatypeType("_reference_nav"), true},
+		{"_root", DatatypeTypeRoot, false},
+		{"_global", DatatypeTypeGlobal, false},
+		{"page", DatatypeType("page"), false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.dt.IsReferenceType(); got != tc.want {
+				t.Errorf("DatatypeType(%q).IsReferenceType() = %v, want %v", tc.dt, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestFieldType_IsIDRefType(t *testing.T) {
+	tests := []struct {
+		name string
+		ft   FieldType
+		want bool
+	}{
+		{"_id", FieldTypeIDRef, true},
+		{"_id_menu", FieldType("_id_menu"), true},
+		{"_id_nav", FieldType("_id_nav"), true},
+		{"text", FieldTypeText, false},
+		{"_title", FieldTypeTitle, false},
+		{"media", FieldTypeMedia, false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.ft.IsIDRefType(); got != tc.want {
+				t.Errorf("FieldType(%q).IsIDRefType() = %v, want %v", tc.ft, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestFieldType_IDRefSuffix(t *testing.T) {
+	tests := []struct {
+		name string
+		ft   FieldType
+		want string
+	}{
+		{"_id has no suffix", FieldTypeIDRef, ""},
+		{"_id_menu", FieldType("_id_menu"), "menu"},
+		{"_id_nav", FieldType("_id_nav"), "nav"},
+		{"text has no suffix", FieldTypeText, ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.ft.IDRefSuffix(); got != tc.want {
+				t.Errorf("FieldType(%q).IDRefSuffix() = %q, want %q", tc.ft, got, tc.want)
+			}
+		})
 	}
 }
 

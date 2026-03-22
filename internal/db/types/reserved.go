@@ -8,6 +8,11 @@ import (
 // DatatypeType represents the type classification of a datatype.
 // Values prefixed with underscore are engine-reserved and trigger
 // built-in behavior. All other values are user-defined pass-through.
+//
+// Reserved types support optional suffixes separated by underscore:
+// "_reference" and "_reference_menu" both trigger reference behavior.
+// The suffix is metadata for the admin panel (e.g. filtering _id field
+// dropdowns) and does not change engine behavior.
 type DatatypeType string
 
 const (
@@ -22,7 +27,19 @@ const (
 
 const pluginTypePrefix = "_plugin_"
 
-// reservedTypes maps each reserved type to a description of its engine behavior.
+// reservedBases lists the base reserved type strings that support suffixes.
+// The suffix separator is underscore: _global_menu has base "_global" and suffix "menu".
+var reservedBases = []string{
+	string(DatatypeTypeRoot),
+	string(DatatypeTypeReference),
+	string(DatatypeTypeNestedRoot),
+	string(DatatypeTypeSystemLog),
+	string(DatatypeTypeCollection),
+	string(DatatypeTypeGlobal),
+	string(DatatypeTypePlugin),
+}
+
+// reservedTypes maps each reserved base type to a description of its engine behavior.
 var reservedTypes = map[DatatypeType]string{
 	DatatypeTypeRoot:       "Tree entry point, one per route",
 	DatatypeTypeReference:  "Triggers tree composition — resolves _id field values, attaches referenced trees as children",
@@ -33,9 +50,40 @@ var reservedTypes = map[DatatypeType]string{
 	DatatypeTypePlugin:     "Plugin-provided content; actual types use _plugin_{name} namespace registered by plugin OnInit",
 }
 
-// IsReserved returns true if the type is engine-reserved.
+// BaseType returns the engine base of a DatatypeType by stripping any suffix.
+// "_reference_menu" -> "_reference", "_global" -> "_global", "page" -> "page".
+func (t DatatypeType) BaseType() DatatypeType {
+	s := string(t)
+	if len(s) == 0 || s[0] != '_' {
+		return t
+	}
+	for _, base := range reservedBases {
+		if s == base {
+			return DatatypeType(base)
+		}
+		if len(s) > len(base) && s[:len(base)] == base && s[len(base)] == '_' {
+			return DatatypeType(base)
+		}
+	}
+	return t
+}
+
+// Suffix returns the suffix portion after the base reserved type.
+// "_reference_menu" -> "menu", "_global" -> "", "page" -> "".
+func (t DatatypeType) Suffix() string {
+	s := string(t)
+	base := string(t.BaseType())
+	if len(s) > len(base)+1 && s[len(base)] == '_' {
+		return s[len(base)+1:]
+	}
+	return ""
+}
+
+// IsReserved returns true if the type matches a known reserved base,
+// with or without a suffix. "_reference_menu" is reserved.
 func (t DatatypeType) IsReserved() bool {
-	_, ok := reservedTypes[t]
+	base := t.BaseType()
+	_, ok := reservedTypes[base]
 	return ok
 }
 
@@ -47,14 +95,32 @@ func IsReservedPrefix(t string) bool {
 }
 
 // IsRootType returns true if the type identifies a tree root node.
-// Used by the tree-building algorithm to find root nodes.
+// Matches _root and _nested_root, with or without suffixes.
 func (t DatatypeType) IsRootType() bool {
-	return t == DatatypeTypeRoot || t == DatatypeTypeNestedRoot
+	base := t.BaseType()
+	return base == DatatypeTypeRoot || base == DatatypeTypeNestedRoot
 }
 
-// IsGlobalType returns true if the type is _global.
+// IsReferenceType returns true if the base type is _reference.
+// Matches _reference, _reference_menu, etc.
+func (t DatatypeType) IsReferenceType() bool {
+	return t.BaseType() == DatatypeTypeReference
+}
+
+// IsCollectionType returns true if the base type is _collection.
+func (t DatatypeType) IsCollectionType() bool {
+	return t.BaseType() == DatatypeTypeCollection
+}
+
+// IsGlobalType returns true if the base type is _global.
+// Matches _global, _global_menu, etc.
 func (t DatatypeType) IsGlobalType() bool {
-	return t == DatatypeTypeGlobal
+	return t.BaseType() == DatatypeTypeGlobal
+}
+
+// IsSystemLogType returns true if the base type is _system_log.
+func (t DatatypeType) IsSystemLogType() bool {
+	return t.BaseType() == DatatypeTypeSystemLog
 }
 
 // IsPluginType returns true if the type uses the _plugin_ namespace
@@ -95,8 +161,9 @@ func ReservedTypes() map[DatatypeType]string {
 // ValidateDatatypeType validates a datatype type string.
 // Rules:
 //   - Empty string: error
-//   - Starts with _ but not in registry: error (reserved prefix, unknown type)
-//   - Starts with _ and in registry: valid reserved type
+//   - Starts with _ and base matches a reserved type (with or without suffix): valid
+//   - Starts with _ and is a plugin type: valid
+//   - Starts with _ but base is not recognized: error
 //   - Does not start with _: valid user type
 func ValidateDatatypeType(t string) error {
 	if t == "" {
@@ -104,7 +171,6 @@ func ValidateDatatypeType(t string) error {
 	}
 	if t[0] == '_' {
 		dt := DatatypeType(t)
-		// Allow _plugin_{name} types (validated by plugin system at load time)
 		if dt.IsPluginType() {
 			return nil
 		}
@@ -123,4 +189,30 @@ func ValidateUserDatatypeType(t string) error {
 		return fmt.Errorf("DatatypeType: cannot be empty")
 	}
 	return nil
+}
+
+// --- Field type prefix helpers ---
+
+const fieldTypeIDRefPrefix = "_id"
+
+// IsIDRefType returns true if the field type starts with _id.
+// Matches _id, _id_menu, etc.
+func (t FieldType) IsIDRefType() bool {
+	s := string(t)
+	if s == fieldTypeIDRefPrefix {
+		return true
+	}
+	return len(s) > len(fieldTypeIDRefPrefix) &&
+		s[:len(fieldTypeIDRefPrefix)] == fieldTypeIDRefPrefix &&
+		s[len(fieldTypeIDRefPrefix)] == '_'
+}
+
+// IDRefSuffix returns the suffix portion of an _id field type.
+// "_id_menu" -> "menu", "_id" -> "".
+func (t FieldType) IDRefSuffix() string {
+	s := string(t)
+	if len(s) > len(fieldTypeIDRefPrefix)+1 && s[len(fieldTypeIDRefPrefix)] == '_' {
+		return s[len(fieldTypeIDRefPrefix)+1:]
+	}
+	return ""
 }

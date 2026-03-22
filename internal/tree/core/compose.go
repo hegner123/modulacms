@@ -96,7 +96,7 @@ func findReferenceNodes(node *Node) []*Node {
 		if n == nil {
 			return
 		}
-		if types.DatatypeType(n.Datatype.Type) == types.DatatypeTypeReference {
+		if types.DatatypeType(n.Datatype.Type).IsReferenceType() {
 			refs = append(refs, n)
 		}
 		walk(n.FirstChild)
@@ -114,7 +114,7 @@ func resolveReferenceNode(ctx context.Context, refNode *Node, root *Root, fetche
 	// Collect _id field values in order
 	var refIDs []types.ContentID
 	for i, f := range refNode.Fields {
-		if f.Type != types.FieldTypeIDRef {
+		if !f.Type.IsIDRefType() {
 			continue
 		}
 		val := refNode.ContentFields[i].FieldValue

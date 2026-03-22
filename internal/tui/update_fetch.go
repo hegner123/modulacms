@@ -19,13 +19,11 @@ func NewFetchUpdate() tea.Cmd {
 	}
 }
 
-// systemDatatypeTypes are datatype types that should not appear in the child picker.
-// Matches the admin panel's SYSTEM_TYPES in block-editor-src/cache.js.
-var systemDatatypeTypes = map[string]bool{
-	"_root":        true,
-	"_nested_root": true,
-	"_system_log":  true,
-	"_reference":   true,
+// isSystemDatatypeType returns true for types that should not appear in the child picker.
+// Matches the admin panel's SYSTEM_TYPES logic.
+func isSystemDatatypeType(t string) bool {
+	dt := types.DatatypeType(t)
+	return dt.IsRootType() || dt.IsSystemLogType() || dt.IsReferenceType()
 }
 
 // filterChildDatatypes filters datatypes using the same 3-category logic as the
@@ -52,7 +50,7 @@ func filterChildDatatypes(all []db.Datatypes, rootDatatypeID types.DatatypeID) [
 	collectDescendants = func(parentID types.DatatypeID) []db.Datatypes {
 		var result []db.Datatypes
 		for _, kid := range childrenOf[parentID] {
-			if systemDatatypeTypes[kid.Type] {
+			if isSystemDatatypeType(kid.Type) {
 				continue
 			}
 			result = append(result, kid)
@@ -79,14 +77,14 @@ func filterChildDatatypes(all []db.Datatypes, rootDatatypeID types.DatatypeID) [
 
 	// Category 2: Children of _collection datatypes
 	for _, dt := range all {
-		if dt.Type == "_collection" {
+		if types.DatatypeType(dt.Type).IsCollectionType() {
 			addUnique(collectDescendants(dt.DatatypeID))
 		}
 	}
 
 	// Category 3: _global datatypes and their children
 	for _, dt := range all {
-		if dt.Type == string(types.DatatypeTypeGlobal) && !systemDatatypeTypes[dt.Type] {
+		if types.DatatypeType(dt.Type).IsGlobalType() && !isSystemDatatypeType(dt.Type) {
 			if !seen[dt.DatatypeID] {
 				seen[dt.DatatypeID] = true
 				filtered = append(filtered, dt)
