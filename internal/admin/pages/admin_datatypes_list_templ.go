@@ -35,7 +35,7 @@ func AdminDatatypesListContent(items []db.AdminDatatypes, pg partials.Pagination
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Page heading --><div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Admin Datatypes</h1><p class=\"mt-2 text-sm text-gray-400\">Define the content structures used across the admin panel.</p></div><div class=\"mt-4 sm:mt-0 sm:ml-16 sm:flex-none\"><button type=\"button\" class=\"block rounded-md bg-[var(--color-primary)] px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]\" data-action=\"new\" onclick=\"document.getElementById('create-admin-datatype-dialog').open()\">New Admin Datatype</button></div></div><!-- Toolbar --><div class=\"mt-4 flex items-center gap-x-3\"><input type=\"search\" name=\"search\" placeholder=\"Search admin datatypes...\" hx-get=\"/admin/admin-datatypes\" hx-target=\"#admin-datatypes-table-body\" hx-trigger=\"input changed delay:300ms\" hx-include=\"[name='type'],[name='sort']\" hx-push-url=\"false\" class=\"block w-64 rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]\" data-search-input><div class=\"grid grid-cols-1\"><select name=\"type\" hx-get=\"/admin/admin-datatypes\" hx-target=\"#admin-datatypes-table-body\" hx-trigger=\"change\" hx-include=\"[name='search'],[name='sort']\" class=\"col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]\"><option value=\"\">All Types</option> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Page heading --><div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Admin Datatypes</h1><p class=\"mt-2 text-sm text-gray-400\">Define the content structures used across the admin panel.</p></div><div class=\"mt-4 sm:mt-0 sm:ml-16 sm:flex-none\"><a href=\"/admin/admin-datatypes/new\" hx-get=\"/admin/admin-datatypes/new\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"block rounded-md bg-[var(--color-primary)] px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]\">New Admin Datatype</a></div></div><!-- Toolbar --><div class=\"mt-4 flex items-center gap-x-3\"><input type=\"search\" name=\"search\" placeholder=\"Search admin datatypes...\" hx-get=\"/admin/admin-datatypes\" hx-target=\"#admin-datatypes-table-body\" hx-trigger=\"input changed delay:300ms\" hx-include=\"[name='type'],[name='sort']\" hx-push-url=\"false\" class=\"block w-64 rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]\" data-search-input><div class=\"grid grid-cols-1\"><select name=\"type\" hx-get=\"/admin/admin-datatypes\" hx-target=\"#admin-datatypes-table-body\" hx-trigger=\"change\" hx-include=\"[name='search'],[name='sort']\" class=\"col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]\"><option value=\"\">All Types</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -47,7 +47,7 @@ func AdminDatatypesListContent(items []db.AdminDatatypes, pg partials.Pagination
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(t)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatypes_list.templ`, Line: 50, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatypes_list.templ`, Line: 51, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -60,7 +60,7 @@ func AdminDatatypesListContent(items []db.AdminDatatypes, pg partials.Pagination
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(t)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatypes_list.templ`, Line: 50, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatypes_list.templ`, Line: 51, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -87,7 +87,7 @@ func AdminDatatypesListContent(items []db.AdminDatatypes, pg partials.Pagination
 	})
 }
 
-func AdminDatatypeCreateDialog(csrfToken string, allDatatypes []db.AdminDatatypes) templ.Component {
+func AdminDatatypesList(layout layouts.AdminData, items []db.AdminDatatypes, pg partials.PaginationPageData, distinctTypes []string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -108,60 +108,7 @@ func AdminDatatypeCreateDialog(csrfToken string, allDatatypes []db.AdminDatatype
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<mcms-dialog id=\"create-admin-datatype-dialog\" aria-labelledby=\"create-admin-datatype-dialog-title\"><div class=\"px-4 pt-5 pb-4 sm:p-6 sm:pb-4\"><h3 id=\"create-admin-datatype-dialog-title\" class=\"text-base/7 font-semibold text-white\">New Admin Datatype</h3><form hx-post=\"/admin/admin-datatypes\" hx-target=\"#create-admin-datatype-form\" hx-swap=\"innerHTML\" id=\"create-admin-datatype-form\" class=\"mt-4 space-y-4\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = partials.CSRFField(csrfToken).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = partials.FormField("name", "Name", "", "").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = partials.FormField("label", "Label", "", "").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = partials.FormField("type", "Type", "", "").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = partials.FormSelect("parent_id", "Parent", "", partials.AdminDatatypeParentOptions(allDatatypes, ""), "").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"mt-5 sm:mt-4 sm:flex sm:flex-row-reverse\"><button type=\"submit\" class=\"inline-flex w-full justify-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] sm:ml-3 sm:w-auto\">Create</button> <button type=\"button\" onclick=\"this.closest('mcms-dialog').close()\" class=\"mt-3 inline-flex w-full justify-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10 sm:mt-0 sm:w-auto\">Cancel</button></div></form></div></mcms-dialog>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		return nil
-	})
-}
-
-func AdminDatatypesList(layout layouts.AdminData, items []db.AdminDatatypes, pg partials.PaginationPageData, distinctTypes []string, allDatatypes []db.AdminDatatypes) templ.Component {
-	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
-			return templ_7745c5c3_CtxErr
-		}
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-		if !templ_7745c5c3_IsBuffer {
-			defer func() {
-				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err == nil {
-					templ_7745c5c3_Err = templ_7745c5c3_BufErr
-				}
-			}()
-		}
-		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var5 == nil {
-			templ_7745c5c3_Var5 = templ.NopComponent
-		}
-		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var6 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var5 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -179,7 +126,7 @@ func AdminDatatypesList(layout layouts.AdminData, items []db.AdminDatatypes, pg 
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layouts.Admin(layout.WithDialogs(AdminDatatypeCreateDialog(layout.CSRFToken, allDatatypes))).Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layouts.Admin(layout).Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

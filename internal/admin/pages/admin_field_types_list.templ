@@ -21,6 +21,41 @@ templ AdminFieldTypesListContent(fieldTypes []db.AdminFieldTypes) {
             </button>
         </div>
     </div>
+    <!-- Toolbar -->
+    <div class="mt-4 flex items-center gap-x-3">
+        <input
+            type="search"
+            name="search"
+            placeholder="Search admin field types..."
+            hx-get="/admin/admin-field-types"
+            hx-target="#admin-field-types-table-body"
+            hx-trigger="input changed delay:300ms"
+            hx-include="[name='sort']"
+            hx-push-url="false"
+            class="block w-64 rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]"
+            data-search-input
+        />
+        <div class="grid grid-cols-1">
+            <select
+                name="sort"
+                hx-get="/admin/admin-field-types"
+                hx-target="#admin-field-types-table-body"
+                hx-trigger="change"
+                hx-include="[name='search']"
+                class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]"
+            >
+                <option value="">Default</option>
+                <option value="label-asc">Label A-Z</option>
+                <option value="label-desc">Label Z-A</option>
+                <option value="type-asc">Type A-Z</option>
+                <option value="type-desc">Type Z-A</option>
+            </select>
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" class="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4">
+                <path d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" fill-rule="evenodd"/>
+            </svg>
+        </div>
+    </div>
+    <!-- Table -->
     <div class="mt-8 flow-root">
         <div class="overflow-x-auto">
             <div class="min-w-full py-2 align-middle">
@@ -28,34 +63,17 @@ templ AdminFieldTypesListContent(fieldTypes []db.AdminFieldTypes) {
                     <table class="min-w-full divide-y divide-white/10">
                         <thead class="bg-white/5">
                             <tr>
-                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Type</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Label</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Type</th>
                                 <th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-white/5">
-                            if len(fieldTypes) == 0 {
-                                <tr>
-                                    <td colspan="3" class="py-10 text-center text-sm text-gray-400">No admin field types found.</td>
-                                </tr>
-                            } else {
-                                for _, ft := range fieldTypes {
-                                    <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/admin-field-types/" + ft.AdminFieldTypeID.String() }>
-                                        <td class="whitespace-nowrap px-4 py-4 text-sm"><code class="rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono text-white">{ ft.Type }</code></td>
-                                        <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ ft.Label }</td>
-                                        <td class="whitespace-nowrap px-4 py-4 text-sm">
-                                            <mcms-confirm
-                                                label="Delete"
-                                                message="Delete this admin field type? This cannot be undone."
-                                                button-class="text-red-400 hover:text-red-300"
-                                                hx-delete={ "/admin/admin-field-types/" + ft.AdminFieldTypeID.String() }
-                                                hx-target="closest tr"
-                                                hx-swap="outerHTML swap:300ms"
-                                            ></mcms-confirm>
-                                        </td>
-                                    </tr>
-                                }
-                            }
+                        <tbody id="admin-field-types-table-body"
+                               class="divide-y divide-white/5"
+                               hx-get="/admin/admin-field-types"
+                               hx-trigger="refreshTable from:body"
+                               hx-swap="innerHTML">
+                            @partials.AdminFieldTypesTableRows(fieldTypes)
                         </tbody>
                     </table>
                 </div>

@@ -12,10 +12,10 @@ templ DatatypeForm(name string, label string, dtype string, parentID string, all
 		</div>
 	}
 	<div class="space-y-4">
-		@FormField("name", "Name", name, errs["name"])
-		@FormField("label", "Label", label, errs["label"])
-		@FormField("type", "Type", dtype, errs["type"])
-		@FormSelect("parent_id", "Parent", parentID, DatatypeParentOptions(allDatatypes, ""), errs["parent_id"])
+		@FormFieldHinted("name", "Name", name, "blog-post", "URL-safe identifier for API queries. Use lowercase with hyphens.", errs["name"])
+		@FormFieldHinted("label", "Label", label, "Blog Post", "Human-readable display name shown in the admin panel.", errs["label"])
+		@FormFieldHinted("type", "Type", dtype, "collection", "Categorizes this datatype (e.g. page, collection, component).", errs["type"])
+		@FormSelectHinted("parent_id", "Parent", parentID, DatatypeParentOptions(allDatatypes, ""), "Optional parent for hierarchical content organization.", errs["parent_id"])
 	</div>
 	<div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
 		<button type="submit" class="inline-flex w-full justify-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] sm:ml-3 sm:w-auto">Create</button>
@@ -37,16 +37,16 @@ templ DatatypeEditForm(id string, name string, label string, dtype string, paren
 		}
 		<div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
 			<div class="sm:col-span-3">
-				@FormField("name", "Name", name, errs["name"])
+				@FormFieldHinted("name", "Name", name, "blog-post", "URL-safe identifier for API queries. Use lowercase with hyphens.", errs["name"])
 			</div>
 			<div class="sm:col-span-3">
-				@FormField("label", "Label", label, errs["label"])
+				@FormFieldHinted("label", "Label", label, "Blog Post", "Human-readable display name shown in the admin panel.", errs["label"])
 			</div>
 			<div class="sm:col-span-3">
-				@FormField("type", "Type", dtype, errs["type"])
+				@FormFieldHinted("type", "Type", dtype, "collection", "Categorizes this datatype (e.g. page, collection, component).", errs["type"])
 			</div>
 			<div class="sm:col-span-3">
-				@FormSelect("parent_id", "Parent", parentID, DatatypeParentOptions(allDatatypes, id), errs["parent_id"])
+				@FormSelectHinted("parent_id", "Parent", parentID, DatatypeParentOptions(allDatatypes, id), "Optional parent for hierarchical content organization.", errs["parent_id"])
 			</div>
 		</div>
 	</form>

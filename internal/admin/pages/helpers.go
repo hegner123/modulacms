@@ -144,6 +144,32 @@ func isRoleSelected(rolesJSON types.NullableString, roleID string) bool {
 	return false
 }
 
+// ReservedTypeInfo holds a reserved datatype type and its description for display.
+type ReservedTypeInfo struct {
+	Type        string
+	Description string
+	Example     string // optional suffixed example (e.g. "_global_menu")
+	UserSet     bool   // true if users can set this type; false if engine-assigned only
+}
+
+// reservedTypesList returns an ordered list of reserved datatype types for UI display.
+func reservedTypesList() []ReservedTypeInfo {
+	return []ReservedTypeInfo{
+		{Type: "_root", Description: "Tree entry point. One per route — the top-level node for a content tree.", UserSet: true},
+		{Type: "_reference", Description: "Triggers tree composition. Resolves _id field values and attaches referenced trees as children. Use a suffix to target specific content types.", Example: "_reference_menu", UserSet: true},
+		{Type: "_collection", Description: "Queryable collection. Signals to clients that children support filtering, sorting, and pagination.", Example: "_collection_blog", UserSet: true},
+		{Type: "_global", Description: "Singleton site-wide content (menus, footers, settings). No route association, delivered via /globals endpoint.", Example: "_global_menu", UserSet: true},
+		{Type: "_nested_root", Description: "Root of a composed subtree. Assigned automatically by the engine during tree composition.", UserSet: false},
+		{Type: "_system_log", Description: "Synthetic node injected when a reference cannot be resolved. Engine-assigned only.", UserSet: false},
+		{Type: "_plugin", Description: "Plugin-provided content. Actual types use _plugin_{name} namespace, registered by plugins on init.", UserSet: false},
+	}
+}
+
+// stepNumber converts an int step to its display string.
+func stepNumber(step int) string {
+	return fmt.Sprintf("%d", step)
+}
+
 // revisionStr converts a revision number to a display string.
 func revisionStr(rev int64) string {
 	return fmt.Sprintf("%d", rev)

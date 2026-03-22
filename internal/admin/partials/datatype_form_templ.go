@@ -60,19 +60,19 @@ func DatatypeForm(name string, label string, dtype string, parentID string, allD
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FormField("name", "Name", name, errs["name"]).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FormFieldHinted("name", "Name", name, "blog-post", "URL-safe identifier for API queries. Use lowercase with hyphens.", errs["name"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FormField("label", "Label", label, errs["label"]).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FormFieldHinted("label", "Label", label, "Blog Post", "Human-readable display name shown in the admin panel.", errs["label"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FormField("type", "Type", dtype, errs["type"]).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FormFieldHinted("type", "Type", dtype, "collection", "Categorizes this datatype (e.g. page, collection, component).", errs["type"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FormSelect("parent_id", "Parent", parentID, DatatypeParentOptions(allDatatypes, ""), errs["parent_id"]).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FormSelectHinted("parent_id", "Parent", parentID, DatatypeParentOptions(allDatatypes, ""), "Optional parent for hierarchical content organization.", errs["parent_id"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -151,7 +151,7 @@ func DatatypeEditForm(id string, name string, label string, dtype string, parent
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FormField("name", "Name", name, errs["name"]).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FormFieldHinted("name", "Name", name, "blog-post", "URL-safe identifier for API queries. Use lowercase with hyphens.", errs["name"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -159,7 +159,7 @@ func DatatypeEditForm(id string, name string, label string, dtype string, parent
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FormField("label", "Label", label, errs["label"]).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FormFieldHinted("label", "Label", label, "Blog Post", "Human-readable display name shown in the admin panel.", errs["label"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -167,7 +167,7 @@ func DatatypeEditForm(id string, name string, label string, dtype string, parent
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FormField("type", "Type", dtype, errs["type"]).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FormFieldHinted("type", "Type", dtype, "collection", "Categorizes this datatype (e.g. page, collection, component).", errs["type"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -175,7 +175,7 @@ func DatatypeEditForm(id string, name string, label string, dtype string, parent
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FormSelect("parent_id", "Parent", parentID, DatatypeParentOptions(allDatatypes, id), errs["parent_id"]).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FormSelectHinted("parent_id", "Parent", parentID, DatatypeParentOptions(allDatatypes, id), "Optional parent for hierarchical content organization.", errs["parent_id"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

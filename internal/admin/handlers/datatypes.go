@@ -109,10 +109,8 @@ func DatatypesListHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if IsNavHTMX(r) {
-			csrfToken := CSRFTokenFromContext(r.Context())
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Datatypes"}`)
-			RenderWithOOB(w, r, pages.DatatypesListContent(list, pg, distinctTypes),
-				OOBSwap{TargetID: "admin-dialogs", Component: pages.DatatypeCreateDialog(csrfToken, all)})
+			Render(w, r, pages.DatatypesListContent(list, pg, distinctTypes))
 			return
 		}
 
@@ -122,7 +120,7 @@ func DatatypesListHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		layout := NewAdminData(r, "Datatypes")
-		Render(w, r, pages.DatatypesList(layout, list, pg, distinctTypes, all))
+		Render(w, r, pages.DatatypesList(layout, list, pg, distinctTypes))
 	}
 }
 
@@ -139,6 +137,24 @@ func sortStrings(s []string) {
 		for j := i; j > 0 && s[j] < s[j-1]; j-- {
 			s[j], s[j-1] = s[j-1], s[j]
 		}
+	}
+}
+
+// DatatypeCreatePageHandler handles GET /admin/datatypes/new.
+// Renders the full datatype creation page with a type reference sidebar.
+func DatatypeCreatePageHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		allDatatypes, err := svc.Schema.ListDatatypes(r.Context())
+		if err != nil {
+			utility.DefaultLogger.Error("failed to list datatypes for create page", err)
+			allDatatypes = []db.Datatypes{}
+		}
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+		layout := NewAdminData(r, "New Datatype")
+		RenderNav(w, r, "New Datatype",
+			pages.DatatypeCreateContent("", "", "", "", allDatatypes, nil, csrfToken),
+			pages.DatatypeCreate(layout, allDatatypes, csrfToken))
 	}
 }
 
@@ -237,7 +253,7 @@ func DatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 		if sortErr != nil {
 			maxSort = -1
 		}
-		_, err := svc.Schema.CreateDatatype(r.Context(), ac, db.CreateDatatypeParams{
+		created, err := svc.Schema.CreateDatatype(r.Context(), ac, db.CreateDatatypeParams{
 			ParentID:  parentID,
 			SortOrder: maxSort + 1,
 			Name:      name,
@@ -255,22 +271,23 @@ func DatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 				}
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				csrfToken := CSRFTokenFromContext(r.Context())
-				Render(w, r, partials.DatatypeForm(name, label, dtype, parentIDStr, allDatatypes, errs, csrfToken))
+				Render(w, r, pages.DatatypeCreateForm(name, label, dtype, parentIDStr, allDatatypes, errs, csrfToken))
 				return
 			}
 			utility.DefaultLogger.Error("failed to create datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeForm(name, label, dtype, parentIDStr, allDatatypes, map[string]string{"_": "Failed to create datatype"}, csrfToken))
+			Render(w, r, pages.DatatypeCreateForm(name, label, dtype, parentIDStr, allDatatypes, map[string]string{"_": "Failed to create datatype"}, csrfToken))
 			return
 		}
 
+		detailURL := "/admin/datatypes/" + created.DatatypeID.String()
 		if !IsHTMX(r) {
-			http.Redirect(w, r, "/admin/datatypes", http.StatusSeeOther)
+			http.Redirect(w, r, detailURL, http.StatusSeeOther)
 			return
 		}
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Datatype created", "type": "success"}}`)
-		w.Header().Set("HX-Redirect", "/admin/datatypes")
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Datatype created — now add fields", "type": "success"}}`)
+		w.Header().Set("HX-Redirect", detailURL)
 		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -1,0 +1,55 @@
+package partials
+
+import (
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+templ FieldTypesTableRows(fieldTypes []db.FieldTypes) {
+    if len(fieldTypes) == 0 {
+        <tr>
+            <td colspan="3" class="py-10 text-center text-sm text-gray-400">No field types found.</td>
+        </tr>
+    } else {
+        for _, ft := range fieldTypes {
+            <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/field-types/" + ft.FieldTypeID.String() }>
+                <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ ft.Label }</td>
+                <td class="whitespace-nowrap px-4 py-4 text-sm"><code class="rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono text-white">{ ft.Type }</code></td>
+                <td class="py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6">
+                    <mcms-confirm
+                        label="Delete"
+                        message="Delete this field type? This cannot be undone."
+                        button-class="text-red-400 hover:text-red-300"
+                        hx-delete={ "/admin/field-types/" + ft.FieldTypeID.String() }
+                        hx-target="closest tr"
+                        hx-swap="outerHTML swap:300ms"
+                    ></mcms-confirm>
+                </td>
+            </tr>
+        }
+    }
+}
+
+templ AdminFieldTypesTableRows(fieldTypes []db.AdminFieldTypes) {
+    if len(fieldTypes) == 0 {
+        <tr>
+            <td colspan="3" class="py-10 text-center text-sm text-gray-400">No admin field types found.</td>
+        </tr>
+    } else {
+        for _, ft := range fieldTypes {
+            <tr class="cursor-pointer hover:bg-white/5" data-clickable-row data-href={ "/admin/admin-field-types/" + ft.AdminFieldTypeID.String() }>
+                <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ ft.Label }</td>
+                <td class="whitespace-nowrap px-4 py-4 text-sm"><code class="rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono text-white">{ ft.Type }</code></td>
+                <td class="whitespace-nowrap px-4 py-4 text-sm">
+                    <mcms-confirm
+                        label="Delete"
+                        message="Delete this admin field type? This cannot be undone."
+                        button-class="text-red-400 hover:text-red-300"
+                        hx-delete={ "/admin/admin-field-types/" + ft.AdminFieldTypeID.String() }
+                        hx-target="closest tr"
+                        hx-swap="outerHTML swap:300ms"
+                    ></mcms-confirm>
+                </td>
+            </tr>
+        }
+    }
+}

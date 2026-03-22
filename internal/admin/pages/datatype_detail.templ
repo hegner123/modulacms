@@ -23,13 +23,21 @@ templ DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, allDataty
                     <span class="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-green-400/20 ring-inset">{ dt.Type }</span>
                 </div>
             </div>
-            <div class="mt-4 flex md:mt-0 md:ml-4">
+            <div class="mt-4 flex gap-x-3 md:mt-0 md:ml-4">
+                <a href="/admin/datatypes/new"
+                   hx-get="/admin/datatypes/new"
+                   hx-target="#main-content"
+                   hx-push-url="true"
+                   class="inline-flex items-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10">
+                    Create Another Datatype
+                </a>
                 <button type="submit" form="datatype-form"
                         class="inline-flex items-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]">
                     Save Changes
                 </button>
             </div>
         </div>
+        @datatypeWorkflowSteps(2)
     </div>
     <!-- Two-column layout -->
     <div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3">

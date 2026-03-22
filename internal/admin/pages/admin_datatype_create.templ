@@ -1,0 +1,70 @@
+package pages
+
+import (
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+templ AdminDatatypeCreateContent(name string, label string, dtype string, parentID string, allDatatypes []db.AdminDatatypes, errs map[string]string, csrfToken string) {
+    <!-- Page Header -->
+    <div class="border-b border-white/10 pb-5" data-page-header>
+        <div class="flex items-center gap-x-3">
+            <a href="/admin/admin-datatypes" class="text-sm text-gray-400 hover:text-white"
+               hx-get="/admin/admin-datatypes"
+               hx-target="#main-content"
+               hx-push-url="true">&larr; Back</a>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+            <h1 class="text-lg font-semibold text-white">New Admin Datatype</h1>
+            <button type="submit" form="admin-datatype-create-form" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Create Datatype</button>
+        </div>
+        @datatypeWorkflowSteps(1)
+    </div>
+    <!-- Two-Column Layout -->
+    <div class="mt-6 grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-2">
+        <!-- Form (left) -->
+        <div>
+            <h2 class="text-base font-semibold text-white">Details</h2>
+            <div id="admin-datatype-create-form-container" class="mt-6">
+                @AdminDatatypeCreateForm(name, label, dtype, parentID, allDatatypes, errs, csrfToken)
+            </div>
+        </div>
+        <!-- Type Guide (right) -->
+        <div>
+            <div class="rounded-xl border border-white/10 bg-white/5 p-6">
+                @datatypeTypeReference()
+            </div>
+        </div>
+    </div>
+}
+
+templ AdminDatatypeCreateForm(name string, label string, dtype string, parentID string, allDatatypes []db.AdminDatatypes, errs map[string]string, csrfToken string) {
+    <form id="admin-datatype-create-form"
+          hx-post="/admin/admin-datatypes"
+          hx-target="#admin-datatype-create-form-container"
+          hx-swap="innerHTML">
+        @partials.CSRFField(csrfToken)
+        if errs["_"] != "" {
+            <div class="mb-6 rounded-md bg-red-400/10 p-4">
+                <div class="flex">
+                    <div class="ml-3">
+                        <p class="text-sm text-red-400">{ errs["_"] }</p>
+                    </div>
+                </div>
+            </div>
+        }
+        <div class="space-y-6">
+            @partials.FormFieldHinted("name", "Name", name, "blog-post", "URL-safe identifier for API queries. Use lowercase with hyphens.", errs["name"])
+            @partials.FormFieldHinted("label", "Label", label, "Blog Post", "Human-readable display name shown in the admin panel.", errs["label"])
+            @partials.FormFieldHinted("type", "Type", dtype, "collection", "Categorizes this datatype. Use a reserved type or any custom value.", errs["type"])
+            @partials.FormSelectHinted("parent_id", "Parent", parentID, partials.AdminDatatypeParentOptions(allDatatypes, ""), "Optional parent for hierarchical content organization.", errs["parent_id"])
+        </div>
+    </form>
+}
+
+templ AdminDatatypeCreate(layout layouts.AdminData, allDatatypes []db.AdminDatatypes, csrfToken string) {
+    @layouts.Admin(layout) {
+        @AdminDatatypeCreateContent("", "", "", "", allDatatypes, nil, csrfToken)
+    }
+}

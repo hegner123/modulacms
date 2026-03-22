@@ -14,9 +14,13 @@ import (
 )
 
 // FieldTypesListHandler handles GET /admin/field-types.
-// Lists all field types from the database with a create dialog.
+// Lists all field types with search and sort. HTMX partial requests
+// receive table rows only; full/nav requests get the complete page.
 func FieldTypesListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		search := strings.TrimSpace(r.URL.Query().Get("search"))
+		sortBy := r.URL.Query().Get("sort")
+
 		list, err := svc.Schema.ListFieldTypes(r.Context())
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list field types", err)
@@ -24,8 +28,38 @@ func FieldTypesListHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
+		// Fuzzy search (overrides sort with relevance order)
+		if search != "" {
+			results := utility.FuzzyFind(search, list, func(ft db.FieldTypes) []string {
+				return []string{ft.Label, ft.Type}
+			})
+			ranked := make([]db.FieldTypes, len(results))
+			for i, r := range results {
+				ranked[i] = list[r.Index]
+			}
+			list = ranked
+			sortBy = ""
+		}
+
+		// Sort
+		switch sortBy {
+		case "label-asc":
+			sortFieldTypes(list, func(a, b db.FieldTypes) bool { return strings.ToLower(a.Label) < strings.ToLower(b.Label) })
+		case "label-desc":
+			sortFieldTypes(list, func(a, b db.FieldTypes) bool { return strings.ToLower(a.Label) > strings.ToLower(b.Label) })
+		case "type-asc":
+			sortFieldTypes(list, func(a, b db.FieldTypes) bool { return strings.ToLower(a.Type) < strings.ToLower(b.Type) })
+		case "type-desc":
+			sortFieldTypes(list, func(a, b db.FieldTypes) bool { return strings.ToLower(a.Type) > strings.ToLower(b.Type) })
+		}
+
+		// HTMX partial (search/sort toolbar requests)
+		if IsHTMX(r) && !IsNavHTMX(r) {
+			Render(w, r, partials.FieldTypesTableRows(list))
+			return
+		}
+
 		csrfToken := CSRFTokenFromContext(r.Context())
-		layout := NewAdminData(r, "Field Types")
 
 		if IsNavHTMX(r) {
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Field Types"}`)
@@ -34,7 +68,16 @@ func FieldTypesListHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
+		layout := NewAdminData(r, "Field Types")
 		Render(w, r, pages.FieldTypesList(layout, list))
+	}
+}
+
+func sortFieldTypes(s []db.FieldTypes, less func(a, b db.FieldTypes) bool) {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && less(s[j], s[j-1]); j-- {
+			s[j], s[j-1] = s[j-1], s[j]
+		}
 	}
 }
 

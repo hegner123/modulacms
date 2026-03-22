@@ -14,9 +14,13 @@ import (
 )
 
 // AdminFieldTypesListHandler handles GET /admin/admin-field-types.
-// Lists all admin field types with a create dialog.
+// Lists all admin field types with search and sort. HTMX partial requests
+// receive table rows only; full/nav requests get the complete page.
 func AdminFieldTypesListHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		search := strings.TrimSpace(r.URL.Query().Get("search"))
+		sortBy := r.URL.Query().Get("sort")
+
 		list, err := svc.Schema.ListAdminFieldTypes(r.Context())
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list admin field types", err)
@@ -24,8 +28,38 @@ func AdminFieldTypesListHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
+		// Fuzzy search (overrides sort with relevance order)
+		if search != "" {
+			results := utility.FuzzyFind(search, list, func(ft db.AdminFieldTypes) []string {
+				return []string{ft.Label, ft.Type}
+			})
+			ranked := make([]db.AdminFieldTypes, len(results))
+			for i, r := range results {
+				ranked[i] = list[r.Index]
+			}
+			list = ranked
+			sortBy = ""
+		}
+
+		// Sort
+		switch sortBy {
+		case "label-asc":
+			sortAdminFieldTypes(list, func(a, b db.AdminFieldTypes) bool { return strings.ToLower(a.Label) < strings.ToLower(b.Label) })
+		case "label-desc":
+			sortAdminFieldTypes(list, func(a, b db.AdminFieldTypes) bool { return strings.ToLower(a.Label) > strings.ToLower(b.Label) })
+		case "type-asc":
+			sortAdminFieldTypes(list, func(a, b db.AdminFieldTypes) bool { return strings.ToLower(a.Type) < strings.ToLower(b.Type) })
+		case "type-desc":
+			sortAdminFieldTypes(list, func(a, b db.AdminFieldTypes) bool { return strings.ToLower(a.Type) > strings.ToLower(b.Type) })
+		}
+
+		// HTMX partial (search/sort toolbar requests)
+		if IsHTMX(r) && !IsNavHTMX(r) {
+			Render(w, r, partials.AdminFieldTypesTableRows(list))
+			return
+		}
+
 		csrfToken := CSRFTokenFromContext(r.Context())
-		layout := NewAdminData(r, "Admin Field Types")
 
 		if IsNavHTMX(r) {
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Admin Field Types"}`)
@@ -34,7 +68,16 @@ func AdminFieldTypesListHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
+		layout := NewAdminData(r, "Admin Field Types")
 		Render(w, r, pages.AdminFieldTypesList(layout, list))
+	}
+}
+
+func sortAdminFieldTypes(s []db.AdminFieldTypes, less func(a, b db.AdminFieldTypes) bool) {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && less(s[j], s[j-1]); j-- {
+			s[j], s[j-1] = s[j-1], s[j]
+		}
 	}
 }
 

@@ -108,10 +108,8 @@ func AdminDatatypesListHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if IsNavHTMX(r) {
-			csrfToken := CSRFTokenFromContext(r.Context())
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Admin Datatypes"}`)
-			RenderWithOOB(w, r, pages.AdminDatatypesListContent(list, pg, distinctTypes),
-				OOBSwap{TargetID: "admin-dialogs", Component: pages.AdminDatatypeCreateDialog(csrfToken, all)})
+			Render(w, r, pages.AdminDatatypesListContent(list, pg, distinctTypes))
 			return
 		}
 
@@ -121,7 +119,7 @@ func AdminDatatypesListHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		layout := NewAdminData(r, "Admin Datatypes")
-		Render(w, r, pages.AdminDatatypesList(layout, list, pg, distinctTypes, all))
+		Render(w, r, pages.AdminDatatypesList(layout, list, pg, distinctTypes))
 	}
 }
 
@@ -130,6 +128,24 @@ func sortAdminDatatypes(s []db.AdminDatatypes, less func(a, b db.AdminDatatypes)
 		for j := i; j > 0 && less(s[j], s[j-1]); j-- {
 			s[j], s[j-1] = s[j-1], s[j]
 		}
+	}
+}
+
+// AdminDatatypeCreatePageHandler handles GET /admin/admin-datatypes/new.
+// Renders the full admin datatype creation page with a type reference sidebar.
+func AdminDatatypeCreatePageHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		allDatatypes, err := svc.Schema.ListAdminDatatypes(r.Context())
+		if err != nil {
+			utility.DefaultLogger.Error("failed to list admin datatypes for create page", err)
+			allDatatypes = []db.AdminDatatypes{}
+		}
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+		layout := NewAdminData(r, "New Admin Datatype")
+		RenderNav(w, r, "New Admin Datatype",
+			pages.AdminDatatypeCreateContent("", "", "", "", allDatatypes, nil, csrfToken),
+			pages.AdminDatatypeCreate(layout, allDatatypes, csrfToken))
 	}
 }
 
@@ -233,7 +249,7 @@ func AdminDatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 		if sortErr != nil {
 			maxSort = -1
 		}
-		_, err := svc.Schema.CreateAdminDatatype(r.Context(), ac, db.CreateAdminDatatypeParams{
+		created, err := svc.Schema.CreateAdminDatatype(r.Context(), ac, db.CreateAdminDatatypeParams{
 			ParentID:  parentID,
 			SortOrder: maxSort + 1,
 			Name:      name,
@@ -251,22 +267,23 @@ func AdminDatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 				}
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				csrfToken := CSRFTokenFromContext(r.Context())
-				Render(w, r, partials.AdminDatatypeForm(name, label, dtype, parentIDStr, allDatatypes, errs, csrfToken))
+				Render(w, r, pages.AdminDatatypeCreateForm(name, label, dtype, parentIDStr, allDatatypes, errs, csrfToken))
 				return
 			}
 			utility.DefaultLogger.Error("failed to create admin datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminDatatypeForm(name, label, dtype, parentIDStr, allDatatypes, map[string]string{"_": "Failed to create admin datatype"}, csrfToken))
+			Render(w, r, pages.AdminDatatypeCreateForm(name, label, dtype, parentIDStr, allDatatypes, map[string]string{"_": "Failed to create admin datatype"}, csrfToken))
 			return
 		}
 
+		detailURL := "/admin/admin-datatypes/" + created.AdminDatatypeID.String()
 		if !IsHTMX(r) {
-			http.Redirect(w, r, "/admin/admin-datatypes", http.StatusSeeOther)
+			http.Redirect(w, r, detailURL, http.StatusSeeOther)
 			return
 		}
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Admin datatype created", "type": "success"}}`)
-		w.Header().Set("HX-Redirect", "/admin/admin-datatypes")
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Admin datatype created — now add fields", "type": "success"}}`)
+		w.Header().Set("HX-Redirect", detailURL)
 		w.WriteHeader(http.StatusOK)
 	}
 }

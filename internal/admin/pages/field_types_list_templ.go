@@ -35,76 +35,15 @@ func FieldTypesListContent(fieldTypes []db.FieldTypes) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Field Types</h1><p class=\"mt-2 text-sm text-gray-400\">Available field types that can be assigned to fields.</p></div><div class=\"mt-4 sm:mt-0 sm:ml-16 sm:flex-none\"><button type=\"button\" class=\"block rounded-md bg-[var(--color-primary)] px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]\" data-action=\"new\" onclick=\"document.getElementById('create-field-type-dialog').open()\">New Field Type</button></div></div><div class=\"mt-8 flow-root\"><div class=\"overflow-x-auto\"><div class=\"min-w-full py-2 align-middle\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Type</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Label</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Actions</th></tr></thead> <tbody class=\"divide-y divide-white/5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-base/7 font-semibold text-white\">Field Types</h1><p class=\"mt-2 text-sm text-gray-400\">Available field types that can be assigned to fields.</p></div><div class=\"mt-4 sm:mt-0 sm:ml-16 sm:flex-none\"><button type=\"button\" class=\"block rounded-md bg-[var(--color-primary)] px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]\" data-action=\"new\" onclick=\"document.getElementById('create-field-type-dialog').open()\">New Field Type</button></div></div><!-- Toolbar --><div class=\"mt-4 flex items-center gap-x-3\"><input type=\"search\" name=\"search\" placeholder=\"Search field types...\" hx-get=\"/admin/field-types\" hx-target=\"#field-types-table-body\" hx-trigger=\"input changed delay:300ms\" hx-include=\"[name='sort']\" hx-push-url=\"false\" class=\"block w-64 rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]\" data-search-input><div class=\"grid grid-cols-1\"><select name=\"sort\" hx-get=\"/admin/field-types\" hx-target=\"#field-types-table-body\" hx-trigger=\"change\" hx-include=\"[name='search']\" class=\"col-start-1 row-start-1 w-full appearance-none rounded-md bg-white/5 py-1.5 pr-8 pl-3 text-sm text-white outline-1 -outline-offset-1 outline-white/10 *:bg-gray-800 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]\"><option value=\"\">Default</option> <option value=\"label-asc\">Label A-Z</option> <option value=\"label-desc\">Label Z-A</option> <option value=\"type-asc\">Type A-Z</option> <option value=\"type-desc\">Type Z-A</option></select> <svg viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\" class=\"pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-gray-500 sm:size-4\"><path d=\"M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z\" clip-rule=\"evenodd\" fill-rule=\"evenodd\"></path></svg></div></div><!-- Table --><div class=\"mt-8 flow-root\"><div class=\"overflow-x-auto\"><div class=\"min-w-full py-2 align-middle\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Label</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Type</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Actions</th></tr></thead> <tbody id=\"field-types-table-body\" class=\"divide-y divide-white/5\" hx-get=\"/admin/field-types\" hx-trigger=\"refreshTable from:body\" hx-swap=\"innerHTML\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if len(fieldTypes) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<tr><td colspan=\"3\" class=\"py-10 text-center text-sm text-gray-400\">No field types found.</td></tr>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			for _, ft := range fieldTypes {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<tr class=\"cursor-pointer hover:bg-white/5\" data-clickable-row data-href=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var2 string
-				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/field-types/" + ft.FieldTypeID.String())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_types_list.templ`, Line: 43, Col: 158}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"><td class=\"whitespace-nowrap px-4 py-4 text-sm\"><code class=\"rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono text-white\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var3 string
-				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(ft.Type)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_types_list.templ`, Line: 44, Col: 173}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</code></td><td class=\"whitespace-nowrap px-4 py-4 text-sm text-white\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(ft.Label)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_types_list.templ`, Line: 45, Col: 109}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</td><td class=\"py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6\"><mcms-confirm label=\"Delete\" message=\"Delete this field type? This cannot be undone.\" button-class=\"text-red-400 hover:text-red-300\" hx-delete=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/field-types/" + ft.FieldTypeID.String())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/field_types_list.templ`, Line: 51, Col: 107}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\"></mcms-confirm></td></tr>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
+		templ_7745c5c3_Err = partials.FieldTypesTableRows(fieldTypes).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</tbody></table></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</tbody></table></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -128,12 +67,12 @@ func FieldTypeCreateDialog(csrfToken string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var6 == nil {
-			templ_7745c5c3_Var6 = templ.NopComponent
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<mcms-dialog id=\"create-field-type-dialog\" aria-labelledby=\"create-field-type-dialog-title\"><div class=\"px-4 pt-5 pb-4 sm:p-6 sm:pb-4\"><h3 id=\"create-field-type-dialog-title\" class=\"text-base/7 font-semibold text-white\">New Field Type</h3><form hx-post=\"/admin/field-types\" hx-target=\"#create-field-type-form\" hx-swap=\"innerHTML\" id=\"create-field-type-form\" class=\"mt-4 space-y-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<mcms-dialog id=\"create-field-type-dialog\" aria-labelledby=\"create-field-type-dialog-title\"><div class=\"px-4 pt-5 pb-4 sm:p-6 sm:pb-4\"><h3 id=\"create-field-type-dialog-title\" class=\"text-base/7 font-semibold text-white\">New Field Type</h3><form hx-post=\"/admin/field-types\" hx-target=\"#create-field-type-form\" hx-swap=\"innerHTML\" id=\"create-field-type-form\" class=\"mt-4 space-y-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -141,7 +80,7 @@ func FieldTypeCreateDialog(csrfToken string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</form></div></mcms-dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</form></div></mcms-dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -165,12 +104,12 @@ func FieldTypesList(layout layouts.AdminData, fieldTypes []db.FieldTypes) templ.
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var7 == nil {
-			templ_7745c5c3_Var7 = templ.NopComponent
+		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var3 == nil {
+			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var8 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var4 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -188,7 +127,7 @@ func FieldTypesList(layout layouts.AdminData, fieldTypes []db.FieldTypes) templ.
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layouts.Admin(layout.WithDialogs(FieldTypeCreateDialog(layout.CSRFToken))).Render(templ.WithChildren(ctx, templ_7745c5c3_Var8), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layouts.Admin(layout.WithDialogs(FieldTypeCreateDialog(layout.CSRFToken))).Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

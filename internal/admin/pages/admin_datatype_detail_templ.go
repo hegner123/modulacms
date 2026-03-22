@@ -61,20 +61,28 @@ func AdminDatatypeDetailContent(dt db.AdminDatatypes, linkedFields []db.AdminFie
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span></div></div><div class=\"mt-4 flex md:mt-0 md:ml-4\"><button type=\"submit\" form=\"admin-datatype-form\" class=\"inline-flex items-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]\">Save Changes</button></div></div></div><!-- Two-column layout --><div class=\"mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3\"><!-- Edit form (2/3) --><div class=\"lg:col-span-2 space-y-10\"><div class=\"border-b border-white/10 pb-10\"><h3 class=\"text-base/7 font-semibold text-white\">Details</h3><p class=\"mt-1 text-sm/6 text-gray-400\">Edit the admin datatype name, label, type, and parent relationship.</p><div id=\"admin-datatype-edit-form\" class=\"mt-10\"><form id=\"admin-datatype-form\" hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span></div></div><div class=\"mt-4 flex gap-x-3 md:mt-0 md:ml-4\"><a href=\"/admin/admin-datatypes/new\" hx-get=\"/admin/admin-datatypes/new\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"inline-flex items-center rounded-md bg-white/5 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 ring-inset hover:bg-white/10\">Create Another Datatype</a> <button type=\"submit\" form=\"admin-datatype-form\" class=\"inline-flex items-center rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]\">Save Changes</button></div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = datatypeWorkflowSteps(2).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><!-- Two-column layout --><div class=\"mt-6 grid grid-cols-1 gap-x-8 gap-y-8 lg:grid-cols-3\"><!-- Edit form (2/3) --><div class=\"lg:col-span-2 space-y-10\"><div class=\"border-b border-white/10 pb-10\"><h3 class=\"text-base/7 font-semibold text-white\">Details</h3><p class=\"mt-1 text-sm/6 text-gray-400\">Edit the admin datatype name, label, type, and parent relationship.</p><div id=\"admin-datatype-edit-form\" class=\"mt-10\"><form id=\"admin-datatype-form\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-datatypes/" + dt.AdminDatatypeID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatype_detail.templ`, Line: 43, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatype_detail.templ`, Line: 51, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" hx-target=\"#admin-datatype-edit-form\" hx-swap=\"innerHTML\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" hx-target=\"#admin-datatype-edit-form\" hx-swap=\"innerHTML\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -82,7 +90,7 @@ func AdminDatatypeDetailContent(dt db.AdminDatatypes, linkedFields []db.AdminFie
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6\"><div class=\"sm:col-span-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6\"><div class=\"sm:col-span-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -90,7 +98,7 @@ func AdminDatatypeDetailContent(dt db.AdminDatatypes, linkedFields []db.AdminFie
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><div class=\"sm:col-span-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div class=\"sm:col-span-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -98,7 +106,7 @@ func AdminDatatypeDetailContent(dt db.AdminDatatypes, linkedFields []db.AdminFie
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div class=\"sm:col-span-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><div class=\"sm:col-span-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -106,7 +114,7 @@ func AdminDatatypeDetailContent(dt db.AdminDatatypes, linkedFields []db.AdminFie
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><div class=\"sm:col-span-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div><div class=\"sm:col-span-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -114,46 +122,46 @@ func AdminDatatypeDetailContent(dt db.AdminDatatypes, linkedFields []db.AdminFie
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div></div></form></div></div><!-- Metadata --><div><h3 class=\"text-base/7 font-semibold text-white\">Metadata</h3><dl class=\"mt-6 divide-y divide-white/10 border-t border-white/10\"><div class=\"px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0\"><dt class=\"text-sm/6 font-medium text-white\">ID</dt><dd class=\"mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div></div></form></div></div><!-- Metadata --><div><h3 class=\"text-base/7 font-semibold text-white\">Metadata</h3><dl class=\"mt-6 divide-y divide-white/10 border-t border-white/10\"><div class=\"px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0\"><dt class=\"text-sm/6 font-medium text-white\">ID</dt><dd class=\"mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(dt.AdminDatatypeID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatype_detail.templ`, Line: 70, Col: 116}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatype_detail.templ`, Line: 78, Col: 116}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</dd></div><div class=\"px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0\"><dt class=\"text-sm/6 font-medium text-white\">Created</dt><dd class=\"mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</dd></div><div class=\"px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0\"><dt class=\"text-sm/6 font-medium text-white\">Created</dt><dd class=\"mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(dt.DateCreated.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatype_detail.templ`, Line: 74, Col: 112}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatype_detail.templ`, Line: 82, Col: 112}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</dd></div><div class=\"px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0\"><dt class=\"text-sm/6 font-medium text-white\">Modified</dt><dd class=\"mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</dd></div><div class=\"px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0\"><dt class=\"text-sm/6 font-medium text-white\">Modified</dt><dd class=\"mt-1 text-sm/6 text-gray-400 sm:col-span-2 sm:mt-0\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(dt.DateModified.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatype_detail.templ`, Line: 78, Col: 113}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatype_detail.templ`, Line: 86, Col: 113}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</dd></div></dl></div></div><!-- Fields sidebar (1/3) --><div><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><div class=\"flex items-center justify-between bg-white/5 px-4 py-3.5 sm:px-6\"><h3 class=\"text-sm font-semibold text-white\">Fields</h3><button type=\"button\" class=\"rounded-md bg-[var(--color-primary)] px-2.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\" onclick=\"document.getElementById('add-admin-field-dialog').open()\">Add Field</button></div><div id=\"admin-linked-fields-list\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</dd></div></dl></div></div><!-- Fields sidebar (1/3) --><div><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><div class=\"flex items-center justify-between bg-white/5 px-4 py-3.5 sm:px-6\"><h3 class=\"text-sm font-semibold text-white\">Fields</h3><button type=\"button\" class=\"rounded-md bg-[var(--color-primary)] px-2.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\" onclick=\"document.getElementById('add-admin-field-dialog').open()\">Add Field</button></div><div id=\"admin-linked-fields-list\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -161,7 +169,7 @@ func AdminDatatypeDetailContent(dt db.AdminDatatypes, linkedFields []db.AdminFie
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -190,20 +198,20 @@ func AdminDatatypeAddFieldDialog(datatypeID string, csrfToken string, fieldTypes
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<mcms-dialog id=\"add-admin-field-dialog\" aria-labelledby=\"add-admin-field-dialog-title\"><div class=\"px-4 pt-5 pb-4 sm:p-6 sm:pb-4\"><h3 id=\"add-admin-field-dialog-title\" class=\"text-base/7 font-semibold text-white\">Add Admin Field</h3><form hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<mcms-dialog id=\"add-admin-field-dialog\" aria-labelledby=\"add-admin-field-dialog-title\"><div class=\"px-4 pt-5 pb-4 sm:p-6 sm:pb-4\"><h3 id=\"add-admin-field-dialog-title\" class=\"text-base/7 font-semibold text-white\">Add Admin Field</h3><form hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/admin-datatypes/" + datatypeID + "/fields")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatype_detail.templ`, Line: 106, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/admin_datatype_detail.templ`, Line: 114, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" hx-target=\"#add-admin-field-form\" hx-swap=\"innerHTML\" id=\"add-admin-field-form\" class=\"mt-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" hx-target=\"#add-admin-field-form\" hx-swap=\"innerHTML\" id=\"add-admin-field-form\" class=\"mt-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -211,7 +219,7 @@ func AdminDatatypeAddFieldDialog(datatypeID string, csrfToken string, fieldTypes
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</form></div></mcms-dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</form></div></mcms-dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
