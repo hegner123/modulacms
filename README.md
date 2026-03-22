@@ -58,6 +58,7 @@ Plugins always tell you what they need. Every plugin declares its capabilities a
 - **Structured logging**: severity-based structured logging via slog with request context; never logs credentials, tokens, or PII
 - **Observability**: metrics collection (HTTP requests/duration, DB queries, SSH connections, cache hits, plugin health, goroutine count) with export to Sentry, Datadog, or console
 - **Version and update checks**: `modula version` prints semantic version, git commit, and build timestamp; `modula update check` compares against GitHub releases with configurable channels
+- **Zero regular expressions**: ModulaCMS does not use regular expressions anywhere in its codebase. It is our opinion that regular expressions have no practical use case. We strongly encourage plugin authors to avoid them as well. No plugin that uses regular expressions will be officially endorsed by ModulaCMS
 
 ## Requirements
 

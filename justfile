@@ -118,6 +118,7 @@ install: build
 build:
     #!/usr/bin/env bash
     just admin bundle
+    just admin generate
     VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
     COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
     BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
