@@ -50,7 +50,7 @@ func (c *CleanTransformer) transformNode(node *model.Node) map[string]any {
 
 	// Add ID and type
 	doc["id"] = node.Datatype.Content.ContentDataID
-	doc["type"] = node.Datatype.Info.Label
+	doc["type"] = node.Datatype.Info.Name
 
 	// Add metadata
 	meta := CleanMeta{
@@ -82,7 +82,11 @@ func (c *CleanTransformer) transformNode(node *model.Node) map[string]any {
 		}
 
 		if allChildrenSameType(node.Nodes) {
-			doc[pluralize(node.Nodes[0].Datatype.Info.Label)] = children
+			childKey := node.Nodes[0].Datatype.Info.Name
+			if childKey == "" {
+				childKey = node.Nodes[0].Datatype.Info.Type
+			}
+			doc[pluralize(childKey)] = children
 		} else {
 			doc["children"] = children
 		}

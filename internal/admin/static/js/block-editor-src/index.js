@@ -4,7 +4,7 @@
 // and registers the custom element. Pure function re-exports sit outside the
 // isBrowser guard for test compatibility.
 
-import { BLOCK_TYPE_CONFIG, getTypeConfig, MAX_DEPTH } from './config.js';
+import { MAX_DEPTH } from './config.js';
 import { generateId } from './id.js';
 import { createState } from './state.js';
 import {
@@ -27,7 +27,7 @@ import { History } from './history.js';
 // ============================================================
 
 export {
-        BLOCK_TYPE_CONFIG, getTypeConfig, MAX_DEPTH,
+        MAX_DEPTH,
         generateId,
         createState,
         unlink, insertBefore, insertAfter, insertAsFirstChild, insertAsLastChild,
@@ -564,8 +564,6 @@ if (isBrowser) {
                         const header = this._renderBlockHeader(block);
                         wrapper.appendChild(header);
 
-                        // Render children or inside-insert button for container types
-                        const typeConfig = getTypeConfig(block.type);
                         const children = getChildren(this._state, block.id);
                         if (children.length > 0) {
                                 const childContainer = document.createElement('div');
@@ -584,18 +582,13 @@ if (isBrowser) {
                 }
 
                 /**
-                 * Render the block-item header element (badge, label, child count, delete button,
+                 * Render the block-item header element (label, child count, delete button,
                  * type-specific content).
                  */
                 _renderBlockHeader(block) {
                         const el = document.createElement('div');
                         el.className = 'block-item';
                         el.dataset.blockId = block.id;
-
-                        // Add type-specific class for container styling
-                        if (block.type === 'container') {
-                                el.classList.add('block-item--container');
-                        }
 
                         // Collapse chevron
                         const chevron = document.createElement('button');
@@ -605,11 +598,6 @@ if (isBrowser) {
                         chevron.textContent = this._collapsedBlocks.has(block.id) ? '\u25B8' : '\u25BE';
                         chevron.title = 'Toggle collapse';
                         el.appendChild(chevron);
-
-                        const badge = document.createElement('span');
-                        badge.className = 'block-type-badge block-type-badge--' + block.type;
-                        badge.textContent = getTypeConfig(block.type).label;
-                        el.appendChild(badge);
 
                         const label = document.createElement('span');
                         label.className = 'block-label';
@@ -657,8 +645,7 @@ if (isBrowser) {
                                 return;
                         }
 
-                        const typeConfig = getTypeConfig(block.type);
-                        const canHaveChildren = typeConfig.canHaveChildren && getDepth(this._state, blockId) < MAX_DEPTH - 1;
+                        const canNest = getDepth(this._state, blockId) < MAX_DEPTH - 1;
 
                         var menu = document.createElement('div');
                         menu.className = 'block-context-menu';
@@ -669,7 +656,7 @@ if (isBrowser) {
                                         items: [
                                                 { label: 'Add Before', action: 'insert', position: 'before', blockId: blockId },
                                                 { label: 'Add After', action: 'insert', position: 'after', blockId: blockId },
-                                                canHaveChildren ? { label: 'Add Inside', action: 'insert', position: 'inside', blockId: blockId } : null,
+                                                canNest ? { label: 'Add Inside', action: 'insert', position: 'inside', blockId: blockId } : null,
                                         ],
                                 },
                                 {

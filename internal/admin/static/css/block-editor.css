@@ -126,19 +126,6 @@ block-editor .block-item.drop-inside {
   box-shadow: 0 0 0 1px var(--accent), inset 0 0 0 1px var(--accent);
 }
 
-block-editor .block-type-badge {
-  display: inline-block;
-  padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--radius-sm);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  background: var(--badge-bg);
-  color: var(--badge-text);
-  flex-shrink: 0;
-}
-
 block-editor .block-label {
   flex: 1;
   font-size: var(--fs-base);
@@ -241,12 +228,6 @@ block-editor .child-count-badge {
   flex-shrink: 0;
 }
 
-block-editor .block-item--container {
-  border-color: var(--accent);
-  border-style: dashed;
-  background: color-mix(in srgb, var(--accent) 4%, var(--block-bg));
-}
-
 /* --- Collapse Controls --- */
 
 block-editor .collapse-controls {
@@ -343,26 +324,6 @@ block-editor .preview-field-empty {
 block-editor .preview-field-ref {
   color: var(--text-muted);
   font-style: italic;
-}
-
-block-editor .block-type-badge--heading {
-  background: #2a1e45;
-  color: #cba6f7;
-}
-
-block-editor .block-type-badge--image {
-  background: #1e3a2a;
-  color: #a6e3a1;
-}
-
-block-editor .block-type-badge--container {
-  background: #1e2a45;
-  color: #89b4fa;
-}
-
-block-editor .block-type-badge--text {
-  background: #2a2a1e;
-  color: #f9e2af;
 }
 
 /* --- Kebab Menu Button --- */

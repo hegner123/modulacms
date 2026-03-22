@@ -16,6 +16,7 @@ func makeNode(id, label, typ string) *model.Node {
 	return &model.Node{
 		Datatype: model.Datatype{
 			Info: db.DatatypeJSON{
+				Name:  typ,
 				Label: label,
 				Type:  typ,
 			},
@@ -32,6 +33,7 @@ func makeNodeWithDates(id, label, typ, authorID, routeID, created, modified stri
 	return &model.Node{
 		Datatype: model.Datatype{
 			Info: db.DatatypeJSON{
+				Name:  typ,
 				Label: label,
 				Type:  typ,
 			},

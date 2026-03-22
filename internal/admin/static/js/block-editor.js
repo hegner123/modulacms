@@ -1,17 +1,11 @@
 // AUTO-GENERATED — DO NOT EDIT. Source: block-editor-src/. Regenerate: just admin bundle
 
 // internal/admin/static/js/block-editor-src/config.js
-var BLOCK_TYPE_CONFIG = {
-  text: { label: "Text", canHaveChildren: false },
-  heading: { label: "Heading", canHaveChildren: false },
-  image: { label: "Image", canHaveChildren: false },
-  container: { label: "Container", canHaveChildren: true }
-};
-function getTypeConfig(type) {
-  if (BLOCK_TYPE_CONFIG[type]) return BLOCK_TYPE_CONFIG[type];
-  return { label: type, canHaveChildren: true };
-}
 var MAX_DEPTH = 8;
+function typeLabel(type) {
+  if (!type) return "Block";
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
 
 // internal/admin/static/js/block-editor-src/id.js
 function generateId() {
@@ -192,7 +186,6 @@ function insertAsLastChild(state, blockId, parentId) {
 }
 function addBlock(state, type, afterId) {
   const id = generateId();
-  const config = getTypeConfig(type);
   const block = {
     id,
     type,
@@ -200,7 +193,7 @@ function addBlock(state, type, afterId) {
     firstChildId: null,
     prevSiblingId: null,
     nextSiblingId: null,
-    label: config.label + " Block"
+    label: typeLabel(type) + " Block"
   };
   state.blocks[id] = block;
   if (!state.rootId) {
@@ -282,8 +275,6 @@ function indentBlock(state, blockId) {
   const prevSibling = state.blocks[block.prevSiblingId];
   if (!prevSibling) return false;
   if (getDepth(state, blockId) + 1 >= MAX_DEPTH) return false;
-  const config = getTypeConfig(prevSibling.type);
-  if (!config.canHaveChildren) return false;
   unlink(state, blockId);
   insertAsLastChild(state, blockId, prevSibling.id);
   state.dirty = true;
@@ -958,13 +949,6 @@ var dragMethods = {
           position = "inside";
         }
         if (position === "inside") {
-          const targetBlock = this._state.blocks[itemBlockId];
-          const config = getTypeConfig(targetBlock?.type);
-          if (!config.canHaveChildren) {
-            position = "after";
-          }
-        }
-        if (position === "inside") {
           const targetDepth = getDepth(this._state, itemBlockId);
           if (targetDepth + 1 > MAX_DEPTH) {
             position = "after";
@@ -1184,7 +1168,12 @@ var _dtCache = {
   pending: null
   // in-flight promise to deduplicate concurrent fetches
 };
-var SYSTEM_TYPES = { "_root": true, "_nested_root": true, "_system_log": true };
+function hasBase(type, base) {
+  return type === base || type.length > base.length && type.substring(0, base.length) === base && type.charAt(base.length) === "_";
+}
+function isSystemType(type) {
+  return hasBase(type, "_root") || hasBase(type, "_nested_root") || hasBase(type, "_system_log");
+}
 function fetchDatatypes() {
   var now = Date.now();
   if (_dtCache.data && now - _dtCache.fetchedAt < _dtCache.ttl) {
@@ -1224,7 +1213,7 @@ function fetchDatatypesGrouped(rootDatatypeId) {
       if (!kids) return result;
       for (var j = 0; j < kids.length; j++) {
         var kid = kids[j];
-        if (SYSTEM_TYPES[kid.type]) continue;
+        if (isSystemType(kid.type)) continue;
         result.push({ id: kid.id, name: kid.name, label: kid.label, type: kid.type, depth: baseDepth });
         var grandchildren = collectChildren(kid.id, baseDepth + 1);
         for (var k = 0; k < grandchildren.length; k++) {
@@ -1243,7 +1232,7 @@ function fetchDatatypesGrouped(rootDatatypeId) {
     }
     var collectionItems = [];
     for (var ci = 0; ci < datatypes.length; ci++) {
-      if (datatypes[ci].type === "_collection") {
+      if (hasBase(datatypes[ci].type, "_collection")) {
         var kids2 = collectChildren(datatypes[ci].id, 0);
         for (var ck = 0; ck < kids2.length; ck++) {
           collectionItems.push(kids2[ck]);
@@ -1256,7 +1245,7 @@ function fetchDatatypesGrouped(rootDatatypeId) {
     var globalItems = [];
     for (var gi = 0; gi < datatypes.length; gi++) {
       var gdt = datatypes[gi];
-      if (gdt.type === "_global") {
+      if (hasBase(gdt.type, "_global")) {
         globalItems.push({ id: gdt.id, name: gdt.name, label: gdt.label, type: gdt.type, depth: 0 });
         var gkids = collectChildren(gdt.id, 1);
         for (var gk = 0; gk < gkids.length; gk++) {
@@ -2034,7 +2023,6 @@ if (isBrowser) {
       wrapper.style.marginInlineStart = depth * 24 + "px";
       const header = this._renderBlockHeader(block);
       wrapper.appendChild(header);
-      const typeConfig = getTypeConfig(block.type);
       const children = getChildren(this._state, block.id);
       if (children.length > 0) {
         const childContainer = document.createElement("div");
@@ -2050,16 +2038,13 @@ if (isBrowser) {
       return wrapper;
     }
     /**
-     * Render the block-item header element (badge, label, child count, delete button,
+     * Render the block-item header element (label, child count, delete button,
      * type-specific content).
      */
     _renderBlockHeader(block) {
       const el = document.createElement("div");
       el.className = "block-item";
       el.dataset.blockId = block.id;
-      if (block.type === "container") {
-        el.classList.add("block-item--container");
-      }
       const chevron = document.createElement("button");
       chevron.className = "block-chevron";
       chevron.dataset.action = "toggle-collapse";
@@ -2067,10 +2052,6 @@ if (isBrowser) {
       chevron.textContent = this._collapsedBlocks.has(block.id) ? "\u25B8" : "\u25BE";
       chevron.title = "Toggle collapse";
       el.appendChild(chevron);
-      const badge = document.createElement("span");
-      badge.className = "block-type-badge block-type-badge--" + block.type;
-      badge.textContent = getTypeConfig(block.type).label;
-      el.appendChild(badge);
       const label = document.createElement("span");
       label.className = "block-label";
       label.textContent = block.label;
@@ -2106,8 +2087,7 @@ if (isBrowser) {
         console.log("[kebab-debug] _openKebabMenu \u2014 block not found in state, aborting");
         return;
       }
-      const typeConfig = getTypeConfig(block.type);
-      const canHaveChildren = typeConfig.canHaveChildren && getDepth(this._state, blockId) < MAX_DEPTH - 1;
+      const canNest = getDepth(this._state, blockId) < MAX_DEPTH - 1;
       var menu = document.createElement("div");
       menu.className = "block-context-menu";
       var sections = [
@@ -2116,7 +2096,7 @@ if (isBrowser) {
           items: [
             { label: "Add Before", action: "insert", position: "before", blockId },
             { label: "Add After", action: "insert", position: "after", blockId },
-            canHaveChildren ? { label: "Add Inside", action: "insert", position: "inside", blockId } : null
+            canNest ? { label: "Add Inside", action: "insert", position: "inside", blockId } : null
           ]
         },
         {
@@ -2663,7 +2643,6 @@ if (isBrowser) {
   customElements.define("block-editor", BlockEditor);
 }
 export {
-  BLOCK_TYPE_CONFIG,
   MAX_DEPTH,
   addBlock,
   addBlockFromDatatype,
@@ -2677,7 +2656,6 @@ export {
   getDepth,
   getDescendantCount,
   getRootList,
-  getTypeConfig,
   indentBlock,
   insertAfter,
   insertAsFirstChild,

@@ -1,6 +1,6 @@
 // tree-ops.js — State-mutating tree operations
 
-import { getTypeConfig, MAX_DEPTH } from './config.js';
+import { MAX_DEPTH, typeLabel } from './config.js';
 import { generateId } from './id.js';
 import { collectDescendants, getDepth, findLastSibling } from './tree-queries.js';
 
@@ -100,7 +100,6 @@ export function insertAsLastChild(state, blockId, parentId) {
 
 export function addBlock(state, type, afterId) {
         const id = generateId();
-        const config = getTypeConfig(type);
         const block = {
                 id,
                 type,
@@ -108,7 +107,7 @@ export function addBlock(state, type, afterId) {
                 firstChildId: null,
                 prevSiblingId: null,
                 nextSiblingId: null,
-                label: config.label + ' Block',
+                label: typeLabel(type) + ' Block',
         };
         state.blocks[id] = block;
 
@@ -219,10 +218,6 @@ export function indentBlock(state, blockId) {
 
         // Check max depth constraint (depths 0 through MAX_DEPTH-1 are valid; MAX_DEPTH levels total)
         if (getDepth(state, blockId) + 1 >= MAX_DEPTH) return false;
-
-        // Check that the previous sibling's type allows children
-        const config = getTypeConfig(prevSibling.type);
-        if (!config.canHaveChildren) return false;
 
         unlink(state, blockId);
         insertAsLastChild(state, blockId, prevSibling.id);

@@ -9,7 +9,7 @@
 
 import { moveBlock } from './tree-ops.js';
 import { isDescendant, getDepth, getChildren } from './tree-queries.js';
-import { getTypeConfig, MAX_DEPTH } from './config.js';
+import { MAX_DEPTH } from './config.js';
 
 export const dragMethods = {
         _onPointerDown(e) {
@@ -239,15 +239,6 @@ export const dragMethods = {
                                         position = 'after';
                                 } else {
                                         position = 'inside';
-                                }
-
-                                // Coerce "inside" to "after" if block type cannot have children
-                                if (position === 'inside') {
-                                        const targetBlock = this._state.blocks[itemBlockId];
-                                        const config = getTypeConfig(targetBlock?.type);
-                                        if (!config.canHaveChildren) {
-                                                position = 'after';
-                                        }
                                 }
 
                                 // Coerce "inside" to "after" if max nesting depth would be exceeded

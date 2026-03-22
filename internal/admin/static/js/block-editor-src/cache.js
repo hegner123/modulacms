@@ -7,8 +7,16 @@ const _dtCache = {
         pending: null,    // in-flight promise to deduplicate concurrent fetches
 };
 
-// System types that are not selectable blocks
-var SYSTEM_TYPES = { '_root': true, '_nested_root': true, '_system_log': true };
+// Reserved type prefix checks. A type matches if it equals the base
+// or starts with base + "_" (e.g. "_global_menu" matches "_global").
+export function hasBase(type, base) {
+        return type === base || (type.length > base.length && type.substring(0, base.length) === base && type.charAt(base.length) === '_');
+}
+
+// System types that are not selectable blocks.
+function isSystemType(type) {
+        return hasBase(type, '_root') || hasBase(type, '_nested_root') || hasBase(type, '_system_log');
+}
 
 export function fetchDatatypes() {
         var now = Date.now();
@@ -68,7 +76,7 @@ export function fetchDatatypesGrouped(rootDatatypeId) {
                         if (!kids) return result;
                         for (var j = 0; j < kids.length; j++) {
                                 var kid = kids[j];
-                                if (SYSTEM_TYPES[kid.type]) continue;
+                                if (isSystemType(kid.type)) continue;
                                 result.push({ id: kid.id, name: kid.name, label: kid.label, type: kid.type, depth: baseDepth });
                                 var grandchildren = collectChildren(kid.id, baseDepth + 1);
                                 for (var k = 0; k < grandchildren.length; k++) {
@@ -92,7 +100,7 @@ export function fetchDatatypesGrouped(rootDatatypeId) {
                 // Category 2: Collections — find _collection parents, collect their children
                 var collectionItems = [];
                 for (var ci = 0; ci < datatypes.length; ci++) {
-                        if (datatypes[ci].type === '_collection') {
+                        if (hasBase(datatypes[ci].type, '_collection')) {
                                 var kids2 = collectChildren(datatypes[ci].id, 0);
                                 for (var ck = 0; ck < kids2.length; ck++) {
                                         collectionItems.push(kids2[ck]);
@@ -107,7 +115,7 @@ export function fetchDatatypesGrouped(rootDatatypeId) {
                 var globalItems = [];
                 for (var gi = 0; gi < datatypes.length; gi++) {
                         var gdt = datatypes[gi];
-                        if (gdt.type === '_global') {
+                        if (hasBase(gdt.type, '_global')) {
                                 globalItems.push({ id: gdt.id, name: gdt.name, label: gdt.label, type: gdt.type, depth: 0 });
                                 var gkids = collectChildren(gdt.id, 1);
                                 for (var gk = 0; gk < gkids.length; gk++) {

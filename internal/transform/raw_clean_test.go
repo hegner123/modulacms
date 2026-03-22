@@ -217,8 +217,8 @@ func TestCleanTransformer_Transform_SimpleNode(t *testing.T) {
 	if doc["id"] != "id-1" {
 		t.Errorf("id = %v, want %q", doc["id"], "id-1")
 	}
-	if doc["type"] != "Blog Post" {
-		t.Errorf("type = %v, want %q", doc["type"], "Blog Post")
+	if doc["type"] != "blogpost" {
+		t.Errorf("type = %v, want %q", doc["type"], "blogpost") // Info.Name, not Info.Label
 	}
 
 	// Check metadata
