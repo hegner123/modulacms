@@ -833,7 +833,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	}
 
 	// Dashboard (requires auth but no specific permission)
-	mux.Handle("GET /admin/{$}", adminAuth(csrf(http.HandlerFunc(adminhandlers.DashboardHandler(driver)))))
+	mux.Handle("GET /admin/{$}", adminAuth(csrf(http.HandlerFunc(adminhandlers.DashboardHandler(svc)))))
 
 	// Content
 	mux.Handle("GET /admin/content", viewing("content", adminhandlers.ContentListHandler(driver, mgr)))
@@ -862,6 +862,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 
 	// datatypes
 	mux.Handle("GET /admin/datatypes", viewing("datatypes", adminhandlers.DatatypesListHandler(svc)))
+	mux.Handle("GET /admin/datatypes/new", viewing("datatypes:create", adminhandlers.DatatypeCreatePageHandler(svc)))
 	mux.Handle("GET /admin/datatypes/{id}", viewing("datatypes", adminhandlers.DatatypeDetailHandler(svc)))
 	mux.Handle("POST /admin/datatypes", mutating("datatypes:create", adminhandlers.DatatypeCreateHandler(svc)))
 	mux.Handle("POST /admin/datatypes/{id}", mutating("datatypes:update", adminhandlers.DatatypeUpdateHandler(svc)))
@@ -936,6 +937,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 
 	// Admin Datatypes
 	mux.Handle("GET /admin/admin-datatypes", viewing("datatypes", adminhandlers.AdminDatatypesListHandler(svc)))
+	mux.Handle("GET /admin/admin-datatypes/new", viewing("datatypes:create", adminhandlers.AdminDatatypeCreatePageHandler(svc)))
 	mux.Handle("GET /admin/admin-datatypes/{id}", viewing("datatypes", adminhandlers.AdminDatatypeDetailHandler(svc)))
 	mux.Handle("POST /admin/admin-datatypes", mutating("datatypes:create", adminhandlers.AdminDatatypeCreateHandler(svc)))
 	mux.Handle("POST /admin/admin-datatypes/{id}", mutating("datatypes:update", adminhandlers.AdminDatatypeUpdateHandler(svc)))
@@ -1061,6 +1063,10 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("GET /admin/settings", viewing("config", adminhandlers.SettingsHandler(svc)))
 	mux.Handle("POST /admin/settings", mutating("config:update", adminhandlers.SettingsUpdateHandler(svc)))
 	mux.Handle("POST /admin/settings/search/rebuild", mutating("search:update", adminhandlers.SearchRebuildHandler(svc)))
+
+	// Content health
+	mux.Handle("GET /admin/settings/content-health", viewing("config", adminhandlers.ContentHealthHandler(svc)))
+	mux.Handle("POST /admin/settings/content-health", mutating("config:update", adminhandlers.ContentHealthCheckHandler(svc)))
 
 	// Locale settings (i18n)
 	mux.Handle("GET /admin/settings/locales", viewing("locale", adminhandlers.LocaleSettingsHandler(svc)))

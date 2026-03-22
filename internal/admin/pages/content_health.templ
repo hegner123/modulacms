@@ -1,0 +1,63 @@
+package pages
+
+import (
+	"github.com/hegner123/modulacms/internal/admin/layouts"
+	"github.com/hegner123/modulacms/internal/admin/partials"
+)
+
+templ ContentHealth(layout layouts.AdminData, csrfToken string) {
+	@layouts.Admin(layout) {
+		@ContentHealthContent(csrfToken)
+	}
+}
+
+templ ContentHealthContent(csrfToken string) {
+	<div class="space-y-8">
+		<div>
+			<h1 class="text-base/7 font-semibold text-white">Content Health</h1>
+			<p class="mt-2 text-sm text-gray-400">
+				Scan content data against datatype field definitions to detect and repair mismatches.
+				Run a check first to preview issues, then heal to fix them.
+			</p>
+		</div>
+
+		<!-- Action cards -->
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+			@contentHealthCard("Public Content", "public", "Scan public content_data and content_fields against datatype definitions.", csrfToken)
+			@contentHealthCard("Admin Content", "admin", "Scan admin_content_data and admin_content_fields against admin datatype definitions.", csrfToken)
+			@contentHealthCard("All Content", "all", "Scan both public and admin content systems together.", csrfToken)
+		</div>
+
+		<!-- Results area -->
+		<div id="health-results"></div>
+	</div>
+}
+
+templ contentHealthCard(title string, scope string, description string, csrfToken string) {
+	<div class="rounded-lg bg-white/5 p-6">
+		<h3 class="text-sm font-semibold text-white">{ title }</h3>
+		<p class="mt-2 text-sm text-gray-400">{ description }</p>
+		<div class="mt-4 flex items-center gap-3">
+			<form hx-post="/admin/settings/content-health"
+				  hx-target="#health-results"
+				  hx-swap="innerHTML">
+				@partials.CSRFField(csrfToken)
+				<input type="hidden" name="scope" value={ scope }/>
+				<input type="hidden" name="action" value="check"/>
+				<button type="submit"
+						class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/20">
+					Check
+				</button>
+			</form>
+			<mcms-confirm
+				label="Heal"
+				message={ "This will modify " + title + " data. Are you sure?" }
+				variant="primary"
+				hx-post="/admin/settings/content-health"
+				hx-target="#health-results"
+				hx-swap="innerHTML"
+				hx-vals={ `{"scope":"` + scope + `","action":"heal"}` }
+			></mcms-confirm>
+		</div>
+	</div>
+}

@@ -57,6 +57,7 @@ var NavItems = []NavItem{
 
 	// Settings
 	{Section: "Settings", Label: "Settings", Href: "/admin/settings", Icon: "settings", Permission: "config:read"},
+	{Section: "Settings", Label: "Content Health", Href: "/admin/settings/content-health", Icon: "heart-pulse", Permission: "config:read"},
 	{Section: "Settings", Label: "Locales", Href: "/admin/settings/locales", Icon: "globe", Permission: "locale:read"},
 	{Section: "Settings", Label: "Webhooks", Href: "/admin/settings/webhooks", Icon: "webhook", Permission: "webhook:read"},
 	{Section: "Settings", Label: "Backups", Href: "/admin/settings/backups", Icon: "archive", Permission: "backup:create"},

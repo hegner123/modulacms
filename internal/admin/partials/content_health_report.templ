@@ -1,0 +1,114 @@
+package partials
+
+import "fmt"
+
+// HealthReportData holds the summarized counts for a heal report.
+type HealthReportData struct {
+	DryRun              bool
+	ContentDataScanned  int
+	ContentFieldScanned int
+	ContentDataRepairs  int
+	ContentFieldRepairs int
+	MissingFields       int
+	DuplicateFields     int
+	OrphanedFields      int
+}
+
+// TotalIssues returns the total number of issues found.
+func (d HealthReportData) TotalIssues() int {
+	return d.ContentDataRepairs + d.ContentFieldRepairs + d.MissingFields + d.DuplicateFields + d.OrphanedFields
+}
+
+templ ContentHealthReport(title string, actionLabel string, data HealthReportData) {
+	<div class="space-y-4">
+		@healthReportSection(title, actionLabel, data)
+	</div>
+}
+
+templ ContentHealthReportCombined(actionLabel string, pubData HealthReportData, adminData HealthReportData) {
+	<div class="space-y-4">
+		@healthReportSection("Public Content", actionLabel, pubData)
+		@healthReportSection("Admin Content", actionLabel, adminData)
+	</div>
+}
+
+templ healthReportSection(title string, actionLabel string, data HealthReportData) {
+	<div class="rounded-lg bg-white/5 p-6">
+		<div class="flex items-center justify-between">
+			<h3 class="text-sm font-semibold text-white">{ title } { actionLabel } Results</h3>
+			if data.TotalIssues() == 0 {
+				<span class="inline-flex items-center rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-400">
+					Healthy
+				</span>
+			} else if data.DryRun {
+				<span class="inline-flex items-center rounded-full bg-yellow-500/10 px-2.5 py-0.5 text-xs font-medium text-yellow-400">
+					{ fmt.Sprintf("%d issues found", data.TotalIssues()) }
+				</span>
+			} else {
+				<span class="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-400">
+					{ fmt.Sprintf("%d issues repaired", data.TotalIssues()) }
+				</span>
+			}
+		</div>
+
+		<!-- Scan summary -->
+		<div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+			@statCard("Content Rows", fmt.Sprintf("%d", data.ContentDataScanned))
+			@statCard("Field Rows", fmt.Sprintf("%d", data.ContentFieldScanned))
+			@statCard("Total Issues", fmt.Sprintf("%d", data.TotalIssues()))
+			if data.DryRun {
+				@statCard("Mode", "Dry Run")
+			} else {
+				@statCard("Mode", "Applied")
+			}
+		</div>
+
+		<!-- Issue breakdown -->
+		if data.TotalIssues() > 0 {
+			<div class="mt-4">
+				<h4 class="text-xs font-medium uppercase tracking-wide text-gray-500">Issue Breakdown</h4>
+				<dl class="mt-2 divide-y divide-white/5">
+					if data.MissingFields > 0 {
+						@issueRow("Missing Fields", fmt.Sprintf("%d", data.MissingFields), "Content items missing field rows for their datatype", !data.DryRun)
+					}
+					if data.DuplicateFields > 0 {
+						@issueRow("Duplicate Fields", fmt.Sprintf("%d", data.DuplicateFields), "Duplicate content_field rows for the same field", !data.DryRun)
+					}
+					if data.OrphanedFields > 0 {
+						@issueRow("Orphaned Fields", fmt.Sprintf("%d", data.OrphanedFields), "Content field rows referencing fields no longer in the datatype", !data.DryRun)
+					}
+					if data.ContentDataRepairs > 0 {
+						@issueRow("Invalid Content IDs", fmt.Sprintf("%d", data.ContentDataRepairs), "Content data rows with malformed ULID columns", !data.DryRun)
+					}
+					if data.ContentFieldRepairs > 0 {
+						@issueRow("Invalid Field IDs", fmt.Sprintf("%d", data.ContentFieldRepairs), "Content field rows with malformed ULID columns", !data.DryRun)
+					}
+				</dl>
+			</div>
+		}
+	</div>
+}
+
+templ statCard(label string, value string) {
+	<div class="rounded-md bg-white/5 p-3">
+		<dt class="text-xs font-medium text-gray-500">{ label }</dt>
+		<dd class="mt-1 text-lg font-semibold text-white">{ value }</dd>
+	</div>
+}
+
+templ issueRow(label string, count string, description string, repaired bool) {
+	<div class="flex items-center justify-between py-2">
+		<div>
+			<dt class="text-sm font-medium text-white">{ label }</dt>
+			<dd class="text-xs text-gray-500">{ description }</dd>
+		</div>
+		<div class="flex items-center gap-2">
+			<span class="text-sm font-medium text-white">{ count }</span>
+			if repaired {
+				<span class="text-xs text-green-400">repaired</span>
+			} else {
+				<span class="text-xs text-yellow-400">found</span>
+			}
+		</div>
+	</div>
+}

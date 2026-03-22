@@ -19,6 +19,16 @@ type HealReport struct {
 	ContentFieldRepairs []HealRepair           `json:"content_field_repairs"`
 	MissingFields       []MissingFieldReport   `json:"missing_fields"`
 	DuplicateFields     []DuplicateFieldReport `json:"duplicate_fields"`
+	OrphanedFields      []OrphanedFieldReport  `json:"orphaned_fields"`
+}
+
+// OrphanedFieldReport records a content_field row that references a field_id
+// no longer present in its content_data's datatype.
+type OrphanedFieldReport struct {
+	ContentFieldID string `json:"content_field_id"`
+	ContentDataID  string `json:"content_data_id"`
+	FieldID        string `json:"field_id"`
+	Deleted        bool   `json:"deleted"`
 }
 
 // HealRepair records a single ID repair made (or that would be made in dry-run).
@@ -61,6 +71,7 @@ func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryR
 		ContentFieldRepairs: []HealRepair{},
 		MissingFields:       []MissingFieldReport{},
 		DuplicateFields:     []DuplicateFieldReport{},
+		OrphanedFields:      []OrphanedFieldReport{},
 	}
 
 	// --- Pass 1: Heal content_data rows ---
@@ -138,6 +149,11 @@ func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryR
 	// --- Pass 4: Create missing content_field rows ---
 	if contentRows != nil {
 		s.healMissingFields(ctx, ac, *contentRows, dryRun, report)
+	}
+
+	// --- Pass 5: Remove orphaned content_field rows ---
+	if contentRows != nil && fieldRows != nil {
+		s.healOrphanedFields(ctx, ac, *contentRows, *fieldRows, dryRun, report)
 	}
 
 	return report, nil
@@ -404,4 +420,64 @@ func healContentFieldRow(row db.ContentFields) (repairs []HealRepair, healed db.
 	}
 
 	return repairs, healed
+}
+
+// healOrphanedFields finds content_field rows that reference a field_id
+// no longer present in the content_data's datatype, and removes them.
+func (s *ContentService) healOrphanedFields(ctx context.Context, ac audited.AuditContext, contentRows []db.ContentData, fieldRows []db.ContentFields, dryRun bool, report *HealReport) {
+	// Build a map of content_data_id → datatype_id
+	contentDatatypes := make(map[types.ContentID]types.DatatypeID, len(contentRows))
+	for _, row := range contentRows {
+		if row.DatatypeID.Valid {
+			contentDatatypes[row.ContentDataID] = row.DatatypeID.ID
+		}
+	}
+
+	// Cache datatype → field IDs
+	datatypeFields := make(map[types.DatatypeID]map[types.FieldID]bool)
+
+	for _, cf := range fieldRows {
+		if !cf.ContentDataID.Valid || !cf.FieldID.Valid {
+			continue
+		}
+		dtID, hasDT := contentDatatypes[cf.ContentDataID.ID]
+		if !hasDT {
+			continue
+		}
+
+		validFields, cached := datatypeFields[dtID]
+		if !cached {
+			fl, flErr := s.driver.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: dtID, Valid: true})
+			if flErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to list fields for datatype %s", dtID), flErr)
+				continue
+			}
+			validFields = make(map[types.FieldID]bool)
+			if fl != nil {
+				for _, f := range *fl {
+					validFields[f.FieldID] = true
+				}
+			}
+			datatypeFields[dtID] = validFields
+		}
+
+		if validFields[cf.FieldID.ID] {
+			continue
+		}
+
+		entry := OrphanedFieldReport{
+			ContentFieldID: string(cf.ContentFieldID),
+			ContentDataID:  string(cf.ContentDataID.ID),
+			FieldID:        string(cf.FieldID.ID),
+			Deleted:        !dryRun,
+		}
+		if !dryRun {
+			delErr := s.driver.DeleteContentField(ctx, ac, cf.ContentFieldID)
+			if delErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to delete orphaned content_field %s", cf.ContentFieldID), delErr)
+				entry.Deleted = false
+			}
+		}
+		report.OrphanedFields = append(report.OrphanedFields, entry)
+	}
 }
