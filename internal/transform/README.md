@@ -202,7 +202,7 @@ func GetContentHandler(cfg *config.Config, db db.DbDriver) http.HandlerFunc {
 ```json
 {
   "id": 42,
-  "type": "Blog Post",
+  "type": "blog_post",
   "title": "Why ModulaCMS is Different",
   "slug": "why-modulacms-is-different",
   "body": "# Introduction...",
@@ -242,12 +242,14 @@ func GetContentHandler(cfg *config.Config, db db.DbDriver) http.HandlerFunc {
 
 ## Transformation Features
 
-### Field Label → camelCase Keys
+### Field Keys
+
+Field keys are determined by `fieldKey()`: if the field has a `name` set, it is used directly; otherwise `fieldLabelToKey()` converts the label to camelCase:
 
 ```
-"Title" → "title"
-"Featured Image" → "featuredImage"
-"SEO Meta Description" → "seoMetaDescription"
+name "hero_image" → "hero_image" (used as-is)
+label "Featured Image" → "featuredImage" (camelCase fallback)
+label "SEO Meta Description" → "seoMetaDescription"
 ```
 
 ### Type Coercion

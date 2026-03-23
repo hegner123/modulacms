@@ -43,29 +43,31 @@ CREATE TABLE content_data (
 
 ## In-Memory Representation
 
-The TUI maintains trees in memory with expanded references:
+The tree package (`internal/tree/`) maintains trees in memory with sibling pointers and typed ULID IDs:
 
 ```go
-// internal/tui/cms_struct.go
-type TreeNode struct {
+// internal/tree/tree.go
+type Node struct {
 	Instance       *db.ContentData      // Database row
 	InstanceFields []db.ContentFields   // Field values
 	Datatype       db.Datatypes         // Type metadata
 	Fields         []db.Fields          // Field definitions
-	Parent         *TreeNode
-	FirstChild     *TreeNode
-	NextSibling    *TreeNode
-	PrevSibling    *TreeNode
+	Parent         *Node
+	FirstChild     *Node
+	NextSibling    *Node
+	PrevSibling    *Node
 	Expand         bool                 // UI state
 	Indent         int                  // Display level
 	Wrapped        int                  // Line wrap
+	CoreNode       *core.Node           // Corresponding core.Node for composition
 }
 
-type TreeRoot struct {
-	Root      *TreeNode              // Tree root
-	NodeIndex map[int64]*TreeNode    // O(1) lookup
-	Orphans   map[int64]*TreeNode    // Unresolved nodes
-	MaxRetry  int                    // Loop detection
+type Root struct {
+	Root      *Node                          // Tree root
+	NodeIndex map[types.ContentID]*Node      // O(1) lookup
+	Orphans   map[types.ContentID]*Node      // Unresolved nodes
+	MaxRetry  int                            // Loop detection (default 100)
+	Core      *core.Root                     // Shared core tree for composition
 }
 ```
 
@@ -77,7 +79,7 @@ Trees load in three phases:
 
 **Phase 1: Create Nodes**
 ```go
-// internal/tui/cms_struct.go
+// internal/tree/tree.go
 for _, row := range *rows {
 	node := NewTreeNodeFromContentTree(row)
 	page.NodeIndex[node.Instance.ContentDataID] = node
@@ -219,7 +221,7 @@ func DecideNodeName(node TreeNode) string {
 
 **Attaching Node to Parent:**
 ```go
-// internal/tui/cms_struct.go
+// internal/tree/tree.go
 func (page *TreeRoot) attachNodeToParent(node, parent *TreeNode) {
 	node.Parent = parent
 
@@ -245,7 +247,7 @@ Deletion handles multiple cases:
 3. Reparenting orphaned children
 
 ```go
-// internal/tui/cms_struct.go
+// internal/tree/tree.go
 func (page *TreeRoot) DeleteTreeNodeByIndex(n *TreeNode) bool {
 	target := page.NodeIndex[n.Instance.ContentDataID]
 	if target == nil || target == page.Root {
@@ -263,7 +265,7 @@ func (page *TreeRoot) DeleteTreeNodeByIndex(n *TreeNode) bool {
 }
 ```
 
-See `internal/tui/cms_struct.go` for complete deletion logic handling sibling chain updates and child reparenting.
+See `internal/tree/tree.go` for complete deletion logic handling sibling chain updates and child reparenting. Reference composition is in `internal/tree/core/compose.go`.
 
 ---
 
@@ -379,7 +381,8 @@ type Node struct {
 ## Quick Reference
 
 **Key Files:**
-- `internal/tui/cms_struct.go` - TreeNode, TreeRoot, loading, deletion
+- `internal/tree/tree.go` - Node, Root, loading, deletion
+- `internal/tree/core/compose.go` - Reference composition (TreeFetcher, ComposeTrees)
 - `internal/tui/page_builders.go` - Tree rendering
 - `internal/model/model.go` - JSON tree structure
 - `sql/schema/16_content_data/schema.sql` - Database schema

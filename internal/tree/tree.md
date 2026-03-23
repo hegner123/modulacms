@@ -256,3 +256,32 @@ Internal deletion helpers:
 - deleteFirstChildNoChildren: Removes first child with no descendants
 - deleteNestedChildHasChildren: Promotes children when deleting nested node
 - deleteNestedChildNoChildren: Removes childless nested node
+
+## core subpackage (tree/core)
+
+The `core` subpackage provides the full tree-building pipeline used by API handlers: fetching data, building the tree, and composing references.
+
+### TreeFetcher
+
+Interface abstracting the full tree-building pipeline. Each call fetches all data for a content tree and builds it using the standard `core.BuildTree` path.
+
+```go
+type TreeFetcher interface {
+    FetchAndBuildTree(ctx context.Context, id types.ContentID) (*Root, error)
+}
+```
+
+### ComposeOptions
+
+Controls composition behavior for reference resolution.
+
+```go
+type ComposeOptions struct {
+    MaxDepth       int // Maximum composition nesting depth (default 10)
+    MaxConcurrency int // Max goroutines for parallel reference resolution (default 10)
+}
+```
+
+### ComposeTrees
+
+Resolves all `_reference` nodes in the tree by fetching and building the referenced content trees via the standard BuildTree pipeline. Operates recursively up to MaxDepth levels. Uses `errgroup` for concurrent resolution of sibling references. Broken references produce `_system_log` nodes instead of errors. Tracks visited nodes to prevent circular composition.

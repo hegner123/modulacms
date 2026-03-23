@@ -26,7 +26,7 @@ Content is managed through the SSH TUI, a server-rendered HTMX admin panel, or t
 
 | Command | Purpose |
 |---------|---------|
-| `just dev` | Build local dev binary (`modula-x86`) with version ldflags |
+| `just dev` | Build local dev binary (`modula`) with version ldflags |
 | `just run` | Build and run |
 | `just run-admin` | Build and run with `air` hot reload (rebuilds on `.go` and `.templ` changes) |
 | `just dev-admin` | Build with `-tags dev` for live CSS/JS from disk (no embed, no cache) |
@@ -70,8 +70,8 @@ Tests use SQLite databases in `testdb/` that are created and cleaned per run. Th
 
 | Command | Purpose |
 |---------|---------|
-| `just admin generate` | Regenerate templ Go code |
-| `just admin watch` | Watch `.templ` files for changes |
+| `just admin generate` | Regenerate templ Go code + build Tailwind CSS |
+| `just admin watch` | Watch `.templ` files + Tailwind CSS for changes (parallel) |
 | `just admin verify` | Verify generated files are up-to-date (CI) |
 | `just admin bundle` | Bundle block editor JS via esbuild |
 | `just admin bundle-watch` | Watch and rebundle block editor JS |
@@ -138,7 +138,7 @@ just plugin disable <name>    # Disable a plugin
 ## Code Organization
 
 ```
-cmd/                          # Cobra CLI commands (serve, install, init, tui, connect, deploy, pipeline, cert, db, config, backup, update, version, plugin, mcp)
+cmd/                          # Cobra CLI commands (serve, init, tui, connect, deploy, pipeline, cert, db, config, backup, update, version, plugin, mcp)
 internal/
   db/                         # DbDriver interface, wrapper structs, application types, query builder
     types/                    # ULID-based typed IDs, enums, timestamps, nullable wrappers, field configs
@@ -151,11 +151,11 @@ internal/
   admin/                      # HTMX admin panel: CSRF, auth middleware, static file embed
     handlers/                 # Admin page handlers (render, auth, CRUD for all resources)
     layouts/                  # templ layouts (base, admin, auth) and AdminData type
-    pages/                    # templ full-page components (51 pages)
-    partials/                 # templ HTMX swap targets (48 partials)
+    pages/                    # templ full-page components (54 pages)
+    partials/                 # templ HTMX swap targets (51 partials)
     components/               # templ shared UI: sidebar, topbar, icon, spinner, status_badge + nav.go
     static/                   # CSS, JS, HTMX, web components (go:embed)
-  tui/                        # Bubbletea TUI (173 files, Elm Architecture)
+  tui/                        # Bubbletea TUI (167 Go files, Elm Architecture)
   router/                     # HTTP route registration with stdlib ServeMux (Go 1.22+ patterns)
   middleware/                  # CORS, rate limiting, sessions, panic recovery, HTTP metrics, RBAC authorization
   auth/                       # Authentication (password + OAuth with Google/GitHub/Azure)
@@ -207,10 +207,10 @@ deploy/                       # Docker compose files and deployment configs
 
 ### Tri-Database Pattern
 
-ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `config.json`'s `db_driver` field:
+ModulaCMS supports SQLite, MySQL, and PostgreSQL interchangeably via `modula.config.json`'s `db_driver` field:
 
 1. **sqlc generates** per-database Go code from SQL queries in `sql/schema/` into `internal/db-sqlite/` (package `mdb`), `internal/db-mysql/` (package `mdbm`), `internal/db-psql/` (package `mdbp`)
-2. **`internal/db/db.go`** defines the `DbDriver` interface (517 methods across 27 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`)
+2. **`internal/db/db.go`** defines the `DbDriver` interface (502 methods across 27 embedded repository interfaces) and three wrapper structs (`Database`, `MysqlDatabase`, `PsqlDatabase`)
 3. **Wrapper methods** in `internal/db/*.go` convert between sqlc types and application types, handling NULL conversions and type width differences (SQLite uses int64, MySQL/PostgreSQL use int32)
 4. **`db.DefaultDriver`** is set at startup based on config and injected into handlers
 
@@ -462,8 +462,8 @@ Detailed guide: `ai/workflows/ADDING_FEATURES.md`. Summary:
 db := testIntegrationDB(t)     // Fresh SQLite with all tables
 db := testSeededDB(t)          // Full FK-satisfying seed data
 
-auditCtx := testAuditCtx       // Pre-built audit context
-auditCtx := testAuditCtxWithUser(userID)
+auditCtx := testAuditCtx(db)              // Audit context from Database
+auditCtx := testAuditCtxWithUser(db, userID)  // Audit context with specific user
 ```
 
 ### Compile-Time Interface Checks
@@ -555,7 +555,7 @@ Environment variables can be referenced via `${VAR}` syntax in config values.
 For multi-environment setups, use the `--overlay` flag to merge a per-environment overlay file on top of the base config. Overlay files contain only the fields that differ:
 
 ```bash
-# Base config has all ~223 fields; overlay has only the 5-10 that differ
+# Base config has all ~141 fields; overlay has only the 5-10 that differ
 ./modula serve --overlay modula.config.prod.json
 ```
 
@@ -629,7 +629,7 @@ Key types: `FileProvider` (single file), `LayeredFileProvider` (base + overlay),
 
 11. **Admin panel HTMX patterns**: full page loads render the complete layout; HTMX navigation requests (`HX-Request` header) return only the content partial + OOB swap targets. Both paths go through the same handler.
 
-12. **Cobra CLI structure**: `cmd/main.go` is the entrypoint. `cmd/root.go` defines the root command. Subcommands: `serve`, `install`, `init`, `tui`, `connect`, `deploy`, `pipeline`, `cert`, `db`, `config`, `backup`, `update`, `version`, `plugin`, `mcp`.
+12. **Cobra CLI structure**: `cmd/main.go` is the entrypoint. `cmd/root.go` defines the root command. Subcommands: `serve`, `init`, `tui`, `connect`, `deploy`, `pipeline`, `cert`, `db`, `config`, `backup`, `update`, `version`, `plugin`, `mcp`.
 
 ---
 

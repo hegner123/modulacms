@@ -43,7 +43,8 @@ func (d Database) DropAllTables() error {
 		// Tier 4: Content data tables
 		{"admin_content_data", func() error { return queries.DropAdminContentDataTable(d.Context) }},
 		{"content_data", func() error { return queries.DropContentDataTable(d.Context) }},
-		// Tier 3: Field definition tables
+		// Tier 3: Field definition tables (field_plugin_config references fields)
+		{"field_plugin_config", func() error { return queries.DropFieldPluginConfigTable(d.Context) }},
 		{"admin_fields", func() error { return queries.DropAdminFieldTable(d.Context) }},
 		{"fields", func() error { return queries.DropFieldTable(d.Context) }},
 		// Tier 2.5: Validation tables (referenced by fields)
@@ -109,7 +110,8 @@ func (d MysqlDatabase) DropAllTables() error {
 		// Tier 4: Content data tables
 		{"admin_content_data", func() error { return queries.DropAdminContentDataTable(d.Context) }},
 		{"content_data", func() error { return queries.DropContentDataTable(d.Context) }},
-		// Tier 3: Field definition tables
+		// Tier 3: Field definition tables (field_plugin_config references fields)
+		{"field_plugin_config", func() error { return queries.DropFieldPluginConfigTable(d.Context) }},
 		{"admin_fields", func() error { return queries.DropAdminFieldTable(d.Context) }},
 		{"fields", func() error { return queries.DropFieldTable(d.Context) }},
 		// Tier 2.5: Validation tables (referenced by fields)
@@ -175,7 +177,8 @@ func (d PsqlDatabase) DropAllTables() error {
 		// Tier 4: Content data tables
 		{"admin_content_data", func() error { return queries.DropAdminContentDataTable(d.Context) }},
 		{"content_data", func() error { return queries.DropContentDataTable(d.Context) }},
-		// Tier 3: Field definition tables
+		// Tier 3: Field definition tables (field_plugin_config references fields)
+		{"field_plugin_config", func() error { return queries.DropFieldPluginConfigTable(d.Context) }},
 		{"admin_fields", func() error { return queries.DropAdminFieldTable(d.Context) }},
 		{"fields", func() error { return queries.DropFieldTable(d.Context) }},
 		// Tier 2.5: Validation tables (referenced by fields)

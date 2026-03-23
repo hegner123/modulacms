@@ -747,18 +747,22 @@ Update `DropAllTables()` in `internal/db/wipe.go`. Add the drop in **reverse dep
 func (d Database) DropAllTables() error {
     queries := mdb.New(d.Connection)
 
-    // ... higher-tier drops ...
+    ops := []dropOp{
+        // ... higher-tier drops ...
 
-    // Comments depend on content_data and users, so drop before those
-    if err := queries.DropCommentTable(d.Context); err != nil {
-        return fmt.Errorf("drop comments: %w", err)
+        // Comments depend on content_data and users, so drop before those
+        {"comments", func() error { return queries.DropCommentTable(d.Context) }},
+
+        // ... rest of drops ...
     }
 
-    // ... rest of drops ...
+    return runDropOps(ops)
 }
 ```
 
-Repeat for `MysqlDatabase` and `PsqlDatabase`. Also update the `WipeAllTables` test helper if one exists.
+The `runDropOps` helper executes each drop sequentially, logging warnings for failures and continuing to the next table. Tables that don't exist are skipped. A combined error is returned if any drops failed.
+
+Repeat for `MysqlDatabase` and `PsqlDatabase` (all three use the same `dropOp`/`runDropOps` pattern).
 
 ---
 

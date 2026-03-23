@@ -552,6 +552,20 @@ Constants: `BackupSetStatusPending`, `BackupSetStatusComplete`, `BackupSetStatus
 
 Methods: `Validate`, `String`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to ContentStatus.
 
+### DatatypeType
+
+Type classification for datatypes. Values prefixed with underscore are engine-reserved and trigger built-in behavior. All other values are user-defined pass-through. Reserved types support optional suffixes separated by underscore (e.g. `_reference_menu` has base `_reference` with suffix `menu`).
+
+Constants: `DatatypeTypeRoot` (`_root`), `DatatypeTypeReference` (`_reference`), `DatatypeTypeNestedRoot` (`_nested_root`), `DatatypeTypeSystemLog` (`_system_log`), `DatatypeTypeCollection` (`_collection`), `DatatypeTypeGlobal` (`_global`), `DatatypeTypePlugin` (`_plugin`).
+
+Methods: `BaseType` (strips suffix), `Suffix` (returns suffix), `IsReserved`, `IsRootType`, `IsReferenceType`, `IsCollectionType`, `IsGlobalType`, `IsSystemLogType`, `IsPluginType`, `PluginName`, `String`.
+
+Functions: `IsReservedPrefix` (checks underscore prefix), `PluginDatatypeType` (creates `_plugin_{name}`), `ReservedTypes` (returns registry copy), `ValidateDatatypeType` (validates against registry), `ValidateUserDatatypeType` (validates non-empty).
+
+### FieldType ID Reference Helpers
+
+`IsIDRefType` returns true if a FieldType starts with `_id` (matches `_id`, `_id_menu`, etc.). `IDRefSuffix` returns the suffix portion (`_id_menu` -> `menu`).
+
 ## Timestamp
 
 Handles datetime columns across SQLite TEXT, MySQL DATETIME, PostgreSQL TIMESTAMP. All times stored and returned in UTC.

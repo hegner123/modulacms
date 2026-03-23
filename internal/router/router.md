@@ -440,7 +440,7 @@ GET returns 405 Method Not Allowed. OAuth connections retrieved through user end
 
 ### SlugHandler
 
-Catch-all handler registered at / for dynamic content routing by slug. Only supports GET method.
+Content delivery handler registered at /api/v1/content/ for dynamic content routing by slug. Only supports GET method. The root URL / redirects to /admin/.
 
 Fetches route by URL path, lists content data by route, builds datatypes and fields, constructs content tree using model.BuildTree, transforms output based on configured or query parameter format.
 
@@ -538,7 +538,7 @@ Fetches full child row before update to preserve other fields. Updates content_d
 
 ### pluginRoutesListHandler
 
-Handles GET /api/v1/admin/plugins/routes. Returns all registered plugin routes with approval status. Requires authentication (any authenticated user). Response includes plugin name, method, path, public flag, approval status, approved_at, approved_by, and plugin_version.
+Handles GET /api/v1/admin/plugins/routes. Returns all registered plugin routes with approval status. Requires authentication (any authenticated user). Response includes plugin name, method, path, public flag, and approval status.
 
 ### pluginRoutesApproveHandler
 

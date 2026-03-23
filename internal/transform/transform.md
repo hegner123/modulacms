@@ -729,4 +729,12 @@ pluralize converts singular word to plural using simplified rules. Already plura
 func allChildrenSameType(nodes []*model.Node) bool
 ```
 
-allChildrenSameType returns true if every child node has the same datatype label. Used to determine if children should be grouped by type or as generic children array.
+allChildrenSameType returns true if every child node has the same datatype name. Used to determine if children should be grouped by type or as generic children array.
+
+### fieldKey
+
+```go
+func fieldKey(info db.FieldsJSON) string
+```
+
+fieldKey returns the key to use for a field in transformed output. Prefers the field's Name when non-empty; falls back to fieldLabelToKey(Label) for camelCase conversion.

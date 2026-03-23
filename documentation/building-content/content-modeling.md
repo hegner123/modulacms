@@ -18,9 +18,13 @@ The `type` field controls how ModulaCMS treats the datatype. Types starting with
 |------|---------|
 | `_root` | Tree entry point for route-based content. Every route's content tree starts with one `_root` node. |
 | `_reference` | Embeds shared content from another tree. ModulaCMS resolves the referenced content and attaches it at delivery time. |
+| `_nested_root` | Root of a composed subtree. Assigned by the engine during tree composition -- not user-created. |
+| `_system_log` | Synthetic node injected when a reference cannot be resolved. Contains error details. |
 | `_collection` | Marks content as a queryable collection. Clients can filter and paginate children via the query API. |
 | `_global` | Tree entry point for site-wide content (menus, footers, settings). Not tied to a route -- accessed via the `/globals` endpoint. |
 | `_plugin` | Plugin-provided content. Uses the `_plugin_{name}` namespace (e.g., `_plugin_analytics`). |
+
+Reserved types support optional suffixes separated by underscore. For example, `_reference_menu` has the base type `_reference` with the suffix `menu`. The suffix is metadata for the admin panel (e.g., filtering dropdowns) and does not change engine behavior.
 
 ModulaCMS rejects datatype creation if you use an unrecognized `_`-prefixed type.
 
@@ -121,8 +125,8 @@ Each field type determines the editor component shown in the admin panel and TUI
 | `richtext` | Rich text / HTML editor | HTML string |
 | `number` | Numeric input | Number as string |
 | `date` | Date picker | ISO 8601 date (YYYY-MM-DD) |
-| `datetime` | Date and time picker | ISO 8601 datetime (RFC 3339 UTC) |
-| `boolean` | True/false toggle | `"true"` or `"false"` |
+| `datetime` | Date and time picker | Datetime string (accepts RFC 3339, `YYYY-MM-DDTHH:MM:SS`, or `YYYY-MM-DD HH:MM:SS`) |
+| `boolean` | True/false toggle | `"true"`, `"false"`, `"1"`, or `"0"` |
 | `select` | Dropdown from predefined options (configured in `data`) | Selected option value |
 | `media` | Media asset picker | Media ID |
 | `_id` | Content node picker. On `_reference` datatypes, ModulaCMS resolves this value and attaches the referenced content at delivery time. | Content data ID |
@@ -130,6 +134,7 @@ Each field type determines the editor component shown in the admin panel and TUI
 | `slug` | URL-safe slug input (lowercase, numbers, hyphens) | Slug string |
 | `email` | Email input with format validation | Email address |
 | `url` | URL input with format validation | URL string |
+| `_title` | Marks this field as the display name of a datatype. Used by the admin panel and TUI to label content nodes. | Plain text |
 | `plugin` | Plugin-provided editor with custom input UI | Opaque string (plugin decides format) |
 
 > **Good to know**: All field values are stored as strings regardless of type. Numbers become their string representation, booleans become `"true"` or `"false"`, and references become ID strings. The field type tells your frontend how to interpret the value.
@@ -437,8 +442,8 @@ The referenced content lives in one place. Update it once, and every page that r
 | GET | `/api/v1/fields/` | `fields:read` | Get a field (`?q=ID`) |
 | PUT | `/api/v1/fields/` | `fields:update` | Update a field |
 | DELETE | `/api/v1/fields/` | `fields:delete` | Delete a field (`?q=ID`) |
-| GET | `/api/v1/fieldtypes` | `fields:read` | List registered field types |
-| POST | `/api/v1/fieldtypes` | `fields:create` | Register a custom field type |
+| GET | `/api/v1/fieldtypes` | `field_types:read` | List registered field types |
+| POST | `/api/v1/fieldtypes` | `field_types:create` | Register a custom field type |
 
 All list endpoints support pagination with `limit` and `offset` query parameters.
 

@@ -257,6 +257,7 @@ Returns 404 if the slug does not match an admin route.
 |--------|------|-------------|
 | GET | `/api/v1/routes` | List all |
 | GET | `/api/v1/routes/?q={ulid}` | Get by ID |
+| GET | `/api/v1/routes/full` | List all routes with full details |
 | POST | `/api/v1/routes` | Create |
 | PUT | `/api/v1/routes/` | Update |
 | DELETE | `/api/v1/routes/?q={ulid}` | Delete |
@@ -466,11 +467,7 @@ Valid formats: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`.
 
 ## Content Delivery
 
-### GET /{slug}
-
-Catch-all handler. Looks up a route by slug, builds the content tree, and returns it in the configured output format.
-
-Query parameter: `?format=` overrides the default. Valid: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, `raw`.
+The root URL `/` redirects to the admin panel (`/admin/`). Public content delivery is available at `/api/v1/content/{slug}` (see "Content Delivery (Slug-Based)" below).
 
 ---
 

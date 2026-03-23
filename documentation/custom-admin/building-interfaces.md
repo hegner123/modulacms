@@ -142,15 +142,16 @@ curl -X POST http://localhost:8080/api/v1/datatype \
 
 ### Link fields to datatypes
 
-Associate fields with a datatype to define what data it contains:
+Fields are associated with a datatype via the `parent_id` field when creating the field:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/datatypefields \
+curl -X POST http://localhost:8080/api/v1/fields \
   -H "Cookie: session=YOUR_SESSION_COOKIE" \
   -H "Content-Type: application/json" \
   -d '{
-    "datatype_id": "01HXK4N2F8...",
-    "field_id": "01HXK4N2F9..."
+    "label": "Title",
+    "type": "text",
+    "parent_id": "01HXK4N2F8..."
   }'
 ```
 

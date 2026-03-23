@@ -250,8 +250,12 @@ These endpoints handle composite creation, batch updates, tree operations, and n
 |--------|------|-------------|
 | GET | `/api/v1/datatype` | List all datatypes |
 | GET | `/api/v1/datatype/?q={ulid}` | Get datatype by ID |
+| GET | `/api/v1/datatype/full` | List all datatypes with full details |
+| GET | `/api/v1/datatype/full/list` | List all datatypes with full details (alternate) |
+| GET | `/api/v1/datatype/max-sort-order` | Get max sort order value |
 | POST | `/api/v1/datatype` | Create datatype |
 | PUT | `/api/v1/datatype/` | Update datatype |
+| PUT | `/api/v1/datatype/{id}/sort-order` | Update datatype sort order |
 | DELETE | `/api/v1/datatype/?q={ulid}` | Delete datatype |
 
 ### Fields
@@ -260,8 +264,10 @@ These endpoints handle composite creation, batch updates, tree operations, and n
 |--------|------|-------------|
 | GET | `/api/v1/fields` | List all fields |
 | GET | `/api/v1/fields/?q={ulid}` | Get field by ID |
+| GET | `/api/v1/fields/max-sort-order` | Get max sort order value for parent |
 | POST | `/api/v1/fields` | Create field |
 | PUT | `/api/v1/fields/` | Update field |
+| PUT | `/api/v1/fields/{id}/sort-order` | Update field sort order |
 | DELETE | `/api/v1/fields/?q={ulid}` | Delete field |
 
 ### Admin Datatypes
@@ -270,8 +276,11 @@ These endpoints handle composite creation, batch updates, tree operations, and n
 |--------|------|-------------|
 | GET | `/api/v1/admindatatypes` | List all admin datatypes |
 | GET | `/api/v1/admindatatypes/?q={ulid}` | Get admin datatype by ID |
+| GET | `/api/v1/admindatatypes/full` | List all admin datatypes with full details |
+| GET | `/api/v1/admindatatypes/max-sort-order` | Get max sort order value |
 | POST | `/api/v1/admindatatypes` | Create admin datatype |
 | PUT | `/api/v1/admindatatypes/` | Update admin datatype |
+| PUT | `/api/v1/admindatatypes/{id}/sort-order` | Update admin datatype sort order |
 | DELETE | `/api/v1/admindatatypes/?q={ulid}` | Delete admin datatype |
 
 ### Admin Fields
@@ -773,24 +782,12 @@ Query content items by datatype name with optional filtering, sorting, and pagin
 | `status` | No | Content status filter (default `published`) |
 | `{field}` | No | Field filters as key-value pairs (supports `[eq]`, `[ne]`, `[gt]`, `[gte]`, `[lt]`, `[lte]`, `[like]`, `[in]` operators) |
 
-## Public Content Delivery
+## Plugin Admin Routes
 
-### GET /{slug}
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| GET | `/api/v1/admin/plugins/routes` | `plugins:read` | List registered plugin routes with approval status |
+| POST | `/api/v1/admin/plugins/routes/approve` | `plugins:admin` | Approve plugin routes |
+| POST | `/api/v1/admin/plugins/routes/revoke` | `plugins:admin` | Revoke plugin routes |
 
-The top-level public content delivery endpoint. Given a route slug, the server builds the full content tree and returns it in the configured output format.
-
-```bash
-curl http://localhost:8080/blog
-```
-
-Override the output format with the `?format=` query parameter:
-
-```bash
-curl http://localhost:8080/blog?format=clean
-```
-
-Valid formats: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, `raw`.
-
-Returns 404 if no route matches the slug.
-
-> **Good to know**: Every admin endpoint requires authentication and role-based permission checks. Public routes (auth, OAuth, content delivery by slug) have no permission guards.
+> **Good to know**: Every admin endpoint requires authentication and role-based permission checks. Public routes (auth, OAuth, content delivery by slug) have no permission guards. The root URL `/` redirects to the admin panel.
