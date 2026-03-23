@@ -15,7 +15,10 @@ templ DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, has
 	</div>
 	if len(envs) == 0 {
 		<div class="mt-8">
-			@partials.EmptyState("No deploy environments configured. Add environments to modula.config.json under deploy_environments.")
+			@partials.EmptyState("No deploy environments configured. Add environments in Settings under deploy_environments.")
+		</div>
+		<div class="mt-4">
+			<a href="/admin/settings" class="text-sm font-medium text-indigo-400 hover:text-indigo-300">Go to Settings &rarr;</a>
 		</div>
 	} else {
 		<div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">

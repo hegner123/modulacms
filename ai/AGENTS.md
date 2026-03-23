@@ -138,7 +138,7 @@ just plugin disable <name>    # Disable a plugin
 ## Code Organization
 
 ```
-cmd/                          # Cobra CLI commands (serve, init, tui, connect, deploy, pipeline, cert, db, config, backup, update, version, plugin, mcp)
+cmd/                          # Cobra CLI commands (serve, init, tui, connect, deploy, pipeline, cert, db, config, backup, update, version, plugin, scaffold, mcp)
 internal/
   db/                         # DbDriver interface, wrapper structs, application types, query builder
     types/                    # ULID-based typed IDs, enums, timestamps, nullable wrappers, field configs
@@ -629,7 +629,7 @@ Key types: `FileProvider` (single file), `LayeredFileProvider` (base + overlay),
 
 11. **Admin panel HTMX patterns**: full page loads render the complete layout; HTMX navigation requests (`HX-Request` header) return only the content partial + OOB swap targets. Both paths go through the same handler.
 
-12. **Cobra CLI structure**: `cmd/main.go` is the entrypoint. `cmd/root.go` defines the root command. Subcommands: `serve`, `init`, `tui`, `connect`, `deploy`, `pipeline`, `cert`, `db`, `config`, `backup`, `update`, `version`, `plugin`, `mcp`.
+12. **Cobra CLI structure**: `cmd/main.go` is the entrypoint. `cmd/root.go` defines the root command. Subcommands: `serve`, `init`, `tui`, `connect`, `deploy`, `pipeline`, `cert`, `db`, `config`, `backup`, `update`, `version`, `plugin`, `scaffold`, `mcp`.
 
 ---
 

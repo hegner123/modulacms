@@ -36,6 +36,7 @@ Management commands:
   deploy     Export, import, and sync content between environments
   plugin     Manage Lua plugins (install, enable, reload, approve)
   pipeline   View and manage plugin pipeline entries
+  scaffold   Generate deployment files (Dockerfile, docker-compose)
   mcp        Start the MCP server for AI-assisted content management
   update     Check for and apply binary updates
 
@@ -69,6 +70,7 @@ func init() {
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(connectCmd)
 	rootCmd.AddCommand(mcpCmd)
+	rootCmd.AddCommand(scaffoldCmd)
 }
 
 // Execute runs the root CLI command and returns any error encountered.

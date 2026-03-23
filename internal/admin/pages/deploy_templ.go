@@ -44,11 +44,11 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = partials.EmptyState("No deploy environments configured. Add environments to modula.config.json under deploy_environments.").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = partials.EmptyState("No deploy environments configured. Add environments in Settings under deploy_environments.").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><div class=\"mt-4\"><a href=\"/admin/settings\" class=\"text-sm font-medium text-indigo-400 hover:text-indigo-300\">Go to Settings &rarr;</a></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -65,7 +65,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 				var templ_7745c5c3_Var2 string
 				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(env.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 27, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 30, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 				if templ_7745c5c3_Err != nil {
@@ -78,7 +78,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(env.URL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 28, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 31, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -91,7 +91,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/deploy/" + env.Name + "/health")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 31, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 34, Col: 56}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -104,7 +104,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("#health-" + env.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 32, Col: 40}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 35, Col: 40}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -117,7 +117,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs("#health-spinner-" + env.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 34, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 37, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -130,7 +130,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(csrfToken)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 36, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 39, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -143,7 +143,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("health-spinner-" + env.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 38, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 41, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -156,7 +156,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs("health-" + env.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 46, Col: 35}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 49, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -174,7 +174,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/deploy/" + env.Name + "/pull?dry_run=true")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 54, Col: 68}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 57, Col: 68}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -187,7 +187,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("#result-" + env.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 55, Col: 41}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 58, Col: 41}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -200,7 +200,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(csrfToken)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 58, Col: 59}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 61, Col: 59}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -213,7 +213,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs("Pull from " + env.Name + "? This will overwrite local content with data from the remote environment.")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 66, Col: 120}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 69, Col: 120}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -226,7 +226,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/deploy/" + env.Name + "/pull")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 68, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 71, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -239,7 +239,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs("#result-" + env.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 69, Col: 41}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 72, Col: 41}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -252,7 +252,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var16 string
 					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/deploy/" + env.Name + "/push?dry_run=true")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 74, Col: 68}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 77, Col: 68}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 					if templ_7745c5c3_Err != nil {
@@ -265,7 +265,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var17 string
 					templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs("#result-" + env.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 75, Col: 41}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 78, Col: 41}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 					if templ_7745c5c3_Err != nil {
@@ -278,7 +278,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var18 string
 					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(csrfToken)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 78, Col: 59}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 81, Col: 59}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 					if templ_7745c5c3_Err != nil {
@@ -291,7 +291,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs("Push to " + env.Name + "? This will overwrite remote content with your local data.")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 86, Col: 102}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 89, Col: 102}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
@@ -304,7 +304,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var20 string
 					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/deploy/" + env.Name + "/push")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 88, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 91, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 					if templ_7745c5c3_Err != nil {
@@ -317,7 +317,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 					var templ_7745c5c3_Var21 string
 					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs("#result-" + env.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 89, Col: 41}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 92, Col: 41}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 					if templ_7745c5c3_Err != nil {
@@ -335,7 +335,7 @@ func DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasW
 				var templ_7745c5c3_Var22 string
 				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs("result-" + env.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 95, Col: 35}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/deploy.templ`, Line: 98, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
