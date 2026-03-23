@@ -21,11 +21,14 @@ type HealthReportData struct {
 	DuplicateFields     int
 	OrphanedFields      int
 	DanglingPointers    int
+	OrphanedRouteRefs   int
+	UnroutedRoots       int
+	RootlessContent     int
 }
 
 // TotalIssues returns the total number of issues found.
 func (d HealthReportData) TotalIssues() int {
-	return d.ContentDataRepairs + d.ContentFieldRepairs + d.MissingFields + d.DuplicateFields + d.OrphanedFields + d.DanglingPointers
+	return d.ContentDataRepairs + d.ContentFieldRepairs + d.MissingFields + d.DuplicateFields + d.OrphanedFields + d.DanglingPointers + d.OrphanedRouteRefs + d.UnroutedRoots + d.RootlessContent
 }
 
 func ContentHealthReport(title string, actionLabel string, data HealthReportData) templ.Component {
@@ -134,7 +137,7 @@ func healthReportSection(title string, actionLabel string, data HealthReportData
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 39, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 42, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -147,7 +150,7 @@ func healthReportSection(title string, actionLabel string, data HealthReportData
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(actionLabel)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 39, Col: 71}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 42, Col: 71}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -170,7 +173,7 @@ func healthReportSection(title string, actionLabel string, data HealthReportData
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d issues found", data.TotalIssues()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 46, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 49, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -188,7 +191,7 @@ func healthReportSection(title string, actionLabel string, data HealthReportData
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d issues repaired", data.TotalIssues()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 50, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 53, Col: 60}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -259,6 +262,24 @@ func healthReportSection(title string, actionLabel string, data HealthReportData
 					return templ_7745c5c3_Err
 				}
 			}
+			if data.OrphanedRouteRefs > 0 {
+				templ_7745c5c3_Err = issueRow("Orphaned Route Refs", fmt.Sprintf("%d", data.OrphanedRouteRefs), "Content rows referencing deleted routes", !data.DryRun).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if data.UnroutedRoots > 0 {
+				templ_7745c5c3_Err = issueRow("Unrouted Roots", fmt.Sprintf("%d", data.UnroutedRoots), "Root content nodes with no route assigned", false).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if data.RootlessContent > 0 {
+				templ_7745c5c3_Err = issueRow("Rootless Content", fmt.Sprintf("%d", data.RootlessContent), "Content on routes with no root node (inaccessible)", !data.DryRun).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
 			if data.ContentDataRepairs > 0 {
 				templ_7745c5c3_Err = issueRow("Invalid Content IDs", fmt.Sprintf("%d", data.ContentDataRepairs), "Content data rows with malformed ULID columns", !data.DryRun).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
@@ -312,7 +333,7 @@ func statCard(label string, value string) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 98, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 110, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -325,7 +346,7 @@ func statCard(label string, value string) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 99, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 111, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -367,7 +388,7 @@ func issueRow(label string, count string, description string, repaired bool) tem
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 106, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 118, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -380,7 +401,7 @@ func issueRow(label string, count string, description string, repaired bool) tem
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 107, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 119, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -393,7 +414,7 @@ func issueRow(label string, count string, description string, repaired bool) tem
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(count)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 110, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/content_health_report.templ`, Line: 122, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {

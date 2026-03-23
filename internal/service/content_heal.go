@@ -21,6 +21,36 @@ type HealReport struct {
 	DuplicateFields     []DuplicateFieldReport  `json:"duplicate_fields"`
 	OrphanedFields      []OrphanedFieldReport   `json:"orphaned_fields"`
 	DanglingPointers    []DanglingPointerReport `json:"dangling_pointers"`
+	OrphanedRouteRefs   []OrphanedRouteReport      `json:"orphaned_route_refs"`
+	UnroutedRoots       []UnroutedRootReport       `json:"unrouted_roots"`
+	RootlessContent     []RootlessContentReport    `json:"rootless_content"`
+}
+
+// OrphanedRouteReport records a content_data row whose route_id references
+// a route that no longer exists.
+type OrphanedRouteReport struct {
+	ContentDataID string `json:"content_data_id"`
+	RouteID       string `json:"route_id"`
+	Nulled        bool   `json:"nulled"`
+}
+
+// UnroutedRootReport records a root content node (_root datatype type)
+// that has no route_id set.
+type UnroutedRootReport struct {
+	ContentDataID string `json:"content_data_id"`
+	DatatypeID    string `json:"datatype_id"`
+	DatatypeName  string `json:"datatype_name"`
+}
+
+// RootlessContentReport records a content_data row assigned to a route
+// that has no _root typed node. These rows are inaccessible — the content
+// tree cannot be built without a root entry point.
+type RootlessContentReport struct {
+	ContentDataID string `json:"content_data_id"`
+	RouteID       string `json:"route_id"`
+	RouteSlug     string `json:"route_slug"`
+	DatatypeName  string `json:"datatype_name"`
+	Deleted       bool   `json:"deleted"`
 }
 
 // OrphanedFieldReport records a content_field row that references a field_id
@@ -67,13 +97,16 @@ type DuplicateFieldReport struct {
 	Deleted        bool   `json:"deleted"`
 }
 
-// Heal performs a 6-pass repair of content data:
+// Heal performs a 9-pass repair of content data:
 //  1. Heal invalid ULIDs on content_data rows
 //  2. Heal invalid ULIDs on content_field rows
 //  3. Remove duplicate content_field rows (keep best by value/date)
 //  4. Create missing content_field rows for datatypes
 //  5. Remove orphaned content_field rows
 //  6. Null out dangling tree pointers (parent, first_child, next/prev_sibling)
+//  7. Null out route_id references pointing to deleted routes
+//  8. Report root content nodes with no route_id
+//  9. Delete content on routes that have no _root node (inaccessible trees)
 //
 // When dryRun is true, the report describes what would be changed without modifying data.
 func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryRun bool) (*HealReport, error) {
@@ -85,6 +118,9 @@ func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryR
 		DuplicateFields:     []DuplicateFieldReport{},
 		OrphanedFields:      []OrphanedFieldReport{},
 		DanglingPointers:    []DanglingPointerReport{},
+		OrphanedRouteRefs:   []OrphanedRouteReport{},
+		UnroutedRoots:       []UnroutedRootReport{},
+		RootlessContent:     []RootlessContentReport{},
 	}
 
 	// --- Pass 1: Heal content_data rows ---
@@ -172,6 +208,21 @@ func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryR
 	// --- Pass 6: Null out dangling tree pointers ---
 	if contentRows != nil {
 		s.healDanglingPointers(ctx, ac, *contentRows, dryRun, report)
+	}
+
+	// --- Pass 7: Null out orphaned route references ---
+	if contentRows != nil {
+		s.healOrphanedRouteRefs(ctx, ac, *contentRows, dryRun, report)
+	}
+
+	// --- Pass 8: Report unrouted root nodes ---
+	if contentRows != nil {
+		s.reportUnroutedRoots(*contentRows, report)
+	}
+
+	// --- Pass 9: Delete content on routes with no _root node ---
+	if contentRows != nil {
+		s.healRootlessContent(ctx, ac, *contentRows, dryRun, report)
 	}
 
 	return report, nil
@@ -579,6 +630,195 @@ func (s *ContentService) healDanglingPointers(ctx context.Context, ac audited.Au
 			for i := len(report.DanglingPointers) - len(danglingCols); i < len(report.DanglingPointers); i++ {
 				report.DanglingPointers[i].Nulled = false
 			}
+		}
+	}
+}
+
+// healOrphanedRouteRefs finds content_data rows whose route_id references
+// a route that no longer exists and nulls the reference.
+func (s *ContentService) healOrphanedRouteRefs(ctx context.Context, ac audited.AuditContext, contentRows []db.ContentData, dryRun bool, report *HealReport) {
+	routes, err := s.driver.ListRoutes()
+	if err != nil {
+		utility.DefaultLogger.Error("heal: failed to list routes", err)
+		return
+	}
+
+	validRoutes := make(map[types.RouteID]bool)
+	if routes != nil {
+		for _, r := range *routes {
+			validRoutes[r.RouteID] = true
+		}
+	}
+
+	for _, row := range contentRows {
+		if !row.RouteID.Valid {
+			continue
+		}
+		if validRoutes[row.RouteID.ID] {
+			continue
+		}
+
+		entry := OrphanedRouteReport{
+			ContentDataID: string(row.ContentDataID),
+			RouteID:       string(row.RouteID.ID),
+			Nulled:        !dryRun,
+		}
+
+		if !dryRun {
+			_, updateErr := s.driver.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: row.ContentDataID,
+				ParentID:      row.ParentID,
+				FirstChildID:  row.FirstChildID,
+				NextSiblingID: row.NextSiblingID,
+				PrevSiblingID: row.PrevSiblingID,
+				RouteID:       types.NullableRouteID{Valid: false},
+				DatatypeID:    row.DatatypeID,
+				AuthorID:      row.AuthorID,
+				Status:        row.Status,
+				DateCreated:   row.DateCreated,
+				DateModified:  types.TimestampNow(),
+			})
+			if updateErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to null orphaned route_id on content_data %s", row.ContentDataID), updateErr)
+				entry.Nulled = false
+			}
+		}
+
+		report.OrphanedRouteRefs = append(report.OrphanedRouteRefs, entry)
+	}
+}
+
+// reportUnroutedRoots finds root content nodes (_root datatype type) that have
+// no route_id set. These are report-only (no automatic repair since the correct
+// route cannot be inferred).
+func (s *ContentService) reportUnroutedRoots(contentRows []db.ContentData, report *HealReport) {
+	// Build a cache of datatype info for root-type checking.
+	dtCache := make(map[types.DatatypeID]*db.Datatypes)
+
+	for _, row := range contentRows {
+		// Only check rows with no route and a datatype.
+		if row.RouteID.Valid || !row.DatatypeID.Valid {
+			continue
+		}
+		// Only check root nodes (no parent).
+		if row.ParentID.Valid {
+			continue
+		}
+
+		dt, cached := dtCache[row.DatatypeID.ID]
+		if !cached {
+			fetched, fetchErr := s.driver.GetDatatype(row.DatatypeID.ID)
+			if fetchErr != nil {
+				continue
+			}
+			dt = fetched
+			dtCache[row.DatatypeID.ID] = dt
+		}
+		if dt == nil {
+			continue
+		}
+
+		dtType := types.DatatypeType(dt.Type)
+		if !dtType.IsRootType() {
+			continue
+		}
+
+		report.UnroutedRoots = append(report.UnroutedRoots, UnroutedRootReport{
+			ContentDataID: string(row.ContentDataID),
+			DatatypeID:    string(row.DatatypeID.ID),
+			DatatypeName:  dt.Name,
+		})
+	}
+}
+
+// healRootlessContent finds routes that have content_data rows but no _root
+// typed node. Content on such routes is inaccessible — the tree cannot be
+// built. In heal mode, deletes the orphaned content and its fields.
+func (s *ContentService) healRootlessContent(ctx context.Context, ac audited.AuditContext, contentRows []db.ContentData, dryRun bool, report *HealReport) {
+	// Group content by route_id
+	byRoute := make(map[types.RouteID][]db.ContentData)
+	for _, row := range contentRows {
+		if !row.RouteID.Valid {
+			continue
+		}
+		byRoute[row.RouteID.ID] = append(byRoute[row.RouteID.ID], row)
+	}
+
+	// Cache datatype lookups
+	dtCache := make(map[types.DatatypeID]*db.Datatypes)
+
+	// Build route slug lookup
+	routes, routeErr := s.driver.ListRoutes()
+	slugMap := make(map[types.RouteID]string)
+	if routeErr == nil && routes != nil {
+		for _, r := range *routes {
+			slugMap[r.RouteID] = string(r.Slug)
+		}
+	}
+
+	for routeID, rows := range byRoute {
+		// Check if any row on this route has a _root type
+		hasRoot := false
+		for _, row := range rows {
+			if !row.DatatypeID.Valid {
+				continue
+			}
+			dt, cached := dtCache[row.DatatypeID.ID]
+			if !cached {
+				fetched, err := s.driver.GetDatatype(row.DatatypeID.ID)
+				if err != nil {
+					continue
+				}
+				dt = fetched
+				dtCache[row.DatatypeID.ID] = dt
+			}
+			if dt != nil && types.DatatypeType(dt.Type).IsRootType() {
+				hasRoot = true
+				break
+			}
+		}
+		if hasRoot {
+			continue
+		}
+
+		// This route has content but no root node — all content is inaccessible
+		slug := slugMap[routeID]
+		for _, row := range rows {
+			dtName := ""
+			if row.DatatypeID.Valid {
+				if dt, ok := dtCache[row.DatatypeID.ID]; ok && dt != nil {
+					dtName = dt.Name
+				}
+			}
+
+			entry := RootlessContentReport{
+				ContentDataID: string(row.ContentDataID),
+				RouteID:       string(routeID),
+				RouteSlug:     slug,
+				DatatypeName:  dtName,
+				Deleted:       !dryRun,
+			}
+
+			if !dryRun {
+				// Delete content fields first
+				fields, _ := s.driver.ListContentFieldsByContentData(types.NullableContentID{ID: row.ContentDataID, Valid: true})
+				if fields != nil {
+					for _, cf := range *fields {
+						delErr := s.driver.DeleteContentField(ctx, ac, cf.ContentFieldID)
+						if delErr != nil {
+							utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to delete content_field %s for rootless content %s", cf.ContentFieldID, row.ContentDataID), delErr)
+						}
+					}
+				}
+				// Delete the content data row
+				delErr := s.driver.DeleteContentData(ctx, ac, row.ContentDataID)
+				if delErr != nil {
+					utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to delete rootless content_data %s", row.ContentDataID), delErr)
+					entry.Deleted = false
+				}
+			}
+
+			report.RootlessContent = append(report.RootlessContent, entry)
 		}
 	}
 }

@@ -13,11 +13,14 @@ type HealthReportData struct {
 	DuplicateFields     int
 	OrphanedFields      int
 	DanglingPointers    int
+	OrphanedRouteRefs   int
+	UnroutedRoots       int
+	RootlessContent     int
 }
 
 // TotalIssues returns the total number of issues found.
 func (d HealthReportData) TotalIssues() int {
-	return d.ContentDataRepairs + d.ContentFieldRepairs + d.MissingFields + d.DuplicateFields + d.OrphanedFields + d.DanglingPointers
+	return d.ContentDataRepairs + d.ContentFieldRepairs + d.MissingFields + d.DuplicateFields + d.OrphanedFields + d.DanglingPointers + d.OrphanedRouteRefs + d.UnroutedRoots + d.RootlessContent
 }
 
 templ ContentHealthReport(title string, actionLabel string, data HealthReportData) {
@@ -80,6 +83,15 @@ templ healthReportSection(title string, actionLabel string, data HealthReportDat
 					}
 					if data.DanglingPointers > 0 {
 						@issueRow("Dangling Pointers", fmt.Sprintf("%d", data.DanglingPointers), "Tree pointers referencing deleted content rows", !data.DryRun)
+					}
+					if data.OrphanedRouteRefs > 0 {
+						@issueRow("Orphaned Route Refs", fmt.Sprintf("%d", data.OrphanedRouteRefs), "Content rows referencing deleted routes", !data.DryRun)
+					}
+					if data.UnroutedRoots > 0 {
+						@issueRow("Unrouted Roots", fmt.Sprintf("%d", data.UnroutedRoots), "Root content nodes with no route assigned", false)
+					}
+					if data.RootlessContent > 0 {
+						@issueRow("Rootless Content", fmt.Sprintf("%d", data.RootlessContent), "Content on routes with no root node (inaccessible)", !data.DryRun)
 					}
 					if data.ContentDataRepairs > 0 {
 						@issueRow("Invalid Content IDs", fmt.Sprintf("%d", data.ContentDataRepairs), "Content data rows with malformed ULID columns", !data.DryRun)

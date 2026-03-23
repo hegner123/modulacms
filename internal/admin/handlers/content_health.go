@@ -59,7 +59,10 @@ func ContentHealthCheckHandler(svc *service.Registry) http.HandlerFunc {
 				MissingFields:       len(report.MissingFields),
 				DuplicateFields:     len(report.DuplicateFields),
 				OrphanedFields:      len(report.OrphanedFields),
-			DanglingPointers:    len(report.DanglingPointers),
+				DanglingPointers:    len(report.DanglingPointers),
+				OrphanedRouteRefs:   len(report.OrphanedRouteRefs),
+				UnroutedRoots:       len(report.UnroutedRoots),
+				RootlessContent:     len(report.RootlessContent),
 			}))
 
 		case "admin":
@@ -82,7 +85,10 @@ func ContentHealthCheckHandler(svc *service.Registry) http.HandlerFunc {
 				MissingFields:       len(report.MissingFields),
 				DuplicateFields:     len(report.DuplicateFields),
 				OrphanedFields:      len(report.OrphanedFields),
-			DanglingPointers:    len(report.DanglingPointers),
+				DanglingPointers:    len(report.DanglingPointers),
+				OrphanedRouteRefs:   len(report.OrphanedRouteRefs),
+				UnroutedRoots:       len(report.UnroutedRoots),
+				RootlessContent:     len(report.RootlessContent),
 			}))
 
 		case "all":
@@ -111,6 +117,9 @@ func ContentHealthCheckHandler(svc *service.Registry) http.HandlerFunc {
 				DuplicateFields:     len(pubReport.DuplicateFields),
 				OrphanedFields:      len(pubReport.OrphanedFields),
 				DanglingPointers:    len(pubReport.DanglingPointers),
+				OrphanedRouteRefs:   len(pubReport.OrphanedRouteRefs),
+				UnroutedRoots:       len(pubReport.UnroutedRoots),
+				RootlessContent:     len(pubReport.RootlessContent),
 			}
 			adminData := partials.HealthReportData{
 				DryRun:              adminReport.DryRun,
@@ -122,6 +131,9 @@ func ContentHealthCheckHandler(svc *service.Registry) http.HandlerFunc {
 				DuplicateFields:     len(adminReport.DuplicateFields),
 				OrphanedFields:      len(adminReport.OrphanedFields),
 				DanglingPointers:    len(adminReport.DanglingPointers),
+				OrphanedRouteRefs:   len(adminReport.OrphanedRouteRefs),
+				UnroutedRoots:       len(adminReport.UnroutedRoots),
+				RootlessContent:     len(adminReport.RootlessContent),
 			}
 			Render(w, r, partials.ContentHealthReportCombined(actionLabel, pubData, adminData))
 

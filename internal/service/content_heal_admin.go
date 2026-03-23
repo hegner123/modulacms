@@ -21,6 +21,9 @@ type AdminHealReport struct {
 	DuplicateFields     []DuplicateFieldReport      `json:"duplicate_fields"`
 	OrphanedFields      []AdminOrphanedFieldReport  `json:"orphaned_fields"`
 	DanglingPointers    []DanglingPointerReport     `json:"dangling_pointers"`
+	OrphanedRouteRefs   []OrphanedRouteReport       `json:"orphaned_route_refs"`
+	UnroutedRoots       []UnroutedRootReport        `json:"unrouted_roots"`
+	RootlessContent     []RootlessContentReport     `json:"rootless_content"`
 }
 
 // AdminOrphanedFieldReport records a content_field row that references a field_id
@@ -32,13 +35,16 @@ type AdminOrphanedFieldReport struct {
 	Deleted        bool   `json:"deleted"`
 }
 
-// Heal performs a 6-pass repair of admin content data:
+// Heal performs a 9-pass repair of admin content data:
 //  1. Heal invalid ULIDs on admin_content_data rows
 //  2. Heal invalid ULIDs on admin_content_field rows
 //  3. Remove duplicate admin_content_field rows (keep best by value/date)
 //  4. Create missing admin_content_field rows for datatypes
 //  5. Remove orphaned admin_content_field rows (field no longer in datatype)
 //  6. Null out dangling tree pointers (parent, first_child, next/prev_sibling)
+//  7. Null out admin_route_id references pointing to deleted admin routes
+//  8. Report root admin content nodes with no admin_route_id
+//  9. Delete admin content on routes that have no _root node (inaccessible trees)
 //
 // When dryRun is true, the report describes what would be changed without modifying data.
 func (s *AdminContentService) Heal(ctx context.Context, ac audited.AuditContext, dryRun bool) (*AdminHealReport, error) {
@@ -50,6 +56,9 @@ func (s *AdminContentService) Heal(ctx context.Context, ac audited.AuditContext,
 		DuplicateFields:     []DuplicateFieldReport{},
 		OrphanedFields:      []AdminOrphanedFieldReport{},
 		DanglingPointers:    []DanglingPointerReport{},
+		OrphanedRouteRefs:   []OrphanedRouteReport{},
+		UnroutedRoots:       []UnroutedRootReport{},
+		RootlessContent:     []RootlessContentReport{},
 	}
 
 	// --- Pass 1: Heal admin_content_data rows ---
@@ -137,6 +146,21 @@ func (s *AdminContentService) Heal(ctx context.Context, ac audited.AuditContext,
 	// --- Pass 6: Null out dangling tree pointers ---
 	if contentRows != nil {
 		s.healAdminDanglingPointers(ctx, ac, *contentRows, dryRun, report)
+	}
+
+	// --- Pass 7: Null out orphaned admin route references ---
+	if contentRows != nil {
+		s.healAdminOrphanedRouteRefs(ctx, ac, *contentRows, dryRun, report)
+	}
+
+	// --- Pass 8: Report unrouted admin root nodes ---
+	if contentRows != nil {
+		s.reportAdminUnroutedRoots(*contentRows, report)
+	}
+
+	// --- Pass 9: Delete admin content on routes with no _root node ---
+	if contentRows != nil {
+		s.healAdminRootlessContent(ctx, ac, *contentRows, dryRun, report)
 	}
 
 	return report, nil
@@ -537,6 +561,183 @@ func (s *AdminContentService) healAdminDanglingPointers(ctx context.Context, ac 
 			for i := len(report.DanglingPointers) - len(danglingCols); i < len(report.DanglingPointers); i++ {
 				report.DanglingPointers[i].Nulled = false
 			}
+		}
+	}
+}
+
+// healAdminOrphanedRouteRefs finds admin_content_data rows whose admin_route_id
+// references an admin route that no longer exists and nulls the reference.
+func (s *AdminContentService) healAdminOrphanedRouteRefs(ctx context.Context, ac audited.AuditContext, contentRows []db.AdminContentData, dryRun bool, report *AdminHealReport) {
+	routes, err := s.driver.ListAdminRoutes()
+	if err != nil {
+		utility.DefaultLogger.Error("admin heal: failed to list admin routes", err)
+		return
+	}
+
+	validRoutes := make(map[types.AdminRouteID]bool)
+	if routes != nil {
+		for _, r := range *routes {
+			validRoutes[r.AdminRouteID] = true
+		}
+	}
+
+	for _, row := range contentRows {
+		if !row.AdminRouteID.Valid {
+			continue
+		}
+		if validRoutes[row.AdminRouteID.ID] {
+			continue
+		}
+
+		entry := OrphanedRouteReport{
+			ContentDataID: string(row.AdminContentDataID),
+			RouteID:       string(row.AdminRouteID.ID),
+			Nulled:        !dryRun,
+		}
+
+		if !dryRun {
+			_, updateErr := s.driver.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
+				AdminContentDataID: row.AdminContentDataID,
+				ParentID:           row.ParentID,
+				FirstChildID:       row.FirstChildID,
+				NextSiblingID:      row.NextSiblingID,
+				PrevSiblingID:      row.PrevSiblingID,
+				AdminRouteID:       types.NullableAdminRouteID{Valid: false},
+				AdminDatatypeID:    row.AdminDatatypeID,
+				AuthorID:           row.AuthorID,
+				Status:             row.Status,
+				DateCreated:        row.DateCreated,
+				DateModified:       types.TimestampNow(),
+			})
+			if updateErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("admin heal: failed to null orphaned admin_route_id on admin_content_data %s", row.AdminContentDataID), updateErr)
+				entry.Nulled = false
+			}
+		}
+
+		report.OrphanedRouteRefs = append(report.OrphanedRouteRefs, entry)
+	}
+}
+
+// reportAdminUnroutedRoots finds admin root content nodes (_root datatype type)
+// that have no admin_route_id set.
+func (s *AdminContentService) reportAdminUnroutedRoots(contentRows []db.AdminContentData, report *AdminHealReport) {
+	dtCache := make(map[types.AdminDatatypeID]*db.AdminDatatypes)
+
+	for _, row := range contentRows {
+		if row.AdminRouteID.Valid || !row.AdminDatatypeID.Valid {
+			continue
+		}
+		if row.ParentID.Valid {
+			continue
+		}
+
+		dt, cached := dtCache[row.AdminDatatypeID.ID]
+		if !cached {
+			fetched, fetchErr := s.driver.GetAdminDatatypeById(row.AdminDatatypeID.ID)
+			if fetchErr != nil {
+				continue
+			}
+			dt = fetched
+			dtCache[row.AdminDatatypeID.ID] = dt
+		}
+		if dt == nil {
+			continue
+		}
+
+		dtType := types.DatatypeType(dt.Type)
+		if !dtType.IsRootType() {
+			continue
+		}
+
+		report.UnroutedRoots = append(report.UnroutedRoots, UnroutedRootReport{
+			ContentDataID: string(row.AdminContentDataID),
+			DatatypeID:    string(row.AdminDatatypeID.ID),
+			DatatypeName:  dt.Name,
+		})
+	}
+}
+
+// healAdminRootlessContent finds admin routes that have content but no _root
+// typed node. Content on such routes is inaccessible. In heal mode, deletes it.
+func (s *AdminContentService) healAdminRootlessContent(ctx context.Context, ac audited.AuditContext, contentRows []db.AdminContentData, dryRun bool, report *AdminHealReport) {
+	byRoute := make(map[types.AdminRouteID][]db.AdminContentData)
+	for _, row := range contentRows {
+		if !row.AdminRouteID.Valid {
+			continue
+		}
+		byRoute[row.AdminRouteID.ID] = append(byRoute[row.AdminRouteID.ID], row)
+	}
+
+	dtCache := make(map[types.AdminDatatypeID]*db.AdminDatatypes)
+
+	routes, routeErr := s.driver.ListAdminRoutes()
+	slugMap := make(map[types.AdminRouteID]string)
+	if routeErr == nil && routes != nil {
+		for _, r := range *routes {
+			slugMap[r.AdminRouteID] = string(r.Slug)
+		}
+	}
+
+	for routeID, rows := range byRoute {
+		hasRoot := false
+		for _, row := range rows {
+			if !row.AdminDatatypeID.Valid {
+				continue
+			}
+			dt, cached := dtCache[row.AdminDatatypeID.ID]
+			if !cached {
+				fetched, err := s.driver.GetAdminDatatypeById(row.AdminDatatypeID.ID)
+				if err != nil {
+					continue
+				}
+				dt = fetched
+				dtCache[row.AdminDatatypeID.ID] = dt
+			}
+			if dt != nil && types.DatatypeType(dt.Type).IsRootType() {
+				hasRoot = true
+				break
+			}
+		}
+		if hasRoot {
+			continue
+		}
+
+		slug := slugMap[routeID]
+		for _, row := range rows {
+			dtName := ""
+			if row.AdminDatatypeID.Valid {
+				if dt, ok := dtCache[row.AdminDatatypeID.ID]; ok && dt != nil {
+					dtName = dt.Name
+				}
+			}
+
+			entry := RootlessContentReport{
+				ContentDataID: string(row.AdminContentDataID),
+				RouteID:       string(routeID),
+				RouteSlug:     slug,
+				DatatypeName:  dtName,
+				Deleted:       !dryRun,
+			}
+
+			if !dryRun {
+				fields, _ := s.driver.ListAdminContentFieldsByContentData(types.NullableAdminContentID{ID: row.AdminContentDataID, Valid: true})
+				if fields != nil {
+					for _, cf := range *fields {
+						delErr := s.driver.DeleteAdminContentField(ctx, ac, cf.AdminContentFieldID)
+						if delErr != nil {
+							utility.DefaultLogger.Error(fmt.Sprintf("admin heal: failed to delete admin_content_field %s for rootless content %s", cf.AdminContentFieldID, row.AdminContentDataID), delErr)
+						}
+					}
+				}
+				delErr := s.driver.DeleteAdminContentData(ctx, ac, row.AdminContentDataID)
+				if delErr != nil {
+					utility.DefaultLogger.Error(fmt.Sprintf("admin heal: failed to delete rootless admin_content_data %s", row.AdminContentDataID), delErr)
+					entry.Deleted = false
+				}
+			}
+
+			report.RootlessContent = append(report.RootlessContent, entry)
 		}
 	}
 }
