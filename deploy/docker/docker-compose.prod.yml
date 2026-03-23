@@ -35,8 +35,9 @@ services:
       - prod_cms_data:/app/data
       - prod_cms_ssh:/app/.ssh
       - prod_cms_backups:/app/backups
-      - ./config.prod.json:/app/modula.config.json
-    entrypoint: ["/bin/sh", "-c", "/app/modula cert generate && /app/modula serve -v"]
+      - prod_cms_config:/app/config
+      - ./config.prod.json:/app/config.seed.json:ro
+    entrypoint: ["/bin/sh", "-c", "cp -n /app/config.seed.json /app/config/modula.config.json && /app/modula serve -v --config /app/config/modula.config.json"]
     env_file:
       - .env
     depends_on:
@@ -83,5 +84,6 @@ volumes:
   prod_cms_data:
   prod_cms_ssh:
   prod_cms_backups:
+  prod_cms_config:
   prod_db_data:
   prod_minio_data:
