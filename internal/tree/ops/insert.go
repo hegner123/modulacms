@@ -40,12 +40,18 @@ func AppendChild[ID ~string](ctx context.Context, ac audited.AuditContext, b Bac
 		})
 	}
 
-	// Walk to end of sibling chain
+	// Walk to end of sibling chain (with cycle guard)
 	current, err := b.GetNode(ctx, parent.FirstChildID.Value)
 	if err != nil {
 		return fmt.Errorf("append child: get first child: %w", err)
 	}
+	visited := map[string]bool{string(current.ID): true}
 	for current.NextSiblingID.Valid {
+		nextKey := string(current.NextSiblingID.Value)
+		if visited[nextKey] {
+			return fmt.Errorf("append child: cycle detected at node %s while walking siblings", nextKey)
+		}
+		visited[nextKey] = true
 		current, err = b.GetNode(ctx, current.NextSiblingID.Value)
 		if err != nil {
 			return fmt.Errorf("append child: walk siblings: %w", err)

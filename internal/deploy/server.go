@@ -149,16 +149,21 @@ func DeployImportHandler(w http.ResponseWriter, r *http.Request, svc *service.Re
 		return
 	}
 
+	utility.DefaultLogger.Info("deploy import: starting",
+		"tables", len(payload.Tables),
+		"manifest_version", payload.Manifest.Version,
+		"manifest_schema", payload.Manifest.SchemaVersion[:12]+"...",
+		"dry_run", false)
+
 	result, err := ImportPayload(ctx, c, driver, &payload, false)
 	if err != nil {
 		utility.DefaultLogger.Error("deploy import failed", err)
 
 		status := http.StatusInternalServerError
-		msg := "import failed"
+		msg := err.Error() // propagate the actual error to the client
 
-		if err.Error() == "import already in progress" {
+		if strings.Contains(msg, "import already in progress") {
 			status = http.StatusConflict
-			msg = "import already in progress"
 		}
 
 		if result != nil {

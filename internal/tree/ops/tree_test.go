@@ -896,12 +896,12 @@ func TestReorder_SingleItem(t *testing.T) {
 	mb.addNode("P", empty(), null("A"), empty(), empty())
 	mb.addNode("A", null("P"), empty(), empty(), empty())
 
-	n, err := ops.Reorder(ctx, ac, mb, null("P"), []testID{"A"})
+	result, err := ops.Reorder(ctx, ac, mb, null("P"), []testID{"A"})
 	if err != nil {
 		t.Fatalf("Reorder() error: %v", err)
 	}
-	if n != 1 {
-		t.Errorf("updated = %d, want 1", n)
+	if result.Updated != 1 {
+		t.Errorf("updated = %d, want 1", result.Updated)
 	}
 
 	// A should have no siblings
@@ -939,7 +939,7 @@ func TestReorder_DuplicateIDs(t *testing.T) {
 	mb.addNode("A", null("P"), empty(), null("B"), empty())
 	mb.addNode("B", null("P"), empty(), empty(), null("A"))
 
-	n, err := ops.Reorder(ctx, ac, mb, null("P"), []testID{"A", "A"})
+	result, err := ops.Reorder(ctx, ac, mb, null("P"), []testID{"A", "A"})
 	// The code doesn't validate duplicates — it will link A -> A.
 	// This documents the current behavior so we can decide if it needs a fix.
 	if err != nil {
@@ -947,7 +947,7 @@ func TestReorder_DuplicateIDs(t *testing.T) {
 		return
 	}
 	t.Logf("Reorder with duplicates succeeded (n=%d) — A.NextSiblingID=%v A.PrevSiblingID=%v",
-		n, mb.nodes["A"].NextSiblingID, mb.nodes["A"].PrevSiblingID)
+		result.Updated, mb.nodes["A"].NextSiblingID, mb.nodes["A"].PrevSiblingID)
 
 	// If it succeeded, A's next would point to itself — document this as a known gap
 	a := mb.nodes["A"]

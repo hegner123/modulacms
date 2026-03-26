@@ -22,10 +22,19 @@ var importMu sync.Mutex
 // ImportPayload imports a SyncPayload into the target database using the overwrite strategy.
 func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, payload *SyncPayload, skipBackup bool) (*SyncResult, error) {
 	start := time.Now()
+	log := utility.DefaultLogger
+
+	log.Info("deploy import: validating payload",
+		"tables", len(payload.Manifest.Tables),
+		"version", payload.Manifest.Version)
 
 	// Pre-import validation (read-only, safe before lock).
 	validationErrs := ValidatePayload(payload, driver)
 	if len(validationErrs) > 0 {
+		for i, ve := range validationErrs {
+			log.Error(fmt.Sprintf("deploy import: validation error %d/%d", i+1, len(validationErrs)),
+				fmt.Errorf("%s [table=%s, row=%s]", ve.Message, ve.Table, ve.RowID))
+		}
 		return &SyncResult{
 			Success:  false,
 			Strategy: StrategyOverwrite,
@@ -33,6 +42,7 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 			Duration: time.Since(start).String(),
 		}, fmt.Errorf("pre-import validation failed with %d errors", len(validationErrs))
 	}
+	log.Info("deploy import: validation passed")
 
 	// Acquire import lock (non-blocking) BEFORE snapshot/backup to avoid
 	// wasted I/O and orphan files when a concurrent import is already running.
@@ -46,19 +56,26 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 
 	// Save pre-import snapshot.
 	snapshotDir := SnapshotDir(cfg)
+	log.Info("deploy import: saving snapshot", "dir", snapshotDir)
 	snapshotID, err := SaveSnapshot(snapshotDir, payload)
 	if err != nil {
-		return nil, fmt.Errorf("save pre-import snapshot: %w", err)
+		return nil, fmt.Errorf("save pre-import snapshot to %s: %w", snapshotDir, err)
 	}
+	log.Info("deploy import: snapshot saved", "id", snapshotID)
 
 	// Optional full backup.
 	var backupPath string
 	if !skipBackup {
-		path, _, bErr := backup.CreateFullBackup(cfg, driver)
+		log.Info("deploy import: creating backup",
+			"backup_option", cfg.Backup_Option,
+			"db_driver", cfg.Db_Driver)
+		path, size, bErr := backup.CreateFullBackup(cfg, driver)
 		if bErr != nil {
-			return nil, fmt.Errorf("pre-import backup: %w", bErr)
+			return nil, fmt.Errorf("pre-import backup (backup_option=%q, db_driver=%s): %w",
+				cfg.Backup_Option, cfg.Db_Driver, bErr)
 		}
 		backupPath = path
+		log.Info("deploy import: backup created", "path", path, "size_bytes", size)
 	}
 
 	ops, err := db.NewDeployOps(driver)
@@ -69,8 +86,9 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 	// Look up viewer role before entering atomic block.
 	viewerRole, err := driver.GetRoleByLabel("viewer")
 	if err != nil {
-		return nil, fmt.Errorf("lookup viewer role: %w", err)
+		return nil, fmt.Errorf("lookup viewer role (bootstrap data may be missing): %w", err)
 	}
+	log.Info("deploy import: starting atomic import")
 
 	var warnings []string
 
@@ -81,6 +99,7 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 			if _, ok := payload.Tables[string(t)]; !ok {
 				continue
 			}
+			log.Info("deploy import: truncating", "table", string(t))
 			if tErr := ops.TruncateTable(ctx, ex, t); tErr != nil {
 				return fmt.Errorf("truncate %s: %w", t, tErr)
 			}
@@ -88,6 +107,7 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 
 		// Resolve user refs: create placeholder users for missing ones.
 		if len(payload.UserRefs) > 0 {
+			log.Info("deploy import: resolving user refs", "count", len(payload.UserRefs))
 			if rErr := resolveUserRefs(ctx, ex, ops, payload.UserRefs, viewerRole.RoleID.String()); rErr != nil {
 				return fmt.Errorf("resolve user refs: %w", rErr)
 			}
@@ -100,16 +120,22 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 				continue
 			}
 			if len(td.Rows) == 0 {
+				log.Info("deploy import: skipping empty table", "table", string(t))
 				continue
 			}
 
+			log.Info("deploy import: inserting", "table", string(t),
+				"rows", len(td.Rows), "columns", len(td.Columns))
+
 			rows, cErr := coerceRows(t, td)
 			if cErr != nil {
-				return fmt.Errorf("coerce %s: %w", t, cErr)
+				return fmt.Errorf("coerce %s (%d cols, %d rows): %w",
+					t, len(td.Columns), len(td.Rows), cErr)
 			}
 
 			if iErr := ops.BulkInsert(ctx, ex, t, td.Columns, rows); iErr != nil {
-				return fmt.Errorf("insert %s: %w", t, iErr)
+				return fmt.Errorf("insert %s (%d cols: %v, %d rows): %w",
+					t, len(td.Columns), td.Columns, len(td.Rows), iErr)
 			}
 		}
 
@@ -163,17 +189,24 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 		}
 
 		// Post-insert FK verification (collect as warnings, don't fail).
+		log.Info("deploy import: verifying foreign keys")
 		violations, vErr := ops.VerifyForeignKeys(ctx, ex)
 		if vErr != nil {
 			warnings = append(warnings, fmt.Sprintf("FK verification error: %v", vErr))
+			log.Error("deploy import: FK verification error", vErr)
 		}
 		for _, v := range violations {
 			warnings = append(warnings, fmt.Sprintf("FK violation in %s (row %s -> %s)", v.Table, v.RowID, v.Parent))
 		}
+		if len(violations) > 0 {
+			log.Info("deploy import: FK violations found", "count", len(violations))
+		}
 
+		log.Info("deploy import: atomic block complete, committing")
 		return nil
 	})
 	if err != nil {
+		log.Error("deploy import: atomic import failed (rolled back)", err)
 		return &SyncResult{
 			Success:    false,
 			Strategy:   StrategyOverwrite,

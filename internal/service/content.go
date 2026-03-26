@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -79,9 +80,61 @@ func (s *ContentService) UpdatePointers(ctx context.Context, ac audited.AuditCon
 	return nil
 }
 
-// WithTx is a no-op passthrough until real transactions are added to DbDriver.
+// WithTx executes fn within a database transaction. The provided Backend reads
+// and writes through the transaction, so all pointer mutations are atomic —
+// if any step fails, everything rolls back.
 func (s *ContentService) WithTx(ctx context.Context, fn func(ops.Backend[types.ContentID]) error) error {
-	return fn(s)
+	conn, _, err := s.driver.GetConnection()
+	if err != nil {
+		return fmt.Errorf("with tx: get connection: %w", err)
+	}
+	return types.WithTransaction(ctx, conn, func(tx *sql.Tx) error {
+		return fn(&txContentBackend{driver: s.driver, tx: tx})
+	})
+}
+
+// txContentBackend implements ops.Backend[types.ContentID] with all reads and
+// writes scoped to a database transaction. This ensures multi-step pointer
+// operations (Unlink, InsertAt, Move, Reorder) are atomic.
+type txContentBackend struct {
+	driver db.DbDriver
+	tx     *sql.Tx
+}
+
+// GetNode reads a content row within the transaction to see uncommitted writes.
+func (tb *txContentBackend) GetNode(ctx context.Context, id types.ContentID) (*ops.Node[types.ContentID], error) {
+	cd, err := db.GetContentDataInTx(tb.driver, ctx, tb.tx, id)
+	if err != nil {
+		return nil, fmt.Errorf("tx get content node %s: %w", id, err)
+	}
+	return &ops.Node[types.ContentID]{
+		ID:            cd.ContentDataID,
+		ParentID:      contentIDToNullable(cd.ParentID),
+		FirstChildID:  contentIDToNullable(cd.FirstChildID),
+		NextSiblingID: contentIDToNullable(cd.NextSiblingID),
+		PrevSiblingID: contentIDToNullable(cd.PrevSiblingID),
+	}, nil
+}
+
+// UpdatePointers updates pointer fields within the transaction with full audit trail.
+func (tb *txContentBackend) UpdatePointers(ctx context.Context, ac audited.AuditContext, id types.ContentID, ptrs ops.Pointers[types.ContentID]) error {
+	cd, err := db.GetContentDataInTx(tb.driver, ctx, tb.tx, id)
+	if err != nil {
+		return fmt.Errorf("tx update pointers: get %s: %w", id, err)
+	}
+	return db.UpdateContentDataInTx(tb.driver, ctx, tb.tx, ac, db.UpdateContentDataParams{
+		ContentDataID: cd.ContentDataID,
+		ParentID:      nullableToContentID(ptrs.ParentID),
+		FirstChildID:  nullableToContentID(ptrs.FirstChildID),
+		NextSiblingID: nullableToContentID(ptrs.NextSiblingID),
+		PrevSiblingID: nullableToContentID(ptrs.PrevSiblingID),
+		RouteID:       cd.RouteID,
+		DatatypeID:    cd.DatatypeID,
+		AuthorID:      cd.AuthorID,
+		Status:        cd.Status,
+		DateCreated:   cd.DateCreated,
+		DateModified:  types.TimestampNow(),
+	})
 }
 
 // --- Content Data CRUD ---
@@ -400,9 +453,15 @@ func (s *ContentService) collectDescendantsRecursive(nodeID types.ContentID, dep
 // --- Tree Operations ---
 
 // Move moves a content node to a new parent at the given position.
-// Delegates to ops.Move which handles cycle detection, unlinking, and reinsertion.
+// All pointer mutations execute within a single transaction — if any step
+// fails (cycle detection, unlink, insert, or validation), everything rolls back.
 func (s *ContentService) Move(ctx context.Context, ac audited.AuditContext, params ops.MoveParams[types.ContentID]) (*ops.MoveResult[types.ContentID], error) {
-	result, err := ops.Move(ctx, ac, s, params)
+	var result *ops.MoveResult[types.ContentID]
+	err := s.WithTx(ctx, func(tb ops.Backend[types.ContentID]) error {
+		var moveErr error
+		result, moveErr = ops.Move(ctx, ac, tb, params)
+		return moveErr
+	})
 	if err != nil {
 		return nil, fmt.Errorf("move content: %w", err)
 	}
@@ -410,13 +469,18 @@ func (s *ContentService) Move(ctx context.Context, ac audited.AuditContext, para
 }
 
 // Reorder atomically reorders sibling content nodes under a parent.
-// Delegates to ops.Reorder which rewrites all sibling pointers and parent first_child.
-func (s *ContentService) Reorder(ctx context.Context, ac audited.AuditContext, parentID ops.NullableID[types.ContentID], orderedIDs []types.ContentID) (int, error) {
-	updated, err := ops.Reorder(ctx, ac, s, parentID, orderedIDs)
+// All pointer mutations execute within a single transaction.
+func (s *ContentService) Reorder(ctx context.Context, ac audited.AuditContext, parentID ops.NullableID[types.ContentID], orderedIDs []types.ContentID) (*ops.ReorderResult[types.ContentID], error) {
+	var result *ops.ReorderResult[types.ContentID]
+	err := s.WithTx(ctx, func(tb ops.Backend[types.ContentID]) error {
+		var reorderErr error
+		result, reorderErr = ops.Reorder(ctx, ac, tb, parentID, orderedIDs)
+		return reorderErr
+	})
 	if err != nil {
-		return 0, fmt.Errorf("reorder content: %w", err)
+		return nil, fmt.Errorf("reorder content: %w", err)
 	}
-	return updated, nil
+	return result, nil
 }
 
 // contentIDToNullable converts types.NullableContentID to ops.NullableID.

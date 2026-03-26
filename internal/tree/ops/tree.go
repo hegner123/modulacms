@@ -74,6 +74,13 @@ type MoveResult[ID ~string] struct {
 	NewParentID NullableID[ID]
 	OldPosition int
 	NewPosition int
+	Report      *OperationReport[ID] // chain snapshots + validation + assertions
+}
+
+// ReorderResult reports what happened during a reorder.
+type ReorderResult[ID ~string] struct {
+	Updated int
+	Report  *OperationReport[ID]
 }
 
 // SaveParams describes a bulk tree save (create/remap/update/delete).
@@ -104,4 +111,5 @@ type SaveResult[ID ~string] struct {
 	Created int
 	Updated int
 	Deleted int
+	Report  *OperationReport[ID]
 }

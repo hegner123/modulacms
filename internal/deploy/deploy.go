@@ -14,6 +14,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // gzipThreshold is the uncompressed JSON size above which files are gzip-compressed.
@@ -71,6 +72,7 @@ func ImportFromFile(ctx context.Context, cfg config.Config, driver db.DbDriver, 
 // The environment name is resolved from cfg.Deploy_Environments.
 // If dryRun is true, the payload is validated locally without modifying the database.
 func Pull(ctx context.Context, cfg config.Config, driver db.DbDriver, envName string, opts ExportOptions, skipBackup bool, dryRun bool) (*SyncResult, error) {
+	log := utility.DefaultLogger
 	ctx, cancel := resolveContext(ctx)
 	defer cancel()
 
@@ -80,21 +82,32 @@ func Pull(ctx context.Context, cfg config.Config, driver db.DbDriver, envName st
 	}
 
 	// Verify remote is reachable.
-	if _, err := client.Health(ctx); err != nil {
+	log.Info("deploy pull: checking remote health", "env", envName)
+	health, err := client.Health(ctx)
+	if err != nil {
 		return nil, fmt.Errorf("remote health check failed: %w", err)
 	}
+	log.Info("deploy pull: remote is healthy",
+		"remote_version", health.Version,
+		"local_version", utility.GetCurrentVersion(),
+		"remote_node", health.NodeID)
 
 	// Export from remote.
+	log.Info("deploy pull: requesting export from remote")
 	payload, err := client.Export(ctx, opts)
 	if err != nil {
 		return nil, fmt.Errorf("remote export: %w", err)
 	}
+	log.Info("deploy pull: received payload",
+		"tables", len(payload.Tables),
+		"schema_version", payload.Manifest.SchemaVersion[:12]+"...")
 
 	if dryRun {
 		return BuildDryRunResult(payload, driver), nil
 	}
 
 	// Import locally.
+	log.Info("deploy pull: importing locally")
 	return ImportPayload(ctx, cfg, driver, payload, skipBackup)
 }
 
@@ -102,6 +115,7 @@ func Pull(ctx context.Context, cfg config.Config, driver db.DbDriver, envName st
 // The environment name is resolved from cfg.Deploy_Environments.
 // If dryRun is true, the payload is validated on the remote without modifying its database.
 func Push(ctx context.Context, cfg config.Config, driver db.DbDriver, envName string, opts ExportOptions, dryRun bool) (*SyncResult, error) {
+	log := utility.DefaultLogger
 	ctx, cancel := resolveContext(ctx)
 	defer cancel()
 
@@ -111,22 +125,40 @@ func Push(ctx context.Context, cfg config.Config, driver db.DbDriver, envName st
 	}
 
 	// Verify remote is reachable.
-	if _, err := client.Health(ctx); err != nil {
+	log.Info("deploy push: checking remote health", "env", envName)
+	health, err := client.Health(ctx)
+	if err != nil {
 		return nil, fmt.Errorf("remote health check failed: %w", err)
 	}
+	log.Info("deploy push: remote is healthy",
+		"remote_version", health.Version,
+		"local_version", utility.GetCurrentVersion(),
+		"remote_node", health.NodeID)
 
 	// Export locally.
+	log.Info("deploy push: exporting local data")
 	payload, err := ExportPayload(ctx, driver, opts)
 	if err != nil {
 		return nil, fmt.Errorf("local export: %w", err)
 	}
+	log.Info("deploy push: export complete",
+		"tables", len(payload.Tables),
+		"schema_version", payload.Manifest.SchemaVersion[:12]+"...")
 
 	if dryRun {
+		log.Info("deploy push: sending dry-run import to remote")
 		return client.DryRunImport(ctx, payload)
 	}
 
 	// Import on remote.
-	return client.Import(ctx, payload)
+	log.Info("deploy push: sending import to remote")
+	result, importErr := client.Import(ctx, payload)
+	if importErr != nil {
+		log.Error("deploy push: remote import failed", importErr)
+		return result, importErr
+	}
+	log.Info("deploy push: remote import succeeded")
+	return result, nil
 }
 
 // TestEnvConnection tests connectivity and authentication to a configured deploy environment.

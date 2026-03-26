@@ -35,10 +35,15 @@ func DetectCycle[ID ~string](ctx context.Context, b Backend[ID], nodeID ID, prop
 }
 
 // Move performs a full tree move: cycle detection, unlink from old position,
-// and insert at new position under the new parent.
+// and insert at new position under the new parent. Uses checked variants for
+// pre-op validation and post-op assertions.
 //
 // If NewParentID is not valid, the node is moved to root level (unlinked
 // with parent/sibling pointers cleared).
+//
+// Returns *ChainError if pre-op validation detects mangled data (operation blocked).
+// Returns *AssertionError if post-op assertions fail (inside a transaction this
+// triggers rollback).
 func Move[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend[ID], params MoveParams[ID]) (*MoveResult[ID], error) {
 	// Fetch the node being moved
 	node, err := b.GetNode(ctx, params.NodeID)
@@ -47,8 +52,6 @@ func Move[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend[ID
 	}
 
 	oldParentID := node.ParentID
-
-	// Compute old position by walking from parent's first child
 	oldPosition := computePosition(ctx, b, node)
 
 	// Cycle detection
@@ -56,25 +59,48 @@ func Move[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend[ID
 		return nil, err
 	}
 
-	// Unlink from current position
-	if err := Unlink(ctx, ac, b, node); err != nil {
+	// Unlink from current position (with validation)
+	unlinkReport, err := UnlinkChecked(ctx, ac, b, node)
+	if err != nil {
 		return nil, fmt.Errorf("move: %w", err)
 	}
 
-	// Insert at new position
-	if params.NewParentID.Valid {
-		if err := InsertAt(ctx, ac, b, params.NewParentID.Value, params.NodeID, params.Position); err != nil {
-			return nil, fmt.Errorf("move: %w", err)
-		}
+	// Build merged report
+	report := &OperationReport[ID]{
+		Before: unlinkReport.Before,
 	}
-	// If NewParentID is not valid, Unlink already cleared the pointers.
-	// The node is now a root-level orphan.
+
+	// Insert at new position (with validation)
+	if params.NewParentID.Valid {
+		insertReport, insertErr := InsertAtChecked(ctx, ac, b, params.NewParentID.Value, params.NodeID, params.Position)
+		if insertErr != nil {
+			// Merge what we have into the report
+			report.After = unlinkReport.After
+			if insertReport != nil {
+				report.Violations = insertReport.Violations
+				report.Assertions = insertReport.Assertions
+			}
+			return &MoveResult[ID]{
+				OldParentID: oldParentID,
+				NewParentID: params.NewParentID,
+				OldPosition: oldPosition,
+				NewPosition: params.Position,
+				Report:      report,
+			}, fmt.Errorf("move: %w", insertErr)
+		}
+		report.After = insertReport.After
+		report.Assertions = insertReport.Assertions
+	} else {
+		report.After = unlinkReport.After
+		report.Assertions = unlinkReport.Assertions
+	}
 
 	return &MoveResult[ID]{
 		OldParentID: oldParentID,
 		NewParentID: params.NewParentID,
 		OldPosition: oldPosition,
 		NewPosition: params.Position,
+		Report:      report,
 	}, nil
 }
 

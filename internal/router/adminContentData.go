@@ -314,14 +314,14 @@ func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, svc *ser
 	}
 	ac := middleware.AuditContextFromRequest(r, *c)
 
-	updated, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
+	result, err := svc.AdminContent.Reorder(r.Context(), ac, adminContentIDToOpsNullable(req.ParentID), req.OrderedIDs)
 	if err != nil {
 		service.HandleServiceError(w, r, err)
 		return
 	}
 
 	writeJSON(w, ReorderAdminContentDataResponse{
-		Updated:  updated,
+		Updated:  result.Updated,
 		ParentID: req.ParentID,
 	})
 }

@@ -16,10 +16,29 @@ import (
 // chain and verifies that every current child is present in orderedIDs.
 // Missing children cause an error rather than silent orphaning.
 //
-// Returns the number of nodes updated.
-func Reorder[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend[ID], parentID NullableID[ID], orderedIDs []ID) (int, error) {
+// Pre-op validation checks chain consistency before rewriting. Post-op assertions
+// verify the new chain is healthy. Returns *ChainError or *AssertionError on
+// failure (inside a transaction these trigger rollback).
+func Reorder[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend[ID], parentID NullableID[ID], orderedIDs []ID) (*ReorderResult[ID], error) {
 	if len(orderedIDs) == 0 {
-		return 0, fmt.Errorf("reorder: ordered_ids must not be empty")
+		return nil, fmt.Errorf("reorder: ordered_ids must not be empty")
+	}
+
+	report := &OperationReport[ID]{}
+
+	// Pre-op snapshot and validation (when parent is known)
+	if parentID.Valid {
+		before, walkErr := WalkSiblingChain(ctx, b, parentID.Value)
+		if walkErr != nil {
+			return nil, fmt.Errorf("reorder: %w", walkErr)
+		}
+		report.Before = before
+
+		violations := ValidateChain(before)
+		if len(violations) > 0 {
+			report.Violations = violations
+			return &ReorderResult[ID]{Report: report}, &ChainError[ID]{Operation: "reorder", Report: report}
+		}
 	}
 
 	// Build lookup set for the provided IDs.
@@ -33,20 +52,19 @@ func Reorder[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend
 	for _, id := range orderedIDs {
 		node, err := b.GetNode(ctx, id)
 		if err != nil {
-			return 0, fmt.Errorf("reorder: get node %s: %w", string(id), err)
+			return nil, fmt.Errorf("reorder: get node %s: %w", string(id), err)
 		}
 		if node.ParentID != parentID {
-			return 0, fmt.Errorf("reorder: node %s does not belong to parent", string(id))
+			return nil, fmt.Errorf("reorder: node %s does not belong to parent", string(id))
 		}
 		nodes = append(nodes, node)
 	}
 
 	// Walk existing sibling chain to detect missing children.
-	// This prevents silent orphaning when the caller omits siblings.
 	if parentID.Valid {
 		parent, err := b.GetNode(ctx, parentID.Value)
 		if err != nil {
-			return 0, fmt.Errorf("reorder: get parent: %w", err)
+			return nil, fmt.Errorf("reorder: get parent: %w", err)
 		}
 		if parent.FirstChildID.Valid {
 			var missing []string
@@ -63,7 +81,7 @@ func Reorder[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend
 				}
 				sibling, err := b.GetNode(ctx, cur)
 				if err != nil {
-					break // node deleted or inaccessible, skip
+					break
 				}
 				if !sibling.NextSiblingID.Valid {
 					break
@@ -71,7 +89,7 @@ func Reorder[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend
 				cur = sibling.NextSiblingID.Value
 			}
 			if len(missing) > 0 {
-				return 0, fmt.Errorf("reorder: ordered_ids is missing existing children: %v — include all siblings to prevent orphans", missing)
+				return nil, fmt.Errorf("reorder: ordered_ids is missing existing children: %v — include all siblings to prevent orphans", missing)
 			}
 		}
 
@@ -83,7 +101,7 @@ func Reorder[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend
 			PrevSiblingID: parent.PrevSiblingID,
 		})
 		if err != nil {
-			return 0, fmt.Errorf("reorder: update parent first_child: %w", err)
+			return nil, fmt.Errorf("reorder: update parent first_child: %w", err)
 		}
 	}
 
@@ -107,9 +125,30 @@ func Reorder[ID ~string](ctx context.Context, ac audited.AuditContext, b Backend
 			PrevSiblingID: prevSibling,
 		})
 		if err != nil {
-			return i, fmt.Errorf("reorder: update node %s: %w", string(node.ID), err)
+			return &ReorderResult[ID]{Updated: i, Report: report}, fmt.Errorf("reorder: update node %s: %w", string(node.ID), err)
 		}
 	}
 
-	return len(orderedIDs), nil
+	// Post-op snapshot and assertions
+	if parentID.Valid {
+		after, walkErr := WalkSiblingChain(ctx, b, parentID.Value)
+		if walkErr != nil {
+			return &ReorderResult[ID]{Updated: len(orderedIDs), Report: report}, fmt.Errorf("reorder: post-op snapshot: %w", walkErr)
+		}
+		report.After = after
+
+		assertions := AssertChainConsistency(after)
+		report.Assertions = assertions
+		for _, a := range assertions {
+			if !a.Passed {
+				return &ReorderResult[ID]{Updated: len(orderedIDs), Report: report},
+					&AssertionError[ID]{Operation: "reorder", Report: report}
+			}
+		}
+	}
+
+	return &ReorderResult[ID]{
+		Updated: len(orderedIDs),
+		Report:  report,
+	}, nil
 }

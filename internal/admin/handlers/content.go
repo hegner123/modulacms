@@ -19,6 +19,7 @@ import (
 	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/tree/core"
+	"github.com/hegner123/modulacms/internal/tree/ops"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/hegner123/modulacms/internal/validation"
 )
@@ -791,9 +792,9 @@ type reorderRequest struct {
 }
 
 // ContentReorderHandler reorders content siblings under a parent.
-// Accepts JSON with parent_id and ordered_ids, then updates sibling pointers
-// for all nodes in the given order.
-func ContentReorderHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+// Delegates to ContentService.Reorder which executes within a transaction
+// with chain validation and assertions.
+func ContentReorderHandler(svc *service.Registry, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -831,81 +832,29 @@ func ContentReorderHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 			clientIP(r),
 		)
 
-		now := types.NewTimestamp(time.Now())
-
-		// Update sibling pointers for each node in order.
-		// First node: prev=nil, next=second. Last node: prev=second-to-last, next=nil.
+		// Convert string IDs to typed ContentIDs
+		orderedIDs := make([]types.ContentID, len(req.OrderedIDs))
 		for i, idStr := range req.OrderedIDs {
-			content, getErr := driver.GetContentData(types.ContentID(idStr))
-			if getErr != nil {
-				utility.DefaultLogger.Error("failed to get content for reorder", getErr)
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Reorder failed", "type": "error"}}`)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			var prevID types.NullableContentID
-			var nextID types.NullableContentID
-
-			if i > 0 {
-				prevID = types.NullableContentID{
-					ID:    types.ContentID(req.OrderedIDs[i-1]),
-					Valid: true,
-				}
-			}
-			if i < len(req.OrderedIDs)-1 {
-				nextID = types.NullableContentID{
-					ID:    types.ContentID(req.OrderedIDs[i+1]),
-					Valid: true,
-				}
-			}
-
-			params := db.UpdateContentDataParams{
-				ContentDataID: content.ContentDataID,
-				ParentID:      content.ParentID,
-				FirstChildID:  content.FirstChildID,
-				NextSiblingID: nextID,
-				PrevSiblingID: prevID,
-				RouteID:       content.RouteID,
-				DatatypeID:    content.DatatypeID,
-				AuthorID:      content.AuthorID,
-				Status:        content.Status,
-				DateCreated:   content.DateCreated,
-				DateModified:  now,
-			}
-
-			if _, updateErr := driver.UpdateContentData(r.Context(), ac, params); updateErr != nil {
-				utility.DefaultLogger.Error("failed to update content during reorder", updateErr)
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Reorder failed", "type": "error"}}`)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
+			orderedIDs[i] = types.ContentID(idStr)
 		}
 
-		// Update parent's first_child_id to the first item in the new order
+		var parentID ops.NullableID[types.ContentID]
 		if req.ParentID != "" {
-			parent, getErr := driver.GetContentData(types.ContentID(req.ParentID))
-			if getErr == nil {
-				params := db.UpdateContentDataParams{
-					ContentDataID: parent.ContentDataID,
-					ParentID:      parent.ParentID,
-					FirstChildID: types.NullableContentID{
-						ID:    types.ContentID(req.OrderedIDs[0]),
-						Valid: true,
-					},
-					NextSiblingID: parent.NextSiblingID,
-					PrevSiblingID: parent.PrevSiblingID,
-					RouteID:       parent.RouteID,
-					DatatypeID:    parent.DatatypeID,
-					AuthorID:      parent.AuthorID,
-					Status:        parent.Status,
-					DateCreated:   parent.DateCreated,
-					DateModified:  now,
-				}
-				if _, updateErr := driver.UpdateContentData(r.Context(), ac, params); updateErr != nil {
-					utility.DefaultLogger.Error("failed to update parent first_child_id", updateErr)
-				}
+			parentID = ops.NullID(types.ContentID(req.ParentID))
+		}
+
+		_, reorderErr := svc.Content.Reorder(r.Context(), ac, parentID, orderedIDs)
+		if reorderErr != nil {
+			if ops.IsChainError(reorderErr) {
+				utility.DefaultLogger.Error("content tree corrupted during reorder", reorderErr)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Content tree is corrupted. Run heal to repair.", "type": "error"}}`)
+				w.WriteHeader(http.StatusConflict)
+				return
 			}
+			utility.DefaultLogger.Error("failed to reorder content", reorderErr)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Reorder failed", "type": "error"}}`)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Content reordered", "type": "success"}}`)
@@ -921,8 +870,9 @@ type moveRequest struct {
 }
 
 // ContentMoveHandler moves content to a new parent at a given position.
-// Detaches from old parent's sibling chain, then attaches to new parent.
-func ContentMoveHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+// Delegates to ContentService.Move which executes within a transaction with
+// cycle detection, chain validation, and assertions.
+func ContentMoveHandler(svc *service.Registry, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -959,154 +909,26 @@ func ContentMoveHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			clientIP(r),
 		)
 
-		now := types.NewTimestamp(time.Now())
-
-		content, getErr := driver.GetContentData(types.ContentID(req.ContentID))
-		if getErr != nil {
-			utility.DefaultLogger.Error("content not found for move", getErr)
-			http.NotFound(w, r)
-			return
+		var newParentID ops.NullableID[types.ContentID]
+		if req.NewParentID != "" {
+			newParentID = ops.NullID(types.ContentID(req.NewParentID))
 		}
 
-		// Detach from old sibling chain: link prev and next siblings together
-		if content.PrevSiblingID.Valid {
-			prev, prevErr := driver.GetContentData(content.PrevSiblingID.ID)
-			if prevErr == nil {
-				prevParams := db.UpdateContentDataParams{
-					ContentDataID: prev.ContentDataID,
-					ParentID:      prev.ParentID,
-					FirstChildID:  prev.FirstChildID,
-					NextSiblingID: content.NextSiblingID,
-					PrevSiblingID: prev.PrevSiblingID,
-					RouteID:       prev.RouteID,
-					DatatypeID:    prev.DatatypeID,
-					AuthorID:      prev.AuthorID,
-					Status:        prev.Status,
-					DateCreated:   prev.DateCreated,
-					DateModified:  now,
-				}
-				if _, uErr := driver.UpdateContentData(r.Context(), ac, prevParams); uErr != nil {
-					utility.DefaultLogger.Error("failed to update prev sibling during move", uErr)
-				}
+		moveParams := ops.MoveParams[types.ContentID]{
+			NodeID:      types.ContentID(req.ContentID),
+			NewParentID: newParentID,
+			Position:    req.Position,
+		}
+
+		_, moveErr := svc.Content.Move(r.Context(), ac, moveParams)
+		if moveErr != nil {
+			if ops.IsChainError(moveErr) {
+				utility.DefaultLogger.Error("content tree corrupted during move", moveErr)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Content tree is corrupted. Run heal to repair.", "type": "error"}}`)
+				w.WriteHeader(http.StatusConflict)
+				return
 			}
-		}
-		if content.NextSiblingID.Valid {
-			next, nextErr := driver.GetContentData(content.NextSiblingID.ID)
-			if nextErr == nil {
-				nextParams := db.UpdateContentDataParams{
-					ContentDataID: next.ContentDataID,
-					ParentID:      next.ParentID,
-					FirstChildID:  next.FirstChildID,
-					NextSiblingID: next.NextSiblingID,
-					PrevSiblingID: content.PrevSiblingID,
-					RouteID:       next.RouteID,
-					DatatypeID:    next.DatatypeID,
-					AuthorID:      next.AuthorID,
-					Status:        next.Status,
-					DateCreated:   next.DateCreated,
-					DateModified:  now,
-				}
-				if _, uErr := driver.UpdateContentData(r.Context(), ac, nextParams); uErr != nil {
-					utility.DefaultLogger.Error("failed to update next sibling during move", uErr)
-				}
-			}
-		}
-
-		// If content was first child of old parent, update old parent's first_child_id
-		if content.ParentID.Valid {
-			oldParent, opErr := driver.GetContentData(content.ParentID.ID)
-			if opErr == nil && oldParent.FirstChildID.Valid && oldParent.FirstChildID.ID == content.ContentDataID {
-				opParams := db.UpdateContentDataParams{
-					ContentDataID: oldParent.ContentDataID,
-					ParentID:      oldParent.ParentID,
-					FirstChildID:  content.NextSiblingID,
-					NextSiblingID: oldParent.NextSiblingID,
-					PrevSiblingID: oldParent.PrevSiblingID,
-					RouteID:       oldParent.RouteID,
-					DatatypeID:    oldParent.DatatypeID,
-					AuthorID:      oldParent.AuthorID,
-					Status:        oldParent.Status,
-					DateCreated:   oldParent.DateCreated,
-					DateModified:  now,
-				}
-				if _, uErr := driver.UpdateContentData(r.Context(), ac, opParams); uErr != nil {
-					utility.DefaultLogger.Error("failed to update old parent first_child_id", uErr)
-				}
-			}
-		}
-
-		// Attach to new parent as first child (position 0) or at end
-		newParentID := types.NullableContentID{
-			ID:    types.ContentID(req.NewParentID),
-			Valid: req.NewParentID != "",
-		}
-
-		moveParams := db.UpdateContentDataParams{
-			ContentDataID: content.ContentDataID,
-			ParentID:      newParentID,
-			FirstChildID:  content.FirstChildID,
-			NextSiblingID: types.NullableContentID{},
-			PrevSiblingID: types.NullableContentID{},
-			RouteID:       content.RouteID,
-			DatatypeID:    content.DatatypeID,
-			AuthorID:      content.AuthorID,
-			Status:        content.Status,
-			DateCreated:   content.DateCreated,
-			DateModified:  now,
-		}
-
-		// If new parent exists, set as first child
-		if newParentID.Valid {
-			newParent, npErr := driver.GetContentData(newParentID.ID)
-			if npErr == nil && newParent.FirstChildID.Valid {
-				// New parent already has children; insert at beginning
-				moveParams.NextSiblingID = newParent.FirstChildID
-
-				// Update old first child's prev pointer
-				oldFirst, ofErr := driver.GetContentData(newParent.FirstChildID.ID)
-				if ofErr == nil {
-					ofParams := db.UpdateContentDataParams{
-						ContentDataID: oldFirst.ContentDataID,
-						ParentID:      oldFirst.ParentID,
-						FirstChildID:  oldFirst.FirstChildID,
-						NextSiblingID: oldFirst.NextSiblingID,
-						PrevSiblingID: types.NullableContentID{ID: content.ContentDataID, Valid: true},
-						RouteID:       oldFirst.RouteID,
-						DatatypeID:    oldFirst.DatatypeID,
-						AuthorID:      oldFirst.AuthorID,
-						Status:        oldFirst.Status,
-						DateCreated:   oldFirst.DateCreated,
-						DateModified:  now,
-					}
-					if _, uErr := driver.UpdateContentData(r.Context(), ac, ofParams); uErr != nil {
-						utility.DefaultLogger.Error("failed to update old first child prev pointer", uErr)
-					}
-				}
-			}
-
-			if npErr == nil {
-				// Update new parent's first_child_id
-				npParams := db.UpdateContentDataParams{
-					ContentDataID: newParent.ContentDataID,
-					ParentID:      newParent.ParentID,
-					FirstChildID:  types.NullableContentID{ID: content.ContentDataID, Valid: true},
-					NextSiblingID: newParent.NextSiblingID,
-					PrevSiblingID: newParent.PrevSiblingID,
-					RouteID:       newParent.RouteID,
-					DatatypeID:    newParent.DatatypeID,
-					AuthorID:      newParent.AuthorID,
-					Status:        newParent.Status,
-					DateCreated:   newParent.DateCreated,
-					DateModified:  now,
-				}
-				if _, uErr := driver.UpdateContentData(r.Context(), ac, npParams); uErr != nil {
-					utility.DefaultLogger.Error("failed to update new parent first_child_id", uErr)
-				}
-			}
-		}
-
-		if _, updateErr := driver.UpdateContentData(r.Context(), ac, moveParams); updateErr != nil {
-			utility.DefaultLogger.Error("failed to move content", updateErr)
+			utility.DefaultLogger.Error("failed to move content", moveErr)
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Move failed", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return

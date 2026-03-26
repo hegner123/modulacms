@@ -181,11 +181,11 @@ func (b *svcContentBackend) ReorderContent(ctx context.Context, params json.RawM
 		orderedIDs[i] = types.ContentID(id)
 	}
 
-	updated, err := b.svc.Content.Reorder(ctx, b.ac, parentID, orderedIDs)
+	result, err := b.svc.Content.Reorder(ctx, b.ac, parentID, orderedIDs)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(map[string]int{"updated": updated})
+	return json.Marshal(map[string]int{"updated": result.Updated})
 }
 
 func (b *svcContentBackend) MoveContent(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
@@ -316,11 +316,11 @@ func (b *svcAdminContentBackend) ReorderAdminContent(ctx context.Context, params
 		orderedIDs[i] = types.AdminContentID(id)
 	}
 
-	updated, err := b.svc.AdminContent.Reorder(ctx, b.ac, parentID, orderedIDs)
+	result, err := b.svc.AdminContent.Reorder(ctx, b.ac, parentID, orderedIDs)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(map[string]int{"updated": updated})
+	return json.Marshal(map[string]int{"updated": result.Updated})
 }
 
 func (b *svcAdminContentBackend) MoveAdminContent(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {

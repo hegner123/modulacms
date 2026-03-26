@@ -37,6 +37,14 @@ func (e *ClientError) Error() string {
 	if e.Message != "" {
 		return fmt.Sprintf("deploy remote: %d %s", e.StatusCode, e.Message)
 	}
+	if e.Body != "" {
+		// Truncate body for display but include enough to diagnose
+		body := e.Body
+		if len(body) > 500 {
+			body = body[:500] + "..."
+		}
+		return fmt.Sprintf("deploy remote: HTTP %d — %s", e.StatusCode, body)
+	}
 	return fmt.Sprintf("deploy remote: HTTP %d", e.StatusCode)
 }
 

@@ -188,6 +188,86 @@ func Update[T any](cmd UpdateCommand[T]) error {
 	return err
 }
 
+// UpdateInTx executes an audited update operation within an existing transaction.
+// Same semantics as Update but uses the provided tx instead of starting a new one.
+// This allows multiple audited updates to be composed into a single atomic transaction.
+//
+// Hook integration: before_update and status-transition hooks run within the
+// provided transaction. After-hooks fire asynchronously after the caller commits.
+// Note: the caller is responsible for committing the transaction — after-hooks
+// only fire if UpdateInTx returns nil AND the caller commits successfully.
+func UpdateInTx[T any](cmd UpdateCommand[T], tx *sql.Tx) error {
+	ctx := cmd.Context()
+
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+	}
+
+	auditCtx := cmd.AuditContext()
+	tableName := cmd.TableName()
+	runner := auditCtx.HookRunner
+
+	before, err := cmd.GetBefore(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("get before state: %w", err)
+	}
+	oldValues, err := marshalToJSONData(before)
+	if err != nil {
+		return fmt.Errorf("marshal before state: %w", err)
+	}
+
+	// Run before_update hooks inside the transaction.
+	if runner != nil && runner.HasHooks(HookBeforeUpdate, tableName) {
+		if hookErr := runner.RunBeforeHooks(ctx, HookBeforeUpdate, tableName, before); hookErr != nil {
+			return hookErr
+		}
+	}
+
+	// Detect status transitions for content_data.
+	if runner != nil {
+		beforeMap, mapErr := StructToMap(before)
+		if mapErr == nil {
+			paramsMap, paramsErr := StructToMap(cmd.Params())
+			if paramsErr == nil {
+				extraBeforeEvents := DetectStatusTransition(tableName, beforeMap, paramsMap)
+				for _, extraEvent := range extraBeforeEvents {
+					if runner.HasHooks(extraEvent, tableName) {
+						if hookErr := runner.RunBeforeHooks(ctx, extraEvent, tableName, before); hookErr != nil {
+							return hookErr
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if err := cmd.Execute(ctx, tx); err != nil {
+		return fmt.Errorf("execute update: %w", err)
+	}
+
+	newValues, err := marshalToJSONData(cmd.Params())
+	if err != nil {
+		return fmt.Errorf("marshal update params: %w", err)
+	}
+
+	return cmd.Recorder().Record(ctx, tx, ChangeEventParams{
+		EventID:      types.NewEventID(),
+		HlcTimestamp: types.HLCNow(),
+		NodeID:       auditCtx.NodeID,
+		TableName:    tableName,
+		RecordID:     cmd.GetID(),
+		Operation:    types.OpUpdate,
+		Action:       types.ActionUpdate,
+		UserID:       types.NullableUserID{ID: auditCtx.UserID, Valid: auditCtx.UserID != ""},
+		OldValues:    oldValues,
+		NewValues:    newValues,
+		RequestID:    types.NullableString{String: auditCtx.RequestID, Valid: auditCtx.RequestID != ""},
+		IP:           types.NullableString{String: auditCtx.IP, Valid: auditCtx.IP != ""},
+	})
+}
+
 // Delete executes an audited delete operation.
 // Captures before-state, executes delete, records deletion atomically.
 //

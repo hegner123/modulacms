@@ -841,8 +841,8 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/content", mutating("content:create", adminhandlers.ContentCreateHandler(driver, mgr)))
 	mux.Handle("POST /admin/content/{id}", mutating("content:update", adminhandlers.ContentUpdateHandler(driver, mgr)))
 	mux.Handle("DELETE /admin/content/{id}", mutating("content:delete", adminhandlers.ContentDeleteHandler(driver, mgr)))
-	mux.Handle("POST /admin/content/reorder", mutating("content:update", adminhandlers.ContentReorderHandler(driver, mgr)))
-	mux.Handle("POST /admin/content/move", mutating("content:update", adminhandlers.ContentMoveHandler(driver, mgr)))
+	mux.Handle("POST /admin/content/reorder", mutating("content:update", adminhandlers.ContentReorderHandler(svc, mgr)))
+	mux.Handle("POST /admin/content/move", mutating("content:update", adminhandlers.ContentMoveHandler(svc, mgr)))
 	mux.Handle("POST /admin/content/tree", mutating("content:update", adminhandlers.ContentTreeSaveHandler(driver, mgr)))
 
 	// Content publish / unpublish / versions / restore

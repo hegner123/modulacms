@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -79,9 +80,59 @@ func (s *AdminContentService) UpdatePointers(ctx context.Context, ac audited.Aud
 	return nil
 }
 
-// WithTx is a no-op passthrough until real transactions are added to DbDriver.
+// WithTx executes fn within a database transaction. The provided Backend reads
+// and writes through the transaction, so all pointer mutations are atomic.
 func (s *AdminContentService) WithTx(ctx context.Context, fn func(ops.Backend[types.AdminContentID]) error) error {
-	return fn(s)
+	conn, _, err := s.driver.GetConnection()
+	if err != nil {
+		return fmt.Errorf("admin with tx: get connection: %w", err)
+	}
+	return types.WithTransaction(ctx, conn, func(tx *sql.Tx) error {
+		return fn(&txAdminContentBackend{driver: s.driver, tx: tx})
+	})
+}
+
+// txAdminContentBackend implements ops.Backend[types.AdminContentID] with all
+// reads and writes scoped to a database transaction.
+type txAdminContentBackend struct {
+	driver db.DbDriver
+	tx     *sql.Tx
+}
+
+// GetNode reads an admin content row within the transaction.
+func (tb *txAdminContentBackend) GetNode(ctx context.Context, id types.AdminContentID) (*ops.Node[types.AdminContentID], error) {
+	cd, err := db.GetAdminContentDataInTx(tb.driver, ctx, tb.tx, id)
+	if err != nil {
+		return nil, fmt.Errorf("tx get admin content node %s: %w", id, err)
+	}
+	return &ops.Node[types.AdminContentID]{
+		ID:            cd.AdminContentDataID,
+		ParentID:      adminContentIDToNullable(cd.ParentID),
+		FirstChildID:  adminContentIDToNullable(cd.FirstChildID),
+		NextSiblingID: adminContentIDToNullable(cd.NextSiblingID),
+		PrevSiblingID: adminContentIDToNullable(cd.PrevSiblingID),
+	}, nil
+}
+
+// UpdatePointers updates pointer fields within the transaction with full audit trail.
+func (tb *txAdminContentBackend) UpdatePointers(ctx context.Context, ac audited.AuditContext, id types.AdminContentID, ptrs ops.Pointers[types.AdminContentID]) error {
+	cd, err := db.GetAdminContentDataInTx(tb.driver, ctx, tb.tx, id)
+	if err != nil {
+		return fmt.Errorf("tx update admin pointers: get %s: %w", id, err)
+	}
+	return db.UpdateAdminContentDataInTx(tb.driver, ctx, tb.tx, ac, db.UpdateAdminContentDataParams{
+		AdminContentDataID: cd.AdminContentDataID,
+		ParentID:           nullableToAdminContentID(ptrs.ParentID),
+		FirstChildID:       nullableToAdminContentID(ptrs.FirstChildID),
+		NextSiblingID:      nullableToAdminContentID(ptrs.NextSiblingID),
+		PrevSiblingID:      nullableToAdminContentID(ptrs.PrevSiblingID),
+		AdminRouteID:       cd.AdminRouteID,
+		AdminDatatypeID:    cd.AdminDatatypeID,
+		AuthorID:           cd.AuthorID,
+		Status:             cd.Status,
+		DateCreated:        cd.DateCreated,
+		DateModified:       types.TimestampNow(),
+	})
 }
 
 // --- Admin Content Data CRUD ---
@@ -402,7 +453,12 @@ func (s *AdminContentService) collectDescendantsRecursive(nodeID types.AdminCont
 // Move moves an admin content node to a new parent at the given position.
 // Delegates to ops.Move which handles cycle detection, unlinking, and reinsertion.
 func (s *AdminContentService) Move(ctx context.Context, ac audited.AuditContext, params ops.MoveParams[types.AdminContentID]) (*ops.MoveResult[types.AdminContentID], error) {
-	result, err := ops.Move(ctx, ac, s, params)
+	var result *ops.MoveResult[types.AdminContentID]
+	err := s.WithTx(ctx, func(tb ops.Backend[types.AdminContentID]) error {
+		var moveErr error
+		result, moveErr = ops.Move(ctx, ac, tb, params)
+		return moveErr
+	})
 	if err != nil {
 		return nil, fmt.Errorf("admin move content: %w", err)
 	}
@@ -410,13 +466,18 @@ func (s *AdminContentService) Move(ctx context.Context, ac audited.AuditContext,
 }
 
 // Reorder atomically reorders sibling admin content nodes under a parent.
-// Delegates to ops.Reorder which rewrites all sibling pointers and parent first_child.
-func (s *AdminContentService) Reorder(ctx context.Context, ac audited.AuditContext, parentID ops.NullableID[types.AdminContentID], orderedIDs []types.AdminContentID) (int, error) {
-	updated, err := ops.Reorder(ctx, ac, s, parentID, orderedIDs)
+// All pointer mutations execute within a single transaction.
+func (s *AdminContentService) Reorder(ctx context.Context, ac audited.AuditContext, parentID ops.NullableID[types.AdminContentID], orderedIDs []types.AdminContentID) (*ops.ReorderResult[types.AdminContentID], error) {
+	var result *ops.ReorderResult[types.AdminContentID]
+	err := s.WithTx(ctx, func(tb ops.Backend[types.AdminContentID]) error {
+		var reorderErr error
+		result, reorderErr = ops.Reorder(ctx, ac, tb, parentID, orderedIDs)
+		return reorderErr
+	})
 	if err != nil {
-		return 0, fmt.Errorf("admin reorder content: %w", err)
+		return nil, fmt.Errorf("admin reorder content: %w", err)
 	}
-	return updated, nil
+	return result, nil
 }
 
 // adminContentIDToNullable converts types.NullableAdminContentID to ops.NullableID.
