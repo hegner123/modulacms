@@ -3,13 +3,14 @@ package pages
 import (
 	"fmt"
 	"github.com/hegner123/modulacms/internal/admin/layouts"
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/service"
 )
 
 // DashboardData holds all status information for the dashboard page.
 type DashboardData struct {
 	// System
-	Environment  string
+	Environment  config.Environment
 	DbDriver     string
 	OutputFormat string
 	Version      string
@@ -253,30 +254,20 @@ templ cbBadge(state string) {
 
 // --- Helper functions ---
 
-func envLabel(env string) string {
-	switch env {
-	case "http-only":
-		return "HTTP Only"
-	case "development":
-		return "Development"
-	case "production":
-		return "Production"
-	default:
-		if env == "" {
-			return "Default"
-		}
-		return env
-	}
+func envLabel(env config.Environment) string {
+	return env.Label()
 }
 
-func envColor(env string) string {
-	switch env {
+func envColor(env config.Environment) string {
+	switch env.Stage() {
 	case "production":
-		return "text-emerald-400"
-	case "development":
+		return "text-red-400"
+	case "staging":
 		return "text-yellow-400"
-	case "http-only":
-		return "text-orange-400"
+	case "development":
+		return "text-emerald-400"
+	case "local":
+		return "text-sky-400"
 	default:
 		return "text-white"
 	}

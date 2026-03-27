@@ -806,6 +806,9 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 		mux.Handle("GET /admin/static/", http.StripPrefix("/admin/static/", htmxadmin.CacheControl(http.FileServer(staticFS))))
 	}
 
+	// Dynamic favicon (colored by environment, no auth)
+	mux.HandleFunc("GET /admin/favicon.svg", adminhandlers.FaviconHandler(svc))
+
 	// Auth pages (no session auth required)
 	loginCSRF := htmxadmin.CSRFMiddleware()
 	loginLimiter := middleware.NewRateLimiter(rate.Limit(10.0/60.0), 10) // 10 attempts/min per IP
