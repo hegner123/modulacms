@@ -189,17 +189,23 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 		}
 
 		// Post-insert FK verification (collect as warnings, don't fail).
+		// Use a savepoint so verification query errors don't poison the
+		// PostgreSQL transaction (PG aborts the entire tx on any error).
 		log.Info("deploy import: verifying foreign keys")
+		_, _ = ex.ExecContext(ctx, "SAVEPOINT fk_check")
 		violations, vErr := ops.VerifyForeignKeys(ctx, ex)
 		if vErr != nil {
+			_, _ = ex.ExecContext(ctx, "ROLLBACK TO SAVEPOINT fk_check")
 			warnings = append(warnings, fmt.Sprintf("FK verification error: %v", vErr))
 			log.Error("deploy import: FK verification error", vErr)
-		}
-		for _, v := range violations {
-			warnings = append(warnings, fmt.Sprintf("FK violation in %s (row %s -> %s)", v.Table, v.RowID, v.Parent))
-		}
-		if len(violations) > 0 {
-			log.Info("deploy import: FK violations found", "count", len(violations))
+		} else {
+			_, _ = ex.ExecContext(ctx, "RELEASE SAVEPOINT fk_check")
+			for _, v := range violations {
+				warnings = append(warnings, fmt.Sprintf("FK violation in %s (row %s -> %s)", v.Table, v.RowID, v.Parent))
+			}
+			if len(violations) > 0 {
+				log.Info("deploy import: FK violations found", "count", len(violations))
+			}
 		}
 
 		log.Info("deploy import: atomic block complete, committing")

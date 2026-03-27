@@ -356,33 +356,28 @@ func (p *psqlDeployOps) Placeholder(n int) string { return fmt.Sprintf("$%d", n)
 
 func (p *psqlDeployOps) VerifyForeignKeys(ctx context.Context, ex Executor) ([]FKViolation, error) {
 	// Query FK constraints with the child table's PK column name.
+	// Uses pg_catalog instead of information_schema to avoid Cartesian
+	// products that produce phantom FK entries on multi-constraint tables.
 	fkRows, err := ex.QueryContext(ctx, `
 		SELECT
-			tc.table_name,
-			kcu.column_name,
-			ccu.table_name AS foreign_table_name,
-			ccu.column_name AS foreign_column_name,
-			pk.column_name  AS pk_column_name
-		FROM information_schema.table_constraints AS tc
-		JOIN information_schema.key_column_usage AS kcu
-			ON tc.constraint_name = kcu.constraint_name
-			AND tc.table_schema = kcu.table_schema
-		JOIN information_schema.constraint_column_usage AS ccu
-			ON ccu.constraint_name = tc.constraint_name
-			AND ccu.table_schema = tc.table_schema
-		JOIN (
-			SELECT tco.table_name, kcup.column_name, tco.table_schema
-			FROM information_schema.table_constraints AS tco
-			JOIN information_schema.key_column_usage AS kcup
-				ON tco.constraint_name = kcup.constraint_name
-				AND tco.table_schema = kcup.table_schema
-			WHERE tco.constraint_type = 'PRIMARY KEY'
-				AND kcup.ordinal_position = 1
-		) AS pk
-			ON pk.table_name = tc.table_name
-			AND pk.table_schema = tc.table_schema
-		WHERE tc.constraint_type = 'FOREIGN KEY'
-			AND tc.table_schema = 'public';
+			cl.relname       AS table_name,
+			a.attname        AS column_name,
+			clf.relname      AS foreign_table_name,
+			af.attname       AS foreign_column_name,
+			pk_att.attname   AS pk_column_name
+		FROM pg_constraint c
+		JOIN pg_class cl  ON cl.oid = c.conrelid
+		JOIN pg_class clf ON clf.oid = c.confrelid
+		JOIN pg_namespace ns ON ns.oid = cl.relnamespace
+		JOIN LATERAL unnest(c.conkey, c.confkey)
+			WITH ORDINALITY AS u(conkey, confkey, ord) ON true
+		JOIN pg_attribute a  ON a.attrelid  = c.conrelid  AND a.attnum  = u.conkey
+		JOIN pg_attribute af ON af.attrelid = c.confrelid AND af.attnum = u.confkey
+		JOIN pg_index pi     ON pi.indrelid = c.conrelid  AND pi.indisprimary
+		JOIN pg_attribute pk_att ON pk_att.attrelid = c.conrelid
+			AND pk_att.attnum = pi.indkey[0]
+		WHERE c.contype = 'f'
+			AND ns.nspname = 'public';
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("list FK constraints: %w", err)
@@ -463,7 +458,7 @@ func verifyFKsViaJoin(ctx context.Context, ex Executor, fks []fkWithPK) ([]FKVio
 	var violations []FKViolation
 	for idx, fk := range fks {
 		q := fmt.Sprintf(
-			"SELECT CAST(t.%s AS CHAR) FROM %s t LEFT JOIN %s p ON t.%s = p.%s WHERE p.%s IS NULL AND t.%s IS NOT NULL;",
+			"SELECT CAST(t.%s AS TEXT) FROM %s t LEFT JOIN %s p ON t.%s = p.%s WHERE p.%s IS NULL AND t.%s IS NOT NULL;",
 			fk.pkColumn, fk.table, fk.refTable, fk.column, fk.refColumn, fk.refColumn, fk.column,
 		)
 		rows, err := ex.QueryContext(ctx, q)
