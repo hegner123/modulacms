@@ -14,6 +14,10 @@ type ValidationResult struct {
 func Validate(c Config) ValidationResult {
 	var result ValidationResult
 
+	if c.Environment != "" && !c.Environment.IsValid() {
+		result.Errors = append(result.Errors, fmt.Sprintf("environment %q is not valid (local, development, staging, production, or any with -docker suffix)", c.Environment))
+	}
+
 	if c.Db_Driver == "" {
 		result.Errors = append(result.Errors, "db_driver is required")
 	} else {
@@ -99,7 +103,7 @@ func ValidateUpdate(current, proposed Config) ValidationResult {
 func configFieldString(c Config, key string) string {
 	switch key {
 	case "environment":
-		return c.Environment
+		return string(c.Environment)
 	case "os":
 		return c.OS
 	case "port":

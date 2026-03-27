@@ -3,6 +3,8 @@
 // settings, SSL/TLS configuration, plugin runtime options, and observability.
 package config
 
+import "strings"
+
 // Endpoint identifies OAuth provider endpoint types.
 type Endpoint string
 
@@ -14,6 +16,11 @@ type OutputFormat string
 
 // EmailProvider specifies which email sending backend to use.
 type EmailProvider string
+
+// Environment identifies the runtime stage and deployment mode.
+// Format is "{stage}" or "{stage}-docker" where stage is one of:
+// local, development, staging, production.
+type Environment string
 
 // OAuth endpoint keys used in the Oauth_Endpoint configuration map.
 const (
@@ -49,11 +56,109 @@ const (
 	FormatDefault    OutputFormat = "" // Empty string defaults to raw
 )
 
+// Environment constants. Each stage may run natively or in Docker.
+// Docker variants bind to 0.0.0.0; native variants use localhost or client_site.
+const (
+	EnvLocal             Environment = "local"
+	EnvLocalDocker       Environment = "local-docker"
+	EnvDevelopment       Environment = "development"
+	EnvDevelopmentDocker Environment = "development-docker"
+	EnvStaging           Environment = "staging"
+	EnvStagingDocker     Environment = "staging-docker"
+	EnvProduction        Environment = "production"
+	EnvProductionDocker  Environment = "production-docker"
+)
+
+// Stage returns the base stage name without the "-docker" suffix.
+func (e Environment) Stage() string {
+	return strings.TrimSuffix(string(e), "-docker")
+}
+
+// IsDocker returns true if the environment is a Docker variant.
+func (e Environment) IsDocker() bool {
+	return strings.HasSuffix(string(e), "-docker")
+}
+
+// IsLocal returns true for local and local-docker environments.
+func (e Environment) IsLocal() bool {
+	return e.Stage() == "local"
+}
+
+// UsesTLS returns true if the environment should start an HTTPS server.
+// Local environments run HTTP only.
+func (e Environment) UsesTLS() bool {
+	return !e.IsLocal()
+}
+
+// UsesAutocert returns true if the environment should use Let's Encrypt
+// for automatic TLS certificates. Development uses self-signed certs.
+func (e Environment) UsesAutocert() bool {
+	stage := e.Stage()
+	return stage == "staging" || stage == "production"
+}
+
+// HTTPHost returns the HTTP server bind address.
+// Docker variants bind 0.0.0.0, local binds localhost,
+// all others return empty string (caller should use client_site).
+func (e Environment) HTTPHost() string {
+	if e.IsDocker() {
+		return "0.0.0.0"
+	}
+	if e.IsLocal() {
+		return "localhost"
+	}
+	return ""
+}
+
+// UsesHTTPScheme returns true if bucket/internal URLs should use http://
+// instead of https://. True for local environments.
+func (e Environment) UsesHTTPScheme() bool {
+	return e.IsLocal()
+}
+
+// IsValid returns true if the environment is a recognized value.
+func (e Environment) IsValid() bool {
+	switch e {
+	case EnvLocal, EnvLocalDocker, EnvDevelopment, EnvDevelopmentDocker,
+		EnvStaging, EnvStagingDocker, EnvProduction, EnvProductionDocker:
+		return true
+	default:
+		return false
+	}
+}
+
+// Label returns a human-readable display name for the environment.
+func (e Environment) Label() string {
+	switch e {
+	case EnvLocal:
+		return "Local"
+	case EnvLocalDocker:
+		return "Local (Docker)"
+	case EnvDevelopment:
+		return "Development"
+	case EnvDevelopmentDocker:
+		return "Development (Docker)"
+	case EnvStaging:
+		return "Staging"
+	case EnvStagingDocker:
+		return "Staging (Docker)"
+	case EnvProduction:
+		return "Production"
+	case EnvProductionDocker:
+		return "Production (Docker)"
+	default:
+		if e == "" {
+			return "Default"
+		}
+		return string(e)
+	}
+}
+
 // Config holds all runtime configuration for Modula including server settings,
 // database credentials, OAuth providers, S3-compatible storage, CORS policies,
 // plugin runtime limits, and observability integration.
 type Config struct {
-	Environment       string            `json:"environment"`
+	Environment       Environment       `json:"environment"`
 	OS                string            `json:"os"`
 	Environment_Hosts map[string]string `json:"environment_hosts"`
 	Port              string            `json:"port"`
@@ -244,7 +349,7 @@ func (c Config) BucketEndpointURL() string {
 		return ""
 	}
 	scheme := "https"
-	if c.Environment == "http-only" || c.Environment == "docker" {
+	if c.Environment.UsesHTTPScheme() {
 		scheme = "http"
 	}
 	return scheme + "://" + c.Bucket_Endpoint
@@ -287,7 +392,7 @@ func (c Config) AdminBucketEndpointURL() string {
 		return ""
 	}
 	scheme := "https"
-	if c.Environment == "http-only" || c.Environment == "docker" {
+	if c.Environment.UsesHTTPScheme() {
 		scheme = "http"
 	}
 	return scheme + "://" + endpoint

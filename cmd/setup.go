@@ -301,7 +301,7 @@ func buildBaseConfig() config.Config {
 	c := config.DefaultConfig()
 
 	// Clear environment-specific fields — these go in overlays
-	c.Environment = ""
+	c.Environment = config.Environment("")
 	c.Db_Driver = ""
 	c.Db_URL = ""
 	c.Db_Name = ""
@@ -327,7 +327,7 @@ func buildBaseConfig() config.Config {
 // buildLocalOverlay returns the local development overlay.
 func buildLocalOverlay() map[string]any {
 	return map[string]any{
-		"environment": "http-only",
+		"environment": "local",
 		"db_driver":   "sqlite",
 		"db_url":      "./modula.db",
 		"db_name":     "modula.db",

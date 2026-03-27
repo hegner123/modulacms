@@ -229,7 +229,7 @@ func logConfigSummary(cfg *config.Config) {
 	utility.DefaultLogger.Debug("Database", "driver", cfg.Db_Driver, "url", cfg.Db_URL)
 	utility.DefaultLogger.Debug("Sites", "client", cfg.Client_Site, "admin", cfg.Admin_Site)
 	utility.DefaultLogger.Debug("Ports", "http", cfg.Port, "https", cfg.SSL_Port, "ssh", cfg.SSH_Port)
-	utility.DefaultLogger.Debug("Environment", "env", cfg.Environment, "host", cfg.Environment_Hosts[cfg.Environment])
+	utility.DefaultLogger.Debug("Environment", "env", cfg.Environment, "host", cfg.Environment_Hosts[cfg.Environment.Stage()])
 	if cfg.Oauth_Provider_Name != "" {
 		utility.DefaultLogger.Debug("OAuth", "provider", cfg.Oauth_Provider_Name, "redirect", cfg.Oauth_Redirect_URL)
 	}

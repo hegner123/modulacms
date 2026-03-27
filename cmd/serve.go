@@ -447,24 +447,21 @@ Examples:
 		manager := autocert.Manager{
 			Prompt: autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(
-				cfg.Environment_Hosts[cfg.Environment],
+				cfg.Environment_Hosts[cfg.Environment.Stage()],
 				cfg.Client_Site,
 				cfg.Admin_Site,
 			),
 		}
 
 		// Determine HTTP host based on environment
-		httpHost := cfg.Client_Site
-		switch cfg.Environment {
-		case "local":
-			httpHost = "localhost"
-		case "docker":
-			httpHost = "0.0.0.0"
+		httpHost := cfg.Environment.HTTPHost()
+		if httpHost == "" {
+			httpHost = cfg.Client_Site
 		}
 
-		// TLS config: use autocert for production, nil for local/docker (self-signed)
+		// TLS config: use autocert for staging/production, nil for dev (self-signed)
 		var tlsConfig *tls.Config
-		if cfg.Environment != "local" && cfg.Environment != "docker" {
+		if cfg.Environment.UsesAutocert() {
 			tlsConfig = manager.TLSConfig()
 		}
 
@@ -476,8 +473,8 @@ Examples:
 			return certErr
 		}
 
-		// Start HTTPS server if configured
-		if !initStatus.UseSSL && cfg.Environment != "http-only" {
+		// Start HTTPS server if configured (local environments are HTTP-only)
+		if !initStatus.UseSSL && cfg.Environment.UsesTLS() {
 			go func() {
 				utility.DefaultLogger.Info("HTTPS is up — locked and loaded", "address", httpsServer.Addr)
 				utility.DefaultLogger.Debug("HTTPS server listener binding", "address", httpsServer.Addr, "cert_dir", certDir)

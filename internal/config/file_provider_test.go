@@ -106,7 +106,7 @@ func TestFileProvider_Get_ValidConfig(t *testing.T) {
 		got  string
 		want string
 	}{
-		{name: "Environment", got: got.Environment, want: "production"},
+		{name: "Environment", got: string(got.Environment), want: "production"},
 		{name: "Port", got: got.Port, want: ":9090"},
 		{name: "SSL_Port", got: got.SSL_Port, want: ":4433"},
 		{name: "Db_Driver", got: string(got.Db_Driver), want: "postgres"},
@@ -255,7 +255,7 @@ func TestFileProvider_Get_RoundTripDefaultConfig(t *testing.T) {
 		got  string
 		want string
 	}{
-		{name: "Environment", got: got.Environment, want: original.Environment},
+		{name: "Environment", got: string(got.Environment), want: string(original.Environment)},
 		{name: "Port", got: got.Port, want: original.Port},
 		{name: "SSL_Port", got: got.SSL_Port, want: original.SSL_Port},
 		{name: "Db_Driver", got: string(got.Db_Driver), want: string(original.Db_Driver)},

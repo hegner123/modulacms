@@ -128,7 +128,7 @@ templ SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchI
                 <div class="md:col-span-2">
                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
                         <div class="sm:col-span-3">
-                            @settingsField("environment", "Environment", cfg.Environment, "Runtime mode: 'http-only' disables TLS, 'development' uses self-signed certs, 'production' enables Let's Encrypt")
+                            @settingsField("environment", "Environment", string(cfg.Environment), "Runtime stage: local (HTTP only), development (self-signed TLS), staging/production (Let's Encrypt). Append -docker for container deployments.")
                         </div>
                         <div class="sm:col-span-3">
                             @settingsField("os", "OS", cfg.OS, "Operating system identifier, set automatically at startup")

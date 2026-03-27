@@ -20,10 +20,9 @@ func DefaultConfig() Config {
 	hosts["development"] = "localhost"
 	hosts["staging"] = "localhost"
 	hosts["production"] = "localhost"
-	hosts["http-only"] = "localhost"
 
 	var c Config
-	c.Environment = "development"
+	c.Environment = EnvDevelopment
 	c.OS = runtime.GOOS
 	c.Environment_Hosts = hosts
 	c.Port = ":8080"

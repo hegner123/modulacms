@@ -333,7 +333,7 @@ func renderConfig(d scaffoldData) string {
 	}
 
 	return fmt.Sprintf(`{
-  "environment": "docker",
+  "environment": "local-docker",
   "db_driver": "%s",
   "db_url": "%s",
   "db_name": "%s",

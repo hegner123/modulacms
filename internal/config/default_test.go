@@ -20,7 +20,7 @@ func TestDefaultConfig_FieldDefaults(t *testing.T) {
 		got  string
 		want string
 	}{
-		{name: "Environment", got: c.Environment, want: "development"},
+		{name: "Environment", got: string(c.Environment), want: "development"},
 		{name: "OS matches runtime", got: c.OS, want: runtime.GOOS},
 		{name: "Port", got: c.Port, want: ":8080"},
 		{name: "SSL_Port", got: c.SSL_Port, want: ":4000"},
@@ -127,7 +127,7 @@ func TestDefaultConfig_EnvironmentHosts(t *testing.T) {
 		t.Fatal("DefaultConfig().Environment_Hosts is nil, want populated map")
 	}
 
-	expectedKeys := []string{"local", "development", "staging", "production", "http-only"}
+	expectedKeys := []string{"local", "development", "staging", "production"}
 	for _, key := range expectedKeys {
 		t.Run(key, func(t *testing.T) {
 			t.Parallel()
@@ -366,7 +366,7 @@ func TestConfig_JSON_RoundTrip(t *testing.T) {
 		got  string
 		want string
 	}{
-		{name: "Environment", got: decoded.Environment, want: original.Environment},
+		{name: "Environment", got: string(decoded.Environment), want: string(original.Environment)},
 		{name: "Port", got: decoded.Port, want: original.Port},
 		{name: "SSL_Port", got: decoded.SSL_Port, want: original.SSL_Port},
 		{name: "Db_Driver", got: string(decoded.Db_Driver), want: string(original.Db_Driver)},

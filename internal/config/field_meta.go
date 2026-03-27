@@ -103,7 +103,7 @@ type FieldMeta struct {
 // FieldRegistry enumerates all Config fields with their metadata.
 var FieldRegistry = []FieldMeta{
 	// Server
-	{JSONKey: "environment", Label: "Environment", Category: CategoryServer, HotReloadable: false, Description: "Runtime environment (local, development, staging, production, docker, http-only)", Example: "production"},
+	{JSONKey: "environment", Label: "Environment", Category: CategoryServer, HotReloadable: false, Description: "Runtime environment: local, development, staging, production (append -docker for container deployments)", Example: "production"},
 	{JSONKey: "os", Label: "Operating System", Category: CategoryServer, HotReloadable: false, Description: "Target OS", Example: "linux"},
 	{JSONKey: "port", Label: "HTTP Port", Category: CategoryServer, HotReloadable: false, Required: true, Description: "HTTP listen address (e.g. :8080)", Example: ":8080"},
 	{JSONKey: "ssl_port", Label: "HTTPS Port", Category: CategoryServer, HotReloadable: false, Description: "HTTPS listen address (e.g. :4000)", Example: ":4000"},

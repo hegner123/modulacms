@@ -230,7 +230,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsField("environment", "Environment", cfg.Environment, "Runtime mode: 'http-only' disables TLS, 'development' uses self-signed certs, 'production' enables Let's Encrypt").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsField("environment", "Environment", string(cfg.Environment), "Runtime stage: local (HTTP only), development (self-signed TLS), staging/production (Let's Encrypt). Append -docker for container deployments.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

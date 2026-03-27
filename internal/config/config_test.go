@@ -12,80 +12,86 @@ func TestBucketEndpointURL(t *testing.T) {
 	tests := []struct {
 		name     string
 		endpoint string
-		env      string
+		env      config.Environment
 		want     string
 	}{
 		{
 			name:     "empty endpoint returns empty string",
 			endpoint: "",
-			env:      "production",
+			env:      config.EnvProduction,
 			want:     "",
 		},
 		{
 			name:     "production environment uses https",
 			endpoint: "s3.example.com",
-			env:      "production",
+			env:      config.EnvProduction,
 			want:     "https://s3.example.com",
 		},
 		{
 			name:     "staging environment uses https",
 			endpoint: "s3.staging.example.com",
-			env:      "staging",
+			env:      config.EnvStaging,
 			want:     "https://s3.staging.example.com",
 		},
 		{
 			name:     "development environment uses https",
 			endpoint: "localhost:9000",
-			env:      "development",
+			env:      config.EnvDevelopment,
 			want:     "https://localhost:9000",
 		},
 		{
-			name:     "http-only environment uses http",
+			name:     "local environment uses http",
 			endpoint: "localhost:9000",
-			env:      "http-only",
+			env:      config.EnvLocal,
 			want:     "http://localhost:9000",
 		},
 		{
-			name:     "docker environment uses http",
+			name:     "local-docker environment uses http",
 			endpoint: "minio:9000",
-			env:      "docker",
+			env:      config.EnvLocalDocker,
 			want:     "http://minio:9000",
 		},
 		{
 			name:     "unknown environment defaults to https",
 			endpoint: "s3.example.com",
-			env:      "custom-env",
+			env:      config.Environment("custom-env"),
 			want:     "https://s3.example.com",
 		},
 		{
 			name:     "empty environment defaults to https",
 			endpoint: "s3.example.com",
-			env:      "",
+			env:      config.Environment(""),
 			want:     "https://s3.example.com",
 		},
 		{
 			name:     "endpoint with port uses correct scheme",
 			endpoint: "localhost:9000",
-			env:      "production",
+			env:      config.EnvProduction,
 			want:     "https://localhost:9000",
 		},
 		{
 			name:     "endpoint with path preserves path",
 			endpoint: "s3.example.com/bucket",
-			env:      "production",
+			env:      config.EnvProduction,
 			want:     "https://s3.example.com/bucket",
 		},
 		{
-			name:     "empty endpoint with http-only still returns empty",
+			name:     "empty endpoint with local still returns empty",
 			endpoint: "",
-			env:      "http-only",
+			env:      config.EnvLocal,
 			want:     "",
 		},
 		{
-			name:     "empty endpoint with docker still returns empty",
+			name:     "empty endpoint with local-docker still returns empty",
 			endpoint: "",
-			env:      "docker",
+			env:      config.EnvLocalDocker,
 			want:     "",
+		},
+		{
+			name:     "production-docker uses https",
+			endpoint: "s3.example.com",
+			env:      config.EnvProductionDocker,
+			want:     "https://s3.example.com",
 		},
 	}
 
