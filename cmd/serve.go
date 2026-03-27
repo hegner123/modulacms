@@ -665,7 +665,7 @@ func generatePluginAPIToken(ctx context.Context, driver db.DbDriver, nodeID stri
 		utility.DefaultLogger.Warn("failed to query existing tokens for stale cleanup", err)
 	} else if existingTokens != nil {
 		for _, tok := range *existingTokens {
-			if tok.TokenType != "plugin_api_key" {
+			if tok.TokenType != types.TokenTypePluginAPIKey {
 				continue
 			}
 			if delErr := driver.DeleteToken(ctx, auditCtx, tok.ID); delErr != nil {
@@ -687,7 +687,7 @@ func generatePluginAPIToken(ctx context.Context, driver db.DbDriver, nodeID stri
 	// Insert the hashed token into the database.
 	created, err := driver.CreateToken(ctx, auditCtx, db.CreateTokenParams{
 		UserID:    systemNullableID,
-		TokenType: "plugin_api_key",
+		TokenType: types.TokenTypePluginAPIKey,
 		Token:     hashedToken,
 		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.NewTimestamp(time.Now().UTC().Add(24 * time.Hour)),

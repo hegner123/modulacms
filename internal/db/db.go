@@ -861,7 +861,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	// 17. Create default token (id = 1) - Validation record
 	token, err := d.CreateToken(ctx, ac, CreateTokenParams{
 		UserID:    types.NullableUserID{Valid: true, ID: systemUser.UserID},
-		TokenType: "validation",
+		TokenType: types.TokenTypeValidation,
 		Token:     utility.HashToken("bootstrap_validation_token"),
 		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.TimestampNow(),
@@ -2035,7 +2035,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 17. Create default token (id = 1) - Validation record
 	token, err := d.CreateToken(ctx, ac, CreateTokenParams{
 		UserID:    types.NullableUserID{Valid: true, ID: systemUser.UserID},
-		TokenType: "validation",
+		TokenType: types.TokenTypeValidation,
 		Token:     utility.HashToken("bootstrap_validation_token"),
 		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.TimestampNow(),
@@ -3170,7 +3170,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 17. Create default token (id = 1) - Validation record
 	token, err := d.CreateToken(ctx, ac, CreateTokenParams{
 		UserID:    types.NullableUserID{Valid: true, ID: systemUser.UserID},
-		TokenType: "validation",
+		TokenType: types.TokenTypeValidation,
 		Token:     utility.HashToken("bootstrap_validation_token"),
 		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.TimestampNow(),

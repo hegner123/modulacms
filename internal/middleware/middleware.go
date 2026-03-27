@@ -11,6 +11,7 @@ import (
 
 	config "github.com/hegner123/modulacms/internal/config"
 	db "github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -68,7 +69,7 @@ func APIKeyAuth(r *http.Request, c *config.Config) (*authcontext, *db.Users) {
 		return nil, nil
 	}
 
-	if token.TokenType != "api_key" && token.TokenType != "plugin_api_key" {
+	if token.TokenType != types.TokenTypeAPIKey && token.TokenType != types.TokenTypePluginAPIKey {
 		utility.DefaultLogger.Finfo("token is not an api_key", token.TokenType)
 		return nil, nil
 	}

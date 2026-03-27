@@ -170,7 +170,7 @@ func (s *AuthService) RequestPasswordReset(ctx context.Context, ac audited.Audit
 	existingTokens, err := s.driver.GetTokenByUserId(userNullID)
 	if err == nil && existingTokens != nil {
 		for _, tok := range *existingTokens {
-			if tok.TokenType != "password_reset" {
+			if tok.TokenType != types.TokenTypePasswordReset {
 				continue
 			}
 			if delErr := s.driver.DeleteToken(ctx, ac, tok.ID); delErr != nil {
@@ -189,7 +189,7 @@ func (s *AuthService) RequestPasswordReset(ctx context.Context, ac audited.Audit
 
 	_, err = s.driver.CreateToken(ctx, ac, db.CreateTokenParams{
 		UserID:    userNullID,
-		TokenType: "password_reset",
+		TokenType: types.TokenTypePasswordReset,
 		Token:     hashedToken,
 		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.NewTimestamp(time.Now().UTC().Add(1 * time.Hour)),
@@ -237,7 +237,7 @@ func (s *AuthService) ConfirmPasswordReset(ctx context.Context, ac audited.Audit
 		return &UnauthorizedError{Message: "invalid or expired reset token"}
 	}
 
-	if tok.TokenType != "password_reset" {
+	if tok.TokenType != types.TokenTypePasswordReset {
 		return &UnauthorizedError{Message: "invalid or expired reset token"}
 	}
 
@@ -294,7 +294,7 @@ func (s *AuthService) ConfirmPasswordReset(ctx context.Context, ac audited.Audit
 	existingTokens, tokErr := s.driver.GetTokenByUserId(userNullID)
 	if tokErr == nil && existingTokens != nil {
 		for _, t := range *existingTokens {
-			if t.TokenType != "password_reset" || t.ID == tok.ID {
+			if t.TokenType != types.TokenTypePasswordReset || t.ID == tok.ID {
 				continue
 			}
 			if delErr := s.driver.DeleteToken(ctx, ac, t.ID); delErr != nil {

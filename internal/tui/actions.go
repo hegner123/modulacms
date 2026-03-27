@@ -503,7 +503,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 
 		_, tokenErr := driver.CreateToken(ctx, ac, db.CreateTokenParams{
 			UserID:    types.NullableUserID{ID: ownerID, Valid: true},
-			TokenType: "api_key",
+			TokenType: types.TokenTypeAPIKey,
 			Token:     hashedToken,
 			IssuedAt:  types.NewTimestamp(now),
 			ExpiresAt: types.NewTimestamp(expiry),

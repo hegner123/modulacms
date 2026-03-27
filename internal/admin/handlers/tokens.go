@@ -99,7 +99,7 @@ func TokenCreateHandler(svc *service.Registry) http.HandlerFunc {
 
 		tokenType := r.FormValue("token_type")
 		if tokenType == "" {
-			tokenType = "api"
+			tokenType = types.TokenTypeAPIKey
 		}
 
 		expiresAt := types.NewTimestamp(time.Now().Add(365 * 24 * time.Hour))

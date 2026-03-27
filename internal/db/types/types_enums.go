@@ -419,6 +419,14 @@ func (a *Action) UnmarshalJSON(data []byte) error {
 	return a.Validate()
 }
 
+// TokenType constants for the tokens table token_type column.
+const (
+	TokenTypeAPIKey       = "api_key"
+	TokenTypePluginAPIKey = "plugin_api_key"
+	TokenTypePasswordReset = "password_reset"
+	TokenTypeValidation   = "validation"
+)
+
 // ConflictPolicy defines how conflicts are resolved for a datatype (for distributed conflict resolution)
 type ConflictPolicy string
 

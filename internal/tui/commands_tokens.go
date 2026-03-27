@@ -49,7 +49,7 @@ func (m Model) HandleCreateToken(msg CreateTokenFromDialogRequestMsg) tea.Cmd {
 
 		tokenType := msg.TokenType
 		if tokenType == "" {
-			tokenType = "api"
+			tokenType = types.TokenTypeAPIKey
 		}
 
 		input := service.CreateTokenInput{

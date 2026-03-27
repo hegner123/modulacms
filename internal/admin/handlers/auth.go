@@ -199,7 +199,7 @@ func ForgotPasswordSubmitHandler(mgr *config.Manager, emailSvc *email.Service, d
 		existingTokens, tokErr := driver.GetTokenByUserId(userNullID)
 		if tokErr == nil && existingTokens != nil {
 			for _, tok := range *existingTokens {
-				if tok.TokenType != "password_reset" {
+				if tok.TokenType != types.TokenTypePasswordReset {
 					continue
 				}
 				if delErr := driver.DeleteToken(r.Context(), ac, tok.ID); delErr != nil {
@@ -218,7 +218,7 @@ func ForgotPasswordSubmitHandler(mgr *config.Manager, emailSvc *email.Service, d
 
 		_, err = driver.CreateToken(r.Context(), ac, db.CreateTokenParams{
 			UserID:    userNullID,
-			TokenType: "password_reset",
+			TokenType: types.TokenTypePasswordReset,
 			Token:     tokenValue,
 			IssuedAt:  types.TimestampNow(),
 			ExpiresAt: types.NewTimestamp(time.Now().UTC().Add(1 * time.Hour)),
@@ -267,7 +267,7 @@ func ResetPasswordPageHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 
 		tok, err := driver.GetTokenByTokenValue(token)
-		if err != nil || tok == nil || tok.TokenType != "password_reset" || tok.Revoked {
+		if err != nil || tok == nil || tok.TokenType != types.TokenTypePasswordReset || tok.Revoked {
 			Render(w, r, pages.ResetPassword(csrfToken, utility.Version, "", "Invalid or expired reset token.", ""))
 			return
 		}
@@ -319,7 +319,7 @@ func ResetPasswordSubmitHandler(mgr *config.Manager, driver db.DbDriver) http.Ha
 		}
 
 		tok, err := driver.GetTokenByTokenValue(token)
-		if err != nil || tok == nil || tok.TokenType != "password_reset" || tok.Revoked {
+		if err != nil || tok == nil || tok.TokenType != types.TokenTypePasswordReset || tok.Revoked {
 			Render(w, r, pages.ResetPassword(csrfToken, utility.Version, "", "Invalid or expired reset token.", ""))
 			return
 		}
