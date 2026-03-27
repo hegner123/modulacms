@@ -33,8 +33,8 @@ func TestBuildDSN_SQLite(t *testing.T) {
 	if driver != "sqlite3" {
 		t.Errorf("driver = %q, want %q", driver, "sqlite3")
 	}
-	if dsn != "/tmp/test.db" {
-		t.Errorf("dsn = %q, want %q", dsn, "/tmp/test.db")
+	if dsn != "/tmp/test.db?_foreign_keys=on" {
+		t.Errorf("dsn = %q, want %q", dsn, "/tmp/test.db?_foreign_keys=on")
 	}
 }
 
@@ -44,8 +44,8 @@ func TestBuildDSN_SQLite_Default(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if dsn != "./modula.db" {
-		t.Errorf("dsn = %q, want %q", dsn, "./modula.db")
+	if dsn != "./modula.db?_foreign_keys=on" {
+		t.Errorf("dsn = %q, want %q", dsn, "./modula.db?_foreign_keys=on")
 	}
 }
 

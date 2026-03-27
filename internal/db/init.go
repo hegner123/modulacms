@@ -37,20 +37,13 @@ func (d Database) GetDb(verbose *bool) DbDriver {
 		utility.DefaultLogger.Info("Using default database path", "path", d.Src)
 	}
 
-	// Open database connection
-	db, err := sql.Open("sqlite3-metrics", d.Src)
+	// Open database connection with foreign keys enabled via DSN so every
+	// pooled connection enforces FK constraints (PRAGMA is per-connection).
+	dsn := d.Src + "?_foreign_keys=on"
+	db, err := sql.Open("sqlite3-metrics", dsn)
 	if err != nil {
 		errWithContext := fmt.Errorf("failed to open SQLite database: %w", err)
 		utility.DefaultLogger.Error("Database connection error", errWithContext, "path", d.Src)
-		d.Err = errWithContext
-		return d
-	}
-
-	// Enable foreign keys
-	_, err = db.Exec("PRAGMA foreign_keys=1;")
-	if err != nil {
-		errWithContext := fmt.Errorf("failed to enable foreign keys: %w", err)
-		utility.DefaultLogger.Error("Database configuration error", errWithContext)
 		d.Err = errWithContext
 		return d
 	}
@@ -263,7 +256,7 @@ func buildDSN(cfg config.Config) (driverName string, dsn string, err error) {
 		if src == "" {
 			src = "./modula.db"
 		}
-		return "sqlite3", src, nil
+		return "sqlite3", src + "?_foreign_keys=on", nil
 
 	case config.Mysql:
 		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true", cfg.Db_User, cfg.Db_Password, cfg.Db_URL, cfg.Db_Name)
@@ -320,10 +313,8 @@ func OpenPool(cfg config.Config, pc PoolConfig) (*sql.DB, error) {
 
 	switch cfg.Db_Driver {
 	case config.Sqlite:
-		if _, err := pool.Exec("PRAGMA foreign_keys=1;"); err != nil {
-			pool.Close() //nolint:errcheck // best-effort on setup failure
-			return nil, fmt.Errorf("PRAGMA foreign_keys: %w", err)
-		}
+		// FK enforcement is set via _foreign_keys=on in the DSN (applies to
+		// every pooled connection). WAL mode is database-level, not per-conn.
 		if _, err := pool.Exec("PRAGMA journal_mode=WAL;"); err != nil {
 			pool.Close() //nolint:errcheck // best-effort on setup failure
 			return nil, fmt.Errorf("PRAGMA journal_mode: %w", err)
