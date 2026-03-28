@@ -112,14 +112,14 @@ jobs:
             -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
             -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
             -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
-            -o modula ./cmd
-          chmod +x modula
+            -o modula-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd
+          chmod +x modula-${{ matrix.goos }}-${{ matrix.goarch }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: modula-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: modula
+          path: modula-${{ matrix.goos }}-${{ matrix.goarch }}
 
   release:
     needs: build
@@ -133,14 +133,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist
-
-      - name: Rename artifacts for release
-        run: |
-          for dir in dist/modula-*/; do
-            variant=$(basename "$dir")
-            cp "$dir/modula" "dist/$variant"
-            rm -rf "$dir"
-          done
+          merge-multiple: true
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -164,14 +157,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist
-
-      - name: Rename artifacts for release
-        run: |
-          for dir in dist/modula-*/; do
-            variant=$(basename "$dir")
-            cp "$dir/modula" "dist/$variant"
-            rm -rf "$dir"
-          done
+          merge-multiple: true
 
       - name: Update rolling latest release
         env:
