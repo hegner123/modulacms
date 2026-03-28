@@ -671,16 +671,42 @@ class McmsFieldRenderer extends HTMLElement {
         }
         container.appendChild(thumbContainer);
 
+        // Button group
+        var btnGroup = document.createElement('div');
+        btnGroup.className = 'flex flex-col gap-1.5';
+
         // Choose button
         var chooseBtn = document.createElement('button');
         chooseBtn.type = 'button';
         chooseBtn.className = 'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors cursor-pointer border border-[var(--color-border)]';
         chooseBtn.textContent = 'Choose';
-        container.appendChild(chooseBtn);
+        btnGroup.appendChild(chooseBtn);
 
+        // Clear button
+        var clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors cursor-pointer border border-red-400/20';
+        clearBtn.textContent = 'Clear';
+        if (!value) clearBtn.style.display = 'none';
+        btnGroup.appendChild(clearBtn);
+
+        container.appendChild(btnGroup);
         wrapper.appendChild(container);
 
         var self = this;
+
+        clearBtn.addEventListener('click', function() {
+            hidden.value = '';
+            thumbContainer.textContent = '';
+            var emptySpan = document.createElement('span');
+            emptySpan.className = 'text-xs text-center text-[var(--color-text-dim)]';
+            emptySpan.textContent = 'No media';
+            emptySpan.style.lineHeight = '1.3';
+            thumbContainer.appendChild(emptySpan);
+            clearBtn.style.display = 'none';
+            self._emitChange(name, '');
+        });
+
         chooseBtn.addEventListener('click', function() {
             // Find or create a media picker
             var picker = document.querySelector('mcms-media-picker');
@@ -712,6 +738,7 @@ class McmsFieldRenderer extends HTMLElement {
                     thumbContainer.appendChild(idSpan);
                 }
 
+                clearBtn.style.display = hidden.value ? '' : 'none';
                 self._emitChange(name, hidden.value);
             };
 
