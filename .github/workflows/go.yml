@@ -112,14 +112,14 @@ jobs:
             -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
             -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
             -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
-            -o modula-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd
-          chmod +x modula-${{ matrix.goos }}-${{ matrix.goarch }}
+            -o modula ./cmd
+          chmod +x modula
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: modula-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: modula-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: modula
 
   release:
     needs: build
@@ -133,15 +133,55 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist
-          merge-multiple: true
+
+      - name: Rename artifacts for release
+        run: |
+          for dir in dist/modula-*/; do
+            variant=$(basename "$dir")
+            mv "$dir/modula" "dist/$variant"
+          done
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: dist/modula-*
           generate_release_notes: true
           draft: false
           prerelease: false
+
+  latest:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Rename artifacts for release
+        run: |
+          for dir in dist/modula-*/; do
+            variant=$(basename "$dir")
+            mv "$dir/modula" "dist/$variant"
+          done
+
+      - name: Update rolling latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes 2>/dev/null || true
+          git tag -f latest
+          git push -f origin latest
+          gh release create latest dist/modula-* \
+            --title "Latest Build ($(date -u '+%Y-%m-%d'))" \
+            --notes "Rolling release from main branch. Commit: ${{ github.sha }}" \
+            --prerelease
 
   deploy-dev:
     needs: test
@@ -180,7 +220,7 @@ jobs:
             -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
             -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
             -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
-            -o modula-amd ./cmd
+            -o modula ./cmd
 
           echo "Built version: $VERSION (commit: $COMMIT)"
 
@@ -208,13 +248,13 @@ jobs:
           ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl stop modula || echo 'Service not running'"
 
           # Backup current binary
-          ssh $DEPLOY_USER@$DEPLOY_HOST "cp $DEPLOY_PATH/modula-amd $DEPLOY_PATH/modula-amd.backup || echo 'No existing binary to backup'"
+          ssh $DEPLOY_USER@$DEPLOY_HOST "cp $DEPLOY_PATH/modula $DEPLOY_PATH/modula.backup || echo 'No existing binary to backup'"
 
           # Upload new binary
-          scp modula-amd $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/modula-amd
+          scp modula $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/modula
 
           # Set permissions
-          ssh $DEPLOY_USER@$DEPLOY_HOST "chmod +x $DEPLOY_PATH/modula-amd"
+          ssh $DEPLOY_USER@$DEPLOY_HOST "chmod +x $DEPLOY_PATH/modula"
 
           # Start service
           ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl start modula"
