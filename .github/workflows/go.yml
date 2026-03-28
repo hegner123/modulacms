@@ -138,7 +138,8 @@ jobs:
         run: |
           for dir in dist/modula-*/; do
             variant=$(basename "$dir")
-            mv "$dir/modula" "dist/$variant"
+            cp "$dir/modula" "dist/$variant"
+            rm -rf "$dir"
           done
 
       - name: Create Release
@@ -168,7 +169,8 @@ jobs:
         run: |
           for dir in dist/modula-*/; do
             variant=$(basename "$dir")
-            mv "$dir/modula" "dist/$variant"
+            cp "$dir/modula" "dist/$variant"
+            rm -rf "$dir"
           done
 
       - name: Update rolling latest release
