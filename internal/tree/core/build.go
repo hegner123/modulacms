@@ -424,6 +424,8 @@ func hasCircularReference(node *Node, index map[types.ContentID]*Node, visited m
 }
 
 // reorderByPointers rebuilds sibling chains to match stored FirstChildID/NextSiblingID pointers.
+// When FirstChildID is missing, falls back to finding the first child by looking
+// for the child whose PrevSiblingID is empty (head of the chain).
 func reorderByPointers(index map[types.ContentID]*Node) {
 	for _, node := range index {
 		if node.FirstChild == nil {
@@ -432,16 +434,37 @@ func reorderByPointers(index map[types.ContentID]*Node) {
 		if node.ContentData == nil {
 			continue
 		}
-		if !node.ContentData.FirstChildID.Valid || node.ContentData.FirstChildID.ID == "" {
-			continue
+
+		var firstChildID types.ContentID
+		if node.ContentData.FirstChildID.Valid && node.ContentData.FirstChildID.ID != "" {
+			firstChildID = node.ContentData.FirstChildID.ID
+		} else {
+			// Fallback: find the child with no prev sibling (head of chain).
+			firstChildID = findChainHead(node)
+			if firstChildID == "" {
+				continue
+			}
 		}
-		firstChildID := node.ContentData.FirstChildID.ID
+
 		ordered := buildSiblingChain(firstChildID, index)
 		if ordered == nil {
 			continue
 		}
 		applySiblingOrder(node, ordered)
 	}
+}
+
+// findChainHead walks a parent's children to find the one whose
+// PrevSiblingID is empty, indicating it is the first in the chain.
+func findChainHead(parent *Node) types.ContentID {
+	current := parent.FirstChild
+	for current != nil {
+		if !current.ContentData.PrevSiblingID.Valid || current.ContentData.PrevSiblingID.ID == "" {
+			return current.ContentData.ContentDataID
+		}
+		current = current.NextSibling
+	}
+	return ""
 }
 
 // buildSiblingChain follows the NextSiblingID chain starting from firstChildID.

@@ -130,6 +130,8 @@ func BuildNodes(log Logger, datatypes []Datatype, fields []Field) (*Node, error)
 
 // reorderChildren sorts each node's Nodes slice to match the stored
 // sibling-pointer ordering (FirstChildID -> NextSiblingID chain).
+// When FirstChildID is missing, falls back to finding the child whose
+// PrevSiblingID is empty (head of the chain).
 // Nodes not found in the chain are appended at the end, preserving
 // partial ordering when chains are incomplete.
 func reorderChildren(nodeIndex map[string]*Node) {
@@ -139,7 +141,16 @@ func reorderChildren(nodeIndex map[string]*Node) {
 		}
 		firstChildID := node.Datatype.Content.FirstChildID
 		if firstChildID == "" {
-			continue
+			// Fallback: find the child with no prev sibling.
+			for _, child := range node.Nodes {
+				if child.Datatype.Content.PrevSiblingID == "" {
+					firstChildID = child.Datatype.Content.ContentDataID
+					break
+				}
+			}
+			if firstChildID == "" {
+				continue
+			}
 		}
 		chain := buildSiblingChain(firstChildID, nodeIndex)
 		if chain == nil {
