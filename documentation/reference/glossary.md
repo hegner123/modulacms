@@ -59,10 +59,7 @@ System-protected roles and permissions cannot be deleted or renamed through the 
 
 **modula.config.json** -- The configuration file loaded at startup. Contains all runtime settings: database connection, server ports, TLS certificates, S3 storage credentials, OAuth configuration, CORS policy, and more. Environment variables can be referenced using `${VAR}` syntax. If no config file exists on first run, the setup wizard creates one with defaults.
 
-**Environment** -- The `environment` field in `modula.config.json` controls TLS behavior:
-- `local` -- Uses self-signed certificates from `cert_dir`
-- `http-only` -- Disables HTTPS entirely
-- `development`, `staging`, `production` -- Uses automatic Let's Encrypt certificates
+**Environment** -- The `environment` field in `modula.config.json` controls TLS behavior, server bind address, and admin panel appearance. Four stages are available: `local`, `development`, `staging`, `production`. Append `-docker` for container deployments (e.g., `production-docker`). Local environments disable HTTPS. Development uses self-signed certificates. Staging and production use Let's Encrypt autocert. The admin panel favicon changes color by stage (blue, green, amber, red) so you can identify the environment at a glance.
 
 ## Infrastructure
 

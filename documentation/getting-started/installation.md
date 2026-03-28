@@ -276,7 +276,7 @@ Generate self-signed certificates for local HTTPS development:
 modula cert generate
 ```
 
-This creates `localhost.crt` and `localhost.key` in the certificate directory. In production, ModulaCMS uses Let's Encrypt autocert for automatic certificate provisioning when `environment` is not set to `local` or `docker`.
+This creates `localhost.crt` and `localhost.key` in the certificate directory. Staging and production environments use Let's Encrypt autocert for automatic certificate provisioning. Development environments use these self-signed certificates. Local environments skip TLS entirely.
 
 ## CLI Reference
 

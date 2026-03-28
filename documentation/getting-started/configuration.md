@@ -210,7 +210,7 @@ These settings change between development, staging, and production:
 
 ```json
 {
-  "environment": "http-only",
+  "environment": "local",
   "port": ":8080",
   "ssl_port": ":4000",
   "ssh_port": "2233",
@@ -295,7 +295,7 @@ modula serve mysite production
 
 | Field | Type | Default | Restart Required | Description |
 |-------|------|---------|-----------------|-------------|
-| `environment` | string | `"development"` | Yes | Runtime environment: `local`, `development`, `staging`, `production`, `docker`, `http-only` |
+| `environment` | string | `"development"` | Yes | Runtime environment: `local`, `development`, `staging`, `production` (append `-docker` for container deployments) |
 | `port` | string | `":8080"` | Yes | HTTP listen address |
 | `ssl_port` | string | `":4000"` | Yes | HTTPS listen address |
 | `ssh_host` | string | `"localhost"` | Yes | SSH server bind host |
@@ -308,7 +308,16 @@ modula serve mysite production
 | `max_upload_size` | integer | `10485760` | No | Maximum file upload size in bytes (default 10 MB) |
 | `node_id` | string | (auto-generated) | Yes | Unique node identifier (ULID). Auto-generated if empty. |
 
-The `environment` field controls TLS behavior. `local` binds to `localhost` and uses `http://` for S3. `docker` binds to `0.0.0.0` and also uses `http://`. All other values use `https://` for S3 and enable Let's Encrypt autocert.
+The `environment` field controls TLS behavior and server bind address. Each stage (`local`, `development`, `staging`, `production`) can run natively or in Docker by appending `-docker` to the value. Docker variants bind to `0.0.0.0`; native variants bind to `localhost` or `client_site`. Local environments disable HTTPS and use `http://` for S3. Development environments use self-signed certificates. Staging and production environments use Let's Encrypt autocert.
+
+The admin panel favicon changes color based on the environment stage, so you can tell at a glance which environment you are working in:
+
+| Stage | Favicon Color |
+|-------|--------------|
+| Local | Blue |
+| Development | Green |
+| Staging | Amber |
+| Production | Red |
 
 The `output_format` field sets the default response structure for content delivery endpoints. Valid values: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, `raw`. Defaults to `raw` when empty. See the [Routing guide](../building-content/routing.md) for details on output formats.
 
@@ -383,7 +392,7 @@ Example for MinIO running locally:
 }
 ```
 
-> **Good to know**: The `environment` field determines the S3 scheme. `http-only` and `docker` use `http://`; all other values use `https://`. Do not include the scheme in `bucket_endpoint`.
+> **Good to know**: The `environment` field determines the S3 scheme. Local environments (`local`, `local-docker`) use `http://`; all other environments use `https://`. Do not include the scheme in `bucket_endpoint`.
 
 > **Good to know**: In Docker, `bucket_endpoint` typically points to a container hostname (e.g., `minio:9000`) that browsers cannot resolve. Set `bucket_public_url` to the externally reachable address so media URLs work in the browser.
 

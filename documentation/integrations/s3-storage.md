@@ -32,7 +32,7 @@ Set these fields in `modula.config.json`:
 
 All S3 storage fields are hot-reloadable. Changes take effect without restarting the server.
 
-> **Good to know**: Do not include the URL scheme (`http://` or `https://`) in `bucket_endpoint`. The scheme is determined by the `environment` config field. `http-only` and `docker` environments use HTTP; all others use HTTPS.
+> **Good to know**: Do not include the URL scheme (`http://` or `https://`) in `bucket_endpoint`. The scheme is determined by the `environment` config field. Local environments (`local`, `local-docker`) use HTTP; all others use HTTPS.
 
 ## Set Up AWS S3
 

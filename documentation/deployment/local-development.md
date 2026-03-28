@@ -127,18 +127,18 @@ Run ModulaCMS normally. Browsers will trust the certificate without any warnings
 
 ## HTTP-Only Mode
 
-To disable HTTPS entirely and run only the HTTP server, set `environment` to `"http-only"`:
+To disable HTTPS entirely and run only the HTTP server, set `environment` to `"local"`:
 
 ```json
 {
-  "environment": "http-only",
+  "environment": "local",
   "port": ":8080",
   "client_site": "localhost",
   "admin_site": "localhost"
 }
 ```
 
-This is useful when you do not need to test TLS-dependent features.
+Local environments skip TLS entirely. This is useful when you do not need to test TLS-dependent features. For Docker, use `"local-docker"` which binds to `0.0.0.0` instead of `localhost`.
 
 ## Custom Local Domain
 
@@ -190,13 +190,16 @@ sudo modula
 
 ## Environment Modes
 
+Each environment stage can run natively or in Docker by appending `-docker` (e.g., `development-docker`). Docker variants bind to `0.0.0.0`; native variants bind to `localhost` or `client_site`.
+
 | Environment | HTTPS | Certificate Source | Use Case |
 |-------------|-------|--------------------|----------|
-| `local` | Yes | Self-signed from `cert_dir` | Local development with HTTPS |
-| `http-only` | No | N/A | HTTP-only development |
-| `development` | Yes | Let's Encrypt (autocert) | Dev server with real domain |
+| `local` | No | N/A | HTTP-only local development |
+| `development` | Yes | Self-signed from `cert_dir` | Dev server with HTTPS |
 | `staging` | Yes | Let's Encrypt (autocert) | Staging server |
 | `production` | Yes | Let's Encrypt (autocert) | Production server |
+
+The admin panel favicon changes color based on the environment stage so you can identify which instance you are working in at a glance: blue for local, green for development, amber for staging, red for production.
 
 ## Troubleshooting
 
