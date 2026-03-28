@@ -134,10 +134,13 @@ func loadConfigFromPaths(basePath, overlayPath string) (*config.Config, error) {
 	return provider.Get()
 }
 
-// buildBaseURL derives the base URL from a config's port field.
-// Prefers HTTP for localhost connections (avoids self-signed cert issues).
-// Uses HTTPS only when the config has a non-localhost host configured.
+// buildBaseURL derives the base URL from the config. If Remote_URL is set,
+// it is used directly (for connecting to remote/production instances).
+// Otherwise falls back to localhost with the configured port.
 func buildBaseURL(cfg *config.Config) string {
+	if cfg.Remote_URL != "" {
+		return strings.TrimRight(cfg.Remote_URL, "/")
+	}
 	port := cfg.Port
 	if port == "" {
 		port = ":8080"
