@@ -14,9 +14,10 @@ import (
 )
 
 type healthResponse struct {
-	Status  string            `json:"status"`
-	Checks  map[string]bool   `json:"checks"`
-	Details map[string]string `json:"details,omitempty"`
+	Status      string            `json:"status"`
+	Environment string            `json:"environment"`
+	Checks      map[string]bool   `json:"checks"`
+	Details     map[string]string `json:"details,omitempty"`
 }
 
 // PluginHealthChecker is a function that returns plugin subsystem health.
@@ -44,9 +45,10 @@ func HealthHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry
 	}
 
 	resp := healthResponse{
-		Status:  "ok",
-		Checks:  make(map[string]bool),
-		Details: make(map[string]string),
+		Status:      "ok",
+		Environment: string(cfg.Environment),
+		Checks:      make(map[string]bool),
+		Details:     make(map[string]string),
 	}
 
 	// Database check
@@ -81,6 +83,23 @@ func HealthHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry
 	// Encode error is non-recoverable (client disconnected or similar);
 	// the response is already partially written so no recovery is possible.
 	json.NewEncoder(w).Encode(resp)
+}
+
+// EnvironmentHandler returns the current environment value from the config.
+func EnvironmentHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	cfg, err := svc.Config()
+	if err != nil {
+		http.Error(w, "configuration unavailable", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	// Encode error is non-recoverable (client disconnected or similar);
+	// the response is already partially written so no recovery is possible.
+	json.NewEncoder(w).Encode(map[string]string{
+		"environment": string(cfg.Environment),
+		"stage":       cfg.Environment.Stage(),
+	})
 }
 
 // checkDatabase pings the database and records the result.

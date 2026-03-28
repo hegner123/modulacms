@@ -85,6 +85,11 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 		HealthHandler(w, r, svc, pluginHealthFn)
 	})))
 
+	// Environment (PUBLIC - no auth required)
+	mux.Handle("GET /api/v1/environment", corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		EnvironmentHandler(w, r, svc)
+	})))
+
 	// Admin tree
 	mux.Handle("/api/v1/admin/tree/", middleware.RequireResourcePermission("admin_tree")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminTreeHandler(w, r, svc)
