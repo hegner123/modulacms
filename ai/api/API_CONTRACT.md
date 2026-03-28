@@ -118,7 +118,15 @@ Query parameters: `code`, `state` (set by provider).
 |--------|------|-------------|
 | GET | `/api/v1/health` | Health check (PUBLIC — no auth required) |
 
-Returns JSON health status including database connectivity and optional plugin health.
+Returns JSON with `status`, `environment`, `checks`, and optional `details`. Includes database connectivity and optional plugin health.
+
+## Environment
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/environment` | Current environment and stage (PUBLIC — no auth required) |
+
+Returns JSON with `environment` (full value, e.g. `"production-docker"`) and `stage` (base stage, e.g. `"production"`).
 
 ---
 

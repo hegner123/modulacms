@@ -9,11 +9,19 @@
  * This is a Light DOM web component -- all rendered elements are direct children
  * of the host element, accessible to global CSS and HTMX processing.
  *
+ * Supported field types:
+ *   - "text" (default): standard text input
+ *   - "password": password input
+ *   - "tables": renders a "Configure Tables" button that opens a dialog with
+ *     checkboxes for selecting database tables. The dialog ID is referenced via
+ *     the field's "dialog" property, which should match a server-rendered
+ *     mcms-dialog element on the page.
+ *
  * @example
  * <mcms-repeater
  *   name="deploy_environments"
- *   data-value='[{"name":"production","url":"https://cms.example.com","api_key":"mcms_KEY"}]'
- *   data-fields='[{"key":"name","label":"Name","type":"text"},{"key":"url","label":"URL","type":"text"},{"key":"api_key","label":"API Key","type":"password"}]'>
+ *   data-value='[{"name":"production","url":"https://cms.example.com","api_key":"mcms_KEY","tables":["content_data"]}]'
+ *   data-fields='[{"key":"name","label":"Name","type":"text"},{"key":"url","label":"URL","type":"text"},{"key":"api_key","label":"API Key","type":"password"},{"key":"tables","label":"Tables","type":"tables"}]'>
  * </mcms-repeater>
  *
  * @attr {string} name - Form field name. The hidden input uses this name.
@@ -76,19 +84,24 @@ class McmsRepeater extends HTMLElement {
       label.textContent = field.label;
       wrap.appendChild(label);
 
-      var input = document.createElement('input');
-      input.type = field.type || 'text';
-      input.placeholder = field.placeholder || '';
-      input.value = data[field.key] || '';
-      input.className = 'block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]';
-      input.dataset.key = field.key;
-      input.dataset.rowIndex = index;
-      input.addEventListener('input', function(e) {
-        var ri = parseInt(e.target.dataset.rowIndex, 10);
-        self._rows[ri][e.target.dataset.key] = e.target.value;
-        self._sync();
-      });
-      wrap.appendChild(input);
+      if (field.type === 'tables') {
+        this._renderTablesField(wrap, data, index, field);
+      } else {
+        var input = document.createElement('input');
+        input.type = field.type || 'text';
+        input.placeholder = field.placeholder || '';
+        input.value = data[field.key] || '';
+        input.className = 'block w-full rounded-md bg-white/5 px-3 py-1.5 text-sm text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-[var(--color-primary)]';
+        input.dataset.key = field.key;
+        input.dataset.rowIndex = index;
+        input.addEventListener('input', function(e) {
+          var ri = parseInt(e.target.dataset.rowIndex, 10);
+          self._rows[ri][e.target.dataset.key] = e.target.value;
+          self._sync();
+        });
+        wrap.appendChild(input);
+      }
+
       fieldsWrap.appendChild(wrap);
     }
 
@@ -111,10 +124,77 @@ class McmsRepeater extends HTMLElement {
     this._container.appendChild(row);
   }
 
+  _renderTablesField(wrap, data, index, field) {
+    var self = this;
+    var tables = data[field.key] || [];
+    var count = Array.isArray(tables) ? tables.length : 0;
+
+    // Badge showing count.
+    var badge = document.createElement('span');
+    badge.className = 'text-xs text-gray-500';
+    badge.textContent = count > 0 ? count + ' table' + (count !== 1 ? 's' : '') + ' selected' : 'Default (content only)';
+
+    // Button to open dialog.
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'inline-flex items-center gap-x-1.5 rounded-md bg-white/5 px-3 py-1.5 text-sm font-medium text-white ring-1 ring-white/10 ring-inset hover:bg-white/10';
+    btn.textContent = 'Configure';
+    btn.addEventListener('click', function() {
+      self._openTablesDialog(index, field.key, tables);
+    });
+
+    var row = document.createElement('div');
+    row.className = 'flex items-center gap-x-3';
+    row.appendChild(btn);
+    row.appendChild(badge);
+    wrap.appendChild(row);
+  }
+
+  _openTablesDialog(rowIndex, fieldKey, currentTables) {
+    var self = this;
+    // Find the server-rendered dialog element.
+    var dialogId = 'deploy-tables-settings-dialog';
+    var dialog = document.getElementById(dialogId);
+    if (!dialog) return;
+
+    // Update checkboxes to match current row's tables.
+    var checkboxes = dialog.querySelectorAll('input[type="checkbox"][name="tables"]');
+    var selected = new Set(Array.isArray(currentTables) ? currentTables : []);
+    for (var i = 0; i < checkboxes.length; i++) {
+      checkboxes[i].checked = selected.has(checkboxes[i].value);
+    }
+
+    // Wire up the done button to save selections.
+    var doneBtn = dialog.querySelector('[data-action="save-tables"]');
+    if (doneBtn) {
+      // Clone to remove old listeners.
+      var newBtn = doneBtn.cloneNode(true);
+      doneBtn.parentNode.replaceChild(newBtn, doneBtn);
+      newBtn.addEventListener('click', function() {
+        var checked = dialog.querySelectorAll('input[type="checkbox"][name="tables"]:checked');
+        var tableNames = [];
+        for (var j = 0; j < checked.length; j++) {
+          tableNames.push(checked[j].value);
+        }
+        self._rows[rowIndex][fieldKey] = tableNames;
+        self._sync();
+        self._render();
+        dialog.close();
+      });
+    }
+
+    dialog.open();
+  }
+
   _addRow() {
     var obj = {};
     for (var f = 0; f < this._fields.length; f++) {
-      obj[this._fields[f].key] = '';
+      var field = this._fields[f];
+      if (field.type === 'tables') {
+        obj[field.key] = [];
+      } else {
+        obj[field.key] = '';
+      }
     }
     this._rows.push(obj);
     this._render();
@@ -127,7 +207,12 @@ class McmsRepeater extends HTMLElement {
       var row = this._rows[i];
       var hasValue = false;
       for (var k in row) {
-        if (row[k] !== '') { hasValue = true; break; }
+        var v = row[k];
+        if (Array.isArray(v)) {
+          if (v.length > 0) { hasValue = true; break; }
+        } else if (v !== '') {
+          hasValue = true; break;
+        }
       }
       if (hasValue) nonEmpty.push(row);
     }

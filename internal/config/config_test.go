@@ -10,10 +10,11 @@ func TestBucketEndpointURL(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		endpoint string
-		env      config.Environment
-		want     string
+		name      string
+		endpoint  string
+		env       config.Environment
+		forceHTTP bool
+		want      string
 	}{
 		{
 			name:     "empty endpoint returns empty string",
@@ -93,6 +94,20 @@ func TestBucketEndpointURL(t *testing.T) {
 			env:      config.EnvProductionDocker,
 			want:     "https://s3.example.com",
 		},
+		{
+			name:      "force_http overrides production to http",
+			endpoint:  "minio:9000",
+			env:       config.EnvProductionDocker,
+			forceHTTP: true,
+			want:      "http://minio:9000",
+		},
+		{
+			name:      "force_http with staging uses http",
+			endpoint:  "minio:9000",
+			env:       config.EnvStagingDocker,
+			forceHTTP: true,
+			want:      "http://minio:9000",
+		},
 	}
 
 	for _, tt := range tests {
@@ -100,8 +115,9 @@ func TestBucketEndpointURL(t *testing.T) {
 			t.Parallel()
 
 			c := config.Config{
-				Bucket_Endpoint: tt.endpoint,
-				Environment:     tt.env,
+				Bucket_Endpoint:   tt.endpoint,
+				Environment:       tt.env,
+				Bucket_Force_HTTP: tt.forceHTTP,
 			}
 			got := c.BucketEndpointURL()
 			if got != tt.want {

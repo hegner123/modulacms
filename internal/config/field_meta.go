@@ -141,6 +141,7 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "bucket_public_url", Label: "Bucket Public URL", Category: CategoryStorage, HotReloadable: true, Description: "Public-facing URL for media assets", Example: "https://cdn.example.com"},
 	{JSONKey: "bucket_default_acl", Label: "Bucket Default ACL", Category: CategoryStorage, HotReloadable: true, Description: "Default ACL for uploaded objects", Example: "public-read"},
 	{JSONKey: "bucket_force_path_style", Label: "Force Path Style", Category: CategoryStorage, HotReloadable: true, Description: "Use path-style S3 URLs", Example: "true"},
+	{JSONKey: "bucket_force_http", Label: "Force HTTP", Category: CategoryStorage, HotReloadable: true, Description: "Use HTTP instead of HTTPS for bucket connections (for co-located S3 on same network)", Example: "true"},
 	{JSONKey: "backup_option", Label: "Backup Option", Category: CategoryStorage, HotReloadable: true, Description: "Backup storage location", Example: "s3"},
 	{JSONKey: "backup_paths", Label: "Backup Paths", Category: CategoryStorage, HotReloadable: true, Description: "Additional backup paths", Example: "/var/backups/modula"},
 

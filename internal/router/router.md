@@ -568,9 +568,13 @@ Calls searchSvc.Rebuild() then searchSvc.Stats(). Returns JSON with status, docu
 
 ### HealthHandler
 
-Handles GET /api/v1/health. Public endpoint (no auth required). Returns JSON health check including database connectivity status and optional plugin health information.
+Handles GET /api/v1/health. Public endpoint (no auth required). Returns JSON with `status`, `environment`, `checks`, and optional `details`. Checks database connectivity and optional plugin health.
 
 When the `X-Modula-MCP` header is present, the health endpoint returns 200 even if status is not 'ok', allowing MCP clients to receive health data without triggering error handling.
+
+### EnvironmentHandler
+
+Handles GET /api/v1/environment. Public endpoint (no auth required). Returns JSON with `environment` (the full config value, e.g. `"staging-docker"`) and `stage` (the base stage with `-docker` suffix stripped, e.g. `"staging"`).
 
 ## Globals Handler
 

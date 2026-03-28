@@ -17,20 +17,46 @@ import (
 // tableListFunc fetches all rows for a single table from the driver.
 type tableListFunc func(db.DbDriver) (any, error)
 
-// tableListFuncs maps each syncable DBTable to its parameterless List* method.
+// tableListFuncs maps syncable DBTables to their parameterless List* methods.
+// Tables not in this map fall back to QueryAllRows in ExportPayload.
 var tableListFuncs = map[db.DBTable]tableListFunc{
-	db.Datatype:                func(d db.DbDriver) (any, error) { return d.ListDatatypes() },
-	db.Admin_datatype:          func(d db.DbDriver) (any, error) { return d.ListAdminDatatypes() },
-	db.Field:                   func(d db.DbDriver) (any, error) { return d.ListFields() },
-	db.Admin_field:             func(d db.DbDriver) (any, error) { return d.ListAdminFields() },
-	db.Route:                   func(d db.DbDriver) (any, error) { return d.ListRoutes() },
-	db.Admin_route:             func(d db.DbDriver) (any, error) { return d.ListAdminRoutes() },
+	// Schema
+	db.Datatype:          func(d db.DbDriver) (any, error) { return d.ListDatatypes() },
+	db.Admin_datatype:    func(d db.DbDriver) (any, error) { return d.ListAdminDatatypes() },
+	db.Field:             func(d db.DbDriver) (any, error) { return d.ListFields() },
+	db.Admin_field:       func(d db.DbDriver) (any, error) { return d.ListAdminFields() },
+	db.Field_types:       func(d db.DbDriver) (any, error) { return d.ListFieldTypes() },
+	db.Admin_field_types: func(d db.DbDriver) (any, error) { return d.ListAdminFieldTypes() },
+	db.Route:             func(d db.DbDriver) (any, error) { return d.ListRoutes() },
+	db.Admin_route:       func(d db.DbDriver) (any, error) { return d.ListAdminRoutes() },
+	db.ValidationT:       func(d db.DbDriver) (any, error) { return d.ListValidations() },
+	db.Admin_validation:  func(d db.DbDriver) (any, error) { return d.ListAdminValidations() },
+	// Content
 	db.Content_data:            func(d db.DbDriver) (any, error) { return d.ListContentData() },
 	db.Admin_content_data:      func(d db.DbDriver) (any, error) { return d.ListAdminContentData() },
 	db.Content_fields:          func(d db.DbDriver) (any, error) { return d.ListContentFields() },
 	db.Admin_content_fields:    func(d db.DbDriver) (any, error) { return d.ListAdminContentFields() },
 	db.Content_relations:       func(d db.DbDriver) (any, error) { return d.ListContentRelations() },
 	db.Admin_content_relations: func(d db.DbDriver) (any, error) { return d.ListAdminContentRelations() },
+	// Media
+	db.MediaT:             func(d db.DbDriver) (any, error) { return d.ListMedia() },
+	db.Admin_media:        func(d db.DbDriver) (any, error) { return d.ListAdminMedia() },
+	db.Media_dimension:    func(d db.DbDriver) (any, error) { return d.ListMediaDimensions() },
+	db.Media_folder:       func(d db.DbDriver) (any, error) { return d.ListMediaFolders() },
+	db.Admin_media_folder: func(d db.DbDriver) (any, error) { return d.ListAdminMediaFolders() },
+	// Identity
+	db.User:             func(d db.DbDriver) (any, error) { return d.ListUsers() },
+	db.Role:             func(d db.DbDriver) (any, error) { return d.ListRoles() },
+	db.Permission:       func(d db.DbDriver) (any, error) { return d.ListPermissions() },
+	db.Role_permissions: func(d db.DbDriver) (any, error) { return d.ListRolePermissions() },
+	db.Session:          func(d db.DbDriver) (any, error) { return d.ListSessions() },
+	db.Token:            func(d db.DbDriver) (any, error) { return d.ListTokens() },
+	// System
+	db.LocaleT:             func(d db.DbDriver) (any, error) { return d.ListLocales() },
+	db.WebhookT:            func(d db.DbDriver) (any, error) { return d.ListWebhooks() },
+	db.Webhook_deliveries:  func(d db.DbDriver) (any, error) { return d.ListWebhookDeliveries() },
+	db.PipelineT:           func(d db.DbDriver) (any, error) { return d.ListPipelines() },
+	db.Table:               func(d db.DbDriver) (any, error) { return d.ListTables() },
 }
 
 // ExportPayload exports data from the driver into a SyncPayload.
@@ -46,26 +72,42 @@ func ExportPayload(ctx context.Context, driver db.DbDriver, opts ExportOptions) 
 	tableNames := make([]string, 0, len(tables))
 	rowCounts := make(map[string]int, len(tables))
 
+	// DeployOps is lazily created only when needed for QueryAllRows fallback.
+	var ops db.DeployOps
+
 	for _, t := range tables {
-		listFn, ok := tableListFuncs[t]
-		if !ok {
-			return nil, fmt.Errorf("export: no list function for table %q", string(t))
-		}
-
-		slicePtr, err := listFn(driver)
-		if err != nil {
-			return nil, fmt.Errorf("export %s: %w", t, err)
-		}
-
-		td, err := structSliceToTableData(slicePtr)
-		if err != nil {
-			return nil, fmt.Errorf("export serialize %s: %w", t, err)
-		}
-
 		name := string(t)
-		tableDataMap[name] = td
-		tableNames = append(tableNames, name)
-		rowCounts[name] = len(td.Rows)
+
+		if listFn, ok := tableListFuncs[t]; ok {
+			// Typed export via struct serialization.
+			slicePtr, err := listFn(driver)
+			if err != nil {
+				return nil, fmt.Errorf("export %s: %w", t, err)
+			}
+			td, err := structSliceToTableData(slicePtr)
+			if err != nil {
+				return nil, fmt.Errorf("export serialize %s: %w", t, err)
+			}
+			tableDataMap[name] = td
+			tableNames = append(tableNames, name)
+			rowCounts[name] = len(td.Rows)
+		} else {
+			// Fallback to catalog-based export (same as plugin tables).
+			if ops == nil {
+				var err error
+				ops, err = db.NewDeployOps(driver)
+				if err != nil {
+					return nil, fmt.Errorf("export: create deploy ops: %w", err)
+				}
+			}
+			cols, rows, err := ops.QueryAllRows(ctx, t)
+			if err != nil {
+				return nil, fmt.Errorf("export %s (QueryAllRows): %w", t, err)
+			}
+			tableDataMap[name] = TableData{Columns: cols, Rows: rows}
+			tableNames = append(tableNames, name)
+			rowCounts[name] = len(rows)
+		}
 	}
 
 	// Export plugin tables via catalog introspection (no struct type needed).

@@ -92,7 +92,7 @@ func oauthEndpointValue(endpoints map[config.Endpoint]string, key config.Endpoin
 
 // deployEnvFields returns the JSON field definitions for the deploy environments repeater.
 func deployEnvFields() string {
-    return `[{"key":"name","label":"Name","type":"text","placeholder":"production"},{"key":"url","label":"URL","type":"text","placeholder":"https://cms.example.com"},{"key":"api_key","label":"API Key","type":"password","placeholder":"mcms_..."}]`
+    return `[{"key":"name","label":"Name","type":"text","placeholder":"production"},{"key":"url","label":"URL","type":"text","placeholder":"https://cms.example.com"},{"key":"api_key","label":"API Key","type":"password","placeholder":"mcms_..."},{"key":"tables","label":"Default Tables","type":"tables"}]`
 }
 
 // sectionID converts a settings section title to a URL-friendly anchor ID.
@@ -246,6 +246,9 @@ templ SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchI
                         </div>
                         <div class="sm:col-span-3">
                             @settingsCheckbox("bucket_force_path_style", "Force Path Style", cfg.Bucket_Force_Path_Style, "Use path-style URLs instead of virtual-hosted-style (required for MinIO)")
+                        </div>
+                        <div class="sm:col-span-3">
+                            @settingsCheckbox("bucket_force_http", "Force HTTP", cfg.Bucket_Force_HTTP, "Use HTTP for bucket connections (for co-located S3 on same Docker network)")
                         </div>
                         <div class="sm:col-span-3">
                             @settingsField("max_upload_size", "Max Upload Size (bytes)", fmtInt64(cfg.MaxUploadSize()), "Maximum file upload size in bytes")
@@ -613,6 +616,7 @@ templ SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchI
                                     data-value={ toJSONSlice(cfg.Deploy_Environments) }
                                     data-fields={ deployEnvFields() }>
                                 </mcms-repeater>
+                                @partials.DeployTableDialog("deploy-tables-settings-dialog", "Default Tables", "tables", nil, "", "", "")
                             </div>
                         </div>
                     </div>

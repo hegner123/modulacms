@@ -1,0 +1,83 @@
+package partials
+
+import (
+	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/deploy"
+)
+
+func isTableChecked(table db.DBTable, defaults []string) bool {
+	name := string(table)
+	for _, d := range defaults {
+		if d == name {
+			return true
+		}
+	}
+	return false
+}
+
+// DeployTableCheckboxes renders grouped checkboxes for all syncable tables.
+// inputName is the form field name (e.g. "tables").
+// checkedTables is the list of table names that should be pre-checked.
+templ DeployTableCheckboxes(inputName string, checkedTables []string) {
+	<div class="space-y-4 max-h-96 overflow-y-auto pr-1">
+		for _, group := range deploy.SyncableTableGroups {
+			<div class="rounded-md bg-white/5 p-3 ring-1 ring-white/10">
+				<p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">{ group.Label }</p>
+				<div class="grid grid-cols-2 gap-x-4 gap-y-1">
+					for _, t := range group.Tables {
+						<label class="flex items-center gap-x-2 text-sm text-gray-300 py-0.5">
+							if isTableChecked(t, checkedTables) {
+								<input type="checkbox" name={ inputName } value={ string(t) } checked class="rounded border-white/10 bg-white/5"/>
+							} else {
+								<input type="checkbox" name={ inputName } value={ string(t) } class="rounded border-white/10 bg-white/5"/>
+							}
+							{ string(t) }
+						</label>
+					}
+				</div>
+			</div>
+		}
+	</div>
+}
+
+// DeployTableDialog renders a dialog with table checkboxes for selecting
+// which tables to include in a deploy operation. Used on both the deploy
+// page (custom push/pull) and the settings page (per-environment defaults).
+//
+// dialogID: unique HTML id for the mcms-dialog element.
+// titleText: dialog header text.
+// inputName: form field name for checkboxes.
+// checkedTables: pre-checked table names.
+// formAction: hx-post URL (empty string disables form wrapper).
+// formTarget: hx-target selector (only used when formAction is set).
+// csrfToken: CSRF token for the form.
+templ DeployTableDialog(dialogID string, titleText string, inputName string, checkedTables []string, formAction string, formTarget string, csrfToken string) {
+	<mcms-dialog id={ dialogID } aria-labelledby={ dialogID + "-title" }>
+		<div class="px-5 py-4">
+			<div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+				<h2 id={ dialogID + "-title" } class="text-lg font-semibold text-white">{ titleText }</h2>
+				<button class="text-gray-400 hover:text-white" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">
+					<svg class="size-5" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/></svg>
+				</button>
+			</div>
+			if formAction != "" {
+				<form hx-post={ formAction } hx-target={ formTarget } hx-swap="innerHTML">
+					<input type="hidden" name="_csrf" value={ csrfToken }/>
+					<p class="text-sm text-gray-400 mb-4">Select tables to include:</p>
+					@DeployTableCheckboxes(inputName, checkedTables)
+					<div class="flex justify-end gap-x-3 border-t border-white/10 mt-4 pt-3">
+						<button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('mcms-dialog').close()">Cancel</button>
+						<button type="submit" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Confirm</button>
+					</div>
+				</form>
+			} else {
+				<p class="text-sm text-gray-400 mb-4">Select default tables for this environment:</p>
+				@DeployTableCheckboxes(inputName, checkedTables)
+				<div class="flex justify-end gap-x-3 border-t border-white/10 mt-4 pt-3">
+					<button type="button" class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" onclick="this.closest('mcms-dialog').close()">Cancel</button>
+					<button type="button" data-action="save-tables" class="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]">Done</button>
+				</div>
+			}
+		</div>
+	</mcms-dialog>
+}

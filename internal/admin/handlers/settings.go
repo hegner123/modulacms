@@ -108,6 +108,7 @@ func SettingsUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		setIfPresent(r, updates, "bucket_public_url")
 		setIfPresent(r, updates, "bucket_default_acl")
 		setBoolIfPresent(r, updates, "bucket_force_path_style")
+		setBoolIfPresent(r, updates, "bucket_force_http")
 		setInt64IfPresent(r, updates, "max_upload_size")
 
 		// Backup settings

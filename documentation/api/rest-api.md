@@ -151,6 +151,38 @@ curl http://localhost:8080/api/v1/health
 
 Returns a JSON health check response. No authentication required.
 
+Response (200):
+
+```json
+{
+  "status": "ok",
+  "environment": "production",
+  "checks": {
+    "database": true,
+    "storage": true
+  }
+}
+```
+
+## Environment
+
+```bash
+curl http://localhost:8080/api/v1/environment
+```
+
+Returns the current environment and stage. No authentication required.
+
+Response (200):
+
+```json
+{
+  "environment": "production-docker",
+  "stage": "production"
+}
+```
+
+The `environment` field is the full configured value. The `stage` field strips the `-docker` suffix for simpler matching. Valid stages: `local`, `development`, `staging`, `production`.
+
 ## Content Endpoints
 
 ### Content Data

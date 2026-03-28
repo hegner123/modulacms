@@ -3,6 +3,7 @@ package deploy
 import (
 	"time"
 
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 )
 
@@ -104,6 +105,151 @@ var DefaultTableSet = []db.DBTable{
 	// Tier 6: relations
 	db.Content_relations,
 	db.Admin_content_relations,
+}
+
+// ContentTableSet is the conservative default for admin panel push/pull.
+// Only syncs content rows — no schema, no users, no media.
+var ContentTableSet = []db.DBTable{
+	db.Content_data,
+	db.Admin_content_data,
+	db.Content_fields,
+	db.Admin_content_fields,
+	db.Content_relations,
+	db.Admin_content_relations,
+}
+
+// FullTableSet is every syncable table ordered by FK dependency tier.
+// Truncate order is the reverse of this slice.
+var FullTableSet = []db.DBTable{
+	// Tier 0: standalone (no FK dependencies)
+	db.Role,
+	db.Permission,
+	db.LocaleT,
+	db.Field_types,
+	db.Admin_field_types,
+	db.Table,
+	db.PipelineT,
+	// Tier 1: depends on tier 0
+	db.Role_permissions,
+	db.User,
+	db.Datatype,
+	db.Admin_datatype,
+	db.ValidationT,
+	db.Admin_validation,
+	// Tier 2: depends on tier 1
+	db.User_oauth,
+	db.User_ssh_keys,
+	db.Session,
+	db.Token,
+	db.Field,
+	db.Admin_field,
+	db.Route,
+	db.Admin_route,
+	db.WebhookT,
+	db.Media_folder,
+	db.Admin_media_folder,
+	// Tier 3: depends on tier 2
+	db.Content_data,
+	db.Admin_content_data,
+	db.MediaT,
+	db.Admin_media,
+	db.Media_dimension,
+	db.Webhook_deliveries,
+	db.Field_plugin_config,
+	// Tier 4: depends on tier 3
+	db.Content_fields,
+	db.Admin_content_fields,
+	db.Content_versions,
+	db.Admin_content_versions,
+	// Tier 5: depends on tier 4
+	db.Content_relations,
+	db.Admin_content_relations,
+	// Tier 6: append-only / audit
+	db.Change_event,
+	db.BackupT,
+	db.Backup_set,
+	db.Backup_verification,
+}
+
+// TableGroup is a display grouping for the deploy table selection UI.
+type TableGroup struct {
+	Label  string
+	Tables []db.DBTable
+}
+
+// SyncableTableGroups organizes all syncable tables into categories for the UI.
+var SyncableTableGroups = []TableGroup{
+	{Label: "Content", Tables: []db.DBTable{
+		db.Content_data, db.Admin_content_data,
+		db.Content_fields, db.Admin_content_fields,
+		db.Content_relations, db.Admin_content_relations,
+		db.Content_versions, db.Admin_content_versions,
+	}},
+	{Label: "Schema", Tables: []db.DBTable{
+		db.Datatype, db.Admin_datatype,
+		db.Field, db.Admin_field,
+		db.Field_types, db.Admin_field_types,
+		db.Route, db.Admin_route,
+		db.ValidationT, db.Admin_validation,
+	}},
+	{Label: "Media", Tables: []db.DBTable{
+		db.MediaT, db.Admin_media,
+		db.Media_dimension,
+		db.Media_folder, db.Admin_media_folder,
+	}},
+	{Label: "Identity", Tables: []db.DBTable{
+		db.User, db.User_oauth, db.User_ssh_keys,
+		db.Role, db.Permission, db.Role_permissions,
+		db.Session, db.Token,
+	}},
+	{Label: "System", Tables: []db.DBTable{
+		db.LocaleT,
+		db.WebhookT, db.Webhook_deliveries,
+		db.PipelineT, db.Field_plugin_config,
+		db.Change_event, db.Table,
+		db.BackupT, db.Backup_set, db.Backup_verification,
+	}},
+}
+
+// ResolveTables validates a set of table name strings, orders them by
+// FullTableSet insertion tier, and returns the result. Unknown names are
+// silently ignored. Returns ContentTableSet if input is empty or yields
+// no valid tables.
+func ResolveTables(names []string) []db.DBTable {
+	if len(names) == 0 {
+		return ContentTableSet
+	}
+	wanted := make(map[string]bool, len(names))
+	for _, n := range names {
+		wanted[n] = true
+	}
+	var result []db.DBTable
+	for _, t := range FullTableSet {
+		if wanted[string(t)] {
+			result = append(result, t)
+		}
+	}
+	if len(result) == 0 {
+		return ContentTableSet
+	}
+	return result
+}
+
+// TablesForEnv resolves the table set for a deploy environment config.
+// If the config has explicit tables, those are used (ordered by FullTableSet).
+// Otherwise returns ContentTableSet.
+func TablesForEnv(env config.DeployEnvironmentConfig) []db.DBTable {
+	return ResolveTables(env.Tables)
+}
+
+// ContentTableNames returns the string names of ContentTableSet for use
+// as default checkbox values in the UI.
+func ContentTableNames() []string {
+	names := make([]string, len(ContentTableSet))
+	for i, t := range ContentTableSet {
+		names[i] = string(t)
+	}
+	return names
 }
 
 // DefaultTimeout is the default maximum duration for an import operation.

@@ -93,9 +93,9 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 	var warnings []string
 
 	err = ops.ImportAtomic(ctx, func(ctx context.Context, ex db.Executor) error {
-		// Truncate tables in reverse order (tier 6→1).
-		for i := len(DefaultTableSet) - 1; i >= 0; i-- {
-			t := DefaultTableSet[i]
+		// Truncate tables in reverse FK-dependency order.
+		for i := len(FullTableSet) - 1; i >= 0; i-- {
+			t := FullTableSet[i]
 			if _, ok := payload.Tables[string(t)]; !ok {
 				continue
 			}
@@ -113,8 +113,8 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 			}
 		}
 
-		// Bulk insert tables in DefaultTableSet order (tier 1→6).
-		for _, t := range DefaultTableSet {
+		// Bulk insert tables in FK-dependency order.
+		for _, t := range FullTableSet {
 			td, ok := payload.Tables[string(t)]
 			if !ok {
 				continue
@@ -236,7 +236,7 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 			HlcTimestamp: types.HLCNow(),
 			NodeID:       types.NodeID(cfg.Node_ID),
 			TableName:    "_deploy_sync",
-			RecordID:     snapshotID,
+			RecordID:     types.NewULID().String(),
 			Operation:    types.OpInsert,
 			Action:       types.ActionCreate,
 			NewValues:    types.JSONData{Data: json.RawMessage(manifestJSON), Valid: true},

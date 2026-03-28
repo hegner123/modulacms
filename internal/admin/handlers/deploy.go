@@ -12,6 +12,27 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// findDeployEnv looks up a deploy environment by name from the config.
+func findDeployEnv(envs []config.DeployEnvironmentConfig, name string) (config.DeployEnvironmentConfig, bool) {
+	for _, env := range envs {
+		if env.Name == name {
+			return env, true
+		}
+	}
+	return config.DeployEnvironmentConfig{}, false
+}
+
+// resolveDeployTables reads table selection from the form (custom dialog) or
+// falls back to the environment's configured default tables.
+func resolveDeployTables(r *http.Request, env config.DeployEnvironmentConfig) deploy.ExportOptions {
+	if err := r.ParseForm(); err == nil {
+		if formTables := r.Form["tables"]; len(formTables) > 0 {
+			return deploy.ExportOptions{Tables: deploy.ResolveTables(formTables)}
+		}
+	}
+	return deploy.ExportOptions{Tables: deploy.TablesForEnv(env)}
+}
+
 // DeployPageHandler renders the deploy page showing configured environments.
 func DeployPageHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +63,6 @@ func DeployPageHandler(svc *service.Registry) http.HandlerFunc {
 }
 
 // DeployHealthHandler tests connectivity to a configured environment.
-// Returns a partial that swaps into the environment card's status area.
 func DeployHealthHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := r.PathValue("name")
@@ -67,7 +87,8 @@ func DeployHealthHandler(svc *service.Registry) http.HandlerFunc {
 }
 
 // DeployPushHandler pushes local content to a remote environment.
-// Supports ?dry_run=true for validation without writing.
+// If form contains "tables" values (from custom dialog), those are used.
+// Otherwise falls back to the environment's configured tables or content-only default.
 func DeployPushHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := r.PathValue("name")
@@ -82,8 +103,14 @@ func DeployPushHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
+		env, found := findDeployEnv(cfg.Deploy_Environments, name)
+		if !found {
+			htmxError(w, r, "Unknown deploy environment", http.StatusBadRequest)
+			return
+		}
+
 		dryRun := r.URL.Query().Get("dry_run") == "true"
-		opts := deploy.ExportOptions{} // default table set
+		opts := resolveDeployTables(r, env)
 
 		result, pushErr := deploy.Push(r.Context(), *cfg, svc.Driver(), name, opts, dryRun)
 		if pushErr != nil {
@@ -104,7 +131,8 @@ func DeployPushHandler(svc *service.Registry) http.HandlerFunc {
 }
 
 // DeployPullHandler pulls content from a remote environment into local.
-// Supports ?dry_run=true for validation without writing.
+// If form contains "tables" values (from custom dialog), those are used.
+// Otherwise falls back to the environment's configured tables or content-only default.
 func DeployPullHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := r.PathValue("name")
@@ -119,8 +147,14 @@ func DeployPullHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
+		env, found := findDeployEnv(cfg.Deploy_Environments, name)
+		if !found {
+			htmxError(w, r, "Unknown deploy environment", http.StatusBadRequest)
+			return
+		}
+
 		dryRun := r.URL.Query().Get("dry_run") == "true"
-		opts := deploy.ExportOptions{} // default table set
+		opts := resolveDeployTables(r, env)
 
 		result, pullErr := deploy.Pull(r.Context(), *cfg, svc.Driver(), name, opts, false, dryRun)
 		if pullErr != nil {

@@ -4,7 +4,15 @@ import (
 	"github.com/hegner123/modulacms/internal/admin/layouts"
 	"github.com/hegner123/modulacms/internal/admin/partials"
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/deploy"
 )
+
+func envDefaultTableNames(env config.DeployEnvironmentConfig) []string {
+	if len(env.Tables) > 0 {
+		return env.Tables
+	}
+	return deploy.ContentTableNames()
+}
 
 templ DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, hasWrite bool) {
 	<div class="sm:flex sm:items-center">
@@ -51,51 +59,88 @@ templ DeployContent(envs []config.DeployEnvironmentConfig, csrfToken string, has
 					</div>
 					<!-- Actions -->
 					if hasWrite {
-						<div class="mt-6 flex items-center gap-x-3 border-t border-white/10 pt-4">
-							<!-- Dry Run Pull -->
-							<form
-								hx-post={ "/admin/deploy/" + env.Name + "/pull?dry_run=true" }
-								hx-target={ "#result-" + env.Name }
-								hx-swap="innerHTML"
-							>
-								<input type="hidden" name="_csrf" value={ csrfToken }/>
-								<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20">
-									Dry Run Pull
+						<div class="mt-6 border-t border-white/10 pt-4 space-y-3">
+							<!-- Standard operations (content-only or config default) -->
+							<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+								<form
+									hx-post={ "/admin/deploy/" + env.Name + "/pull?dry_run=true" }
+									hx-target={ "#result-" + env.Name }
+									hx-swap="innerHTML"
+								>
+									<input type="hidden" name="_csrf" value={ csrfToken }/>
+									<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20">
+										Dry Run Pull
+									</button>
+								</form>
+								<mcms-confirm
+									label="Pull"
+									message={ "Pull from " + env.Name + "? This will overwrite local content with data from the remote environment." }
+									button-class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-500/10 px-3 py-1.5 text-sm font-semibold text-blue-400 ring-1 ring-blue-400/20 ring-inset hover:bg-blue-500/20"
+									hx-post={ "/admin/deploy/" + env.Name + "/pull" }
+									hx-target={ "#result-" + env.Name }
+									hx-swap="innerHTML"
+								></mcms-confirm>
+								<form
+									hx-post={ "/admin/deploy/" + env.Name + "/push?dry_run=true" }
+									hx-target={ "#result-" + env.Name }
+									hx-swap="innerHTML"
+								>
+									<input type="hidden" name="_csrf" value={ csrfToken }/>
+									<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20">
+										Dry Run Push
+									</button>
+								</form>
+								<mcms-confirm
+									label="Push"
+									message={ "Push to " + env.Name + "? This will overwrite remote content with your local data." }
+									button-class="inline-flex items-center gap-x-1.5 rounded-md bg-yellow-500/10 px-3 py-1.5 text-sm font-semibold text-yellow-400 ring-1 ring-yellow-400/20 ring-inset hover:bg-yellow-500/20"
+									hx-post={ "/admin/deploy/" + env.Name + "/push" }
+									hx-target={ "#result-" + env.Name }
+									hx-swap="innerHTML"
+								></mcms-confirm>
+							</div>
+							<!-- Custom operations -->
+							<div class="flex items-center gap-x-3">
+								<button
+									type="button"
+									class="inline-flex items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20"
+									onclick={ templ.ComponentScript{Call: "document.getElementById('custom-pull-dialog-" + env.Name + "').open()"} }
+								>
+									Custom Pull
 								</button>
-							</form>
-							<!-- Pull -->
-							<mcms-confirm
-								label="Pull"
-								message={ "Pull from " + env.Name + "? This will overwrite local content with data from the remote environment." }
-								button-class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-500/10 px-3 py-1.5 text-sm font-semibold text-blue-400 ring-1 ring-blue-400/20 ring-inset hover:bg-blue-500/20"
-								hx-post={ "/admin/deploy/" + env.Name + "/pull" }
-								hx-target={ "#result-" + env.Name }
-								hx-swap="innerHTML"
-							></mcms-confirm>
-							<!-- Dry Run Push -->
-							<form
-								hx-post={ "/admin/deploy/" + env.Name + "/push?dry_run=true" }
-								hx-target={ "#result-" + env.Name }
-								hx-swap="innerHTML"
-							>
-								<input type="hidden" name="_csrf" value={ csrfToken }/>
-								<button type="submit" class="inline-flex items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20">
-									Dry Run Push
+								<button
+									type="button"
+									class="inline-flex items-center gap-x-1.5 rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20"
+									onclick={ templ.ComponentScript{Call: "document.getElementById('custom-push-dialog-" + env.Name + "').open()"} }
+								>
+									Custom Push
 								</button>
-							</form>
-							<!-- Push -->
-							<mcms-confirm
-								label="Push"
-								message={ "Push to " + env.Name + "? This will overwrite remote content with your local data." }
-								button-class="inline-flex items-center gap-x-1.5 rounded-md bg-yellow-500/10 px-3 py-1.5 text-sm font-semibold text-yellow-400 ring-1 ring-yellow-400/20 ring-inset hover:bg-yellow-500/20"
-								hx-post={ "/admin/deploy/" + env.Name + "/push" }
-								hx-target={ "#result-" + env.Name }
-								hx-swap="innerHTML"
-							></mcms-confirm>
+							</div>
 						</div>
 					}
 					<!-- Result area -->
 					<div id={ "result-" + env.Name } class="mt-4"></div>
+					<!-- Custom dialogs -->
+					if hasWrite {
+						@partials.DeployTableDialog(
+							"custom-pull-dialog-"+env.Name,
+							"Custom Pull — "+env.Name,
+							"tables",
+							envDefaultTableNames(env),
+							"/admin/deploy/"+env.Name+"/pull",
+							"#result-"+env.Name,
+							csrfToken,
+						)
+						@partials.DeployTableDialog(
+							"custom-push-dialog-"+env.Name,
+							"Custom Push — "+env.Name,
+							"tables",
+							envDefaultTableNames(env),
+							"/admin/deploy/"+env.Name+"/push",
+							"#result-"+env.Name,
+							csrfToken,
+						)
+					}
 				</div>
 			}
 		</div>

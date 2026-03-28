@@ -162,6 +162,8 @@ func configFieldString(c Config, key string) string {
 		return c.Bucket_Default_ACL
 	case "bucket_force_path_style":
 		return fmt.Sprintf("%t", c.Bucket_Force_Path_Style)
+	case "bucket_force_http":
+		return fmt.Sprintf("%t", c.Bucket_Force_HTTP)
 	case "backup_option":
 		return c.Backup_Option
 	case "cors_credentials":

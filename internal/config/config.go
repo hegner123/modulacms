@@ -193,6 +193,7 @@ type Config struct {
 	Bucket_Public_URL       string              `json:"bucket_public_url"`
 	Bucket_Default_ACL      string              `json:"bucket_default_acl"`
 	Bucket_Force_Path_Style bool                `json:"bucket_force_path_style"`
+	Bucket_Force_HTTP       bool                `json:"bucket_force_http"`
 	Bucket_Admin_Media      string              `json:"bucket_admin_media"`
 	Bucket_Admin_Endpoint   string              `json:"bucket_admin_endpoint"`
 	Bucket_Admin_Access_Key string              `json:"bucket_admin_access_key"`
@@ -336,20 +337,22 @@ type Config struct {
 // DeployEnvironmentConfig describes a remote Modula instance for deploy operations.
 // APIKey supports ${VAR} expansion via the existing config system.
 type DeployEnvironmentConfig struct {
-	Name   string `json:"name"`
-	URL    string `json:"url"`
-	APIKey string `json:"api_key"`
+	Name   string   `json:"name"`
+	URL    string   `json:"url"`
+	APIKey string   `json:"api_key"`
+	Tables []string `json:"tables,omitempty"`
 }
 
 // BucketEndpointURL returns Bucket_Endpoint prefixed with the scheme
-// determined by Environment. Non-TLS environments get http, all others https.
-// This is used for S3 API calls (internal/Docker hostname is fine).
+// determined by Environment and Bucket_Force_HTTP. Local environments
+// always use http. Non-local environments use https unless Bucket_Force_HTTP
+// is set (for co-located S3 on the same Docker network).
 func (c Config) BucketEndpointURL() string {
 	if c.Bucket_Endpoint == "" {
 		return ""
 	}
 	scheme := "https"
-	if c.Environment.UsesHTTPScheme() {
+	if c.Environment.UsesHTTPScheme() || c.Bucket_Force_HTTP {
 		scheme = "http"
 	}
 	return scheme + "://" + c.Bucket_Endpoint
@@ -392,7 +395,7 @@ func (c Config) AdminBucketEndpointURL() string {
 		return ""
 	}
 	scheme := "https"
-	if c.Environment.UsesHTTPScheme() {
+	if c.Environment.UsesHTTPScheme() || c.Bucket_Force_HTTP {
 		scheme = "http"
 	}
 	return scheme + "://" + endpoint
