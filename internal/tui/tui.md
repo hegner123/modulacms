@@ -9,7 +9,7 @@ This package integrates with the Charmbracelet ecosystem (charm.land/bubbletea/v
 Key architectural concepts:
 - **Screen interface** — each page is a self-contained struct that owns its state, update logic, and rendering
 - **AppContext** — read-only snapshot of shared state passed to screens (DB, Config, UserID, dimensions, etc.)
-- **PanelScreen** — base type for multi-panel layouts with grid-based positioning
+- **GridScreen** — base type for 12-column grid layouts with cell-based positioning
 - **Modal overlays** — dialogs, form dialogs, content forms rendered as composited layers
 
 ## Types

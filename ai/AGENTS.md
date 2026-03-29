@@ -152,7 +152,7 @@ internal/
     handlers/                 # Admin page handlers (render, auth, CRUD for all resources)
     layouts/                  # templ layouts (base, admin, auth) and AdminData type
     pages/                    # templ full-page components (54 pages)
-    partials/                 # templ HTMX swap targets (51 partials)
+    partials/                 # templ HTMX swap targets (53 partials)
     components/               # templ shared UI: sidebar, topbar, icon, spinner, status_badge + nav.go
     static/                   # CSS, JS, HTMX, web components (go:embed)
   tui/                        # Bubbletea TUI (167 Go files, Elm Architecture)

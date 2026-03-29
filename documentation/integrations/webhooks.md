@@ -48,6 +48,7 @@ Webhooks require `webhook_enabled: true` in `modula.config.json`. Without it, al
 | `admin.content.unpublished` | Admin content is unpublished |
 | `admin.content.updated` | Admin content is updated |
 | `admin.content.deleted` | Admin content is deleted |
+| `update.available` | A new CMS version is available (fired by the update scheduler) |
 | `webhook.test` | Synthetic test event (sent by the test endpoint) |
 
 Use `["*"]` as the events list to subscribe to all event types, including any added in future versions.

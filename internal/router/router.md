@@ -12,7 +12,7 @@ Package router provides HTTP handlers for the ModulaCMS REST API. Uses standard 
 
 Creates and configures HTTP router with all endpoint registrations. Returns configured ServeMux ready for use by HTTP server.
 
-Parameters: mgr (*config.Manager), bridge (*plugin.HTTPBridge), driver (db.DbDriver), pc (*middleware.PermissionCache), emailSvc (*email.Service), dispatcher (publishing.WebhookDispatcher), svc (*service.Registry), searchSvc (*search.Service).
+Parameters: mgr (*config.Manager), bridge (*plugin.HTTPBridge), driver (db.DbDriver), pc (*middleware.PermissionCache), emailSvc (*email.Service), dispatcher (publishing.WebhookDispatcher), svc (*service.Registry), searchSvc (*search.Service), restartFn (func()). The restartFn callback triggers a graceful server restart and is wired to the admin settings restart endpoint.
 
 Returns: Configured http.ServeMux with all routes registered.
 

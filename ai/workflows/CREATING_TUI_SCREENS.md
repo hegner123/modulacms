@@ -34,13 +34,10 @@ type KeyHinter interface {
 
 #### 1. Add a PageIndex constant
 
-In `pages.go`, add a new constant to the `PageIndex` iota block and add a `PageLayout` entry to the `pageLayouts` map:
+In `pages.go`, add a new constant to the `PageIndex` iota block:
 
 ```go
 MYPAGE  // in the iota block
-
-// in pageLayouts:
-MYPAGE: {3, [3]float64{0.25, 0.50, 0.25}, [3]string{"Left", "Center", "Right"}},
 ```
 
 Create the Page in `InitPages()`:
@@ -52,7 +49,7 @@ p[MYPAGE] = myPage
 
 #### 2. Create the screen file
 
-Create `screen_mypage.go`. Embed `PanelScreen` for 3-panel layouts:
+Create `screen_mypage.go`. Define a `Grid` layout and embed `GridScreen`:
 
 ```go
 package tui
@@ -62,17 +59,35 @@ import (
     "github.com/hegner123/modulacms/internal/config"
 )
 
+var myPageGrid = Grid{
+    Columns: []GridColumn{
+        {Span: 3, Cells: []GridCell{
+            {Height: 1, Title: "Items"},
+        }},
+        {Span: 6, Cells: []GridCell{
+            {Height: 0.70, Title: "Details"},
+            {Height: 0.30, Title: "Help"},
+        }},
+        {Span: 3, Cells: []GridCell{
+            {Height: 1, Title: "Info"},
+        }},
+    },
+}
+
 type MyScreen struct {
-    PanelScreen
+    GridScreen
     Items []string  // screen-owned state
 }
 
 func NewMyScreen(items []string) *MyScreen {
+    cursorMax := len(items) - 1
+    if cursorMax < 0 {
+        cursorMax = 0
+    }
     return &MyScreen{
-        PanelScreen: PanelScreen{
-            Layout:     layoutForPage(MYPAGE),
-            PanelFocus: ContentPanel,
-            CursorMax:  len(items) - 1,
+        GridScreen: GridScreen{
+            Grid:      myPageGrid,
+            CursorMax: cursorMax,
         },
         Items: items,
     }
@@ -91,10 +106,7 @@ func (s *MyScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
         km := ctx.Config.KeyBindings
         key := msg.String()
 
-        if s.HandlePanelNav(key, km) {
-            return s, nil
-        }
-        if s.HandleTabNav(key, km) {
+        if s.HandleFocusNav(key, km) {
             return s, nil
         }
         if km.Matches(key, config.ActionSelect) {
@@ -121,10 +133,16 @@ func (s *MyScreen) KeyHints(km config.KeyMap) []KeyHint {
 }
 
 func (s *MyScreen) View(ctx AppContext) string {
-    left := s.renderLeft()
-    center := s.renderCenter()
-    right := s.renderRight()
-    return s.RenderPanels(ctx, left, center, right)
+    items := s.renderItems()
+    details := s.renderDetails()
+    help := s.renderHelp()
+    info := s.renderInfo()
+    return s.RenderGrid(ctx, []CellContent{
+        {Content: items},
+        {Content: details},
+        {Content: help},
+        {Content: info},
+    })
 }
 ```
 
@@ -146,7 +164,6 @@ case MYPAGE:
     cmds = append(cmds, LoadingStartCmd())
     cmds = append(cmds, MyDataFetchCmd())
     cmds = append(cmds, PageSetCmd(msg.Page))
-    cmds = append(cmds, PanelFocusResetCmd())
     return m, tea.Batch(cmds...)
 ```
 
@@ -165,20 +182,18 @@ Messages the screen handles internally (like `MyDataSetMsg`) flow through automa
 
 ### Key Patterns
 
-**PanelScreen base:** Embed `PanelScreen` for automatic 3-panel layout, ScreenMode/accordion handling, gutter strips, and tab support. Call `s.RenderPanels(ctx, left, center, right)` from View.
+**GridScreen base:** Embed `GridScreen` for 12-column grid layouts with cell-based positioning. Define a `Grid` var with `GridColumn` entries (each with a `Span` out of 12 and stacked `GridCell` entries). Call `s.RenderGrid(ctx, []CellContent{...})` from View. Use `s.HandleFocusNav(key, km)` for cell focus cycling.
 
 **AppContext:** Read-only snapshot of shared state (DB, Config, Logger, dimensions, etc.). Never mutate -- emit messages to change Model state.
 
-**Scroll indicators:** Pass `PanelScrollInfo` to `RenderPanels()` for scroll indicators:
+**Scroll indicators:** Pass scroll info via `CellContent` fields:
 
 ```go
-return s.RenderPanels(ctx, left, center, right,
-    PanelScrollInfo{TotalLines: totalLeft, ScrollOffset: s.leftOffset},
-    PanelScrollInfo{TotalLines: totalCenter, ScrollOffset: s.centerOffset},
-)
+return s.RenderGrid(ctx, []CellContent{
+    {Content: left, TotalLines: totalLeft, ScrollOffset: s.leftOffset},
+    {Content: center, TotalLines: totalCenter, ScrollOffset: s.centerOffset},
+})
 ```
-
-**Panel tabs:** Set `s.TabSets[panelIndex]` with `PanelTab` entries. Each tab has a Label and a `Render(ctx, width, height)` function.
 
 **Overlays/dialogs:** Emit `OverlaySetCmd(&dialog)` to show, `OverlayClearCmd()` to hide. The root Model handles overlay compositing.
 

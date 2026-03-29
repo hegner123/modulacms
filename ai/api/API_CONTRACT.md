@@ -737,6 +737,14 @@ System-protected permissions cannot be deleted or renamed.
 
 Additional plugin management endpoints are mounted by `bridge.MountAdminEndpoints` and require `plugins:read` or `plugins:admin`.
 
+## Server Restart (Admin Panel)
+
+| Method | Path | Handler | Permission | Description |
+|--------|------|---------|------------|-------------|
+| POST | `/admin/settings/restart` | `ServerRestartHandler` | Admin auth | Trigger graceful server restart |
+
+This is an admin panel route (not under `/api/v1`). It performs a graceful restart via `syscall.Exec`, re-executing the server binary. Only accessible through the admin panel with admin authentication.
+
 ---
 
 ## Implementation Notes
