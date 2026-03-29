@@ -66,7 +66,7 @@ func TestSentryProvider_Implements_ObservabilityProvider(t *testing.T) {
 func TestNewSentryProvider(t *testing.T) {
 	t.Parallel()
 	p, err := NewSentryProvider(ObservabilityConfig{
-		DSN:         "https://example.com",
+		DSN:         "https://key@sentry.example.com/1",
 		Environment: "test",
 	})
 	if err != nil {
@@ -79,7 +79,9 @@ func TestNewSentryProvider(t *testing.T) {
 
 func TestSentryProvider_AllMethods(t *testing.T) {
 	t.Parallel()
-	p, err := NewSentryProvider(ObservabilityConfig{})
+	p, err := NewSentryProvider(ObservabilityConfig{
+		DSN: "https://key@sentry.example.com/1",
+	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -145,6 +147,7 @@ func TestNewObservabilityClient_SentryProvider(t *testing.T) {
 	client, err := NewObservabilityClient(ObservabilityConfig{
 		Enabled:       true,
 		Provider:      "sentry",
+		DSN:           "https://key@sentry.example.com/1",
 		FlushInterval: "5s",
 	})
 	if err != nil {
