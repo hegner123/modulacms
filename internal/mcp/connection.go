@@ -134,21 +134,24 @@ func loadConfigFromPaths(basePath, overlayPath string) (*config.Config, error) {
 	return provider.Get()
 }
 
-// buildBaseURL derives the base URL from the config. If Remote_URL is set,
-// it is used directly (for connecting to remote/production instances).
-// Otherwise falls back to localhost with the configured port.
+// buildBaseURL derives the MCP connection URL from the config.
+// Priority: mcp_url (explicit) > localhost:port (fallback).
 func buildBaseURL(cfg *config.Config) string {
-	if cfg.Remote_URL != "" {
-		return strings.TrimRight(cfg.Remote_URL, "/")
+	if cfg.MCP_URL != "" {
+		return strings.TrimRight(cfg.MCP_URL, "/")
+	}
+	host := cfg.Environment.HTTPHost()
+	if host == "" {
+		host = "localhost"
 	}
 	port := cfg.Port
 	if port == "" {
 		port = ":8080"
 	}
 	if port == ":80" {
-		return "http://localhost"
+		return "http://" + host
 	}
-	return "http://localhost" + port
+	return "http://" + host + port
 }
 
 // mcpHTTPClient returns an http.Client that injects X-Modula-MCP: true on

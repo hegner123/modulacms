@@ -263,6 +263,7 @@ var FieldRegistry = []FieldMeta{
 	// MCP
 	{JSONKey: "mcp_enabled", Label: "MCP Enabled", Category: CategoryMCP, HotReloadable: false, Description: "Enable Model Context Protocol server", Example: "true"},
 	{JSONKey: "mcp_api_key", Label: "MCP API Key", Category: CategoryMCP, HotReloadable: true, Sensitive: true, Description: "API key for MCP client authentication", Example: "mcp-secret-key"},
+	{JSONKey: "mcp_url", Label: "MCP URL", Category: CategoryMCP, HotReloadable: true, Description: "URL the MCP server connects to (falls back to localhost:port)", Example: "https://api.example.com"},
 
 	// Misc
 	{JSONKey: "richtext_toolbar", Label: "Richtext Toolbar", Category: CategoryMisc, HotReloadable: true, Description: "Default toolbar buttons for richtext fields", Example: "bold,italic,link,heading,list,quote,code"},

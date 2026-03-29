@@ -326,6 +326,7 @@ type Config struct {
 	// MCP server (Model Context Protocol for AI tooling)
 	MCP_Enabled bool   `json:"mcp_enabled"`
 	MCP_API_Key string `json:"mcp_api_key"` // API key for authenticating MCP clients
+	MCP_URL     string `json:"mcp_url"`     // URL the MCP server connects to (falls back to localhost:port)
 
 	// Search
 	Search_Enabled bool   `json:"search_enabled"`
