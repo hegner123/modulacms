@@ -14,8 +14,8 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 out/
-# Dependency directories (remove the comment below to include it)
-vendor/
+# Dependency directories
+# vendor/ is tracked — do not ignore
 
 # Go workspace file
 go.work
