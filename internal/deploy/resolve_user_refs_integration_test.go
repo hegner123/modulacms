@@ -40,6 +40,12 @@ func setupSQLiteDeployDB(t *testing.T) (*sql.DB, db.DeployOps, string) {
 	for _, ddl := range []string{
 		`CREATE TABLE roles (role_id TEXT PRIMARY KEY NOT NULL, label TEXT NOT NULL UNIQUE, system_protected INTEGER NOT NULL DEFAULT 0);`,
 		`CREATE TABLE users (user_id TEXT PRIMARY KEY NOT NULL, username TEXT NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT NOT NULL, hash TEXT NOT NULL, role TEXT NOT NULL REFERENCES roles(role_id), date_created TEXT DEFAULT CURRENT_TIMESTAMP, date_modified TEXT DEFAULT CURRENT_TIMESTAMP);`,
+		`CREATE TABLE datatypes (datatype_id TEXT PRIMARY KEY, author_id TEXT);`,
+		`CREATE TABLE admin_datatypes (admin_datatype_id TEXT PRIMARY KEY, author_id TEXT);`,
+		`CREATE TABLE fields (field_id TEXT PRIMARY KEY, author_id TEXT);`,
+		`CREATE TABLE admin_fields (admin_field_id TEXT PRIMARY KEY, author_id TEXT);`,
+		`CREATE TABLE routes (route_id TEXT PRIMARY KEY, author_id TEXT);`,
+		`CREATE TABLE admin_routes (admin_route_id TEXT PRIMARY KEY, author_id TEXT);`,
 		`CREATE TABLE content_data (content_data_id TEXT PRIMARY KEY, author_id TEXT, published_by TEXT);`,
 		`CREATE TABLE content_fields (content_field_id TEXT PRIMARY KEY, author_id TEXT);`,
 		`CREATE TABLE admin_content_data (content_data_id TEXT PRIMARY KEY, author_id TEXT, published_by TEXT);`,

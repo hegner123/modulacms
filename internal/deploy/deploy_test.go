@@ -1744,6 +1744,12 @@ func TestResolveUserRefs_SQLite_RemapToAdmin(t *testing.T) {
 	for _, ddl := range []string{
 		`CREATE TABLE roles (role_id TEXT PRIMARY KEY, label TEXT);`,
 		`CREATE TABLE users (user_id TEXT PRIMARY KEY, username TEXT, name TEXT, email TEXT, hash TEXT, role TEXT, date_created TEXT, date_modified TEXT);`,
+		`CREATE TABLE datatypes (datatype_id TEXT PRIMARY KEY, author_id TEXT);`,
+		`CREATE TABLE admin_datatypes (admin_datatype_id TEXT PRIMARY KEY, author_id TEXT);`,
+		`CREATE TABLE fields (field_id TEXT PRIMARY KEY, author_id TEXT);`,
+		`CREATE TABLE admin_fields (admin_field_id TEXT PRIMARY KEY, author_id TEXT);`,
+		`CREATE TABLE routes (route_id TEXT PRIMARY KEY, author_id TEXT);`,
+		`CREATE TABLE admin_routes (admin_route_id TEXT PRIMARY KEY, author_id TEXT);`,
 		`CREATE TABLE content_data (content_data_id TEXT PRIMARY KEY, author_id TEXT, published_by TEXT);`,
 		`CREATE TABLE content_fields (content_field_id TEXT PRIMARY KEY, author_id TEXT);`,
 		`CREATE TABLE admin_content_data (content_data_id TEXT PRIMARY KEY, author_id TEXT, published_by TEXT);`,
