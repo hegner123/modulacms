@@ -313,16 +313,22 @@ func resolveUserRefs(ctx context.Context, ex db.Executor, ops db.DeployOps, user
 		return nil, fmt.Errorf("no admin user found to remap %d orphaned user refs", len(missing))
 	}
 
-	// Remap author_id and published_by in content tables.
+	// Remap author_id and published_by in all tables that reference users.
 	remapTables := []struct {
 		table  string
 		column string
 	}{
+		{"datatypes", "author_id"},
+		{"admin_datatypes", "author_id"},
+		{"fields", "author_id"},
+		{"admin_fields", "author_id"},
+		{"routes", "author_id"},
+		{"admin_routes", "author_id"},
 		{"content_data", "author_id"},
 		{"content_data", "published_by"},
-		{"content_fields", "author_id"},
 		{"admin_content_data", "author_id"},
 		{"admin_content_data", "published_by"},
+		{"content_fields", "author_id"},
 		{"admin_content_fields", "author_id"},
 	}
 
@@ -338,6 +344,9 @@ func resolveUserRefs(ctx context.Context, ex db.Executor, ops db.DeployOps, user
 		}
 		remapped[oldID] = adminID
 	}
+
+	// Clean up any leftover [sync] placeholder users from previous imports.
+	_, _ = ex.ExecContext(ctx, "DELETE FROM users WHERE username LIKE '[sync] %';")
 
 	return remapped, nil
 }
