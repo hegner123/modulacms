@@ -83,11 +83,6 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 		return nil, fmt.Errorf("create deploy ops: %w", err)
 	}
 
-	// Look up viewer role before entering atomic block.
-	viewerRole, err := driver.GetRoleByLabel("viewer")
-	if err != nil {
-		return nil, fmt.Errorf("lookup viewer role (bootstrap data may be missing): %w", err)
-	}
 	log.Info("deploy import: starting atomic import")
 
 	var warnings []string
@@ -102,14 +97,6 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 			log.Info("deploy import: truncating", "table", string(t))
 			if tErr := ops.TruncateTable(ctx, ex, t); tErr != nil {
 				return fmt.Errorf("truncate %s: %w", t, tErr)
-			}
-		}
-
-		// Resolve user refs: create placeholder users for missing ones.
-		if len(payload.UserRefs) > 0 {
-			log.Info("deploy import: resolving user refs", "count", len(payload.UserRefs))
-			if rErr := resolveUserRefs(ctx, ex, ops, payload.UserRefs, viewerRole.RoleID.String()); rErr != nil {
-				return fmt.Errorf("resolve user refs: %w", rErr)
 			}
 		}
 
@@ -208,6 +195,18 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 			}
 		}
 
+		// Remap missing user refs to the first admin after all data is inserted.
+		if len(payload.UserRefs) > 0 {
+			log.Info("deploy import: resolving user refs", "count", len(payload.UserRefs))
+			remapped, rErr := resolveUserRefs(ctx, ex, ops, payload.UserRefs)
+			if rErr != nil {
+				return fmt.Errorf("resolve user refs: %w", rErr)
+			}
+			for oldID, newID := range remapped {
+				warnings = append(warnings, fmt.Sprintf("user %s not found, remapped to %s", oldID, newID))
+			}
+		}
+
 		log.Info("deploy import: atomic block complete, committing")
 		return nil
 	})
@@ -266,49 +265,81 @@ func ImportPayload(ctx context.Context, cfg config.Config, driver db.DbDriver, p
 	}, nil
 }
 
-// resolveUserRefs ensures that every user_id in userRefs exists in the users table.
-// Missing users are created as locked placeholder accounts with the viewer role.
-func resolveUserRefs(ctx context.Context, ex db.Executor, ops db.DeployOps, userRefs map[string]string, viewerRoleID string) error {
-	now := types.NewTimestamp(time.Now().UTC())
-
-	for userID, username := range userRefs {
-		// Check if user already exists. Use ops.Placeholder for backend-appropriate SQL.
+// resolveUserRefs checks that every user_id in userRefs exists in the users
+// table. Missing users are remapped to the first admin user via UPDATE on
+// content_data, content_fields, admin_content_data, and admin_content_fields.
+// Returns a map of old_id → new_id for each remapped user.
+func resolveUserRefs(ctx context.Context, ex db.Executor, ops db.DeployOps, userRefs map[string]string) (map[string]string, error) {
+	// Find which referenced users are missing.
+	var missing []string
+	for userID := range userRefs {
 		var exists int64
 		rows, err := ex.QueryContext(ctx, "SELECT COUNT(*) FROM users WHERE user_id = "+ops.Placeholder(1)+";", userID)
 		if err != nil {
-			return fmt.Errorf("check user %s: %w", userID, err)
+			return nil, fmt.Errorf("check user %s: %w", userID, err)
 		}
 		if rows.Next() {
 			if sErr := rows.Scan(&exists); sErr != nil {
 				rows.Close()
-				return fmt.Errorf("scan user check: %w", sErr)
+				return nil, fmt.Errorf("scan user check: %w", sErr)
 			}
 		}
 		rows.Close()
-
-		if exists > 0 {
-			continue
-		}
-
-		// Create placeholder user via BulkInsert.
-		columns := []string{"user_id", "username", "name", "email", "hash", "role", "date_created", "date_modified"}
-		row := []any{
-			userID,
-			"[sync] " + username,
-			"",
-			username + "@sync.placeholder",
-			"", // empty hash = locked account
-			viewerRoleID,
-			now.String(),
-			now.String(),
-		}
-
-		if err := ops.BulkInsert(ctx, ex, db.User, columns, [][]any{row}); err != nil {
-			return fmt.Errorf("create placeholder user %s: %w", userID, err)
+		if exists == 0 {
+			missing = append(missing, userID)
 		}
 	}
 
-	return nil
+	if len(missing) == 0 {
+		return nil, nil
+	}
+
+	// Find the first admin user to use as the remap target.
+	var adminID string
+	adminRows, err := ex.QueryContext(ctx,
+		"SELECT u.user_id FROM users u JOIN roles r ON u.role = r.role_id WHERE r.label = 'admin' LIMIT 1;")
+	if err != nil {
+		return nil, fmt.Errorf("find admin user: %w", err)
+	}
+	if adminRows.Next() {
+		if sErr := adminRows.Scan(&adminID); sErr != nil {
+			adminRows.Close()
+			return nil, fmt.Errorf("scan admin user: %w", sErr)
+		}
+	}
+	adminRows.Close()
+
+	if adminID == "" {
+		return nil, fmt.Errorf("no admin user found to remap %d orphaned user refs", len(missing))
+	}
+
+	// Remap author_id and published_by in content tables.
+	remapTables := []struct {
+		table  string
+		column string
+	}{
+		{"content_data", "author_id"},
+		{"content_data", "published_by"},
+		{"content_fields", "author_id"},
+		{"admin_content_data", "author_id"},
+		{"admin_content_data", "published_by"},
+		{"admin_content_fields", "author_id"},
+	}
+
+	remapped := make(map[string]string, len(missing))
+	for _, oldID := range missing {
+		for _, rt := range remapTables {
+			query := fmt.Sprintf("UPDATE %s SET %s = %s WHERE %s = %s;",
+				rt.table, rt.column, ops.Placeholder(1), rt.column, ops.Placeholder(2))
+			_, execErr := ex.ExecContext(ctx, query, adminID, oldID)
+			if execErr != nil {
+				return nil, fmt.Errorf("remap %s.%s %s → %s: %w", rt.table, rt.column, oldID, adminID, execErr)
+			}
+		}
+		remapped[oldID] = adminID
+	}
+
+	return remapped, nil
 }
 
 // coerceRows converts JSON-decoded row values to database-compatible types.

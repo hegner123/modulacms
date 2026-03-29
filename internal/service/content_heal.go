@@ -12,18 +12,19 @@ import (
 
 // HealReport is the result from ContentService.Heal.
 type HealReport struct {
-	DryRun              bool                    `json:"dry_run"`
-	ContentDataScanned  int                     `json:"content_data_scanned"`
-	ContentDataRepairs  []HealRepair            `json:"content_data_repairs"`
-	ContentFieldScanned int                     `json:"content_field_scanned"`
-	ContentFieldRepairs []HealRepair            `json:"content_field_repairs"`
-	MissingFields       []MissingFieldReport    `json:"missing_fields"`
-	DuplicateFields     []DuplicateFieldReport  `json:"duplicate_fields"`
-	OrphanedFields      []OrphanedFieldReport   `json:"orphaned_fields"`
-	DanglingPointers    []DanglingPointerReport `json:"dangling_pointers"`
-	OrphanedRouteRefs   []OrphanedRouteReport      `json:"orphaned_route_refs"`
-	UnroutedRoots       []UnroutedRootReport       `json:"unrouted_roots"`
-	RootlessContent     []RootlessContentReport    `json:"rootless_content"`
+	DryRun              bool                      `json:"dry_run"`
+	ContentDataScanned  int                       `json:"content_data_scanned"`
+	ContentDataRepairs  []HealRepair              `json:"content_data_repairs"`
+	ContentFieldScanned int                       `json:"content_field_scanned"`
+	ContentFieldRepairs []HealRepair              `json:"content_field_repairs"`
+	MissingFields       []MissingFieldReport      `json:"missing_fields"`
+	DuplicateFields     []DuplicateFieldReport    `json:"duplicate_fields"`
+	OrphanedFields      []OrphanedFieldReport     `json:"orphaned_fields"`
+	DanglingPointers    []DanglingPointerReport   `json:"dangling_pointers"`
+	OrphanedRouteRefs   []OrphanedRouteReport     `json:"orphaned_route_refs"`
+	UnroutedRoots       []UnroutedRootReport      `json:"unrouted_roots"`
+	RootlessContent     []RootlessContentReport   `json:"rootless_content"`
+	InvalidUserRefs     []InvalidUserRefReport    `json:"invalid_user_refs"`
 }
 
 // OrphanedRouteReport records a content_data row whose route_id references
@@ -97,7 +98,19 @@ type DuplicateFieldReport struct {
 	Deleted        bool   `json:"deleted"`
 }
 
-// Heal performs a 9-pass repair of content data:
+// InvalidUserRefReport records a content row whose author_id or published_by
+// references a user that does not exist. Healed by reassigning author_id to the
+// user performing the heal, or nulling published_by.
+type InvalidUserRefReport struct {
+	Table    string `json:"table"`
+	RowID    string `json:"row_id"`
+	Column   string `json:"column"`
+	OldValue string `json:"old_value"`
+	NewValue string `json:"new_value"`
+	Repaired bool   `json:"repaired"`
+}
+
+// Heal performs a 10-pass repair of content data:
 //  1. Heal invalid ULIDs on content_data rows
 //  2. Heal invalid ULIDs on content_field rows
 //  3. Remove duplicate content_field rows (keep best by value/date)
@@ -107,6 +120,7 @@ type DuplicateFieldReport struct {
 //  7. Null out route_id references pointing to deleted routes
 //  8. Report root content nodes with no route_id
 //  9. Delete content on routes that have no _root node (inaccessible trees)
+//  10. Reassign content with invalid user refs to the healing user
 //
 // When dryRun is true, the report describes what would be changed without modifying data.
 func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryRun bool) (*HealReport, error) {
@@ -121,6 +135,7 @@ func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryR
 		OrphanedRouteRefs:   []OrphanedRouteReport{},
 		UnroutedRoots:       []UnroutedRootReport{},
 		RootlessContent:     []RootlessContentReport{},
+		InvalidUserRefs:     []InvalidUserRefReport{},
 	}
 
 	// --- Pass 1: Heal content_data rows ---
@@ -223,6 +238,11 @@ func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryR
 	// --- Pass 9: Delete content on routes with no _root node ---
 	if contentRows != nil {
 		s.healRootlessContent(ctx, ac, *contentRows, dryRun, report)
+	}
+
+	// --- Pass 10: Reassign content with invalid user refs ---
+	if contentRows != nil {
+		s.healInvalidUserRefs(ctx, ac, *contentRows, fieldRows, dryRun, report)
 	}
 
 	return report, nil
@@ -820,5 +840,120 @@ func (s *ContentService) healRootlessContent(ctx context.Context, ac audited.Aud
 
 			report.RootlessContent = append(report.RootlessContent, entry)
 		}
+	}
+}
+
+// healInvalidUserRefs finds content_data and content_fields rows whose
+// author_id or published_by references a user that does not exist. For
+// author_id (NOT NULL), reassigns to the user performing the heal. For
+// published_by (nullable), nulls it out.
+func (s *ContentService) healInvalidUserRefs(ctx context.Context, ac audited.AuditContext, contentRows []db.ContentData, fieldRows *[]db.ContentFields, dryRun bool, report *HealReport) {
+	// Build set of valid user IDs.
+	users, err := s.driver.ListUsers()
+	if err != nil {
+		utility.DefaultLogger.Error("heal: failed to list users for user ref check", err)
+		return
+	}
+	validUsers := make(map[types.UserID]bool)
+	if users != nil {
+		for _, u := range *users {
+			validUsers[u.UserID] = true
+		}
+	}
+
+	healerID := ac.UserID
+
+	// Check content_data author_id and published_by.
+	for _, row := range contentRows {
+		if !validUsers[row.AuthorID] {
+			entry := InvalidUserRefReport{
+				Table:    "content_data",
+				RowID:    string(row.ContentDataID),
+				Column:   "author_id",
+				OldValue: string(row.AuthorID),
+				NewValue: string(healerID),
+				Repaired: !dryRun,
+			}
+			if !dryRun {
+				_, updateErr := s.driver.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+					ContentDataID: row.ContentDataID,
+					ParentID:      row.ParentID,
+					FirstChildID:  row.FirstChildID,
+					NextSiblingID: row.NextSiblingID,
+					PrevSiblingID: row.PrevSiblingID,
+					RouteID:       row.RouteID,
+					DatatypeID:    row.DatatypeID,
+					AuthorID:      healerID,
+					Status:        row.Status,
+					DateCreated:   row.DateCreated,
+					DateModified:  types.TimestampNow(),
+				})
+				if updateErr != nil {
+					utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to reassign author on content_data %s", row.ContentDataID), updateErr)
+					entry.Repaired = false
+				}
+			}
+			report.InvalidUserRefs = append(report.InvalidUserRefs, entry)
+		}
+
+		if row.PublishedBy.Valid && !validUsers[row.PublishedBy.ID] {
+			entry := InvalidUserRefReport{
+				Table:    "content_data",
+				RowID:    string(row.ContentDataID),
+				Column:   "published_by",
+				OldValue: string(row.PublishedBy.ID),
+				NewValue: "",
+				Repaired: !dryRun,
+			}
+			if !dryRun {
+				updateErr := s.driver.UpdateContentDataPublishMeta(ctx, db.UpdateContentDataPublishMetaParams{
+					ContentDataID: row.ContentDataID,
+					Status:        row.Status,
+					PublishedAt:   row.PublishedAt,
+					PublishedBy:   types.NullableUserID{},
+					DateModified:  types.TimestampNow(),
+				})
+				if updateErr != nil {
+					utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to null published_by on content_data %s", row.ContentDataID), updateErr)
+					entry.Repaired = false
+				}
+			}
+			report.InvalidUserRefs = append(report.InvalidUserRefs, entry)
+		}
+	}
+
+	// Check content_fields author_id.
+	if fieldRows == nil {
+		return
+	}
+	for _, row := range *fieldRows {
+		if validUsers[row.AuthorID] {
+			continue
+		}
+		entry := InvalidUserRefReport{
+			Table:    "content_fields",
+			RowID:    string(row.ContentFieldID),
+			Column:   "author_id",
+			OldValue: string(row.AuthorID),
+			NewValue: string(healerID),
+			Repaired: !dryRun,
+		}
+		if !dryRun {
+			_, updateErr := s.driver.UpdateContentField(ctx, ac, db.UpdateContentFieldParams{
+				ContentFieldID: row.ContentFieldID,
+				RouteID:        row.RouteID,
+				ContentDataID:  row.ContentDataID,
+				FieldID:        row.FieldID,
+				FieldValue:     row.FieldValue,
+				AuthorID:       healerID,
+				DateCreated:    row.DateCreated,
+				DateModified:   types.TimestampNow(),
+			})
+			if updateErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to reassign author on content_field %s", row.ContentFieldID), updateErr)
+				entry.Repaired = false
+			}
+		}
+		report.InvalidUserRefs = append(report.InvalidUserRefs, entry)
 	}
 }

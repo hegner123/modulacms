@@ -1731,41 +1731,55 @@ func TestColumnsFromType_OmitsIgnoredFields(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// resolveUserRefs placeholder SQL -- SQLite backend verification
+// resolveUserRefs remap -- SQLite backend verification
 // ---------------------------------------------------------------------------
 
-func TestResolveUserRefs_SQLite_PlaceholderInsert(t *testing.T) {
+func TestResolveUserRefs_SQLite_RemapToAdmin(t *testing.T) {
 	t.Parallel()
 
-	// Set up an in-memory SQLite with a minimal users table.
 	pool := openTestDB(t)
-	if _, err := pool.ExecContext(context.Background(),
-		`CREATE TABLE users (
-			user_id TEXT PRIMARY KEY,
-			username TEXT,
-			name TEXT,
-			email TEXT,
-			hash TEXT,
-			role TEXT,
-			date_created TEXT,
-			date_modified TEXT
-		);`); err != nil {
-		t.Fatalf("create users table: %v", err)
+	ctx := context.Background()
+
+	// Create minimal schema.
+	for _, ddl := range []string{
+		`CREATE TABLE roles (role_id TEXT PRIMARY KEY, label TEXT);`,
+		`CREATE TABLE users (user_id TEXT PRIMARY KEY, username TEXT, name TEXT, email TEXT, hash TEXT, role TEXT, date_created TEXT, date_modified TEXT);`,
+		`CREATE TABLE content_data (content_data_id TEXT PRIMARY KEY, author_id TEXT, published_by TEXT);`,
+		`CREATE TABLE content_fields (content_field_id TEXT PRIMARY KEY, author_id TEXT);`,
+		`CREATE TABLE admin_content_data (content_data_id TEXT PRIMARY KEY, author_id TEXT, published_by TEXT);`,
+		`CREATE TABLE admin_content_fields (content_field_id TEXT PRIMARY KEY, author_id TEXT);`,
+	} {
+		if _, err := pool.ExecContext(ctx, ddl); err != nil {
+			t.Fatalf("ddl: %v", err)
+		}
 	}
 
-	// Insert an existing user.
-	if _, err := pool.ExecContext(context.Background(),
-		"INSERT INTO users (user_id, username, name, email, hash, role, date_created, date_modified) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
-		"EXISTING_USER_ID_XXXXXXXXXXX", "alice", "Alice", "alice@example.com", "hash", "viewer-role-id", "2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z",
+	// Insert admin role and admin user.
+	if _, err := pool.ExecContext(ctx,
+		"INSERT INTO roles (role_id, label) VALUES (?, ?);",
+		"ADMIN_ROLE_ID_XXXXXXXXXXXXXX", "admin",
 	); err != nil {
-		t.Fatalf("insert existing user: %v", err)
+		t.Fatalf("insert role: %v", err)
+	}
+	if _, err := pool.ExecContext(ctx,
+		"INSERT INTO users (user_id, username, name, email, hash, role, date_created, date_modified) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
+		"ADMIN_USER_ID_XXXXXXXXXXXXXX", "admin", "Admin", "admin@example.com", "hash", "ADMIN_ROLE_ID_XXXXXXXXXXXXXX", "2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z",
+	); err != nil {
+		t.Fatalf("insert admin: %v", err)
+	}
+
+	// Insert content referencing a missing user.
+	missingUserID := "MISSING_USER_IDXXXXXXXXXXXXXX"
+	if _, err := pool.ExecContext(ctx,
+		"INSERT INTO content_data (content_data_id, author_id, published_by) VALUES (?, ?, ?);",
+		"CONTENT_ID_XXXXXXXXXXXXXXXX", missingUserID, missingUserID,
+	); err != nil {
+		t.Fatalf("insert content: %v", err)
 	}
 
 	ops := &sqliteTestDeployOps{pool: pool}
-
 	userRefs := map[string]string{
-		"EXISTING_USER_ID_XXXXXXXXXXX": "alice",
-		"NEW_USER_ID_XXXXXXXXXXXXXXXX": "bob",
+		missingUserID: "ghost",
 	}
 
 	tx, err := pool.Begin()
@@ -1774,7 +1788,7 @@ func TestResolveUserRefs_SQLite_PlaceholderInsert(t *testing.T) {
 	}
 	defer tx.Rollback()
 
-	err = resolveUserRefs(context.Background(), tx, ops, userRefs, "viewer-role-id")
+	remapped, err := resolveUserRefs(ctx, tx, ops, userRefs)
 	if err != nil {
 		t.Fatalf("resolveUserRefs: %v", err)
 	}
@@ -1783,28 +1797,36 @@ func TestResolveUserRefs_SQLite_PlaceholderInsert(t *testing.T) {
 		t.Fatalf("commit: %v", err)
 	}
 
-	// Verify: existing user should be unchanged, new user should exist.
-	var count int64
-	if err := pool.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM users;").Scan(&count); err != nil {
-		t.Fatalf("count users: %v", err)
+	// Verify remap was reported.
+	if len(remapped) != 1 {
+		t.Fatalf("expected 1 remapped user, got %d", len(remapped))
 	}
-	if count != 2 {
-		t.Errorf("expected 2 users, got %d", count)
+	if remapped[missingUserID] != "ADMIN_USER_ID_XXXXXXXXXXXXXX" {
+		t.Errorf("remapped target = %q, want admin user ID", remapped[missingUserID])
 	}
 
-	// Verify placeholder user properties.
-	var username, email string
-	if err := pool.QueryRowContext(context.Background(),
-		"SELECT username, email FROM users WHERE user_id = ?;",
-		"NEW_USER_ID_XXXXXXXXXXXXXXXX",
-	).Scan(&username, &email); err != nil {
-		t.Fatalf("query new user: %v", err)
+	// Verify content_data was updated.
+	var authorID, publishedBy string
+	if err := pool.QueryRowContext(ctx,
+		"SELECT author_id, published_by FROM content_data WHERE content_data_id = ?;",
+		"CONTENT_ID_XXXXXXXXXXXXXXXX",
+	).Scan(&authorID, &publishedBy); err != nil {
+		t.Fatalf("query content: %v", err)
 	}
-	if username != "[sync] bob" {
-		t.Errorf("username = %q, want %q", username, "[sync] bob")
+	if authorID != "ADMIN_USER_ID_XXXXXXXXXXXXXX" {
+		t.Errorf("author_id = %q, want admin user ID", authorID)
 	}
-	if email != "bob@sync.placeholder" {
-		t.Errorf("email = %q, want %q", email, "bob@sync.placeholder")
+	if publishedBy != "ADMIN_USER_ID_XXXXXXXXXXXXXX" {
+		t.Errorf("published_by = %q, want admin user ID", publishedBy)
+	}
+
+	// Verify no placeholder user was created.
+	var userCount int64
+	if err := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM users;").Scan(&userCount); err != nil {
+		t.Fatalf("count users: %v", err)
+	}
+	if userCount != 1 {
+		t.Errorf("expected 1 user (admin only), got %d", userCount)
 	}
 }
 
