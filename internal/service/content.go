@@ -184,6 +184,21 @@ func (s *ContentService) ListPaginated(ctx context.Context, params db.Pagination
 // spliced into the parent's sibling chain via AppendChild. Auto-creates
 // empty content fields for every field belonging to the assigned datatype.
 func (s *ContentService) Create(ctx context.Context, ac audited.AuditContext, params db.CreateContentDataParams) (*db.ContentData, error) {
+	// Fill in defaults for fields that callers may omit.
+	now := types.TimestampNow()
+	if params.DateCreated.IsZero() {
+		params.DateCreated = now
+	}
+	if params.DateModified.IsZero() {
+		params.DateModified = now
+	}
+	if params.AuthorID.IsZero() && !ac.UserID.IsZero() {
+		params.AuthorID = ac.UserID
+	}
+	if params.Status == "" {
+		params.Status = types.ContentStatusDraft
+	}
+
 	// Resolve root_id before creation when the caller hasn't set it.
 	// Child nodes inherit root_id from their parent.
 	if !params.RootID.Valid && params.ParentID.Valid {

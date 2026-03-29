@@ -182,6 +182,21 @@ func (s *AdminContentService) ListPaginated(ctx context.Context, params db.Pagin
 // spliced into the parent's sibling chain via AppendChild. Auto-creates empty
 // admin content fields for every field belonging to the assigned admin datatype.
 func (s *AdminContentService) Create(ctx context.Context, ac audited.AuditContext, params db.CreateAdminContentDataParams) (*db.AdminContentData, error) {
+	// Fill in defaults for fields that callers may omit.
+	now := types.TimestampNow()
+	if params.DateCreated.IsZero() {
+		params.DateCreated = now
+	}
+	if params.DateModified.IsZero() {
+		params.DateModified = now
+	}
+	if params.AuthorID.IsZero() && !ac.UserID.IsZero() {
+		params.AuthorID = ac.UserID
+	}
+	if params.Status == "" {
+		params.Status = types.ContentStatusDraft
+	}
+
 	// Resolve root_id before creation when the caller hasn't set it.
 	// Child nodes inherit root_id from their parent.
 	if !params.RootID.Valid && params.ParentID.Valid {

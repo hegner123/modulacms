@@ -45,6 +45,29 @@ func (s *AdminContentService) ListFieldsPaginated(ctx context.Context, params db
 
 // CreateField creates a new admin content field.
 func (s *AdminContentService) CreateField(ctx context.Context, ac audited.AuditContext, params db.CreateAdminContentFieldParams) (*db.AdminContentFields, error) {
+	// Fill in defaults for fields that callers may omit.
+	now := types.TimestampNow()
+	if params.DateCreated.IsZero() {
+		params.DateCreated = now
+	}
+	if params.DateModified.IsZero() {
+		params.DateModified = now
+	}
+	if params.AuthorID.IsZero() && !ac.UserID.IsZero() {
+		params.AuthorID = ac.UserID
+	}
+
+	// Resolve root_id from admin content_data when not set.
+	if !params.RootID.Valid && params.AdminContentDataID.Valid {
+		cd, lookupErr := s.driver.GetAdminContentData(params.AdminContentDataID.ID)
+		if lookupErr == nil && cd != nil {
+			params.RootID = cd.RootID
+			if !params.AdminRouteID.Valid {
+				params.AdminRouteID = cd.AdminRouteID
+			}
+		}
+	}
+
 	cf, err := s.driver.CreateAdminContentField(ctx, ac, params)
 	if err != nil {
 		return nil, fmt.Errorf("create admin content field: %w", err)

@@ -217,6 +217,9 @@ func (s *SchemaService) CreateDatatype(ctx context.Context, ac audited.AuditCont
 	if params.DatatypeID.IsZero() {
 		params.DatatypeID = types.NewDatatypeID()
 	}
+	if params.AuthorID.IsZero() && !ac.UserID.IsZero() {
+		params.AuthorID = ac.UserID
+	}
 	now := nowUTC()
 	if !params.DateCreated.Valid {
 		params.DateCreated = now
@@ -393,6 +396,9 @@ func (s *SchemaService) CreateField(ctx context.Context, ac audited.AuditContext
 	// Defaults.
 	if params.FieldID.IsZero() {
 		params.FieldID = types.NewFieldID()
+	}
+	if !params.AuthorID.Valid && !ac.UserID.IsZero() {
+		params.AuthorID = types.NullableUserID{ID: ac.UserID, Valid: true}
 	}
 	now := nowUTC()
 	if !params.DateCreated.Valid {
@@ -638,6 +644,9 @@ func (s *SchemaService) CreateAdminDatatype(ctx context.Context, ac audited.Audi
 		return nil, &ve
 	}
 
+	if params.AuthorID.IsZero() && !ac.UserID.IsZero() {
+		params.AuthorID = ac.UserID
+	}
 	now := nowUTC()
 	if !params.DateCreated.Valid {
 		params.DateCreated = now
@@ -774,6 +783,9 @@ func (s *SchemaService) CreateAdminField(ctx context.Context, ac audited.AuditCo
 		return nil, &ve
 	}
 
+	if !params.AuthorID.Valid && !ac.UserID.IsZero() {
+		params.AuthorID = types.NullableUserID{ID: ac.UserID, Valid: true}
+	}
 	now := nowUTC()
 	if !params.DateCreated.Valid {
 		params.DateCreated = now

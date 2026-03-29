@@ -47,6 +47,29 @@ func (s *ContentService) ListFieldsPaginated(ctx context.Context, params db.Pagi
 // CreateField creates a new content field after validating the value against
 // the field definition's type and validation rules.
 func (s *ContentService) CreateField(ctx context.Context, ac audited.AuditContext, params db.CreateContentFieldParams) (*db.ContentFields, error) {
+	// Fill in defaults for fields that callers may omit.
+	now := types.TimestampNow()
+	if params.DateCreated.IsZero() {
+		params.DateCreated = now
+	}
+	if params.DateModified.IsZero() {
+		params.DateModified = now
+	}
+	if params.AuthorID.IsZero() && !ac.UserID.IsZero() {
+		params.AuthorID = ac.UserID
+	}
+
+	// Resolve root_id from content_data when not set.
+	if !params.RootID.Valid && params.ContentDataID.Valid {
+		cd, lookupErr := s.driver.GetContentData(params.ContentDataID.ID)
+		if lookupErr == nil && cd != nil {
+			params.RootID = cd.RootID
+			if !params.RouteID.Valid {
+				params.RouteID = cd.RouteID
+			}
+		}
+	}
+
 	if !params.FieldID.Valid || params.FieldID.ID.IsZero() {
 		return nil, NewValidationError("field_id", "field_id is required")
 	}
