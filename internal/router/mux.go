@@ -714,7 +714,7 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	}
 
 	// HTMX admin panel
-	registerAdminRoutes(mux, mgr, driver, pc, emailSvc, dispatcher, svc)
+	registerAdminRoutes(mux, mgr, driver, pc, emailSvc, dispatcher, svc, searchSvc)
 
 	// Root redirects to admin panel
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -804,7 +804,7 @@ func pluginRoutesApproveHandler(bridge *plugin.HTTPBridge) http.Handler {
 }
 
 // registerAdminRoutes registers all HTMX-based admin panel routes.
-func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher, svc *service.Registry) {
+func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher, svc *service.Registry, searchSvc *search.Service) {
 	// Static assets (no auth, no CSRF)
 	staticFS, staticErr := htmxadmin.StaticFS()
 	if staticErr == nil {
@@ -844,7 +844,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("GET /admin/{$}", adminAuth(csrf(http.HandlerFunc(adminhandlers.DashboardHandler(svc)))))
 
 	// Content
-	mux.Handle("GET /admin/content", viewing("content", adminhandlers.ContentListHandler(driver, mgr)))
+	mux.Handle("GET /admin/content", viewing("content", adminhandlers.ContentListHandler(driver, mgr, searchSvc)))
 	mux.Handle("GET /admin/content/{id}", viewing("content", adminhandlers.ContentEditHandler(driver, mgr)))
 	mux.Handle("POST /admin/content", mutating("content:create", adminhandlers.ContentCreateHandler(driver, mgr)))
 	mux.Handle("POST /admin/content/{id}", mutating("content:update", adminhandlers.ContentUpdateHandler(driver, mgr)))

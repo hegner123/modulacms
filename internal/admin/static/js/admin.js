@@ -731,7 +731,7 @@ document.addEventListener('field-change', function(e) {
         if (!_pendingRootFieldUpdates) _pendingRootFieldUpdates = {};
         _pendingRootFieldUpdates[renderer.dataset.fieldId] = {
             content_data_id: renderer.dataset.contentDataId,
-            content_field_id: renderer.dataset.contentFieldId || '',
+            content_field_id: renderer.dataset.contentFieldId,
             field_id: renderer.dataset.fieldId,
             value: e.detail.value
         };
@@ -911,7 +911,7 @@ document.addEventListener('block-editor:save', function(e) {
             if (!origField || origField.value !== f.value) {
                 fieldUpdates.push({
                     content_data_id: fblock.id,
-                    content_field_id: f.contentFieldId || '',
+                    content_field_id: f.contentFieldId || '',  // empty for newly created blocks (no DB row yet)
                     field_id: f.fieldId,
                     value: f.value
                 });

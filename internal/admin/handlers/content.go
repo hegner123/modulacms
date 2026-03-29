@@ -17,6 +17,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/publishing"
+	"github.com/hegner123/modulacms/internal/search"
 	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/tree/core"
 	"github.com/hegner123/modulacms/internal/tree/ops"
@@ -64,74 +65,119 @@ func resolveContentDisplayName(driver db.DbDriver, item db.ContentData) string {
 	return id
 }
 
-// ContentListHandler lists content with pagination.
+// ContentListHandler lists content with pagination and search.
 // HTMX requests return partial table rows; full requests include the complete page layout.
-func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+// When a "search" query param is present and a search service is available,
+// results are filtered via the full-text search index.
+func ContentListHandler(driver db.DbDriver, mgr *config.Manager, searchSvc *search.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limit, offset := ParsePagination(r)
 		statusFilter := r.URL.Query().Get("status")
-
-		var rawItems []db.ContentDataTopLevel
-		var total *int64
-
-		if statusFilter != "" {
-			items, err := driver.ListContentDataTopLevelPaginatedByStatus(db.PaginationParams{
-				Limit:  limit,
-				Offset: offset,
-			}, types.ContentStatus(statusFilter))
-			if err != nil {
-				utility.DefaultLogger.Error("failed to list content by status", err)
-				http.Error(w, "Failed to load content", http.StatusInternalServerError)
-				return
-			}
-			if items != nil {
-				rawItems = *items
-			}
-			cnt, cntErr := driver.CountContentDataTopLevelByStatus(types.ContentStatus(statusFilter))
-			if cntErr != nil {
-				utility.DefaultLogger.Error("failed to count content by status", cntErr)
-				http.Error(w, "Failed to load content", http.StatusInternalServerError)
-				return
-			}
-			total = cnt
-		} else {
-			items, err := driver.ListContentDataTopLevelPaginated(db.PaginationParams{
-				Limit:  limit,
-				Offset: offset,
-			})
-			if err != nil {
-				utility.DefaultLogger.Error("failed to list content", err)
-				http.Error(w, "Failed to load content", http.StatusInternalServerError)
-				return
-			}
-			if items != nil {
-				rawItems = *items
-			}
-			cnt, cntErr := driver.CountContentDataTopLevel()
-			if cntErr != nil {
-				utility.DefaultLogger.Error("failed to count content", cntErr)
-				http.Error(w, "Failed to load content", http.StatusInternalServerError)
-				return
-			}
-			total = cnt
-		}
+		searchQuery := strings.TrimSpace(r.URL.Query().Get("search"))
 
 		hasPublishPerm := HasPermission(r, "content:publish")
+		var listItems []pages.ContentListItem
+		var totalCount int64
 
-		// Resolve display names: route title+slug if route assigned, else title field value
-		listItems := make([]pages.ContentListItem, len(rawItems))
-		for i, item := range rawItems {
-			listItems[i] = pages.ContentListItem{ContentDataTopLevel: item, HasPublishPerm: hasPublishPerm}
-			listItems[i].DisplayName = resolveContentDisplayName(driver, item.ContentData)
-			if item.RouteID.Valid {
-				rt, rtErr := driver.GetRoute(item.RouteID.ID)
-				if rtErr == nil && rt != nil {
-					listItems[i].Slug = string(rt.Slug)
+		// Search path: use full-text index when a query is provided.
+		if searchQuery != "" && searchSvc != nil {
+			resp := searchSvc.SearchWithPrefix(searchQuery, search.SearchOptions{
+				Limit:  int(limit),
+				Offset: int(offset),
+			})
+			totalCount = int64(resp.Total)
+
+			for _, result := range resp.Results {
+				contentID := types.ContentID(result.ContentDataID)
+				cd, cdErr := driver.GetContentData(contentID)
+				if cdErr != nil || cd == nil {
+					continue
+				}
+				if statusFilter != "" && string(cd.Status) != statusFilter {
+					continue
+				}
+				item := pages.ContentListItem{
+					ContentDataTopLevel: db.ContentDataTopLevel{
+						ContentData:   *cd,
+						AuthorName:    "",
+						RouteSlug:     types.Slug(result.RouteSlug),
+						RouteTitle:    result.RouteTitle,
+						DatatypeLabel: result.DatatypeLabel,
+						DatatypeType:  result.DatatypeName,
+					},
+					HasPublishPerm: hasPublishPerm,
+				}
+				item.DisplayName = resolveContentDisplayName(driver, *cd)
+				if cd.RouteID.Valid {
+					rt, rtErr := driver.GetRoute(cd.RouteID.ID)
+					if rtErr == nil && rt != nil {
+						item.Slug = string(rt.Slug)
+					}
+				}
+				listItems = append(listItems, item)
+			}
+		} else {
+			// Standard list path: paginated DB query.
+			var rawItems []db.ContentDataTopLevel
+			var total *int64
+
+			if statusFilter != "" {
+				items, err := driver.ListContentDataTopLevelPaginatedByStatus(db.PaginationParams{
+					Limit:  limit,
+					Offset: offset,
+				}, types.ContentStatus(statusFilter))
+				if err != nil {
+					utility.DefaultLogger.Error("failed to list content by status", err)
+					http.Error(w, "Failed to load content", http.StatusInternalServerError)
+					return
+				}
+				if items != nil {
+					rawItems = *items
+				}
+				cnt, cntErr := driver.CountContentDataTopLevelByStatus(types.ContentStatus(statusFilter))
+				if cntErr != nil {
+					utility.DefaultLogger.Error("failed to count content by status", cntErr)
+					http.Error(w, "Failed to load content", http.StatusInternalServerError)
+					return
+				}
+				total = cnt
+			} else {
+				items, err := driver.ListContentDataTopLevelPaginated(db.PaginationParams{
+					Limit:  limit,
+					Offset: offset,
+				})
+				if err != nil {
+					utility.DefaultLogger.Error("failed to list content", err)
+					http.Error(w, "Failed to load content", http.StatusInternalServerError)
+					return
+				}
+				if items != nil {
+					rawItems = *items
+				}
+				cnt, cntErr := driver.CountContentDataTopLevel()
+				if cntErr != nil {
+					utility.DefaultLogger.Error("failed to count content", cntErr)
+					http.Error(w, "Failed to load content", http.StatusInternalServerError)
+					return
+				}
+				total = cnt
+			}
+
+			totalCount = *total
+			listItems = make([]pages.ContentListItem, len(rawItems))
+			for i, item := range rawItems {
+				listItems[i] = pages.ContentListItem{ContentDataTopLevel: item, HasPublishPerm: hasPublishPerm}
+				listItems[i].DisplayName = resolveContentDisplayName(driver, item.ContentData)
+				if item.RouteID.Valid {
+					rt, rtErr := driver.GetRoute(item.RouteID.ID)
+					if rtErr == nil && rt != nil {
+						listItems[i].Slug = string(rt.Slug)
+					}
 				}
 			}
 		}
 
-		pd := NewPaginationData(*total, limit, offset, "#content-table-body", "/admin/content")
+		pd := NewPaginationData(totalCount, limit, offset, "#content-table-body", "/admin/content")
 		pg := partials.PaginationPageData{
 			Current:    pd.Current,
 			TotalPages: pd.TotalPages,
@@ -1373,11 +1419,10 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 					continue
 				}
 			} else if fu.FieldID != "" {
-				// No content_field_id provided — check if a content field already
-				// exists for this content_data + field_id pair (upsert).
+				// No content_field_id provided — look up the existing content field
+				// by content_data + field_id and update it.
 				if fieldMap, ok := existingFieldsByCD[cdIDStr]; ok {
 					if existingCF, found := fieldMap[fu.FieldID]; found {
-						// Update the existing content field instead of creating a duplicate.
 						_, updateErr := driver.UpdateContentField(ctx, ac, db.UpdateContentFieldParams{
 							ContentFieldID: existingCF.ContentFieldID,
 							ContentDataID:  existingCF.ContentDataID,
@@ -1398,7 +1443,17 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 					}
 				}
 
-				// No existing content field — create a new one.
+				// Only create content_fields for blocks that were just created in this
+				// request (they bypass autoCreateFields). Existing blocks should always
+				// have their fields — a missing field is a data integrity issue, not a
+				// create opportunity.
+				_, isNewBlock := idMap[fu.ContentDataID]
+				if !isNewBlock {
+					utility.DefaultLogger.Warn(fmt.Sprintf("tree-save: no existing content_field for content_data=%s field=%s, skipping", cdIDStr, fu.FieldID), fmt.Errorf("missing content_field"))
+					resp.Errors = append(resp.Errors, fmt.Sprintf("no existing content_field for content_data=%s field=%s", cdIDStr, fu.FieldID))
+					continue
+				}
+
 				created, createErr := driver.CreateContentField(ctx, ac, db.CreateContentFieldParams{
 					ContentDataID: types.NullableContentID{ID: types.ContentID(cdIDStr), Valid: true},
 					FieldID:       types.NullableFieldID{ID: types.FieldID(fu.FieldID), Valid: true},
@@ -1413,7 +1468,6 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 					resp.Errors = append(resp.Errors, fmt.Sprintf("create field for %s: %v", cdIDStr, createErr))
 					continue
 				}
-				// Update the lookup map so subsequent saves in this batch don't duplicate.
 				if created != nil && created.ContentFieldID != "" {
 					if fieldMap, ok := existingFieldsByCD[cdIDStr]; ok {
 						fieldMap[fu.FieldID] = *created
