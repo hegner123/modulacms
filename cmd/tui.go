@@ -65,6 +65,16 @@ Examples:
 			return fmt.Errorf("resolving config path: %w", absErr)
 		}
 		cfgDir := filepath.Dir(absCfg)
+
+		// Resolve overlay path to absolute before chdir changes the working directory.
+		if overlayPath != "" {
+			absOverlay, oErr := filepath.Abs(overlayPath)
+			if oErr != nil {
+				return fmt.Errorf("resolving overlay path: %w", oErr)
+			}
+			overlayPath = absOverlay
+		}
+
 		if err := os.Chdir(cfgDir); err != nil {
 			return fmt.Errorf("changing to config directory %s: %w", cfgDir, err)
 		}
