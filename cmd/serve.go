@@ -36,6 +36,7 @@ import (
 	"github.com/hegner123/modulacms/internal/search"
 	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/tui"
+	"github.com/hegner123/modulacms/internal/update"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/hegner123/modulacms/internal/webhooks"
 	"github.com/spf13/cobra"
@@ -274,6 +275,18 @@ Examples:
 			utility.DefaultLogger.Debug("Webhook dispatcher goroutine started, event channel open, HMAC signing active")
 		}
 
+		// Background update checker — fires update.available webhook when a
+		// newer release is found on GitHub. When notify-only is off it also
+		// downloads and applies the binary (restart still required).
+		if cfg.Update_Auto_Enabled {
+			update.StartScheduler(rootCtx, update.SchedulerConfig{
+				Interval:   cfg.Update_Check_Interval,
+				Channel:    cfg.Update_Channel,
+				NotifyOnly: cfg.Update_Notify_Only,
+			}, dispatcher)
+			utility.DefaultLogger.Info("Update checker armed", "interval", cfg.Update_Check_Interval, "channel", cfg.Update_Channel, "notify_only", cfg.Update_Notify_Only)
+		}
+
 		// Search index (nil if disabled).
 		var searchSvc *search.Service
 		if cfg.SearchEnabled() {
@@ -400,7 +413,7 @@ Examples:
 				}
 			}
 
-			mux := router.NewModulaMux(mgr, bridge, driver, pc, emailSvc, dispatcher, svc, searchSvc)
+			mux := router.NewModulaMux(mgr, bridge, driver, pc, emailSvc, dispatcher, svc, searchSvc, RequestRestart)
 
 			var hookRunner audited.HookRunner
 			if pluginManager != nil {
@@ -552,10 +565,17 @@ Examples:
 			}()
 		}
 
-		// Wait for shutdown signal
-		<-done
-		utility.DefaultLogger.Info("Last call — shutting it all down...")
-		utility.DefaultLogger.Debug("Main goroutine received shutdown signal, cancelling root context, starting 30s graceful shutdown deadline")
+		// Wait for shutdown signal or restart request.
+		var restarting bool
+		select {
+		case <-done:
+			utility.DefaultLogger.Info("Last call — shutting it all down...")
+			utility.DefaultLogger.Debug("Main goroutine received shutdown signal, cancelling root context, starting 30s graceful shutdown deadline")
+		case <-restartCh:
+			restarting = true
+			utility.DefaultLogger.Info("Restart requested — draining connections before re-exec...")
+			utility.DefaultLogger.Debug("Restart signal received from admin panel, performing graceful shutdown then syscall.Exec")
+		}
 
 		rootCancel()
 
@@ -621,6 +641,14 @@ Examples:
 
 		utility.DefaultLogger.Info("And that's a wrap. See you next time!")
 		utility.DefaultLogger.Debug("Graceful shutdown complete — HTTP drained, HTTPS drained, SSH closed, plugin subsystems shut down, database pools released")
+
+		if restarting {
+			if err := execSelf(); err != nil {
+				utility.DefaultLogger.Error("restart exec failed — process will exit, use your process manager to restart", err)
+				return fmt.Errorf("restart failed: %w", err)
+			}
+		}
+
 		return nil
 	},
 }

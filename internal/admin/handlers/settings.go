@@ -41,6 +41,22 @@ func SettingsHandler(svc *service.Registry) http.HandlerFunc {
 	}
 }
 
+// ServerRestartHandler handles POST /admin/settings/restart.
+// Signals the serve loop to perform a graceful restart via syscall.Exec.
+func ServerRestartHandler(restartFn func()) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Server is restarting — you may lose connection briefly", "type": "info"}}`)
+		Render(w, r, partials.ServerRestartResult())
+
+		// Flush the response before signaling restart so the client sees the toast.
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+
+		restartFn()
+	}
+}
+
 // SearchRebuildHandler handles POST /admin/settings/search/rebuild.
 // Rebuilds the full-text search index and returns a status partial.
 func SearchRebuildHandler(svc *service.Registry) http.HandlerFunc {

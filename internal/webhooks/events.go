@@ -17,6 +17,9 @@ const (
 	EventAdminContentUnpublished = "admin.content.unpublished"
 	EventAdminContentUpdated     = "admin.content.updated"
 	EventAdminContentDeleted     = "admin.content.deleted"
+
+	// System events.
+	EventUpdateAvailable = "update.available"
 )
 
 // Payload is the top-level envelope sent to webhook endpoints.

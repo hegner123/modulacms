@@ -595,6 +595,19 @@ templ SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchI
                         <div class="sm:col-span-3">
                             @settingsField("update_channel", "Channel", cfg.Update_Channel, "Update channel: stable or beta")
                         </div>
+                        <div class="sm:col-span-6">
+                            <div id="server-restart-container" class="mt-2 flex items-center gap-3">
+                                <mcms-confirm
+                                    label="Restart Server"
+                                    message="This will gracefully drain all connections and restart the server process. Active SSH sessions will be disconnected."
+                                    button-class="rounded-md bg-yellow-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-yellow-500"
+                                    hx-post="/admin/settings/restart"
+                                    hx-target="#server-restart-container"
+                                    hx-swap="innerHTML"
+                                ></mcms-confirm>
+                                <span class="text-xs text-gray-400">Gracefully restarts the process after draining connections</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

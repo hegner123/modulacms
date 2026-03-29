@@ -19,7 +19,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher, svc *service.Registry, searchSvc *search.Service) *http.ServeMux {
+func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher, svc *service.Registry, searchSvc *search.Service, restartFn func()) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	c, err := mgr.Config()
@@ -714,7 +714,7 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	}
 
 	// HTMX admin panel
-	registerAdminRoutes(mux, mgr, driver, pc, emailSvc, dispatcher, svc, searchSvc)
+	registerAdminRoutes(mux, mgr, driver, pc, emailSvc, dispatcher, svc, searchSvc, restartFn)
 
 	// Root redirects to admin panel
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -804,7 +804,7 @@ func pluginRoutesApproveHandler(bridge *plugin.HTTPBridge) http.Handler {
 }
 
 // registerAdminRoutes registers all HTMX-based admin panel routes.
-func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher, svc *service.Registry, searchSvc *search.Service) {
+func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher, svc *service.Registry, searchSvc *search.Service, restartFn func()) {
 	// Static assets (no auth, no CSRF)
 	staticFS, staticErr := htmxadmin.StaticFS()
 	if staticErr == nil {
@@ -1071,6 +1071,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("GET /admin/settings", viewing("config", adminhandlers.SettingsHandler(svc)))
 	mux.Handle("POST /admin/settings", mutating("config:update", adminhandlers.SettingsUpdateHandler(svc)))
 	mux.Handle("POST /admin/settings/search/rebuild", mutating("search:update", adminhandlers.SearchRebuildHandler(svc)))
+	mux.Handle("POST /admin/settings/restart", mutating("config:update", adminhandlers.ServerRestartHandler(restartFn)))
 
 	// Content health
 	mux.Handle("GET /admin/settings/content-health", viewing("config", adminhandlers.ContentHealthHandler(svc)))
