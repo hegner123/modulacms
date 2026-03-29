@@ -179,7 +179,6 @@ func (s *PluginDetailScreen) KeyHints(km config.KeyMap) []KeyHint {
 		return []KeyHint{
 			{km.HintString(config.ActionNextPanel), "panel"},
 			{km.HintString(config.ActionBack), "back"},
-			{km.HintString(config.ActionQuit), "quit"},
 		}
 	}
 }

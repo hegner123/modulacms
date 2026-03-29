@@ -186,7 +186,6 @@ func (s *ConfigScreen) KeyHints(km config.KeyMap) []KeyHint {
 				{"↑↓/pgup/pgdn", "scroll"},
 				{km.HintString(config.ActionNextPanel), "panel"},
 				{km.HintString(config.ActionBack), "back"},
-				{km.HintString(config.ActionQuit), "quit"},
 			}
 		}
 		return []KeyHint{
@@ -194,7 +193,6 @@ func (s *ConfigScreen) KeyHints(km config.KeyMap) []KeyHint {
 			{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
 			{km.HintString(config.ActionNextPanel), "panel"},
 			{km.HintString(config.ActionBack), "back"},
-			{km.HintString(config.ActionQuit), "quit"},
 		}
 	default:
 		return []KeyHint{
@@ -202,7 +200,6 @@ func (s *ConfigScreen) KeyHints(km config.KeyMap) []KeyHint {
 			{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
 			{km.HintString(config.ActionNextPanel), "panel"},
 			{km.HintString(config.ActionBack), "back"},
-			{km.HintString(config.ActionQuit), "quit"},
 		}
 	}
 }

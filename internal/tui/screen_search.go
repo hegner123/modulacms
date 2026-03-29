@@ -168,7 +168,6 @@ func (s *SearchScreen) KeyHints(km config.KeyMap) []KeyHint {
 		{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionBack), "back"},
-		{km.HintString(config.ActionQuit), "quit"},
 	}
 }
 

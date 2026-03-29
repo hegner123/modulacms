@@ -195,7 +195,6 @@ func (s *HomeScreen) KeyHints(km config.KeyMap) []KeyHint {
 		{km.HintString(config.ActionSelect), "select"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionAdminToggle), "admin/client"},
-		{km.HintString(config.ActionQuit), "quit"},
 	}
 }
 

@@ -99,7 +99,6 @@ func (s *CMSMenuScreen) KeyHints(km config.KeyMap) []KeyHint {
 		{km.HintString(config.ActionSelect), "select"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionBack), "back"},
-		{km.HintString(config.ActionQuit), "quit"},
 	}
 }
 

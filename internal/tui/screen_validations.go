@@ -198,7 +198,6 @@ func (s *ValidationsScreen) KeyHints(km config.KeyMap) []KeyHint {
 		{km.HintString(config.ActionDelete), "del"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionBack), "back"},
-		{km.HintString(config.ActionQuit), "quit"},
 	}
 }
 

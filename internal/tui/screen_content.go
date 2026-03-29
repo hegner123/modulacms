@@ -114,7 +114,6 @@ func (s *ContentScreen) KeyHints(km config.KeyMap) []KeyHint {
 			{km.HintString(config.ActionSelect), "restore"},
 			{km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown), "nav"},
 			{km.HintString(config.ActionBack), "back"},
-			{km.HintString(config.ActionQuit), "quit"},
 		}
 	}
 	if s.inTreePhase() {
@@ -136,7 +135,6 @@ func (s *ContentScreen) KeyHints(km config.KeyMap) []KeyHint {
 			KeyHint{km.HintString(config.ActionReorderUp) + "/" + km.HintString(config.ActionReorderDown), "reorder"},
 			KeyHint{km.HintString(config.ActionVersions), "versions"},
 			KeyHint{km.HintString(config.ActionBack), "back"},
-			KeyHint{km.HintString(config.ActionQuit), "quit"},
 		)
 		return hints
 	}
@@ -150,7 +148,6 @@ func (s *ContentScreen) KeyHints(km config.KeyMap) []KeyHint {
 		{km.HintString(config.ActionDelete), "del"},
 		{km.HintString(config.ActionPublish), "publish"},
 		{km.HintString(config.ActionBack), "back"},
-		{km.HintString(config.ActionQuit), "quit"},
 	}
 }
 

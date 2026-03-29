@@ -439,7 +439,6 @@ func (s *UsersScreen) KeyHints(km config.KeyMap) []KeyHint {
 		{"s", "rm ssh key"},
 		{km.HintString(config.ActionNextPanel), "panel"},
 		{km.HintString(config.ActionBack), "back"},
-		{km.HintString(config.ActionQuit), "quit"},
 	}
 }
 
