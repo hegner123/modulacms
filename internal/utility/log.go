@@ -38,9 +38,10 @@ func NewLogFile() *os.File {
 
 // Logger represents a simple structured logger with levels
 type Logger struct {
-	level   LogLevel
-	prefix  string
-	logFile *os.File
+	level      LogLevel
+	prefix     string
+	logFile    *os.File
+	inObsSend  bool // reentrance guard for observability forwarding
 }
 
 // DefaultLogger is the default logger instance used throughout the application.
@@ -188,17 +189,38 @@ func (l *Logger) Warn(message string, err error, args ...any) {
 	}
 }
 
-// Error logs an error message
+// Error logs an error message and forwards it to the observability provider.
 func (l *Logger) Error(message string, err error, args ...any) {
 	if l.level <= ERROR {
 		fmt.Println(formatLogMessage(ERROR, message, err, args...))
 	}
+	if err != nil && GlobalObservability != nil && !l.inObsSend {
+		ctx := map[string]any{"message": message}
+		for i := 0; i+1 < len(args); i += 2 {
+			if key, ok := args[i].(string); ok {
+				ctx[key] = args[i+1]
+			}
+		}
+		l.inObsSend = true
+		GlobalObservability.SendError(err, ctx)
+		l.inObsSend = false
+	}
 }
 
-// Fatal logs an error message and exits the program
+// Fatal logs an error message, forwards it to the observability provider, and exits.
 func (l *Logger) Fatal(message string, err error, args ...any) {
 	if l.level <= FATAL {
 		fmt.Println(formatLogMessage(FATAL, message, err, args...))
+		if err != nil && GlobalObservability != nil {
+			ctx := map[string]any{"message": message, "level": "fatal"}
+			for i := 0; i+1 < len(args); i += 2 {
+				if key, ok := args[i].(string); ok {
+					ctx[key] = args[i+1]
+				}
+			}
+			GlobalObservability.SendError(err, ctx)
+			GlobalObservability.Stop()
+		}
 		os.Exit(1)
 	}
 }

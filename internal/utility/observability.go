@@ -3,8 +3,11 @@ package utility
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/getsentry/sentry-go"
 )
 
 // ObservabilityProvider defines the interface for different observability backends
@@ -51,6 +54,7 @@ type ObservabilityConfig struct {
 // NewObservabilityClient creates a new observability client
 func NewObservabilityClient(config ObservabilityConfig) (*ObservabilityClient, error) {
 	if !config.Enabled {
+		DefaultLogger.Debug("observability disabled")
 		return &ObservabilityClient{
 			enabled: false,
 		}, nil
@@ -59,10 +63,12 @@ func NewObservabilityClient(config ObservabilityConfig) (*ObservabilityClient, e
 	// Parse flush interval
 	flushInterval, err := time.ParseDuration(config.FlushInterval)
 	if err != nil {
-		flushInterval = 30 * time.Second // Default to 30 seconds
+		flushInterval = 30 * time.Second
+		DefaultLogger.Warn("invalid observability flush interval, defaulting to 30s", err, "raw", config.FlushInterval)
 	}
 
 	// Create provider based on config
+	DefaultLogger.Info("initializing observability provider", "provider", config.Provider)
 	var provider ObservabilityProvider
 	switch config.Provider {
 	case "sentry":
@@ -76,6 +82,14 @@ func NewObservabilityClient(config ObservabilityConfig) (*ObservabilityClient, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to create provider: %w", err)
 	}
+
+	DefaultLogger.Info("observability provider ready",
+		"provider", config.Provider,
+		"flush_interval", flushInterval.String(),
+		"environment", config.Environment,
+		"sample_rate", fmt.Sprintf("%.2f", config.SampleRate),
+		"traces_rate", fmt.Sprintf("%.2f", config.TracesRate),
+	)
 
 	client := &ObservabilityClient{
 		provider:      provider,
@@ -94,6 +108,7 @@ func (c *ObservabilityClient) Start(ctx context.Context) {
 		return
 	}
 
+	DefaultLogger.Info("observability flush loop started", "interval", c.flushInterval.String())
 	c.wg.Add(1)
 	go func() {
 		defer c.wg.Done()
@@ -105,8 +120,10 @@ func (c *ObservabilityClient) Start(ctx context.Context) {
 			case <-ticker.C:
 				c.flush()
 			case <-c.stopChan:
+				DefaultLogger.Debug("observability flush loop stopped")
 				return
 			case <-ctx.Done():
+				DefaultLogger.Debug("observability flush loop stopped (context cancelled)")
 				return
 			}
 		}
@@ -119,33 +136,39 @@ func (c *ObservabilityClient) Stop() error {
 		return nil
 	}
 
+	DefaultLogger.Info("observability shutting down")
 	close(c.stopChan)
 	c.wg.Wait()
 
 	// Final flush
+	DefaultLogger.Debug("observability final flush")
 	if err := c.provider.Flush(5 * time.Second); err != nil {
+		DefaultLogger.Error("observability final flush failed", err)
 		return err
 	}
 
+	DefaultLogger.Info("observability provider closed")
 	return c.provider.Close()
 }
 
 // flush sends all current metrics to the provider
 func (c *ObservabilityClient) flush() {
 	snapshot := c.metrics.GetSnapshot()
+	DefaultLogger.Debug("observability flush", "metrics", fmt.Sprintf("%d", len(snapshot)))
 	for _, metric := range snapshot {
 		if err := c.provider.SendMetric(metric); err != nil {
-			DefaultLogger.Error("Failed to send metric", err, "metric", metric.Name)
+			DefaultLogger.Error("failed to send metric", err, "metric", metric.Name)
 		}
 	}
 }
 
 // SendError sends an error to the observability provider
-func (c *ObservabilityClient) SendError(err error, context map[string]any) error {
+func (c *ObservabilityClient) SendError(err error, ctx map[string]any) error {
 	if !c.enabled {
 		return nil
 	}
-	return c.provider.SendError(err, context)
+	DefaultLogger.Debug("observability capturing error", "error", err.Error())
+	return c.provider.SendError(err, ctx)
 }
 
 // ConsoleProvider is a simple provider that logs metrics to console (useful for development)
@@ -183,82 +206,124 @@ func (p *ConsoleProvider) Close() error {
 	return nil
 }
 
-// SentryProvider integrates with Sentry for error tracking and performance monitoring
-// This is a placeholder - actual implementation would use github.com/getsentry/sentry-go
+// logWriter is an io.Writer adapter that routes Sentry SDK debug output
+// through DefaultLogger so all log output uses the same format and destination.
+type logWriter struct{}
+
+func (logWriter) Write(p []byte) (int, error) {
+	msg := strings.TrimRight(string(p), "\n")
+	if msg != "" {
+		DefaultLogger.Debug(msg)
+	}
+	return len(p), nil
+}
+
+// SentryProvider integrates with Sentry for error tracking and performance monitoring.
 type SentryProvider struct {
 	config ObservabilityConfig
-	// In production: add sentry.Client here
 }
 
-// NewSentryProvider creates a new Sentry observability provider.
+// NewSentryProvider initializes the Sentry SDK and returns a provider that
+// sends errors and metrics to the configured Sentry project.
 func NewSentryProvider(config ObservabilityConfig) (*SentryProvider, error) {
-	// In production, initialize Sentry SDK here:
-	// err := sentry.Init(sentry.ClientOptions{
-	//     Dsn:              config.DSN,
-	//     Environment:      config.Environment,
-	//     Release:          config.Release,
-	//     SampleRate:       config.SampleRate,
-	//     TracesSampleRate: config.TracesRate,
-	//     Debug:            config.Debug,
-	//     ServerName:       config.ServerName,
-	// })
+	opts := sentry.ClientOptions{
+		Dsn:              config.DSN,
+		Environment:      config.Environment,
+		Release:          config.Release,
+		SampleRate:       config.SampleRate,
+		TracesSampleRate: config.TracesRate,
+		EnableTracing:    config.TracesRate > 0,
+		Debug:            config.Debug,
+		DebugWriter:      &logWriter{},
+		ServerName:       config.ServerName,
+		AttachStacktrace: true,
+	}
 
-	return &SentryProvider{
-		config: config,
-	}, nil
+	if config.SendPII {
+		opts.SendDefaultPII = true
+	}
+
+	if err := sentry.Init(opts); err != nil {
+		return nil, fmt.Errorf("sentry.Init: %w", err)
+	}
+	dsnPreview := config.DSN
+	if len(dsnPreview) > 20 {
+		dsnPreview = dsnPreview[:20] + "..."
+	}
+	DefaultLogger.Info("sentry SDK initialized", "dsn", dsnPreview, "environment", config.Environment)
+
+	// Apply global tags from config.
+	if len(config.Tags) > 0 {
+		sentry.ConfigureScope(func(scope *sentry.Scope) {
+			for k, v := range config.Tags {
+				scope.SetTag(k, v)
+			}
+		})
+		DefaultLogger.Debug("sentry global tags applied", "count", fmt.Sprintf("%d", len(config.Tags)))
+	}
+
+	return &SentryProvider{config: config}, nil
 }
 
-// SendMetric sends a metric to Sentry.
+// SendMetric records a metric as a Sentry breadcrumb so it is attached to
+// subsequent error events for context. Sentry is primarily an error tracker;
+// dedicated metrics export uses Prometheus or OTLP providers.
 func (p *SentryProvider) SendMetric(metric Metric) error {
-	// In production, send to Sentry:
-	// sentry.CaptureMessage(fmt.Sprintf("%s: %f", metric.Name, metric.Value))
-	//
-	// Or for custom metrics:
-	// transaction := sentry.StartTransaction(...)
-	// transaction.SetData(metric.Name, metric.Value)
-	// transaction.Finish()
-
-	DefaultLogger.Debug("Would send to Sentry",
-		"metric", metric.Name,
-		"value", metric.Value,
-	)
+	sentry.AddBreadcrumb(&sentry.Breadcrumb{
+		Category: "metric",
+		Message:  fmt.Sprintf("%s = %f", metric.Name, metric.Value),
+		Level:    sentry.LevelInfo,
+		Data: map[string]any{
+			"name":   metric.Name,
+			"type":   string(metric.Type),
+			"value":  metric.Value,
+			"labels": metric.Labels,
+		},
+	})
 	return nil
 }
 
-// SendError sends an error event to Sentry.
-func (p *SentryProvider) SendError(err error, context map[string]any) error {
-	// In production:
-	// sentry.WithScope(func(scope *sentry.Scope) {
-	//     for k, v := range context {
-	//         scope.SetContext(k, v)
-	//     }
-	//     sentry.CaptureException(err)
-	// })
-
-	DefaultLogger.Error("Would send error to Sentry", err, "context", context)
+// SendError captures an exception in Sentry with the provided context.
+func (p *SentryProvider) SendError(err error, ctx map[string]any) error {
+	DefaultLogger.Debug("sentry capturing exception", "error", err.Error())
+	sentry.WithScope(func(scope *sentry.Scope) {
+		for k, v := range ctx {
+			scope.SetExtra(k, v)
+		}
+		sentry.CaptureException(err)
+	})
 	return nil
 }
 
-// Flush flushes all pending data to Sentry.
+// Flush ensures all buffered events are sent to Sentry.
 func (p *SentryProvider) Flush(timeout time.Duration) error {
-	// In production:
-	// return sentry.Flush(timeout)
+	DefaultLogger.Debug("sentry flushing", "timeout", timeout.String())
+	if !sentry.Flush(timeout) {
+		return fmt.Errorf("sentry flush timed out after %s", timeout)
+	}
+	DefaultLogger.Debug("sentry flush complete")
 	return nil
 }
 
-// Close closes the Sentry provider connection.
+// Close flushes remaining events and releases Sentry resources.
 func (p *SentryProvider) Close() error {
-	// In production: cleanup Sentry client
+	DefaultLogger.Debug("sentry provider closing")
+	sentry.Flush(2 * time.Second)
 	return nil
 }
 
-// CaptureError sends an error to the global observability provider with optional context.
+// CaptureError sends an error directly to the observability provider with
+// enriched context. Use this at explicit error boundaries (panics, server
+// crashes) where you want to attach extra metadata beyond what the logger
+// provides. Normal handler errors are captured automatically via
+// DefaultLogger.Error().
 func CaptureError(err error, context map[string]any) {
-	// This would be called throughout the app to send errors to observability
 	if GlobalObservability != nil {
 		GlobalObservability.SendError(err, context)
 	}
-	DefaultLogger.Error("Error captured", err, "context", context)
+	// Log to console without re-triggering the observability send — use Warn
+	// level so it still prints but does not recurse into SendError.
+	DefaultLogger.Warn("error captured for observability", err, "context", context)
 }
 
 // GlobalObservability is the global observability client instance

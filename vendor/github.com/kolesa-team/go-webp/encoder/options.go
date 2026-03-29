@@ -22,9 +22,7 @@
 package encoder
 
 /*
-#cgo linux LDFLAGS: -lwebp
-#cgo darwin pkg-config: libwebp
-#cgo windows LDFLAGS: -lwebp
+#cgo LDFLAGS: -lwebp
 #include <webp/encode.h>
 */
 import "C"
