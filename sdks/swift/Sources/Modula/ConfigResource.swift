@@ -26,6 +26,12 @@ public final class ConfigResource: Sendable {
     public func meta() async throws -> ConfigMetaResponse {
         try await http.get(path: "/api/v1/admin/config/meta")
     }
+
+    /// Get a searchable index of all config fields, combining field
+    /// registry metadata with help text.
+    public func searchIndex() async throws -> [ConfigSearchIndexEntry] {
+        try await http.get(path: "/api/v1/admin/config/search-index")
+    }
 }
 
 // MARK: - Types
@@ -71,6 +77,34 @@ public struct ConfigUpdateResponse: Codable, Sendable {
 public struct ConfigMetaResponse: Codable, Sendable {
     public let fields: [ConfigFieldMeta]
     public let categories: [String]
+}
+
+public struct ConfigSearchIndexEntry: Codable, Sendable {
+    public let key: String
+    public let label: String
+    public let category: String
+    public let categoryLabel: String
+    public let description: String
+    public let helpText: String
+    public let defaultValue: String
+    public let example: String
+    public let hotReloadable: Bool
+    public let sensitive: Bool
+    public let required: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case key
+        case label
+        case category
+        case categoryLabel = "category_label"
+        case description
+        case helpText = "help_text"
+        case defaultValue = "default"
+        case example
+        case hotReloadable = "hot_reloadable"
+        case sensitive
+        case required
+    }
 }
 
 // MARK: - Private

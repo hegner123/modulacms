@@ -103,6 +103,33 @@ public final class ModulaClient: Sendable {
     // Config resource
     public let config: ConfigResource
 
+    // Health resource
+    public let health: HealthResource
+
+    // Environment resource
+    public let environment: EnvironmentResource
+
+    // Activity resource
+    public let activity: ActivityResource
+
+    // Metrics resource
+    public let metrics: MetricsResource
+
+    // Globals resource
+    public let globals: GlobalsResource
+
+    // Media download resource
+    public let mediaDownload: MediaDownloadResource
+
+    // Full / composed resources
+    public let contentDataFull: ContentDataFullResource
+    public let datatypeFull: DatatypeFullResource
+    public let routesFull: RoutesFullResource
+    public let mediaFull: MediaFullResource
+
+    // User sessions resource
+    public let userSessions: UserSessionsResource
+
     public init(config: ClientConfig) throws {
         guard !config.baseURL.isEmpty else {
             throw APIError(statusCode: 0, message: "modula: BaseURL is required")
@@ -217,5 +244,32 @@ public final class ModulaClient: Sendable {
 
         // Config
         self.config = ConfigResource(http: http)
+
+        // Health
+        health = HealthResource(http: http)
+
+        // Environment
+        environment = EnvironmentResource(http: http)
+
+        // Activity
+        activity = ActivityResource(http: http)
+
+        // Metrics
+        metrics = MetricsResource(http: http)
+
+        // Globals
+        globals = GlobalsResource(http: http)
+
+        // Media download
+        mediaDownload = MediaDownloadResource(http: http)
+
+        // Full / composed
+        contentDataFull = ContentDataFullResource(http: http)
+        datatypeFull = DatatypeFullResource(http: http)
+        routesFull = RoutesFullResource(http: http)
+        mediaFull = MediaFullResource(http: http)
+
+        // User sessions
+        userSessions = UserSessionsResource(http: http)
     }
 }

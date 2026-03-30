@@ -7,6 +7,12 @@ public final class SessionsResource: Sendable {
         self.http = http
     }
 
+    /// Returns all active sessions. For admin users this includes all sessions
+    /// across all users; for non-admin users only their own sessions are returned.
+    public func list() async throws -> [Session] {
+        try await http.get(path: "/api/v1/sessions")
+    }
+
     public func update(params: UpdateSessionParams) async throws -> Session {
         try await http.put(path: "/api/v1/sessions/", body: params)
     }

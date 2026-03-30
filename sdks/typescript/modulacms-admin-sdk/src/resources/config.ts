@@ -30,6 +30,7 @@ import type {
   ConfigGetResponse,
   ConfigUpdateResponse,
   ConfigMetaResponse,
+  SearchIndexResponse,
 } from '../types/config.js'
 
 /** Config management operations available on `client.config`. */
@@ -117,6 +118,14 @@ type ConfigResource = {
    * ```
    */
   meta: (opts?: RequestOptions) => Promise<ConfigMetaResponse>
+  /**
+   * Retrieve the current search index status.
+   *
+   * @param opts - Optional request configuration.
+   * @returns The search index status including document count and memory usage.
+   * @throws {ApiError} 401 if not authenticated, 403 if missing `config:read` permission.
+   */
+  searchIndex: (opts?: RequestOptions) => Promise<SearchIndexResponse>
 }
 
 /**
@@ -138,6 +147,10 @@ function createConfigResource(http: HttpClient): ConfigResource {
 
     meta(opts?: RequestOptions): Promise<ConfigMetaResponse> {
       return http.get<ConfigMetaResponse>('/admin/config/meta', undefined, opts)
+    },
+
+    searchIndex(opts?: RequestOptions): Promise<SearchIndexResponse> {
+      return http.get<SearchIndexResponse>('/admin/config/search-index', undefined, opts)
     },
   }
 }

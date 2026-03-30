@@ -65,6 +65,18 @@ public final class ContentTreeResource: Sendable {
     public func save(_ request: TreeSaveRequest) async throws -> TreeSaveResponse {
         try await http.post(path: "/api/v1/content/tree", body: request)
     }
+
+    /// Returns all content tree nodes belonging to the given route as a flat
+    /// array of ``ContentTreeNode`` values.
+    ///
+    /// The caller reconstructs the tree hierarchy using the pointer fields
+    /// (parentID, firstChildID, nextSiblingID, prevSiblingID).
+    ///
+    /// - Parameter routeID: The route whose content tree to retrieve.
+    /// - Returns: A flat array of content tree nodes for the route.
+    public func getByRoute(routeID: RouteID) async throws -> [ContentTreeNode] {
+        try await http.get(path: "/api/v1/content/tree/\(routeID.rawValue)")
+    }
 }
 
 /// A new content_data node to insert via the tree save endpoint.
@@ -224,5 +236,63 @@ public struct TreeSaveResponse: Codable, Sendable {
         case deleted
         case idMap = "id_map"
         case errors
+    }
+}
+
+/// A node in the content tree for a route, returned by
+/// ``ContentTreeResource/getByRoute(routeID:)``.
+///
+/// The tree structure is encoded as a doubly-linked sibling list with parent
+/// and first-child pointers, allowing O(1) insertion, deletion, and reordering.
+public struct ContentTreeNode: Codable, Sendable {
+    /// Unique ULID identifying this content node.
+    public let contentID: String
+
+    /// Datatype assigned to this node, or `nil` if untyped.
+    public let datatypeID: String?
+
+    /// Parent node, or `nil` for root-level nodes.
+    public let parentID: String?
+
+    /// Leftmost child, or `nil` if no children.
+    public let firstChildID: String?
+
+    /// Next sibling in display order, or `nil` if last.
+    public let nextSiblingID: String?
+
+    /// Previous sibling in display order, or `nil` if first.
+    public let prevSiblingID: String?
+
+    /// Route this content node belongs to.
+    public let routeID: String?
+
+    /// Human-readable title.
+    public let title: String
+
+    /// URL-safe identifier used for public content delivery.
+    public let slug: String
+
+    /// Publishing status (e.g. "draft", "published").
+    public let status: String
+
+    /// ISO 8601 timestamp when the node was created.
+    public let dateCreated: String
+
+    /// ISO 8601 timestamp when the node was last modified.
+    public let dateModified: String
+
+    enum CodingKeys: String, CodingKey {
+        case contentID = "content_id"
+        case datatypeID = "datatype_id"
+        case parentID = "parent_id"
+        case firstChildID = "first_child_id"
+        case nextSiblingID = "next_sibling_id"
+        case prevSiblingID = "prev_sibling_id"
+        case routeID = "route_id"
+        case title
+        case slug
+        case status
+        case dateCreated = "date_created"
+        case dateModified = "date_modified"
     }
 }

@@ -37,6 +37,13 @@ final class HTTPClient: Sendable {
         try checkStatus(response: response, data: data)
     }
 
+    func postNoBody<T: Decodable>(path: String) async throws -> T {
+        let request = try buildRequest(method: "POST", path: path)
+        let (data, response) = try await session.data(for: request)
+        try checkStatus(response: response, data: data)
+        return try JSON.decoder.decode(T.self, from: data)
+    }
+
     func put<T: Decodable, B: Encodable>(path: String, body: B) async throws -> T {
         let request = try buildJSONRequest(method: "PUT", path: path, body: body)
         let (data, response) = try await session.data(for: request)

@@ -80,6 +80,8 @@ export type LocalesResource = {
   remove: (id: LocaleID, opts?: RequestOptions) => Promise<void>
   /** Create translations for a content data node in a given locale. */
   createTranslation: (contentDataID: string, req: CreateTranslationRequest, opts?: RequestOptions) => Promise<CreateTranslationResponse>
+  /** Create translations for an admin content data node in a given locale. */
+  createAdminTranslation: (adminContentDataID: string, req: CreateTranslationRequest, opts?: RequestOptions) => Promise<CreateTranslationResponse>
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +118,10 @@ function createLocalesResource(http: HttpClient): LocalesResource {
 
     createTranslation(contentDataID: string, req: CreateTranslationRequest, opts?: RequestOptions): Promise<CreateTranslationResponse> {
       return http.post<CreateTranslationResponse>(`/admin/contentdata/${contentDataID}/translations`, req as unknown as Record<string, unknown>, opts)
+    },
+
+    createAdminTranslation(adminContentDataID: string, req: CreateTranslationRequest, opts?: RequestOptions): Promise<CreateTranslationResponse> {
+      return http.post<CreateTranslationResponse>(`/admin/admincontentdata/${adminContentDataID}/translations`, req as unknown as Record<string, unknown>, opts)
     },
   }
 }

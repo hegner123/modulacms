@@ -87,3 +87,29 @@ func (c *ConfigResource) Meta(ctx context.Context) (*ConfigMetaResponse, error) 
 	}
 	return &result, nil
 }
+
+// ConfigSearchIndexEntry describes a single config field with its metadata,
+// help text, default value, and example. Returned by [ConfigResource.SearchIndex].
+type ConfigSearchIndexEntry struct {
+	Key           string `json:"key"`
+	Label         string `json:"label"`
+	Category      string `json:"category"`
+	CategoryLabel string `json:"category_label"`
+	Description   string `json:"description"`
+	HelpText      string `json:"help_text"`
+	Default       string `json:"default"`
+	Example       string `json:"example"`
+	HotReloadable bool   `json:"hot_reloadable"`
+	Sensitive     bool   `json:"sensitive"`
+	Required      bool   `json:"required"`
+}
+
+// SearchIndex returns a searchable index of all config fields, combining field
+// registry metadata with help text. Useful for building config search UIs.
+func (c *ConfigResource) SearchIndex(ctx context.Context) ([]ConfigSearchIndexEntry, error) {
+	var result []ConfigSearchIndexEntry
+	if err := c.http.get(ctx, "/api/v1/admin/config/search-index", nil, &result); err != nil {
+		return nil, fmt.Errorf("get config search index: %w", err)
+	}
+	return result, nil
+}

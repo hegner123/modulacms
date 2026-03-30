@@ -98,3 +98,27 @@ func (r *SearchResource) Search(ctx context.Context, query string, opts *SearchO
 	}
 	return &result, nil
 }
+
+// SearchRebuildResponse is returned by [SearchResource.Rebuild] after a
+// successful search index rebuild.
+type SearchRebuildResponse struct {
+	// Status is "ok" on success.
+	Status string `json:"status"`
+	// Documents is the number of documents in the rebuilt index.
+	Documents int `json:"documents"`
+	// Terms is the number of unique terms in the rebuilt index.
+	Terms int `json:"terms"`
+	// MemBytes is the estimated memory usage of the rebuilt index in bytes.
+	MemBytes int64 `json:"mem_bytes"`
+}
+
+// Rebuild triggers a full rebuild of the search index and returns the
+// resulting index statistics. Requires search:update permission. This is
+// an admin operation and should not be called in response to user actions.
+func (r *SearchResource) Rebuild(ctx context.Context) (*SearchRebuildResponse, error) {
+	var result SearchRebuildResponse
+	if err := r.http.post(ctx, "/api/v1/admin/search/rebuild", nil, &result); err != nil {
+		return nil, fmt.Errorf("rebuild search index: %w", err)
+	}
+	return &result, nil
+}

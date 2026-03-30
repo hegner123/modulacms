@@ -48,6 +48,12 @@ import { createValidationsResource, createAdminValidationsResource } from './res
 import { createQueryResource } from './resources/query.js'
 import { createAdminMediaResource } from './resources/admin-media.js'
 import { createAdminMediaFoldersResource } from './resources/admin-media-folders.js'
+import { createHealthResource } from './resources/health.js'
+import { createEnvironmentResource } from './resources/environment.js'
+import { createActivityResource } from './resources/activity.js'
+import { createMetricsResource } from './resources/metrics.js'
+import { createSearchResource } from './resources/search.js'
+import { createGlobalsResource } from './resources/globals.js'
 
 import type { RequestOptions, PaginationParams, PaginatedResponse, AdminRouteID, FieldTypeID, AdminFieldTypeID, Slug, WebhookID, WebhookDeliveryID, ValidationID, AdminValidationID } from './types/common.js'
 import type { MediaUploadOptions } from './resources/media-upload.js'
@@ -283,9 +289,16 @@ export type {
   ConfigGetResponse,
   ConfigUpdateResponse,
   ConfigMetaResponse,
+  SearchIndexResponse,
 } from './types/config.js'
 export type { ConfigResource } from './resources/config.js'
 export type { ContentDeliveryResource } from './resources/content-delivery.js'
+export type { HealthResource, HealthResponse } from './resources/health.js'
+export type { EnvironmentResource, EnvironmentResponse } from './resources/environment.js'
+export type { ActivityResource, ActivityItem } from './resources/activity.js'
+export type { MetricsResource, MetricsSnapshot } from './resources/metrics.js'
+export type { SearchResource, SearchRebuildResponse } from './resources/search.js'
+export type { GlobalsResource } from './resources/globals.js'
 export type {
   PublishingResource,
   AdminPublishingResource,
@@ -472,6 +485,13 @@ import type { AdminMedia } from './types/admin-media.js'
 import type { UpdateAdminMediaParams, MoveAdminMediaParams, MoveAdminMediaResponse } from './types/admin-media.js'
 import type { AdminMediaFolder, AdminMediaFolderTreeNode, CreateAdminMediaFolderParams, UpdateAdminMediaFolderParams } from './types/admin-media-folders.js'
 import type { AdminMediaID, AdminMediaFolderID } from './types/common.js'
+import type { HealthResource } from './resources/health.js'
+import type { EnvironmentResource } from './resources/environment.js'
+import type { ActivityResource } from './resources/activity.js'
+import type { MetricsResource } from './resources/metrics.js'
+import type { SearchResource } from './resources/search.js'
+import type { GlobalsResource } from './resources/globals.js'
+import type { SearchIndexResponse } from './types/config.js'
 
 // ---------------------------------------------------------------------------
 // Client config
@@ -579,6 +599,8 @@ export type ModulaCMSAdminClient = {
   }
   /** Admin content data nodes (tree structure). */
   adminContentData: CrudResource<AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID> & {
+    /** Get a fully composed admin content data node with resolved fields and relations. */
+    getFull: (id: AdminContentID, opts?: RequestOptions) => Promise<Record<string, unknown>>
     /** Reorder sibling admin content data nodes under a parent. */
     reorder: (params: ReorderAdminContentDataParams, opts?: RequestOptions) => Promise<ReorderAdminContentDataResponse>
     /** Move an admin content data node to a different parent at a given position. */
@@ -588,6 +610,8 @@ export type ModulaCMSAdminClient = {
   adminContentFields: CrudResource<AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID>
   /** Admin datatype definitions. */
   adminDatatypes: CrudResource<AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID> & {
+    /** Get a fully composed admin datatype with all field definitions. */
+    getFull: (id: AdminDatatypeID, opts?: RequestOptions) => Promise<Record<string, unknown>>
     /** Update the sort order of an admin datatype. */
     updateSortOrder: (id: AdminDatatypeID, sortOrder: number, opts?: RequestOptions) => Promise<void>
     /** Get the maximum sort order among admin datatypes under a parent (or root if no parent). */
@@ -597,6 +621,10 @@ export type ModulaCMSAdminClient = {
   adminFields: CrudResource<AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID>
   /** Public content data nodes (tree structure). */
   contentData: CrudResource<ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID> & {
+    /** Get a fully composed content data node with resolved fields and relations. */
+    getFull: (id: ContentID, opts?: RequestOptions) => Promise<Record<string, unknown>>
+    /** List content data nodes associated with a route. */
+    listByRoute: (routeId: RouteID, opts?: RequestOptions) => Promise<ContentData[]>
     /** Reorder sibling content data nodes under a parent. */
     reorder: (params: ReorderContentDataParams, opts?: RequestOptions) => Promise<ReorderContentDataResponse>
     /** Move a content data node to a different parent at a given position. */
@@ -614,6 +642,8 @@ export type ModulaCMSAdminClient = {
   datatypes: CrudResource<Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID> & {
     /** Get a fully composed datatype with all field definitions. */
     getFull: (id: DatatypeID, opts?: RequestOptions) => Promise<DatatypeFullView>
+    /** List all datatypes with full field definitions. */
+    listFull: (opts?: RequestOptions) => Promise<DatatypeFullView[]>
     /** Delete a datatype and cascade-delete all content nodes that use it. */
     deleteCascade: (id: DatatypeID, opts?: RequestOptions) => Promise<DatatypeCascadeDeleteResponse>
     /** Update the sort order of a datatype. */
@@ -633,9 +663,16 @@ export type ModulaCMSAdminClient = {
   /** Admin field type lookup entries (admin content fields). */
   adminFieldTypes: CrudResource<AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID>
   /** Public routes. */
-  routes: CrudResource<Route, CreateRouteParams, UpdateRouteParams, RouteID>
+  routes: CrudResource<Route, CreateRouteParams, UpdateRouteParams, RouteID> & {
+    /** Get a fully composed route with resolved content data. */
+    getFull: (id: RouteID, opts?: RequestOptions) => Promise<Record<string, unknown>>
+  }
   /** Media assets. */
   media: CrudResource<Media, CreateMediaParams, UpdateMediaParams, MediaID> & {
+    /** List all media items with full metadata. */
+    listFull: (opts?: RequestOptions) => Promise<Record<string, unknown>[]>
+    /** Get the download URL for a media item (follows redirect). */
+    downloadUrl: (id: MediaID, opts?: RequestOptions) => Promise<string>
     /** Check for orphaned files in the media S3 bucket. */
     health: (opts?: RequestOptions) => Promise<MediaHealthResponse>
     /** Delete orphaned files from the media S3 bucket. */
@@ -657,7 +694,10 @@ export type ModulaCMSAdminClient = {
     moveMedia: (params: MoveMediaParams, opts?: RequestOptions) => Promise<MoveMediaResponse>
   }
   /** Admin media assets — CRUD, upload, and batch move for admin panel media. */
-  adminMedia: CrudResource<AdminMedia, Record<string, unknown>, UpdateAdminMediaParams, AdminMediaID> & AdminMediaResource
+  adminMedia: CrudResource<AdminMedia, Record<string, unknown>, UpdateAdminMediaParams, AdminMediaID> & AdminMediaResource & {
+    /** Get the download URL for an admin media item (follows redirect). */
+    downloadUrl: (id: AdminMediaID, opts?: RequestOptions) => Promise<string>
+  }
   /** Admin media folders for organizing admin media assets. */
   adminMediaFolders: AdminMediaFoldersResource
   /** User accounts. */
@@ -666,6 +706,8 @@ export type ModulaCMSAdminClient = {
     listFull: (opts?: RequestOptions) => Promise<UserWithRoleLabel[]>
     /** Get a fully composed user with OAuth, SSH keys, sessions, and tokens. */
     getFull: (id: UserID, opts?: RequestOptions) => Promise<UserFullView>
+    /** Get all sessions for a user by user ID. */
+    getSessions: (userId: UserID, opts?: RequestOptions) => Promise<Session[]>
     /** Reassign a user's owned content to another user and then delete the user. */
     reassignDelete: (params: UserReassignDeleteParams, opts?: RequestOptions) => Promise<UserReassignDeleteResponse>
   }
@@ -703,8 +745,10 @@ export type ModulaCMSAdminClient = {
     /** Upload a file and receive the created media entity. */
     upload: (file: File | Blob, opts?: MediaUploadOptions) => Promise<Media>
   }
-  /** Session management (update and remove only; sessions are created via login). */
+  /** Session management (list, update, and remove; sessions are created via login). */
   sessions: {
+    /** List all active sessions for the current user. */
+    list: (opts?: RequestOptions) => Promise<Session[]>
     /** Update session metadata. */
     update: (params: UpdateSessionParams, opts?: RequestOptions) => Promise<Session>
     /** Invalidate a session. */
@@ -740,6 +784,8 @@ export type ModulaCMSAdminClient = {
   contentTree: {
     /** Save tree structure changes (creates, updates, deletes) in one request. */
     save: (params: TreeSaveRequest, opts?: RequestOptions) => Promise<TreeSaveResponse>
+    /** Get the content tree for a route by route ID. */
+    getByRoute: (routeId: RouteID, opts?: RequestOptions) => Promise<Record<string, unknown>>
   }
   /** Content tree healing — scan and repair malformed IDs. */
   contentHeal: {
@@ -776,6 +822,24 @@ export type ModulaCMSAdminClient = {
 
   /** Content query by datatype (filtered, sorted, paginated). */
   query: QueryResource
+
+  /** Health check endpoint. */
+  health: HealthResource
+
+  /** Environment info endpoint. */
+  environment: EnvironmentResource
+
+  /** Recent activity/change events. */
+  activity: ActivityResource
+
+  /** Server metrics. */
+  metrics: MetricsResource
+
+  /** Admin search operations (rebuild index). */
+  search: SearchResource
+
+  /** Published global content trees. */
+  globals: GlobalsResource
 
   /** Bulk content import from external CMS platforms. */
   import: {
@@ -882,6 +946,9 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     adminRoutes,
     adminContentData: {
       ...createResource<AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID>(http, 'admincontentdatas'),
+      getFull(id: AdminContentID, opts?: RequestOptions): Promise<Record<string, unknown>> {
+        return http.get<Record<string, unknown>>('/admincontentdatas/full', { q: String(id) }, opts)
+      },
       reorder(params: ReorderAdminContentDataParams, opts?: RequestOptions): Promise<ReorderAdminContentDataResponse> {
         return http.post<ReorderAdminContentDataResponse>('/admincontentdatas/reorder', params as unknown as Record<string, unknown>, opts)
       },
@@ -892,6 +959,9 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     adminContentFields: createResource<AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID>(http, 'admincontentfields'),
     adminDatatypes: {
       ...createResource<AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID>(http, 'admindatatypes'),
+      getFull(id: AdminDatatypeID, opts?: RequestOptions): Promise<Record<string, unknown>> {
+        return http.get<Record<string, unknown>>('/admindatatypes/full', { q: String(id) }, opts)
+      },
       async updateSortOrder(id: AdminDatatypeID, sortOrder: number, opts?: RequestOptions): Promise<void> {
         await http.put<void>('/admindatatypes/' + encodeURIComponent(String(id)) + '/sort-order', { sort_order: sortOrder }, opts)
       },
@@ -905,6 +975,12 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     adminFields: createResource<AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID>(http, 'adminfields'),
     contentData: {
       ...createResource<ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID>(http, 'contentdata'),
+      getFull(id: ContentID, opts?: RequestOptions): Promise<Record<string, unknown>> {
+        return http.get<Record<string, unknown>>('/contentdata/full', { q: String(id) }, opts)
+      },
+      listByRoute(routeId: RouteID, opts?: RequestOptions): Promise<ContentData[]> {
+        return http.get<ContentData[]>('/contentdata/by-route', { q: String(routeId) }, opts)
+      },
       reorder(params: ReorderContentDataParams, opts?: RequestOptions): Promise<ReorderContentDataResponse> {
         return http.post<ReorderContentDataResponse>('/contentdata/reorder', params as unknown as Record<string, unknown>, opts)
       },
@@ -938,6 +1014,9 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
       ...createResource<Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID>(http, 'datatype'),
       getFull(id: DatatypeID, opts?: RequestOptions): Promise<DatatypeFullView> {
         return http.get<DatatypeFullView>('/datatype/full', { q: String(id) }, opts)
+      },
+      listFull(opts?: RequestOptions): Promise<DatatypeFullView[]> {
+        return http.get<DatatypeFullView[]>('/datatype/full/list', undefined, opts)
       },
       async deleteCascade(id: DatatypeID, opts?: RequestOptions): Promise<DatatypeCascadeDeleteResponse> {
         const h: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -977,9 +1056,33 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     },
     fieldTypes: createResource<FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID>(http, 'fieldtypes'),
     adminFieldTypes: createResource<AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID>(http, 'adminfieldtypes'),
-    routes: createResource<Route, CreateRouteParams, UpdateRouteParams, RouteID>(http, 'routes'),
+    routes: {
+      ...createResource<Route, CreateRouteParams, UpdateRouteParams, RouteID>(http, 'routes'),
+      getFull(id: RouteID, opts?: RequestOptions): Promise<Record<string, unknown>> {
+        return http.get<Record<string, unknown>>('/routes/full', { q: String(id) }, opts)
+      },
+    },
     media: {
       ...createResource<Media, CreateMediaParams, UpdateMediaParams, MediaID>(http, 'media'),
+      listFull(opts?: RequestOptions): Promise<Record<string, unknown>[]> {
+        return http.get<Record<string, unknown>[]>('/media/full', undefined, opts)
+      },
+      async downloadUrl(id: MediaID, opts?: RequestOptions): Promise<string> {
+        const h: Record<string, string> = {}
+        if (config.apiKey) h['Authorization'] = `Bearer ${config.apiKey}`
+        const response = await http.raw('/media/' + encodeURIComponent(String(id)) + '/download', {
+          method: 'GET',
+          headers: h,
+          credentials,
+          redirect: 'manual',
+          ...(opts?.signal ? { signal: opts.signal } : {}),
+        })
+        const location = response.headers.get('Location')
+        if (location) return location
+        if (response.ok) return response.url
+        const text = await response.text()
+        throw new Error(`media download URL failed (${response.status}): ${text}`)
+      },
       health(opts?: RequestOptions): Promise<MediaHealthResponse> {
         return http.get<MediaHealthResponse>('/media/health', undefined, opts)
       },
@@ -1037,6 +1140,22 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     adminMedia: {
       ...createResource<AdminMedia, Record<string, unknown>, UpdateAdminMediaParams, AdminMediaID>(http, 'adminmedia'),
       ...createAdminMediaResource(http, defaultTimeout, credentials, config.apiKey),
+      async downloadUrl(id: AdminMediaID, opts?: RequestOptions): Promise<string> {
+        const h: Record<string, string> = {}
+        if (config.apiKey) h['Authorization'] = `Bearer ${config.apiKey}`
+        const response = await http.raw('/adminmedia/' + encodeURIComponent(String(id)) + '/download', {
+          method: 'GET',
+          headers: h,
+          credentials,
+          redirect: 'manual',
+          ...(opts?.signal ? { signal: opts.signal } : {}),
+        })
+        const location = response.headers.get('Location')
+        if (location) return location
+        if (response.ok) return response.url
+        const text = await response.text()
+        throw new Error(`admin media download URL failed (${response.status}): ${text}`)
+      },
     },
     adminMediaFolders: createAdminMediaFoldersResource(http),
     users: {
@@ -1046,6 +1165,9 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
       },
       getFull(id: UserID, opts?: RequestOptions): Promise<UserFullView> {
         return http.get<UserFullView>('/users/full/', { q: String(id) }, opts)
+      },
+      getSessions(userId: UserID, opts?: RequestOptions): Promise<Session[]> {
+        return http.get<Session[]>('/users/sessions', { q: String(userId) }, opts)
       },
       reassignDelete(params: UserReassignDeleteParams, opts?: RequestOptions): Promise<UserReassignDeleteResponse> {
         return http.post<UserReassignDeleteResponse>('/users/reassign-delete', params as unknown as Record<string, unknown>, opts)
@@ -1086,6 +1208,9 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
       save(params: TreeSaveRequest, opts?: RequestOptions): Promise<TreeSaveResponse> {
         return http.post<TreeSaveResponse>('/content/tree', params as unknown as Record<string, unknown>, opts)
       },
+      getByRoute(routeId: RouteID, opts?: RequestOptions): Promise<Record<string, unknown>> {
+        return http.get<Record<string, unknown>>('/content/tree/' + encodeURIComponent(String(routeId)), undefined, opts)
+      },
     },
     contentHeal: {
       heal(dryRun?: boolean, opts?: RequestOptions): Promise<HealReport> {
@@ -1102,5 +1227,11 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     query: createQueryResource(http),
     deploy: createDeployResource(http),
     import: createImportResource(http),
+    health: createHealthResource(http),
+    environment: createEnvironmentResource(http),
+    activity: createActivityResource(http),
+    metrics: createMetricsResource(http),
+    search: createSearchResource(http),
+    globals: createGlobalsResource(http),
   }
 }

@@ -15,6 +15,13 @@ import type { Session, UpdateSessionParams } from '../types/users.js'
  */
 type SessionsResource = {
   /**
+   * List all active sessions for the current user.
+   * @param opts - Optional request options.
+   * @returns Array of active sessions.
+   */
+  list: (opts?: RequestOptions) => Promise<Session[]>
+
+  /**
    * Update an existing session's metadata.
    * @param params - Session update parameters (must include `session_id`).
    * @param opts - Optional request options.
@@ -38,6 +45,10 @@ type SessionsResource = {
  */
 function createSessionsResource(http: HttpClient): SessionsResource {
   return {
+    list(opts?: RequestOptions): Promise<Session[]> {
+      return http.get<Session[]>('/sessions', undefined, opts)
+    },
+
     update(params: UpdateSessionParams, opts?: RequestOptions): Promise<Session> {
       return http.put<Session>('/sessions/', params as Record<string, unknown>, opts)
     },

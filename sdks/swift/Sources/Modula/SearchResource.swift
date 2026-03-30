@@ -60,6 +60,29 @@ public struct SearchResponse: Codable, Sendable {
     public let offset: Int
 }
 
+/// Response from `POST /api/v1/admin/search/rebuild` after a successful
+/// search index rebuild.
+public struct SearchRebuildResponse: Codable, Sendable {
+    /// "ok" on success.
+    public let status: String
+
+    /// Number of documents in the rebuilt index.
+    public let documents: Int
+
+    /// Number of unique terms in the rebuilt index.
+    public let terms: Int
+
+    /// Estimated memory usage of the rebuilt index in bytes.
+    public let memBytes: Int64
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case documents
+        case terms
+        case memBytes = "mem_bytes"
+    }
+}
+
 public final class SearchResource: Sendable {
     let http: HTTPClient
 
@@ -87,5 +110,12 @@ public final class SearchResource: Sendable {
             queryItems.append(URLQueryItem(name: "prefix", value: String(prefix)))
         }
         return try await http.get(path: "/api/v1/search", queryItems: queryItems)
+    }
+
+    /// Triggers a full rebuild of the search index and returns the resulting
+    /// index statistics. Requires `search:update` permission. This is an admin
+    /// operation and should not be called in response to user actions.
+    public func rebuild() async throws -> SearchRebuildResponse {
+        try await http.postNoBody(path: "/api/v1/admin/search/rebuild")
     }
 }

@@ -87,3 +87,19 @@ export type ConfigMetaResponse = {
   /** Distinct category names across all fields, for building category filters. */
   categories: string[]
 }
+
+/**
+ * Response from `GET /api/v1/admin/config/search-index`.
+ *
+ * Provides information about the current state of the search index.
+ */
+export type SearchIndexResponse = {
+  /** Number of documents in the index. */
+  documents: number
+  /** Number of unique terms in the index. */
+  terms: number
+  /** Memory consumed by the index in bytes. */
+  mem_bytes: number
+  /** ISO 8601 timestamp of when the index was last rebuilt. */
+  last_rebuilt?: string
+}
