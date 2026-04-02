@@ -19,7 +19,7 @@ For full details on each step, read on.
 
 | Requirement | Details |
 |-------------|---------|
-| Go | 1.24 or later |
+| Go | 1.25 or later |
 | CGO | Must be enabled (`CGO_ENABLED=1`) |
 | C compiler | GCC or Clang (for the SQLite driver) |
 | OS | Linux or macOS |
@@ -74,45 +74,60 @@ mkdir ~/projects/mysite && cd ~/projects/mysite
 modula init
 ```
 
-`modula init` does two things:
+`modula init` is idempotent -- each step checks whether its output already exists and skips if so. Safe to run multiple times. It performs six steps:
 
-1. **Runs the install wizard** -- prompts for database driver, connection details, ports, and admin credentials. Creates `modula.config.json`, initializes the database, and seeds bootstrap data.
-2. **Registers the project** -- adds an entry to `~/.modula/configs.json` with the project name (defaults to the directory name) and environment `local` pointing to the new config file. Sets it as the default project if it's the first one registered.
+1. **Loads or creates the project registry** at `~/.modula/configs.json`.
+2. **Creates a `modula/` project directory** (or uses the current directory if `modula.config.json` already exists there).
+3. **Writes config files** -- a base `modula.config.json` plus three environment overlays (`modula.local.config.json`, `modula.dev.config.json`, `modula.prod.config.json`).
+4. **Registers configs** in the project registry and sets `local` as the default environment.
+5. **Generates localhost TLS certificates** in a `certs/` directory.
+6. **Creates and seeds the SQLite database** -- skipped for external databases (MySQL/PostgreSQL) or if the `.db` file already exists.
 
-For automated or CI setups:
+### Init modes
+
+| Mode | Flag | Behavior |
+|------|------|----------|
+| Interactive | (default) | Prompts for project name and admin password |
+| CI | `--mode ci` or `--yes` | No prompts; requires `--admin-password` |
+| Container | `--mode container` | No prompts; skips database creation entirely |
 
 ```bash
-modula init --yes --admin-password your-password
-```
-
-To use a custom project name instead of the directory name:
-
-```bash
-modula init --name my-site --admin-password pw
+modula init                                       # interactive
+modula init --mode ci --admin-password s3cret!    # CI pipeline
+modula init --mode container                      # Docker entrypoint
+modula init --name my-site                        # custom project name
 ```
 
 ### What init creates
 
-1. `modula.config.json` with your chosen settings.
-2. Database tables for all CMS entities.
-3. Bootstrap data: three roles (admin, editor, viewer), 72 permissions, and a system admin user.
-4. A registry entry in `~/.modula/configs.json` mapping the project name to this directory's config.
+```
+mysite/
+  modula/
+    modula.config.json           # base config (shared defaults)
+    modula.local.config.json     # local overlay (SQLite, dev ports)
+    modula.dev.config.json       # dev overlay
+    modula.prod.config.json      # prod overlay (PostgreSQL, env vars)
+    certs/                       # self-signed localhost certificates
+    modula.db                    # SQLite database (if applicable)
+```
 
-ModulaCMS prints the system admin credentials to the log:
+The database is seeded with bootstrap data: three roles (admin, editor, viewer), 72 permissions, and a system admin user.
+
+When no `--admin-password` is provided outside interactive mode, ModulaCMS generates a random password and prints it to the log:
 
 ```
-Generated system admin password  email=system@modulacms.local  password=<random-string>
+Generated system admin password  email=system@modula.local  password=<random-string>
 ```
 
-### Non-interactive setup (Docker / CI)
+### Check project status
 
-For Docker containers or ephemeral environments where registry is not needed:
+After init, verify everything is in place:
 
 ```bash
-modula init --yes --admin-password your-password
+modula status
 ```
 
-> **Good to know**: The `modula install` command is deprecated. Use `modula init` instead. Both run the same setup wizard; `init` also registers the project in the global registry.
+This shows the base config, certificates, registered environments, and available commands for the project in the current directory.
 
 ## Project Registry
 
@@ -282,13 +297,13 @@ This creates `localhost.crt` and `localhost.key` in the certificate directory. S
 
 | Command | Description |
 |---------|-------------|
-| `init` | Install wizard + register project in registry |
-| `init --name <name>` | Init with custom project name (default: directory name) |
-| `init --yes --admin-password <pw>` | Non-interactive init with defaults |
+| `init` | Initialize project (idempotent, safe to re-run) |
+| `init --mode ci --admin-password <pw>` | Non-interactive init for CI |
+| `init --mode container` | Init for Docker (skips DB creation) |
+| `init --name <name>` | Init with custom project name |
+| `status` | Show project status for the current directory |
 | `serve` | Start all servers (HTTP, HTTPS, SSH) |
 | `serve --wizard` | Interactive setup wizard before starting |
-| `install` | Run installation wizard only (no registry) |
-| `install --yes --admin-password <pw>` | Non-interactive install with defaults |
 | `connect` | Launch TUI for a registered project |
 | `connect set <name> <env> <path>` | Register a project environment |
 | `connect list` | List all registered projects |
@@ -309,7 +324,9 @@ This creates `localhost.crt` and `localhost.key` in the certificate directory. S
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--config` | `modula.config.json` | Path to configuration file |
+| `--overlay` | | Overlay config file (merged on top of `--config`) |
 | `-v`, `--verbose` | `false` | Enable debug logging |
+| `-y`, `--yes` | `false` | Auto-accept all prompts (equivalent to `--mode ci`) |
 
 > **Good to know**: PostgreSQL backups require `pg_dump` in your PATH and MySQL backups require `mysqldump`. SQLite backups need no external tools.
 

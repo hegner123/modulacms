@@ -22,9 +22,9 @@ backend management. Content is managed via the SSH TUI, a web admin panel, or th
 REST API and delivered to frontend clients over HTTP/HTTPS.
 
 Core commands:
+  init       Initialize a project (idempotent, safe to re-run)
   serve      Start all servers (HTTP, HTTPS, SSH)
-  install    Run the first-time setup wizard
-  init       Initialize a new project and register it
+  status     Show project status for the current directory
   connect    Launch the TUI for a remote or registered project
   tui        Launch the TUI locally without starting the server
 
@@ -47,7 +47,6 @@ Global flags:
   --yes, -y  Auto-accept all prompts (non-interactive mode)`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	RunE:          runDefaultCommand,
 }
 
 func init() {

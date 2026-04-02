@@ -332,7 +332,7 @@ Examples:
 		}
 
 		go func() {
-			utility.DefaultLogger.Info("Opening the SSH tunnel — knock knock",
+			utility.DefaultLogger.Info("Starting SSH server",
 				"address", net.JoinHostPort(cfg.SSH_Host, cfg.SSH_Port))
 			utility.DefaultLogger.Debug("SSH server listener binding",
 				"address", net.JoinHostPort(cfg.SSH_Host, cfg.SSH_Port),
@@ -350,14 +350,14 @@ Examples:
 		// On failure the SSH server keeps running so operators can diagnose via TUI;
 		// HTTP starts with a placeholder handler until DB is initialized.
 		sshOnly := false
-		utility.DefaultLogger.Info("Memorizing who gets in and who doesn't...")
+		utility.DefaultLogger.Info("Loading permission cache")
 		utility.DefaultLogger.Debug("Building in-memory PermissionCache from role_permissions table, build-then-swap for lock-free reads")
 		pc := middleware.NewPermissionCache()
 		if pcErr := pc.Load(driver); pcErr != nil {
 			utility.DefaultLogger.Error("Permission cache load failed — placeholder HTTP mode until DB init via SSH", pcErr)
 			sshOnly = true
 		} else {
-			utility.DefaultLogger.Info("Bouncer's ready")
+			utility.DefaultLogger.Info("Permission cache ready")
 			utility.DefaultLogger.Debug("PermissionCache populated, starting periodic refresh goroutine", "interval", "60s")
 			pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
 		}
@@ -504,7 +504,7 @@ Examples:
 
 		// Start HTTP server
 		go func() {
-			utility.DefaultLogger.Info("HTTP is live — come on in", "address", httpServer.Addr)
+			utility.DefaultLogger.Info("HTTP server started", "address", httpServer.Addr)
 			utility.DefaultLogger.Debug("HTTP server listener binding", "address", httpServer.Addr, "handler", "full middleware chain → stdlib ServeMux")
 			httpErr := httpServer.ListenAndServe()
 			if httpErr != nil && !errors.Is(httpErr, http.ErrServerClosed) {
@@ -523,7 +523,7 @@ Examples:
 				pluginAPITokenID = tokenID
 				pluginAPITokenPath = tokenPath
 				tokenMu.Unlock()
-				utility.DefaultLogger.Info("Plugins got their backstage pass", "path", tokenPath)
+				utility.DefaultLogger.Info("Plugin API token written", "path", tokenPath)
 				utility.DefaultLogger.Debug("Plugin API token written to disk", "path", tokenPath, "type", "plugin_api_key", "expires", "24h", "user", "system")
 			}
 		}
@@ -556,7 +556,7 @@ Examples:
 							pluginAPITokenID = tokenID
 							pluginAPITokenPath = tokenPath
 							tokenMu.Unlock()
-							utility.DefaultLogger.Info("Plugins got their backstage pass", "path", tokenPath)
+							utility.DefaultLogger.Info("Plugin API token written", "path", tokenPath)
 							utility.DefaultLogger.Debug("Plugin API token written to disk", "path", tokenPath, "type", "plugin_api_key", "expires", "24h", "user", "system")
 						}
 					}

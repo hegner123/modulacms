@@ -9,10 +9,12 @@ mkdir mysite && cd mysite
 modula init
 ```
 
-`modula init` runs the setup wizard, creates your database, seeds default roles and permissions, and registers the project. For non-interactive setup:
+`modula init` creates a `modula/` directory with config files, generates TLS certificates, initializes the SQLite database, seeds default roles and permissions, and registers the project. Each step is idempotent -- safe to run again if interrupted.
+
+For non-interactive setup (CI pipelines):
 
 ```bash
-modula init --yes --admin-password your-password
+modula init --mode ci --admin-password your-password
 ```
 
 ## 2. Start the server
@@ -29,7 +31,7 @@ ModulaCMS starts three servers:
 | HTTPS | `localhost:4000` | TLS-secured API |
 | SSH | `localhost:2233` | Terminal UI |
 
-> **Good to know**: If you used the interactive installer without setting a password, check the startup logs for the generated admin credentials.
+> **Good to know**: If you did not set a password during init, check the startup logs for the generated admin credentials.
 
 ## 3. Connect
 

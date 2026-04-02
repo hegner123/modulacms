@@ -11,6 +11,7 @@ These flags apply to every command:
 | `--config` | `./modula.config.json` | Path to config file |
 | `--overlay` | | Overlay config file (merged on top of `--config`) |
 | `--verbose`, `-v` | `false` | Enable debug-level log output |
+| `--yes`, `-y` | `false` | Auto-accept all prompts (maps to `--mode ci` for init) |
 
 ## Project Registry
 
@@ -60,7 +61,7 @@ modula serve --wizard               # interactive setup first
 
 ### init
 
-Initialize a new project and register it in the global registry.
+Initialize a ModulaCMS project in the current directory. Idempotent -- each step checks whether its output already exists and skips if so.
 
 ```bash
 modula init
@@ -68,17 +69,44 @@ modula init
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--yes`, `-y` | `false` | Accept all defaults without prompting |
-| `--admin-password` | | System admin password (required with `--yes`) |
+| `--mode` | `interactive` | Init mode: `interactive`, `ci`, or `container` |
+| `--admin-password` | | System admin password (required for `ci` mode) |
 | `--name` | current directory name | Project name |
 
-Creates `modula.config.json`, initializes the database, seeds bootstrap data, and registers the project in `~/.modula/configs.json`.
+Steps performed:
+
+1. Load or create the project registry (`~/.modula/configs.json`)
+2. Create `modula/` project directory (if not present)
+3. Write base config and environment overlays (local, dev, prod)
+4. Register configs in the registry, set `local` as default environment
+5. Generate localhost TLS certificates
+6. Create and seed SQLite database (skipped for external databases or container mode)
 
 ```bash
 modula init                                       # interactive
-modula init --yes --admin-password s3cret!        # non-interactive
-modula init --name my-site --admin-password pw    # custom name
+modula init --mode ci --admin-password s3cret!    # CI pipeline
+modula init --mode container                      # Docker entrypoint
+modula init --name my-site                        # custom project name
 ```
+
+> **Good to know**: The `--yes` global flag maps to `--mode ci` for backward compatibility.
+
+### status
+
+Display the registration status, config files, environments, and available commands for the project in the current directory.
+
+```bash
+modula status
+```
+
+Shows:
+- Base config path with `[ok]`/`[missing]` status
+- Certificate directory and search index status
+- All registered environment overlays with status markers
+- Available `serve`, `connect`, and `tui` commands for each environment
+- Troubleshooting tips when files are missing
+
+If the current directory is not a registered project, suggests running `modula init`.
 
 ### tui
 

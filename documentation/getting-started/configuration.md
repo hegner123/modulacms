@@ -1,6 +1,6 @@
 # Configuration
 
-All settings live in a single `modula.config.json` file, created automatically on first run with development defaults.
+All settings live in `modula.config.json` files. `modula init` creates a base config with shared defaults plus environment-specific overlay files (local, dev, prod).
 
 ## File Location
 
@@ -779,7 +779,7 @@ ModulaCMS redacts the following fields (replacing them with `********`) when ret
 
 ## Full Default Configuration
 
-`modula init` creates a `modula.config.json` with these defaults:
+`modula init` creates a base `modula.config.json` with these defaults:
 
 ```json
 {

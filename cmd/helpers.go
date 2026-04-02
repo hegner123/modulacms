@@ -159,7 +159,7 @@ func initObservability(ctx context.Context, cfg *config.Config) func() {
 	// same context so it shuts down together with the observability client.
 	utility.StartRuntimeMetrics(ctx, 15*time.Second)
 
-	utility.DefaultLogger.Info("Eyes wide open — observability is live",
+	utility.DefaultLogger.Info("Observability provider active",
 		"provider", cfg.Observability_Provider)
 	utility.DefaultLogger.Debug("Observability client connected and flushing",
 		"provider", cfg.Observability_Provider,
@@ -202,7 +202,7 @@ func initPluginPool(cfg *config.Config) (*sql.DB, func(), error) {
 		return nil, nil, fmt.Errorf("plugin pool: %w", err)
 	}
 
-	utility.DefaultLogger.Info("Plugins got their own database pool — splish splash")
+	utility.DefaultLogger.Info("Plugin database pool initialized")
 	utility.DefaultLogger.Debug("Isolated plugin database connection pool opened",
 		"max_open", pc.MaxOpenConns,
 		"max_idle", pc.MaxIdleConns,
@@ -223,7 +223,7 @@ func initPluginPool(cfg *config.Config) (*sql.DB, func(), error) {
 
 // logConfigSummary logs the loaded configuration details.
 func logConfigSummary(cfg *config.Config) {
-	utility.DefaultLogger.Info("Config locked in, looking good",
+	utility.DefaultLogger.Info("Configuration summary",
 		"env", cfg.Environment, "db", string(cfg.Db_Driver),
 		"http", cfg.Port, "https", cfg.SSL_Port, "ssh", cfg.SSH_Port)
 	utility.DefaultLogger.Debug("Database", "driver", cfg.Db_Driver, "url", cfg.Db_URL)
