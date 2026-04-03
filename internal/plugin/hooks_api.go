@@ -87,7 +87,7 @@ func hooksOnFn(L *lua.LState, pluginName string, handlers *lua.LTable, pending *
 		}
 
 		// 3. Phase guard: hooks.on() must only be called at module scope.
-		if phase := vmPhase(L); phase != "" && phase != "module_scope" {
+		if phase := VMPhase(L); phase != "" && phase != "module_scope" {
 			L.RaiseError("hooks.on() must be called at module scope, not inside on_init()")
 			return 0
 		}

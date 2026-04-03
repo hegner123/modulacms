@@ -42,6 +42,7 @@ Offline subcommands (no running server needed):
   init       Scaffold a new plugin with init.lua and lib/ directory
   validate   Parse and validate a plugin without loading it
   install    Install a plugin into the database
+  test       Run plugin tests in an isolated in-memory environment
 
 Online subcommands (require running server):
   info       Show detailed plugin state, VM pool, and circuit breaker info
@@ -1366,6 +1367,12 @@ func init() {
 	pluginListCmd.Flags().Bool("json", false, "Output as JSON")
 	pluginInfoCmd.Flags().Bool("json", false, "Output as JSON")
 
+	// Flags for plugin test.
+	pluginTestCmd.Flags().BoolP("verbose", "v", false, "Print all assertions, not just failures")
+	pluginTestCmd.Flags().String("filter", "", "Run only test functions whose name contains this substring")
+	pluginTestCmd.Flags().Bool("json", false, "Output as NDJSON")
+	pluginTestCmd.Flags().Int("timeout", 5, "Per-test timeout in seconds")
+
 	// Register all subcommands.
 	pluginCmd.AddCommand(pluginListCmd)
 	pluginCmd.AddCommand(pluginInitCmd)
@@ -1377,4 +1384,5 @@ func init() {
 	pluginCmd.AddCommand(pluginDisableCmd)
 	pluginCmd.AddCommand(pluginApproveCmd)
 	pluginCmd.AddCommand(pluginRevokeCmd)
+	pluginCmd.AddCommand(pluginTestCmd)
 }

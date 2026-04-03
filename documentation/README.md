@@ -42,6 +42,7 @@ Add custom functionality with Lua plugins.
 
 - [Overview](extending/overview.md) -- what plugins can do
 - [Tutorial](extending/tutorial.md) -- build a bookmarks plugin from scratch
+- [Testing](extending/testing.md) -- write and run automated plugin tests
 - [Lua API Reference](extending/lua-api.md) -- every function and parameter
 - [Examples](extending/examples.md) -- complete working plugins
 

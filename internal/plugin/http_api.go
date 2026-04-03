@@ -82,7 +82,7 @@ func httpHandleFn(L *lua.LState, pluginName string, handlers *lua.LTable, routeM
 		// 3. Phase guard: http.handle() must only be called at module scope
 		// (during init.lua execution by the factory). The Manager sets __vm_phase
 		// on the LState registry to track the current lifecycle phase.
-		if phase := vmPhase(L); phase != "" && phase != "module_scope" {
+		if phase := VMPhase(L); phase != "" && phase != "module_scope" {
 			L.RaiseError("http.handle() must be called at module scope, not inside on_init()")
 			return 0
 		}
@@ -139,7 +139,7 @@ func httpUseFn(L *lua.LState, middleware *lua.LTable) lua.LGFunction {
 		fn := L.CheckFunction(1)
 
 		// Phase guard: http.use() must only be called at module scope.
-		if phase := vmPhase(L); phase != "" && phase != "module_scope" {
+		if phase := VMPhase(L); phase != "" && phase != "module_scope" {
 			L.RaiseError("http.use() must be called at module scope, not inside on_init()")
 			return 0
 		}

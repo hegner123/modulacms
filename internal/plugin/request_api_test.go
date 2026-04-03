@@ -9,7 +9,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-// mockExecutor implements outboundExecutor for testing.
+// mockExecutor implements OutboundExecutor for testing.
 type mockExecutor struct {
 	lastMethod string
 	lastURL    string
@@ -69,7 +69,7 @@ func TestRequestRegister(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`request.register("api.example.com", {description = "Test API"})`)
@@ -93,7 +93,7 @@ func TestRequestRegister(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`request.register("API.Example.COM")`)
@@ -114,7 +114,7 @@ func TestRequestRegister(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "init")
+		SetVMPhase(L, "init")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`request.register("api.example.com")`)
@@ -130,7 +130,7 @@ func TestRequestRegister(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "runtime")
+		SetVMPhase(L, "runtime")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`request.register("api.example.com")`)
@@ -146,7 +146,7 @@ func TestRequestRegister(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`
@@ -170,7 +170,7 @@ func TestRequestRegister(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		// Register MaxDomainsPerPlugin domains.
@@ -195,7 +195,7 @@ func TestRequestRegister(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`request.register("https://bad.com")`)
@@ -208,7 +208,7 @@ func TestRequestRegister(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`request.register("api.example.com")`)
@@ -231,7 +231,7 @@ func TestRequestSend(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`request.send("GET", "https://api.example.com/test")`)
@@ -247,7 +247,7 @@ func TestRequestSend(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "init")
+		SetVMPhase(L, "init")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`request.send("GET", "https://api.example.com/test")`)
@@ -263,7 +263,7 @@ func TestRequestSend(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "shutdown")
+		SetVMPhase(L, "shutdown")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`request.send("GET", "https://api.example.com/test")`)
@@ -279,7 +279,7 @@ func TestRequestSend(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "runtime")
+		SetVMPhase(L, "runtime")
 		state := RegisterRequestAPI(L, "test_plugin", nil)
 		state.inBeforeHook = true
 
@@ -299,7 +299,7 @@ func TestRequestSend(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "runtime")
+		SetVMPhase(L, "runtime")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		ctx := context.Background()
@@ -318,7 +318,7 @@ func TestRequestSend(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "runtime")
+		SetVMPhase(L, "runtime")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		ctx := context.Background()
@@ -337,7 +337,7 @@ func TestRequestSend(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "runtime")
+		SetVMPhase(L, "runtime")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		ctx := context.Background()
@@ -356,7 +356,7 @@ func TestRequestSend(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "runtime")
+		SetVMPhase(L, "runtime")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		ctx := context.Background()
@@ -375,7 +375,7 @@ func TestRequestSend(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "runtime")
+		SetVMPhase(L, "runtime")
 		RegisterRequestAPI(L, "test_plugin", nil) // nil engine
 
 		ctx := context.Background()
@@ -394,7 +394,7 @@ func TestRequestSend(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "runtime")
+		SetVMPhase(L, "runtime")
 
 		mock := &mockExecutor{
 			result: map[string]any{
@@ -444,7 +444,7 @@ func TestRequestSend(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "runtime")
+		SetVMPhase(L, "runtime")
 
 		mock := &mockExecutor{
 			err: fmt.Errorf("domain not approved: api.example.com"),
@@ -482,7 +482,7 @@ func TestRequestConvenienceMethods(t *testing.T) {
 			L := lua.NewState(lua.Options{SkipOpenLibs: true})
 			defer L.Close()
 			ApplySandbox(L, SandboxConfig{})
-			setVMPhase(L, "runtime")
+			SetVMPhase(L, "runtime")
 
 			mock := &mockExecutor{
 				result: map[string]any{"status": 200, "body": "ok"},
@@ -509,7 +509,7 @@ func TestRequestConvenienceMethods(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "runtime")
+		SetVMPhase(L, "runtime")
 
 		mock := &mockExecutor{
 			result: map[string]any{"status": 201, "body": "created"},
@@ -541,7 +541,7 @@ func TestRequestConvenienceMethods(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`request.get("https://api.example.com/test")`)
@@ -559,7 +559,7 @@ func TestReadPendingRequests(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		reqs := ReadPendingRequests(L)
@@ -572,7 +572,7 @@ func TestReadPendingRequests(t *testing.T) {
 		L := lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
 		ApplySandbox(L, SandboxConfig{})
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 		RegisterRequestAPI(L, "test_plugin", nil)
 
 		err := L.DoString(`
@@ -628,23 +628,23 @@ func TestVMPhaseHelpers(t *testing.T) {
 		L := lua.NewState()
 		defer L.Close()
 
-		setVMPhase(L, "module_scope")
-		if got := vmPhase(L); got != "module_scope" {
+		SetVMPhase(L, "module_scope")
+		if got := VMPhase(L); got != "module_scope" {
 			t.Errorf("expected 'module_scope', got %q", got)
 		}
 
-		setVMPhase(L, "init")
-		if got := vmPhase(L); got != "init" {
+		SetVMPhase(L, "init")
+		if got := VMPhase(L); got != "init" {
 			t.Errorf("expected 'init', got %q", got)
 		}
 
-		setVMPhase(L, "runtime")
-		if got := vmPhase(L); got != "runtime" {
+		SetVMPhase(L, "runtime")
+		if got := VMPhase(L); got != "runtime" {
 			t.Errorf("expected 'runtime', got %q", got)
 		}
 
-		setVMPhase(L, "shutdown")
-		if got := vmPhase(L); got != "shutdown" {
+		SetVMPhase(L, "shutdown")
+		if got := VMPhase(L); got != "shutdown" {
 			t.Errorf("expected 'shutdown', got %q", got)
 		}
 	})
@@ -653,7 +653,7 @@ func TestVMPhaseHelpers(t *testing.T) {
 		L := lua.NewState()
 		defer L.Close()
 
-		if got := vmPhase(L); got != "" {
+		if got := VMPhase(L); got != "" {
 			t.Errorf("expected empty string, got %q", got)
 		}
 	})

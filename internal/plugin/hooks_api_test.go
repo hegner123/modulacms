@@ -190,7 +190,7 @@ func TestHooksOn(t *testing.T) {
 		RegisterHooksAPI(L, "test_plugin")
 
 		// Simulate __vm_phase = "init" (during on_init).
-		setVMPhase(L, "init")
+		SetVMPhase(L, "init")
 
 		err := L.DoString(`
 			hooks.on("before_create", "content_data", function() end)

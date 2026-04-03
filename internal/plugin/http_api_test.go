@@ -334,7 +334,7 @@ func TestHTTPHandle(t *testing.T) {
 		RegisterHTTPAPI(L, "test_plugin")
 
 		// Simulate the Manager setting __vm_phase to "init" before on_init.
-		setVMPhase(L, "init")
+		SetVMPhase(L, "init")
 
 		err := L.DoString(`
 			http.handle("GET", "/should-fail", function(req) return {status = 200} end)
@@ -356,7 +356,7 @@ func TestHTTPHandle(t *testing.T) {
 		RegisterHTTPAPI(L, "test_plugin")
 
 		// Simulate module scope (the normal factory case).
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 
 		err := L.DoString(`
 			http.handle("GET", "/should-work", function(req) return {status = 200} end)
@@ -481,7 +481,7 @@ func TestHTTPUse(t *testing.T) {
 		RegisterHTTPAPI(L, "test_plugin")
 
 		// Simulate the Manager setting __vm_phase to "init" before on_init.
-		setVMPhase(L, "init")
+		SetVMPhase(L, "init")
 
 		err := L.DoString(`
 			http.use(function(req) return nil end)

@@ -24,14 +24,14 @@ type PendingRequest struct {
 // Each instance is bound to exactly one LState (1:1 invariant), same as DatabaseAPI.
 // INVARIANT: never share across VMs.
 type requestAPIState struct {
-	engine       outboundExecutor // nil until RequestEngine is wired
+	engine       OutboundExecutor // nil until RequestEngine is wired
 	pluginName   string
 	inBeforeHook bool
 }
 
-// outboundExecutor executes outbound HTTP requests.
+// OutboundExecutor executes outbound HTTP requests.
 // Implemented by RequestEngine (request_engine.go).
-type outboundExecutor interface {
+type OutboundExecutor interface {
 	Execute(ctx context.Context, pluginName, method, urlStr string, opts OutboundRequestOpts) (map[string]any, error)
 }
 
@@ -49,7 +49,7 @@ type OutboundRequestOpts struct {
 //
 // After calling RegisterRequestAPI, the caller should call FreezeModule(L, "request")
 // to make the module read-only.
-func RegisterRequestAPI(L *lua.LState, pluginName string, engine outboundExecutor) *requestAPIState {
+func RegisterRequestAPI(L *lua.LState, pluginName string, engine OutboundExecutor) *requestAPIState {
 	state := &requestAPIState{
 		engine:     engine,
 		pluginName: pluginName,
@@ -421,9 +421,9 @@ func isValidDomainChar(r rune) bool {
 		r == '.' || r == '-'
 }
 
-// vmPhase reads the __vm_phase value from the LState registry.
+// VMPhase reads the __vm_phase value from the LState registry.
 // Returns empty string if not set.
-func vmPhase(L *lua.LState) string {
+func VMPhase(L *lua.LState) string {
 	registryTbl := L.Get(lua.RegistryIndex)
 	regTbl, ok := registryTbl.(*lua.LTable)
 	if !ok {
@@ -436,8 +436,8 @@ func vmPhase(L *lua.LState) string {
 	return ""
 }
 
-// setVMPhase sets the __vm_phase value in the LState registry.
-func setVMPhase(L *lua.LState, phase string) {
+// SetVMPhase sets the __vm_phase value in the LState registry.
+func SetVMPhase(L *lua.LState, phase string) {
 	registryTbl := L.Get(lua.RegistryIndex)
 	if regTbl, ok := registryTbl.(*lua.LTable); ok {
 		L.SetField(regTbl, "__vm_phase", lua.LString(phase))

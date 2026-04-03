@@ -254,6 +254,12 @@ type Manager struct {
 	// shutdownOnce ensures Shutdown is idempotent -- calling it multiple times
 	// (e.g., signal handler + deferred call) does not double-close resources.
 	shutdownOnce sync.Once
+
+	// outboundOverride, when non-nil, replaces the requestEngine as the
+	// OutboundExecutor passed to Lua VMs. Used by the test harness to inject
+	// a MockRequestEngine. Does NOT replace requestEngine for table creation,
+	// approval loading, or cleanup.
+	outboundOverride OutboundExecutor
 }
 
 // NewManager creates a new plugin Manager with the given configuration.
@@ -425,7 +431,16 @@ func (m *Manager) LoadAll(ctx context.Context) error {
 	discovered := make(map[string]*PluginInstance)
 
 	for _, entry := range entries {
-		if !entry.IsDir() {
+		// os.ReadDir uses Lstat, so symlinks to directories report IsDir() == false.
+		// Resolve symlinks before checking so that symlinked plugin directories work.
+		isDir := entry.IsDir()
+		if !isDir && entry.Type()&os.ModeSymlink != 0 {
+			resolved := filepath.Join(m.cfg.Directory, entry.Name())
+			if fi, err := os.Stat(resolved); err == nil {
+				isDir = fi.IsDir()
+			}
+		}
+		if !isDir {
 			continue
 		}
 
@@ -689,7 +704,7 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 		// 8. RegisterRequestAPI
 		// 9. FreezeModule (all modules)
 		ApplySandbox(L, SandboxConfig{AllowCoroutine: true, ExecTimeout: timeout})
-		setVMPhase(L, "module_scope")
+		SetVMPhase(L, "module_scope")
 		RegisterPluginRequire(L, inst.Dir)
 
 		dbAPI := NewDatabaseAPI(m.db, pluginName, m.dialect, m.cfg.MaxOpsPerExec, m.tableReg)
@@ -699,7 +714,11 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 		RegisterHooksAPI(L, pluginName)
 		coreAPI := NewCoreTableAPI(dbAPI, pluginName, m.dialect, inst.ApprovedAccess)
 		RegisterCoreAPI(L, coreAPI)
-		reqAPI := RegisterRequestAPI(L, pluginName, m.requestEngine)
+		var reqExecutor OutboundExecutor = m.requestEngine
+		if m.outboundOverride != nil {
+			reqExecutor = m.outboundOverride
+		}
+		reqAPI := RegisterRequestAPI(L, pluginName, reqExecutor)
 		RegisterJSONAPI(L)
 		FreezeModule(L, "db")
 		FreezeModule(L, "log")
@@ -789,7 +808,7 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 	// calls during on_init. These must only be called at module scope (during init.lua
 	// execution by the factory). The phase is stored in the LState's registry table,
 	// which is inaccessible from Lua code.
-	setVMPhase(L, "init")
+	SetVMPhase(L, "init")
 
 	// Call on_init() if defined.
 	onInit := L.GetGlobal("on_init")
@@ -800,7 +819,7 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 			Protect: true,
 		}); callErr != nil {
 			// Set phase to runtime before returning VM to pool.
-			setVMPhase(L, "runtime")
+			SetVMPhase(L, "runtime")
 			pool.Put(L)
 			m.failPlugin(inst, fmt.Sprintf("on_init failed: %s", callErr.Error()))
 			return
@@ -808,7 +827,7 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 	}
 
 	// Set phase to runtime after on_init completes.
-	setVMPhase(L, "runtime")
+	SetVMPhase(L, "runtime")
 
 	// Take global snapshot after on_init (captures any globals defined during init).
 	pool.SnapshotGlobals(L)
@@ -994,7 +1013,7 @@ func (m *Manager) shutdownPlugin(ctx context.Context, inst *PluginInstance) {
 
 	// Set VM phase to "shutdown" so request.send() and registration APIs
 	// (http.handle, hooks.on) are blocked during on_shutdown().
-	setVMPhase(L, "shutdown")
+	SetVMPhase(L, "shutdown")
 
 	onShutdown := L.GetGlobal("on_shutdown")
 	if fn, ok := onShutdown.(*lua.LFunction); ok {
@@ -2529,4 +2548,11 @@ func (m *Manager) DB() *sql.DB {
 // to construct dialect-specific queries.
 func (m *Manager) Dialect() db.Dialect {
 	return m.dialect
+}
+
+// SetOutboundOverride sets an alternative OutboundExecutor that will be passed
+// to Lua VMs instead of the real RequestEngine. Used by the test harness to
+// inject mock HTTP responses.
+func (m *Manager) SetOutboundOverride(executor OutboundExecutor) {
+	m.outboundOverride = executor
 }

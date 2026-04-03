@@ -183,6 +183,18 @@ func ContextIsAdmin(ctx context.Context) bool {
 	return v
 }
 
+// SetPermissions stores a PermissionSet in the context. Used by the plugin test
+// harness to inject synthetic permissions into test requests.
+func SetPermissions(ctx context.Context, ps PermissionSet) context.Context {
+	return context.WithValue(ctx, permissionsKey, ps)
+}
+
+// SetIsAdmin stores the admin flag in the context. Used by the plugin test
+// harness to inject synthetic admin status into test requests.
+func SetIsAdmin(ctx context.Context, isAdmin bool) context.Context {
+	return context.WithValue(ctx, isAdminKey, isAdmin)
+}
+
 // PermissionInjector resolves the user's role to a PermissionSet and stores
 // it in context. Must run after HTTPAuthenticationMiddleware.
 // Short-circuits for unauthenticated requests: if no user is in context,

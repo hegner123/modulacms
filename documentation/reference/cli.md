@@ -429,6 +429,28 @@ modula plugin enable <name>
 modula plugin disable <name>
 ```
 
+#### plugin test
+
+Run automated tests for a plugin in an isolated in-memory environment. No running server needed.
+
+```bash
+modula plugin test ./plugins/my-plugin
+modula plugin test ./plugins/my-plugin --verbose
+modula plugin test ./plugins/my-plugin --filter test_create
+modula plugin test ./plugins/my-plugin --json
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-v`, `--verbose` | `false` | Print all assertions, not just failures |
+| `--filter` | | Run only test functions whose name contains this substring |
+| `--json` | `false` | Output as NDJSON |
+| `--timeout` | `5` | Per-test timeout in seconds |
+
+Exit codes: `0` all passed, `1` failures, `2` load error.
+
+See [Testing Plugins](../extending/testing.md) for the full test API.
+
 #### plugin approve / revoke (online)
 
 Approve or revoke plugin routes and hooks.
@@ -522,6 +544,7 @@ Commands that support `--json` output structured JSON to stdout. Errors still go
 | `config validate` | Yes |
 | `plugin list` | Yes |
 | `plugin info` | Yes |
+| `plugin test` | Yes |
 | `pipeline list` | Yes |
 | `pipeline show` | Yes |
 | `deploy export` | Yes |

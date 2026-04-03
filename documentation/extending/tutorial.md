@@ -556,3 +556,53 @@ function on_shutdown()
     log.info("bookmarks plugin shutting down")
 end
 ```
+
+## 12. Write Tests
+
+Create a `test/` directory with test files:
+
+```bash
+mkdir plugins/bookmarks/test
+```
+
+Create `plugins/bookmarks/test/bookmarks.test.lua`:
+
+```lua
+function test_list_empty()
+    local resp = test.request("GET", "/api/v1/plugins/bookmarks/bookmarks")
+    test.assert_eq(200, resp.status)
+    test.assert_not_nil(resp.json)
+end
+
+function test_create_bookmark()
+    local resp = test.request("POST", "/api/v1/plugins/bookmarks/bookmarks", {
+        body = '{"url": "https://example.com", "title": "Example"}',
+    })
+    test.assert_eq(201, resp.status)
+    test.assert_not_nil(resp.json.id)
+end
+
+function test_create_requires_url()
+    local resp = test.request("POST", "/api/v1/plugins/bookmarks/bookmarks", {
+        body = '{"title": "No URL"}',
+    })
+    test.assert_eq(400, resp.status)
+end
+
+function test_unauthenticated_returns_401()
+    local resp = test.request("GET", "/api/v1/plugins/bookmarks/bookmarks", {
+        auth = "none",
+    })
+    test.assert_eq(401, resp.status)
+end
+```
+
+Run the tests:
+
+```bash
+modula plugin test ./plugins/bookmarks
+```
+
+No running server needed. Tests run in an isolated in-memory database with all CMS tables and your plugin's tables bootstrapped.
+
+See [Testing Plugins](testing.md) for the full test API, including assertions, hook testing, and outbound HTTP mocking.

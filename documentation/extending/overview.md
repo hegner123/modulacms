@@ -96,9 +96,9 @@ See [security](security.md) for the full security model.
 ## Next Steps
 
 - [Tutorial](tutorial.md) -- build a bookmarks plugin from scratch
+- [Testing](testing.md) -- write and run automated tests for your plugins
 - [Lua API Reference](lua-api.md) -- every function, parameter, and return value
 - [Configuration](configuration.md) -- all modula.config.json fields with tuning guidance
 - [Security](security.md) -- sandbox, isolation, and protection mechanisms
 - [Approval Workflow](approval.md) -- route and hook approval in detail
 - [Examples](examples.md) -- complete example plugins demonstrating common patterns
-- [Configuration](configuration.md) -- all modula.config.json plugin fields with tuning guidance
