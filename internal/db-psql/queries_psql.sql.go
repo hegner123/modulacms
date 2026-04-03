@@ -5610,9 +5610,12 @@ func (q *Queries) GetAdminMaxVersionNumber(ctx context.Context, arg GetAdminMaxV
 }
 
 const getAdminMaxVersionNumberForUpdate = `-- name: GetAdminMaxVersionNumberForUpdate :one
-SELECT COALESCE(MAX(version_number), 0) FROM admin_content_versions
-WHERE admin_content_data_id = $1 AND locale = $2
-FOR UPDATE
+SELECT COALESCE(MAX(l.version_number), 0)
+FROM (
+  SELECT version_number FROM admin_content_versions
+  WHERE admin_content_data_id = $1 AND locale = $2
+  FOR UPDATE
+) l
 `
 
 type GetAdminMaxVersionNumberForUpdateParams struct {
@@ -7195,9 +7198,12 @@ func (q *Queries) GetMaxVersionNumber(ctx context.Context, arg GetMaxVersionNumb
 }
 
 const getMaxVersionNumberForUpdate = `-- name: GetMaxVersionNumberForUpdate :one
-SELECT COALESCE(MAX(version_number), 0) FROM content_versions
-WHERE content_data_id = $1 AND locale = $2
-FOR UPDATE
+SELECT COALESCE(MAX(l.version_number), 0)
+FROM (
+  SELECT version_number FROM content_versions
+  WHERE content_data_id = $1 AND locale = $2
+  FOR UPDATE
+) l
 `
 
 type GetMaxVersionNumberForUpdateParams struct {

@@ -85,9 +85,12 @@ WHERE admin_content_version_id IN (
 );
 
 -- name: GetAdminMaxVersionNumberForUpdate :one
-SELECT COALESCE(MAX(version_number), 0) FROM admin_content_versions
-WHERE admin_content_data_id = $1 AND locale = $2
-FOR UPDATE;
+SELECT COALESCE(MAX(l.version_number), 0)
+FROM (
+  SELECT version_number FROM admin_content_versions
+  WHERE admin_content_data_id = $1 AND locale = $2
+  FOR UPDATE
+) l;
 
 -- name: ListAdminDuplicatePublished :many
 SELECT admin_content_data_id, locale, COUNT(*) as pub_count

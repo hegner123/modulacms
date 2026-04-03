@@ -85,9 +85,12 @@ WHERE content_version_id IN (
 );
 
 -- name: GetMaxVersionNumberForUpdate :one
-SELECT COALESCE(MAX(version_number), 0) FROM content_versions
-WHERE content_data_id = $1 AND locale = $2
-FOR UPDATE;
+SELECT COALESCE(MAX(l.version_number), 0)
+FROM (
+  SELECT version_number FROM content_versions
+  WHERE content_data_id = $1 AND locale = $2
+  FOR UPDATE
+) l;
 
 -- name: ListDuplicatePublished :many
 SELECT content_data_id, locale, COUNT(*) as pub_count
