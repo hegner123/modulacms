@@ -73,6 +73,14 @@ func MapStringContentVersion(a ContentVersion) StringContentVersion {
 	}
 }
 
+// DuplicatePublishedRow represents a content_data_id+locale group with more than
+// one published version, returned by ListDuplicatePublished for heal detection.
+type DuplicatePublishedRow struct {
+	ContentDataID types.ContentID
+	Locale        string
+	PubCount      int64
+}
+
 ///////////////////////////////
 // SQLITE
 //////////////////////////////
@@ -252,6 +260,34 @@ func (d Database) PruneOldVersions(contentDataID types.ContentID, locale string,
 		ContentDataID: contentDataID,
 		Locale:        locale,
 		Limit:         limit,
+	})
+}
+
+// ListDuplicatePublished finds content_data_id+locale groups with more than one published version.
+func (d Database) ListDuplicatePublished() (*[]DuplicatePublishedRow, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListDuplicatePublished(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list duplicate published: %w", err)
+	}
+	res := []DuplicatePublishedRow{}
+	for _, r := range rows {
+		res = append(res, DuplicatePublishedRow{
+			ContentDataID: r.ContentDataID,
+			Locale:        r.Locale,
+			PubCount:      r.PubCount,
+		})
+	}
+	return &res, nil
+}
+
+// ClearPublishedFlagExcept clears published on all versions except the specified one.
+func (d Database) ClearPublishedFlagExcept(contentDataID types.ContentID, locale string, keepID types.ContentVersionID) error {
+	queries := mdb.New(d.Connection)
+	return queries.ClearPublishedFlagExcept(d.Context, mdb.ClearPublishedFlagExceptParams{
+		ContentDataID:    contentDataID,
+		Locale:           locale,
+		ContentVersionID: keepID,
 	})
 }
 
@@ -437,6 +473,34 @@ func (d MysqlDatabase) PruneOldVersions(contentDataID types.ContentID, locale st
 	})
 }
 
+// ListDuplicatePublished finds content_data_id+locale groups with more than one published version. (MySQL)
+func (d MysqlDatabase) ListDuplicatePublished() (*[]DuplicatePublishedRow, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListDuplicatePublished(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list duplicate published: %w", err)
+	}
+	res := []DuplicatePublishedRow{}
+	for _, r := range rows {
+		res = append(res, DuplicatePublishedRow{
+			ContentDataID: r.ContentDataID,
+			Locale:        r.Locale,
+			PubCount:      r.PubCount,
+		})
+	}
+	return &res, nil
+}
+
+// ClearPublishedFlagExcept clears published on all versions except the specified one. (MySQL)
+func (d MysqlDatabase) ClearPublishedFlagExcept(contentDataID types.ContentID, locale string, keepID types.ContentVersionID) error {
+	queries := mdbm.New(d.Connection)
+	return queries.ClearPublishedFlagExcept(d.Context, mdbm.ClearPublishedFlagExceptParams{
+		ContentDataID:    contentDataID,
+		Locale:           locale,
+		ContentVersionID: keepID,
+	})
+}
+
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
@@ -616,6 +680,34 @@ func (d PsqlDatabase) PruneOldVersions(contentDataID types.ContentID, locale str
 		ContentDataID: contentDataID,
 		Locale:        locale,
 		Limit:         int32(limit),
+	})
+}
+
+// ListDuplicatePublished finds content_data_id+locale groups with more than one published version. (PostgreSQL)
+func (d PsqlDatabase) ListDuplicatePublished() (*[]DuplicatePublishedRow, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListDuplicatePublished(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list duplicate published: %w", err)
+	}
+	res := []DuplicatePublishedRow{}
+	for _, r := range rows {
+		res = append(res, DuplicatePublishedRow{
+			ContentDataID: r.ContentDataID,
+			Locale:        r.Locale,
+			PubCount:      r.PubCount,
+		})
+	}
+	return &res, nil
+}
+
+// ClearPublishedFlagExcept clears published on all versions except the specified one. (PostgreSQL)
+func (d PsqlDatabase) ClearPublishedFlagExcept(contentDataID types.ContentID, locale string, keepID types.ContentVersionID) error {
+	queries := mdbp.New(d.Connection)
+	return queries.ClearPublishedFlagExcept(d.Context, mdbp.ClearPublishedFlagExceptParams{
+		ContentDataID:    contentDataID,
+		Locale:           locale,
+		ContentVersionID: keepID,
 	})
 }
 

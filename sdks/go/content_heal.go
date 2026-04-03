@@ -21,29 +21,107 @@ type HealRepair struct {
 	NewValue string `json:"new_value"`
 }
 
+// MissingFieldReport records a content_field row that was created (or would be
+// created in dry-run mode) because the parent content_data's datatype requires
+// a field that was not present.
+type MissingFieldReport struct {
+	ContentDataID string `json:"content_data_id"`
+	FieldID       string `json:"field_id"`
+	Created       bool   `json:"created"`
+}
+
+// DuplicateFieldReport records a duplicate content_field row that was deleted
+// (or would be deleted in dry-run mode).
+type DuplicateFieldReport struct {
+	ContentFieldID string `json:"content_field_id"`
+	ContentDataID  string `json:"content_data_id"`
+	FieldID        string `json:"field_id"`
+	Deleted        bool   `json:"deleted"`
+}
+
+// OrphanedFieldReport records a content_field row that references a field_id
+// no longer present in its content_data's datatype.
+type OrphanedFieldReport struct {
+	ContentFieldID string `json:"content_field_id"`
+	ContentDataID  string `json:"content_data_id"`
+	FieldID        string `json:"field_id"`
+	Deleted        bool   `json:"deleted"`
+}
+
+// DanglingPointerReport records a tree pointer on a content_data row that
+// references a content_data_id that no longer exists.
+type DanglingPointerReport struct {
+	ContentDataID string `json:"content_data_id"`
+	Column        string `json:"column"`
+	TargetID      string `json:"target_id"`
+	Nulled        bool   `json:"nulled"`
+}
+
+// OrphanedRouteReport records a content_data row whose route_id references
+// a route that no longer exists.
+type OrphanedRouteReport struct {
+	ContentDataID string `json:"content_data_id"`
+	RouteID       string `json:"route_id"`
+	Nulled        bool   `json:"nulled"`
+}
+
+// UnroutedRootReport records a root content node that has no route_id set.
+type UnroutedRootReport struct {
+	ContentDataID string `json:"content_data_id"`
+	DatatypeID    string `json:"datatype_id"`
+	DatatypeName  string `json:"datatype_name"`
+}
+
+// RootlessContentReport records a content_data row assigned to a route
+// that has no _root typed node.
+type RootlessContentReport struct {
+	ContentDataID string `json:"content_data_id"`
+	RouteID       string `json:"route_id"`
+	RouteSlug     string `json:"route_slug"`
+	DatatypeName  string `json:"datatype_name"`
+	Deleted       bool   `json:"deleted"`
+}
+
+// InvalidUserRefReport records a content row whose author_id or published_by
+// references a user that does not exist.
+type InvalidUserRefReport struct {
+	Table    string `json:"table"`
+	RowID    string `json:"row_id"`
+	Column   string `json:"column"`
+	OldValue string `json:"old_value"`
+	NewValue string `json:"new_value"`
+	Repaired bool   `json:"repaired"`
+}
+
+// DuplicatePublishedReport records a content_data_id+locale group that had more
+// than one published version.
+type DuplicatePublishedReport struct {
+	ContentDataID string `json:"content_data_id"`
+	Locale        string `json:"locale"`
+	Count         int    `json:"count"`
+	KeptVersionID string `json:"kept_version_id"`
+	Repaired      bool   `json:"repaired"`
+}
+
 // HealReport is the response from POST /api/v1/admin/content/heal. It
-// summarizes the scan results for both content_data and content_field tables,
-// including how many rows were scanned and which repairs were made (or would
-// be made in dry-run mode).
+// summarizes the scan results for content_data, content_field, and
+// content_versions tables, including repairs and structural issues.
 type HealReport struct {
-	// DryRun is true when the heal was a preview-only scan. When true, the
-	// repairs listed in ContentDataRepairs and ContentFieldRepairs describe
-	// changes that would be made but have not been persisted.
-	DryRun bool `json:"dry_run"`
-
-	// ContentDataScanned is the total number of content_data rows examined.
-	ContentDataScanned int `json:"content_data_scanned"`
-
-	// ContentDataRepairs lists every malformed ID found (and fixed, unless
-	// DryRun is true) in the content_data table.
-	ContentDataRepairs []HealRepair `json:"content_data_repairs"`
-
-	// ContentFieldScanned is the total number of content_field rows examined.
-	ContentFieldScanned int `json:"content_field_scanned"`
-
-	// ContentFieldRepairs lists every malformed ID found (and fixed, unless
-	// DryRun is true) in the content_field table.
-	ContentFieldRepairs []HealRepair `json:"content_field_repairs"`
+	DryRun              bool                       `json:"dry_run"`
+	ContentDataScanned  int                        `json:"content_data_scanned"`
+	ContentDataRepairs  []HealRepair               `json:"content_data_repairs"`
+	ContentFieldScanned int                        `json:"content_field_scanned"`
+	ContentFieldRepairs []HealRepair               `json:"content_field_repairs"`
+	MissingFields       []MissingFieldReport       `json:"missing_fields"`
+	DuplicateFields     []DuplicateFieldReport     `json:"duplicate_fields"`
+	OrphanedFields      []OrphanedFieldReport      `json:"orphaned_fields"`
+	DanglingPointers    []DanglingPointerReport    `json:"dangling_pointers"`
+	OrphanedRouteRefs   []OrphanedRouteReport      `json:"orphaned_route_refs"`
+	UnroutedRoots       []UnroutedRootReport       `json:"unrouted_roots"`
+	RootlessContent     []RootlessContentReport    `json:"rootless_content"`
+	InvalidUserRefs     []InvalidUserRefReport     `json:"invalid_user_refs"`
+	VersionsScanned     int                        `json:"versions_scanned"`
+	DuplicatePublished  []DuplicatePublishedReport `json:"duplicate_published"`
 }
 
 // ContentHealResource provides the content tree healing endpoint for scanning

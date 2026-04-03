@@ -204,6 +204,64 @@ export type DuplicateFieldReport = {
   deleted: boolean
 }
 
+/** An orphaned content_field row referencing a field_id no longer in its datatype. */
+export type OrphanedFieldReport = {
+  content_field_id: string
+  content_data_id: string
+  field_id: string
+  deleted: boolean
+}
+
+/** A tree pointer on a content_data row referencing a non-existent content_data_id. */
+export type DanglingPointerReport = {
+  content_data_id: string
+  column: string
+  target_id: string
+  nulled: boolean
+}
+
+/** A content_data row whose route_id references a route that no longer exists. */
+export type OrphanedRouteReport = {
+  content_data_id: string
+  route_id: string
+  nulled: boolean
+}
+
+/** A root content node with no route_id set. */
+export type UnroutedRootReport = {
+  content_data_id: string
+  datatype_id: string
+  datatype_name: string
+}
+
+/** A content_data row on a route that has no _root node (inaccessible). */
+export type RootlessContentReport = {
+  content_data_id: string
+  route_id: string
+  route_slug: string
+  datatype_name: string
+  deleted: boolean
+}
+
+/** A content row whose author_id or published_by references a non-existent user. */
+export type InvalidUserRefReport = {
+  table: string
+  row_id: string
+  column: string
+  old_value: string
+  new_value: string
+  repaired: boolean
+}
+
+/** A content_data_id+locale group with more than one published version. */
+export type DuplicatePublishedReport = {
+  content_data_id: string
+  locale: string
+  count: number
+  kept_version_id: string
+  repaired: boolean
+}
+
 /** Response from the content heal endpoint (`POST /admin/content/heal`). */
 export type HealReport = {
   /** Whether the request was a dry run (no changes written). */
@@ -220,6 +278,22 @@ export type HealReport = {
   missing_fields: MissingFieldReport[]
   /** Duplicate content_field rows that were deleted (or would be in dry-run). */
   duplicate_fields: DuplicateFieldReport[]
+  /** Orphaned content_field rows deleted (or would be in dry-run). */
+  orphaned_fields: OrphanedFieldReport[]
+  /** Tree pointers referencing non-existent content_data rows. */
+  dangling_pointers: DanglingPointerReport[]
+  /** Route references pointing to deleted routes. */
+  orphaned_route_refs: OrphanedRouteReport[]
+  /** Root content nodes with no route_id. */
+  unrouted_roots: UnroutedRootReport[]
+  /** Content on routes with no _root node. */
+  rootless_content: RootlessContentReport[]
+  /** Content rows with invalid user references. */
+  invalid_user_refs: InvalidUserRefReport[]
+  /** Number of duplicate-published groups found. */
+  versions_scanned: number
+  /** Duplicate published version groups that were repaired. */
+  duplicate_published: DuplicatePublishedReport[]
 }
 
 // ---------------------------------------------------------------------------

@@ -136,6 +136,22 @@ func (q *Queries) ClearAdminPublishedFlag(ctx context.Context, arg ClearAdminPub
 	return err
 }
 
+const clearAdminPublishedFlagExcept = `-- name: ClearAdminPublishedFlagExcept :exec
+UPDATE admin_content_versions SET published = 0
+WHERE admin_content_data_id = ? AND locale = ? AND published = 1 AND admin_content_version_id != ?
+`
+
+type ClearAdminPublishedFlagExceptParams struct {
+	AdminContentDataID    types.AdminContentID        `json:"admin_content_data_id"`
+	Locale                string                      `json:"locale"`
+	AdminContentVersionID types.AdminContentVersionID `json:"admin_content_version_id"`
+}
+
+func (q *Queries) ClearAdminPublishedFlagExcept(ctx context.Context, arg ClearAdminPublishedFlagExceptParams) error {
+	_, err := q.db.ExecContext(ctx, clearAdminPublishedFlagExcept, arg.AdminContentDataID, arg.Locale, arg.AdminContentVersionID)
+	return err
+}
+
 const clearContentDataSchedule = `-- name: ClearContentDataSchedule :exec
 UPDATE content_data
 SET publish_at = NULL,
@@ -175,6 +191,22 @@ type ClearPublishedFlagParams struct {
 
 func (q *Queries) ClearPublishedFlag(ctx context.Context, arg ClearPublishedFlagParams) error {
 	_, err := q.db.ExecContext(ctx, clearPublishedFlag, arg.ContentDataID, arg.Locale)
+	return err
+}
+
+const clearPublishedFlagExcept = `-- name: ClearPublishedFlagExcept :exec
+UPDATE content_versions SET published = 0
+WHERE content_data_id = ? AND locale = ? AND published = 1 AND content_version_id != ?
+`
+
+type ClearPublishedFlagExceptParams struct {
+	ContentDataID    types.ContentID        `json:"content_data_id"`
+	Locale           string                 `json:"locale"`
+	ContentVersionID types.ContentVersionID `json:"content_version_id"`
+}
+
+func (q *Queries) ClearPublishedFlagExcept(ctx context.Context, arg ClearPublishedFlagExceptParams) error {
+	_, err := q.db.ExecContext(ctx, clearPublishedFlagExcept, arg.ContentDataID, arg.Locale, arg.ContentVersionID)
 	return err
 }
 
@@ -5421,6 +5453,23 @@ func (q *Queries) GetAdminMaxVersionNumber(ctx context.Context, arg GetAdminMaxV
 	return coalesce, err
 }
 
+const getAdminMaxVersionNumberForUpdate = `-- name: GetAdminMaxVersionNumberForUpdate :one
+SELECT COALESCE(MAX(version_number), 0) FROM admin_content_versions
+WHERE admin_content_data_id = ? AND locale = ?
+`
+
+type GetAdminMaxVersionNumberForUpdateParams struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+	Locale             string               `json:"locale"`
+}
+
+func (q *Queries) GetAdminMaxVersionNumberForUpdate(ctx context.Context, arg GetAdminMaxVersionNumberForUpdateParams) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, getAdminMaxVersionNumberForUpdate, arg.AdminContentDataID, arg.Locale)
+	var coalesce interface{}
+	err := row.Scan(&coalesce)
+	return coalesce, err
+}
+
 const getAdminMedia = `-- name: GetAdminMedia :one
 SELECT admin_media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified FROM admin_media
 WHERE admin_media_id = ? LIMIT 1
@@ -5592,7 +5641,8 @@ func (q *Queries) GetAdminMediaFolderByNameAtRoot(ctx context.Context, arg GetAd
 
 const getAdminPublishedSnapshot = `-- name: GetAdminPublishedSnapshot :one
 SELECT admin_content_version_id, admin_content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created FROM admin_content_versions
-WHERE admin_content_data_id = ? AND locale = ? AND published = 1 LIMIT 1
+WHERE admin_content_data_id = ? AND locale = ? AND published = 1
+ORDER BY version_number DESC LIMIT 1
 `
 
 type GetAdminPublishedSnapshotParams struct {
@@ -6999,6 +7049,23 @@ func (q *Queries) GetMaxVersionNumber(ctx context.Context, arg GetMaxVersionNumb
 	return coalesce, err
 }
 
+const getMaxVersionNumberForUpdate = `-- name: GetMaxVersionNumberForUpdate :one
+SELECT COALESCE(MAX(version_number), 0) FROM content_versions
+WHERE content_data_id = ? AND locale = ?
+`
+
+type GetMaxVersionNumberForUpdateParams struct {
+	ContentDataID types.ContentID `json:"content_data_id"`
+	Locale        string          `json:"locale"`
+}
+
+func (q *Queries) GetMaxVersionNumberForUpdate(ctx context.Context, arg GetMaxVersionNumberForUpdateParams) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, getMaxVersionNumberForUpdate, arg.ContentDataID, arg.Locale)
+	var coalesce interface{}
+	err := row.Scan(&coalesce)
+	return coalesce, err
+}
+
 const getMedia = `-- name: GetMedia :one
 SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, folder_id, date_created, date_modified FROM media
 WHERE media_id = ? LIMIT 1
@@ -7342,7 +7409,8 @@ func (q *Queries) GetPluginByName(ctx context.Context, arg GetPluginByNameParams
 
 const getPublishedSnapshot = `-- name: GetPublishedSnapshot :one
 SELECT content_version_id, content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created FROM content_versions
-WHERE content_data_id = ? AND locale = ? AND published = 1 LIMIT 1
+WHERE content_data_id = ? AND locale = ? AND published = 1
+ORDER BY version_number DESC LIMIT 1
 `
 
 type GetPublishedSnapshotParams struct {
@@ -10075,6 +10143,41 @@ func (q *Queries) ListAdminDatatypeRoot(ctx context.Context) ([]AdminDatatypes, 
 	return items, nil
 }
 
+const listAdminDuplicatePublished = `-- name: ListAdminDuplicatePublished :many
+SELECT admin_content_data_id, locale, COUNT(*) as pub_count
+FROM admin_content_versions WHERE published = 1
+GROUP BY admin_content_data_id, locale HAVING COUNT(*) > 1
+`
+
+type ListAdminDuplicatePublishedRow struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+	Locale             string               `json:"locale"`
+	PubCount           int64                `json:"pub_count"`
+}
+
+func (q *Queries) ListAdminDuplicatePublished(ctx context.Context) ([]ListAdminDuplicatePublishedRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDuplicatePublished)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAdminDuplicatePublishedRow{}
+	for rows.Next() {
+		var i ListAdminDuplicatePublishedRow
+		if err := rows.Scan(&i.AdminContentDataID, &i.Locale, &i.PubCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAdminField = `-- name: ListAdminField :many
 SELECT admin_field_id, parent_id, sort_order, name, label, data, validation_id, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM admin_fields
 ORDER BY sort_order, admin_field_id
@@ -12783,6 +12886,41 @@ func (q *Queries) ListDatatypeRoot(ctx context.Context) ([]Datatypes, error) {
 			&i.DateCreated,
 			&i.DateModified,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDuplicatePublished = `-- name: ListDuplicatePublished :many
+SELECT content_data_id, locale, COUNT(*) as pub_count
+FROM content_versions WHERE published = 1
+GROUP BY content_data_id, locale HAVING COUNT(*) > 1
+`
+
+type ListDuplicatePublishedRow struct {
+	ContentDataID types.ContentID `json:"content_data_id"`
+	Locale        string          `json:"locale"`
+	PubCount      int64           `json:"pub_count"`
+}
+
+func (q *Queries) ListDuplicatePublished(ctx context.Context) ([]ListDuplicatePublishedRow, error) {
+	rows, err := q.db.QueryContext(ctx, listDuplicatePublished)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDuplicatePublishedRow{}
+	for rows.Next() {
+		var i ListDuplicatePublishedRow
+		if err := rows.Scan(&i.ContentDataID, &i.Locale, &i.PubCount); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

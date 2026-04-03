@@ -96,6 +96,8 @@ type ContentDataRepository interface {
 	ClearPublishedFlag(types.ContentID, string) error
 	GetMaxVersionNumber(types.ContentID, string) (int64, error)
 	PruneOldVersions(types.ContentID, string, int64) error
+	ListDuplicatePublished() (*[]DuplicatePublishedRow, error)
+	ClearPublishedFlagExcept(types.ContentID, string, types.ContentVersionID) error
 }
 
 // ContentFieldRepository manages content field values.
@@ -176,6 +178,8 @@ type AdminContentDataRepository interface {
 	ClearAdminPublishedFlag(types.AdminContentID, string) error
 	GetAdminMaxVersionNumber(types.AdminContentID, string) (int64, error)
 	PruneAdminOldVersions(types.AdminContentID, string, int64) error
+	ListAdminDuplicatePublished() (*[]AdminDuplicatePublishedRow, error)
+	ClearAdminPublishedFlagExcept(types.AdminContentID, string, types.AdminContentVersionID) error
 }
 
 // AdminContentFieldRepository manages admin-side content field values.

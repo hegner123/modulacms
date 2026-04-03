@@ -44,7 +44,8 @@ WHERE admin_content_version_id = ? LIMIT 1;
 
 -- name: GetAdminPublishedSnapshot :one
 SELECT * FROM admin_content_versions
-WHERE admin_content_data_id = ? AND locale = ? AND published = 1 LIMIT 1;
+WHERE admin_content_data_id = ? AND locale = ? AND published = 1
+ORDER BY version_number DESC LIMIT 1;
 
 -- name: ListAdminContentVersionsByContent :many
 SELECT * FROM admin_content_versions
@@ -82,3 +83,16 @@ WHERE admin_content_version_id IN (
     ORDER BY acv.version_number ASC
     LIMIT ?
 );
+
+-- name: GetAdminMaxVersionNumberForUpdate :one
+SELECT COALESCE(MAX(version_number), 0) FROM admin_content_versions
+WHERE admin_content_data_id = ? AND locale = ?;
+
+-- name: ListAdminDuplicatePublished :many
+SELECT admin_content_data_id, locale, COUNT(*) as pub_count
+FROM admin_content_versions WHERE published = 1
+GROUP BY admin_content_data_id, locale HAVING COUNT(*) > 1;
+
+-- name: ClearAdminPublishedFlagExcept :exec
+UPDATE admin_content_versions SET published = 0
+WHERE admin_content_data_id = ? AND locale = ? AND published = 1 AND admin_content_version_id != ?;

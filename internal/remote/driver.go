@@ -803,6 +803,14 @@ func (r *RemoteDriver) PruneAdminOldVersions(_ types.AdminContentID, _ string, _
 	return ErrNotSupported{Method: "PruneAdminOldVersions"}
 }
 
+func (r *RemoteDriver) ListAdminDuplicatePublished() (*[]db.AdminDuplicatePublishedRow, error) {
+	return nil, ErrNotSupported{Method: "ListAdminDuplicatePublished"}
+}
+
+func (r *RemoteDriver) ClearAdminPublishedFlagExcept(_ types.AdminContentID, _ string, _ types.AdminContentVersionID) error {
+	return ErrNotSupported{Method: "ClearAdminPublishedFlagExcept"}
+}
+
 // ---------------------------------------------------------------------------
 // AdminDatatypes
 // ---------------------------------------------------------------------------
@@ -2325,6 +2333,14 @@ func (r *RemoteDriver) GetMaxVersionNumber(_ types.ContentID, _ string) (int64, 
 
 func (r *RemoteDriver) PruneOldVersions(_ types.ContentID, _ string, _ int64) error {
 	return ErrNotSupported{Method: "PruneOldVersions"}
+}
+
+func (r *RemoteDriver) ListDuplicatePublished() (*[]db.DuplicatePublishedRow, error) {
+	return nil, ErrNotSupported{Method: "ListDuplicatePublished"}
+}
+
+func (r *RemoteDriver) ClearPublishedFlagExcept(_ types.ContentID, _ string, _ types.ContentVersionID) error {
+	return ErrNotSupported{Method: "ClearPublishedFlagExcept"}
 }
 
 // ---------------------------------------------------------------------------

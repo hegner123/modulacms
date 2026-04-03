@@ -2,6 +2,7 @@ package publishing
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
@@ -212,33 +213,41 @@ func PublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminC
 		return fmt.Errorf("marshal admin snapshot: %w", err)
 	}
 
-	// Get next version number.
-	maxVersion, err := d.GetAdminMaxVersionNumber(rootID, locale)
-	if err != nil {
-		return fmt.Errorf("get admin max version number: %w", err)
+	// Get next version, clear published flag, and create new version atomically.
+	conn, _, connErr := d.GetConnection()
+	if connErr != nil {
+		return fmt.Errorf("get connection for admin publish tx: %w", connErr)
 	}
-	nextVersion := maxVersion + 1
-
-	// Clear published flag.
-	if clearErr := d.ClearAdminPublishedFlag(rootID, locale); clearErr != nil {
-		return fmt.Errorf("clear admin published flag: %w", clearErr)
-	}
-
-	// Create new version.
 	now := types.TimestampNow()
-	_, err = d.CreateAdminContentVersion(ctx, ac, db.CreateAdminContentVersionParams{
-		AdminContentDataID: rootID,
-		VersionNumber:      nextVersion,
-		Locale:             locale,
-		Snapshot:           string(snapshotBytes),
-		Trigger:            "publish",
-		Label:              "",
-		Published:          true,
-		PublishedBy:        types.NullableUserID{ID: userID, Valid: true},
-		DateCreated:        now,
+	err = db.WithTransaction(ctx, conn, func(tx *sql.Tx) error {
+		maxVersion, maxErr := db.GetAdminMaxVersionNumberInTx(d, ctx, tx, rootID, locale)
+		if maxErr != nil {
+			return fmt.Errorf("get admin max version number: %w", maxErr)
+		}
+		nextVersion := maxVersion + 1
+
+		if clearErr := db.ClearAdminPublishedFlagInTx(d, ctx, tx, rootID, locale); clearErr != nil {
+			return fmt.Errorf("clear admin published flag: %w", clearErr)
+		}
+
+		_, createErr := db.CreateAdminContentVersionInTx(d, ctx, tx, ac, db.CreateAdminContentVersionParams{
+			AdminContentDataID: rootID,
+			VersionNumber:      nextVersion,
+			Locale:             locale,
+			Snapshot:           string(snapshotBytes),
+			Trigger:            "publish",
+			Label:              "",
+			Published:          true,
+			PublishedBy:        types.NullableUserID{ID: userID, Valid: true},
+			DateCreated:        now,
+		})
+		if createErr != nil {
+			return fmt.Errorf("create admin content version: %w", createErr)
+		}
+		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("create admin content version: %w", err)
+		return err
 	}
 
 	// Update publish metadata.

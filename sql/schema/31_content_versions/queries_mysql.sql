@@ -47,7 +47,8 @@ WHERE content_version_id = ? LIMIT 1;
 
 -- name: GetPublishedSnapshot :one
 SELECT * FROM content_versions
-WHERE content_data_id = ? AND locale = ? AND published = 1 LIMIT 1;
+WHERE content_data_id = ? AND locale = ? AND published = 1
+ORDER BY version_number DESC LIMIT 1;
 
 -- name: ListContentVersionsByContent :many
 SELECT * FROM content_versions
@@ -82,3 +83,17 @@ WHERE content_data_id = ? AND locale = ?
     AND published = 0 AND label = ''
 ORDER BY version_number ASC
 LIMIT ?;
+
+-- name: GetMaxVersionNumberForUpdate :one
+SELECT COALESCE(MAX(version_number), 0) FROM content_versions
+WHERE content_data_id = ? AND locale = ?
+FOR UPDATE;
+
+-- name: ListDuplicatePublished :many
+SELECT content_data_id, locale, COUNT(*) as pub_count
+FROM content_versions WHERE published = 1
+GROUP BY content_data_id, locale HAVING COUNT(*) > 1;
+
+-- name: ClearPublishedFlagExcept :exec
+UPDATE content_versions SET published = 0
+WHERE content_data_id = ? AND locale = ? AND published = 1 AND content_version_id != ?;

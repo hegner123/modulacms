@@ -182,47 +182,12 @@ func (d MysqlDatabase) ListAdminMediaByFolder(folderID types.NullableAdminMediaF
 	return &res, nil
 }
 
-// ListAdminMediaByFolderPaginated retrieves a paginated list of admin media in a given folder (MySQL).
-func (d MysqlDatabase) ListAdminMediaByFolderPaginated(params ListAdminMediaByFolderPaginatedParams) (*[]AdminMedia, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminMediaByFolderPaginated(d.Context, mdbm.ListAdminMediaByFolderPaginatedParams{
-		FolderID: params.FolderID,
-		Limit:    int32(params.Limit),
-		Offset:   int32(params.Offset),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list admin media by folder paginated: %w", err)
-	}
-	res := make([]AdminMedia, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminMedia(v))
-	}
-	return &res, nil
-}
-
 // ListAdminMediaUnfiled retrieves all admin media with no folder assignment (MySQL).
 func (d MysqlDatabase) ListAdminMediaUnfiled() (*[]AdminMedia, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListAdminMediaUnfiled(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list unfiled admin media: %w", err)
-	}
-	res := make([]AdminMedia, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminMedia(v))
-	}
-	return &res, nil
-}
-
-// ListAdminMediaUnfiledPaginated retrieves a paginated list of admin media with no folder assignment (MySQL).
-func (d MysqlDatabase) ListAdminMediaUnfiledPaginated(params PaginationParams) (*[]AdminMedia, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminMediaUnfiledPaginated(d.Context, mdbm.ListAdminMediaUnfiledPaginatedParams{
-		Limit:  int32(params.Limit),
-		Offset: int32(params.Offset),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list unfiled admin media paginated: %w", err)
 	}
 	res := make([]AdminMedia, 0, len(rows))
 	for _, v := range rows {
@@ -251,14 +216,49 @@ func (d MysqlDatabase) CountAdminMediaUnfiled() (*int64, error) {
 	return &c, nil
 }
 
+func (d MysqlDatabase) MoveAdminMediaToFolderCmd(ctx context.Context, auditCtx audited.AuditContext, params MoveAdminMediaToFolderParams) MoveAdminMediaToFolderCmd {
+	return MoveAdminMediaToFolderCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ListAdminMediaByFolderPaginated retrieves a paginated list of admin media in a given folder (MySQL).
+func (d MysqlDatabase) ListAdminMediaByFolderPaginated(params ListAdminMediaByFolderPaginatedParams) (*[]AdminMedia, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminMediaByFolderPaginated(d.Context, mdbm.ListAdminMediaByFolderPaginatedParams{
+		FolderID: params.FolderID,
+		Limit:    int32(params.Limit),
+		Offset:   int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin media by folder paginated: %w", err)
+	}
+	res := make([]AdminMedia, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminMedia(v))
+	}
+	return &res, nil
+}
+
+// ListAdminMediaUnfiledPaginated retrieves a paginated list of admin media with no folder assignment (MySQL).
+func (d MysqlDatabase) ListAdminMediaUnfiledPaginated(params PaginationParams) (*[]AdminMedia, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminMediaUnfiledPaginated(d.Context, mdbm.ListAdminMediaUnfiledPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list unfiled admin media paginated: %w", err)
+	}
+	res := make([]AdminMedia, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminMedia(v))
+	}
+	return &res, nil
+}
+
 // MoveAdminMediaToFolder moves an admin media item to a folder and records an audit event (MySQL).
 func (d MysqlDatabase) MoveAdminMediaToFolder(ctx context.Context, ac audited.AuditContext, params MoveAdminMediaToFolderParams) error {
 	cmd := d.MoveAdminMediaToFolderCmd(ctx, ac, params)
 	return audited.Update(cmd)
-}
-
-func (d MysqlDatabase) MoveAdminMediaToFolderCmd(ctx context.Context, auditCtx audited.AuditContext, params MoveAdminMediaToFolderParams) MoveAdminMediaToFolderCmd {
-	return MoveAdminMediaToFolderCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
 
 // PSQL
@@ -277,47 +277,12 @@ func (d PsqlDatabase) ListAdminMediaByFolder(folderID types.NullableAdminMediaFo
 	return &res, nil
 }
 
-// ListAdminMediaByFolderPaginated retrieves a paginated list of admin media in a given folder (PostgreSQL).
-func (d PsqlDatabase) ListAdminMediaByFolderPaginated(params ListAdminMediaByFolderPaginatedParams) (*[]AdminMedia, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminMediaByFolderPaginated(d.Context, mdbp.ListAdminMediaByFolderPaginatedParams{
-		FolderID: params.FolderID,
-		Limit:    int32(params.Limit),
-		Offset:   int32(params.Offset),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list admin media by folder paginated: %w", err)
-	}
-	res := make([]AdminMedia, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminMedia(v))
-	}
-	return &res, nil
-}
-
 // ListAdminMediaUnfiled retrieves all admin media with no folder assignment (PostgreSQL).
 func (d PsqlDatabase) ListAdminMediaUnfiled() (*[]AdminMedia, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListAdminMediaUnfiled(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list unfiled admin media: %w", err)
-	}
-	res := make([]AdminMedia, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminMedia(v))
-	}
-	return &res, nil
-}
-
-// ListAdminMediaUnfiledPaginated retrieves a paginated list of admin media with no folder assignment (PostgreSQL).
-func (d PsqlDatabase) ListAdminMediaUnfiledPaginated(params PaginationParams) (*[]AdminMedia, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminMediaUnfiledPaginated(d.Context, mdbp.ListAdminMediaUnfiledPaginatedParams{
-		Limit:  int32(params.Limit),
-		Offset: int32(params.Offset),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list unfiled admin media paginated: %w", err)
 	}
 	res := make([]AdminMedia, 0, len(rows))
 	for _, v := range rows {
@@ -346,12 +311,47 @@ func (d PsqlDatabase) CountAdminMediaUnfiled() (*int64, error) {
 	return &c, nil
 }
 
+func (d PsqlDatabase) MoveAdminMediaToFolderCmd(ctx context.Context, auditCtx audited.AuditContext, params MoveAdminMediaToFolderParams) MoveAdminMediaToFolderCmd {
+	return MoveAdminMediaToFolderCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ListAdminMediaByFolderPaginated retrieves a paginated list of admin media in a given folder (PostgreSQL).
+func (d PsqlDatabase) ListAdminMediaByFolderPaginated(params ListAdminMediaByFolderPaginatedParams) (*[]AdminMedia, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminMediaByFolderPaginated(d.Context, mdbp.ListAdminMediaByFolderPaginatedParams{
+		FolderID: params.FolderID,
+		Limit:    int32(params.Limit),
+		Offset:   int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin media by folder paginated: %w", err)
+	}
+	res := make([]AdminMedia, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminMedia(v))
+	}
+	return &res, nil
+}
+
+// ListAdminMediaUnfiledPaginated retrieves a paginated list of admin media with no folder assignment (PostgreSQL).
+func (d PsqlDatabase) ListAdminMediaUnfiledPaginated(params PaginationParams) (*[]AdminMedia, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminMediaUnfiledPaginated(d.Context, mdbp.ListAdminMediaUnfiledPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list unfiled admin media paginated: %w", err)
+	}
+	res := make([]AdminMedia, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminMedia(v))
+	}
+	return &res, nil
+}
+
 // MoveAdminMediaToFolder moves an admin media item to a folder and records an audit event (PostgreSQL).
 func (d PsqlDatabase) MoveAdminMediaToFolder(ctx context.Context, ac audited.AuditContext, params MoveAdminMediaToFolderParams) error {
 	cmd := d.MoveAdminMediaToFolderCmd(ctx, ac, params)
 	return audited.Update(cmd)
-}
-
-func (d PsqlDatabase) MoveAdminMediaToFolderCmd(ctx context.Context, auditCtx audited.AuditContext, params MoveAdminMediaToFolderParams) MoveAdminMediaToFolderCmd {
-	return MoveAdminMediaToFolderCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }

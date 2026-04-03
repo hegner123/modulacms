@@ -2,6 +2,7 @@ package publishing
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
@@ -228,33 +229,47 @@ func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, 
 		return nil, fmt.Errorf("marshal snapshot: %w", err)
 	}
 
-	// 5. Get next version number.
-	maxVersion, err := d.GetMaxVersionNumber(rootID, locale)
-	if err != nil {
-		return nil, fmt.Errorf("get max version number: %w", err)
+	// 5+6+7. Get next version, clear published flag, and create new version atomically.
+	// All three operations MUST be in the same transaction. If any step fails, the
+	// transaction rolls back and no partial state is left.
+	conn, _, connErr := d.GetConnection()
+	if connErr != nil {
+		return nil, fmt.Errorf("get connection for publish tx: %w", connErr)
 	}
-	nextVersion := maxVersion + 1
-
-	// 6. Clear published flag on all existing versions for this content+locale.
-	if clearErr := d.ClearPublishedFlag(rootID, locale); clearErr != nil {
-		return nil, fmt.Errorf("clear published flag: %w", clearErr)
-	}
-
-	// 7. Create new content version with published=true.
 	now := types.TimestampNow()
-	version, err := d.CreateContentVersion(ctx, ac, db.CreateContentVersionParams{
-		ContentDataID: rootID,
-		VersionNumber: nextVersion,
-		Locale:        locale,
-		Snapshot:      string(snapshotBytes),
-		Trigger:       "publish",
-		Label:         "",
-		Published:     true,
-		PublishedBy:   types.NullableUserID{ID: userID, Valid: true},
-		DateCreated:   now,
+	version, err := db.WithTransactionResult(ctx, conn, func(tx *sql.Tx) (*db.ContentVersion, error) {
+		// Read max version number inside the transaction.
+		// MySQL/PostgreSQL use FOR UPDATE to prevent concurrent reads.
+		maxVersion, maxErr := db.GetMaxVersionNumberInTx(d, ctx, tx, rootID, locale)
+		if maxErr != nil {
+			return nil, fmt.Errorf("get max version number: %w", maxErr)
+		}
+		nextVersion := maxVersion + 1
+
+		// Clear published flag within the transaction.
+		if clearErr := db.ClearPublishedFlagInTx(d, ctx, tx, rootID, locale); clearErr != nil {
+			return nil, fmt.Errorf("clear published flag: %w", clearErr)
+		}
+
+		// Create new content version within the same transaction.
+		ver, createErr := db.CreateContentVersionInTx(d, ctx, tx, ac, db.CreateContentVersionParams{
+			ContentDataID: rootID,
+			VersionNumber: nextVersion,
+			Locale:        locale,
+			Snapshot:      string(snapshotBytes),
+			Trigger:       "publish",
+			Label:         "",
+			Published:     true,
+			PublishedBy:   types.NullableUserID{ID: userID, Valid: true},
+			DateCreated:   now,
+		})
+		if createErr != nil {
+			return nil, fmt.Errorf("create content version: %w", createErr)
+		}
+		return ver, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("create content version: %w", err)
+		return nil, err
 	}
 
 	// 8. Update content data publish metadata.

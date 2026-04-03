@@ -24,6 +24,8 @@ type AdminHealReport struct {
 	OrphanedRouteRefs   []OrphanedRouteReport       `json:"orphaned_route_refs"`
 	UnroutedRoots       []UnroutedRootReport        `json:"unrouted_roots"`
 	RootlessContent     []RootlessContentReport     `json:"rootless_content"`
+	VersionsScanned     int                         `json:"versions_scanned"`
+	DuplicatePublished  []DuplicatePublishedReport  `json:"duplicate_published"`
 }
 
 // AdminOrphanedFieldReport records a content_field row that references a field_id
@@ -59,6 +61,7 @@ func (s *AdminContentService) Heal(ctx context.Context, ac audited.AuditContext,
 		OrphanedRouteRefs:   []OrphanedRouteReport{},
 		UnroutedRoots:       []UnroutedRootReport{},
 		RootlessContent:     []RootlessContentReport{},
+		DuplicatePublished:  []DuplicatePublishedReport{},
 	}
 
 	// --- Pass 1: Heal admin_content_data rows ---
@@ -162,6 +165,9 @@ func (s *AdminContentService) Heal(ctx context.Context, ac audited.AuditContext,
 	if contentRows != nil {
 		s.healAdminRootlessContent(ctx, ac, *contentRows, dryRun, report)
 	}
+
+	// --- Pass 10: Fix duplicate published admin versions ---
+	s.healAdminDuplicatePublished(dryRun, report)
 
 	return report, nil
 }
@@ -739,5 +745,50 @@ func (s *AdminContentService) healAdminRootlessContent(ctx context.Context, ac a
 
 			report.RootlessContent = append(report.RootlessContent, entry)
 		}
+	}
+}
+
+// healAdminDuplicatePublished finds admin content_data_id+locale groups with more
+// than one published version and clears all but the highest version_number.
+func (s *AdminContentService) healAdminDuplicatePublished(dryRun bool, report *AdminHealReport) {
+	dupes, err := s.driver.ListAdminDuplicatePublished()
+	if err != nil {
+		utility.DefaultLogger.Error("admin heal: list admin duplicate published", err)
+		return
+	}
+	if dupes == nil {
+		return
+	}
+	report.VersionsScanned = len(*dupes)
+	for _, dupe := range *dupes {
+		entry := DuplicatePublishedReport{
+			ContentDataID: dupe.AdminContentDataID.String(),
+			Locale:        dupe.Locale,
+			Count:         int(dupe.PubCount),
+		}
+		versions, versErr := s.driver.ListAdminContentVersionsByContentLocale(dupe.AdminContentDataID, dupe.Locale)
+		if versErr != nil {
+			utility.DefaultLogger.Error(fmt.Sprintf("admin heal: list versions for %s/%s", dupe.AdminContentDataID, dupe.Locale), versErr)
+			report.DuplicatePublished = append(report.DuplicatePublished, entry)
+			continue
+		}
+		var keepID string
+		if versions != nil {
+			for _, v := range *versions {
+				if v.Published {
+					keepID = v.AdminContentVersionID.String()
+					break
+				}
+			}
+		}
+		entry.KeptVersionID = keepID
+		if !dryRun && keepID != "" {
+			if clearErr := s.driver.ClearAdminPublishedFlagExcept(dupe.AdminContentDataID, dupe.Locale, types.AdminContentVersionID(keepID)); clearErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("admin heal: clear published flag except %s", keepID), clearErr)
+			} else {
+				entry.Repaired = true
+			}
+		}
+		report.DuplicatePublished = append(report.DuplicatePublished, entry)
 	}
 }

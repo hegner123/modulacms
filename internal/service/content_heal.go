@@ -12,19 +12,21 @@ import (
 
 // HealReport is the result from ContentService.Heal.
 type HealReport struct {
-	DryRun              bool                      `json:"dry_run"`
-	ContentDataScanned  int                       `json:"content_data_scanned"`
-	ContentDataRepairs  []HealRepair              `json:"content_data_repairs"`
-	ContentFieldScanned int                       `json:"content_field_scanned"`
-	ContentFieldRepairs []HealRepair              `json:"content_field_repairs"`
-	MissingFields       []MissingFieldReport      `json:"missing_fields"`
-	DuplicateFields     []DuplicateFieldReport    `json:"duplicate_fields"`
-	OrphanedFields      []OrphanedFieldReport     `json:"orphaned_fields"`
-	DanglingPointers    []DanglingPointerReport   `json:"dangling_pointers"`
-	OrphanedRouteRefs   []OrphanedRouteReport     `json:"orphaned_route_refs"`
-	UnroutedRoots       []UnroutedRootReport      `json:"unrouted_roots"`
-	RootlessContent     []RootlessContentReport   `json:"rootless_content"`
-	InvalidUserRefs     []InvalidUserRefReport    `json:"invalid_user_refs"`
+	DryRun              bool                       `json:"dry_run"`
+	ContentDataScanned  int                        `json:"content_data_scanned"`
+	ContentDataRepairs  []HealRepair               `json:"content_data_repairs"`
+	ContentFieldScanned int                        `json:"content_field_scanned"`
+	ContentFieldRepairs []HealRepair               `json:"content_field_repairs"`
+	MissingFields       []MissingFieldReport       `json:"missing_fields"`
+	DuplicateFields     []DuplicateFieldReport     `json:"duplicate_fields"`
+	OrphanedFields      []OrphanedFieldReport      `json:"orphaned_fields"`
+	DanglingPointers    []DanglingPointerReport    `json:"dangling_pointers"`
+	OrphanedRouteRefs   []OrphanedRouteReport      `json:"orphaned_route_refs"`
+	UnroutedRoots       []UnroutedRootReport       `json:"unrouted_roots"`
+	RootlessContent     []RootlessContentReport    `json:"rootless_content"`
+	InvalidUserRefs     []InvalidUserRefReport     `json:"invalid_user_refs"`
+	VersionsScanned     int                        `json:"versions_scanned"`
+	DuplicatePublished  []DuplicatePublishedReport `json:"duplicate_published"`
 }
 
 // OrphanedRouteReport records a content_data row whose route_id references
@@ -110,6 +112,17 @@ type InvalidUserRefReport struct {
 	Repaired bool   `json:"repaired"`
 }
 
+// DuplicatePublishedReport records a content_data_id+locale group that had more
+// than one published version. The heal pass keeps the highest version_number and
+// clears published on all others.
+type DuplicatePublishedReport struct {
+	ContentDataID string `json:"content_data_id"`
+	Locale        string `json:"locale"`
+	Count         int    `json:"count"`
+	KeptVersionID string `json:"kept_version_id"`
+	Repaired      bool   `json:"repaired"`
+}
+
 // Heal performs a 10-pass repair of content data:
 //  1. Heal invalid ULIDs on content_data rows
 //  2. Heal invalid ULIDs on content_field rows
@@ -136,6 +149,7 @@ func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryR
 		UnroutedRoots:       []UnroutedRootReport{},
 		RootlessContent:     []RootlessContentReport{},
 		InvalidUserRefs:     []InvalidUserRefReport{},
+		DuplicatePublished:  []DuplicatePublishedReport{},
 	}
 
 	// --- Pass 1: Heal content_data rows ---
@@ -244,6 +258,9 @@ func (s *ContentService) Heal(ctx context.Context, ac audited.AuditContext, dryR
 	if contentRows != nil {
 		s.healInvalidUserRefs(ctx, ac, *contentRows, fieldRows, dryRun, report)
 	}
+
+	// --- Pass 11: Fix duplicate published versions ---
+	s.healDuplicatePublished(dryRun, report)
 
 	return report, nil
 }
@@ -840,6 +857,53 @@ func (s *ContentService) healRootlessContent(ctx context.Context, ac audited.Aud
 
 			report.RootlessContent = append(report.RootlessContent, entry)
 		}
+	}
+}
+
+// healDuplicatePublished finds content_data_id+locale groups with more than one
+// published version and clears all but the highest version_number.
+func (s *ContentService) healDuplicatePublished(dryRun bool, report *HealReport) {
+	dupes, err := s.driver.ListDuplicatePublished()
+	if err != nil {
+		utility.DefaultLogger.Error("heal: list duplicate published", err)
+		return
+	}
+	if dupes == nil {
+		return
+	}
+	report.VersionsScanned = len(*dupes)
+	for _, dupe := range *dupes {
+		entry := DuplicatePublishedReport{
+			ContentDataID: dupe.ContentDataID.String(),
+			Locale:        dupe.Locale,
+			Count:         int(dupe.PubCount),
+		}
+		// Find the highest-version published row to keep.
+		versions, versErr := s.driver.ListContentVersionsByContentLocale(dupe.ContentDataID, dupe.Locale)
+		if versErr != nil {
+			utility.DefaultLogger.Error(fmt.Sprintf("heal: list versions for %s/%s", dupe.ContentDataID, dupe.Locale), versErr)
+			report.DuplicatePublished = append(report.DuplicatePublished, entry)
+			continue
+		}
+		// Filter to published-only, keep highest version_number (list is DESC-sorted).
+		var keepID string
+		if versions != nil {
+			for _, v := range *versions {
+				if v.Published {
+					keepID = v.ContentVersionID.String()
+					break
+				}
+			}
+		}
+		entry.KeptVersionID = keepID
+		if !dryRun && keepID != "" {
+			if clearErr := s.driver.ClearPublishedFlagExcept(dupe.ContentDataID, dupe.Locale, types.ContentVersionID(keepID)); clearErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("heal: clear published flag except %s", keepID), clearErr)
+			} else {
+				entry.Repaired = true
+			}
+		}
+		report.DuplicatePublished = append(report.DuplicatePublished, entry)
 	}
 }
 

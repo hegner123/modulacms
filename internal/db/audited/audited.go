@@ -268,6 +268,61 @@ func UpdateInTx[T any](cmd UpdateCommand[T], tx *sql.Tx) error {
 	})
 }
 
+// CreateInTx executes an audited create operation within an existing transaction.
+// The caller is responsible for committing or rolling back the transaction,
+// and for firing after-hooks post-commit.
+func CreateInTx[T any](cmd CreateCommand[T], tx *sql.Tx) (T, error) {
+	var result T
+	ctx := cmd.Context()
+
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+	}
+
+	auditCtx := cmd.AuditContext()
+	tableName := cmd.TableName()
+	runner := auditCtx.HookRunner
+
+	created, err := cmd.Execute(ctx, tx)
+	if err != nil {
+		return result, fmt.Errorf("execute create: %w", err)
+	}
+	result = created
+
+	// Phase 3: Run before_create hooks inside the transaction.
+	// The hook can abort the entire operation by returning an error.
+	if runner != nil && runner.HasHooks(HookBeforeCreate, tableName) {
+		if hookErr := runner.RunBeforeHooks(ctx, HookBeforeCreate, tableName, created); hookErr != nil {
+			return result, hookErr
+		}
+	}
+
+	newValues, err := marshalToJSONData(created)
+	if err != nil {
+		return result, fmt.Errorf("marshal created entity: %w", err)
+	}
+
+	if err := cmd.Recorder().Record(ctx, tx, ChangeEventParams{
+		EventID:      types.NewEventID(),
+		HlcTimestamp: types.HLCNow(),
+		NodeID:       auditCtx.NodeID,
+		TableName:    tableName,
+		RecordID:     cmd.GetID(created),
+		Operation:    types.OpInsert,
+		Action:       types.ActionCreate,
+		UserID:       types.NullableUserID{ID: auditCtx.UserID, Valid: auditCtx.UserID != ""},
+		NewValues:    newValues,
+		RequestID:    types.NullableString{String: auditCtx.RequestID, Valid: auditCtx.RequestID != ""},
+		IP:           types.NullableString{String: auditCtx.IP, Valid: auditCtx.IP != ""},
+	}); err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
 // Delete executes an audited delete operation.
 // Captures before-state, executes delete, records deletion atomically.
 //

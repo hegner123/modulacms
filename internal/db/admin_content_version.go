@@ -73,6 +73,14 @@ func MapStringAdminContentVersion(a AdminContentVersion) StringAdminContentVersi
 	}
 }
 
+// AdminDuplicatePublishedRow represents an admin_content_data_id+locale group with more than
+// one published version, returned by ListAdminDuplicatePublished for heal detection.
+type AdminDuplicatePublishedRow struct {
+	AdminContentDataID types.AdminContentID
+	Locale             string
+	PubCount           int64
+}
+
 ///////////////////////////////
 // SQLITE
 //////////////////////////////
@@ -255,6 +263,34 @@ func (d Database) PruneAdminOldVersions(adminContentDataID types.AdminContentID,
 		AdminContentDataID: adminContentDataID,
 		Locale:             locale,
 		Limit:              limit,
+	})
+}
+
+// ListAdminDuplicatePublished finds admin_content_data_id+locale groups with more than one published version.
+func (d Database) ListAdminDuplicatePublished() (*[]AdminDuplicatePublishedRow, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminDuplicatePublished(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin duplicate published: %w", err)
+	}
+	res := []AdminDuplicatePublishedRow{}
+	for _, r := range rows {
+		res = append(res, AdminDuplicatePublishedRow{
+			AdminContentDataID: r.AdminContentDataID,
+			Locale:             r.Locale,
+			PubCount:           r.PubCount,
+		})
+	}
+	return &res, nil
+}
+
+// ClearAdminPublishedFlagExcept clears published on all admin versions except the specified one.
+func (d Database) ClearAdminPublishedFlagExcept(adminContentDataID types.AdminContentID, locale string, keepID types.AdminContentVersionID) error {
+	queries := mdb.New(d.Connection)
+	return queries.ClearAdminPublishedFlagExcept(d.Context, mdb.ClearAdminPublishedFlagExceptParams{
+		AdminContentDataID:    adminContentDataID,
+		Locale:                locale,
+		AdminContentVersionID: keepID,
 	})
 }
 
@@ -443,6 +479,34 @@ func (d MysqlDatabase) PruneAdminOldVersions(adminContentDataID types.AdminConte
 	})
 }
 
+// ListAdminDuplicatePublished finds admin_content_data_id+locale groups with more than one published version. (MySQL)
+func (d MysqlDatabase) ListAdminDuplicatePublished() (*[]AdminDuplicatePublishedRow, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminDuplicatePublished(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin duplicate published: %w", err)
+	}
+	res := []AdminDuplicatePublishedRow{}
+	for _, r := range rows {
+		res = append(res, AdminDuplicatePublishedRow{
+			AdminContentDataID: r.AdminContentDataID,
+			Locale:             r.Locale,
+			PubCount:           r.PubCount,
+		})
+	}
+	return &res, nil
+}
+
+// ClearAdminPublishedFlagExcept clears published on all admin versions except the specified one. (MySQL)
+func (d MysqlDatabase) ClearAdminPublishedFlagExcept(adminContentDataID types.AdminContentID, locale string, keepID types.AdminContentVersionID) error {
+	queries := mdbm.New(d.Connection)
+	return queries.ClearAdminPublishedFlagExcept(d.Context, mdbm.ClearAdminPublishedFlagExceptParams{
+		AdminContentDataID:    adminContentDataID,
+		Locale:                locale,
+		AdminContentVersionID: keepID,
+	})
+}
+
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
@@ -625,6 +689,34 @@ func (d PsqlDatabase) PruneAdminOldVersions(adminContentDataID types.AdminConten
 		AdminContentDataID: adminContentDataID,
 		Locale:             locale,
 		Limit:              int32(limit),
+	})
+}
+
+// ListAdminDuplicatePublished finds admin_content_data_id+locale groups with more than one published version. (PostgreSQL)
+func (d PsqlDatabase) ListAdminDuplicatePublished() (*[]AdminDuplicatePublishedRow, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminDuplicatePublished(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin duplicate published: %w", err)
+	}
+	res := []AdminDuplicatePublishedRow{}
+	for _, r := range rows {
+		res = append(res, AdminDuplicatePublishedRow{
+			AdminContentDataID: r.AdminContentDataID,
+			Locale:             r.Locale,
+			PubCount:           r.PubCount,
+		})
+	}
+	return &res, nil
+}
+
+// ClearAdminPublishedFlagExcept clears published on all admin versions except the specified one. (PostgreSQL)
+func (d PsqlDatabase) ClearAdminPublishedFlagExcept(adminContentDataID types.AdminContentID, locale string, keepID types.AdminContentVersionID) error {
+	queries := mdbp.New(d.Connection)
+	return queries.ClearAdminPublishedFlagExcept(d.Context, mdbp.ClearAdminPublishedFlagExceptParams{
+		AdminContentDataID:    adminContentDataID,
+		Locale:                locale,
+		AdminContentVersionID: keepID,
 	})
 }
 
