@@ -416,11 +416,14 @@ Examples:
 			mux := router.NewModulaMux(mgr, bridge, driver, pc, emailSvc, dispatcher, svc, searchSvc, RequestRestart)
 
 			var hookRunner audited.HookRunner
+			var readHookRunner audited.ReadHookRunner
 			if pluginManager != nil {
 				hookRunner = pluginManager.HookEngine()
+				readHookRunner = pluginManager.HookEngine()
 			}
 			fullHandler := middleware.Chain(
 				middleware.HookRunnerMiddleware(hookRunner),
+				middleware.ReadHookRunnerMiddleware(readHookRunner),
 			)(middleware.DefaultMiddlewareChain(mgr, pc)(mux))
 
 			// MCP server (Model Context Protocol for AI tooling).

@@ -64,6 +64,36 @@ func AuditContextFromCLI(c config.Config, userID types.UserID) audited.AuditCont
 	)
 }
 
+// readHookRunnerKeyType is the context key for ReadHookRunner.
+type readHookRunnerKeyType struct{}
+
+var readHookRunnerKey = readHookRunnerKeyType{}
+
+// ReadHookRunnerFromContext extracts the ReadHookRunner from the context, or nil
+// if absent (plugins disabled). Callers must handle nil — skip hook calls and
+// proceed with normal delivery.
+func ReadHookRunnerFromContext(ctx context.Context) audited.ReadHookRunner {
+	runner, _ := ctx.Value(readHookRunnerKey).(audited.ReadHookRunner)
+	return runner
+}
+
+// ReadHookRunnerMiddleware returns a middleware that injects the given
+// ReadHookRunner into every request's context. The delivery handler extracts
+// it via ReadHookRunnerFromContext to dispatch before_read/after_read hooks.
+//
+// Returns a no-op middleware if runner is nil (plugins disabled).
+func ReadHookRunnerMiddleware(runner audited.ReadHookRunner) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		if runner == nil {
+			return next
+		}
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), readHookRunnerKey, runner)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
 // HookRunnerMiddleware returns a middleware that injects the given HookRunner into
 // every request's context. This makes it available to AuditContextFromRequest,
 // which passes it through to audited Create/Update/Delete for hook dispatch.

@@ -700,12 +700,14 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 		coreAPI := NewCoreTableAPI(dbAPI, pluginName, m.dialect, inst.ApprovedAccess)
 		RegisterCoreAPI(L, coreAPI)
 		reqAPI := RegisterRequestAPI(L, pluginName, m.requestEngine)
+		RegisterJSONAPI(L)
 		FreezeModule(L, "db")
 		FreezeModule(L, "log")
 		FreezeModule(L, "http")
 		FreezeModule(L, "hooks")
 		FreezeModule(L, "core")
 		FreezeModule(L, "request")
+		FreezeModule(L, "json")
 
 		// Execute init.lua to define globals (plugin_info, on_init, on_shutdown).
 		// Use a context with timeout for the execution.
@@ -1489,7 +1491,7 @@ func registerManifestStubs(L *lua.LState) {
 		return 1
 	}))
 
-	for _, name := range []string{"db", "log", "http", "hooks", "core", "request"} {
+	for _, name := range []string{"db", "log", "http", "hooks", "core", "request", "json"} {
 		stub := L.NewTable()
 		L.SetMetatable(stub, mt)
 		L.SetGlobal(name, stub)

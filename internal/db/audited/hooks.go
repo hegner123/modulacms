@@ -19,6 +19,8 @@ const (
 	HookAfterDelete   HookEvent = "after_delete"
 	HookBeforePublish HookEvent = "before_publish"
 	HookAfterPublish  HookEvent = "after_publish"
+	HookBeforeRead    HookEvent = "before_read"
+	HookAfterRead     HookEvent = "after_read"
 )
 
 // ValidHookEvents is the complete set of valid hook event strings for
@@ -32,6 +34,42 @@ var ValidHookEvents = map[string]HookEvent{
 	"after_delete":   HookAfterDelete,
 	"before_publish": HookBeforePublish,
 	"after_publish":  HookAfterPublish,
+	"before_read":    HookBeforeRead,
+	"after_read":     HookAfterRead,
+}
+
+// IsReadHookEvent returns true if the event is a read lifecycle hook
+// (before_read or after_read). Read hooks have different execution semantics
+// than mutation hooks: they run outside any database transaction, so db.*,
+// core.*, and request.* calls are permitted.
+func IsReadHookEvent(event HookEvent) bool {
+	return event == HookBeforeRead || event == HookAfterRead
+}
+
+// ReadHookResponse is the structured response returned by a before_read hook
+// when it wants to abort delivery and return a custom HTTP response.
+// The Lua table shape is { status, headers, json } — same as plugin route
+// handler responses.
+type ReadHookResponse struct {
+	Status  int               // HTTP status code (e.g., 402)
+	Headers map[string]string // HTTP headers to set
+	Body    map[string]any    // JSON body to marshal and write
+}
+
+// ReadHookRunner is the interface for read lifecycle hook dispatch. Separate
+// from HookRunner to avoid breaking the 147+ files that implement or reference
+// the existing HookRunner interface.
+//
+// RunBeforeReadHooks executes all matching before_read hooks synchronously.
+// Returns a non-nil ReadHookResponse if a hook wants to abort delivery, plus
+// a state map that captures any _-prefixed keys set by hooks on the data table.
+//
+// RunAfterReadHooks executes all matching after_read hooks synchronously.
+// Returns collected headers to append to the HTTP response.
+type ReadHookRunner interface {
+	HasReadHooks(table string) bool
+	RunBeforeReadHooks(ctx context.Context, table string, data map[string]any) (*ReadHookResponse, map[string]any, error)
+	RunAfterReadHooks(ctx context.Context, table string, data map[string]any, state map[string]any) (map[string]string, error)
 }
 
 // HookRunner is the interface between the audited command layer and the plugin

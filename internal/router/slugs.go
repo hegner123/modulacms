@@ -9,6 +9,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/model"
@@ -64,6 +65,24 @@ func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, svc *ser
 	slug := strings.TrimPrefix(r.URL.Path, "/api/v1/content")
 	if slug == "" {
 		slug = "/"
+	}
+
+	// Read hooks: before_read fires before the slug lookup. Plugins can
+	// inspect the request and return a custom response (e.g., 402 for payment
+	// gating) or let delivery proceed by returning nil.
+	var readHookState map[string]any
+	if readRunner := middleware.ReadHookRunnerFromContext(r.Context()); readRunner != nil && readRunner.HasReadHooks("content_data") {
+		hookData := buildReadHookData(r, slug)
+		resp, state, hookErr := readRunner.RunBeforeReadHooks(r.Context(), "content_data", hookData)
+		if hookErr != nil {
+			utility.DefaultLogger.Error("before_read hook error", hookErr)
+			// Do not block delivery on hook infrastructure errors.
+		}
+		if resp != nil {
+			writeReadHookResponse(w, resp)
+			return
+		}
+		readHookState = state
 	}
 
 	// 1. Look up route by slug.
@@ -206,7 +225,19 @@ func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, svc *ser
 		root.RebuildFromCore()
 	}
 
-	// 8. Apply format/transform the same way as the live flow.
+	// 8. Run after_read hooks (synchronous, before response is written).
+	if readRunner := middleware.ReadHookRunnerFromContext(r.Context()); readRunner != nil && readRunner.HasReadHooks("content_data") {
+		hookData := buildReadHookData(r, slug)
+		headers, hookErr := readRunner.RunAfterReadHooks(r.Context(), "content_data", hookData, readHookState)
+		if hookErr != nil {
+			utility.DefaultLogger.Error("after_read hook error", hookErr)
+		}
+		for k, v := range headers {
+			w.Header().Set(k, v)
+		}
+	}
+
+	// 9. Apply format/transform the same way as the live flow.
 	applyFormatAndTransform(w, r, *c, d, root)
 }
 
@@ -411,6 +442,52 @@ func applyFormatAndTransform(w http.ResponseWriter, r *http.Request, c config.Co
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+///////////////////////////////
+// READ HOOK HELPERS
+///////////////////////////////
+
+// buildReadHookData builds the data map passed to before_read and after_read hooks.
+// Headers are lowercased to match Lua convention (Go's http.Header uses CanonicalHeaderKey).
+func buildReadHookData(r *http.Request, slug string) map[string]any {
+	headers := make(map[string]any)
+	for name, values := range r.Header {
+		if len(values) > 0 {
+			headers[strings.ToLower(name)] = values[0]
+		}
+	}
+
+	query := make(map[string]any)
+	for k, v := range r.URL.Query() {
+		if len(v) > 0 {
+			query[k] = v[0]
+		}
+	}
+
+	return map[string]any{
+		"slug":      slug,
+		"headers":   headers,
+		"client_ip": middleware.ClientIPFromContext(r.Context()),
+		"query":     query,
+	}
+}
+
+// writeReadHookResponse writes a ReadHookResponse as an HTTP response.
+// Used when a before_read hook aborts delivery.
+func writeReadHookResponse(w http.ResponseWriter, resp *audited.ReadHookResponse) {
+	for k, v := range resp.Headers {
+		w.Header().Set(k, v)
+	}
+
+	if resp.Body != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.Status)
+		json.NewEncoder(w).Encode(resp.Body)
+		return
+	}
+
+	w.WriteHeader(resp.Status)
 }
 
 ///////////////////////////////

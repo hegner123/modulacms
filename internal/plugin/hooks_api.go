@@ -79,6 +79,13 @@ func hooksOnFn(L *lua.LState, pluginName string, handlers *lua.LTable, pending *
 			return 0
 		}
 
+		// 2b. Reject wildcard table for read hooks (performance: read hooks
+		// fire on every content delivery request).
+		if tableName == "*" && audited.IsReadHookEvent(audited.ValidHookEvents[eventStr]) {
+			L.ArgError(2, "wildcard table (*) is not allowed for read hooks (before_read, after_read)")
+			return 0
+		}
+
 		// 3. Phase guard: hooks.on() must only be called at module scope.
 		if phase := vmPhase(L); phase != "" && phase != "module_scope" {
 			L.RaiseError("hooks.on() must be called at module scope, not inside on_init()")
