@@ -182,7 +182,7 @@ func (s *ContentScreen) selectNodeDatatypeLabel(node *ContentSelectNode) string 
 
 func (s *ContentScreen) renderSelectDetail() string {
 	if s.Cursor >= len(s.FlatSelectList) || len(s.FlatSelectList) == 0 {
-		return "No content selected"
+		return "no content selected"
 	}
 
 	node := s.FlatSelectList[s.Cursor]
@@ -260,7 +260,7 @@ func (s *ContentScreen) renderSelectStats() string {
 
 func (s *ContentScreen) renderTree() string {
 	if s.Root.Root == nil {
-		return "No content loaded"
+		return "no content loaded"
 	}
 	display := make([]string, 0)
 	currentIndex := 0
@@ -334,7 +334,7 @@ type previewResult struct {
 // The selected node's section is highlighted; others are dimmed.
 func (s *ContentScreen) renderDocumentPreview(ctx AppContext) previewResult {
 	if s.Root.Root == nil {
-		return previewResult{content: "No content loaded"}
+		return previewResult{content: "no content loaded"}
 	}
 
 	selectedNode := s.Root.NodeAtIndex(s.Cursor)

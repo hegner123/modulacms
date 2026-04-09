@@ -80,7 +80,7 @@ func TestMapStringUser_ZeroValueUser(t *testing.T) {
 		t.Errorf("Name = %q, want empty string", got.Name)
 	}
 	if got.Email != "" {
-		t.Errorf("Email = %q, want empty string", got.Email)
+		t.Errorf("email = %q, want empty string", got.Email)
 	}
 	if got.Hash != "" {
 		t.Errorf("Hash = %q, want empty string", got.Hash)
@@ -104,7 +104,7 @@ func TestMapStringUser_UnicodeFields(t *testing.T) {
 		t.Errorf("Name = %q, want %q", got.Name, "Jose Garcia")
 	}
 	if got.Email != "jose@ejemplo.es" {
-		t.Errorf("Email = %q, want %q", got.Email, "jose@ejemplo.es")
+		t.Errorf("email = %q, want %q", got.Email, "jose@ejemplo.es")
 	}
 }
 
@@ -140,7 +140,7 @@ func TestDatabase_MapUser_AllFields(t *testing.T) {
 		t.Errorf("Name = %q, want %q", got.Name, "Bob Jones")
 	}
 	if got.Email != email {
-		t.Errorf("Email = %v, want %v", got.Email, email)
+		t.Errorf("email = %v, want %v", got.Email, email)
 	}
 	if got.Hash != "hash123" {
 		t.Errorf("Hash = %q, want %q", got.Hash, "hash123")
@@ -203,7 +203,7 @@ func TestDatabase_MapCreateUserParams_GeneratesNewID(t *testing.T) {
 		t.Errorf("Name = %q, want %q", got.Name, "New User")
 	}
 	if got.Email != types.Email("new@example.com") {
-		t.Errorf("Email = %v, want %v", got.Email, types.Email("new@example.com"))
+		t.Errorf("email = %v, want %v", got.Email, types.Email("new@example.com"))
 	}
 	if got.Hash != "newhash" {
 		t.Errorf("Hash = %q, want %q", got.Hash, "newhash")
@@ -261,7 +261,7 @@ func TestDatabase_MapUpdateUserParams_AllFields(t *testing.T) {
 		t.Errorf("Name = %q, want %q", got.Name, "Updated Name")
 	}
 	if got.Email != types.Email("updated@example.com") {
-		t.Errorf("Email = %v, want %v", got.Email, types.Email("updated@example.com"))
+		t.Errorf("email = %v, want %v", got.Email, types.Email("updated@example.com"))
 	}
 	if got.Hash != "updatedhash" {
 		t.Errorf("Hash = %q, want %q", got.Hash, "updatedhash")
@@ -312,7 +312,7 @@ func TestMysqlDatabase_MapUser_AllFields(t *testing.T) {
 		t.Errorf("Name = %q, want %q", got.Name, "MySQL User")
 	}
 	if got.Email != email {
-		t.Errorf("Email = %v, want %v", got.Email, email)
+		t.Errorf("email = %v, want %v", got.Email, email)
 	}
 	if got.Hash != "mysqlhash" {
 		t.Errorf("Hash = %q, want %q", got.Hash, "mysqlhash")
@@ -370,7 +370,7 @@ func TestMysqlDatabase_MapCreateUserParams_GeneratesNewID(t *testing.T) {
 		t.Errorf("Roles = %q, want %q", got.Roles, "editor")
 	}
 	if got.Email != types.Email("mysqlnew@example.com") {
-		t.Errorf("Email = %v, want %v", got.Email, types.Email("mysqlnew@example.com"))
+		t.Errorf("email = %v, want %v", got.Email, types.Email("mysqlnew@example.com"))
 	}
 }
 
@@ -405,7 +405,7 @@ func TestMysqlDatabase_MapUpdateUserParams_AllFields(t *testing.T) {
 		t.Errorf("UserID = %v, want %v", got.UserID, userID)
 	}
 	if got.Email != types.Email("mysqlupdated@example.com") {
-		t.Errorf("Email = %v, want %v", got.Email, types.Email("mysqlupdated@example.com"))
+		t.Errorf("email = %v, want %v", got.Email, types.Email("mysqlupdated@example.com"))
 	}
 }
 
@@ -441,7 +441,7 @@ func TestPsqlDatabase_MapUser_AllFields(t *testing.T) {
 		t.Errorf("Name = %q, want %q", got.Name, "PostgreSQL User")
 	}
 	if got.Email != email {
-		t.Errorf("Email = %v, want %v", got.Email, email)
+		t.Errorf("email = %v, want %v", got.Email, email)
 	}
 	if got.Hash != "psqlhash" {
 		t.Errorf("Hash = %q, want %q", got.Hash, "psqlhash")
@@ -499,7 +499,7 @@ func TestPsqlDatabase_MapCreateUserParams_GeneratesNewID(t *testing.T) {
 		t.Errorf("Roles = %q, want %q", got.Roles, "admin")
 	}
 	if got.Email != types.Email("psqlnew@example.com") {
-		t.Errorf("Email = %v, want %v", got.Email, types.Email("psqlnew@example.com"))
+		t.Errorf("email = %v, want %v", got.Email, types.Email("psqlnew@example.com"))
 	}
 }
 
@@ -534,7 +534,7 @@ func TestPsqlDatabase_MapUpdateUserParams_AllFields(t *testing.T) {
 		t.Errorf("UserID = %v, want %v", got.UserID, userID)
 	}
 	if got.Email != types.Email("psqlupdated@example.com") {
-		t.Errorf("Email = %v, want %v", got.Email, types.Email("psqlupdated@example.com"))
+		t.Errorf("email = %v, want %v", got.Email, types.Email("psqlupdated@example.com"))
 	}
 }
 

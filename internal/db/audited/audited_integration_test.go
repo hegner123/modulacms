@@ -999,7 +999,7 @@ func TestIntegration_AuditedMultipleUpdates_EachRecorded(t *testing.T) {
 			DateModified:  types.TimestampNow(),
 		})
 		if err != nil {
-			t.Fatalf("Update to %s: %v", status, err)
+			t.Fatalf("update to %s: %v", status, err)
 		}
 	}
 

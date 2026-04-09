@@ -47,11 +47,11 @@ type importFormat struct {
 }
 
 var importFormats = []importFormat{
-	{"Contentful", config.FormatContentful, "Import from Contentful CMS export JSON"},
-	{"Sanity", config.FormatSanity, "Import from Sanity dataset export"},
-	{"Strapi", config.FormatStrapi, "Import from Strapi content export"},
-	{"WordPress", config.FormatWordPress, "Import from WordPress REST API JSON"},
-	{"Clean JSON", config.FormatClean, "Import ModulaCMS native JSON format"},
+	{"Contentful", config.FormatContentful, "import from Contentful CMS export JSON"},
+	{"Sanity", config.FormatSanity, "import from Sanity dataset export"},
+	{"Strapi", config.FormatStrapi, "import from Strapi content export"},
+	{"WordPress", config.FormatWordPress, "import from WordPress REST API JSON"},
+	{"Clean JSON", config.FormatClean, "import ModulaCMS native JSON format"},
 }
 
 // ImportScreen implements Screen for the content import wizard.

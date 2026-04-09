@@ -25,7 +25,7 @@ func registerUserTools(srv *server.MCPServer, backend UserBackend) {
 	srv.AddTool(
 		mcp.NewTool("get_user",
 			mcp.WithDescription("Get a single user by ID."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("User ID (ULID)")),
+			mcp.WithString("id", mcp.Required(), mcp.Description("user ID (ULID)")),
 		),
 		handleGetUser(backend),
 	)
@@ -35,7 +35,7 @@ func registerUserTools(srv *server.MCPServer, backend UserBackend) {
 			mcp.WithDescription("Create a new user. All fields are required."),
 			mcp.WithString("username", mcp.Required(), mcp.Description("Username")),
 			mcp.WithString("name", mcp.Required(), mcp.Description("Display name")),
-			mcp.WithString("email", mcp.Required(), mcp.Description("Email address")),
+			mcp.WithString("email", mcp.Required(), mcp.Description("email address")),
 			mcp.WithString("password", mcp.Required(), mcp.Description("Password")),
 			mcp.WithString("role", mcp.Required(), mcp.Description("Role name (e.g. admin, editor, viewer)")),
 		),
@@ -44,11 +44,11 @@ func registerUserTools(srv *server.MCPServer, backend UserBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_user",
-			mcp.WithDescription("Update an existing user. This is a full replacement — provide all fields you want to keep. Omitting a field sets it to empty. Password can be omitted to keep the current password."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("User ID (ULID)")),
+			mcp.WithDescription("update an existing user. This is a full replacement — provide all fields you want to keep. Omitting a field sets it to empty. Password can be omitted to keep the current password."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("user ID (ULID)")),
 			mcp.WithString("username", mcp.Description("Username")),
 			mcp.WithString("name", mcp.Description("Display name")),
-			mcp.WithString("email", mcp.Description("Email address")),
+			mcp.WithString("email", mcp.Description("email address")),
 			mcp.WithString("password", mcp.Description("New password (omit to keep current)")),
 			mcp.WithString("role", mcp.Description("Role name")),
 		),
@@ -58,7 +58,7 @@ func registerUserTools(srv *server.MCPServer, backend UserBackend) {
 	srv.AddTool(
 		mcp.NewTool("delete_user",
 			mcp.WithDescription("Delete a user by ID."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("User ID (ULID)")),
+			mcp.WithString("id", mcp.Required(), mcp.Description("user ID (ULID)")),
 		),
 		handleDeleteUser(backend),
 	)
@@ -73,7 +73,7 @@ func registerUserTools(srv *server.MCPServer, backend UserBackend) {
 	srv.AddTool(
 		mcp.NewTool("get_user_full",
 			mcp.WithDescription("Get a single user with full associated data by ID. Returns raw JSON."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("User ID (ULID)")),
+			mcp.WithString("id", mcp.Required(), mcp.Description("user ID (ULID)")),
 		),
 		handleGetUserFull(backend),
 	)

@@ -87,7 +87,7 @@ func FieldTypeDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing field type ID", http.StatusBadRequest)
+			http.Error(w, "missing field type ID", http.StatusBadRequest)
 			return
 		}
 
@@ -154,7 +154,7 @@ func FieldTypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to create field type", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.FieldTypeForm(ftType, label, map[string]string{"_": "Failed to create field type"}, csrfToken))
+			Render(w, r, partials.FieldTypeForm(ftType, label, map[string]string{"_": "failed to create field type"}, csrfToken))
 			return
 		}
 
@@ -174,7 +174,7 @@ func FieldTypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing field type ID", http.StatusBadRequest)
+			http.Error(w, "missing field type ID", http.StatusBadRequest)
 			return
 		}
 
@@ -218,7 +218,7 @@ func FieldTypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to update field type", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.FieldTypeEditForm(id, ftType, label, map[string]string{"_": "Failed to update field type"}, csrfToken))
+			Render(w, r, partials.FieldTypeEditForm(id, ftType, label, map[string]string{"_": "failed to update field type"}, csrfToken))
 			return
 		}
 
@@ -243,14 +243,14 @@ func FieldTypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing field type ID", http.StatusBadRequest)
+			http.Error(w, "missing field type ID", http.StatusBadRequest)
 			return
 		}
 
 		ac, acErr := svc.AuditCtx(r.Context())
 		if acErr != nil {
 			utility.DefaultLogger.Error("failed to build audit context", acErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete field type", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete field type", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -258,7 +258,7 @@ func FieldTypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		err := svc.Schema.DeleteFieldType(r.Context(), ac, types.FieldTypeID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to delete field type", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete field type", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete field type", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

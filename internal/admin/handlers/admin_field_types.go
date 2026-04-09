@@ -87,7 +87,7 @@ func AdminFieldTypeDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing admin field type ID", http.StatusBadRequest)
+			http.Error(w, "missing admin field type ID", http.StatusBadRequest)
 			return
 		}
 
@@ -150,7 +150,7 @@ func AdminFieldTypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to create admin field type", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminFieldTypeForm(ftType, label, map[string]string{"_": "Failed to create admin field type"}, csrfToken))
+			Render(w, r, partials.AdminFieldTypeForm(ftType, label, map[string]string{"_": "failed to create admin field type"}, csrfToken))
 			return
 		}
 
@@ -170,7 +170,7 @@ func AdminFieldTypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing admin field type ID", http.StatusBadRequest)
+			http.Error(w, "missing admin field type ID", http.StatusBadRequest)
 			return
 		}
 
@@ -214,7 +214,7 @@ func AdminFieldTypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to update admin field type", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminFieldTypeEditForm(id, ftType, label, map[string]string{"_": "Failed to update admin field type"}, csrfToken))
+			Render(w, r, partials.AdminFieldTypeEditForm(id, ftType, label, map[string]string{"_": "failed to update admin field type"}, csrfToken))
 			return
 		}
 
@@ -239,14 +239,14 @@ func AdminFieldTypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing admin field type ID", http.StatusBadRequest)
+			http.Error(w, "missing admin field type ID", http.StatusBadRequest)
 			return
 		}
 
 		ac, acErr := svc.AuditCtx(r.Context())
 		if acErr != nil {
 			utility.DefaultLogger.Error("failed to build audit context", acErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete admin field type", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete admin field type", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -254,7 +254,7 @@ func AdminFieldTypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		err := svc.Schema.DeleteAdminFieldType(r.Context(), ac, types.AdminFieldTypeID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to delete admin field type", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete admin field type", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete admin field type", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

@@ -61,7 +61,7 @@ func TestBuild_PopulatesChains(t *testing.T) {
 		t.Error("Enabled = false, want true")
 	}
 	if e.Config == nil || e.Config["key"] != "val" {
-		t.Errorf("Config = %v, want map with key=val", e.Config)
+		t.Errorf("config = %v, want map with key=val", e.Config)
 	}
 }
 

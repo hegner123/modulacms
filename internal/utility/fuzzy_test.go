@@ -289,7 +289,7 @@ func TestFuzzyFind(t *testing.T) {
 		t.Parallel()
 		items := []item{
 			{Name: "discontinuous", Label: "Unrelated"},
-			{Name: "conf", Label: "Config File"},
+			{Name: "conf", Label: "config File"},
 			{Name: "postgres_config", Label: "DB Config"},
 		}
 		results := FuzzyFind("con", items, func(it item) []string {

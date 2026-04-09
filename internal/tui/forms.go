@@ -320,7 +320,7 @@ func (m Model) BuildContentFieldsForm(datatypeID types.DatatypeID, routeID types
 	return func() tea.Msg {
 		d := db.ConfigDB(*m.Config)
 
-		logger.Finfo(fmt.Sprintf("Building content form for datatype %s, route %s", datatypeID, routeID))
+		logger.Finfo(fmt.Sprintf("building content form for datatype %s, route %s", datatypeID, routeID))
 
 		// Fetch fields by parent datatype ID
 		fieldList, err := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: datatypeID, Valid: true})
@@ -335,7 +335,7 @@ func (m Model) BuildContentFieldsForm(datatypeID types.DatatypeID, routeID types
 		}
 
 		if len(fields) == 0 {
-			logger.Finfo(fmt.Sprintf("No valid fields found for datatype %s", datatypeID))
+			logger.Finfo(fmt.Sprintf("no valid fields found for datatype %s", datatypeID))
 			return FetchErrMsg{Error: fmt.Errorf("no fields found for datatype %s", datatypeID)}
 		}
 

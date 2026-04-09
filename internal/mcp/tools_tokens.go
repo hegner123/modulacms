@@ -30,7 +30,7 @@ func registerTokenTools(srv *server.MCPServer, backend TokenBackend) {
 			mcp.WithString("token", mcp.Required(), mcp.Description("Token value")),
 			mcp.WithString("issued_at", mcp.Required(), mcp.Description("Issued at timestamp")),
 			mcp.WithString("expires_at", mcp.Required(), mcp.Description("Expiration timestamp (RFC3339)")),
-			mcp.WithString("user_id", mcp.Description("User ID to associate with the token")),
+			mcp.WithString("user_id", mcp.Description("user ID to associate with the token")),
 			mcp.WithBoolean("revoked", mcp.Description("Whether the token is revoked (default false)")),
 		),
 		handleCreateToken(backend),

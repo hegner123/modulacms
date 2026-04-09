@@ -14,7 +14,7 @@ import (
 
 var configParentCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Configuration management commands",
+	Short: "configuration management commands",
 	Long: `View, validate, and modify the Modula configuration file (modula.config.json).
 
 Subcommands:
@@ -148,14 +148,14 @@ Examples:
 			return fmt.Errorf("configuration has %d validation error(s):\n  %s", len(errs), strings.Join(errs, "\n  "))
 		}
 
-		utility.DefaultLogger.Info("Configuration is valid")
+		utility.DefaultLogger.Info("configuration is valid")
 		return nil
 	},
 }
 
 var configSetCmd = &cobra.Command{
 	Use:   "set <key> <value>",
-	Short: "Update a configuration field and save to disk",
+	Short: "update a configuration field and save to disk",
 	Long: `Update a single field in modula.config.json and write the file back to disk.
 
 The key must be a known configuration field name. Use "modula config fields" to
@@ -429,7 +429,7 @@ Examples:
 			return fmt.Errorf("writing %s: %w", filename, err)
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Created %s\n", filename)
+		fmt.Fprintf(cmd.OutOrStdout(), "created %s\n", filename)
 		fmt.Fprintf(cmd.OutOrStdout(), "Usage: modula serve --overlay %s\n", filename)
 		return nil
 	},

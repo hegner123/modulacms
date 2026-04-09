@@ -181,7 +181,7 @@ func TestDatabase_CRUD_Plugin_GetByName(t *testing.T) {
 	created, err := d.CreatePlugin(ctx, ac, CreatePluginParams{
 		Name:           "named-plugin",
 		Version:        "1.0.0",
-		Description:    "Plugin found by name",
+		Description:    "plugin found by name",
 		Author:         "tester",
 		Status:         types.PluginStatusInstalled,
 		Capabilities:   "[]",
@@ -205,8 +205,8 @@ func TestDatabase_CRUD_Plugin_GetByName(t *testing.T) {
 	if got.Name != "named-plugin" {
 		t.Errorf("Name = %q, want %q", got.Name, "named-plugin")
 	}
-	if got.Description != "Plugin found by name" {
-		t.Errorf("Description = %q, want %q", got.Description, "Plugin found by name")
+	if got.Description != "plugin found by name" {
+		t.Errorf("Description = %q, want %q", got.Description, "plugin found by name")
 	}
 }
 
@@ -299,7 +299,7 @@ func TestDatabase_CRUD_Plugin_UpdateStatus(t *testing.T) {
 	created, err := d.CreatePlugin(ctx, ac, CreatePluginParams{
 		Name:           "status-change-plugin",
 		Version:        "1.0.0",
-		Description:    "Plugin to test status change",
+		Description:    "plugin to test status change",
 		Author:         "tester",
 		Status:         types.PluginStatusInstalled,
 		Capabilities:   "[]",

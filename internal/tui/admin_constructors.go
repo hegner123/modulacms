@@ -417,7 +417,7 @@ func ReloadAdminContentTreeCmd(cfg *config.Config, adminRouteID types.AdminRoute
 
 		rows, err := d.ListAdminContentDataWithDatatypeByRoute(routeFilter)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: "Failed to load admin content: " + err.Error()}
+			return ActionResultMsg{Title: "Error", Message: "failed to load admin content: " + err.Error()}
 		}
 
 		var cd []db.AdminContentData
@@ -456,7 +456,7 @@ func ReloadAdminContentTreeCmd(cfg *config.Config, adminRouteID types.AdminRoute
 
 		cfRows, cfErr := d.ListAdminContentFieldsWithFieldByRoute(routeFilter)
 		if cfErr != nil {
-			return ActionResultMsg{Title: "Error", Message: "Failed to load admin content fields: " + cfErr.Error()}
+			return ActionResultMsg{Title: "Error", Message: "failed to load admin content fields: " + cfErr.Error()}
 		}
 
 		var cf []db.AdminContentFields
@@ -496,7 +496,7 @@ func ReloadAdminContentTreeCmd(cfg *config.Config, adminRouteID types.AdminRoute
 		root := tree.NewRoot()
 		stats, treeErr := root.LoadFromAdminData(cd, dt, cf, df)
 		if treeErr != nil {
-			return ActionResultMsg{Title: "Error", Message: "Failed to build admin tree: " + treeErr.Error()}
+			return ActionResultMsg{Title: "Error", Message: "failed to build admin tree: " + treeErr.Error()}
 		}
 
 		return AdminTreeLoadedMsg{RootNode: root, Stats: stats}
@@ -511,7 +511,7 @@ func ReloadAdminContentTreeByRootIDCmd(cfg *config.Config, rootID types.AdminCon
 
 		rows, err := d.ListAdminContentDataWithDatatypeByRootID(rootFilter)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: "Failed to load admin content by root_id: " + err.Error()}
+			return ActionResultMsg{Title: "Error", Message: "failed to load admin content by root_id: " + err.Error()}
 		}
 
 		var cd []db.AdminContentData
@@ -551,7 +551,7 @@ func ReloadAdminContentTreeByRootIDCmd(cfg *config.Config, rootID types.AdminCon
 
 		cfRows, cfErr := d.ListAdminContentFieldsByRootID(rootFilter)
 		if cfErr != nil {
-			return ActionResultMsg{Title: "Error", Message: "Failed to load admin content fields by root_id: " + cfErr.Error()}
+			return ActionResultMsg{Title: "Error", Message: "failed to load admin content fields by root_id: " + cfErr.Error()}
 		}
 
 		var cf []db.AdminContentFields
@@ -574,7 +574,7 @@ func ReloadAdminContentTreeByRootIDCmd(cfg *config.Config, rootID types.AdminCon
 		root := tree.NewRoot()
 		stats, treeErr := root.LoadFromAdminData(cd, dt, cf, df)
 		if treeErr != nil {
-			return ActionResultMsg{Title: "Error", Message: "Failed to build admin tree: " + treeErr.Error()}
+			return ActionResultMsg{Title: "Error", Message: "failed to build admin tree: " + treeErr.Error()}
 		}
 
 		return AdminTreeLoadedMsg{RootNode: root, Stats: stats}
@@ -595,12 +595,12 @@ func LoadAdminContentFieldsCmd(cfg *config.Config, adminContentDataID types.Admi
 			// Full mode: merge content values with canonical field list
 			contentFields, err := d.ListAdminContentFieldsByContentDataAndLocale(contentFilter, locale)
 			if err != nil {
-				return ActionResultMsg{Title: "Error", Message: "Failed to load admin content fields: " + err.Error()}
+				return ActionResultMsg{Title: "Error", Message: "failed to load admin content fields: " + err.Error()}
 			}
 
 			canonicalFields, fieldErr := d.ListAdminFieldsByDatatypeID(adminDatatypeID)
 			if fieldErr != nil {
-				return ActionResultMsg{Title: "Error", Message: "Failed to load admin fields: " + fieldErr.Error()}
+				return ActionResultMsg{Title: "Error", Message: "failed to load admin fields: " + fieldErr.Error()}
 			}
 
 			valueMap := make(map[types.AdminFieldID]db.AdminContentFields)
@@ -636,7 +636,7 @@ func LoadAdminContentFieldsCmd(cfg *config.Config, adminContentDataID types.Admi
 		// Lightweight mode: return only fields with stored values via join
 		rows, err := d.ListAdminContentFieldsWithFieldByContentData(contentFilter)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: "Failed to load admin content fields: " + err.Error()}
+			return ActionResultMsg{Title: "Error", Message: "failed to load admin content fields: " + err.Error()}
 		}
 
 		var display []AdminContentFieldDisplay
@@ -666,13 +666,13 @@ func FetchAdminContentForEditCmd(cfg *config.Config, adminContentID types.AdminC
 		contentFilter := types.NullableAdminContentID{ID: adminContentID, Valid: true}
 		contentFields, err := d.ListAdminContentFieldsByContentDataAndLocale(contentFilter, locale)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: "Failed to fetch admin content fields: " + err.Error()}
+			return ActionResultMsg{Title: "Error", Message: "failed to fetch admin content fields: " + err.Error()}
 		}
 
 		dtFilter := types.NullableAdminDatatypeID{ID: adminDatatypeID, Valid: true}
 		canonicalFields, fieldErr := d.ListAdminFieldsByDatatypeID(dtFilter)
 		if fieldErr != nil {
-			return ActionResultMsg{Title: "Error", Message: "Failed to fetch admin fields: " + fieldErr.Error()}
+			return ActionResultMsg{Title: "Error", Message: "failed to fetch admin fields: " + fieldErr.Error()}
 		}
 
 		// Build map of existing values
@@ -718,7 +718,7 @@ func FetchAdminRootDatatypesCmd(cfg *config.Config) tea.Cmd {
 		d := db.ConfigDB(*cfg)
 		all, err := d.ListAdminDatatypes()
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: "Failed to load admin datatypes: " + err.Error()}
+			return ActionResultMsg{Title: "Error", Message: "failed to load admin datatypes: " + err.Error()}
 		}
 
 		var roots []db.AdminDatatypes
@@ -842,12 +842,12 @@ func ShowMoveAdminContentDialogCmd(node *tree.Node, adminRouteID types.AdminRout
 func AdminFetchFieldsForFormCmd(d db.DbDriver, adminDatatypeID types.AdminDatatypeID, adminRouteID types.AdminRouteID) tea.Cmd {
 	return func() tea.Msg {
 		if d == nil {
-			return ActionResultMsg{Title: "Error", Message: "Database not available"}
+			return ActionResultMsg{Title: "Error", Message: "database not available"}
 		}
 		dtFilter := types.NullableAdminDatatypeID{ID: adminDatatypeID, Valid: true}
 		fields, err := d.ListAdminFieldsByDatatypeID(dtFilter)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to fetch fields: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to fetch fields: %v", err)}
 		}
 		var fieldList []db.AdminFields
 		if fields != nil {

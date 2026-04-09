@@ -202,7 +202,7 @@ func (d Database) UpdateDatatype(ctx context.Context, ac audited.AuditContext, s
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update datatype: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Label)
 	return &msg, nil
 }
 
@@ -363,7 +363,7 @@ func (d MysqlDatabase) UpdateDatatype(ctx context.Context, ac audited.AuditConte
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update datatype: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Label)
 	return &msg, nil
 }
 
@@ -524,7 +524,7 @@ func (d PsqlDatabase) UpdateDatatype(ctx context.Context, ac audited.AuditContex
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update datatype: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Label)
 	return &msg, nil
 }
 

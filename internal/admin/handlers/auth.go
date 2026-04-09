@@ -42,7 +42,7 @@ func LoginSubmitHandler(mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, err := mgr.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -63,7 +63,7 @@ func LoginSubmitHandler(mgr *config.Manager) http.HandlerFunc {
 
 		if email == "" || password == "" {
 			w.WriteHeader(http.StatusUnprocessableEntity)
-			Render(w, r, pages.Login(csrfToken, utility.Version, nextURL, "Email and password are required"))
+			Render(w, r, pages.Login(csrfToken, utility.Version, nextURL, "email and password are required"))
 			return
 		}
 
@@ -85,7 +85,7 @@ func LoginSubmitHandler(mgr *config.Manager) http.HandlerFunc {
 		// Generate session token
 		tokenBytes := make([]byte, 32)
 		if _, randErr := rand.Read(tokenBytes); randErr != nil {
-			utility.DefaultLogger.Error("Failed to generate session token", randErr)
+			utility.DefaultLogger.Error("failed to generate session token", randErr)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -106,14 +106,14 @@ func LoginSubmitHandler(mgr *config.Manager) http.HandlerFunc {
 			UserAgent:   db.NewNullString(r.UserAgent()),
 		})
 		if sessionErr != nil {
-			utility.DefaultLogger.Error("Failed to create session", sessionErr)
+			utility.DefaultLogger.Error("failed to create session", sessionErr)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
 		// Set cookie
 		if cookieErr := middleware.WriteCookie(w, cfg, sessionToken, user.UserID); cookieErr != nil {
-			utility.DefaultLogger.Error("Failed to set cookie", cookieErr)
+			utility.DefaultLogger.Error("failed to set cookie", cookieErr)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -169,7 +169,7 @@ func ForgotPasswordSubmitHandler(mgr *config.Manager, emailSvc *email.Service, d
 
 		if addr == "" {
 			w.WriteHeader(http.StatusUnprocessableEntity)
-			Render(w, r, pages.ForgotPassword(csrfToken, utility.Version, "Email is required", ""))
+			Render(w, r, pages.ForgotPassword(csrfToken, utility.Version, "email is required", ""))
 			return
 		}
 
@@ -336,7 +336,7 @@ func ResetPasswordSubmitHandler(mgr *config.Manager, driver db.DbDriver) http.Ha
 
 		user, err := driver.GetUser(tok.UserID.ID)
 		if err != nil || user == nil {
-			Render(w, r, pages.ResetPassword(csrfToken, utility.Version, "", "User not found.", ""))
+			Render(w, r, pages.ResetPassword(csrfToken, utility.Version, "", "user not found.", ""))
 			return
 		}
 

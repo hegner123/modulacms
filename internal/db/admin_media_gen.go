@@ -264,7 +264,7 @@ func (d Database) UpdateAdminMedia(ctx context.Context, ac audited.AuditContext,
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminMedia: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminMediaID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.AdminMediaID)
 	return &msg, nil
 }
 
@@ -451,7 +451,7 @@ func (d MysqlDatabase) UpdateAdminMedia(ctx context.Context, ac audited.AuditCon
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminMedia: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminMediaID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.AdminMediaID)
 	return &msg, nil
 }
 
@@ -638,7 +638,7 @@ func (d PsqlDatabase) UpdateAdminMedia(ctx context.Context, ac audited.AuditCont
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminMedia: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminMediaID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.AdminMediaID)
 	return &msg, nil
 }
 

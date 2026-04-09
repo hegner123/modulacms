@@ -185,7 +185,7 @@ func (d Database) UpdateUser(ctx context.Context, ac audited.AuditContext, s Upd
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Username)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Username)
 	return &msg, nil
 }
 
@@ -319,7 +319,7 @@ func (d MysqlDatabase) UpdateUser(ctx context.Context, ac audited.AuditContext, 
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Username)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Username)
 	return &msg, nil
 }
 
@@ -453,7 +453,7 @@ func (d PsqlDatabase) UpdateUser(ctx context.Context, ac audited.AuditContext, s
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Username)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Username)
 	return &msg, nil
 }
 

@@ -181,7 +181,7 @@ func NewConsoleProvider() *ConsoleProvider {
 
 // SendMetric logs a metric to the console.
 func (p *ConsoleProvider) SendMetric(metric Metric) error {
-	DefaultLogger.Info("METRIC",
+	DefaultLogger.Info("metric",
 		"name", metric.Name,
 		"type", metric.Type,
 		"value", metric.Value,
@@ -192,7 +192,7 @@ func (p *ConsoleProvider) SendMetric(metric Metric) error {
 
 // SendError logs an error event to the console.
 func (p *ConsoleProvider) SendError(err error, context map[string]any) error {
-	DefaultLogger.Error("OBSERVABILITY ERROR", err, "context", context)
+	DefaultLogger.Error("observability error", err, "context", context)
 	return nil
 }
 

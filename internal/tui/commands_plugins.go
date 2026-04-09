@@ -14,7 +14,7 @@ func (m Model) HandlePluginAction(msg PluginActionRequestMsg) tea.Cmd {
 	adminUser := m.AdminUsername
 	if mgr == nil {
 		return func() tea.Msg {
-			return PluginActionResultMsg{Title: "Error", Message: "Plugin manager not available"}
+			return PluginActionResultMsg{Title: "Error", Message: "plugin manager not available"}
 		}
 	}
 
@@ -24,7 +24,7 @@ func (m Model) HandlePluginAction(msg PluginActionRequestMsg) tea.Cmd {
 			if err := mgr.ActivatePlugin(context.Background(), msg.Name, adminUser); err != nil {
 				return PluginActionResultMsg{
 					Title:   "Error",
-					Message: fmt.Sprintf("Failed to enable plugin %q: %v", msg.Name, err),
+					Message: fmt.Sprintf("failed to enable plugin %q: %v", msg.Name, err),
 				}
 			}
 			return PluginActionCompleteMsg{Name: msg.Name, Action: PluginActionEnable}
@@ -34,7 +34,7 @@ func (m Model) HandlePluginAction(msg PluginActionRequestMsg) tea.Cmd {
 			if err := mgr.DeactivatePlugin(context.Background(), msg.Name); err != nil {
 				return PluginActionResultMsg{
 					Title:   "Error",
-					Message: fmt.Sprintf("Failed to disable plugin %q: %v", msg.Name, err),
+					Message: fmt.Sprintf("failed to disable plugin %q: %v", msg.Name, err),
 				}
 			}
 			return PluginActionCompleteMsg{Name: msg.Name, Action: PluginActionDisable}
@@ -44,7 +44,7 @@ func (m Model) HandlePluginAction(msg PluginActionRequestMsg) tea.Cmd {
 			if err := mgr.ReloadPlugin(context.Background(), msg.Name); err != nil {
 				return PluginActionResultMsg{
 					Title:   "Error",
-					Message: fmt.Sprintf("Failed to reload plugin %q: %v", msg.Name, err),
+					Message: fmt.Sprintf("failed to reload plugin %q: %v", msg.Name, err),
 				}
 			}
 			return PluginActionCompleteMsg{Name: msg.Name, Action: PluginActionReload}
@@ -64,7 +64,7 @@ func (m Model) HandlePluginAction(msg PluginActionRequestMsg) tea.Cmd {
 				if err := bridge.ApproveRoute(context.Background(), r.PluginName, r.Method, r.Path, adminUser); err != nil {
 					return PluginActionResultMsg{
 						Title:   "Error",
-						Message: fmt.Sprintf("Failed to approve route %s %s: %v", r.Method, r.Path, err),
+						Message: fmt.Sprintf("failed to approve route %s %s: %v", r.Method, r.Path, err),
 					}
 				}
 				approved++
@@ -86,7 +86,7 @@ func (m Model) HandlePluginAction(msg PluginActionRequestMsg) tea.Cmd {
 				if err := engine.ApproveHook(context.Background(), h.PluginName, h.Event, h.Table, adminUser); err != nil {
 					return PluginActionResultMsg{
 						Title:   "Error",
-						Message: fmt.Sprintf("Failed to approve hook %s:%s: %v", h.Event, h.Table, err),
+						Message: fmt.Sprintf("failed to approve hook %s:%s: %v", h.Event, h.Table, err),
 					}
 				}
 				approved++
@@ -103,7 +103,7 @@ func (m Model) HandlePluginAction(msg PluginActionRequestMsg) tea.Cmd {
 func FetchPendingRoutesForApprovalScreenCmd(mgr *plugin.Manager, pluginName string) tea.Cmd {
 	if mgr == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Plugin manager not available"}
+			return ActionResultMsg{Title: "Error", Message: "plugin manager not available"}
 		}
 	}
 	return func() tea.Msg {
@@ -120,8 +120,8 @@ func FetchPendingRoutesForApprovalScreenCmd(mgr *plugin.Manager, pluginName stri
 		}
 		if len(pending) == 0 {
 			return ActionResultMsg{
-				Title:   "No Pending Routes",
-				Message: fmt.Sprintf("Plugin '%s' has no unapproved routes.", pluginName),
+				Title:   "no Pending Routes",
+				Message: fmt.Sprintf("plugin '%s' has no unapproved routes.", pluginName),
 			}
 		}
 		return ShowApproveAllRoutesDialogMsg{PluginName: pluginName, PendingRoutes: pending}
@@ -133,7 +133,7 @@ func FetchPendingRoutesForApprovalScreenCmd(mgr *plugin.Manager, pluginName stri
 func FetchPendingHooksForApprovalScreenCmd(mgr *plugin.Manager, pluginName string) tea.Cmd {
 	if mgr == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Plugin manager not available"}
+			return ActionResultMsg{Title: "Error", Message: "plugin manager not available"}
 		}
 	}
 	return func() tea.Msg {
@@ -150,8 +150,8 @@ func FetchPendingHooksForApprovalScreenCmd(mgr *plugin.Manager, pluginName strin
 		}
 		if len(pending) == 0 {
 			return ActionResultMsg{
-				Title:   "No Pending Hooks",
-				Message: fmt.Sprintf("Plugin '%s' has no unapproved hooks.", pluginName),
+				Title:   "no Pending Hooks",
+				Message: fmt.Sprintf("plugin '%s' has no unapproved hooks.", pluginName),
 			}
 		}
 		return ShowApproveAllHooksDialogMsg{PluginName: pluginName, PendingHooks: pending}

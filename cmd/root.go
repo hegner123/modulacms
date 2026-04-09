@@ -51,7 +51,7 @@ Global flags:
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgPath, "config", config.DefaultConfigFilename, "Path to configuration file")
-	rootCmd.PersistentFlags().StringVar(&overlayPath, "overlay", "", "Overlay config file (merged on top of --config)")
+	rootCmd.PersistentFlags().StringVar(&overlayPath, "overlay", "", "overlay config file (merged on top of --config)")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable debug logging")
 	rootCmd.PersistentFlags().BoolVarP(&yesFlag, "yes", "y", false, "Auto-accept all prompts")
 

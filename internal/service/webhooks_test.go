@@ -96,7 +96,7 @@ func TestWebhookService_CreateEmptyURL(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := svc.CreateWebhook(ctx, ac, service.CreateWebhookInput{
-		Name:   "No URL",
+		Name:   "no URL",
 		URL:    "",
 		Events: []string{"content.published"},
 	}, userID)
@@ -130,7 +130,7 @@ func TestWebhookService_CreateEmptyEvents(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := svc.CreateWebhook(ctx, ac, service.CreateWebhookInput{
-		Name:   "No Events",
+		Name:   "no Events",
 		URL:    "https://example.com/webhook",
 		Events: []string{},
 	}, userID)
@@ -222,7 +222,7 @@ func TestWebhookService_Delete(t *testing.T) {
 	d, svc, userID, ac := webhookTestSetup(t)
 	ctx := context.Background()
 
-	wh := seedWebhook(t, d, ac, userID, "https://example.com/hook", "To Delete", "")
+	wh := seedWebhook(t, d, ac, userID, "https://example.com/hook", "to Delete", "")
 
 	if err := svc.DeleteWebhook(ctx, ac, wh.WebhookID); err != nil {
 		t.Fatalf("delete: %v", err)
@@ -290,7 +290,7 @@ func TestWebhookService_ListPaginated(t *testing.T) {
 	ctx := context.Background()
 
 	for i := range 3 {
-		name := "Webhook " + string(rune('A'+i))
+		name := "webhook " + string(rune('A'+i))
 		seedWebhook(t, d, ac, userID, "https://example.com/hook"+string(rune('A'+i)), name, "")
 	}
 

@@ -13,7 +13,7 @@ func CreateDb(path string, c *config.Config, adminHash string) error {
 
 	progress := NewInstallProgress()
 
-	progress.AddStep("Database tables", "Creating database tables", func() error {
+	progress.AddStep("database tables", "creating database tables", func() error {
 		err := d.CreateAllTables()
 		if err != nil {
 			return ErrDBTables(err)
@@ -21,7 +21,7 @@ func CreateDb(path string, c *config.Config, adminHash string) error {
 		return nil
 	})
 
-	progress.AddStep("Bootstrap data", "Inserting bootstrap data", func() error {
+	progress.AddStep("bootstrap data", "Inserting bootstrap data", func() error {
 		err := d.CreateBootstrapData(adminHash)
 		if err != nil {
 			return ErrDBBootstrap(err)
@@ -29,7 +29,7 @@ func CreateDb(path string, c *config.Config, adminHash string) error {
 		return nil
 	})
 
-	progress.AddStep("Database validation", "Validating database setup", func() error {
+	progress.AddStep("database validation", "Validating database setup", func() error {
 		err := d.ValidateBootstrapData()
 		if err != nil {
 			return ErrDBBootstrap(err)
@@ -37,7 +37,7 @@ func CreateDb(path string, c *config.Config, adminHash string) error {
 		return nil
 	})
 
-	progress.AddStep("Bootstrap cleanup", "Removing verification records from content tables", func() error {
+	progress.AddStep("bootstrap cleanup", "Removing verification records from content tables", func() error {
 		err := d.CleanupBootstrapData()
 		if err != nil {
 			return ErrDBBootstrap(err)

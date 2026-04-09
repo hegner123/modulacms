@@ -71,7 +71,7 @@ func InitPages() *map[PageIndex]Page {
 	adminDatatypesPage := NewPage(ADMINDATATYPES, "Admin Datatypes")
 	adminContentPage := NewPage(ADMINCONTENT, "Admin Content")
 	pluginsPage := NewPage(PLUGINSPAGE, "Plugins")
-	pluginDetailPage := NewPage(PLUGINDETAILPAGE, "Plugin Detail")
+	pluginDetailPage := NewPage(PLUGINDETAILPAGE, "plugin Detail")
 	quickstartPage := NewPage(QUICKSTARTPAGE, "Quickstart")
 	fieldTypesPage := NewPage(FIELDTYPES, "Field Types")
 	adminFieldTypesPage := NewPage(ADMINFIELDTYPES, "Admin Field Types")

@@ -40,7 +40,7 @@ func registerAdminContentTools(srv *server.MCPServer, backend AdminContentBacken
 
 	srv.AddTool(
 		mcp.NewTool("admin_update_content",
-			mcp.WithDescription("Update an existing admin content data entry."),
+			mcp.WithDescription("update an existing admin content data entry."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin content data ID (ULID)")),
 			mcp.WithString("status", mcp.Required(), mcp.Description("Content status"), mcp.Enum("draft", "published", "archived", "pending")),
 			mcp.WithString("parent_id", mcp.Description("Parent admin content ID")),
@@ -109,7 +109,7 @@ func registerAdminContentTools(srv *server.MCPServer, backend AdminContentBacken
 
 	srv.AddTool(
 		mcp.NewTool("admin_update_content_field",
-			mcp.WithDescription("Update an existing admin content field."),
+			mcp.WithDescription("update an existing admin content field."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin content field ID (ULID)")),
 			mcp.WithString("admin_field_value", mcp.Required(), mcp.Description("New field value")),
 			mcp.WithString("admin_content_data_id", mcp.Description("Admin content data ID")),

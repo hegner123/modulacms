@@ -99,10 +99,10 @@ func TestDatabase_CRUD_ContentData(t *testing.T) {
 		t.Fatalf("ListContentDataByRoute: %v", err)
 	}
 	if byRoute == nil {
-		t.Fatal("ListContentDataByRoute returned nil")
+		t.Fatal("listContentDataByRoute returned nil")
 	}
 	if len(*byRoute) != 1 {
-		t.Fatalf("ListContentDataByRoute len = %d, want 1", len(*byRoute))
+		t.Fatalf("listContentDataByRoute len = %d, want 1", len(*byRoute))
 	}
 	if (*byRoute)[0].ContentDataID != created.ContentDataID {
 		t.Errorf("ListContentDataByRoute[0].ContentDataID = %v, want %v", (*byRoute)[0].ContentDataID, created.ContentDataID)
@@ -111,10 +111,10 @@ func TestDatabase_CRUD_ContentData(t *testing.T) {
 	// --- ListContentDataByRoute with non-matching route ---
 	noMatch, err := d.ListContentDataByRoute(types.NullableRouteID{ID: types.NewRouteID(), Valid: true})
 	if err != nil {
-		t.Fatalf("ListContentDataByRoute (no match): %v", err)
+		t.Fatalf("listContentDataByRoute (no match): %v", err)
 	}
 	if noMatch != nil && len(*noMatch) != 0 {
-		t.Errorf("ListContentDataByRoute (no match) len = %d, want 0", len(*noMatch))
+		t.Errorf("listContentDataByRoute (no match) len = %d, want 0", len(*noMatch))
 	}
 
 	// --- Count: now 1 ---

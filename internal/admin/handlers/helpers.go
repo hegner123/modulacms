@@ -38,9 +38,12 @@ func Render(w http.ResponseWriter, r *http.Request, component templ.Component) {
 }
 
 // OOBSwap represents an out-of-band HTMX swap fragment.
+// By default uses outerHTML swap. Set InnerHTML to true to preserve the
+// target element and only replace its children.
 type OOBSwap struct {
 	TargetID  string
 	Component templ.Component
+	InnerHTML bool
 }
 
 // RenderWithOOB renders a primary component plus out-of-band swap fragments.
@@ -61,7 +64,11 @@ func RenderWithOOB(w http.ResponseWriter, r *http.Request, primary templ.Compone
 	}
 
 	for _, swap := range oob {
-		fmt.Fprintf(buf, `<div id="%s" hx-swap-oob="true">`, template.HTMLEscapeString(swap.TargetID))
+		swapMode := "true"
+		if swap.InnerHTML {
+			swapMode = "innerHTML"
+		}
+		fmt.Fprintf(buf, `<div id="%s" hx-swap-oob="%s">`, template.HTMLEscapeString(swap.TargetID), swapMode)
 		if err := swap.Component.Render(r.Context(), buf); err != nil {
 			utility.DefaultLogger.Error("OOB render failed", err, "target", swap.TargetID)
 			if r.Header.Get("HX-Request") != "" {

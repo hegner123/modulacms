@@ -2205,7 +2205,7 @@ func TestDeleteVerificationCmd_GetID_EmptyID(t *testing.T) {
 func TestAuditedBackupCreateCommands_GetID_CrossDatabase(t *testing.T) {
 	t.Parallel()
 
-	t.Run("Backup CreateCmd GetID extracts from result row", func(t *testing.T) {
+	t.Run("backup CreateCmd GetID extracts from result row", func(t *testing.T) {
 		t.Parallel()
 		backupID := types.NewBackupID()
 

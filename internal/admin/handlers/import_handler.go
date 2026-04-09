@@ -63,11 +63,11 @@ func ImportSubmitHandler(svc *service.Registry) http.HandlerFunc {
 		if fileErr != nil {
 			utility.DefaultLogger.Error("failed to read import file", fileErr)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "No file uploaded", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "no file uploaded", "type": "error"}}`)
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			http.Error(w, "No file uploaded", http.StatusBadRequest)
+			http.Error(w, "no file uploaded", http.StatusBadRequest)
 			return
 		}
 		defer file.Close()
@@ -76,11 +76,11 @@ func ImportSubmitHandler(svc *service.Registry) http.HandlerFunc {
 		if readErr != nil {
 			utility.DefaultLogger.Error("failed to read import file body", readErr)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to read file", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to read file", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to read file", http.StatusInternalServerError)
+			http.Error(w, "failed to read file", http.StatusInternalServerError)
 			return
 		}
 

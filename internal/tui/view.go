@@ -15,7 +15,7 @@ func (m Model) View() tea.View {
 		if m.FormState != nil && m.FormState.Form != nil {
 			content = m.FormState.Form.View()
 		} else {
-			content = "Initializing user provisioning..."
+			content = "initializing user provisioning..."
 		}
 	} else {
 		content = renderCMSPanelLayout(m)

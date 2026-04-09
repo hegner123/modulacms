@@ -126,7 +126,7 @@ func TestSearchWithPrefixPartialTermMatch(t *testing.T) {
 	idx.Add(SearchDocument{
 		ID:            "doc1",
 		ContentDataID: "cd1",
-		Fields:        map[string]string{"title": "Configuration Management"},
+		Fields:        map[string]string{"title": "configuration Management"},
 	})
 	idx.Add(SearchDocument{
 		ID:            "doc2",

@@ -4,7 +4,7 @@ func init() {
 	RegisterFieldInput(FieldInputEntry{
 		Key:         "email",
 		Label:       "Email",
-		Description: "Email address input",
+		Description: "email address input",
 		NewBubble:   func() FieldBubble { return NewEmailBubble() },
 	})
 }

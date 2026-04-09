@@ -51,7 +51,7 @@ const (
 // NewWebhookFormDialog creates a webhook form dialog for creating a new webhook.
 func NewWebhookFormDialog(title string) WebhookFormDialogModel {
 	nameInput := textinput.New()
-	nameInput.Placeholder = "Webhook name"
+	nameInput.Placeholder = "webhook name"
 	nameInput.CharLimit = 128
 	nameInput.SetWidth(40)
 	nameInput.Focus()
@@ -89,7 +89,7 @@ func NewWebhookFormDialog(title string) WebhookFormDialogModel {
 // NewEditWebhookFormDialog creates a webhook form dialog pre-populated for editing.
 func NewEditWebhookFormDialog(title string, webhook db.Webhook) WebhookFormDialogModel {
 	nameInput := textinput.New()
-	nameInput.Placeholder = "Webhook name"
+	nameInput.Placeholder = "webhook name"
 	nameInput.CharLimit = 128
 	nameInput.SetWidth(40)
 	nameInput.SetValue(webhook.Name)

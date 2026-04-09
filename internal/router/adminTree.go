@@ -121,7 +121,7 @@ func apiGetAdminTreeContent(w http.ResponseWriter, r *http.Request, svc *service
 
 	root, err := model.BuildAdminTree(utility.DefaultLogger, filteredData, dt, filteredFields, fd)
 	if err != nil {
-		utility.DefaultLogger.Error("BuildAdminTree error", err)
+		utility.DefaultLogger.Error("buildAdminTree error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
@@ -152,7 +152,7 @@ func apiGetAdminTreeContent(w http.ResponseWriter, r *http.Request, svc *service
 	)
 
 	if err := transformCfg.TransformAndWrite(w, root); err != nil {
-		utility.DefaultLogger.Error("Transform error", err)
+		utility.DefaultLogger.Error("transform error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}

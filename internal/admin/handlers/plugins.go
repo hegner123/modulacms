@@ -87,16 +87,16 @@ func PluginEnableHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := r.PathValue("name")
 		if name == "" {
-			htmxError(w, r, "Plugin name is required", http.StatusBadRequest)
+			htmxError(w, r, "plugin name is required", http.StatusBadRequest)
 			return
 		}
 
 		if err := svc.Plugins.Enable(r.Context(), name); err != nil {
-			htmxServiceError(w, r, "Failed to enable plugin", err)
+			htmxServiceError(w, r, "failed to enable plugin", err)
 			return
 		}
 
-		htmxRedirectToDetail(w, name, "Plugin enabled")
+		htmxRedirectToDetail(w, name, "plugin enabled")
 	}
 }
 
@@ -105,16 +105,16 @@ func PluginDisableHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := r.PathValue("name")
 		if name == "" {
-			htmxError(w, r, "Plugin name is required", http.StatusBadRequest)
+			htmxError(w, r, "plugin name is required", http.StatusBadRequest)
 			return
 		}
 
 		if err := svc.Plugins.Disable(r.Context(), name); err != nil {
-			htmxServiceError(w, r, "Failed to disable plugin", err)
+			htmxServiceError(w, r, "failed to disable plugin", err)
 			return
 		}
 
-		htmxRedirectToDetail(w, name, "Plugin disabled")
+		htmxRedirectToDetail(w, name, "plugin disabled")
 	}
 }
 
@@ -123,16 +123,16 @@ func PluginReloadHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := r.PathValue("name")
 		if name == "" {
-			htmxError(w, r, "Plugin name is required", http.StatusBadRequest)
+			htmxError(w, r, "plugin name is required", http.StatusBadRequest)
 			return
 		}
 
 		if err := svc.Plugins.Reload(r.Context(), name); err != nil {
-			htmxServiceError(w, r, "Failed to reload plugin", err)
+			htmxServiceError(w, r, "failed to reload plugin", err)
 			return
 		}
 
-		htmxRedirectToDetail(w, name, "Plugin reloaded")
+		htmxRedirectToDetail(w, name, "plugin reloaded")
 	}
 }
 
@@ -148,7 +148,7 @@ func PluginApproveRouteHandler(svc *service.Registry) http.HandlerFunc {
 		method := r.FormValue("method")
 		path := r.FormValue("path")
 		if pluginName == "" || method == "" || path == "" {
-			htmxError(w, r, "Missing route fields", http.StatusBadRequest)
+			htmxError(w, r, "missing route fields", http.StatusBadRequest)
 			return
 		}
 
@@ -162,7 +162,7 @@ func PluginApproveRouteHandler(svc *service.Registry) http.HandlerFunc {
 			{Plugin: pluginName, Method: method, Path: path},
 		}, approvedBy)
 		if err != nil {
-			htmxServiceError(w, r, "Failed to approve route", err)
+			htmxServiceError(w, r, "failed to approve route", err)
 			return
 		}
 
@@ -182,7 +182,7 @@ func PluginRevokeRouteHandler(svc *service.Registry) http.HandlerFunc {
 		method := r.FormValue("method")
 		path := r.FormValue("path")
 		if pluginName == "" || method == "" || path == "" {
-			htmxError(w, r, "Missing route fields", http.StatusBadRequest)
+			htmxError(w, r, "missing route fields", http.StatusBadRequest)
 			return
 		}
 
@@ -190,7 +190,7 @@ func PluginRevokeRouteHandler(svc *service.Registry) http.HandlerFunc {
 			{Plugin: pluginName, Method: method, Path: path},
 		})
 		if err != nil {
-			htmxServiceError(w, r, "Failed to revoke route", err)
+			htmxServiceError(w, r, "failed to revoke route", err)
 			return
 		}
 
@@ -210,7 +210,7 @@ func PluginApproveHookHandler(svc *service.Registry) http.HandlerFunc {
 		event := r.FormValue("event")
 		table := r.FormValue("table")
 		if pluginName == "" || event == "" {
-			htmxError(w, r, "Missing hook fields", http.StatusBadRequest)
+			htmxError(w, r, "missing hook fields", http.StatusBadRequest)
 			return
 		}
 
@@ -224,7 +224,7 @@ func PluginApproveHookHandler(svc *service.Registry) http.HandlerFunc {
 			{PluginName: pluginName, Event: event, Table: table},
 		}, approvedBy)
 		if err != nil {
-			htmxServiceError(w, r, "Failed to approve hook", err)
+			htmxServiceError(w, r, "failed to approve hook", err)
 			return
 		}
 
@@ -244,7 +244,7 @@ func PluginRevokeHookHandler(svc *service.Registry) http.HandlerFunc {
 		event := r.FormValue("event")
 		table := r.FormValue("table")
 		if pluginName == "" || event == "" {
-			htmxError(w, r, "Missing hook fields", http.StatusBadRequest)
+			htmxError(w, r, "missing hook fields", http.StatusBadRequest)
 			return
 		}
 
@@ -252,7 +252,7 @@ func PluginRevokeHookHandler(svc *service.Registry) http.HandlerFunc {
 			{PluginName: pluginName, Event: event, Table: table},
 		})
 		if err != nil {
-			htmxServiceError(w, r, "Failed to revoke hook", err)
+			htmxServiceError(w, r, "failed to revoke hook", err)
 			return
 		}
 
@@ -270,13 +270,13 @@ func PluginApproveAllRoutesHandler(svc *service.Registry) http.HandlerFunc {
 
 		pluginName := r.FormValue("plugin")
 		if pluginName == "" {
-			htmxError(w, r, "Missing plugin name", http.StatusBadRequest)
+			htmxError(w, r, "missing plugin name", http.StatusBadRequest)
 			return
 		}
 
 		routes, err := svc.Plugins.ListRoutes(r.Context())
 		if err != nil {
-			htmxServiceError(w, r, "Failed to list routes", err)
+			htmxServiceError(w, r, "failed to list routes", err)
 			return
 		}
 
@@ -297,7 +297,7 @@ func PluginApproveAllRoutesHandler(svc *service.Registry) http.HandlerFunc {
 
 		if len(pending) > 0 {
 			if approveErr := svc.Plugins.ApproveRoutes(r.Context(), pending, approvedBy); approveErr != nil {
-				htmxServiceError(w, r, "Failed to approve routes", approveErr)
+				htmxServiceError(w, r, "failed to approve routes", approveErr)
 				return
 			}
 		}
@@ -316,13 +316,13 @@ func PluginApproveAllHooksHandler(svc *service.Registry) http.HandlerFunc {
 
 		pluginName := r.FormValue("plugin")
 		if pluginName == "" {
-			htmxError(w, r, "Missing plugin name", http.StatusBadRequest)
+			htmxError(w, r, "missing plugin name", http.StatusBadRequest)
 			return
 		}
 
 		hooks, err := svc.Plugins.ListHooks(r.Context())
 		if err != nil {
-			htmxServiceError(w, r, "Failed to list hooks", err)
+			htmxServiceError(w, r, "failed to list hooks", err)
 			return
 		}
 
@@ -343,7 +343,7 @@ func PluginApproveAllHooksHandler(svc *service.Registry) http.HandlerFunc {
 
 		if len(pending) > 0 {
 			if approveErr := svc.Plugins.ApproveHooks(r.Context(), pending, approvedBy); approveErr != nil {
-				htmxServiceError(w, r, "Failed to approve hooks", approveErr)
+				htmxServiceError(w, r, "failed to approve hooks", approveErr)
 				return
 			}
 		}
@@ -362,13 +362,13 @@ func PluginRevokeAllRoutesHandler(svc *service.Registry) http.HandlerFunc {
 
 		pluginName := r.FormValue("plugin")
 		if pluginName == "" {
-			htmxError(w, r, "Missing plugin name", http.StatusBadRequest)
+			htmxError(w, r, "missing plugin name", http.StatusBadRequest)
 			return
 		}
 
 		routes, err := svc.Plugins.ListRoutes(r.Context())
 		if err != nil {
-			htmxServiceError(w, r, "Failed to list routes", err)
+			htmxServiceError(w, r, "failed to list routes", err)
 			return
 		}
 
@@ -383,7 +383,7 @@ func PluginRevokeAllRoutesHandler(svc *service.Registry) http.HandlerFunc {
 
 		if len(approved) > 0 {
 			if revokeErr := svc.Plugins.RevokeRoutes(r.Context(), approved); revokeErr != nil {
-				htmxServiceError(w, r, "Failed to revoke routes", revokeErr)
+				htmxServiceError(w, r, "failed to revoke routes", revokeErr)
 				return
 			}
 		}
@@ -402,13 +402,13 @@ func PluginRevokeAllHooksHandler(svc *service.Registry) http.HandlerFunc {
 
 		pluginName := r.FormValue("plugin")
 		if pluginName == "" {
-			htmxError(w, r, "Missing plugin name", http.StatusBadRequest)
+			htmxError(w, r, "missing plugin name", http.StatusBadRequest)
 			return
 		}
 
 		hooks, err := svc.Plugins.ListHooks(r.Context())
 		if err != nil {
-			htmxServiceError(w, r, "Failed to list hooks", err)
+			htmxServiceError(w, r, "failed to list hooks", err)
 			return
 		}
 
@@ -423,7 +423,7 @@ func PluginRevokeAllHooksHandler(svc *service.Registry) http.HandlerFunc {
 
 		if len(approved) > 0 {
 			if revokeErr := svc.Plugins.RevokeHooks(r.Context(), approved); revokeErr != nil {
-				htmxServiceError(w, r, "Failed to revoke hooks", revokeErr)
+				htmxServiceError(w, r, "failed to revoke hooks", revokeErr)
 				return
 			}
 		}
@@ -460,7 +460,7 @@ func filterHooksByPlugin(hooks []service.HookInfo, name string) []service.HookIn
 func renderPluginRoutes(w http.ResponseWriter, r *http.Request, svc *service.Registry, pluginName, toastMsg string) {
 	routes, err := svc.Plugins.ListRoutes(r.Context())
 	if err != nil {
-		htmxServiceError(w, r, "Failed to reload routes", err)
+		htmxServiceError(w, r, "failed to reload routes", err)
 		return
 	}
 	pluginRoutes := filterRoutesByPlugin(routes, pluginName)
@@ -474,7 +474,7 @@ func renderPluginRoutes(w http.ResponseWriter, r *http.Request, svc *service.Reg
 func renderPluginHooks(w http.ResponseWriter, r *http.Request, svc *service.Registry, pluginName, toastMsg string) {
 	hooks, err := svc.Plugins.ListHooks(r.Context())
 	if err != nil {
-		htmxServiceError(w, r, "Failed to reload hooks", err)
+		htmxServiceError(w, r, "failed to reload hooks", err)
 		return
 	}
 	pluginHooks := filterHooksByPlugin(hooks, pluginName)

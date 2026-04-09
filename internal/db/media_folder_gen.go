@@ -177,7 +177,7 @@ func (d Database) UpdateMediaFolder(ctx context.Context, ac audited.AuditContext
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update mediaFolder: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Name)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Name)
 	return &msg, nil
 }
 
@@ -357,7 +357,7 @@ func (d MysqlDatabase) UpdateMediaFolder(ctx context.Context, ac audited.AuditCo
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update mediaFolder: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Name)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Name)
 	return &msg, nil
 }
 
@@ -537,7 +537,7 @@ func (d PsqlDatabase) UpdateMediaFolder(ctx context.Context, ac audited.AuditCon
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update mediaFolder: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Name)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Name)
 	return &msg, nil
 }
 

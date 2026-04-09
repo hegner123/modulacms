@@ -27,10 +27,10 @@ func (m Model) HandleUnlinkOauth(msg UnlinkOauthRequestMsg) tea.Cmd {
 		logger.Finfo(fmt.Sprintf("Unlinking OAuth connection: %s", msg.UserOauthID))
 
 		if err := d.DeleteUserOauth(ctx, ac, msg.UserOauthID); err != nil {
-			logger.Ferror("Failed to unlink OAuth connection", err)
+			logger.Ferror("failed to unlink OAuth connection", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to unlink OAuth: %v", err),
+				Message: fmt.Sprintf("failed to unlink OAuth: %v", err),
 			}
 		}
 

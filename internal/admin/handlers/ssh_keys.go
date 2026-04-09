@@ -17,7 +17,7 @@ func UserSSHKeyAddHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := r.PathValue("id")
 		if userID == "" {
-			http.Error(w, "Missing user ID", http.StatusBadRequest)
+			http.Error(w, "missing user ID", http.StatusBadRequest)
 			return
 		}
 
@@ -30,7 +30,7 @@ func UserSSHKeyAddHandler(svc *service.Registry) http.HandlerFunc {
 		publicKey := strings.TrimSpace(r.FormValue("public_key"))
 
 		if publicKey == "" {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Public key is required", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "public key is required", "type": "error"}}`)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			return
 		}
@@ -70,14 +70,14 @@ func UserSSHKeyDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		userID := r.PathValue("id")
 		keyID := r.PathValue("keyId")
 		if userID == "" || keyID == "" {
-			http.Error(w, "Missing user ID or key ID", http.StatusBadRequest)
+			http.Error(w, "missing user ID or key ID", http.StatusBadRequest)
 			return
 		}
 
 		ac, acErr := svc.AuditCtx(r.Context())
 		if acErr != nil {
 			utility.DefaultLogger.Error("failed to build audit context", acErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete SSH key", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete SSH key", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -85,7 +85,7 @@ func UserSSHKeyDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		err := svc.SSHKeys.DeleteKey(r.Context(), ac, types.UserID(userID), keyID)
 		if err != nil {
 			utility.DefaultLogger.Error("failed to delete ssh key", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete SSH key", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete SSH key", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -100,7 +100,7 @@ func renderSSHKeysRows(w http.ResponseWriter, r *http.Request, svc *service.Regi
 	keyList, err := svc.SSHKeys.ListKeys(r.Context(), types.NullableUserID{ID: types.UserID(userID), Valid: true})
 	if err != nil {
 		utility.DefaultLogger.Error("failed to reload ssh keys", err)
-		http.Error(w, "Failed to reload SSH keys", http.StatusInternalServerError)
+		http.Error(w, "failed to reload SSH keys", http.StatusInternalServerError)
 		return
 	}
 

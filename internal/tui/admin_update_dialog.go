@@ -94,7 +94,7 @@ func (m Model) HandleCreateAdminRouteFromDialog(msg CreateAdminRouteFromDialogRe
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create admin route: %v", err),
+				Message: fmt.Sprintf("failed to create admin route: %v", err),
 			}
 		}
 
@@ -165,7 +165,7 @@ func (m Model) HandleUpdateAdminRouteFromDialog(msg UpdateAdminRouteFromDialogRe
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update admin route: %v", err),
+				Message: fmt.Sprintf("failed to update admin route: %v", err),
 			}
 		}
 
@@ -200,7 +200,7 @@ func (m Model) HandleDeleteAdminRoute(msg DeleteAdminRouteRequestMsg) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete admin route: %v", err),
+				Message: fmt.Sprintf("failed to delete admin route: %v", err),
 			}
 		}
 
@@ -271,7 +271,7 @@ func (m Model) HandleCreateAdminDatatypeFromDialog(msg CreateAdminDatatypeFromDi
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create admin datatype: %v", err),
+				Message: fmt.Sprintf("failed to create admin datatype: %v", err),
 			}
 		}
 
@@ -306,7 +306,7 @@ func (m Model) HandleUpdateAdminDatatypeFromDialog(msg UpdateAdminDatatypeFromDi
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get admin datatype for update: %v", err),
+				Message: fmt.Sprintf("failed to get admin datatype for update: %v", err),
 			}
 		}
 
@@ -339,7 +339,7 @@ func (m Model) HandleUpdateAdminDatatypeFromDialog(msg UpdateAdminDatatypeFromDi
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update admin datatype: %v", err),
+				Message: fmt.Sprintf("failed to update admin datatype: %v", err),
 			}
 		}
 
@@ -375,7 +375,7 @@ func (m Model) HandleDeleteAdminDatatype(msg DeleteAdminDatatypeRequestMsg) tea.
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete admin datatype: %v", err),
+				Message: fmt.Sprintf("failed to delete admin datatype: %v", err),
 			}
 		}
 
@@ -448,9 +448,9 @@ func (m Model) HandleCreateAdminFieldFromDialog(msg CreateAdminFieldFromDialogRe
 
 		field, err := d.CreateAdminField(ctx, ac, fieldParams)
 		if err != nil || field == nil {
-			errMsg := "Failed to create admin field in database"
+			errMsg := "failed to create admin field in database"
 			if err != nil {
-				errMsg = fmt.Sprintf("Failed to create admin field: %v", err)
+				errMsg = fmt.Sprintf("failed to create admin field: %v", err)
 			}
 			return ActionResultMsg{
 				Title:   "Error",
@@ -490,7 +490,7 @@ func (m Model) HandleUpdateAdminFieldFromDialog(msg UpdateAdminFieldFromDialogRe
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get admin field for update: %v", err),
+				Message: fmt.Sprintf("failed to get admin field for update: %v", err),
 			}
 		}
 
@@ -524,7 +524,7 @@ func (m Model) HandleUpdateAdminFieldFromDialog(msg UpdateAdminFieldFromDialogRe
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update admin field: %v", err),
+				Message: fmt.Sprintf("failed to update admin field: %v", err),
 			}
 		}
 
@@ -561,7 +561,7 @@ func (m Model) HandleDeleteAdminField(msg DeleteAdminFieldRequestMsg) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get admin field for delete: %v", err),
+				Message: fmt.Sprintf("failed to get admin field for delete: %v", err),
 			}
 		}
 		adminDatatypeID := existing.ParentID.ID
@@ -571,7 +571,7 @@ func (m Model) HandleDeleteAdminField(msg DeleteAdminFieldRequestMsg) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete admin field: %v", err),
+				Message: fmt.Sprintf("failed to delete admin field: %v", err),
 			}
 		}
 
@@ -629,7 +629,7 @@ func (m Model) HandleCreateFieldTypeFromDialog(msg CreateFieldTypeFromDialogRequ
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create field type: %v", err),
+				Message: fmt.Sprintf("failed to create field type: %v", err),
 			}
 		}
 
@@ -666,7 +666,7 @@ func (m Model) HandleUpdateFieldTypeFromDialog(msg UpdateFieldTypeFromDialogRequ
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get field type for update: %v", err),
+				Message: fmt.Sprintf("failed to get field type for update: %v", err),
 			}
 		}
 
@@ -693,7 +693,7 @@ func (m Model) HandleUpdateFieldTypeFromDialog(msg UpdateFieldTypeFromDialogRequ
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update field type: %v", err),
+				Message: fmt.Sprintf("failed to update field type: %v", err),
 			}
 		}
 
@@ -728,7 +728,7 @@ func (m Model) HandleDeleteFieldType(msg DeleteFieldTypeRequestMsg) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete field type: %v", err),
+				Message: fmt.Sprintf("failed to delete field type: %v", err),
 			}
 		}
 
@@ -783,7 +783,7 @@ func (m Model) HandleCreateAdminFieldTypeFromDialog(msg CreateAdminFieldTypeFrom
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create admin field type: %v", err),
+				Message: fmt.Sprintf("failed to create admin field type: %v", err),
 			}
 		}
 
@@ -820,7 +820,7 @@ func (m Model) HandleUpdateAdminFieldTypeFromDialog(msg UpdateAdminFieldTypeFrom
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get admin field type for update: %v", err),
+				Message: fmt.Sprintf("failed to get admin field type for update: %v", err),
 			}
 		}
 
@@ -846,7 +846,7 @@ func (m Model) HandleUpdateAdminFieldTypeFromDialog(msg UpdateAdminFieldTypeFrom
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update admin field type: %v", err),
+				Message: fmt.Sprintf("failed to update admin field type: %v", err),
 			}
 		}
 
@@ -881,7 +881,7 @@ func (m Model) HandleDeleteAdminFieldType(msg DeleteAdminFieldTypeRequestMsg) te
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete admin field type: %v", err),
+				Message: fmt.Sprintf("failed to delete admin field type: %v", err),
 			}
 		}
 
@@ -940,7 +940,7 @@ func (m Model) HandleCreateValidationFromDialog(msg CreateValidationFromDialogRe
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create validation: %v", err),
+				Message: fmt.Sprintf("failed to create validation: %v", err),
 			}
 		}
 
@@ -976,7 +976,7 @@ func (m Model) HandleUpdateValidationFromDialog(msg UpdateValidationFromDialogRe
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get validation for update: %v", err),
+				Message: fmt.Sprintf("failed to get validation for update: %v", err),
 			}
 		}
 
@@ -1005,7 +1005,7 @@ func (m Model) HandleUpdateValidationFromDialog(msg UpdateValidationFromDialogRe
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update validation: %v", err),
+				Message: fmt.Sprintf("failed to update validation: %v", err),
 			}
 		}
 
@@ -1039,7 +1039,7 @@ func (m Model) HandleDeleteValidation(msg DeleteValidationRequestMsg) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete validation: %v", err),
+				Message: fmt.Sprintf("failed to delete validation: %v", err),
 			}
 		}
 
@@ -1098,7 +1098,7 @@ func (m Model) HandleCreateAdminValidationFromDialog(msg CreateAdminValidationFr
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create admin validation: %v", err),
+				Message: fmt.Sprintf("failed to create admin validation: %v", err),
 			}
 		}
 
@@ -1134,7 +1134,7 @@ func (m Model) HandleUpdateAdminValidationFromDialog(msg UpdateAdminValidationFr
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get admin validation for update: %v", err),
+				Message: fmt.Sprintf("failed to get admin validation for update: %v", err),
 			}
 		}
 
@@ -1163,7 +1163,7 @@ func (m Model) HandleUpdateAdminValidationFromDialog(msg UpdateAdminValidationFr
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update admin validation: %v", err),
+				Message: fmt.Sprintf("failed to update admin validation: %v", err),
 			}
 		}
 
@@ -1197,7 +1197,7 @@ func (m Model) HandleDeleteAdminValidation(msg DeleteAdminValidationRequestMsg) 
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete admin validation: %v", err),
+				Message: fmt.Sprintf("failed to delete admin validation: %v", err),
 			}
 		}
 
@@ -1268,13 +1268,13 @@ func (m Model) HandleCreateAdminRouteWithContent(msg CreateAdminRouteWithContent
 			if routeErr != nil {
 				return ActionResultMsg{
 					Title:   "Error",
-					Message: fmt.Sprintf("Failed to create admin route: %v", routeErr),
+					Message: fmt.Sprintf("failed to create admin route: %v", routeErr),
 				}
 			}
 			if route.AdminRouteID.IsZero() {
 				return ActionResultMsg{
 					Title:   "Error",
-					Message: "Failed to create admin route in database",
+					Message: "failed to create admin route in database",
 				}
 			}
 			adminRouteID = route.AdminRouteID
@@ -1306,7 +1306,7 @@ func (m Model) HandleCreateAdminRouteWithContent(msg CreateAdminRouteWithContent
 			}
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create admin content: %v", contentErr),
+				Message: fmt.Sprintf("failed to create admin content: %v", contentErr),
 			}
 		}
 

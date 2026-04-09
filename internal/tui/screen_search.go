@@ -87,7 +87,7 @@ func (s *SearchScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 				return s, s.fetchStats(ctx)
 			case 1: // Rebuild Index
 				if !s.Enabled {
-					return s, ShowDialogCmd("Search Disabled", "Search is not enabled in the configuration.", false, DIALOGGENERIC)
+					return s, ShowDialogCmd("search Disabled", "search is not enabled in the configuration.", false, DIALOGGENERIC)
 				}
 				s.Rebuilding = true
 				s.RebuildErr = nil

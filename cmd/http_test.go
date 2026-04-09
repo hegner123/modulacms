@@ -606,7 +606,7 @@ func TestApproveAllRoutes_NoPending(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if !strings.Contains(stdout.String(), "No pending routes") {
+	if !strings.Contains(stdout.String(), "no pending routes") {
 		t.Errorf("expected 'No pending routes' message, got: %q", stdout.String())
 	}
 }
@@ -632,7 +632,7 @@ func TestRevokeAllRoutes_NoApproved(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if !strings.Contains(stdout.String(), "No approved routes") {
+	if !strings.Contains(stdout.String(), "no approved routes") {
 		t.Errorf("expected 'No approved routes' message, got: %q", stdout.String())
 	}
 }
@@ -658,7 +658,7 @@ func TestApproveAllHooks_NoPending(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if !strings.Contains(stdout.String(), "No pending hooks") {
+	if !strings.Contains(stdout.String(), "no pending hooks") {
 		t.Errorf("expected 'No pending hooks' message, got: %q", stdout.String())
 	}
 }
@@ -684,7 +684,7 @@ func TestRevokeAllHooks_NoApproved(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if !strings.Contains(stdout.String(), "No approved hooks") {
+	if !strings.Contains(stdout.String(), "no approved hooks") {
 		t.Errorf("expected 'No approved hooks' message, got: %q", stdout.String())
 	}
 }

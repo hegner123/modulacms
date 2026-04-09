@@ -26,7 +26,7 @@ func BackupsListHandler(svc *service.Registry) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list backups", err)
-			http.Error(w, "Failed to load backups", http.StatusInternalServerError)
+			http.Error(w, "failed to load backups", http.StatusInternalServerError)
 			return
 		}
 
@@ -73,13 +73,13 @@ func BackupDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Backup ID required", http.StatusBadRequest)
+			http.Error(w, "backup ID required", http.StatusBadRequest)
 			return
 		}
 
 		b, err := svc.Driver().GetBackup(types.BackupID(id))
 		if err != nil || b == nil {
-			http.Error(w, "Backup not found", http.StatusNotFound)
+			http.Error(w, "backup not found", http.StatusNotFound)
 			return
 		}
 
@@ -96,7 +96,7 @@ func BackupCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -144,7 +144,7 @@ func BackupCreateHandler(svc *service.Registry) http.HandlerFunc {
 			})
 
 			utility.DefaultLogger.Error("backup creation failed", backupErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Backup failed", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "backup failed", "type": "error"}}`)
 			renderBackupsTableRows(w, r, svc)
 			return
 		}
@@ -159,7 +159,7 @@ func BackupCreateHandler(svc *service.Registry) http.HandlerFunc {
 
 		_ = path // actual path matches predictedPath
 
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Backup created", "type": "success"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "backup created", "type": "success"}}`)
 		renderBackupsTableRows(w, r, svc)
 	}
 }
@@ -170,25 +170,25 @@ func BackupRestoreHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Backup ID required", http.StatusBadRequest)
+			http.Error(w, "backup ID required", http.StatusBadRequest)
 			return
 		}
 
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
 		b, err := svc.Driver().GetBackup(types.BackupID(id))
 		if err != nil || b == nil {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Backup not found", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "backup not found", "type": "error"}}`)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
 		if b.StoragePath == "" {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Backup has no storage path", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "backup has no storage path", "type": "error"}}`)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			return
 		}
@@ -196,12 +196,12 @@ func BackupRestoreHandler(svc *service.Registry) http.HandlerFunc {
 		restoreErr := backup.RestoreFromBackup(*cfg, b.StoragePath)
 		if restoreErr != nil {
 			utility.DefaultLogger.Error("backup restore failed", restoreErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Restore failed: `+restoreErr.Error()+`", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "restore failed: `+restoreErr.Error()+`", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Database restored from backup. Restart recommended.", "type": "success", "persist": true}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "database restored from backup. Restart recommended.", "type": "success", "persist": true}}`)
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -217,18 +217,18 @@ func BackupDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Backup ID required", http.StatusBadRequest)
+			http.Error(w, "backup ID required", http.StatusBadRequest)
 			return
 		}
 
 		if err := svc.Driver().DeleteBackup(types.BackupID(id)); err != nil {
 			utility.DefaultLogger.Error("failed to delete backup", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete backup record", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete backup record", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Backup record deleted", "type": "success"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "backup record deleted", "type": "success"}}`)
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -243,7 +243,7 @@ func renderBackupsTableRows(w http.ResponseWriter, r *http.Request, svc *service
 	})
 	if listErr != nil {
 		utility.DefaultLogger.Error("failed to reload backups", listErr)
-		http.Error(w, "Failed to reload backups", http.StatusInternalServerError)
+		http.Error(w, "failed to reload backups", http.StatusInternalServerError)
 		return
 	}
 

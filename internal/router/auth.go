@@ -21,7 +21,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry)
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
-		utility.DefaultLogger.Error("Failed to decode login request", err)
+		utility.DefaultLogger.Error("failed to decode login request", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -44,7 +44,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry)
 	}
 
 	if err := middleware.WriteCookie(w, cfg, result.SessionToken, result.User.UserID); err != nil {
-		utility.DefaultLogger.Error("Failed to set cookie", err)
+		utility.DefaultLogger.Error("failed to set cookie", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -60,7 +60,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 
-	utility.DefaultLogger.Info("User logged in successfully:", result.User.Email)
+	utility.DefaultLogger.Info("user logged in successfully:", result.User.Email)
 }
 
 // LogoutHandler clears the session cookie and invalidates the session.
@@ -82,7 +82,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry
 
 	userCookie, err := middleware.ReadCookie(cookie)
 	if err == nil && userCookie != nil {
-		utility.DefaultLogger.Info("User logged out:", userCookie.UserId)
+		utility.DefaultLogger.Info("user logged out:", userCookie.UserId)
 	}
 
 	// Clear the cookie.
@@ -115,7 +115,7 @@ func MeHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 			writeMeResponse(w, user)
 			return
 		}
-		utility.DefaultLogger.Error("Session validation failed", authErr)
+		utility.DefaultLogger.Error("session validation failed", authErr)
 	}
 
 	// Fall back to API key auth (used by MCP and other programmatic clients).
@@ -263,7 +263,7 @@ func OauthInitiateHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
-		utility.DefaultLogger.Info("Redirecting to OAuth provider:", cfg.Oauth_Provider_Name)
+		utility.DefaultLogger.Info("redirecting to OAuth provider:", cfg.Oauth_Provider_Name)
 		http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
 	}
 }
@@ -273,21 +273,21 @@ func OauthCallbackHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		code := r.URL.Query().Get("code")
 		if code == "" {
-			utility.DefaultLogger.Error("Missing code parameter", nil)
-			http.Error(w, "Missing code parameter", http.StatusBadRequest)
+			utility.DefaultLogger.Error("missing code parameter", nil)
+			http.Error(w, "missing code parameter", http.StatusBadRequest)
 			return
 		}
 
 		state := r.URL.Query().Get("state")
 		if err := auth.ValidateState(state); err != nil {
-			utility.DefaultLogger.Error("State validation failed", err)
+			utility.DefaultLogger.Error("state validation failed", err)
 			http.Error(w, "Invalid or expired state", http.StatusBadRequest)
 			return
 		}
 
 		verifier, err := auth.GetVerifier(state)
 		if err != nil {
-			utility.DefaultLogger.Error("Verifier retrieval failed", err)
+			utility.DefaultLogger.Error("verifier retrieval failed", err)
 			http.Error(w, "Invalid session", http.StatusBadRequest)
 			return
 		}
@@ -311,8 +311,8 @@ func OauthCallbackHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		if err := middleware.WriteCookie(w, cfg, result.SessionToken, result.User.UserID); err != nil {
-			utility.DefaultLogger.Error("Cookie creation failed", err)
-			http.Error(w, "Cookie creation failed", http.StatusInternalServerError)
+			utility.DefaultLogger.Error("cookie creation failed", err)
+			http.Error(w, "cookie creation failed", http.StatusInternalServerError)
 			return
 		}
 

@@ -79,7 +79,7 @@ func RoleDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing role ID", http.StatusBadRequest)
+			http.Error(w, "missing role ID", http.StatusBadRequest)
 			return
 		}
 
@@ -134,7 +134,7 @@ func RoleCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -161,7 +161,7 @@ func RoleCreateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to create role", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.RoleForm(label, map[string]string{"_": "Failed to create role"}, csrfToken))
+			Render(w, r, partials.RoleForm(label, map[string]string{"_": "failed to create role"}, csrfToken))
 			return
 		}
 
@@ -181,13 +181,13 @@ func RoleUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing role ID", http.StatusBadRequest)
+			http.Error(w, "missing role ID", http.StatusBadRequest)
 			return
 		}
 
@@ -244,7 +244,7 @@ func RoleDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -255,7 +255,7 @@ func RoleDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing role ID", http.StatusBadRequest)
+			http.Error(w, "missing role ID", http.StatusBadRequest)
 			return
 		}
 

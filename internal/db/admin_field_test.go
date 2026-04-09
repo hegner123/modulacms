@@ -1447,20 +1447,20 @@ func TestDeleteAdminFieldCmd_GetID_EmptyID(t *testing.T) {
 func TestUpdateAdminField_SuccessMessageFormat(t *testing.T) {
 	t.Parallel()
 	label := "Test Field"
-	expected := fmt.Sprintf("Successfully updated %v\n", label)
+	expected := fmt.Sprintf("successfully updated %v\n", label)
 
 	// The actual method builds this exact format using s.Label
-	if expected != "Successfully updated Test Field\n" {
-		t.Errorf("message = %q, want %q", expected, "Successfully updated Test Field\n")
+	if expected != "successfully updated Test Field\n" {
+		t.Errorf("message = %q, want %q", expected, "successfully updated Test Field\n")
 	}
 }
 
 func TestUpdateAdminField_SuccessMessageFormat_EmptyLabel(t *testing.T) {
 	t.Parallel()
 	// Edge case: empty label still produces a valid format string
-	expected := fmt.Sprintf("Successfully updated %v\n", "")
-	if expected != "Successfully updated \n" {
-		t.Errorf("message = %q, want %q", expected, "Successfully updated \n")
+	expected := fmt.Sprintf("successfully updated %v\n", "")
+	if expected != "successfully updated \n" {
+		t.Errorf("message = %q, want %q", expected, "successfully updated \n")
 	}
 }
 

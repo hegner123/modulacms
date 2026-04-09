@@ -513,7 +513,7 @@ func TestRegisterRoutes_CrossPluginCollision(t *testing.T) {
 plugin_info = {
     name = "plugin_b",
     version = "1.0.0",
-    description = "Plugin B",
+    description = "plugin B",
 }
 http.handle("GET", "/conflict", function(req) return {status = 200} end)
 function on_init() end
@@ -582,7 +582,7 @@ func TestRegisterRoutes_DifferentPluginsNoCollision(t *testing.T) {
 plugin_info = {
     name = "plugin_a",
     version = "1.0.0",
-    description = "Plugin A",
+    description = "plugin A",
 }
 http.handle("GET", "/tasks", function(req) return {status = 200} end)
 function on_init() end
@@ -604,7 +604,7 @@ function on_init() end
 plugin_info = {
     name = "plugin_b",
     version = "1.0.0",
-    description = "Plugin B",
+    description = "plugin B",
 }
 http.handle("GET", "/tasks", function(req) return {status = 200} end)
 function on_init() end

@@ -35,7 +35,7 @@ func registerAdminMediaFolderTools(srv *server.MCPServer, backend AdminMediaFold
 
 	srv.AddTool(
 		mcp.NewTool("admin_update_media_folder",
-			mcp.WithDescription("Update an admin media folder. Rename or move to a different parent. Only provided fields are changed."),
+			mcp.WithDescription("update an admin media folder. Rename or move to a different parent. Only provided fields are changed."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin media folder ID (ULID)")),
 			mcp.WithString("name", mcp.Description("New folder name")),
 			mcp.WithString("parent_id", mcp.Description("New parent folder ID (ULID). Use empty string to move to root.")),

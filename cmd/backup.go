@@ -16,7 +16,7 @@ import (
 // backupCmd represents the backup root command for creating, restoring, and listing backups.
 var backupCmd = &cobra.Command{
 	Use:   "backup",
-	Short: "Backup and restore commands",
+	Short: "backup and restore commands",
 	Long: `Create, restore, and list database backups.
 
 Backups include a full SQL dump and any configured media/path data, saved as
@@ -73,10 +73,10 @@ Examples:
 			Metadata:    types.JSONData{Valid: false},
 		})
 		if recordErr != nil {
-			utility.DefaultLogger.Warn("Failed to record backup start (continuing anyway)", recordErr)
+			utility.DefaultLogger.Warn("failed to record backup start (continuing anyway)", recordErr)
 		}
 
-		utility.DefaultLogger.Info("Creating backup...")
+		utility.DefaultLogger.Info("creating backup...")
 
 		path, sizeBytes, err := backup.CreateFullBackup(*cfg, driver)
 		if err != nil {
@@ -89,7 +89,7 @@ Examples:
 					ErrorMessage: types.NullableString{String: err.Error(), Valid: true},
 				})
 				if updateErr != nil {
-					utility.DefaultLogger.Warn("Failed to record backup failure", updateErr)
+					utility.DefaultLogger.Warn("failed to record backup failure", updateErr)
 				}
 			}
 			return fmt.Errorf("backup failed: %w", err)
@@ -104,11 +104,11 @@ Examples:
 				SizeBytes:   types.NullableInt64{Int64: sizeBytes, Valid: true},
 			})
 			if updateErr != nil {
-				utility.DefaultLogger.Warn("Failed to record backup completion", updateErr)
+				utility.DefaultLogger.Warn("failed to record backup completion", updateErr)
 			}
 		}
 
-		utility.DefaultLogger.Info("Backup created successfully",
+		utility.DefaultLogger.Info("backup created successfully",
 			"path", path,
 			"size", formatBytes(sizeBytes),
 		)
@@ -120,7 +120,7 @@ Examples:
 // backupRestoreCmd represents the backup restore subcommand that restores the database from a backup archive.
 var backupRestoreCmd = &cobra.Command{
 	Use:   "restore <path>",
-	Short: "Restore from a backup archive",
+	Short: "restore from a backup archive",
 	Long: `Restore the database from a previously created backup archive.
 
 Reads the archive manifest to display the backup's driver, timestamp, version,
@@ -150,7 +150,7 @@ Examples:
 			return fmt.Errorf("failed to read backup: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Backup details",
+		utility.DefaultLogger.Info("backup details",
 			"driver", manifest.Driver,
 			"timestamp", manifest.Timestamp,
 			"version", manifest.Version,
@@ -165,23 +165,23 @@ Examples:
 			Value(&restoreConfirm)
 		if err := confirm.Run(); err != nil {
 			if errors.Is(err, huh.ErrUserAborted) {
-				utility.DefaultLogger.Info("Restore cancelled")
+				utility.DefaultLogger.Info("restore cancelled")
 				return nil
 			}
 			return fmt.Errorf("confirmation form error: %w", err)
 		}
 		if !restoreConfirm {
-			utility.DefaultLogger.Info("Restore cancelled")
+			utility.DefaultLogger.Info("restore cancelled")
 			return nil
 		}
 
-		utility.DefaultLogger.Info("Restoring backup...")
+		utility.DefaultLogger.Info("restoring backup...")
 
 		if err := backup.RestoreFromBackup(*cfg, backupPath); err != nil {
 			return fmt.Errorf("restore failed: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Backup restored successfully")
+		utility.DefaultLogger.Info("backup restored successfully")
 		return nil
 	},
 }
@@ -218,7 +218,7 @@ Examples:
 		}
 
 		if backups == nil || len(*backups) == 0 {
-			utility.DefaultLogger.Info("No backups found")
+			utility.DefaultLogger.Info("no backups found")
 			return nil
 		}
 

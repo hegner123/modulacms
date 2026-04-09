@@ -93,7 +93,7 @@ func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(
 			LoadingStartCmd(),
 			m.DatabaseInsert(m.Config, msg.Table, msg.Columns, msg.Values),
-			LogMessageCmd(fmt.Sprintf("Database create initiated: table %s with %d fields", msg.Table, len(msg.Columns))),
+			LogMessageCmd(fmt.Sprintf("database create initiated: table %s with %d fields", msg.Table, len(msg.Columns))),
 		)
 	case DatabaseUpdateEntry:
 		// Convert string values to any map for the query builder
@@ -112,7 +112,7 @@ func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(
 			LoadingStartCmd(),
 			m.DatabaseUpdate(m.Config, msg.Table, rowID, valuesMap),
-			LogMessageCmd(fmt.Sprintf("Database update initiated: table %s row %s", msg.Table, msg.RowID)),
+			LogMessageCmd(fmt.Sprintf("database update initiated: table %s row %s", msg.Table, msg.RowID)),
 		)
 	case DbResMsg:
 		// Operation completed — re-fetch the table rows so the screen refreshes.

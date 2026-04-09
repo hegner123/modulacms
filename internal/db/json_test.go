@@ -579,7 +579,7 @@ func TestNullTypes_InStruct(t *testing.T) {
 			t.Errorf("Label = {%q, %v}, want {%q, true}", got.Label.String, got.Label.Valid, "mixed")
 		}
 		if got.Created.Valid {
-			t.Error("Created should be invalid (null)")
+			t.Error("created should be invalid (null)")
 		}
 	})
 }

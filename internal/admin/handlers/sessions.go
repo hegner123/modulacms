@@ -19,7 +19,7 @@ func SessionsListHandler(svc *service.Registry) http.HandlerFunc {
 		items, err := svc.Sessions.ListSessions(r.Context())
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list sessions", err)
-			http.Error(w, "Failed to load sessions", http.StatusInternalServerError)
+			http.Error(w, "failed to load sessions", http.StatusInternalServerError)
 			return
 		}
 
@@ -55,7 +55,7 @@ func SessionDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sessionID := r.PathValue("id")
 		if sessionID == "" {
-			http.Error(w, "Session ID required", http.StatusBadRequest)
+			http.Error(w, "session ID required", http.StatusBadRequest)
 			return
 		}
 
@@ -81,7 +81,7 @@ func SessionDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -92,7 +92,7 @@ func SessionDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		sessionID := r.PathValue("id")
 		if sessionID == "" {
-			http.Error(w, "Session ID required", http.StatusBadRequest)
+			http.Error(w, "session ID required", http.StatusBadRequest)
 			return
 		}
 
@@ -106,12 +106,12 @@ func SessionDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		if err := svc.Sessions.DeleteSession(r.Context(), ac, types.SessionID(sessionID)); err != nil {
 			utility.DefaultLogger.Error("failed to delete session", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to revoke session", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to revoke session", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Session revoked", "type": "success"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "session revoked", "type": "success"}}`)
 		w.WriteHeader(http.StatusOK)
 	}
 }

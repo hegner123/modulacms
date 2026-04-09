@@ -42,7 +42,7 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 	case DbResMsg:
 		return m, tea.Batch(
 			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("Database operation completed for table %s", msg.Table)),
+			LogMessageCmd(fmt.Sprintf("database operation completed for table %s", msg.Table)),
 		)
 	}
 

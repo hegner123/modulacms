@@ -52,7 +52,7 @@ func ensureFieldType(ctx context.Context, driver DbDriver) error {
 		if err != nil {
 			return fmt.Errorf("create field_type %q: %w", ftType, err)
 		}
-		utility.DefaultLogger.Info("Created missing field_type", "type", ftType)
+		utility.DefaultLogger.Info("created missing field_type", "type", ftType)
 	}
 
 	// Check admin_field_types
@@ -70,7 +70,7 @@ func ensureFieldType(ctx context.Context, driver DbDriver) error {
 		if err != nil {
 			return fmt.Errorf("create admin_field_type %q: %w", ftType, err)
 		}
-		utility.DefaultLogger.Info("Created missing admin_field_type", "type", ftType)
+		utility.DefaultLogger.Info("created missing admin_field_type", "type", ftType)
 	}
 
 	return nil
@@ -96,7 +96,7 @@ func ensureTitleFieldType(ctx context.Context, driver DbDriver) error {
 		if err != nil {
 			return fmt.Errorf("create field_type %q: %w", ftType, err)
 		}
-		utility.DefaultLogger.Info("Created missing field_type", "type", ftType)
+		utility.DefaultLogger.Info("created missing field_type", "type", ftType)
 	}
 
 	_, err = driver.GetAdminFieldTypeByType(ftType)
@@ -113,7 +113,7 @@ func ensureTitleFieldType(ctx context.Context, driver DbDriver) error {
 		if err != nil {
 			return fmt.Errorf("create admin_field_type %q: %w", ftType, err)
 		}
-		utility.DefaultLogger.Info("Created missing admin_field_type", "type", ftType)
+		utility.DefaultLogger.Info("created missing admin_field_type", "type", ftType)
 	}
 
 	return nil
@@ -149,7 +149,7 @@ func ensureReferenceDatatype(ctx context.Context, driver DbDriver) error {
 	if err != nil {
 		return fmt.Errorf("create _reference datatype: %w", err)
 	}
-	utility.DefaultLogger.Info("Creating missing _reference system datatype", "datatype_id", refDatatype.DatatypeID)
+	utility.DefaultLogger.Info("creating missing _reference system datatype", "datatype_id", refDatatype.DatatypeID)
 
 	// Create "Target" field linked to _reference datatype via parent_id
 	_, err = driver.CreateField(ctx, ac, CreateFieldParams{
@@ -206,7 +206,7 @@ func EnsurePublishPermission(ctx context.Context, driver DbDriver) error {
 	if err != nil {
 		return fmt.Errorf("create permission %q: %w", label, err)
 	}
-	utility.DefaultLogger.Info("Created missing permission", "label", label)
+	utility.DefaultLogger.Info("created missing permission", "label", label)
 
 	// Assign to admin role
 	roles, err := driver.ListRoles()
@@ -223,7 +223,7 @@ func EnsurePublishPermission(ctx context.Context, driver DbDriver) error {
 				if assignErr != nil {
 					return fmt.Errorf("assign %q to admin role: %w", label, assignErr)
 				}
-				utility.DefaultLogger.Info("Assigned permission to admin role", "label", label)
+				utility.DefaultLogger.Info("assigned permission to admin role", "label", label)
 				break
 			}
 		}
@@ -290,7 +290,7 @@ func EnsureLocalePermissions(ctx context.Context, driver DbDriver) error {
 		if createErr != nil {
 			return fmt.Errorf("create permission %q: %w", lp.label, createErr)
 		}
-		utility.DefaultLogger.Info("Created missing permission", "label", lp.label)
+		utility.DefaultLogger.Info("created missing permission", "label", lp.label)
 
 		for _, roleLabel := range lp.roles {
 			role, ok := rolesByLabel[roleLabel]
@@ -304,7 +304,7 @@ func EnsureLocalePermissions(ctx context.Context, driver DbDriver) error {
 			if assignErr != nil {
 				return fmt.Errorf("assign %q to %s role: %w", lp.label, roleLabel, assignErr)
 			}
-			utility.DefaultLogger.Info("Assigned permission to role", "label", lp.label, "role", roleLabel)
+			utility.DefaultLogger.Info("assigned permission to role", "label", lp.label, "role", roleLabel)
 		}
 	}
 
@@ -367,7 +367,7 @@ func EnsureWebhookPermissions(ctx context.Context, driver DbDriver) error {
 		if createErr != nil {
 			return fmt.Errorf("create permission %q: %w", wp.label, createErr)
 		}
-		utility.DefaultLogger.Info("Created missing permission", "label", wp.label)
+		utility.DefaultLogger.Info("created missing permission", "label", wp.label)
 
 		for _, roleLabel := range wp.roles {
 			role, ok := rolesByLabel[roleLabel]
@@ -381,7 +381,7 @@ func EnsureWebhookPermissions(ctx context.Context, driver DbDriver) error {
 			if assignErr != nil {
 				return fmt.Errorf("assign %q to %s role: %w", wp.label, roleLabel, assignErr)
 			}
-			utility.DefaultLogger.Info("Assigned permission to role", "label", wp.label, "role", roleLabel)
+			utility.DefaultLogger.Info("assigned permission to role", "label", wp.label, "role", roleLabel)
 		}
 	}
 

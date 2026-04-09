@@ -39,7 +39,7 @@ func (tr *TokenRefresher) RefreshIfNeeded(userID types.UserID) error {
 	userOauth, err := tr.driver.GetUserOauthByUserId(types.NullableUserID{Valid: true, ID: userID})
 	if err != nil {
 		// User doesn't use OAuth - this is not an error
-		tr.log.Debug("No OAuth record for user %s", userID)
+		tr.log.Debug("no OAuth record for user %s", userID)
 		return nil
 	}
 
@@ -128,7 +128,7 @@ func (tr *TokenRefresher) updateTokens(userOauthID types.UserOauthID, token *oau
 	})
 
 	if err != nil {
-		tr.log.Error("Failed to update tokens in database", err)
+		tr.log.Error("failed to update tokens in database", err)
 		return err
 	}
 

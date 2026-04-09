@@ -59,21 +59,21 @@ func (s *ImportService) ImportContent(ctx context.Context, ac audited.AuditConte
 
 	transformer, err := transformCfg.GetTransformer()
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to get transformer", err)
+		utility.DefaultLogger.Error("failed to get transformer", err)
 		return nil, fmt.Errorf("get transformer: %w", err)
 	}
 
 	// Parse CMS format to Modula
 	root, err := transformer.Parse(input.Body)
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to parse input", err)
+		utility.DefaultLogger.Error("failed to parse input", err)
 		return nil, fmt.Errorf("parse input: %w", err)
 	}
 
 	// Import to database
 	result, err := s.importRootToDatabase(ctx, ac, root, input.RouteID)
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to import to database", err)
+		utility.DefaultLogger.Error("failed to import to database", err)
 		return nil, fmt.Errorf("import to database: %w", err)
 	}
 
@@ -99,7 +99,7 @@ func (s *ImportService) importRootToDatabase(reqCtx context.Context, ac audited.
 	}
 
 	if root.Node == nil {
-		result.Errors = append(result.Errors, "No content to import")
+		result.Errors = append(result.Errors, "no content to import")
 		return result, nil
 	}
 
@@ -117,13 +117,13 @@ func (s *ImportService) importRootToDatabase(reqCtx context.Context, ac audited.
 
 	result.Success = len(result.Errors) == 0
 	if result.Success {
-		result.Message = fmt.Sprintf("Import complete: %d datatypes, %d fields, %d content nodes created",
+		result.Message = fmt.Sprintf("import complete: %d datatypes, %d fields, %d content nodes created",
 			result.DatatypesCreated, result.FieldsCreated, result.ContentCreated)
 	} else {
-		result.Message = fmt.Sprintf("Import completed with %d errors", len(result.Errors))
+		result.Message = fmt.Sprintf("import completed with %d errors", len(result.Errors))
 	}
 
-	utility.DefaultLogger.Info("Import completed",
+	utility.DefaultLogger.Info("import completed",
 		"datatypes", result.DatatypesCreated,
 		"fields", result.FieldsCreated,
 		"content", result.ContentCreated,

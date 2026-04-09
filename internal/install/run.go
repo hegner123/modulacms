@@ -57,17 +57,17 @@ func runInstallDefaults(v *bool, adminPassword *string) error {
 
 	progress := NewInstallProgress()
 
-	progress.AddStep("Database connection", "Checking database connection", func() error {
+	progress.AddStep("database connection", "checking database connection", func() error {
 		_, checkErr := CheckDb(v, iarg.Config)
 		return checkErr
 	})
 
-	progress.AddStep("Database setup", "Setting up database tables", func() error {
+	progress.AddStep("database setup", "Setting up database tables", func() error {
 		return CreateDbSimple(iarg.ConfigPath, &iarg.Config, iarg.AdminPasswordHash)
 	})
 
 	var bucketStatus string
-	progress.AddStep("Bucket connection", "Checking S3 bucket connection", func() error {
+	progress.AddStep("bucket connection", "checking S3 bucket connection", func() error {
 		bucketStatus, _ = CheckBucket(v, &iarg.Config)
 		return nil
 	})
@@ -80,17 +80,17 @@ func runInstallDefaults(v *bool, adminPassword *string) error {
 
 	// Check backup tool availability (non-fatal warning)
 	if _, toolErr := CheckBackupTools(iarg.Config.Db_Driver); toolErr != nil {
-		PrintWarning(fmt.Sprintf("Backup tools: %v", toolErr))
+		PrintWarning(fmt.Sprintf("backup tools: %v", toolErr))
 	}
 
-	PrintSuccess("Installation completed successfully!")
+	PrintSuccess("installation completed successfully!")
 	printInstallSummary(iarg, bucketStatus)
 	return nil
 }
 
 func runInstallWithRetry(v *bool, adminPassword *string, retriesLeft int) error {
 	if retriesLeft <= 0 {
-		PrintError("Installation failed after maximum retries")
+		PrintError("installation failed after maximum retries")
 		return ErrMaxRetries(maxRetries)
 	}
 
@@ -138,18 +138,18 @@ func runInstallWithRetry(v *bool, adminPassword *string, retriesLeft int) error 
 	// Run installation checks with progress indicators
 	progress := NewInstallProgress()
 
-	progress.AddStep("Database connection", "Checking database connection", func() error {
+	progress.AddStep("database connection", "checking database connection", func() error {
 		_, checkErr := CheckDb(v, iarg.Config)
 		return checkErr
 	})
 
-	progress.AddStep("Database setup", "Setting up database tables", func() error {
+	progress.AddStep("database setup", "Setting up database tables", func() error {
 		return CreateDbSimple(iarg.ConfigPath, &iarg.Config, iarg.AdminPasswordHash)
 	})
 
 	// Run with warnings for optional checks
 	var bucketStatus string
-	progress.AddStep("Bucket connection", "Checking S3 bucket connection", func() error {
+	progress.AddStep("bucket connection", "checking S3 bucket connection", func() error {
 		bucketStatus, _ = CheckBucket(v, &iarg.Config)
 		return nil // Bucket is optional, don't fail on error
 	})
@@ -175,7 +175,7 @@ func runInstallWithRetry(v *bool, adminPassword *string, retriesLeft int) error 
 	}
 
 	// Print final status
-	PrintSuccess("Installation completed successfully!")
+	PrintSuccess("installation completed successfully!")
 
 	if bucketStatus != "Connected" && bucketStatus != "" {
 		PrintWarning(fmt.Sprintf("S3 bucket: %s (media storage will be unavailable)", bucketStatus))
@@ -183,7 +183,7 @@ func runInstallWithRetry(v *bool, adminPassword *string, retriesLeft int) error 
 
 	// Check backup tool availability (non-fatal warning)
 	if _, toolErr := CheckBackupTools(iarg.Config.Db_Driver); toolErr != nil {
-		PrintWarning(fmt.Sprintf("Backup tools: %v", toolErr))
+		PrintWarning(fmt.Sprintf("backup tools: %v", toolErr))
 	}
 
 	printInstallSummary(iarg, bucketStatus)
@@ -199,7 +199,7 @@ func writeConfigFile(iarg *InstallArguments) error {
 			bakPath := iarg.ConfigPath + ".bak"
 			writeErr := os.WriteFile(bakPath, existing, 0644)
 			if writeErr != nil {
-				utility.DefaultLogger.Warn("Failed to create config backup: "+bakPath, writeErr)
+				utility.DefaultLogger.Warn("failed to create config backup: "+bakPath, writeErr)
 			}
 		}
 	}

@@ -165,7 +165,7 @@ Examples:
 				return err
 			}
 			abs, _ := filepath.Abs(args[1])
-			fmt.Printf("Set project %q base config -> %s\n", args[0], abs)
+			fmt.Printf("set project %q base config -> %s\n", args[0], abs)
 		} else {
 			if len(args) != 3 {
 				return fmt.Errorf("without --base, requires 3 arguments: <name> <env> <overlay-path>")
@@ -174,7 +174,7 @@ Examples:
 				return err
 			}
 			abs, _ := filepath.Abs(args[2])
-			fmt.Printf("Set project %q env %q -> %s\n", args[0], args[1], abs)
+			fmt.Printf("set project %q env %q -> %s\n", args[0], args[1], abs)
 		}
 		return nil
 	},
@@ -204,7 +204,7 @@ Example output:
 		}
 
 		if len(reg.Projects) == 0 {
-			fmt.Println("No projects registered. Use: modula connect set <name> <env> <config-path>")
+			fmt.Println("no projects registered. Use: modula connect set <name> <env> <config-path>")
 			return nil
 		}
 
@@ -281,7 +281,7 @@ Examples:
 
 var connectDefaultCmd = &cobra.Command{
 	Use:   "default <name> [env]",
-	Short: "Set the default project or default environment",
+	Short: "set the default project or default environment",
 	Long: `Configure which project or environment is used when arguments are omitted.
 
 With one argument: sets the default project. Running "modula connect" with
@@ -330,6 +330,6 @@ func init() {
 	connectCmd.AddCommand(connectRemoveCmd)
 	connectCmd.AddCommand(connectDefaultCmd)
 
-	connectSetCmd.Flags().BoolVar(&connectSetBase, "base", false, "Set the project's base config instead of an environment overlay")
+	connectSetCmd.Flags().BoolVar(&connectSetBase, "base", false, "set the project's base config instead of an environment overlay")
 	connectRemoveCmd.Flags().String("env", "", "remove a single environment instead of the entire project")
 }

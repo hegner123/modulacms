@@ -88,7 +88,7 @@ func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, svc *ser
 	// 1. Look up route by slug.
 	route, err := d.GetRouteID(slug)
 	if err != nil {
-		utility.DefaultLogger.Error("GetRouteID failed", err)
+		utility.DefaultLogger.Error("getRouteID failed", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -97,7 +97,7 @@ func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, svc *ser
 	nullableRoute := types.NullableRouteID{ID: *route, Valid: true}
 	contentData, err := d.ListContentDataByRoute(nullableRoute)
 	if err != nil {
-		utility.DefaultLogger.Error("ListContentDataByRoute failed", err)
+		utility.DefaultLogger.Error("listContentDataByRoute failed", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -120,7 +120,7 @@ func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, svc *ser
 	if r.URL.Query().Get("locale") == "*" {
 		meta, metaErr := svc.Locales.BuildLocaleMetadata(r.Context(), rootContentDataID)
 		if metaErr != nil {
-			utility.DefaultLogger.Error("BuildLocaleMetadata failed", metaErr)
+			utility.DefaultLogger.Error("buildLocaleMetadata failed", metaErr)
 			http.Error(w, "failed to build locale metadata", http.StatusInternalServerError)
 			return
 		}
@@ -206,7 +206,7 @@ func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, svc *ser
 	// 6. Build the tree from snapshot data.
 	root, err := model.BuildTree(utility.DefaultLogger, cdSlice, dtSlice, cfSlice, fdSlice)
 	if err != nil {
-		utility.DefaultLogger.Error("BuildTree error from snapshot", err)
+		utility.DefaultLogger.Error("buildTree error from snapshot", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -394,7 +394,7 @@ func apiGetSlugContentLive(w http.ResponseWriter, r *http.Request, svc *service.
 
 	root, err := model.BuildTree(utility.DefaultLogger, dataSlice, dt, allCF, allFD)
 	if err != nil {
-		utility.DefaultLogger.Error("BuildTree error", err)
+		utility.DefaultLogger.Error("buildTree error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -438,7 +438,7 @@ func applyFormatAndTransform(w http.ResponseWriter, r *http.Request, c config.Co
 	)
 
 	if err := transformCfg.TransformAndWrite(w, root); err != nil {
-		utility.DefaultLogger.Error("Transform error", err)
+		utility.DefaultLogger.Error("transform error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

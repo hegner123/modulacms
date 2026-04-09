@@ -26,7 +26,7 @@ func registerRBACTools(srv *server.MCPServer, backend RBACBackend) {
 		mcp.NewTool("assign_role_permission",
 			mcp.WithDescription("Assign a permission to a role. Creates a role-permission association."),
 			mcp.WithString("role_id", mcp.Required(), mcp.Description("Role ID (ULID)")),
-			mcp.WithString("permission_id", mcp.Required(), mcp.Description("Permission ID (ULID)")),
+			mcp.WithString("permission_id", mcp.Required(), mcp.Description("permission ID (ULID)")),
 		),
 		handleAssignRolePermission(backend),
 	)
@@ -59,7 +59,7 @@ func registerRBACTools(srv *server.MCPServer, backend RBACBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_role",
-			mcp.WithDescription("Update a role's label."),
+			mcp.WithDescription("update a role's label."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Role ID (ULID)")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("New role label")),
 		),
@@ -79,7 +79,7 @@ func registerRBACTools(srv *server.MCPServer, backend RBACBackend) {
 	srv.AddTool(
 		mcp.NewTool("get_permission",
 			mcp.WithDescription("Get a single permission by ID."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("Permission ID (ULID)")),
+			mcp.WithString("id", mcp.Required(), mcp.Description("permission ID (ULID)")),
 		),
 		handleGetPermission(backend),
 	)
@@ -87,15 +87,15 @@ func registerRBACTools(srv *server.MCPServer, backend RBACBackend) {
 	srv.AddTool(
 		mcp.NewTool("create_permission",
 			mcp.WithDescription("Create a new permission. Label must follow resource:operation format (e.g. 'content:read')."),
-			mcp.WithString("label", mcp.Required(), mcp.Description("Permission label (resource:operation format)")),
+			mcp.WithString("label", mcp.Required(), mcp.Description("permission label (resource:operation format)")),
 		),
 		handleCreatePermission(backend),
 	)
 
 	srv.AddTool(
 		mcp.NewTool("update_permission",
-			mcp.WithDescription("Update a permission's label."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("Permission ID (ULID)")),
+			mcp.WithDescription("update a permission's label."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("permission ID (ULID)")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("New permission label (resource:operation format)")),
 		),
 		handleUpdatePermission(backend),
@@ -104,7 +104,7 @@ func registerRBACTools(srv *server.MCPServer, backend RBACBackend) {
 	srv.AddTool(
 		mcp.NewTool("delete_permission",
 			mcp.WithDescription("Delete a permission by ID. System-protected permissions cannot be deleted."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("Permission ID (ULID)")),
+			mcp.WithString("id", mcp.Required(), mcp.Description("permission ID (ULID)")),
 		),
 		handleDeletePermission(backend),
 	)

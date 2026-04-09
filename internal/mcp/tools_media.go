@@ -30,7 +30,7 @@ func registerMediaTools(srv *server.MCPServer, backend MediaBackend, folderBacke
 
 	srv.AddTool(
 		mcp.NewTool("update_media",
-			mcp.WithDescription("Update media asset metadata. Only provided fields are changed; omitted fields remain unchanged."),
+			mcp.WithDescription("update media asset metadata. Only provided fields are changed; omitted fields remain unchanged."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Media ID (ULID)")),
 			mcp.WithString("name", mcp.Description("File name")),
 			mcp.WithString("display_name", mcp.Description("Display name")),
@@ -110,7 +110,7 @@ func registerMediaTools(srv *server.MCPServer, backend MediaBackend, folderBacke
 	// update_media_dimension
 	srv.AddTool(
 		mcp.NewTool("update_media_dimension",
-			mcp.WithDescription("Update a media dimension preset."),
+			mcp.WithDescription("update a media dimension preset."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Media dimension ID (ULID)")),
 			mcp.WithString("label", mcp.Description("Dimension label")),
 			mcp.WithNumber("width", mcp.Description("Width in pixels")),

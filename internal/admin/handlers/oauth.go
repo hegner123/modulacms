@@ -18,7 +18,7 @@ func OAuthCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := r.PathValue("id")
 		if userID == "" {
-			http.Error(w, "Missing user ID", http.StatusBadRequest)
+			http.Error(w, "missing user ID", http.StatusBadRequest)
 			return
 		}
 
@@ -56,7 +56,7 @@ func OAuthCreateHandler(svc *service.Registry) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to create oauth connection", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to link provider", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to link provider", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -84,7 +84,7 @@ func OAuthDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		ac, acErr := svc.AuditCtx(r.Context())
 		if acErr != nil {
 			utility.DefaultLogger.Error("failed to build audit context", acErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to unlink provider", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to unlink provider", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -92,7 +92,7 @@ func OAuthDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		err := svc.OAuth.DeleteUserOauth(r.Context(), ac, types.UserOauthID(oauthID))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to delete oauth connection", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to unlink provider", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to unlink provider", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

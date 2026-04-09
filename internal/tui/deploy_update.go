@@ -81,7 +81,7 @@ func (m Model) UpdateDeployCms(msg tea.Msg) (Model, tea.Cmd) {
 		// Screen manages display state; log the result at Model level
 		var logMsg string
 		if msg.Health.Err != "" {
-			logMsg = fmt.Sprintf("Connection failed: %s", msg.Health.Err)
+			logMsg = fmt.Sprintf("connection failed: %s", msg.Health.Err)
 		} else {
 			logMsg = fmt.Sprintf("Connected to %s (v%s)", msg.Health.EnvName, msg.Health.Version)
 		}
@@ -126,9 +126,9 @@ func (m Model) UpdateDeployCms(msg tea.Msg) (Model, tea.Cmd) {
 		// Screen manages display state; log the result at Model level
 		var logMsg string
 		if msg.Err != "" {
-			logMsg = fmt.Sprintf("Pull failed: %s", msg.Err)
+			logMsg = fmt.Sprintf("pull failed: %s", msg.Err)
 		} else {
-			logMsg = fmt.Sprintf("Pull completed: %d tables", len(msg.Result.TablesAffected))
+			logMsg = fmt.Sprintf("pull completed: %d tables", len(msg.Result.TablesAffected))
 		}
 		return m, LogMessageCmd(logMsg)
 
@@ -171,9 +171,9 @@ func (m Model) UpdateDeployCms(msg tea.Msg) (Model, tea.Cmd) {
 		// Screen manages display state; log the result at Model level
 		var logMsg string
 		if msg.Err != "" {
-			logMsg = fmt.Sprintf("Push failed: %s", msg.Err)
+			logMsg = fmt.Sprintf("push failed: %s", msg.Err)
 		} else {
-			logMsg = fmt.Sprintf("Push completed: %d tables", len(msg.Result.TablesAffected))
+			logMsg = fmt.Sprintf("push completed: %d tables", len(msg.Result.TablesAffected))
 		}
 		return m, LogMessageCmd(logMsg)
 	}

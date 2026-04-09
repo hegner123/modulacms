@@ -35,7 +35,7 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 		ops := newContentTreeOps(d)
 		node, err := ops.getNode(string(contentID))
 		if err != nil || node == nil {
-			logger.Ferror("Failed to get content for deletion", err)
+			logger.Ferror("failed to get content for deletion", err)
 			return ActionResultMsg{
 				Title:   "Error",
 				Message: fmt.Sprintf("Content not found: %v", err),
@@ -61,10 +61,10 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 
 		// Delete the content data (content_fields will cascade delete)
 		if err := d.DeleteContentData(ctx, ac, contentID); err != nil {
-			logger.Ferror("Failed to delete content", err)
+			logger.Ferror("failed to delete content", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete content: %v", err),
+				Message: fmt.Sprintf("failed to delete content: %v", err),
 			}
 		}
 
@@ -136,7 +136,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 		if attachErr != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to attach content: %v", attachErr),
+				Message: fmt.Sprintf("failed to attach content: %v", attachErr),
 			}
 		}
 
@@ -156,10 +156,10 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 			DateModified:  types.TimestampNow(),
 		}
 		if _, updateErr := d.UpdateContentData(ctx, ac, sourceParams); updateErr != nil {
-			logger.Ferror("Failed to update source node", updateErr)
+			logger.Ferror("failed to update source node", updateErr)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update source: %v", updateErr),
+				Message: fmt.Sprintf("failed to update source: %v", updateErr),
 			}
 		}
 
@@ -201,7 +201,7 @@ func (m Model) ReloadContentTree(c *config.Config, routeID types.RouteID) tea.Cm
 		logger.Finfo(fmt.Sprintf("GetContentTreeByRoute returned %d rows for route %s", len(*rows), routeID))
 
 		if len(*rows) == 0 {
-			logger.Finfo(fmt.Sprintf("No rows returned for route %s", routeID))
+			logger.Finfo(fmt.Sprintf("no rows returned for route %s", routeID))
 			return TreeLoadedMsg{
 				RouteID:  routeID,
 				Stats:    &tree.LoadStats{},
@@ -279,7 +279,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -301,7 +301,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 		if msg.Direction == "up" {
 			// Move up: swap A with its prev sibling B
 			if a.prevSiblingID.isEmpty() {
-				return ActionResultMsg{Title: "Info", Message: "Already at top"}
+				return ActionResultMsg{Title: "Info", Message: "already at top"}
 			}
 			b, bErr := ops.getNode(a.prevSiblingID.ID)
 			if bErr != nil || b == nil {
@@ -319,7 +319,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 		} else {
 			// Move down: swap A with its next sibling B
 			if a.nextSiblingID.isEmpty() {
-				return ActionResultMsg{Title: "Info", Message: "Already at bottom"}
+				return ActionResultMsg{Title: "Info", Message: "already at bottom"}
 			}
 			b, bErr := ops.getNode(a.nextSiblingID.ID)
 			if bErr != nil || b == nil {
@@ -360,7 +360,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 	userID := m.UserID
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -379,7 +379,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 		// Read source fields
 		sourceFields, err := d.ListContentFieldsByContentData(types.NullableContentID{ID: msg.SourceContentID, Valid: true})
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to read source fields: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to read source fields: %v", err)}
 		}
 
 		// Create new ContentData as sibling after source
@@ -398,18 +398,18 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 			DateModified:  now,
 		})
 		if createErr != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to create content copy: %v", createErr)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to create content copy: %v", createErr)}
 		}
 
 		if newContent.ContentDataID.IsZero() {
-			return ActionResultMsg{Title: "Error", Message: "Failed to create content copy"}
+			return ActionResultMsg{Title: "Error", Message: "failed to create content copy"}
 		}
 
 		// Update sibling pointers: source.next -> new, old-next.prev -> new
 		ops := newContentTreeOps(d)
 		sourceNode := contentToTreeNode(source)
 		if spliceErr := spliceAfter(ctx, ac, ops, sourceNode, string(newContent.ContentDataID)); spliceErr != nil {
-			logger.Ferror("Failed to update sibling pointers after copy", spliceErr)
+			logger.Ferror("failed to update sibling pointers after copy", spliceErr)
 		}
 
 		// Copy fields — iterate the canonical datatype field list so all fields
@@ -430,7 +430,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 		if source.DatatypeID.Valid {
 			allFields, fieldListErr := d.ListFieldsByDatatypeID(source.DatatypeID)
 			if fieldListErr != nil {
-				logger.Ferror("Failed to list datatype fields for copy, falling back to source fields only", fieldListErr)
+				logger.Ferror("failed to list datatype fields for copy, falling back to source fields only", fieldListErr)
 			}
 
 			if allFields != nil && len(*allFields) > 0 {
@@ -447,7 +447,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 						DateModified:  now,
 					})
 					if fieldErr != nil {
-						logger.Ferror(fmt.Sprintf("Failed to copy field: %v", fieldErr), fieldErr)
+						logger.Ferror(fmt.Sprintf("failed to copy field: %v", fieldErr), fieldErr)
 					}
 					fieldCount++
 				}
@@ -465,7 +465,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 							DateModified:  now,
 						})
 						if fieldErr != nil {
-							logger.Ferror(fmt.Sprintf("Failed to copy field: %v", fieldErr), fieldErr)
+							logger.Ferror(fmt.Sprintf("failed to copy field: %v", fieldErr), fieldErr)
 						}
 						fieldCount++
 					}
@@ -485,7 +485,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 						DateModified:  now,
 					})
 					if fieldErr != nil {
-						logger.Ferror(fmt.Sprintf("Failed to copy field: %v", fieldErr), fieldErr)
+						logger.Ferror(fmt.Sprintf("failed to copy field: %v", fieldErr), fieldErr)
 					}
 					fieldCount++
 				}
@@ -518,7 +518,7 @@ func (m Model) HandleTogglePublish(msg TogglePublishRequestMsg) tea.Cmd {
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -549,7 +549,7 @@ func (m Model) HandleConfirmedPublish(msg ConfirmedPublishMsg) tea.Cmd {
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -566,7 +566,7 @@ func (m Model) HandleConfirmedPublish(msg ConfirmedPublishMsg) tea.Cmd {
 		publishAll := !cfg.Node_Level_Publish
 		_, pubErr := publishing.PublishContent(ctx, d, msg.ContentID, locale, userID, ac, retentionCap, publishAll, dispatcher, nil)
 		if pubErr != nil {
-			logger.Ferror(fmt.Sprintf("Failed to publish content %s", msg.ContentID), pubErr)
+			logger.Ferror(fmt.Sprintf("failed to publish content %s", msg.ContentID), pubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Publish failed: %v", pubErr)}
 		}
 
@@ -583,7 +583,7 @@ func (m Model) HandleConfirmedUnpublish(msg ConfirmedUnpublishMsg) tea.Cmd {
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -598,7 +598,7 @@ func (m Model) HandleConfirmedUnpublish(msg ConfirmedUnpublishMsg) tea.Cmd {
 
 		unpubErr := publishing.UnpublishContent(ctx, d, msg.ContentID, locale, userID, ac, dispatcher, nil)
 		if unpubErr != nil {
-			logger.Ferror(fmt.Sprintf("Failed to unpublish content %s", msg.ContentID), unpubErr)
+			logger.Ferror(fmt.Sprintf("failed to unpublish content %s", msg.ContentID), unpubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Unpublish failed: %v", unpubErr)}
 		}
 
@@ -625,7 +625,7 @@ func (m Model) HandleListVersions(msg ListVersionsRequestMsg) tea.Cmd {
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -633,7 +633,7 @@ func (m Model) HandleListVersions(msg ListVersionsRequestMsg) tea.Cmd {
 		d := db.ConfigDB(*cfg)
 		versions, err := d.ListContentVersionsByContent(msg.ContentID)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to list versions: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to list versions: %v", err)}
 		}
 		var versionList []db.ContentVersion
 		if versions != nil {
@@ -672,7 +672,7 @@ func (m Model) HandleConfirmedRestoreVersion(msg ConfirmedRestoreVersionMsg) tea
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -685,8 +685,8 @@ func (m Model) HandleConfirmedRestoreVersion(msg ConfirmedRestoreVersionMsg) tea
 
 		result, err := publishing.RestoreContent(ctx, d, msg.ContentID, msg.VersionID, userID, ac)
 		if err != nil {
-			logger.Ferror(fmt.Sprintf("Failed to restore version for %s", msg.ContentID), err)
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Restore failed: %v", err)}
+			logger.Ferror(fmt.Sprintf("failed to restore version for %s", msg.ContentID), err)
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("restore failed: %v", err)}
 		}
 
 		logger.Finfo(fmt.Sprintf("Content %s restored from version %s (%d fields)", msg.ContentID, msg.VersionID, result.FieldsRestored))

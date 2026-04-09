@@ -50,7 +50,7 @@ func MediaFolderCreateHandler(svc *service.Registry) http.HandlerFunc {
 			breadcrumb, err := d.GetMediaFolderBreadcrumb(pid)
 			if err != nil {
 				utility.DefaultLogger.Error("check folder depth", err)
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to validate folder depth", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to validate folder depth", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -69,7 +69,7 @@ func MediaFolderCreateHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -89,7 +89,7 @@ func MediaFolderCreateHandler(svc *service.Registry) http.HandlerFunc {
 			DateModified: now,
 		}); err != nil {
 			utility.DefaultLogger.Error("failed to create media folder", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create folder", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to create folder", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -173,7 +173,7 @@ func MediaFolderUpdateHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -192,7 +192,7 @@ func MediaFolderUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			DateModified: types.NewTimestamp(time.Now().UTC()),
 		}); err != nil {
 			utility.DefaultLogger.Error("failed to update media folder", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to update folder", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to update folder", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -235,7 +235,7 @@ func MediaFolderDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		children, err := d.ListMediaFoldersByParent(folderID)
 		if err != nil {
 			utility.DefaultLogger.Error("list child folders", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to check folder contents", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to check folder contents", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -249,7 +249,7 @@ func MediaFolderDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		mediaCount, err := d.CountMediaByFolder(folderNullable)
 		if err != nil {
 			utility.DefaultLogger.Error("count media in folder", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to check folder contents", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to check folder contents", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -261,7 +261,7 @@ func MediaFolderDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -275,7 +275,7 @@ func MediaFolderDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		if err := d.DeleteMediaFolder(r.Context(), ac, folderID); err != nil {
 			utility.DefaultLogger.Error("failed to delete media folder", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete folder", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete folder", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -327,7 +327,7 @@ func MediaMoveToFolderHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -346,7 +346,7 @@ func MediaMoveToFolderHandler(svc *service.Registry) http.HandlerFunc {
 			MediaID:      mediaID,
 		}); err != nil {
 			utility.DefaultLogger.Error("failed to move media to folder", err, "media_id", mediaID, "folder_id", folderID)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to move media", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to move media", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -362,7 +362,7 @@ func renderFolderTree(w http.ResponseWriter, r *http.Request, d db.DbDriver, act
 	allFolders, err := d.ListMediaFolders()
 	if err != nil {
 		utility.DefaultLogger.Error("failed to list media folders", err)
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to load folders", "type": "error"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to load folders", "type": "error"}}`)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

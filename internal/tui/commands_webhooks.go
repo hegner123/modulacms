@@ -52,13 +52,13 @@ func (m Model) HandleCreateWebhook(msg CreateWebhookFromDialogRequestMsg) tea.Cm
 		if msg.Name == "" {
 			return ActionResultMsg{
 				Title:   "Validation Error",
-				Message: "Webhook name is required",
+				Message: "webhook name is required",
 			}
 		}
 		if msg.URL == "" {
 			return ActionResultMsg{
 				Title:   "Validation Error",
-				Message: "Webhook URL is required",
+				Message: "webhook URL is required",
 			}
 		}
 
@@ -78,13 +78,13 @@ func (m Model) HandleCreateWebhook(msg CreateWebhookFromDialogRequestMsg) tea.Cm
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create webhook: %v", err),
+				Message: fmt.Sprintf("failed to create webhook: %v", err),
 			}
 		}
 		if webhook == nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: "Failed to create webhook in database",
+				Message: "failed to create webhook in database",
 			}
 		}
 
@@ -125,7 +125,7 @@ func (m Model) HandleUpdateWebhook(msg UpdateWebhookFromDialogRequestMsg) tea.Cm
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get webhook for update: %v", err),
+				Message: fmt.Sprintf("failed to get webhook for update: %v", err),
 			}
 		}
 
@@ -136,13 +136,13 @@ func (m Model) HandleUpdateWebhook(msg UpdateWebhookFromDialogRequestMsg) tea.Cm
 		if msg.Name == "" {
 			return ActionResultMsg{
 				Title:   "Validation Error",
-				Message: "Webhook name is required",
+				Message: "webhook name is required",
 			}
 		}
 		if msg.URL == "" {
 			return ActionResultMsg{
 				Title:   "Validation Error",
-				Message: "Webhook URL is required",
+				Message: "webhook URL is required",
 			}
 		}
 
@@ -161,7 +161,7 @@ func (m Model) HandleUpdateWebhook(msg UpdateWebhookFromDialogRequestMsg) tea.Cm
 		if err := d.UpdateWebhook(ctx, ac, params); err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update webhook: %v", err),
+				Message: fmt.Sprintf("failed to update webhook: %v", err),
 			}
 		}
 
@@ -192,14 +192,14 @@ func (m Model) HandleDeleteWebhook(msg DeleteWebhookRequestMsg) tea.Cmd {
 		logger.Finfo(fmt.Sprintf("Deleting webhook: %s", msg.WebhookID))
 
 		if err := d.DeleteWebhook(ctx, ac, msg.WebhookID); err != nil {
-			logger.Ferror("Failed to delete webhook", err)
+			logger.Ferror("failed to delete webhook", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete webhook: %v", err),
+				Message: fmt.Sprintf("failed to delete webhook: %v", err),
 			}
 		}
 
-		logger.Finfo(fmt.Sprintf("Webhook deleted successfully: %s", msg.WebhookID))
+		logger.Finfo(fmt.Sprintf("webhook deleted successfully: %s", msg.WebhookID))
 		return WebhookDeletedMsg{WebhookID: msg.WebhookID}
 	}
 }

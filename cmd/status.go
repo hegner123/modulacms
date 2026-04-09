@@ -23,7 +23,7 @@ If the current directory is not a registered project, suggests running 'modula i
 
 		reg, err := registry.Load()
 		if err != nil {
-			utility.DefaultLogger.Warn("Failed to load project registry", err)
+			utility.DefaultLogger.Warn("failed to load project registry", err)
 			reg = &registry.Registry{Projects: make(map[string]*registry.Project)}
 		}
 
@@ -34,7 +34,7 @@ If the current directory is not a registered project, suggests running 'modula i
 
 		name, proj := reg.FindByDir(cwd)
 		if proj == nil {
-			fmt.Fprintln(cmd.OutOrStdout(), "No ModulaCMS project found in this directory.")
+			fmt.Fprintln(cmd.OutOrStdout(), "no ModulaCMS project found in this directory.")
 			fmt.Fprintln(cmd.OutOrStdout(), "Run 'modula init' to set one up.")
 			return nil
 		}

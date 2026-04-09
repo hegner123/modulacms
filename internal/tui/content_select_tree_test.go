@@ -99,7 +99,7 @@ func TestBuildContentSelectTree_MixedRoutedStandalone(t *testing.T) {
 		makeTopLevel("/contact", "Page", "_root", true),
 		makeTopLevel("", "Config", "_global", false),
 	}
-	items[1].RouteTitle = "Main Menu"
+	items[1].RouteTitle = "main Menu"
 	items[3].RouteTitle = "Site Settings"
 
 	tree := BuildContentSelectTree(items, nil)
@@ -126,7 +126,7 @@ func TestBuildContentSelectTree_GlobalsSectionSeparation(t *testing.T) {
 		makeTopLevel("", "Footer", "_global", false),
 		makeTopLevel("", "Banner", "component", false),
 	}
-	items[1].RouteTitle = "Main Menu"
+	items[1].RouteTitle = "main Menu"
 	items[2].RouteTitle = "Footer Nav"
 	items[3].RouteTitle = "Hero Banner"
 
@@ -162,7 +162,7 @@ func TestBuildContentSelectTree_StandaloneGrouping(t *testing.T) {
 		makeTopLevel("", "Menu", "_global", false),
 		makeTopLevel("", "Config", "_global", false),
 	}
-	items[0].RouteTitle = "Main Menu"
+	items[0].RouteTitle = "main Menu"
 	items[1].RouteTitle = "Footer"
 	items[2].RouteTitle = "Site Settings"
 

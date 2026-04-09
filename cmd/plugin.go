@@ -30,7 +30,7 @@ var pluginTokenFlag string
 // pluginCmd is the parent command for all plugin management operations.
 var pluginCmd = &cobra.Command{
 	Use:   "plugin",
-	Short: "Plugin management commands",
+	Short: "plugin management commands",
 	Long: `Manage Lua plugins for Modula.
 
 Plugins extend CMS functionality with custom HTTP routes, content lifecycle
@@ -169,7 +169,7 @@ Examples:
 		entries, err := os.ReadDir(dir)
 		if err != nil {
 			if os.IsNotExist(err) {
-				fmt.Fprintln(cmd.OutOrStdout(), "No plugins directory found.")
+				fmt.Fprintln(cmd.OutOrStdout(), "no plugins directory found.")
 				return nil
 			}
 			return fmt.Errorf("reading plugin directory %q: %w", dir, err)
@@ -228,7 +228,7 @@ Examples:
 			if jsonOutput {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode([]struct{}{})
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "No plugins found.")
+			fmt.Fprintln(cmd.OutOrStdout(), "no plugins found.")
 			return nil
 		}
 
@@ -383,7 +383,7 @@ Examples:
 
 			if formErr := form.Run(); formErr != nil {
 				if errors.Is(formErr, huh.ErrUserAborted) {
-					utility.DefaultLogger.Info("Plugin init cancelled")
+					utility.DefaultLogger.Info("plugin init cancelled")
 					return nil
 				}
 				return fmt.Errorf("form error: %w", formErr)
@@ -410,7 +410,7 @@ Examples:
 			return fmt.Errorf("writing init.lua: %w", err)
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Created plugin scaffold at %s\n", pluginDir)
+		fmt.Fprintf(cmd.OutOrStdout(), "created plugin scaffold at %s\n", pluginDir)
 		return nil
 	},
 }
@@ -460,7 +460,7 @@ Examples:
 		}
 
 		// Print summary on success.
-		fmt.Fprintf(cmd.OutOrStdout(), "Plugin %q v%s is valid.\n", info.Name, info.Version)
+		fmt.Fprintf(cmd.OutOrStdout(), "plugin %q v%s is valid.\n", info.Name, info.Version)
 
 		// Print any warnings that were found (already printed above to stderr).
 		warningCount := 0
@@ -566,7 +566,7 @@ SQLite concurrent writes may briefly block.`,
 			return fmt.Errorf("installing plugin %q: %w", name, err)
 		}
 
-		fmt.Fprintf(out, "Plugin %q installed successfully (id: %s).\n", info.Name, record.PluginID)
+		fmt.Fprintf(out, "plugin %q installed successfully (id: %s).\n", info.Name, record.PluginID)
 		return nil
 	},
 }
@@ -662,7 +662,7 @@ Examples:
 		}
 		fmt.Fprintf(out, "State:         %s\n", info.State)
 		if info.FailedReason != "" {
-			fmt.Fprintf(out, "Failed Reason: %s\n", info.FailedReason)
+			fmt.Fprintf(out, "failed Reason: %s\n", info.FailedReason)
 		}
 		if info.CBState != "" {
 			fmt.Fprintf(out, "CB State:      %s\n", info.CBState)
@@ -812,7 +812,7 @@ func handleSimpleResponse(cmd *cobra.Command, resp *http.Response, name, action 
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "Plugin %q %s successfully.\n", name, action)
+	fmt.Fprintf(cmd.OutOrStdout(), "plugin %q %s successfully.\n", name, action)
 	return nil
 }
 
@@ -1176,7 +1176,7 @@ func approveAllRoutes(cmd *cobra.Command, client *apiClient, pluginName string, 
 	}
 
 	if len(pending) == 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "No pending routes for %q.\n", pluginName)
+		fmt.Fprintf(cmd.OutOrStdout(), "no pending routes for %q.\n", pluginName)
 		return nil
 	}
 
@@ -1201,7 +1201,7 @@ func revokeAllRoutes(cmd *cobra.Command, client *apiClient, pluginName string, s
 	}
 
 	if len(approved) == 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "No approved routes for %q.\n", pluginName)
+		fmt.Fprintf(cmd.OutOrStdout(), "no approved routes for %q.\n", pluginName)
 		return nil
 	}
 
@@ -1226,7 +1226,7 @@ func approveAllHooks(cmd *cobra.Command, client *apiClient, pluginName string, s
 	}
 
 	if len(pending) == 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "No pending hooks for %q.\n", pluginName)
+		fmt.Fprintf(cmd.OutOrStdout(), "no pending hooks for %q.\n", pluginName)
 		return nil
 	}
 
@@ -1251,7 +1251,7 @@ func revokeAllHooks(cmd *cobra.Command, client *apiClient, pluginName string, sk
 	}
 
 	if len(approved) == 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "No approved hooks for %q.\n", pluginName)
+		fmt.Fprintf(cmd.OutOrStdout(), "no approved hooks for %q.\n", pluginName)
 		return nil
 	}
 
@@ -1341,10 +1341,10 @@ func init() {
 	pluginCmd.PersistentFlags().StringVar(&pluginTokenFlag, "token", "", "Admin API token (overrides token file, for CI/CD)")
 
 	// Non-interactive flags for plugin init.
-	pluginInitCmd.Flags().StringVar(&pluginInitVersion, "version", "", "Plugin version (default: 0.1.0)")
-	pluginInitCmd.Flags().StringVar(&pluginInitDescription, "description", "", "Plugin description")
-	pluginInitCmd.Flags().StringVar(&pluginInitAuthor, "author", "", "Plugin author")
-	pluginInitCmd.Flags().StringVar(&pluginInitLicense, "license", "", "Plugin license")
+	pluginInitCmd.Flags().StringVar(&pluginInitVersion, "version", "", "plugin version (default: 0.1.0)")
+	pluginInitCmd.Flags().StringVar(&pluginInitDescription, "description", "", "plugin description")
+	pluginInitCmd.Flags().StringVar(&pluginInitAuthor, "author", "", "plugin author")
+	pluginInitCmd.Flags().StringVar(&pluginInitLicense, "license", "", "plugin license")
 
 	// Flags for plugin approve.
 	pluginApproveCmd.Flags().StringVar(&pluginApproveRoute, "route", "", `Route to approve (e.g., "GET /tasks")`)

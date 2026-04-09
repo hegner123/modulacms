@@ -23,7 +23,7 @@ var NavItems = []NavItem{
 	{Label: "Dashboard", Href: "/admin/", Icon: "home"},
 
 	// Content
-	{Section: "Content", Label: "Content", Href: "/admin/content", Icon: "file-text", Permission: "content:read"},
+	{Section: "Content", Label: "Content", Href: "/admin/content-tree", Icon: "file-text", Permission: "content:read"},
 	{Section: "Content", Label: "Datatypes", Href: "/admin/datatypes", Icon: "blocks", Permission: "datatypes:read"},
 	{Section: "Content", Label: "Field Types", Href: "/admin/field-types", Icon: "tag", Permission: "field_types:read"},
 	{Section: "Content", Label: "Validations", Href: "/admin/validations", Icon: "check-circle", Permission: "validations:read"},

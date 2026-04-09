@@ -1596,7 +1596,7 @@ func (m *Manager) StartWatcher(ctx context.Context) {
 
 	go m.watcher.Run(watchCtx)
 
-	utility.DefaultLogger.Info("Plugin hot reload watcher started",
+	utility.DefaultLogger.Info("plugin hot reload watcher started",
 		"poll_interval", "2s",
 		"debounce_delay", "1s",
 	)
@@ -1939,7 +1939,7 @@ func (m *Manager) StartCoordinator(ctx context.Context, syncInterval time.Durati
 
 	go coord.Run(coordCtx)
 
-	utility.DefaultLogger.Info("Plugin coordinator started",
+	utility.DefaultLogger.Info("plugin coordinator started",
 		"poll_interval", syncInterval.String(),
 	)
 }

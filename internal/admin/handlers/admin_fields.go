@@ -44,7 +44,7 @@ func AdminFieldDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing field ID", http.StatusBadRequest)
+			http.Error(w, "missing field ID", http.StatusBadRequest)
 			return
 		}
 
@@ -90,7 +90,7 @@ func AdminFieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing field ID", http.StatusBadRequest)
+			http.Error(w, "missing field ID", http.StatusBadRequest)
 			return
 		}
 
@@ -162,7 +162,7 @@ func AdminFieldUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to update admin field", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminFieldEditForm(id, name, label, fieldType, data, validation, uiConfig, map[string]string{"_": "Failed to update field"}, csrfToken, fieldTypes))
+			Render(w, r, partials.AdminFieldEditForm(id, name, label, fieldType, data, validation, uiConfig, map[string]string{"_": "failed to update field"}, csrfToken, fieldTypes))
 			return
 		}
 
@@ -187,14 +187,14 @@ func AdminFieldDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing field ID", http.StatusBadRequest)
+			http.Error(w, "missing field ID", http.StatusBadRequest)
 			return
 		}
 
 		ac, acErr := svc.AuditCtx(r.Context())
 		if acErr != nil {
 			utility.DefaultLogger.Error("failed to build audit context", acErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete admin field", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete admin field", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -202,7 +202,7 @@ func AdminFieldDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		err := svc.Schema.DeleteAdminField(r.Context(), ac, types.AdminFieldID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to delete admin field", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete admin field", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete admin field", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

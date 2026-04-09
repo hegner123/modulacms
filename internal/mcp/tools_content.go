@@ -43,7 +43,7 @@ func registerContentTools(srv *server.MCPServer, backend ContentBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_content",
-			mcp.WithDescription("Update an existing content data entry. This is a full replacement — all fields are sent. Omitted pointer fields (parent_id, route_id, etc.) will be set to null. Status values: draft, published, archived, pending."),
+			mcp.WithDescription("update an existing content data entry. This is a full replacement — all fields are sent. Omitted pointer fields (parent_id, route_id, etc.) will be set to null. Status values: draft, published, archived, pending."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Content data ID (ULID)")),
 			mcp.WithString("status", mcp.Required(), mcp.Description("Content status: draft, published, archived, pending"), mcp.Enum("draft", "published", "archived", "pending")),
 			mcp.WithString("parent_id", mcp.Description("Parent content data ID")),
@@ -108,7 +108,7 @@ func registerContentTools(srv *server.MCPServer, backend ContentBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_content_field",
-			mcp.WithDescription("Update an existing content field value."),
+			mcp.WithDescription("update an existing content field value."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Content field ID (ULID)")),
 			mcp.WithString("field_value", mcp.Required(), mcp.Description("The new field value")),
 			mcp.WithString("content_data_id", mcp.Description("Content data ID")),

@@ -20,7 +20,7 @@ func SettingsHandler(svc *service.Registry) http.HandlerFunc {
 		cfg, err := svc.Config()
 		if err != nil {
 			utility.DefaultLogger.Error("failed to load config", err)
-			http.Error(w, "Failed to load configuration", http.StatusInternalServerError)
+			http.Error(w, "failed to load configuration", http.StatusInternalServerError)
 			return
 		}
 
@@ -64,12 +64,12 @@ func SearchRebuildHandler(svc *service.Registry) http.HandlerFunc {
 		stats, err := svc.Search.Rebuild(r.Context())
 		if err != nil {
 			utility.DefaultLogger.Error("failed to rebuild search index", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to rebuild search index", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to rebuild search index", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Search index rebuilt", "type": "success"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "search index rebuilt", "type": "success"}}`)
 		Render(w, r, partials.SearchRebuildResult(stats.Documents, stats.Terms))
 	}
 }
@@ -269,7 +269,7 @@ func SettingsUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		if len(updates) == 0 {
 			utility.DefaultLogger.Info("settings update: no changes to save")
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "No changes to save", "type": "info"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "no changes to save", "type": "info"}}`)
 				w.WriteHeader(http.StatusOK)
 				return
 			}
@@ -287,7 +287,7 @@ func SettingsUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		)
 		if updateErr != nil {
 			utility.DefaultLogger.Error("failed to update settings", updateErr)
-			msg := "Failed to update settings"
+			msg := "failed to update settings"
 			if !result.Valid && len(result.Errors) > 0 {
 				msg = result.Errors[0]
 			}

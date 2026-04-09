@@ -20,7 +20,7 @@ func TokensListHandler(svc *service.Registry) http.HandlerFunc {
 		items, err := svc.Tokens.ListTokens(r.Context())
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list tokens", err)
-			http.Error(w, "Failed to load tokens", http.StatusInternalServerError)
+			http.Error(w, "failed to load tokens", http.StatusInternalServerError)
 			return
 		}
 
@@ -82,7 +82,7 @@ func TokenCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -115,11 +115,11 @@ func TokenCreateHandler(svc *service.Registry) http.HandlerFunc {
 		if createErr != nil {
 			utility.DefaultLogger.Error("failed to create token", createErr)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create token", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to create token", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to create token", http.StatusInternalServerError)
+			http.Error(w, "failed to create token", http.StatusInternalServerError)
 			return
 		}
 
@@ -155,7 +155,7 @@ func TokenDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -180,7 +180,7 @@ func TokenDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		if err := svc.Tokens.DeleteToken(r.Context(), ac, tokenID); err != nil {
 			utility.DefaultLogger.Error("failed to delete token", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete token", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete token", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

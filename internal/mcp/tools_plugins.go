@@ -19,7 +19,7 @@ func registerPluginTools(srv *server.MCPServer, backend PluginBackend) {
 	srv.AddTool(
 		mcp.NewTool("get_plugin",
 			mcp.WithDescription("Get detailed info for a specific plugin."),
-			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin name")),
+			mcp.WithString("name", mcp.Required(), mcp.Description("plugin name")),
 		),
 		handleGetPlugin(backend),
 	)
@@ -27,7 +27,7 @@ func registerPluginTools(srv *server.MCPServer, backend PluginBackend) {
 	srv.AddTool(
 		mcp.NewTool("reload_plugin",
 			mcp.WithDescription("Reload a plugin from disk."),
-			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin name")),
+			mcp.WithString("name", mcp.Required(), mcp.Description("plugin name")),
 		),
 		handleReloadPlugin(backend),
 	)
@@ -35,7 +35,7 @@ func registerPluginTools(srv *server.MCPServer, backend PluginBackend) {
 	srv.AddTool(
 		mcp.NewTool("enable_plugin",
 			mcp.WithDescription("Enable a disabled plugin."),
-			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin name")),
+			mcp.WithString("name", mcp.Required(), mcp.Description("plugin name")),
 		),
 		handleEnablePlugin(backend),
 	)
@@ -43,7 +43,7 @@ func registerPluginTools(srv *server.MCPServer, backend PluginBackend) {
 	srv.AddTool(
 		mcp.NewTool("disable_plugin",
 			mcp.WithDescription("Disable an active plugin."),
-			mcp.WithString("name", mcp.Required(), mcp.Description("Plugin name")),
+			mcp.WithString("name", mcp.Required(), mcp.Description("plugin name")),
 		),
 		handleDisablePlugin(backend),
 	)

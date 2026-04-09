@@ -52,10 +52,10 @@ func (m Model) HandleCreateAdminMediaFolder(msg CreateAdminMediaFolderRequestMsg
 
 		result, err := d.CreateAdminMediaFolder(ctx, ac, params)
 		if err != nil {
-			logger.Ferror("Failed to create admin media folder", err)
+			logger.Ferror("failed to create admin media folder", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create folder: %v", err),
+				Message: fmt.Sprintf("failed to create folder: %v", err),
 			}
 		}
 
@@ -93,10 +93,10 @@ func (m Model) HandleRenameAdminMediaFolder(msg RenameAdminMediaFolderRequestMsg
 		// Fetch existing folder to preserve all fields
 		existing, err := d.GetAdminMediaFolder(msg.FolderID)
 		if err != nil {
-			logger.Ferror("Failed to get admin folder for rename", err)
+			logger.Ferror("failed to get admin folder for rename", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get folder for rename: %v", err),
+				Message: fmt.Sprintf("failed to get folder for rename: %v", err),
 			}
 		}
 
@@ -117,10 +117,10 @@ func (m Model) HandleRenameAdminMediaFolder(msg RenameAdminMediaFolderRequestMsg
 
 		_, err = d.UpdateAdminMediaFolder(ctx, ac, params)
 		if err != nil {
-			logger.Ferror("Failed to rename admin media folder", err)
+			logger.Ferror("failed to rename admin media folder", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to rename folder: %v", err),
+				Message: fmt.Sprintf("failed to rename folder: %v", err),
 			}
 		}
 
@@ -159,10 +159,10 @@ func (m Model) HandleDeleteAdminMediaFolder(msg DeleteAdminMediaFolderRequestMsg
 		// Check for child folders
 		children, err := d.ListAdminMediaFoldersByParent(msg.FolderID)
 		if err != nil {
-			logger.Ferror("Failed to check admin folder children", err)
+			logger.Ferror("failed to check admin folder children", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to check folder contents: %v", err),
+				Message: fmt.Sprintf("failed to check folder contents: %v", err),
 			}
 		}
 		if children != nil && len(*children) > 0 {
@@ -175,10 +175,10 @@ func (m Model) HandleDeleteAdminMediaFolder(msg DeleteAdminMediaFolderRequestMsg
 		// Check for media in folder
 		mediaCount, err := d.CountAdminMediaByFolder(types.NullableAdminMediaFolderID{ID: msg.FolderID, Valid: true})
 		if err != nil {
-			logger.Ferror("Failed to check admin folder media", err)
+			logger.Ferror("failed to check admin folder media", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to check folder contents: %v", err),
+				Message: fmt.Sprintf("failed to check folder contents: %v", err),
 			}
 		}
 		if mediaCount != nil && *mediaCount > 0 {
@@ -189,10 +189,10 @@ func (m Model) HandleDeleteAdminMediaFolder(msg DeleteAdminMediaFolderRequestMsg
 		}
 
 		if err := d.DeleteAdminMediaFolder(ctx, ac, msg.FolderID); err != nil {
-			logger.Ferror("Failed to delete admin media folder", err)
+			logger.Ferror("failed to delete admin media folder", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete folder: %v", err),
+				Message: fmt.Sprintf("failed to delete folder: %v", err),
 			}
 		}
 
@@ -231,10 +231,10 @@ func (m Model) HandleMoveAdminMediaToFolder(msg MoveAdminMediaToFolderRequestMsg
 		}
 
 		if err := d.MoveAdminMediaToFolder(ctx, ac, params); err != nil {
-			logger.Ferror("Failed to move admin media to folder", err)
+			logger.Ferror("failed to move admin media to folder", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to move media: %v", err),
+				Message: fmt.Sprintf("failed to move media: %v", err),
 			}
 		}
 
@@ -270,10 +270,10 @@ func (m Model) HandleDeleteAdminMedia(msg DeleteAdminMediaRequestMsg) tea.Cmd {
 		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
 		if err := d.DeleteAdminMedia(ctx, ac, msg.AdminMediaID); err != nil {
-			logger.Ferror("Failed to delete admin media", err)
+			logger.Ferror("failed to delete admin media", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete admin media: %v", err),
+				Message: fmt.Sprintf("failed to delete admin media: %v", err),
 			}
 		}
 

@@ -45,7 +45,7 @@ func MediaListHandler(svc *service.Registry) http.HandlerFunc {
 			})
 			if err != nil {
 				utility.DefaultLogger.Error("failed to list media by folder", err)
-				http.Error(w, "Failed to load media", http.StatusInternalServerError)
+				http.Error(w, "failed to load media", http.StatusInternalServerError)
 				return
 			}
 			if items != nil {
@@ -55,7 +55,7 @@ func MediaListHandler(svc *service.Registry) http.HandlerFunc {
 			count, err := d.CountMediaByFolder(folderNullable)
 			if err != nil {
 				utility.DefaultLogger.Error("failed to count media by folder", err)
-				http.Error(w, "Failed to load media", http.StatusInternalServerError)
+				http.Error(w, "failed to load media", http.StatusInternalServerError)
 				return
 			}
 			if count != nil {
@@ -66,7 +66,7 @@ func MediaListHandler(svc *service.Registry) http.HandlerFunc {
 			items, err := d.ListMediaUnfiledPaginated(db.PaginationParams{Limit: limit, Offset: offset})
 			if err != nil {
 				utility.DefaultLogger.Error("failed to list unfiled media", err)
-				http.Error(w, "Failed to load media", http.StatusInternalServerError)
+				http.Error(w, "failed to load media", http.StatusInternalServerError)
 				return
 			}
 			if items != nil {
@@ -75,7 +75,7 @@ func MediaListHandler(svc *service.Registry) http.HandlerFunc {
 			count, err := d.CountMediaUnfiled()
 			if err != nil {
 				utility.DefaultLogger.Error("failed to count unfiled media", err)
-				http.Error(w, "Failed to load media", http.StatusInternalServerError)
+				http.Error(w, "failed to load media", http.StatusInternalServerError)
 				return
 			}
 			if count != nil {
@@ -216,7 +216,7 @@ func MediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -227,7 +227,7 @@ func MediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			http.Error(w, "Failed to parse upload", http.StatusBadRequest)
+			http.Error(w, "failed to parse upload", http.StatusBadRequest)
 			return
 		}
 
@@ -241,11 +241,11 @@ func MediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 		if fileErr != nil {
 			utility.DefaultLogger.Error("no file in upload", fileErr)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "No file selected", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "no file selected", "type": "error"}}`)
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			http.Error(w, "No file uploaded", http.StatusBadRequest)
+			http.Error(w, "no file uploaded", http.StatusBadRequest)
 			return
 		}
 		defer file.Close()
@@ -291,7 +291,7 @@ func MediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to create media", http.StatusInternalServerError)
+			http.Error(w, "failed to create media", http.StatusInternalServerError)
 			return
 		}
 
@@ -322,7 +322,7 @@ func MediaUpdateHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -362,11 +362,11 @@ func MediaUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			}
 			utility.DefaultLogger.Error("failed to update media", err)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to update media", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to update media", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to update media", http.StatusInternalServerError)
+			http.Error(w, "failed to update media", http.StatusInternalServerError)
 			return
 		}
 
@@ -407,7 +407,7 @@ func MediaDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -421,7 +421,7 @@ func MediaDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		if err := svc.Media.DeleteMedia(r.Context(), ac, types.MediaID(id)); err != nil {
 			utility.DefaultLogger.Error("failed to delete media", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete media", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete media", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -443,7 +443,7 @@ func MediaBulkDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -455,7 +455,7 @@ func MediaBulkDeleteHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 		if len(body.IDs) == 0 {
-			http.Error(w, "No IDs provided", http.StatusBadRequest)
+			http.Error(w, "no IDs provided", http.StatusBadRequest)
 			return
 		}
 

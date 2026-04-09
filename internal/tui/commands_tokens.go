@@ -63,7 +63,7 @@ func (m Model) HandleCreateToken(msg CreateTokenFromDialogRequestMsg) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create token: %v", err),
+				Message: fmt.Sprintf("failed to create token: %v", err),
 			}
 		}
 
@@ -94,10 +94,10 @@ func (m Model) HandleDeleteToken(msg DeleteTokenRequestMsg) tea.Cmd {
 		logger.Finfo(fmt.Sprintf("Deleting token: %s", msg.TokenID))
 
 		if err := d.DeleteToken(ctx, ac, msg.TokenID); err != nil {
-			logger.Ferror("Failed to delete token", err)
+			logger.Ferror("failed to delete token", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete token: %v", err),
+				Message: fmt.Sprintf("failed to delete token: %v", err),
 			}
 		}
 

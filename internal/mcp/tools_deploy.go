@@ -18,7 +18,7 @@ func registerDeployTools(srv *server.MCPServer, backend DeployBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("deploy_export",
-			mcp.WithDescription("Export a sync payload from the server. Optionally filter by table names."),
+			mcp.WithDescription("export a sync payload from the server. Optionally filter by table names."),
 			mcp.WithObject("tables", mcp.Description("Array of table names to export. Omit for full export.")),
 		),
 		handleDeployExport(backend),
@@ -26,7 +26,7 @@ func registerDeployTools(srv *server.MCPServer, backend DeployBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("deploy_import",
-			mcp.WithDescription("Import a sync payload into the server. The payload should be the raw JSON from deploy_export."),
+			mcp.WithDescription("import a sync payload into the server. The payload should be the raw JSON from deploy_export."),
 			mcp.WithObject("payload", mcp.Required(), mcp.Description("Sync payload JSON from deploy_export")),
 		),
 		handleDeployImport(backend),

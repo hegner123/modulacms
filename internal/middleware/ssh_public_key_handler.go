@@ -13,7 +13,7 @@ func PublicKeyHandler(c *config.Config) func(ssh.Context, ssh.PublicKey) bool {
 	return func(ctx ssh.Context, key ssh.PublicKey) bool {
 		// Log the attempt
 		fingerprint := FingerprintSHA256(key)
-		utility.DefaultLogger.Finfo("Public key presented: %s (type: %s)", fingerprint, key.Type())
+		utility.DefaultLogger.Finfo("public key presented: %s (type: %s)", fingerprint, key.Type())
 
 		// Allow all valid keys through - authentication happens in middleware
 		return true

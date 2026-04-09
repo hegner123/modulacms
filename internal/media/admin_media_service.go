@@ -141,7 +141,7 @@ func ProcessAdminMediaUpload(
 		DateModified: types.TimestampNow(),
 	}
 
-	utility.DefaultLogger.Info("CreateAdminMedia params", "folder_id_valid", params.FolderID.Valid, "folder_id", params.FolderID.ID)
+	utility.DefaultLogger.Info("createAdminMedia params", "folder_id_valid", params.FolderID.Valid, "folder_id", params.FolderID.ID)
 
 	row, err := store.CreateAdminMedia(ctx, ac, params)
 	if err != nil {

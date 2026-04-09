@@ -79,7 +79,7 @@ func apiGetToken(w http.ResponseWriter, r *http.Request, svc *service.Registry) 
 func apiCreateToken(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	cfg, cfgErr := svc.Config()
 	if cfgErr != nil {
-		http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+		http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 		return cfgErr
 	}
 
@@ -116,7 +116,7 @@ func apiCreateToken(w http.ResponseWriter, r *http.Request, svc *service.Registr
 func apiUpdateToken(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	cfg, cfgErr := svc.Config()
 	if cfgErr != nil {
-		http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+		http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 		return cfgErr
 	}
 
@@ -143,7 +143,7 @@ func apiUpdateToken(w http.ResponseWriter, r *http.Request, svc *service.Registr
 func apiDeleteToken(w http.ResponseWriter, r *http.Request, svc *service.Registry) error {
 	cfg, cfgErr := svc.Config()
 	if cfgErr != nil {
-		http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+		http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 		return cfgErr
 	}
 

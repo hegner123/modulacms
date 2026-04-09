@@ -27,10 +27,10 @@ func (m Model) HandleDeleteSshKey(msg DeleteSshKeyRequestMsg) tea.Cmd {
 		logger.Finfo(fmt.Sprintf("Removing SSH key: %s", msg.SshKeyID))
 
 		if err := d.DeleteUserSshKey(ctx, ac, msg.SshKeyID); err != nil {
-			logger.Ferror("Failed to remove SSH key", err)
+			logger.Ferror("failed to remove SSH key", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to remove SSH key: %v", err),
+				Message: fmt.Sprintf("failed to remove SSH key: %v", err),
 			}
 		}
 

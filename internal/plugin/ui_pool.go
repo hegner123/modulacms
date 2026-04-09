@@ -14,7 +14,7 @@ import (
 // and held indefinitely until the UI closes.
 //
 // UI pool is bounded by MaxUIVMs (default 4) to cap concurrent UI sessions
-// per plugin. Pool exhaustion shows "Plugin busy" instead of blocking.
+// per plugin. Pool exhaustion shows "plugin busy" instead of blocking.
 type UIVMPool struct {
 	vms        chan *lua.LState
 	factory    func() *lua.LState
@@ -54,7 +54,7 @@ func NewUIVMPool(cfg UIVMPoolConfig) *UIVMPool {
 
 // Get checks out a UI VM. Unlike the standard pool, this does NOT have
 // an acquisition timeout — if the pool is full, it returns ErrPoolExhausted
-// immediately (non-blocking). The caller should show "Plugin busy".
+// immediately (non-blocking). The caller should show "plugin busy".
 func (p *UIVMPool) Get(ctx context.Context) (*lua.LState, error) {
 	if p.draining.Load() || p.closed.Load() {
 		return nil, ErrPoolExhausted

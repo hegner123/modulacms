@@ -42,7 +42,7 @@ func CheckInstall(c *config.Config, v *bool) (ModulaInit, error) {
 	bucketStatus, bucketErr := CheckBucket(v, c)
 	if bucketErr != nil {
 		Status.BucketConnected = false
-		utility.DefaultLogger.Warn("Bucket check failed (optional): "+bucketStatus, bucketErr)
+		utility.DefaultLogger.Warn("bucket check failed (optional): "+bucketStatus, bucketErr)
 	} else {
 		Status.BucketConnected = true
 	}

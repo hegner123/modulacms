@@ -16,7 +16,7 @@ import (
 // dbCmd is the root command for database management operations.
 var dbCmd = &cobra.Command{
 	Use:   "db",
-	Short: "Database management commands",
+	Short: "database management commands",
 	Long: `Initialize, inspect, and manage the Modula database.
 
 Supports SQLite, MySQL, and PostgreSQL as configured in modula.config.json.
@@ -77,7 +77,7 @@ Examples:
 		))
 		if err := pwForm.Run(); err != nil {
 			if errors.Is(err, huh.ErrUserAborted) {
-				utility.DefaultLogger.Info("Database init cancelled")
+				utility.DefaultLogger.Info("database init cancelled")
 				return nil
 			}
 			return fmt.Errorf("password form error: %w", err)
@@ -90,12 +90,12 @@ Examples:
 			return fmt.Errorf("failed to hash admin password: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Initializing database tables and bootstrap data...")
+		utility.DefaultLogger.Info("initializing database tables and bootstrap data...")
 		if err := install.CreateDbSimple(cfgPath, cfg, adminHash); err != nil {
 			return fmt.Errorf("database initialization failed: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Database initialization complete")
+		utility.DefaultLogger.Info("database initialization complete")
 		return nil
 	},
 }
@@ -134,13 +134,13 @@ Examples:
 			Value(&wipeConfirm)
 		if err := confirm.Run(); err != nil {
 			if errors.Is(err, huh.ErrUserAborted) {
-				utility.DefaultLogger.Info("Wipe cancelled")
+				utility.DefaultLogger.Info("wipe cancelled")
 				return nil
 			}
 			return fmt.Errorf("confirmation form error: %w", err)
 		}
 		if !wipeConfirm {
-			utility.DefaultLogger.Info("Wipe cancelled")
+			utility.DefaultLogger.Info("wipe cancelled")
 			return nil
 		}
 
@@ -149,7 +149,7 @@ Examples:
 			return fmt.Errorf("failed to drop tables: %w", err)
 		}
 
-		utility.DefaultLogger.Info("All tables dropped successfully")
+		utility.DefaultLogger.Info("all tables dropped successfully")
 		return nil
 	},
 }
@@ -188,13 +188,13 @@ Examples:
 			Value(&wipeConfirm)
 		if err := confirm.Run(); err != nil {
 			if errors.Is(err, huh.ErrUserAborted) {
-				utility.DefaultLogger.Info("Wipe-redeploy cancelled")
+				utility.DefaultLogger.Info("wipe-redeploy cancelled")
 				return nil
 			}
 			return fmt.Errorf("confirmation form error: %w", err)
 		}
 		if !wipeConfirm {
-			utility.DefaultLogger.Info("Wipe-redeploy cancelled")
+			utility.DefaultLogger.Info("wipe-redeploy cancelled")
 			return nil
 		}
 
@@ -215,7 +215,7 @@ Examples:
 		))
 		if err := pwForm.Run(); err != nil {
 			if errors.Is(err, huh.ErrUserAborted) {
-				utility.DefaultLogger.Info("Wipe-redeploy cancelled")
+				utility.DefaultLogger.Info("wipe-redeploy cancelled")
 				return nil
 			}
 			return fmt.Errorf("password form error: %w", err)
@@ -232,7 +232,7 @@ Examples:
 		if err := driver.DropAllTables(); err != nil {
 			return fmt.Errorf("failed to drop tables: %w", err)
 		}
-		utility.DefaultLogger.Info("All tables dropped")
+		utility.DefaultLogger.Info("all tables dropped")
 
 		if err := driver.CreateAllTables(); err != nil {
 			return fmt.Errorf("failed to recreate tables: %w", err)
@@ -244,7 +244,7 @@ Examples:
 			return fmt.Errorf("failed to validate bootstrap data: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Database wiped and redeployed successfully")
+		utility.DefaultLogger.Info("database wiped and redeployed successfully")
 		return nil
 	},
 }
@@ -271,12 +271,12 @@ Examples:
 			return fmt.Errorf("loading configuration: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Resetting database", "path", cfg.Db_URL)
+		utility.DefaultLogger.Info("resetting database", "path", cfg.Db_URL)
 		if err := os.Remove(cfg.Db_URL); err != nil {
 			return fmt.Errorf("error deleting database file: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Database reset complete")
+		utility.DefaultLogger.Info("database reset complete")
 		return nil
 	},
 }
@@ -322,7 +322,7 @@ Examples:
 			return fmt.Errorf("database export failed: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Database export complete")
+		utility.DefaultLogger.Info("database export complete")
 		return nil
 	},
 }

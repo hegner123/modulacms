@@ -33,7 +33,7 @@ func (cs S3Credentials) GetBucket() (*s3.S3, error) {
 		S3ForcePathStyle: aws.Bool(cs.ForcePathStyle),
 	})
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to create session:", err)
+		utility.DefaultLogger.Error("failed to create session:", err)
 		return nil, err
 	}
 
@@ -56,7 +56,7 @@ func EnsureBucket(svc *s3.S3, bucketName string) error {
 		return fmt.Errorf("create bucket %q: %w", bucketName, err)
 	}
 
-	utility.DefaultLogger.Info("Created bucket:", bucketName)
+	utility.DefaultLogger.Info("created bucket:", bucketName)
 	return nil
 }
 
@@ -105,7 +105,7 @@ func SetPublicReadPolicy(svc *s3.S3, bucketName string) error {
 		return fmt.Errorf("set public-read policy on %q: %w", bucketName, err)
 	}
 
-	utility.DefaultLogger.Info("Set public-read policy on bucket:", bucketName)
+	utility.DefaultLogger.Info("set public-read policy on bucket:", bucketName)
 	return nil
 }
 
@@ -119,7 +119,7 @@ func UploadPrep(uploadPath string, bucketName string, data *os.File, acl string)
 	}
 
 	size := info.Size()
-	utility.DefaultLogger.Info("UploadPrep", "key", uploadPath, "file", data.Name(), "size", size)
+	utility.DefaultLogger.Info("uploadPrep", "key", uploadPath, "file", data.Name(), "size", size)
 
 	upload := &s3.PutObjectInput{
 		Bucket:        aws.String(bucketName),
@@ -144,7 +144,7 @@ func PrintBuckets(s3 *s3.S3) {
 		utility.DefaultLogger.Fatal("Unable to list buckets: %w", err)
 	}
 
-	utility.DefaultLogger.Info("Buckets:")
+	utility.DefaultLogger.Info("buckets:")
 	for _, bucket := range result.Buckets {
 		utility.DefaultLogger.Info(aws.StringValue(bucket.Name), "created on", aws.TimeValue(bucket.CreationDate))
 	}

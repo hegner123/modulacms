@@ -117,7 +117,7 @@ func buildGlobalEntry(ctx context.Context, d db.DbDriver, root db.ContentData) (
 
 	built, err := model.BuildTree(utility.DefaultLogger, cdSlice, dtSlice, allCF, allFD)
 	if err != nil {
-		return nil, fmt.Errorf("BuildTree for global %s: %w", root.ContentDataID, err)
+		return nil, fmt.Errorf("buildTree for global %s: %w", root.ContentDataID, err)
 	}
 
 	if built.Node == nil {

@@ -55,7 +55,7 @@ Examples:
 			if resolved.Overlay != "" {
 				overlayPath = resolved.Overlay
 			}
-			utility.DefaultLogger.Info("Using config from registry", "project", projName, "environment", envName, "config", cfgPath)
+			utility.DefaultLogger.Info("using config from registry", "project", projName, "environment", envName, "config", cfgPath)
 		}
 
 		// Root the process in the config file's directory so relative paths

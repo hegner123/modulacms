@@ -18,21 +18,21 @@ func registerSessionTools(srv *server.MCPServer, backend SessionBackend) {
 	srv.AddTool(
 		mcp.NewTool("get_session",
 			mcp.WithDescription("Get a single session by ID."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("Session ID (ULID)")),
+			mcp.WithString("id", mcp.Required(), mcp.Description("session ID (ULID)")),
 		),
 		handleGetSession(backend),
 	)
 
 	srv.AddTool(
 		mcp.NewTool("update_session",
-			mcp.WithDescription("Update an existing session."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("Session ID (ULID)")),
-			mcp.WithString("user_id", mcp.Description("User ID")),
+			mcp.WithDescription("update an existing session."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("session ID (ULID)")),
+			mcp.WithString("user_id", mcp.Description("user ID")),
 			mcp.WithString("expires_at", mcp.Description("Expiration timestamp (RFC3339)")),
 			mcp.WithString("last_access", mcp.Description("Last access timestamp")),
 			mcp.WithString("ip_address", mcp.Description("IP address")),
-			mcp.WithString("user_agent", mcp.Description("User agent string")),
-			mcp.WithString("session_data", mcp.Description("Session data")),
+			mcp.WithString("user_agent", mcp.Description("user agent string")),
+			mcp.WithString("session_data", mcp.Description("session data")),
 		),
 		handleUpdateSession(backend),
 	)
@@ -40,7 +40,7 @@ func registerSessionTools(srv *server.MCPServer, backend SessionBackend) {
 	srv.AddTool(
 		mcp.NewTool("delete_session",
 			mcp.WithDescription("Delete a session by ID."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("Session ID (ULID)")),
+			mcp.WithString("id", mcp.Required(), mcp.Description("session ID (ULID)")),
 		),
 		handleDeleteSession(backend),
 	)

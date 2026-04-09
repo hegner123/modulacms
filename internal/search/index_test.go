@@ -202,7 +202,7 @@ func TestIndexSearchPrefixMatch(t *testing.T) {
 	idx.Add(SearchDocument{
 		ID:            "doc1",
 		ContentDataID: "cd1",
-		Fields:        map[string]string{"title": "Installation Guide"},
+		Fields:        map[string]string{"title": "installation Guide"},
 	})
 
 	// "install" should match "installation" via prefix search

@@ -914,7 +914,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modula",
 		KeyType:     "ssh-ed25519",
 		Fingerprint: "SHA256:bootstrap_validation_fingerprint",
-		Label:       "Bootstrap Validation Key",
+		Label:       "bootstrap Validation Key",
 		DateCreated: types.TimestampNow(),
 	})
 	if err != nil {
@@ -994,7 +994,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap data created successfully: all tables validated with bootstrap records + complete table registry populated")
+	utility.DefaultLogger.Finfo("bootstrap data created successfully: all tables validated with bootstrap records + complete table registry populated")
 	return nil
 }
 
@@ -1176,7 +1176,7 @@ func (d Database) CleanupBootstrapData() error {
 		}
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap cleanup: removed all verification-only records")
+	utility.DefaultLogger.Finfo("bootstrap cleanup: removed all verification-only records")
 	return nil
 }
 
@@ -1325,11 +1325,11 @@ func (d Database) ValidateBootstrapData() error {
 	// If any validation failed, return combined error
 	if len(errors) > 0 {
 		err := fmt.Errorf("bootstrap validation failed:\n  - %s", strings.Join(errors, "\n  - "))
-		utility.DefaultLogger.Ferror("Bootstrap validation failed", err)
+		utility.DefaultLogger.Ferror("bootstrap validation failed", err)
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 29 tables contain expected records")
+	utility.DefaultLogger.Finfo("bootstrap validation passed: all 29 tables contain expected records")
 	return nil
 }
 
@@ -2088,7 +2088,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modula",
 		KeyType:     "ssh-ed25519",
 		Fingerprint: "SHA256:bootstrap_validation_fingerprint",
-		Label:       "Bootstrap Validation Key",
+		Label:       "bootstrap Validation Key",
 		DateCreated: types.TimestampNow(),
 	})
 	if err != nil {
@@ -2168,7 +2168,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap data created successfully: all tables validated with bootstrap records + complete table registry populated")
+	utility.DefaultLogger.Finfo("bootstrap data created successfully: all tables validated with bootstrap records + complete table registry populated")
 	return nil
 }
 
@@ -2290,11 +2290,11 @@ func (d MysqlDatabase) ValidateBootstrapData() error {
 
 	if len(errors) > 0 {
 		err := fmt.Errorf("bootstrap validation failed:\n  - %s", strings.Join(errors, "\n  - "))
-		utility.DefaultLogger.Ferror("Bootstrap validation failed", err)
+		utility.DefaultLogger.Ferror("bootstrap validation failed", err)
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 28 tables contain expected records (MySQL)")
+	utility.DefaultLogger.Finfo("bootstrap validation passed: all 28 tables contain expected records (MySQL)")
 	return nil
 }
 
@@ -2464,7 +2464,7 @@ func (d MysqlDatabase) CleanupBootstrapData() error {
 		}
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap cleanup: removed all verification-only records (MySQL)")
+	utility.DefaultLogger.Finfo("bootstrap cleanup: removed all verification-only records (MySQL)")
 	return nil
 }
 
@@ -3223,7 +3223,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modula",
 		KeyType:     "ssh-ed25519",
 		Fingerprint: "SHA256:bootstrap_validation_fingerprint",
-		Label:       "Bootstrap Validation Key",
+		Label:       "bootstrap Validation Key",
 		DateCreated: types.TimestampNow(),
 	})
 	if err != nil {
@@ -3303,7 +3303,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap data created successfully: all tables validated with bootstrap records + complete table registry populated")
+	utility.DefaultLogger.Finfo("bootstrap data created successfully: all tables validated with bootstrap records + complete table registry populated")
 	return nil
 }
 
@@ -3425,11 +3425,11 @@ func (d PsqlDatabase) ValidateBootstrapData() error {
 
 	if len(errors) > 0 {
 		err := fmt.Errorf("bootstrap validation failed:\n  - %s", strings.Join(errors, "\n  - "))
-		utility.DefaultLogger.Ferror("Bootstrap validation failed", err)
+		utility.DefaultLogger.Ferror("bootstrap validation failed", err)
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 28 tables contain expected records (PostgreSQL)")
+	utility.DefaultLogger.Finfo("bootstrap validation passed: all 28 tables contain expected records (PostgreSQL)")
 	return nil
 }
 
@@ -3599,7 +3599,7 @@ func (d PsqlDatabase) CleanupBootstrapData() error {
 		}
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap cleanup: removed all verification-only records (PostgreSQL)")
+	utility.DefaultLogger.Finfo("bootstrap cleanup: removed all verification-only records (PostgreSQL)")
 	return nil
 }
 
@@ -3811,17 +3811,17 @@ func (d PsqlDatabase) DumpSql(c config.Config, outFile string) error {
 
 // Query methods for database implementations
 func (d Database) Query(db *sql.DB, query string) (sql.Result, error) {
-	utility.DefaultLogger.Finfo("Executing query:", query)
+	utility.DefaultLogger.Finfo("executing query:", query)
 	return db.Exec(query)
 }
 
 func (d MysqlDatabase) Query(db *sql.DB, query string) (sql.Result, error) {
-	utility.DefaultLogger.Finfo("Executing query:", query)
+	utility.DefaultLogger.Finfo("executing query:", query)
 	return db.Exec(query)
 }
 
 func (d PsqlDatabase) Query(db *sql.DB, query string) (sql.Result, error) {
-	utility.DefaultLogger.Finfo("Executing query:", query)
+	utility.DefaultLogger.Finfo("executing query:", query)
 	return db.Exec(query)
 }
 

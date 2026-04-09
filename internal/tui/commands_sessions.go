@@ -27,14 +27,14 @@ func (m Model) HandleDeleteSession(msg DeleteSessionRequestMsg) tea.Cmd {
 		logger.Finfo(fmt.Sprintf("Revoking session: %s", msg.SessionID))
 
 		if err := d.DeleteSession(ctx, ac, msg.SessionID); err != nil {
-			logger.Ferror("Failed to revoke session", err)
+			logger.Ferror("failed to revoke session", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to revoke session: %v", err),
+				Message: fmt.Sprintf("failed to revoke session: %v", err),
 			}
 		}
 
-		logger.Finfo(fmt.Sprintf("Session revoked successfully: %s", msg.SessionID))
+		logger.Finfo(fmt.Sprintf("session revoked successfully: %s", msg.SessionID))
 		return SessionDeletedMsg{SessionID: msg.SessionID}
 	}
 }

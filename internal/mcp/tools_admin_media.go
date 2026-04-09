@@ -30,7 +30,7 @@ func registerAdminMediaTools(srv *server.MCPServer, backend AdminMediaBackend, f
 
 	srv.AddTool(
 		mcp.NewTool("admin_update_media",
-			mcp.WithDescription("Update admin media asset metadata. Only provided fields are changed; omitted fields remain unchanged."),
+			mcp.WithDescription("update admin media asset metadata. Only provided fields are changed; omitted fields remain unchanged."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin media ID (ULID)")),
 			mcp.WithString("name", mcp.Description("File name")),
 			mcp.WithString("display_name", mcp.Description("Display name")),

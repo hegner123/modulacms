@@ -33,7 +33,7 @@ func ContentHealthCheckHandler(svc *service.Registry) http.HandlerFunc {
 
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 		ac := middleware.AuditContextFromRequest(r, *cfg)
@@ -48,9 +48,9 @@ func ContentHealthCheckHandler(svc *service.Registry) http.HandlerFunc {
 			actionLabel := "Check"
 			if !dryRun {
 				actionLabel = "Heal"
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Public content healed", "type": "success"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "public content healed", "type": "success"}}`)
 			}
-			Render(w, r, partials.ContentHealthReport("Public Content", actionLabel, partials.HealthReportData{
+			Render(w, r, partials.ContentHealthReport("public Content", actionLabel, partials.HealthReportData{
 				DryRun:              report.DryRun,
 				ContentDataScanned:  report.ContentDataScanned,
 				ContentFieldScanned: report.ContentFieldScanned,
@@ -105,7 +105,7 @@ func ContentHealthCheckHandler(svc *service.Registry) http.HandlerFunc {
 			actionLabel := "Check"
 			if !dryRun {
 				actionLabel = "Heal"
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "All content healed", "type": "success"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "all content healed", "type": "success"}}`)
 			}
 			pubData := partials.HealthReportData{
 				DryRun:              pubReport.DryRun,

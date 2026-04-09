@@ -444,7 +444,7 @@ func ShowDatabaseUpdateDialogCmd(table db.DBTable, rowID string) tea.Cmd {
 	return func() tea.Msg {
 		return ShowDatabaseFormDialogMsg{
 			Action: FORMDIALOGDBUPDATE,
-			Title:  "Update Row",
+			Title:  "update Row",
 			Table:  table,
 			RowID:  rowID,
 		}

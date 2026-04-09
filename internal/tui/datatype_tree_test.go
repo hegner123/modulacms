@@ -141,7 +141,7 @@ func TestBuildAdminDatatypeTree_Hierarchy(t *testing.T) {
 func TestFilterAdminDatatypeList(t *testing.T) {
 	items := []db.AdminDatatypes{
 		{AdminDatatypeID: "adt1", Label: "System Config"},
-		{AdminDatatypeID: "adt2", Label: "User Settings"},
+		{AdminDatatypeID: "adt2", Label: "user Settings"},
 	}
 	filtered := FilterAdminDatatypeList(items, "config")
 	if len(filtered) != 1 {

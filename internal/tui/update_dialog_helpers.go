@@ -142,7 +142,7 @@ func (m Model) HandleCreateDatatypeFromDialog(msg CreateDatatypeFromDialogReques
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create datatype: %v", err),
+				Message: fmt.Sprintf("failed to create datatype: %v", err),
 			}
 		}
 		return DatatypeCreatedFromDialogMsg{
@@ -235,9 +235,9 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 
 		field, err := d.CreateField(ctx, ac, fieldParams)
 		if err != nil || field.FieldID.IsZero() {
-			errMsg := "Failed to create field in database"
+			errMsg := "failed to create field in database"
 			if err != nil {
-				errMsg = fmt.Sprintf("Failed to create field: %v", err)
+				errMsg = fmt.Sprintf("failed to create field: %v", err)
 			}
 			return ActionResultMsg{
 				Title:   "Error",
@@ -330,13 +330,13 @@ func (m Model) HandleCreateRouteFromDialog(msg CreateRouteFromDialogRequestMsg) 
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create route: %v", err),
+				Message: fmt.Sprintf("failed to create route: %v", err),
 			}
 		}
 		if route.RouteID.IsZero() {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: "Failed to create route in database",
+				Message: "failed to create route in database",
 			}
 		}
 
@@ -378,7 +378,7 @@ func (m Model) HandleUpdateDatatypeFromDialog(msg UpdateDatatypeFromDialogReques
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get datatype for update: %v", err),
+				Message: fmt.Sprintf("failed to get datatype for update: %v", err),
 			}
 		}
 
@@ -414,7 +414,7 @@ func (m Model) HandleUpdateDatatypeFromDialog(msg UpdateDatatypeFromDialogReques
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update datatype: %v", err),
+				Message: fmt.Sprintf("failed to update datatype: %v", err),
 			}
 		}
 
@@ -455,7 +455,7 @@ func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) 
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get field for update: %v", err),
+				Message: fmt.Sprintf("failed to get field for update: %v", err),
 			}
 		}
 
@@ -488,7 +488,7 @@ func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) 
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update field: %v", err),
+				Message: fmt.Sprintf("failed to update field: %v", err),
 			}
 		}
 
@@ -528,7 +528,7 @@ func (m Model) HandleUpdateFieldUIConfig(msg UpdateFieldUIConfigRequestMsg) tea.
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get field for UIConfig update: %v", err),
+				Message: fmt.Sprintf("failed to get field for UIConfig update: %v", err),
 			}
 		}
 
@@ -552,7 +552,7 @@ func (m Model) HandleUpdateFieldUIConfig(msg UpdateFieldUIConfigRequestMsg) tea.
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update field UIConfig: %v", err),
+				Message: fmt.Sprintf("failed to update field UIConfig: %v", err),
 			}
 		}
 
@@ -646,7 +646,7 @@ func (m Model) HandleUpdateRouteFromDialog(msg UpdateRouteFromDialogRequestMsg) 
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update route: %v", err),
+				Message: fmt.Sprintf("failed to update route: %v", err),
 			}
 		}
 
@@ -730,13 +730,13 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 			if routeErr != nil {
 				return ActionResultMsg{
 					Title:   "Error",
-					Message: fmt.Sprintf("Failed to create route: %v", routeErr),
+					Message: fmt.Sprintf("failed to create route: %v", routeErr),
 				}
 			}
 			if route.RouteID.IsZero() {
 				return ActionResultMsg{
 					Title:   "Error",
-					Message: "Failed to create route in database",
+					Message: "failed to create route in database",
 				}
 			}
 			routeID = route.RouteID
@@ -768,7 +768,7 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 			}
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create content: %v", contentErr),
+				Message: fmt.Sprintf("failed to create content: %v", contentErr),
 			}
 		}
 
@@ -788,7 +788,7 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 			DateModified:  types.TimestampNow(),
 		})
 		if rootUpdateErr != nil {
-			utility.DefaultLogger.Ferror("Failed to set root_id on new root content", rootUpdateErr)
+			utility.DefaultLogger.Ferror("failed to set root_id on new root content", rootUpdateErr)
 		}
 
 		return RouteWithContentCreatedMsg{
@@ -855,9 +855,9 @@ func (m Model) HandleInitializeRouteContent(msg InitializeRouteContentRequestMsg
 
 		contentData, contentErr := d.CreateContentData(ctx, ac, contentParams)
 		if contentErr != nil || contentData.ContentDataID.IsZero() {
-			errMsg := "Failed to create content in database"
+			errMsg := "failed to create content in database"
 			if contentErr != nil {
-				errMsg = fmt.Sprintf("Failed to create content: %v", contentErr)
+				errMsg = fmt.Sprintf("failed to create content: %v", contentErr)
 			}
 			return ActionResultMsg{
 				Title:   "Error",
@@ -881,7 +881,7 @@ func (m Model) HandleInitializeRouteContent(msg InitializeRouteContentRequestMsg
 			DateModified:  types.TimestampNow(),
 		})
 		if rootUpdateErr != nil {
-			utility.DefaultLogger.Ferror("Failed to set root_id on new root content", rootUpdateErr)
+			utility.DefaultLogger.Ferror("failed to set root_id on new root content", rootUpdateErr)
 		}
 
 		return RouteContentInitializedMsg{
@@ -902,13 +902,13 @@ func (m Model) handleCrudResultMsg(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case UserCreatedFromDialogMsg:
 		return m, tea.Batch(
 			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("User created: %s", msg.Username)),
+			LogMessageCmd(fmt.Sprintf("user created: %s", msg.Username)),
 			UsersFetchCmd(),
 		), true
 	case UserUpdatedFromDialogMsg:
 		return m, tea.Batch(
 			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("User updated: %s", msg.Username)),
+			LogMessageCmd(fmt.Sprintf("user updated: %s", msg.Username)),
 			UsersFetchCmd(),
 		), true
 	case UserDeletedMsg:
@@ -916,7 +916,7 @@ func (m Model) handleCrudResultMsg(msg tea.Msg) (Model, tea.Cmd, bool) {
 		newModel.Cursor = 0
 		return newModel, tea.Batch(
 			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("User deleted: %s", msg.UserID)),
+			LogMessageCmd(fmt.Sprintf("user deleted: %s", msg.UserID)),
 			UsersFetchCmd(),
 		), true
 	case ContentCreatedFromDialogMsg:
@@ -1025,13 +1025,13 @@ func (m Model) handleCrudResultMsg(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case WebhookCreatedMsg:
 		return m, tea.Batch(
 			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("Webhook created: %s", msg.Name)),
+			LogMessageCmd(fmt.Sprintf("webhook created: %s", msg.Name)),
 			WebhooksFetchCmd(),
 		), true
 	case WebhookUpdatedMsg:
 		return m, tea.Batch(
 			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("Webhook updated: %s", msg.Name)),
+			LogMessageCmd(fmt.Sprintf("webhook updated: %s", msg.Name)),
 			WebhooksFetchCmd(),
 		), true
 	case WebhookDeletedMsg:
@@ -1039,7 +1039,7 @@ func (m Model) handleCrudResultMsg(msg tea.Msg) (Model, tea.Cmd, bool) {
 		newModel.Cursor = 0
 		return newModel, tea.Batch(
 			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("Webhook deleted: %s", msg.WebhookID)),
+			LogMessageCmd(fmt.Sprintf("webhook deleted: %s", msg.WebhookID)),
 			WebhooksFetchCmd(),
 		), true
 	default:

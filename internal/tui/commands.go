@@ -299,13 +299,13 @@ func (m Model) HandleCreateUserFromDialog(msg CreateUserFromDialogRequestMsg) te
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create user: %v", err),
+				Message: fmt.Sprintf("failed to create user: %v", err),
 			}
 		}
 		if user == nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: "Failed to create user in database",
+				Message: "failed to create user in database",
 			}
 		}
 
@@ -341,7 +341,7 @@ func (m Model) HandleUpdateUserFromDialog(msg UpdateUserFromDialogRequestMsg) te
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("User not found: %v", err),
+				Message: fmt.Sprintf("user not found: %v", err),
 			}
 		}
 
@@ -366,7 +366,7 @@ func (m Model) HandleUpdateUserFromDialog(msg UpdateUserFromDialogRequestMsg) te
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to update user: %v", err),
+				Message: fmt.Sprintf("failed to update user: %v", err),
 			}
 		}
 
@@ -393,14 +393,14 @@ func (m Model) HandleDeleteUser(msg DeleteUserRequestMsg) tea.Cmd {
 		logger.Finfo(fmt.Sprintf("Deleting user: %s", msg.UserID))
 
 		if err := d.DeleteUser(ctx, ac, msg.UserID); err != nil {
-			logger.Ferror("Failed to delete user", err)
+			logger.Ferror("failed to delete user", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete user: %v", err),
+				Message: fmt.Sprintf("failed to delete user: %v", err),
 			}
 		}
 
-		logger.Finfo(fmt.Sprintf("User deleted successfully: %s", msg.UserID))
+		logger.Finfo(fmt.Sprintf("user deleted successfully: %s", msg.UserID))
 		return UserDeletedMsg{UserID: msg.UserID}
 	}
 }
@@ -427,10 +427,10 @@ func (m Model) HandleDeleteDatatype(msg DeleteDatatypeRequestMsg) tea.Cmd {
 		// Check for child datatypes that reference this one as parent
 		allDatatypes, err := d.ListDatatypes()
 		if err != nil {
-			logger.Ferror("Failed to list datatypes for child check", err)
+			logger.Ferror("failed to list datatypes for child check", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to check for child datatypes: %v", err),
+				Message: fmt.Sprintf("failed to check for child datatypes: %v", err),
 			}
 		}
 		if allDatatypes != nil {
@@ -446,10 +446,10 @@ func (m Model) HandleDeleteDatatype(msg DeleteDatatypeRequestMsg) tea.Cmd {
 
 		// Delete the datatype (fields with parent_id referencing it are set to NULL by FK cascade)
 		if err := d.DeleteDatatype(ctx, ac, msg.DatatypeID); err != nil {
-			logger.Ferror("Failed to delete datatype", err)
+			logger.Ferror("failed to delete datatype", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete datatype: %v", err),
+				Message: fmt.Sprintf("failed to delete datatype: %v", err),
 			}
 		}
 
@@ -475,10 +475,10 @@ func (m Model) HandleDeleteField(msg DeleteFieldRequestMsg) tea.Cmd {
 
 		// Delete the field
 		if err := d.DeleteField(ctx, ac, msg.FieldID); err != nil {
-			logger.Ferror("Failed to delete field", err)
+			logger.Ferror("failed to delete field", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete field: %v", err),
+				Message: fmt.Sprintf("failed to delete field: %v", err),
 			}
 		}
 
@@ -506,10 +506,10 @@ func (m Model) HandleDeleteRoute(msg DeleteRouteRequestMsg) tea.Cmd {
 		logger.Finfo(fmt.Sprintf("Deleting route: %s", msg.RouteID))
 
 		if err := d.DeleteRoute(ctx, ac, msg.RouteID); err != nil {
-			logger.Ferror("Failed to delete route", err)
+			logger.Ferror("failed to delete route", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete route: %v", err),
+				Message: fmt.Sprintf("failed to delete route: %v", err),
 			}
 		}
 
@@ -534,10 +534,10 @@ func (m Model) HandleDeleteMedia(msg DeleteMediaRequestMsg) tea.Cmd {
 		logger.Finfo(fmt.Sprintf("Deleting media: %s", msg.MediaID))
 
 		if err := d.DeleteMedia(ctx, ac, msg.MediaID); err != nil {
-			logger.Ferror("Failed to delete media", err)
+			logger.Ferror("failed to delete media", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete media: %v", err),
+				Message: fmt.Sprintf("failed to delete media: %v", err),
 			}
 		}
 

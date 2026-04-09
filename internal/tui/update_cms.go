@@ -318,7 +318,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(
 			ShowDialog(
 				"Success",
-				fmt.Sprintf("Created content with %d fields", msg.FieldCount),
+				fmt.Sprintf("created content with %d fields", msg.FieldCount),
 				false,
 			),
 			LogMessageCmd(fmt.Sprintf("ContentData created: ID=%s, RouteID=%s", msg.ContentID, msg.RouteID)),
@@ -338,7 +338,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 				),
 				false,
 			),
-			LogMessageCmd(fmt.Sprintf("Failed field IDs: %v", msg.FailedFields)),
+			LogMessageCmd(fmt.Sprintf("failed field IDs: %v", msg.FailedFields)),
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
 			FormCompletedCmd(&contentPage), // Navigate back to content browser
 		)
@@ -350,11 +350,11 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		var title, verb string
 		switch msg.Action {
 		case PluginActionEnable:
-			title, verb = "Plugin Enabled", "enabled"
+			title, verb = "plugin Enabled", "enabled"
 		case PluginActionDisable:
-			title, verb = "Plugin Disabled", "disabled"
+			title, verb = "plugin Disabled", "disabled"
 		case PluginActionReload:
-			title, verb = "Plugin Reloaded", "reloaded"
+			title, verb = "plugin Reloaded", "reloaded"
 		}
 		return m, tea.Batch(
 			PluginsFetchCmd(),
@@ -362,7 +362,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 			func() tea.Msg {
 				return ActionResultMsg{
 					Title:   title,
-					Message: fmt.Sprintf("Plugin '%s' has been %s.", msg.Name, verb),
+					Message: fmt.Sprintf("plugin '%s' has been %s.", msg.Name, verb),
 				}
 			},
 		)

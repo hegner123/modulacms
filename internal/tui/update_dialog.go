@@ -94,10 +94,10 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		)
 	case LocaleListMsg:
 		if msg.Err != nil {
-			return m, ShowDialog("Error", fmt.Sprintf("Failed to load locales: %v", msg.Err), false)
+			return m, ShowDialog("Error", fmt.Sprintf("failed to load locales: %v", msg.Err), false)
 		}
 		if len(msg.Locales) == 0 {
-			return m, ShowDialog("Info", "No enabled locales configured", false)
+			return m, ShowDialog("Info", "no enabled locales configured", false)
 		}
 		// Build the locale code list for the selection dialog
 		locales := make([]string, len(msg.Locales))
@@ -222,8 +222,8 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	case RestoreBackupFromPathMsg:
 		// Show confirmation before restoring
 		dialog := NewDialog(
-			"Restore Backup",
-			fmt.Sprintf("Restore from:\n%s\n\nThis will replace the current database. Continue?", msg.Path),
+			"restore Backup",
+			fmt.Sprintf("restore from:\n%s\n\nThis will replace the current database. Continue?", msg.Path),
 			true,
 			DIALOGBACKUPRESTORE,
 		)
@@ -236,8 +236,8 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	case BackupRestoreCompleteMsg:
 		// Show result dialog and quit on dismiss
 		dialog := NewDialog(
-			"Restore Complete",
-			fmt.Sprintf("Backup restored from:\n%s\n\nThe application will exit. Please restart.", msg.Path),
+			"restore Complete",
+			fmt.Sprintf("backup restored from:\n%s\n\nThe application will exit. Please restart.", msg.Path),
 			false,
 			DIALOGGENERIC,
 		)
@@ -579,7 +579,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	// DEPLOY CONFIRMATION DIALOGS
 	// =========================================================================
 	case DeployConfirmPullMsg:
-		dialog := NewDialog("Pull from "+msg.EnvName, "This will overwrite local data with data\nfrom the remote environment.\n\nProceed?", true, DIALOGDEPLOYPULL)
+		dialog := NewDialog("pull from "+msg.EnvName, "This will overwrite local data with data\nfrom the remote environment.\n\nProceed?", true, DIALOGDEPLOYPULL)
 		dialog.SetButtons("Pull", "Cancel")
 		m.DCtx.Active = &DeployPullContext{EnvName: msg.EnvName}
 		return m, tea.Batch(
@@ -587,7 +587,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(DIALOGFOCUS),
 		)
 	case DeployConfirmPushMsg:
-		dialog := NewDialog("Push to "+msg.EnvName, "This will overwrite remote data with\nlocal data.\n\nProceed?", true, DIALOGDEPLOYPUSH)
+		dialog := NewDialog("push to "+msg.EnvName, "This will overwrite remote data with\nlocal data.\n\nProceed?", true, DIALOGDEPLOYPUSH)
 		dialog.SetButtons("Push", "Cancel")
 		m.DCtx.Active = &DeployPushContext{EnvName: msg.EnvName}
 		return m, tea.Batch(
@@ -898,7 +898,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		// Need to fetch current admin folders to build the picker list.
 		d := m.DB
 		if d == nil {
-			dialog := NewDialog("Error", "Database not connected.", false, DIALOGGENERIC)
+			dialog := NewDialog("Error", "database not connected.", false, DIALOGGENERIC)
 			return m, tea.Batch(
 				OverlaySetCmd(&dialog),
 				FocusSetCmd(DIALOGFOCUS),
@@ -911,7 +911,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			if err != nil {
 				return ActionResultMsg{
 					Title:   "Error",
-					Message: fmt.Sprintf("Failed to load admin folders: %v", err),
+					Message: fmt.Sprintf("failed to load admin folders: %v", err),
 				}
 			}
 			var folderData []db.AdminMediaFolder
@@ -1022,7 +1022,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		// Use DB from model to get folder list synchronously in a command.
 		d := m.DB
 		if d == nil {
-			dialog := NewDialog("Error", "Database not connected.", false, DIALOGGENERIC)
+			dialog := NewDialog("Error", "database not connected.", false, DIALOGGENERIC)
 			return m, tea.Batch(
 				OverlaySetCmd(&dialog),
 				FocusSetCmd(DIALOGFOCUS),
@@ -1035,7 +1035,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			if err != nil {
 				return ActionResultMsg{
 					Title:   "Error",
-					Message: fmt.Sprintf("Failed to load folders: %v", err),
+					Message: fmt.Sprintf("failed to load folders: %v", err),
 				}
 			}
 			var folderData []db.MediaFolder
@@ -1391,7 +1391,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			columns = db.GenericHeaders(dbt)
 		}
 		if len(columns) == 0 {
-			return m, LogMessageCmd("No column metadata available")
+			return m, LogMessageCmd("no column metadata available")
 		}
 
 		switch msg.Action {
@@ -1406,7 +1406,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			// Get current row data. m.Cursor is set to the absolute row index
 			// by the screen's CursorSetCmd before this message arrives.
 			if len(m.TableState.Rows) == 0 {
-				return m, LogMessageCmd("No rows available for update")
+				return m, LogMessageCmd("no rows available for update")
 			}
 			if m.Cursor >= len(m.TableState.Rows) {
 				return m, LogMessageCmd("Row index out of range")
@@ -1477,7 +1477,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	case ConfigFieldUpdateMsg:
 		// Apply config field update via the config manager
 		if m.ConfigManager == nil {
-			dialog := NewDialog("Error", "Config manager is not available.", false, DIALOGGENERIC)
+			dialog := NewDialog("Error", "config manager is not available.", false, DIALOGGENERIC)
 			return m, tea.Batch(
 				OverlaySetCmd(&dialog),
 				FocusSetCmd(DIALOGFOCUS),
@@ -1507,7 +1507,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		}
 		if msg.Err != nil {
-			dialog := NewDialog("Config Update Failed", msg.Err.Error(), false, DIALOGGENERIC)
+			dialog := NewDialog("config Update Failed", msg.Err.Error(), false, DIALOGGENERIC)
 			return m, tea.Batch(
 				OverlaySetCmd(&dialog),
 				FocusSetCmd(DIALOGFOCUS),
@@ -1515,13 +1515,13 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		if len(msg.RestartRequired) > 0 {
 			fields := strings.Join(msg.RestartRequired, ", ")
-			dialog := NewDialog("Config Updated", fmt.Sprintf("Config saved. The following fields require a restart to take effect:\n\n%s", fields), false, DIALOGGENERIC)
+			dialog := NewDialog("config Updated", fmt.Sprintf("config saved. The following fields require a restart to take effect:\n\n%s", fields), false, DIALOGGENERIC)
 			return m, tea.Batch(
 				OverlaySetCmd(&dialog),
 				FocusSetCmd(DIALOGFOCUS),
 			)
 		}
-		dialog := NewDialog("Config Updated", "Config saved successfully.", false, DIALOGGENERIC)
+		dialog := NewDialog("config Updated", "config saved successfully.", false, DIALOGGENERIC)
 		return m, tea.Batch(
 			OverlaySetCmd(&dialog),
 			FocusSetCmd(DIALOGFOCUS),

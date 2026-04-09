@@ -291,15 +291,15 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			}
 			if all == nil || len(*all) == 0 {
 				return ActionResultMsg{
-					Title:   "No Datatypes",
-					Message: "No datatypes are defined.",
+					Title:   "no Datatypes",
+					Message: "no datatypes are defined.",
 				}
 			}
 			filtered := filterChildDatatypes(*all, rootDatatypeID)
 			if len(filtered) == 0 {
 				return ActionResultMsg{
-					Title:   "No Datatypes",
-					Message: "No eligible child datatypes for this root type.",
+					Title:   "no Datatypes",
+					Message: "no eligible child datatypes for this root type.",
 				}
 			}
 			return ShowChildDatatypeDialogMsg{
@@ -341,7 +341,7 @@ func (s *ContentScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 			}
 			if len(fields) == 0 {
 				return ActionResultMsg{
-					Title:   "No Fields",
+					Title:   "no Fields",
 					Message: "This datatype has no fields defined.",
 				}
 			}
@@ -558,12 +558,12 @@ func (s *ContentScreen) handleRouteListKeys(ctx AppContext, key string, km confi
 	if km.Matches(key, config.ActionNew) {
 		if s.AdminMode {
 			if len(s.AdminRootDatatypes) == 0 {
-				return s, ShowDialog("Info", "No admin root datatypes available", false)
+				return s, ShowDialog("Info", "no admin root datatypes available", false)
 			}
 			return s, ShowCreateAdminRouteWithContentDialogCmd(s.AdminRootDatatypes)
 		}
 		if len(s.RootDatatypes) == 0 {
-			return s, ShowDialog("Info", "No root datatypes available", false)
+			return s, ShowDialog("Info", "no root datatypes available", false)
 		}
 		return s, ShowCreateRouteWithContentDialogCmd(s.RootDatatypes)
 	}
@@ -811,7 +811,7 @@ func (s *ContentScreen) handleTreeKeys(ctx AppContext, key string, km config.Key
 				fmt.Sprintf("Edit: %s", node.Datatype.Label),
 			)
 		}
-		return s, ShowDialog("Error", "Please select a content node first", false)
+		return s, ShowDialog("Error", "please select a content node first", false)
 	}
 
 	// Delete content node
@@ -829,7 +829,7 @@ func (s *ContentScreen) handleTreeKeys(ctx AppContext, key string, km config.Key
 				hasChildren,
 			)
 		}
-		return s, ShowDialog("Error", "Please select a content node first", false)
+		return s, ShowDialog("Error", "please select a content node first", false)
 	}
 
 	// Move content
@@ -1025,7 +1025,7 @@ func (s *ContentScreen) versionListLen() int {
 func (s *ContentScreen) handleRegularTreeNew(ctx AppContext) (Screen, tea.Cmd) {
 	node := s.Root.NodeAtIndex(s.Cursor)
 	if node == nil {
-		return s, ShowDialog("Error", "Please select a content node first", false)
+		return s, ShowDialog("Error", "please select a content node first", false)
 	}
 	rootDatatypeID := node.Datatype.DatatypeID
 	if s.Root.Root != nil {
@@ -1038,7 +1038,7 @@ func (s *ContentScreen) handleRegularTreeNew(ctx AppContext) (Screen, tea.Cmd) {
 func (s *ContentScreen) handleAdminTreeNew(ctx AppContext) (Screen, tea.Cmd) {
 	node := s.Root.NodeAtIndex(s.Cursor)
 	if node == nil {
-		return s, ShowDialog("Error", "Please select a content node first", false)
+		return s, ShowDialog("Error", "please select a content node first", false)
 	}
 	dtID := types.AdminDatatypeID(node.Datatype.DatatypeID)
 	return s, AdminFetchFieldsForFormCmd(ctx.DB, dtID, s.AdminPageRouteId)
@@ -1048,7 +1048,7 @@ func (s *ContentScreen) handleAdminTreeNew(ctx AppContext) (Screen, tea.Cmd) {
 func (s *ContentScreen) handleAdminTreeEdit(ctx AppContext) (Screen, tea.Cmd) {
 	node := s.Root.NodeAtIndex(s.Cursor)
 	if node == nil || node.Instance == nil {
-		return s, ShowDialog("Error", "Please select a content node first", false)
+		return s, ShowDialog("Error", "please select a content node first", false)
 	}
 	adminContentID := types.AdminContentID(node.Instance.ContentDataID)
 	adminDatatypeID := types.AdminDatatypeID(node.Datatype.DatatypeID)
@@ -1067,7 +1067,7 @@ func (s *ContentScreen) handleAdminTreeEdit(ctx AppContext) (Screen, tea.Cmd) {
 func (s *ContentScreen) handleAdminTreeDelete(ctx AppContext) (Screen, tea.Cmd) {
 	node := s.Root.NodeAtIndex(s.Cursor)
 	if node == nil || node.Instance == nil {
-		return s, ShowDialog("Error", "Please select a content node first", false)
+		return s, ShowDialog("Error", "please select a content node first", false)
 	}
 	adminID := types.AdminContentID(node.Instance.ContentDataID)
 	contentName := DecideNodeName(*node)
@@ -1079,7 +1079,7 @@ func (s *ContentScreen) handleAdminTreeDelete(ctx AppContext) (Screen, tea.Cmd) 
 func (s *ContentScreen) handleRegularTreeMove(ctx AppContext) (Screen, tea.Cmd) {
 	node := s.Root.NodeAtIndex(s.Cursor)
 	if node == nil || node.Instance == nil {
-		return s, ShowDialog("Error", "Please select a content node first", false)
+		return s, ShowDialog("Error", "please select a content node first", false)
 	}
 	allVisible := s.Root.FlattenVisible()
 	targets := make([]ParentOption, 0)
@@ -1100,7 +1100,7 @@ func (s *ContentScreen) handleRegularTreeMove(ctx AppContext) (Screen, tea.Cmd) 
 		})
 	}
 	if len(targets) == 0 {
-		return s, ShowDialog("Cannot Move", "No valid move targets", false)
+		return s, ShowDialog("Cannot Move", "no valid move targets", false)
 	}
 	return s, ShowMoveContentDialogCmd(node, s.PageRouteId, targets)
 }
@@ -1109,7 +1109,7 @@ func (s *ContentScreen) handleRegularTreeMove(ctx AppContext) (Screen, tea.Cmd) 
 func (s *ContentScreen) handleAdminTreeMove(ctx AppContext) (Screen, tea.Cmd) {
 	node := s.Root.NodeAtIndex(s.Cursor)
 	if node == nil || node.Instance == nil {
-		return s, ShowDialog("Error", "Please select a content node first", false)
+		return s, ShowDialog("Error", "please select a content node first", false)
 	}
 	allVisible := s.Root.FlattenVisible()
 	targets := make([]ParentOption, 0)
@@ -1130,7 +1130,7 @@ func (s *ContentScreen) handleAdminTreeMove(ctx AppContext) (Screen, tea.Cmd) {
 		})
 	}
 	if len(targets) == 0 {
-		return s, ShowDialog("Cannot Move", "No valid move targets", false)
+		return s, ShowDialog("Cannot Move", "no valid move targets", false)
 	}
 	return s, ShowMoveAdminContentDialogCmd(node, s.AdminPageRouteId, targets)
 }

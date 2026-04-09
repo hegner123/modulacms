@@ -16,7 +16,7 @@ func StatusBlock(c *config.Config) string {
 	adminSite := "Admin Site: "
 	clientSite := "Client Site: "
 	sshConnection := "SSH: "
-	bucketConnection := "Bucket Status:"
+	bucketConnection := "bucket Status:"
 	dbDriver := "Driver: "
 	dbUrl := "URL: "
 	dbDriverStatus := dbStatus.Driver

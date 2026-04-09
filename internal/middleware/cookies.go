@@ -88,6 +88,6 @@ func WriteCookie(w http.ResponseWriter, c *config.Config, sessionData string, us
 		SameSite: sameSite, // CSRF protection (from config)
 	})
 
-	utility.DefaultLogger.Finfo("Secure cookie set for user %d", userId)
+	utility.DefaultLogger.Finfo("secure cookie set for user %d", userId)
 	return nil
 }

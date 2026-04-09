@@ -101,7 +101,7 @@ func (s *PluginTUIScreen) handleInit(msg PluginScreenInitMsg) (Screen, tea.Cmd) 
 	initEvent := plugin.BuildInitEvent(msg.L, msg.Width, msg.Height, msg.Params)
 	yv, err := s.bridge.Start(initEvent)
 	if err != nil {
-		s.errMsg = fmt.Sprintf("Plugin %q screen %q init error: %s", s.pluginName, s.screenName, err)
+		s.errMsg = fmt.Sprintf("plugin %q screen %q init error: %s", s.pluginName, s.screenName, err)
 		return s, LoadingStopCmd()
 	}
 
@@ -146,7 +146,7 @@ func (s *PluginTUIScreen) handleDialogResponse(msg PluginDialogResponseMsg) (Scr
 func (s *PluginTUIScreen) resumeWithEvent(event *lua.LTable) (Screen, tea.Cmd) {
 	yv, err := s.bridge.Resume(event)
 	if err != nil {
-		s.errMsg = fmt.Sprintf("Plugin %q error: %s", s.pluginName, err)
+		s.errMsg = fmt.Sprintf("plugin %q error: %s", s.pluginName, err)
 		return s, nil
 	}
 	return s.processYield(yv)

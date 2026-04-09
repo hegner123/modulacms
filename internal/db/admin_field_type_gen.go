@@ -147,7 +147,7 @@ func (d Database) UpdateAdminFieldType(ctx context.Context, ac audited.AuditCont
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminFieldType: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Type)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Type)
 	return &msg, nil
 }
 
@@ -263,7 +263,7 @@ func (d MysqlDatabase) UpdateAdminFieldType(ctx context.Context, ac audited.Audi
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminFieldType: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Type)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Type)
 	return &msg, nil
 }
 
@@ -379,7 +379,7 @@ func (d PsqlDatabase) UpdateAdminFieldType(ctx context.Context, ac audited.Audit
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminFieldType: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Type)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Type)
 	return &msg, nil
 }
 

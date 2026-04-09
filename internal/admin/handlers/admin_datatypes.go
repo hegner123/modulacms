@@ -155,7 +155,7 @@ func AdminDatatypeDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing admin datatype ID", http.StatusBadRequest)
+			http.Error(w, "missing admin datatype ID", http.StatusBadRequest)
 			return
 		}
 
@@ -273,7 +273,7 @@ func AdminDatatypeCreateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to create admin datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, pages.AdminDatatypeCreateForm(name, label, dtype, parentIDStr, allDatatypes, map[string]string{"_": "Failed to create admin datatype"}, csrfToken))
+			Render(w, r, pages.AdminDatatypeCreateForm(name, label, dtype, parentIDStr, allDatatypes, map[string]string{"_": "failed to create admin datatype"}, csrfToken))
 			return
 		}
 
@@ -294,7 +294,7 @@ func AdminDatatypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing admin datatype ID", http.StatusBadRequest)
+			http.Error(w, "missing admin datatype ID", http.StatusBadRequest)
 			return
 		}
 
@@ -348,7 +348,7 @@ func AdminDatatypeUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to update admin datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminDatatypeEditForm(id, name, label, dtype, parentIDStr, allDatatypes, map[string]string{"_": "Failed to update admin datatype"}, csrfToken))
+			Render(w, r, partials.AdminDatatypeEditForm(id, name, label, dtype, parentIDStr, allDatatypes, map[string]string{"_": "failed to update admin datatype"}, csrfToken))
 			return
 		}
 
@@ -373,14 +373,14 @@ func AdminDatatypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing admin datatype ID", http.StatusBadRequest)
+			http.Error(w, "missing admin datatype ID", http.StatusBadRequest)
 			return
 		}
 
 		ac, acErr := svc.AuditCtx(r.Context())
 		if acErr != nil {
 			utility.DefaultLogger.Error("failed to build audit context", acErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete admin datatype", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete admin datatype", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -388,7 +388,7 @@ func AdminDatatypeDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		err := svc.Schema.DeleteAdminDatatype(r.Context(), ac, types.AdminDatatypeID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to delete admin datatype", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete admin datatype", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete admin datatype", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -404,7 +404,7 @@ func AdminDatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing admin datatype ID", http.StatusBadRequest)
+			http.Error(w, "missing admin datatype ID", http.StatusBadRequest)
 			return
 		}
 
@@ -464,7 +464,7 @@ func AdminDatatypeCreateFieldHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to create admin field for admin datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminDatatypeCreateFieldForm(id, name, label, fieldType, data, validationIDStr, uiConfig, map[string]string{"_": "Failed to create field"}, csrfToken, fieldTypes, validations))
+			Render(w, r, partials.AdminDatatypeCreateFieldForm(id, name, label, fieldType, data, validationIDStr, uiConfig, map[string]string{"_": "failed to create field"}, csrfToken, fieldTypes, validations))
 			return
 		}
 
@@ -485,7 +485,7 @@ func AdminDatatypeFieldReorderHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		datatypeID := r.PathValue("id")
 		if datatypeID == "" {
-			http.Error(w, "Missing datatype ID", http.StatusBadRequest)
+			http.Error(w, "missing datatype ID", http.StatusBadRequest)
 			return
 		}
 

@@ -35,7 +35,7 @@ func TestMapAuthorView(t *testing.T) {
 		t.Errorf("Name = %q, want %q", av.Name, user.Name)
 	}
 	if av.Email != user.Email {
-		t.Errorf("Email = %v, want %v", av.Email, user.Email)
+		t.Errorf("email = %v, want %v", av.Email, user.Email)
 	}
 	if av.Role != user.Role {
 		t.Errorf("Role = %q, want %q", av.Role, user.Role)

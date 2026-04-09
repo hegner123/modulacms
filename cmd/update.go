@@ -24,10 +24,10 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		utility.DefaultLogger.Info("Checking for updates...")
+		utility.DefaultLogger.Info("checking for updates...")
 
 		currentVersion := utility.GetCurrentVersion()
-		utility.DefaultLogger.Info("Current version", currentVersion)
+		utility.DefaultLogger.Info("current version", currentVersion)
 
 		release, available, err := update.CheckForUpdates(currentVersion, "stable")
 		if err != nil {
@@ -35,29 +35,29 @@ Examples:
 		}
 
 		if !available {
-			utility.DefaultLogger.Info("Already running latest version")
+			utility.DefaultLogger.Info("already running latest version")
 			return nil
 		}
 
-		utility.DefaultLogger.Info("Update available", release.TagName)
+		utility.DefaultLogger.Info("update available", release.TagName)
 
 		downloadURL, err := update.GetDownloadURL(release, runtime.GOOS, runtime.GOARCH)
 		if err != nil {
 			return fmt.Errorf("no compatible binary found: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Downloading update...")
+		utility.DefaultLogger.Info("downloading update...")
 		tempPath, err := update.DownloadUpdate(downloadURL)
 		if err != nil {
 			return fmt.Errorf("download failed: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Applying update...")
+		utility.DefaultLogger.Info("applying update...")
 		if err := update.ApplyUpdate(tempPath); err != nil {
 			return fmt.Errorf("update failed: %w", err)
 		}
 
-		utility.DefaultLogger.Info("Update complete! Please restart Modula.")
+		utility.DefaultLogger.Info("update complete! Please restart Modula.")
 		return nil
 	},
 }

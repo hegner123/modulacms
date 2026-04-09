@@ -61,8 +61,8 @@ func TestStripHTML(t *testing.T) {
 		},
 		{
 			name:     "no tags",
-			input:    "No tags here",
-			expected: "No tags here",
+			input:    "no tags here",
+			expected: "no tags here",
 		},
 		{
 			name:     "HTML entities decoded",

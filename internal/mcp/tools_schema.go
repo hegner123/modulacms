@@ -40,7 +40,7 @@ func registerSchemaTools(srv *server.MCPServer, backend SchemaBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_datatype",
-			mcp.WithDescription("Update an existing datatype. This is a full replacement."),
+			mcp.WithDescription("update an existing datatype. This is a full replacement."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Datatype ID (ULID)")),
 			mcp.WithString("name", mcp.Description("Machine-readable name (used as JSON key). If omitted, derived from label.")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Datatype label")),
@@ -93,7 +93,7 @@ func registerSchemaTools(srv *server.MCPServer, backend SchemaBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_field",
-			mcp.WithDescription("Update an existing field definition. This is a full replacement."),
+			mcp.WithDescription("update an existing field definition. This is a full replacement."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Field ID (ULID)")),
 			mcp.WithString("name", mcp.Description("Machine-readable name (used as JSON key). If omitted, derived from label.")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Field label")),
@@ -153,7 +153,7 @@ func registerSchemaTools(srv *server.MCPServer, backend SchemaBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_field_type",
-			mcp.WithDescription("Update a field type definition."),
+			mcp.WithDescription("update a field type definition."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Field type ID (ULID)")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Field type key")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Human-readable label")),

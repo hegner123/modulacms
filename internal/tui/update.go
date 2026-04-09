@@ -192,7 +192,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(
 			ErrorSetCmd(typedMsg.Error),
 			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("Database fetch error: %s", typedMsg.Error.Error())),
+			LogMessageCmd(fmt.Sprintf("database fetch error: %s", typedMsg.Error.Error())),
 			func() tea.Msg {
 				return ActionResultMsg{
 					Title:   "Fetch Error",

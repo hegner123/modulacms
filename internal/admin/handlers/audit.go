@@ -23,14 +23,14 @@ func AuditLogHandler(svc *service.Registry) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list change events", err)
-			http.Error(w, "Failed to load audit log", http.StatusInternalServerError)
+			http.Error(w, "failed to load audit log", http.StatusInternalServerError)
 			return
 		}
 
 		total, countErr := svc.AuditLog.CountChangeEvents(r.Context())
 		if countErr != nil {
 			utility.DefaultLogger.Error("failed to count change events", countErr)
-			http.Error(w, "Failed to load audit log", http.StatusInternalServerError)
+			http.Error(w, "failed to load audit log", http.StatusInternalServerError)
 			return
 		}
 
@@ -69,7 +69,7 @@ func AuditDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("eventID")
 		if id == "" {
-			http.Error(w, "Missing event ID", http.StatusBadRequest)
+			http.Error(w, "missing event ID", http.StatusBadRequest)
 			return
 		}
 

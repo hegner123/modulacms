@@ -27,14 +27,14 @@ var (
 // GetDb initializes a SQLite database connection and configures connection pooling.
 func (d Database) GetDb(verbose *bool) DbDriver {
 	if *verbose {
-		utility.DefaultLogger.Info("Connecting to SQLite database...")
+		utility.DefaultLogger.Info("connecting to SQLite database...")
 	}
 	ctx := context.Background()
 
 	// Use default path if not specified
 	if d.Src == "" {
 		d.Src = "./modula.db"
-		utility.DefaultLogger.Info("Using default database path", "path", d.Src)
+		utility.DefaultLogger.Info("using default database path", "path", d.Src)
 	}
 
 	// Open database connection with foreign keys enabled via DSN so every
@@ -43,7 +43,7 @@ func (d Database) GetDb(verbose *bool) DbDriver {
 	db, err := sql.Open("sqlite3-metrics", dsn)
 	if err != nil {
 		errWithContext := fmt.Errorf("failed to open SQLite database: %w", err)
-		utility.DefaultLogger.Error("Database connection error", errWithContext, "path", d.Src)
+		utility.DefaultLogger.Error("database connection error", errWithContext, "path", d.Src)
 		d.Err = errWithContext
 		return d
 	}
@@ -52,7 +52,7 @@ func (d Database) GetDb(verbose *bool) DbDriver {
 	_, err = db.Exec("PRAGMA journal_mode=WAL;")
 	if err != nil {
 		errWithContext := fmt.Errorf("failed to enable WAL mode: %w", err)
-		utility.DefaultLogger.Error("Database configuration error", errWithContext)
+		utility.DefaultLogger.Error("database configuration error", errWithContext)
 		d.Err = errWithContext
 		return d
 	}
@@ -70,7 +70,7 @@ func (d Database) GetDb(verbose *bool) DbDriver {
 // GetDb initializes a MySQL database connection and configures connection pooling.
 func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 	if *verbose {
-		utility.DefaultLogger.Info("Connecting to MySQL database...")
+		utility.DefaultLogger.Info("connecting to MySQL database...")
 	}
 	ctx := context.Background()
 
@@ -79,13 +79,13 @@ func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 
 	// Hide password in logs
 	sanitizedDsn := fmt.Sprintf("%s:****@tcp(%s)/%s?parseTime=true", d.Config.Db_User, d.Config.Db_URL, d.Config.Db_Name)
-	utility.DefaultLogger.Info("Preparing MySQL connection", "dsn", sanitizedDsn)
+	utility.DefaultLogger.Info("preparing MySQL connection", "dsn", sanitizedDsn)
 
 	// Open database connection
 	db, err := sql.Open("mysql-metrics", dsn)
 	if err != nil {
 		errWithContext := fmt.Errorf("failed to open MySQL database: %w", err)
-		utility.DefaultLogger.Error("Database connection error", errWithContext, "host", d.Config.Db_URL)
+		utility.DefaultLogger.Error("database connection error", errWithContext, "host", d.Config.Db_URL)
 		d.Err = errWithContext
 		return d
 	}
@@ -94,7 +94,7 @@ func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 	err = db.Ping()
 	if err != nil {
 		errWithContext := fmt.Errorf("failed to connect to MySQL database: %w", err)
-		utility.DefaultLogger.Error("Database ping error", errWithContext, "host", d.Config.Db_URL)
+		utility.DefaultLogger.Error("database ping error", errWithContext, "host", d.Config.Db_URL)
 		d.Err = errWithContext
 		return d
 	}
@@ -113,7 +113,7 @@ func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 // GetDb initializes a PostgreSQL database connection and configures connection pooling.
 func (d PsqlDatabase) GetDb(verbose *bool) DbDriver {
 	if *verbose {
-		utility.DefaultLogger.Info("Connecting to PostgreSQL database...")
+		utility.DefaultLogger.Info("connecting to PostgreSQL database...")
 	}
 	ctx := context.Background()
 
@@ -130,13 +130,13 @@ func (d PsqlDatabase) GetDb(verbose *bool) DbDriver {
 	// Hide password in logs
 	sanitizedConnStr := fmt.Sprintf("postgres://%s:****@%s/%s?sslmode=disable",
 		d.Config.Db_User, d.Config.Db_URL, d.Config.Db_Name)
-	utility.DefaultLogger.Info("Preparing PostgreSQL connection", "connection", sanitizedConnStr)
+	utility.DefaultLogger.Info("preparing PostgreSQL connection", "connection", sanitizedConnStr)
 
 	// Open database connection
 	db, err := sql.Open("postgres-metrics", connStr)
 	if err != nil {
 		errWithContext := fmt.Errorf("failed to open PostgreSQL database: %w", err)
-		utility.DefaultLogger.Error("Database connection error", errWithContext, "host", d.Config.Db_URL)
+		utility.DefaultLogger.Error("database connection error", errWithContext, "host", d.Config.Db_URL)
 		d.Err = errWithContext
 		return d
 	}
@@ -145,7 +145,7 @@ func (d PsqlDatabase) GetDb(verbose *bool) DbDriver {
 	err = db.Ping()
 	if err != nil {
 		errWithContext := fmt.Errorf("failed to connect to PostgreSQL database: %w", err)
-		utility.DefaultLogger.Error("Database ping error", errWithContext, "host", d.Config.Db_URL)
+		utility.DefaultLogger.Error("database ping error", errWithContext, "host", d.Config.Db_URL)
 		d.Err = errWithContext
 		return d
 	}
@@ -193,7 +193,7 @@ func InitDB(env config.Config) (DbDriver, error) {
 			return
 		}
 
-		utility.DefaultLogger.Info("Database pool initialized", "driver", string(env.Db_Driver))
+		utility.DefaultLogger.Info("database pool initialized", "driver", string(env.Db_Driver))
 	})
 
 	return dbInstance, dbInitErr
@@ -243,7 +243,7 @@ func CloseDB() error {
 		return fmt.Errorf("failed to get connection for close: %w", err)
 	}
 
-	utility.DefaultLogger.Info("Closing database connection pool")
+	utility.DefaultLogger.Info("closing database connection pool")
 	return con.Close()
 }
 
@@ -335,7 +335,7 @@ func GenerateKey() []byte {
 	key := make([]byte, 32)
 	_, err := rand.Read(key)
 	if err != nil {
-		utility.DefaultLogger.Fatal("Failed to generate key: %v", err)
+		utility.DefaultLogger.Fatal("failed to generate key: %v", err)
 	}
 	return key
 }

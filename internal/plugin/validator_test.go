@@ -185,7 +185,7 @@ func TestValidatePlugin_HasOnInit(t *testing.T) {
 plugin_info = {
     name        = "with_init",
     version     = "1.0.0",
-    description = "Plugin with on_init defined",
+    description = "plugin with on_init defined",
     author      = "test",
     license     = "MIT",
 }
@@ -226,7 +226,7 @@ func TestValidatePlugin_NoOnInit(t *testing.T) {
 plugin_info = {
     name        = "no_init_fn",
     version     = "1.0.0",
-    description = "Plugin without on_init",
+    description = "plugin without on_init",
     author      = "test",
     license     = "MIT",
 }

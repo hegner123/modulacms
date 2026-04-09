@@ -52,7 +52,7 @@ func ValidationDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing validation ID", http.StatusBadRequest)
+			http.Error(w, "missing validation ID", http.StatusBadRequest)
 			return
 		}
 
@@ -123,7 +123,7 @@ func ValidationCreateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to create validation", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.ValidationForm(name, description, config, map[string]string{"_": "Failed to create validation"}, csrfToken))
+			Render(w, r, partials.ValidationForm(name, description, config, map[string]string{"_": "failed to create validation"}, csrfToken))
 			return
 		}
 
@@ -143,7 +143,7 @@ func ValidationUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing validation ID", http.StatusBadRequest)
+			http.Error(w, "missing validation ID", http.StatusBadRequest)
 			return
 		}
 
@@ -195,7 +195,7 @@ func ValidationUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to update validation", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.ValidationEditForm(id, name, description, config, map[string]string{"_": "Failed to update validation"}, csrfToken))
+			Render(w, r, partials.ValidationEditForm(id, name, description, config, map[string]string{"_": "failed to update validation"}, csrfToken))
 			return
 		}
 
@@ -220,14 +220,14 @@ func ValidationDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing validation ID", http.StatusBadRequest)
+			http.Error(w, "missing validation ID", http.StatusBadRequest)
 			return
 		}
 
 		ac, acErr := svc.AuditCtx(r.Context())
 		if acErr != nil {
 			utility.DefaultLogger.Error("failed to build audit context", acErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete validation", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete validation", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -235,7 +235,7 @@ func ValidationDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		err := svc.Validations.DeleteValidation(r.Context(), ac, types.ValidationID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to delete validation", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete validation", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete validation", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -283,7 +283,7 @@ func AdminValidationDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing admin validation ID", http.StatusBadRequest)
+			http.Error(w, "missing admin validation ID", http.StatusBadRequest)
 			return
 		}
 
@@ -354,7 +354,7 @@ func AdminValidationCreateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to create admin validation", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminValidationForm(name, description, config, map[string]string{"_": "Failed to create admin validation"}, csrfToken))
+			Render(w, r, partials.AdminValidationForm(name, description, config, map[string]string{"_": "failed to create admin validation"}, csrfToken))
 			return
 		}
 
@@ -374,7 +374,7 @@ func AdminValidationUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing admin validation ID", http.StatusBadRequest)
+			http.Error(w, "missing admin validation ID", http.StatusBadRequest)
 			return
 		}
 
@@ -426,7 +426,7 @@ func AdminValidationUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to update admin validation", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminValidationEditForm(id, name, description, config, map[string]string{"_": "Failed to update admin validation"}, csrfToken))
+			Render(w, r, partials.AdminValidationEditForm(id, name, description, config, map[string]string{"_": "failed to update admin validation"}, csrfToken))
 			return
 		}
 
@@ -451,14 +451,14 @@ func AdminValidationDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing admin validation ID", http.StatusBadRequest)
+			http.Error(w, "missing admin validation ID", http.StatusBadRequest)
 			return
 		}
 
 		ac, acErr := svc.AuditCtx(r.Context())
 		if acErr != nil {
 			utility.DefaultLogger.Error("failed to build audit context", acErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete admin validation", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete admin validation", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -466,7 +466,7 @@ func AdminValidationDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		err := svc.Validations.DeleteAdminValidation(r.Context(), ac, types.AdminValidationID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to delete admin validation", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete admin validation", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete admin validation", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

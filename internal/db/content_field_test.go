@@ -1502,12 +1502,12 @@ func TestDeleteContentFieldCmd_GetID_EmptyID(t *testing.T) {
 func TestUpdateContentField_SuccessMessageFormat(t *testing.T) {
 	t.Parallel()
 	cfID := types.NewContentFieldID()
-	expected := fmt.Sprintf("Successfully updated %v\n", cfID)
+	expected := fmt.Sprintf("successfully updated %v\n", cfID)
 
 	if expected == "" {
 		t.Fatal("expected non-empty message")
 	}
-	if expected == "Successfully updated \n" {
+	if expected == "successfully updated \n" {
 		t.Fatal("expected message to contain the ID")
 	}
 }

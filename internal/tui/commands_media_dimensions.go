@@ -20,7 +20,7 @@ func (m Model) HandleCreateMediaDimension(msg CreateMediaDimensionFromDialogRequ
 
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -53,7 +53,7 @@ func (m Model) HandleCreateMediaDimension(msg CreateMediaDimensionFromDialogRequ
 
 		result, createErr := d.CreateMediaDimension(ctx, ac, params)
 		if createErr != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to create dimension: %v", createErr)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to create dimension: %v", createErr)}
 		}
 
 		label := msg.Label
@@ -71,7 +71,7 @@ func (m Model) HandleUpdateMediaDimension(msg UpdateMediaDimensionFromDialogRequ
 
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -101,7 +101,7 @@ func (m Model) HandleUpdateMediaDimension(msg UpdateMediaDimensionFromDialogRequ
 		}
 
 		if _, updateErr := d.UpdateMediaDimension(ctx, ac, params); updateErr != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update dimension: %v", updateErr)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to update dimension: %v", updateErr)}
 		}
 
 		return MediaDimensionUpdatedMsg{MdID: msg.MdID, Label: msg.Label}
@@ -124,8 +124,8 @@ func (m Model) HandleDeleteMediaDimension(msg DeleteMediaDimensionRequestMsg) te
 		logger.Finfo(fmt.Sprintf("Deleting media dimension: %s", msg.MdID))
 
 		if err := d.DeleteMediaDimension(ctx, ac, msg.MdID); err != nil {
-			logger.Ferror("Failed to delete media dimension", err)
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to delete dimension: %v", err)}
+			logger.Ferror("failed to delete media dimension", err)
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to delete dimension: %v", err)}
 		}
 
 		logger.Finfo(fmt.Sprintf("Media dimension deleted: %s", msg.MdID))

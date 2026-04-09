@@ -44,7 +44,7 @@ Examples:
 
 var deployExportCmd = &cobra.Command{
 	Use:   "export",
-	Short: "Export content data to a JSON file",
+	Short: "export content data to a JSON file",
 	Long: `Export content tables from the local database to a JSON file.
 
 By default, exports all sync-eligible tables. Use --tables to export only
@@ -104,7 +104,7 @@ Examples:
 			return nil
 		}
 
-		utility.DefaultLogger.Info("Export complete",
+		utility.DefaultLogger.Info("export complete",
 			"file", actualPath,
 			"tables", len(manifest.Tables),
 			"version", manifest.Version,
@@ -121,7 +121,7 @@ Examples:
 
 var deployImportCmd = &cobra.Command{
 	Use:   "import <file>",
-	Short: "Import content data from a JSON export file",
+	Short: "import content data from a JSON export file",
 	Long: `Import content data from a previously exported JSON file into the local database.
 
 By default, creates a pre-import backup and a snapshot for rollback. Use
@@ -194,7 +194,7 @@ Examples:
 			return nil
 		}
 
-		utility.DefaultLogger.Info("Import complete",
+		utility.DefaultLogger.Info("import complete",
 			"tables", len(result.TablesAffected),
 			"duration", result.Duration,
 			"backup", result.BackupPath,
@@ -262,7 +262,7 @@ Examples:
 		}
 
 		if len(snapshots) == 0 {
-			utility.DefaultLogger.Info("No snapshots found")
+			utility.DefaultLogger.Info("no snapshots found")
 			return nil
 		}
 
@@ -313,7 +313,7 @@ Examples:
 		}
 
 		m := payload.Manifest
-		utility.DefaultLogger.Info("Snapshot details",
+		utility.DefaultLogger.Info("snapshot details",
 			"timestamp", m.Timestamp,
 			"version", m.Version,
 			"schema", m.SchemaVersion[:12]+"...",
@@ -322,7 +322,7 @@ Examples:
 		for _, t := range m.Tables {
 			utility.DefaultLogger.Info("  "+t, "rows", m.RowCounts[t])
 		}
-		utility.DefaultLogger.Info("User refs", "count", len(payload.UserRefs))
+		utility.DefaultLogger.Info("user refs", "count", len(payload.UserRefs))
 
 		return nil
 	},
@@ -330,7 +330,7 @@ Examples:
 
 var deploySnapshotRestoreCmd = &cobra.Command{
 	Use:   "restore <id>",
-	Short: "Restore a snapshot",
+	Short: "restore a snapshot",
 	Long: `Restore the database to the state captured in a snapshot.
 
 Loads the snapshot payload and imports it into the current database. A backup
@@ -387,7 +387,7 @@ Examples:
 			return nil
 		}
 
-		utility.DefaultLogger.Info("Snapshot restored",
+		utility.DefaultLogger.Info("snapshot restored",
 			"id", args[0],
 			"tables", len(result.TablesAffected),
 			"duration", result.Duration,
@@ -401,7 +401,7 @@ Examples:
 
 var deployPullCmd = &cobra.Command{
 	Use:   "pull <source>",
-	Short: "Pull data from a remote environment and apply locally",
+	Short: "pull data from a remote environment and apply locally",
 	Long: `Download content data from a remote CMS environment and import it into the local
 database.
 
@@ -470,7 +470,7 @@ Examples:
 			return nil
 		}
 
-		utility.DefaultLogger.Info("Pull complete",
+		utility.DefaultLogger.Info("pull complete",
 			"source", envName,
 			"tables", len(result.TablesAffected),
 			"duration", result.Duration,
@@ -492,7 +492,7 @@ Examples:
 
 var deployPushCmd = &cobra.Command{
 	Use:   "push <target>",
-	Short: "Export local data and push to a remote environment",
+	Short: "export local data and push to a remote environment",
 	Long: `Export content data from the local database and upload it to a remote CMS
 environment.
 
@@ -559,7 +559,7 @@ Examples:
 			return nil
 		}
 
-		utility.DefaultLogger.Info("Push complete",
+		utility.DefaultLogger.Info("push complete",
 			"target", envName,
 			"tables", len(result.TablesAffected),
 			"duration", result.Duration,
@@ -637,8 +637,8 @@ Examples:
 		}
 
 		if len(envs) == 0 {
-			utility.DefaultLogger.Info("No deploy environments configured")
-			utility.DefaultLogger.Info("Add environments to modula.config.json under deploy_environments")
+			utility.DefaultLogger.Info("no deploy environments configured")
+			utility.DefaultLogger.Info("add environments to modula.config.json under deploy_environments")
 			return nil
 		}
 
@@ -699,7 +699,7 @@ Examples:
 			return nil
 		}
 
-		utility.DefaultLogger.Info("Connection successful",
+		utility.DefaultLogger.Info("connection successful",
 			"environment", args[0],
 			"status", health.Status,
 			"version", health.Version,
@@ -713,12 +713,12 @@ Examples:
 // printDryRunResult outputs a human-readable dry-run impact report.
 func printDryRunResult(result *deploy.SyncResult) {
 	if result.Success {
-		utility.DefaultLogger.Info("Dry run: validation passed")
+		utility.DefaultLogger.Info("dry run: validation passed")
 	} else {
-		utility.DefaultLogger.Warn("Dry run: validation failed", nil, "errors", len(result.Errors))
+		utility.DefaultLogger.Warn("dry run: validation failed", nil, "errors", len(result.Errors))
 	}
 
-	utility.DefaultLogger.Info("Impact report",
+	utility.DefaultLogger.Info("impact report",
 		"tables", len(result.TablesAffected),
 		"strategy", string(result.Strategy),
 	)

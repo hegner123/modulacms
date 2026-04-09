@@ -28,7 +28,7 @@ func SSHAuthenticationMiddleware(c *config.Config) wish.Middleware {
 
 			// Get the public key from the session
 			if s.PublicKey() == nil {
-				utility.DefaultLogger.Fwarn("No public key provided in SSH session", nil)
+				utility.DefaultLogger.Fwarn("no public key provided in SSH session", nil)
 				utility.GlobalMetrics.Increment(utility.MetricSSHErrors, utility.Labels{"error_type": "no_public_key"})
 				next(s)
 				return
@@ -83,7 +83,7 @@ func SSHAuthorizationMiddleware(c *config.Config) wish.Middleware {
 
 			// Check if user needs provisioning - allow through for provisioning flow
 			if needsProvisioning, ok := ctx.Value("needs_provisioning").(bool); ok && needsProvisioning {
-				utility.DefaultLogger.Finfo("User needs provisioning, allowing through")
+				utility.DefaultLogger.Finfo("user needs provisioning, allowing through")
 				next(s)
 				return
 			}

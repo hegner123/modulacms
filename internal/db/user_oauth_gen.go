@@ -163,7 +163,7 @@ func (d Database) UpdateUserOauth(ctx context.Context, ac audited.AuditContext, 
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update userOauth: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.UserOauthID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.UserOauthID)
 	return &msg, nil
 }
 
@@ -290,7 +290,7 @@ func (d MysqlDatabase) UpdateUserOauth(ctx context.Context, ac audited.AuditCont
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update userOauth: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.UserOauthID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.UserOauthID)
 	return &msg, nil
 }
 
@@ -417,7 +417,7 @@ func (d PsqlDatabase) UpdateUserOauth(ctx context.Context, ac audited.AuditConte
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update userOauth: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.UserOauthID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.UserOauthID)
 	return &msg, nil
 }
 

@@ -61,14 +61,14 @@ func UserDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing user ID", http.StatusBadRequest)
+			http.Error(w, "missing user ID", http.StatusBadRequest)
 			return
 		}
 
 		user, err := svc.Users.GetUser(r.Context(), types.UserID(id))
 		if err != nil {
 			utility.DefaultLogger.Error("failed to get user", err)
-			http.Error(w, "User not found", http.StatusNotFound)
+			http.Error(w, "user not found", http.StatusNotFound)
 			return
 		}
 
@@ -125,7 +125,7 @@ func UserCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -166,7 +166,7 @@ func UserCreateHandler(svc *service.Registry) http.HandlerFunc {
 			http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
 			return
 		}
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "User created", "type": "success"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "user created", "type": "success"}}`)
 		w.Header().Set("HX-Redirect", "/admin/users")
 		w.WriteHeader(http.StatusOK)
 	}
@@ -178,13 +178,13 @@ func UserUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing user ID", http.StatusBadRequest)
+			http.Error(w, "missing user ID", http.StatusBadRequest)
 			return
 		}
 
@@ -212,7 +212,7 @@ func UserUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		})
 		if err != nil {
 			if service.IsNotFound(err) {
-				http.Error(w, "User not found", http.StatusNotFound)
+				http.Error(w, "user not found", http.StatusNotFound)
 				return
 			}
 			errs := userServiceErrorToMap(err)
@@ -230,7 +230,7 @@ func UserUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			http.Redirect(w, r, "/admin/users/"+id, http.StatusSeeOther)
 			return
 		}
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "User updated", "type": "success"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "user updated", "type": "success"}}`)
 		w.Header().Set("HX-Redirect", "/admin/users/"+id)
 		w.WriteHeader(http.StatusOK)
 	}
@@ -242,7 +242,7 @@ func UserDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -253,7 +253,7 @@ func UserDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing user ID", http.StatusBadRequest)
+			http.Error(w, "missing user ID", http.StatusBadRequest)
 			return
 		}
 
@@ -264,7 +264,7 @@ func UserDeleteHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "User deleted", "type": "success"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "user deleted", "type": "success"}}`)
 		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -235,7 +235,7 @@ func (d Database) UpdateField(ctx context.Context, ac audited.AuditContext, s Up
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update field: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Label)
 	return &msg, nil
 }
 
@@ -392,7 +392,7 @@ func (d MysqlDatabase) UpdateField(ctx context.Context, ac audited.AuditContext,
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update field: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Label)
 	return &msg, nil
 }
 
@@ -549,7 +549,7 @@ func (d PsqlDatabase) UpdateField(ctx context.Context, ac audited.AuditContext, 
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update field: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Label)
 	return &msg, nil
 }
 

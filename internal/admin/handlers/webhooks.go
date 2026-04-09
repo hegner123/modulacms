@@ -31,13 +31,13 @@ func WebhookSettingsHandler(svc *service.Registry) http.HandlerFunc {
 		csrfToken := CSRFTokenFromContext(r.Context())
 
 		if IsNavHTMX(r) {
-			w.Header().Set("HX-Trigger", `{"pageTitle": "Webhook Settings"}`)
+			w.Header().Set("HX-Trigger", `{"pageTitle": "webhook Settings"}`)
 			RenderWithOOB(w, r, pages.WebhookSettingsContent(webhookList, csrfToken),
 				OOBSwap{TargetID: "admin-dialogs", Component: pages.WebhookAddDialog(csrfToken)})
 			return
 		}
 
-		layout := NewAdminData(r, "Webhook Settings")
+		layout := NewAdminData(r, "webhook Settings")
 		Render(w, r, pages.WebhookSettings(layout, webhookList))
 	}
 }
@@ -47,7 +47,7 @@ func WebhookDetailHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing webhook ID", http.StatusBadRequest)
+			http.Error(w, "missing webhook ID", http.StatusBadRequest)
 			return
 		}
 
@@ -108,7 +108,7 @@ func WebhookCreateHandler(svc *service.Registry) http.HandlerFunc {
 
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 		ac := middleware.AuditContextFromRequest(r, *cfg)
@@ -126,7 +126,7 @@ func WebhookCreateHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Webhook created", "type": "success"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "webhook created", "type": "success"}}`)
 		renderWebhookTableRows(w, r, svc)
 	}
 }
@@ -136,7 +136,7 @@ func WebhookUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing webhook ID", http.StatusBadRequest)
+			http.Error(w, "missing webhook ID", http.StatusBadRequest)
 			return
 		}
 
@@ -155,7 +155,7 @@ func WebhookUpdateHandler(svc *service.Registry) http.HandlerFunc {
 
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 		ac := middleware.AuditContextFromRequest(r, *cfg)
@@ -174,7 +174,7 @@ func WebhookUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Webhook updated", "type": "success"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "webhook updated", "type": "success"}}`)
 		renderWebhookTableRows(w, r, svc)
 	}
 }
@@ -189,13 +189,13 @@ func WebhookDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing webhook ID", http.StatusBadRequest)
+			http.Error(w, "missing webhook ID", http.StatusBadRequest)
 			return
 		}
 
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 		ac := middleware.AuditContextFromRequest(r, *cfg)
@@ -206,7 +206,7 @@ func WebhookDeleteHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Webhook deleted", "type": "success"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "webhook deleted", "type": "success"}}`)
 		renderWebhookTableRows(w, r, svc)
 	}
 }
@@ -216,7 +216,7 @@ func WebhookTestHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing webhook ID", http.StatusBadRequest)
+			http.Error(w, "missing webhook ID", http.StatusBadRequest)
 			return
 		}
 
@@ -237,7 +237,7 @@ func renderWebhookTableRows(w http.ResponseWriter, r *http.Request, svc *service
 	list, listErr := svc.Webhooks.ListWebhooks(r.Context())
 	if listErr != nil {
 		utility.DefaultLogger.Error("failed to list webhooks after mutation", listErr)
-		http.Error(w, "Failed to reload webhooks", http.StatusInternalServerError)
+		http.Error(w, "failed to reload webhooks", http.StatusInternalServerError)
 		return
 	}
 

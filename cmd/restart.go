@@ -34,6 +34,6 @@ func execSelf() error {
 		return err
 	}
 
-	utility.DefaultLogger.Info("Restarting process", "binary", execPath)
+	utility.DefaultLogger.Info("restarting process", "binary", execPath)
 	return syscall.Exec(execPath, os.Args, os.Environ())
 }

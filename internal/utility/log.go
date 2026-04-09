@@ -260,7 +260,7 @@ func (l *Logger) Fwarn(message string, err error, args ...any) {
 	if l.level <= WARN {
 		_, writeErr := fmt.Fprintln(l.logFile, formatLogMessage(WARN, message, err, args...))
 		if writeErr != nil {
-			DefaultLogger.Error("Failed to write warning to log file", writeErr)
+			DefaultLogger.Error("failed to write warning to log file", writeErr)
 		}
 	}
 }
@@ -270,7 +270,7 @@ func (l *Logger) Ferror(message string, err error, args ...any) {
 	if l.level <= ERROR {
 		_, writeErr := fmt.Fprintln(l.logFile, formatLogMessage(ERROR, message, err, args...))
 		if writeErr != nil {
-			DefaultLogger.Error("Failed to write error to log file", writeErr)
+			DefaultLogger.Error("failed to write error to log file", writeErr)
 		}
 	}
 }
@@ -280,7 +280,7 @@ func (l *Logger) Ffatal(message string, err error, args ...any) {
 	if l.level <= FATAL {
 		_, writeErr := fmt.Fprintln(l.logFile, formatLogMessage(FATAL, message, err, args...))
 		if writeErr != nil {
-			DefaultLogger.Error("Failed to write fatal error to log file", writeErr)
+			DefaultLogger.Error("failed to write fatal error to log file", writeErr)
 		}
 		os.Exit(1)
 	}

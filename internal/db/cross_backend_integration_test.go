@@ -1193,7 +1193,7 @@ func TestCrossBackend_StatusUpdate(t *testing.T) {
 				DateModified:  types.TimestampNow(),
 			})
 			if err != nil {
-				t.Fatalf("Update to published: %v", err)
+				t.Fatalf("update to published: %v", err)
 			}
 
 			// Verify published

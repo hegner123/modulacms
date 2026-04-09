@@ -22,7 +22,7 @@ func LocaleSettingsHandler(svc *service.Registry) http.HandlerFunc {
 		cfg, err := svc.Config()
 		if err != nil {
 			utility.DefaultLogger.Error("failed to load config", err)
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -31,7 +31,7 @@ func LocaleSettingsHandler(svc *service.Registry) http.HandlerFunc {
 		localeList, localesErr := svc.Locales.ListLocales(r.Context())
 		if localesErr != nil {
 			utility.DefaultLogger.Error("failed to list locales", localesErr)
-			http.Error(w, "Failed to load locales", http.StatusInternalServerError)
+			http.Error(w, "failed to load locales", http.StatusInternalServerError)
 			return
 		}
 
@@ -54,7 +54,7 @@ func LocaleEditDialogHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, err := svc.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -65,7 +65,7 @@ func LocaleEditDialogHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing locale ID", http.StatusBadRequest)
+			http.Error(w, "missing locale ID", http.StatusBadRequest)
 			return
 		}
 
@@ -93,7 +93,7 @@ func LocaleCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, err := svc.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -149,7 +149,7 @@ func LocaleUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, err := svc.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -160,7 +160,7 @@ func LocaleUpdateHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing locale ID", http.StatusBadRequest)
+			http.Error(w, "missing locale ID", http.StatusBadRequest)
 			return
 		}
 
@@ -219,7 +219,7 @@ func LocaleDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, err := svc.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -235,7 +235,7 @@ func LocaleDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing locale ID", http.StatusBadRequest)
+			http.Error(w, "missing locale ID", http.StatusBadRequest)
 			return
 		}
 
@@ -257,7 +257,7 @@ func renderLocaleTableRows(w http.ResponseWriter, r *http.Request, svc *service.
 	localeList, listErr := svc.Locales.ListLocales(r.Context())
 	if listErr != nil {
 		utility.DefaultLogger.Error("failed to list locales after mutation", listErr)
-		http.Error(w, "Failed to reload locales", http.StatusInternalServerError)
+		http.Error(w, "failed to reload locales", http.StatusInternalServerError)
 		return
 	}
 

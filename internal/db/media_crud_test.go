@@ -46,10 +46,10 @@ func TestDatabase_CRUD_Media(t *testing.T) {
 		t.Fatalf("CreateMedia: %v", err)
 	}
 	if created == nil {
-		t.Fatal("CreateMedia returned nil")
+		t.Fatal("createMedia returned nil")
 	}
 	if created.MediaID.IsZero() {
-		t.Fatal("CreateMedia returned zero MediaID")
+		t.Fatal("createMedia returned zero MediaID")
 	}
 	if !created.Name.Valid || created.Name.String != "test-image" {
 		t.Errorf("Name = %v, want {test-image, true}", created.Name)

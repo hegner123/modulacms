@@ -182,7 +182,7 @@ func (d Database) UpdateSession(ctx context.Context, ac audited.AuditContext, s 
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update session: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.SessionID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.SessionID)
 	return &msg, nil
 }
 
@@ -313,7 +313,7 @@ func (d MysqlDatabase) UpdateSession(ctx context.Context, ac audited.AuditContex
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update session: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.SessionID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.SessionID)
 	return &msg, nil
 }
 
@@ -444,7 +444,7 @@ func (d PsqlDatabase) UpdateSession(ctx context.Context, ac audited.AuditContext
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update session: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.SessionID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.SessionID)
 	return &msg, nil
 }
 

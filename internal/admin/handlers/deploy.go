@@ -73,7 +73,7 @@ func DeployHealthHandler(svc *service.Registry) http.HandlerFunc {
 
 		cfg, err := svc.Config()
 		if err != nil {
-			htmxError(w, r, "Failed to load config", http.StatusInternalServerError)
+			htmxError(w, r, "failed to load config", http.StatusInternalServerError)
 			return
 		}
 
@@ -99,7 +99,7 @@ func DeployPushHandler(svc *service.Registry) http.HandlerFunc {
 
 		cfg, err := svc.Config()
 		if err != nil {
-			htmxError(w, r, "Failed to load config", http.StatusInternalServerError)
+			htmxError(w, r, "failed to load config", http.StatusInternalServerError)
 			return
 		}
 
@@ -114,15 +114,15 @@ func DeployPushHandler(svc *service.Registry) http.HandlerFunc {
 
 		result, pushErr := deploy.Push(r.Context(), *cfg, svc.Driver(), name, opts, dryRun)
 		if pushErr != nil {
-			w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": %q, "type": "error"}}`, "Push failed: "+pushErr.Error()))
+			w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": %q, "type": "error"}}`, "push failed: "+pushErr.Error()))
 			Render(w, r, partials.DeploySyncResult(name, "push", nil, pushErr.Error()))
 			return
 		}
 
 		if result.Success {
-			msg := "Push completed"
+			msg := "push completed"
 			if dryRun {
-				msg = "Dry run completed"
+				msg = "dry run completed"
 			}
 			w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": %q, "type": "success"}}`, msg))
 		}
@@ -143,7 +143,7 @@ func DeployPullHandler(svc *service.Registry) http.HandlerFunc {
 
 		cfg, err := svc.Config()
 		if err != nil {
-			htmxError(w, r, "Failed to load config", http.StatusInternalServerError)
+			htmxError(w, r, "failed to load config", http.StatusInternalServerError)
 			return
 		}
 
@@ -158,15 +158,15 @@ func DeployPullHandler(svc *service.Registry) http.HandlerFunc {
 
 		result, pullErr := deploy.Pull(r.Context(), *cfg, svc.Driver(), name, opts, false, dryRun)
 		if pullErr != nil {
-			w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": %q, "type": "error"}}`, "Pull failed: "+pullErr.Error()))
+			w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": %q, "type": "error"}}`, "pull failed: "+pullErr.Error()))
 			Render(w, r, partials.DeploySyncResult(name, "pull", nil, pullErr.Error()))
 			return
 		}
 
 		if result.Success {
-			msg := "Pull completed"
+			msg := "pull completed"
 			if dryRun {
-				msg = "Dry run completed"
+				msg = "dry run completed"
 			}
 			w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": %q, "type": "success"}}`, msg))
 		}

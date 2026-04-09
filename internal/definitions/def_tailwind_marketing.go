@@ -471,7 +471,7 @@ func init() {
 				FieldRefs: []FieldDef{
 					{Name: "heading", Label: "Heading", Type: types.FieldTypeText},
 					{Name: "description", Label: "Description", Type: types.FieldTypeTextarea},
-					{Name: "placeholder", Label: "Email Placeholder", Type: types.FieldTypeText},
+					{Name: "placeholder", Label: "email Placeholder", Type: types.FieldTypeText},
 					{Name: "submit_text", Label: "Submit Button Text", Type: types.FieldTypeText},
 				},
 			},

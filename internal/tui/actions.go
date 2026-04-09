@@ -52,7 +52,7 @@ func ActionsMenu() []ActionItem {
 		{Index: 8, Label: "Generate API Token", Description: "Create a new API token for the current user"},
 		{Index: 9, Label: "Register SSH Key", Description: "Create a new user and register the current SSH key"},
 		{Index: 10, Label: "Create Backup", Description: "Create a backup of database and configured paths"},
-		{Index: 11, Label: "Restore Backup", Description: "Restore from a backup archive", Destructive: true},
+		{Index: 11, Label: "restore Backup", Description: "restore from a backup archive", Destructive: true},
 	}
 }
 
@@ -157,7 +157,7 @@ func runDBInit(cfg *config.Config) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "DB Init Failed",
-				Message: fmt.Sprintf("Failed to generate admin password:\n%s", err),
+				Message: fmt.Sprintf("failed to generate admin password:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -165,7 +165,7 @@ func runDBInit(cfg *config.Config) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "DB Init Failed",
-				Message: fmt.Sprintf("Failed to hash admin password:\n%s", err),
+				Message: fmt.Sprintf("failed to hash admin password:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -173,13 +173,13 @@ func runDBInit(cfg *config.Config) tea.Cmd {
 		if err := install.CreateDbSimple(config.DefaultConfigFilename, cfg, adminHash); err != nil {
 			return ActionResultMsg{
 				Title:   "DB Init Failed",
-				Message: fmt.Sprintf("Database initialization failed:\n%s", err),
+				Message: fmt.Sprintf("database initialization failed:\n%s", err),
 				IsError: true,
 			}
 		}
 		return ActionResultMsg{
 			Title:             "DB Init Complete",
-			Message:           fmt.Sprintf("Database tables created and bootstrap data loaded.\n\nSystem admin: system@modula.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
+			Message:           fmt.Sprintf("database tables created and bootstrap data loaded.\n\nSystem admin: system@modula.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
 			ReloadPermissions: true,
 		}
 	}
@@ -192,13 +192,13 @@ func runDBWipe(cfg *config.Config) tea.Cmd {
 		if err := driver.DropAllTables(); err != nil {
 			return ActionResultMsg{
 				Title:   "DB Wipe Failed",
-				Message: fmt.Sprintf("Failed to drop tables:\n%s", err),
+				Message: fmt.Sprintf("failed to drop tables:\n%s", err),
 				IsError: true,
 			}
 		}
 		return ActionResultMsg{
 			Title:   "DB Wipe Complete",
-			Message: "All tables dropped successfully.",
+			Message: "all tables dropped successfully.",
 		}
 	}
 }
@@ -211,7 +211,7 @@ func runDBWipeRedeploy(cfg *config.Config) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "DB Wipe & Redeploy Failed",
-				Message: fmt.Sprintf("Failed to generate admin password:\n%s", err),
+				Message: fmt.Sprintf("failed to generate admin password:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -219,7 +219,7 @@ func runDBWipeRedeploy(cfg *config.Config) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "DB Wipe & Redeploy Failed",
-				Message: fmt.Sprintf("Failed to hash admin password:\n%s", err),
+				Message: fmt.Sprintf("failed to hash admin password:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -228,7 +228,7 @@ func runDBWipeRedeploy(cfg *config.Config) tea.Cmd {
 		if err := driver.DropAllTables(); err != nil {
 			return ActionResultMsg{
 				Title:   "DB Wipe & Redeploy Failed",
-				Message: fmt.Sprintf("Failed to drop tables:\n%s", err),
+				Message: fmt.Sprintf("failed to drop tables:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -255,7 +255,7 @@ func runDBWipeRedeploy(cfg *config.Config) tea.Cmd {
 		}
 		return ActionResultMsg{
 			Title:             "DB Wipe & Redeploy Complete",
-			Message:           fmt.Sprintf("Database wiped and redeployed successfully.\n\nSystem admin: system@modula.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
+			Message:           fmt.Sprintf("database wiped and redeployed successfully.\n\nSystem admin: system@modula.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
 			ReloadPermissions: true,
 		}
 	}
@@ -273,7 +273,7 @@ func runDBReset(cfg *config.Config) tea.Cmd {
 		}
 		return ActionResultMsg{
 			Title:   "DB Reset Complete",
-			Message: fmt.Sprintf("Database file deleted: %s\nRestart the application to recreate.", cfg.Db_URL),
+			Message: fmt.Sprintf("database file deleted: %s\nRestart the application to recreate.", cfg.Db_URL),
 		}
 	}
 }
@@ -285,13 +285,13 @@ func runDBExport(cfg *config.Config) tea.Cmd {
 		if err := driver.DumpSql(*cfg, ""); err != nil {
 			return ActionResultMsg{
 				Title:   "DB Export Failed",
-				Message: fmt.Sprintf("Database export failed:\n%s", err),
+				Message: fmt.Sprintf("database export failed:\n%s", err),
 				IsError: true,
 			}
 		}
 		return ActionResultMsg{
 			Title:   "DB Export Complete",
-			Message: "Database exported successfully.",
+			Message: "database exported successfully.",
 		}
 	}
 }
@@ -312,7 +312,7 @@ func runGenerateCerts(cfg *config.Config) tea.Cmd {
 		if err := utility.GenerateSelfSignedCert(certDir, domain); err != nil {
 			return ActionResultMsg{
 				Title:   "Generate Certs Failed",
-				Message: fmt.Sprintf("Failed to generate certificates:\n%s", err),
+				Message: fmt.Sprintf("failed to generate certificates:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -334,8 +334,8 @@ func runCheckForUpdates() tea.Cmd {
 		release, available, err := update.CheckForUpdates(currentVersion, "stable")
 		if err != nil {
 			return ActionResultMsg{
-				Title:   "Update Check Failed",
-				Message: fmt.Sprintf("Update check failed:\n%s", err),
+				Title:   "update Check Failed",
+				Message: fmt.Sprintf("update check failed:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -343,15 +343,15 @@ func runCheckForUpdates() tea.Cmd {
 		if !available {
 			return ActionResultMsg{
 				Title:   "Up to Date",
-				Message: fmt.Sprintf("Already running latest version (%s).", currentVersion),
+				Message: fmt.Sprintf("already running latest version (%s).", currentVersion),
 			}
 		}
 
 		downloadURL, err := update.GetDownloadURL(release, runtime.GOOS, runtime.GOARCH)
 		if err != nil {
 			return ActionResultMsg{
-				Title:   "Update Available",
-				Message: fmt.Sprintf("Update %s available but no compatible binary found:\n%s", release.TagName, err),
+				Title:   "update Available",
+				Message: fmt.Sprintf("update %s available but no compatible binary found:\n%s", release.TagName, err),
 				IsError: true,
 			}
 		}
@@ -359,22 +359,22 @@ func runCheckForUpdates() tea.Cmd {
 		tempPath, err := update.DownloadUpdate(downloadURL)
 		if err != nil {
 			return ActionResultMsg{
-				Title:   "Update Download Failed",
-				Message: fmt.Sprintf("Failed to download update:\n%s", err),
+				Title:   "update Download Failed",
+				Message: fmt.Sprintf("failed to download update:\n%s", err),
 				IsError: true,
 			}
 		}
 
 		if err := update.ApplyUpdate(tempPath); err != nil {
 			return ActionResultMsg{
-				Title:   "Update Apply Failed",
-				Message: fmt.Sprintf("Failed to apply update:\n%s", err),
+				Title:   "update Apply Failed",
+				Message: fmt.Sprintf("failed to apply update:\n%s", err),
 				IsError: true,
 			}
 		}
 
 		return ActionResultMsg{
-			Title:   "Update Complete",
+			Title:   "update Complete",
 			Message: fmt.Sprintf("Updated to %s. Please restart Modula.", release.TagName),
 		}
 	}
@@ -408,7 +408,7 @@ func runValidateConfig(cfg *config.Config) tea.Cmd {
 		}
 
 		if len(errs) > 0 {
-			msg := fmt.Sprintf("Configuration has %d error(s):\n", len(errs))
+			msg := fmt.Sprintf("configuration has %d error(s):\n", len(errs))
 			for _, e := range errs {
 				msg += fmt.Sprintf("  - %s\n", e)
 			}
@@ -425,7 +425,7 @@ func runValidateConfig(cfg *config.Config) tea.Cmd {
 		}
 		return ActionResultMsg{
 			Title:   "Validation Passed",
-			Message: fmt.Sprintf("Configuration is valid.\nMode: %s", mode),
+			Message: fmt.Sprintf("configuration is valid.\nMode: %s", mode),
 		}
 	}
 }
@@ -442,7 +442,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 			if err != nil {
 				return ActionResultMsg{
 					Title:   "Token Generation Failed",
-					Message: fmt.Sprintf("Failed to list roles:\n%s", err),
+					Message: fmt.Sprintf("failed to list roles:\n%s", err),
 					IsError: true,
 				}
 			}
@@ -456,7 +456,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 			if adminRoleID == "" {
 				return ActionResultMsg{
 					Title:   "Token Generation Failed",
-					Message: "No admin role found. Run DB Init first.",
+					Message: "no admin role found. Run DB Init first.",
 					IsError: true,
 				}
 			}
@@ -465,7 +465,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 			if err != nil {
 				return ActionResultMsg{
 					Title:   "Token Generation Failed",
-					Message: fmt.Sprintf("Failed to list users:\n%s", err),
+					Message: fmt.Sprintf("failed to list users:\n%s", err),
 					IsError: true,
 				}
 			}
@@ -478,7 +478,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 			if ownerID.IsZero() {
 				return ActionResultMsg{
 					Title:   "Token Generation Failed",
-					Message: "No admin user found. Create one first.",
+					Message: "no admin user found. Create one first.",
 					IsError: true,
 				}
 			}
@@ -488,7 +488,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Token Generation Failed",
-				Message: fmt.Sprintf("Failed to generate token:\n%s", err),
+				Message: fmt.Sprintf("failed to generate token:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -512,7 +512,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 		if tokenErr != nil {
 			return ActionResultMsg{
 				Title:   "Token Generation Failed",
-				Message: fmt.Sprintf("Failed to store token: %s", tokenErr),
+				Message: fmt.Sprintf("failed to store token: %s", tokenErr),
 				IsError: true,
 			}
 		}
@@ -554,12 +554,12 @@ func runCreateBackup(cfg *config.Config) tea.Cmd {
 					ErrorMessage: types.NullableString{String: err.Error(), Valid: true},
 				})
 				if updateErr != nil {
-					utility.DefaultLogger.Warn("Failed to record backup failure", updateErr)
+					utility.DefaultLogger.Warn("failed to record backup failure", updateErr)
 				}
 			}
 			return ActionResultMsg{
-				Title:   "Backup Failed",
-				Message: fmt.Sprintf("Failed to create backup:\n%s", err),
+				Title:   "backup Failed",
+				Message: fmt.Sprintf("failed to create backup:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -573,14 +573,14 @@ func runCreateBackup(cfg *config.Config) tea.Cmd {
 				SizeBytes:   types.NullableInt64{Int64: sizeBytes, Valid: true},
 			})
 			if updateErr != nil {
-				utility.DefaultLogger.Warn("Failed to record backup completion", updateErr)
+				utility.DefaultLogger.Warn("failed to record backup completion", updateErr)
 			}
 		}
 
 		sizeStr := formatBackupSize(sizeBytes)
 		return ActionResultMsg{
-			Title:   "Backup Complete",
-			Message: fmt.Sprintf("Backup created successfully.\n\nPath: %s\nSize: %s", path, sizeStr),
+			Title:   "backup Complete",
+			Message: fmt.Sprintf("backup created successfully.\n\nPath: %s\nSize: %s", path, sizeStr),
 		}
 	}
 }
@@ -605,7 +605,7 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 		if p.SSHFingerprint == "" {
 			return ActionResultMsg{
 				Title:   "Registration Failed",
-				Message: "No SSH key detected. Connect via SSH with a public key.",
+				Message: "no SSH key detected. Connect via SSH with a public key.",
 				IsError: true,
 			}
 		}
@@ -627,7 +627,7 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Registration Failed",
-				Message: fmt.Sprintf("Failed to generate credentials:\n%s", err),
+				Message: fmt.Sprintf("failed to generate credentials:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -636,7 +636,7 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Registration Failed",
-				Message: fmt.Sprintf("Failed to hash password:\n%s", err),
+				Message: fmt.Sprintf("failed to hash password:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -649,7 +649,7 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Registration Failed",
-				Message: fmt.Sprintf("Failed to list roles:\n%s", err),
+				Message: fmt.Sprintf("failed to list roles:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -664,7 +664,7 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 		if roleID == "" {
 			return ActionResultMsg{
 				Title:   "Registration Failed",
-				Message: "No admin role found. Run DB Init first.",
+				Message: "no admin role found. Run DB Init first.",
 				IsError: true,
 			}
 		}
@@ -691,7 +691,7 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Registration Failed",
-				Message: fmt.Sprintf("Failed to create user:\n%s", err),
+				Message: fmt.Sprintf("failed to create user:\n%s", err),
 				IsError: true,
 			}
 		}
@@ -702,13 +702,13 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 			PublicKey:   p.SSHPublicKey,
 			KeyType:     p.SSHKeyType,
 			Fingerprint: p.SSHFingerprint,
-			Label:       "Registered via TUI",
+			Label:       "registered via TUI",
 			DateCreated: ts,
 		})
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Registration Partial",
-				Message: fmt.Sprintf("User created (%s) but SSH key registration failed:\n%s\n\nRegister the key manually.", username, err),
+				Message: fmt.Sprintf("user created (%s) but SSH key registration failed:\n%s\n\nRegister the key manually.", username, err),
 				IsError: true,
 			}
 		}

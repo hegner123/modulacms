@@ -85,7 +85,7 @@ func (d Database) UpdateAdminRoute(ctx context.Context, ac audited.AuditContext,
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminRoute: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Slug)
 	return &msg, nil
 }
 
@@ -288,7 +288,7 @@ func (d MysqlDatabase) UpdateAdminRoute(ctx context.Context, ac audited.AuditCon
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminRoute: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Slug)
 	return &msg, nil
 }
 
@@ -463,7 +463,7 @@ func (d PsqlDatabase) UpdateAdminRoute(ctx context.Context, ac audited.AuditCont
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminRoute: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Slug)
 	return &msg, nil
 }
 

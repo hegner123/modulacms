@@ -2634,7 +2634,7 @@ func TestDBAPI_Query_LeftJoin(t *testing.T) {
 
 	seedTestCategory(t, conn, pluginName, "cat1", "Engineering")
 	seedTestRowWithCategory(t, conn, pluginName, "id1", "Build API", "active", 5, "cat1")
-	seedTestRowWithCategory(t, conn, pluginName, "id2", "No category", "active", 3, "cat_missing")
+	seedTestRowWithCategory(t, conn, pluginName, "id2", "no category", "active", 3, "cat_missing")
 
 	L, _, cancel := newDBTestState(t, conn, pluginName)
 	defer L.Close()

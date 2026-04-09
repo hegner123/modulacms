@@ -717,7 +717,7 @@ func TestDatabase_ZeroValue(t *testing.T) {
 		t.Errorf("Status = %q, want empty", d.Status)
 	}
 	if d.Connection != nil {
-		t.Error("Connection should be nil")
+		t.Error("connection should be nil")
 	}
 	if d.LastConnection != "" {
 		t.Errorf("LastConnection = %q, want empty", d.LastConnection)
@@ -741,7 +741,7 @@ func TestMysqlDatabase_ZeroValue(t *testing.T) {
 		t.Errorf("Status = %q, want empty", d.Status)
 	}
 	if d.Connection != nil {
-		t.Error("Connection should be nil")
+		t.Error("connection should be nil")
 	}
 	if d.Err != nil {
 		t.Errorf("Err = %v, want nil", d.Err)
@@ -759,7 +759,7 @@ func TestPsqlDatabase_ZeroValue(t *testing.T) {
 		t.Errorf("Status = %q, want empty", d.Status)
 	}
 	if d.Connection != nil {
-		t.Error("Connection should be nil")
+		t.Error("connection should be nil")
 	}
 	if d.Err != nil {
 		t.Errorf("Err = %v, want nil", d.Err)
@@ -785,7 +785,7 @@ func TestDatabase_FieldAssignment(t *testing.T) {
 	}
 
 	if d.Connection != nil {
-		t.Error("Connection should be nil")
+		t.Error("connection should be nil")
 	}
 	if d.Src != "/tmp/test.db" {
 		t.Errorf("Src = %q", d.Src)

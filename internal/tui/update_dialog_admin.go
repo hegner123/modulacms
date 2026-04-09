@@ -63,7 +63,7 @@ func (m Model) handleAdminDialogMsg(msg tea.Msg) (Model, tea.Cmd, bool) {
 			FocusSetCmd(DIALOGFOCUS),
 		), true
 	case ShowRestoreVersionDialogMsg:
-		dialog := NewDialog("Restore Version", fmt.Sprintf("Restore version %d?\nCurrent field values will be overwritten.", msg.VersionNumber), true, DIALOGRESTOREVERSION)
+		dialog := NewDialog("restore Version", fmt.Sprintf("restore version %d?\nCurrent field values will be overwritten.", msg.VersionNumber), true, DIALOGRESTOREVERSION)
 		dialog.SetButtons("Restore", "Cancel")
 		m.DCtx.Active = &RestoreVersionContext{
 			ContentID: msg.ContentID,
@@ -75,7 +75,7 @@ func (m Model) handleAdminDialogMsg(msg tea.Msg) (Model, tea.Cmd, bool) {
 			FocusSetCmd(DIALOGFOCUS),
 		), true
 	case ShowRestoreAdminVersionDialogMsg:
-		dialog := NewDialog("Restore Version", fmt.Sprintf("Restore version %d?\nCurrent field values will be overwritten.", msg.VersionNumber), true, DIALOGRESTOREVERSION)
+		dialog := NewDialog("restore Version", fmt.Sprintf("restore version %d?\nCurrent field values will be overwritten.", msg.VersionNumber), true, DIALOGRESTOREVERSION)
 		dialog.SetButtons("Restore", "Cancel")
 		m.DCtx.Active = &RestoreVersionContext{
 			ContentID: types.ContentID(msg.AdminContentID),
@@ -103,7 +103,7 @@ func (m Model) handleAdminDialogMsg(msg tea.Msg) (Model, tea.Cmd, bool) {
 		), true
 	case ShowMoveAdminContentDialogMsg:
 		if len(msg.Targets) == 0 {
-			dialog := NewDialog("Cannot Move", "No valid move targets available.", false, DIALOGGENERIC)
+			dialog := NewDialog("Cannot Move", "no valid move targets available.", false, DIALOGGENERIC)
 			return m, tea.Batch(
 				OverlaySetCmd(&dialog),
 				FocusSetCmd(DIALOGFOCUS),

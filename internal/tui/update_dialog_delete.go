@@ -859,8 +859,8 @@ func (m Model) handleDialogAccept(msg DialogAcceptMsg) (Model, tea.Cmd) {
 				func() tea.Msg {
 					if err := backup.RestoreFromBackup(*cfg, backupPath); err != nil {
 						return ActionResultMsg{
-							Title:   "Restore Failed",
-							Message: fmt.Sprintf("Failed to restore backup:\n%s", err),
+							Title:   "restore Failed",
+							Message: fmt.Sprintf("failed to restore backup:\n%s", err),
 							IsError: true,
 						}
 					}

@@ -71,7 +71,7 @@ func GenerateSelfSignedCert(certDir string, domain string) error {
 		return fmt.Errorf("failed to write certificate: %w", err)
 	}
 
-	DefaultLogger.Info("Generated certificate", certPath)
+	DefaultLogger.Info("generated certificate", certPath)
 
 	// Write private key to file
 	keyPath := filepath.Join(certDir, "localhost.key")
@@ -91,7 +91,7 @@ func GenerateSelfSignedCert(certDir string, domain string) error {
 		return fmt.Errorf("failed to set key file permissions: %w", err)
 	}
 
-	DefaultLogger.Info("Generated private key", keyPath)
+	DefaultLogger.Info("generated private key", keyPath)
 
 	return nil
 }
@@ -108,8 +108,8 @@ func TrustCertificate(certPath string) error {
 	case "windows":
 		return trustCertWindows(certPath)
 	default:
-		DefaultLogger.Warn("Automatic certificate trust not supported on", nil, osType)
-		DefaultLogger.Info("Please manually trust the certificate:", certPath)
+		DefaultLogger.Warn("automatic certificate trust not supported on", nil, osType)
+		DefaultLogger.Info("please manually trust the certificate:", certPath)
 		return nil
 	}
 }
@@ -117,7 +117,7 @@ func TrustCertificate(certPath string) error {
 func trustCertMacOS(certPath string) error {
 	DefaultLogger.Info("")
 	DefaultLogger.Info("═══════════════════════════════════════════════════════")
-	DefaultLogger.Info("To trust this certificate on macOS, run:")
+	DefaultLogger.Info("to trust this certificate on macOS, run:")
 	DefaultLogger.Info("")
 	DefaultLogger.Info("  sudo security add-trusted-cert -d -r trustRoot \\")
 	DefaultLogger.Info("    -k /Library/Keychains/System.keychain " + certPath)
@@ -131,7 +131,7 @@ func trustCertMacOS(certPath string) error {
 	fmt.Scanln(&response)
 
 	if response == "y" || response == "Y" {
-		DefaultLogger.Info("Running certificate trust command...")
+		DefaultLogger.Info("running certificate trust command...")
 		cmd := exec.Command("sudo", "security", "add-trusted-cert", "-d", "-r", "trustRoot",
 			"-k", "/Library/Keychains/System.keychain", certPath)
 		cmd.Stdout = os.Stdout
@@ -143,9 +143,9 @@ func trustCertMacOS(certPath string) error {
 		}
 
 		DefaultLogger.Info("✓ Certificate trusted successfully!")
-		DefaultLogger.Info("Restart your browser to see the changes")
+		DefaultLogger.Info("restart your browser to see the changes")
 	} else {
-		DefaultLogger.Info("Skipped. You can trust it later with the command above.")
+		DefaultLogger.Info("skipped. you can trust it later with the command above.")
 	}
 
 	return nil
@@ -154,7 +154,7 @@ func trustCertMacOS(certPath string) error {
 func trustCertLinux(certPath string) error {
 	DefaultLogger.Info("")
 	DefaultLogger.Info("═══════════════════════════════════════════════════════")
-	DefaultLogger.Info("To trust this certificate on Linux, run:")
+	DefaultLogger.Info("to trust this certificate on Linux, run:")
 	DefaultLogger.Info("")
 	DefaultLogger.Info("  sudo cp " + certPath + " /usr/local/share/ca-certificates/modula.crt")
 	DefaultLogger.Info("  sudo update-ca-certificates")
@@ -168,7 +168,7 @@ func trustCertLinux(certPath string) error {
 	fmt.Scanln(&response)
 
 	if response == "y" || response == "Y" {
-		DefaultLogger.Info("Running certificate trust commands...")
+		DefaultLogger.Info("running certificate trust commands...")
 
 		// Copy certificate
 		copyCmd := exec.Command("sudo", "cp", certPath, "/usr/local/share/ca-certificates/modula.crt")
@@ -190,9 +190,9 @@ func trustCertLinux(certPath string) error {
 		}
 
 		DefaultLogger.Info("✓ Certificate trusted successfully!")
-		DefaultLogger.Info("Restart your browser to see the changes")
+		DefaultLogger.Info("restart your browser to see the changes")
 	} else {
-		DefaultLogger.Info("Skipped. You can trust it later with the commands above.")
+		DefaultLogger.Info("skipped. you can trust it later with the commands above.")
 	}
 
 	return nil
@@ -201,12 +201,12 @@ func trustCertLinux(certPath string) error {
 func trustCertWindows(certPath string) error {
 	DefaultLogger.Info("")
 	DefaultLogger.Info("═══════════════════════════════════════════════════════")
-	DefaultLogger.Info("To trust this certificate on Windows, run PowerShell as Administrator:")
+	DefaultLogger.Info("to trust this certificate on Windows, run PowerShell as Administrator:")
 	DefaultLogger.Info("")
 	DefaultLogger.Info("  Import-Certificate -FilePath \"" + certPath + "\" \\")
 	DefaultLogger.Info("    -CertStoreLocation Cert:\\LocalMachine\\Root")
 	DefaultLogger.Info("")
-	DefaultLogger.Info("Or using certutil:")
+	DefaultLogger.Info("or using certutil:")
 	DefaultLogger.Info("  certutil -addstore Root \"" + certPath + "\"")
 	DefaultLogger.Info("")
 	DefaultLogger.Info("═══════════════════════════════════════════════════════")
@@ -218,7 +218,7 @@ func trustCertWindows(certPath string) error {
 	fmt.Scanln(&response)
 
 	if response == "y" || response == "Y" {
-		DefaultLogger.Info("Running certificate trust command...")
+		DefaultLogger.Info("running certificate trust command...")
 		cmd := exec.Command("certutil", "-addstore", "Root", certPath)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -237,9 +237,9 @@ func trustCertWindows(certPath string) error {
 		}
 
 		DefaultLogger.Info("✓ Certificate trusted successfully!")
-		DefaultLogger.Info("Restart your browser to see the changes")
+		DefaultLogger.Info("restart your browser to see the changes")
 	} else {
-		DefaultLogger.Info("Skipped. You can trust it later with the commands above.")
+		DefaultLogger.Info("skipped. you can trust it later with the commands above.")
 	}
 
 	return nil

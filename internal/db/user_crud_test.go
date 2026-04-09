@@ -50,7 +50,7 @@ func TestDatabase_CRUD_User(t *testing.T) {
 		t.Errorf("Name = %q, want %q", created.Name, "CRUD Test User")
 	}
 	if created.Email != types.Email("crud@example.com") {
-		t.Errorf("Email = %q, want %q", created.Email, "crud@example.com")
+		t.Errorf("email = %q, want %q", created.Email, "crud@example.com")
 	}
 	if created.Hash != "crudhash" {
 		t.Errorf("Hash = %q, want %q", created.Hash, "crudhash")

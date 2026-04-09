@@ -83,7 +83,7 @@ func AdminRouteCreateHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 		ac := middleware.AuditContextFromRequest(r, *c)
@@ -114,7 +114,7 @@ func AdminRouteCreateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to create admin route", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminRouteForm(slug, title, statusStr, map[string]string{"_": "Failed to create route"}, csrfToken))
+			Render(w, r, partials.AdminRouteForm(slug, title, statusStr, map[string]string{"_": "failed to create route"}, csrfToken))
 			return
 		}
 
@@ -134,7 +134,7 @@ func AdminRouteUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing route ID", http.StatusBadRequest)
+			http.Error(w, "missing route ID", http.StatusBadRequest)
 			return
 		}
 
@@ -157,7 +157,7 @@ func AdminRouteUpdateHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 		ac := middleware.AuditContextFromRequest(r, *c)
@@ -193,7 +193,7 @@ func AdminRouteUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			utility.DefaultLogger.Error("failed to update admin route", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.AdminRouteEditForm(id, slug, title, statusStr, map[string]string{"_": "Failed to update route"}, csrfToken))
+			Render(w, r, partials.AdminRouteEditForm(id, slug, title, statusStr, map[string]string{"_": "failed to update route"}, csrfToken))
 			return
 		}
 
@@ -218,13 +218,13 @@ func AdminRouteDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Missing route ID", http.StatusBadRequest)
+			http.Error(w, "missing route ID", http.StatusBadRequest)
 			return
 		}
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 		ac := middleware.AuditContextFromRequest(r, *c)
@@ -237,7 +237,7 @@ func AdminRouteDeleteHandler(svc *service.Registry) http.HandlerFunc {
 				return
 			}
 			utility.DefaultLogger.Error("failed to delete admin route", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete route", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete route", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

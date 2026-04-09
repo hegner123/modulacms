@@ -91,10 +91,10 @@ func (up *UserProvisioner) FetchUserInfo(client *http.Client) (*UserInfo, error)
 
 	// If email is missing, try to fetch from GitHub's /user/emails endpoint
 	if userInfo.Email == "" {
-		up.log.Info("Email not in user info, fetching from /user/emails endpoint")
+		up.log.Info("email not in user info, fetching from /user/emails endpoint")
 		email, err := up.fetchGitHubEmail(client)
 		if err != nil {
-			up.log.Warn("Failed to fetch email from /user/emails", err)
+			up.log.Warn("failed to fetch email from /user/emails", err)
 		} else {
 			userInfo.Email = email
 		}
@@ -145,7 +145,7 @@ func (up *UserProvisioner) fetchGitHubEmail(client *http.Client) (string, error)
 	// Fallback to first verified email
 	for _, email := range emails {
 		if email.Verified {
-			up.log.Debug("Using first verified email: %s", email.Email)
+			up.log.Debug("using first verified email: %s", email.Email)
 			return email.Email, nil
 		}
 	}
@@ -163,7 +163,7 @@ func (up *UserProvisioner) ProvisionUser(
 	token *oauth2.Token,
 	provider string,
 ) (*db.Users, error) {
-	up.log.Info("Starting user provisioning for provider: %s", provider)
+	up.log.Info("starting user provisioning for provider: %s", provider)
 
 	// Validate required fields
 	if userInfo.Email == "" {
@@ -189,7 +189,7 @@ func (up *UserProvisioner) ProvisionUser(
 		// User exists, update tokens
 		err = up.updateTokens(existingOauth.UserOauthID, token)
 		if err != nil {
-			up.log.Warn("Failed to update tokens", err)
+			up.log.Warn("failed to update tokens", err)
 			return nil, fmt.Errorf("failed to update OAuth tokens: %w", err)
 		}
 
@@ -206,7 +206,7 @@ func (up *UserProvisioner) ProvisionUser(
 	}
 
 	// Create new user
-	up.log.Debug("Creating new user for: %s", userInfo.Email)
+	up.log.Debug("creating new user for: %s", userInfo.Email)
 	return up.createNewUser(userInfo, token, provider, providerUserID)
 }
 
@@ -258,7 +258,7 @@ func (up *UserProvisioner) createNewUser(
 		DateModified: now,
 	})
 	if err != nil {
-		up.log.Error("Failed to create user", err)
+		up.log.Error("failed to create user", err)
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
@@ -278,11 +278,11 @@ func (up *UserProvisioner) createNewUser(
 		DateCreated:         types.TimestampNow(),
 	})
 	if err != nil {
-		up.log.Error("Failed to link OAuth", err)
+		up.log.Error("failed to link OAuth", err)
 		return nil, fmt.Errorf("failed to link OAuth: %w", err)
 	}
 
-	up.log.Debug("Created new user via OAuth: %s (user_id: %s)", userInfo.Email, user.UserID)
+	up.log.Debug("created new user via OAuth: %s (user_id: %s)", userInfo.Email, user.UserID)
 	return user, nil
 }
 
@@ -312,7 +312,7 @@ func (up *UserProvisioner) linkOAuthToUser(
 		DateCreated:         types.TimestampNow(),
 	})
 	if err != nil {
-		up.log.Error("Failed to link OAuth to existing user", err)
+		up.log.Error("failed to link OAuth to existing user", err)
 		return nil, fmt.Errorf("failed to link OAuth: %w", err)
 	}
 

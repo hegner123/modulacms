@@ -136,10 +136,10 @@ func TestDatabase_CRUD_Route_GetRouteID(t *testing.T) {
 		t.Fatalf("GetRouteID: %v", err)
 	}
 	if routeID == nil {
-		t.Fatal("GetRouteID returned nil")
+		t.Fatal("getRouteID returned nil")
 	}
 	if *routeID != seed.Route.RouteID {
-		t.Errorf("GetRouteID = %v, want %v", *routeID, seed.Route.RouteID)
+		t.Errorf("getRouteID = %v, want %v", *routeID, seed.Route.RouteID)
 	}
 }
 

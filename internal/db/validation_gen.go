@@ -193,7 +193,7 @@ func (d Database) UpdateValidation(ctx context.Context, ac audited.AuditContext,
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update validation: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Name)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Name)
 	return &msg, nil
 }
 
@@ -343,7 +343,7 @@ func (d MysqlDatabase) UpdateValidation(ctx context.Context, ac audited.AuditCon
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update validation: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Name)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Name)
 	return &msg, nil
 }
 
@@ -493,7 +493,7 @@ func (d PsqlDatabase) UpdateValidation(ctx context.Context, ac audited.AuditCont
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update validation: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Name)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Name)
 	return &msg, nil
 }
 

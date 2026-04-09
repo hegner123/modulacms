@@ -72,7 +72,7 @@ Examples:
 			if jsonOutput {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode([]struct{}{})
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "No pipelines found.")
+			fmt.Fprintln(cmd.OutOrStdout(), "no pipelines found.")
 			return nil
 		}
 
@@ -133,7 +133,7 @@ Examples:
 			if jsonOutput {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode([]struct{}{})
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "No pipelines found for table %q.\n", tableName)
+			fmt.Fprintf(cmd.OutOrStdout(), "no pipelines found for table %q.\n", tableName)
 			return nil
 		}
 

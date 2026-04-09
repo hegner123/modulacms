@@ -703,7 +703,7 @@ func TestHookIntegration_PluginHooksTableCleanup(t *testing.T) {
 plugin_info = {
     name        = "persistent",
     version     = "1.0.0",
-    description = "Plugin that stays",
+    description = "plugin that stays",
 }
 
 hooks.on("before_create", "content_data", function(data) end)
@@ -716,7 +716,7 @@ end
 plugin_info = {
     name        = "ephemeral",
     version     = "1.0.0",
-    description = "Plugin that will be removed",
+    description = "plugin that will be removed",
 }
 
 hooks.on("after_update", "content_data", function(data) end)
@@ -781,7 +781,7 @@ end
 plugin_info = {
     name        = "persistent",
     version     = "1.0.0",
-    description = "Plugin that stays",
+    description = "plugin that stays",
 }
 
 hooks.on("before_create", "content_data", function(data) end)

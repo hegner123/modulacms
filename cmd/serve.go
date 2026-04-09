@@ -116,7 +116,7 @@ Examples:
 			if resolved.Overlay != "" {
 				overlayPath = resolved.Overlay
 			}
-			utility.DefaultLogger.Info("Using config from registry", "project", projName, "environment", envName, "config", cfgPath)
+			utility.DefaultLogger.Info("using config from registry", "project", projName, "environment", envName, "config", cfgPath)
 		}
 
 		// Root the process in the config file's directory so relative paths
@@ -130,7 +130,7 @@ Examples:
 			return fmt.Errorf("changing to config directory %s: %w", cfgDir, err)
 		}
 		cfgPath = filepath.Base(absCfg)
-		utility.DefaultLogger.Info("Working directory set", "path", cfgDir)
+		utility.DefaultLogger.Info("working directory set", "path", cfgDir)
 
 		rootCtx, rootCancel := context.WithCancel(context.Background())
 		defer rootCancel()
@@ -141,7 +141,7 @@ Examples:
 		// Second signal forces immediate exit
 		go func() {
 			<-done
-			utility.DefaultLogger.Info("Wrap-up signal received, hang tight...")
+			utility.DefaultLogger.Info("shutdown signal received, draining connections...")
 			utility.DefaultLogger.Debug("OS interrupt caught, re-queuing SIGTERM for main goroutine shutdown handler")
 			// Drain done so the main select sees it
 			select {
@@ -157,13 +157,13 @@ Examples:
 			}
 		} else {
 			if _, statErr := os.Stat(cfgPath); errors.Is(statErr, os.ErrNotExist) {
-				utility.DefaultLogger.Info("No config found, creating defaults...", "path", cfgPath)
+				utility.DefaultLogger.Info("no config found, creating defaults...", "path", cfgPath)
 				yes := true
 				autoPassword, err := utility.MakeRandomString()
 				if err != nil {
 					return fmt.Errorf("failed to generate admin password: %w", err)
 				}
-				utility.DefaultLogger.Finfo("Generated system admin password", "email", "system@modula.local", "password", autoPassword)
+				utility.DefaultLogger.Finfo("generated system admin password", "email", "system@modula.local", "password", autoPassword)
 				if err := install.RunInstall(&verbose, &yes, &autoPassword); err != nil {
 					return fmt.Errorf("auto-setup failed: %w", err)
 				}
@@ -179,22 +179,22 @@ Examples:
 		// Ensure system-level data exists (idempotent, safe on every boot).
 		// Non-fatal: CMS still boots, tree composition stays inactive if this fails.
 		if ensureErr := db.EnsureSystemData(rootCtx, driver); ensureErr != nil {
-			utility.DefaultLogger.Warn("EnsureSystemData failed, tree composition may be inactive", ensureErr)
+			utility.DefaultLogger.Warn("ensureSystemData failed, tree composition may be inactive", ensureErr)
 		}
 
 		// Ensure "content:publish" permission exists (backfill for upgrades).
 		if ensureErr := db.EnsurePublishPermission(rootCtx, driver); ensureErr != nil {
-			utility.DefaultLogger.Warn("EnsurePublishPermission failed", ensureErr)
+			utility.DefaultLogger.Warn("ensurePublishPermission failed", ensureErr)
 		}
 
 		// Ensure locale CRUD permissions exist (backfill for upgrades).
 		if ensureErr := db.EnsureLocalePermissions(rootCtx, driver); ensureErr != nil {
-			utility.DefaultLogger.Warn("EnsureLocalePermissions failed", ensureErr)
+			utility.DefaultLogger.Warn("ensureLocalePermissions failed", ensureErr)
 		}
 
 		// Ensure webhook CRUD permissions exist (backfill for upgrades).
 		if ensureErr := db.EnsureWebhookPermissions(rootCtx, driver); ensureErr != nil {
-			utility.DefaultLogger.Warn("EnsureWebhookPermissions failed", ensureErr)
+			utility.DefaultLogger.Warn("ensureWebhookPermissions failed", ensureErr)
 		}
 
 		cfg, err := mgr.Config()
@@ -202,12 +202,12 @@ Examples:
 			return err
 		}
 
-		utility.DefaultLogger.Info("Base config loaded", "path", cfgPath)
+		utility.DefaultLogger.Info("base config loaded", "path", cfgPath)
 		if overlayPath != "" {
-			utility.DefaultLogger.Info("Overlay applied", "path", overlayPath)
+			utility.DefaultLogger.Info("overlay applied", "path", overlayPath)
 		}
 		if cfg.Log_Path != "" {
-			utility.DefaultLogger.Info("Log file configured", "path", cfg.Log_Path)
+			utility.DefaultLogger.Info("log file configured", "path", cfg.Log_Path)
 		}
 
 		// Initialize isolated plugin database pool
@@ -220,7 +220,7 @@ Examples:
 
 		if cfg.Node_ID == "" {
 			cfg.Node_ID = string(types.NewNodeID())
-			utility.DefaultLogger.Finfo("No node_id configured, generated ephemeral node ID", "node_id", cfg.Node_ID)
+			utility.DefaultLogger.Finfo("no node_id configured, generated ephemeral node ID", "node_id", cfg.Node_ID)
 		}
 
 		logConfigSummary(cfg)
@@ -244,7 +244,7 @@ Examples:
 		// Run install check — if DB isn't connected, attempt table creation and bootstrap
 		initStatus, err := install.CheckInstall(cfg, &verbose)
 		if err != nil {
-			utility.DefaultLogger.Warn("Installation check reported issues, attempting DB setup", err)
+			utility.DefaultLogger.Warn("installation check reported issues, attempting DB setup", err)
 			fallbackPassword, pwErr := utility.MakeRandomString()
 			if pwErr != nil {
 				return fmt.Errorf("failed to generate admin password: %w", pwErr)
@@ -253,7 +253,7 @@ Examples:
 			if pwErr != nil {
 				return fmt.Errorf("failed to hash admin password: %w", pwErr)
 			}
-			utility.DefaultLogger.Finfo("Generated system admin password for DB setup", "email", "system@modula.local", "password", fallbackPassword)
+			utility.DefaultLogger.Finfo("generated system admin password for DB setup", "email", "system@modula.local", "password", fallbackPassword)
 			if setupErr := install.CreateDbSimple(cfgPath, cfg, fallbackHash); setupErr != nil {
 				return fmt.Errorf("database setup failed: %w", setupErr)
 			}
@@ -271,8 +271,8 @@ Examples:
 			wd.Start(rootCtx)
 			defer wd.Shutdown()
 			dispatcher = wd
-			utility.DefaultLogger.Info("Carrier pigeons on standby")
-			utility.DefaultLogger.Debug("Webhook dispatcher goroutine started, event channel open, HMAC signing active")
+			utility.DefaultLogger.Info("carrier pigeons on standby")
+			utility.DefaultLogger.Debug("webhook dispatcher goroutine started, event channel open, HMAC signing active")
 		}
 
 		// Background update checker — fires update.available webhook when a
@@ -284,7 +284,7 @@ Examples:
 				Channel:    cfg.Update_Channel,
 				NotifyOnly: cfg.Update_Notify_Only,
 			}, dispatcher)
-			utility.DefaultLogger.Info("Update checker armed", "interval", cfg.Update_Check_Interval, "channel", cfg.Update_Channel, "notify_only", cfg.Update_Notify_Only)
+			utility.DefaultLogger.Info("update checker armed", "interval", cfg.Update_Check_Interval, "channel", cfg.Update_Channel, "notify_only", cfg.Update_Notify_Only)
 		}
 
 		// Search index (nil if disabled).
@@ -307,7 +307,7 @@ Examples:
 				// Non-fatal: CMS runs without search
 				searchSvc = nil
 			} else {
-				utility.DefaultLogger.Info("Search index loaded")
+				utility.DefaultLogger.Info("search index loaded")
 			}
 		}
 
@@ -332,7 +332,7 @@ Examples:
 		}
 
 		go func() {
-			utility.DefaultLogger.Info("Starting SSH server",
+			utility.DefaultLogger.Info("starting SSH server",
 				"address", net.JoinHostPort(cfg.SSH_Host, cfg.SSH_Port))
 			utility.DefaultLogger.Debug("SSH server listener binding",
 				"address", net.JoinHostPort(cfg.SSH_Host, cfg.SSH_Port),
@@ -350,15 +350,15 @@ Examples:
 		// On failure the SSH server keeps running so operators can diagnose via TUI;
 		// HTTP starts with a placeholder handler until DB is initialized.
 		sshOnly := false
-		utility.DefaultLogger.Info("Loading permission cache")
-		utility.DefaultLogger.Debug("Building in-memory PermissionCache from role_permissions table, build-then-swap for lock-free reads")
+		utility.DefaultLogger.Info("loading permission cache")
+		utility.DefaultLogger.Debug("building in-memory PermissionCache from role_permissions table, build-then-swap for lock-free reads")
 		pc := middleware.NewPermissionCache()
 		if pcErr := pc.Load(driver); pcErr != nil {
-			utility.DefaultLogger.Error("Permission cache load failed — placeholder HTTP mode until DB init via SSH", pcErr)
+			utility.DefaultLogger.Error("permission cache load failed — placeholder HTTP mode until DB init via SSH", pcErr)
 			sshOnly = true
 		} else {
-			utility.DefaultLogger.Info("Permission cache ready")
-			utility.DefaultLogger.Debug("PermissionCache populated, starting periodic refresh goroutine", "interval", "60s")
+			utility.DefaultLogger.Info("permission cache ready")
+			utility.DefaultLogger.Debug("permissionCache populated, starting periodic refresh goroutine", "interval", "60s")
 			pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
 		}
 
@@ -371,7 +371,7 @@ Examples:
 			bridge = pluginManager.Bridge()
 		}
 
-		svc := service.NewRegistry(driver, mgr, pc, emailSvc, dispatcher)
+		svc := service.NewRegistry(rootCtx, driver, mgr, pc, emailSvc, dispatcher)
 
 		// Phase 5 services — constructed post-NewRegistry, assigned to exported fields.
 		var pluginMgr service.PluginManager
@@ -400,14 +400,14 @@ Examples:
 				} else {
 					if cfg.Bucket_Media != "" {
 						if bErr := bucket.EnsureBucket(s3Session, cfg.Bucket_Media); bErr != nil {
-							utility.DefaultLogger.Warn("Failed to ensure media bucket", bErr, "bucket", cfg.Bucket_Media)
+							utility.DefaultLogger.Warn("failed to ensure media bucket", bErr, "bucket", cfg.Bucket_Media)
 						} else if pErr := bucket.SetPublicReadPolicy(s3Session, cfg.Bucket_Media); pErr != nil {
-							utility.DefaultLogger.Warn("Failed to set public-read policy on media bucket", pErr, "bucket", cfg.Bucket_Media)
+							utility.DefaultLogger.Warn("failed to set public-read policy on media bucket", pErr, "bucket", cfg.Bucket_Media)
 						}
 					}
 					if cfg.Bucket_Backup != "" {
 						if bErr := bucket.EnsureBucket(s3Session, cfg.Bucket_Backup); bErr != nil {
-							utility.DefaultLogger.Warn("Failed to ensure backup bucket", bErr, "bucket", cfg.Bucket_Backup)
+							utility.DefaultLogger.Warn("failed to ensure backup bucket", bErr, "bucket", cfg.Bucket_Backup)
 						}
 					}
 				}
@@ -526,8 +526,8 @@ Examples:
 				pluginAPITokenID = tokenID
 				pluginAPITokenPath = tokenPath
 				tokenMu.Unlock()
-				utility.DefaultLogger.Info("Plugin API token written", "path", tokenPath)
-				utility.DefaultLogger.Debug("Plugin API token written to disk", "path", tokenPath, "type", "plugin_api_key", "expires", "24h", "user", "system")
+				utility.DefaultLogger.Info("plugin API token written", "path", tokenPath)
+				utility.DefaultLogger.Debug("plugin API token written to disk", "path", tokenPath, "type", "plugin_api_key", "expires", "24h", "user", "system")
 			}
 		}
 
@@ -537,14 +537,14 @@ Examples:
 			go func() {
 				select {
 				case <-dbReadyCh:
-					utility.DefaultLogger.Info("Database is alive — the TUI worked its magic, reloading permissions...")
+					utility.DefaultLogger.Info("database is alive — the TUI worked its magic, reloading permissions...")
 					utility.DefaultLogger.Debug("DB initialized via SSH TUI session, reloading PermissionCache from freshly bootstrapped role_permissions table")
 					if pcErr := pc.Load(driver); pcErr != nil {
-						utility.DefaultLogger.Error("Permission cache reload after DB init failed", pcErr)
+						utility.DefaultLogger.Error("permission cache reload after DB init failed", pcErr)
 						return
 					}
-					utility.DefaultLogger.Info("Bouncer updated, swapping in the real deal")
-					utility.DefaultLogger.Debug("PermissionCache reloaded, handlerSwap atomically replaced placeholder with full router + middleware stack")
+					utility.DefaultLogger.Info("bouncer updated, swapping in the real deal")
+					utility.DefaultLogger.Debug("permissionCache reloaded, handlerSwap atomically replaced placeholder with full router + middleware stack")
 					pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
 					handler.set(buildRealHandler())
 					publishInterval := time.Duration(cfg.PublishScheduleInterval()) * time.Second
@@ -559,8 +559,8 @@ Examples:
 							pluginAPITokenID = tokenID
 							pluginAPITokenPath = tokenPath
 							tokenMu.Unlock()
-							utility.DefaultLogger.Info("Plugin API token written", "path", tokenPath)
-							utility.DefaultLogger.Debug("Plugin API token written to disk", "path", tokenPath, "type", "plugin_api_key", "expires", "24h", "user", "system")
+							utility.DefaultLogger.Info("plugin API token written", "path", tokenPath)
+							utility.DefaultLogger.Debug("plugin API token written to disk", "path", tokenPath, "type", "plugin_api_key", "expires", "24h", "user", "system")
 						}
 					}
 				case <-rootCtx.Done():
@@ -572,12 +572,12 @@ Examples:
 		var restarting bool
 		select {
 		case <-done:
-			utility.DefaultLogger.Info("Last call — shutting it all down...")
-			utility.DefaultLogger.Debug("Main goroutine received shutdown signal, cancelling root context, starting 30s graceful shutdown deadline")
+			utility.DefaultLogger.Info("shutting down servers")
+			utility.DefaultLogger.Debug("main goroutine received shutdown signal, cancelling root context, starting 30s graceful shutdown deadline")
 		case <-restartCh:
 			restarting = true
-			utility.DefaultLogger.Info("Restart requested — draining connections before re-exec...")
-			utility.DefaultLogger.Debug("Restart signal received from admin panel, performing graceful shutdown then syscall.Exec")
+			utility.DefaultLogger.Info("restart requested — draining connections before re-exec...")
+			utility.DefaultLogger.Debug("restart signal received from admin panel, performing graceful shutdown then syscall.Exec")
 		}
 
 		rootCancel()
@@ -642,8 +642,8 @@ Examples:
 			pluginManager.Shutdown(shutdownCtx)
 		}
 
-		utility.DefaultLogger.Info("And that's a wrap. See you next time!")
-		utility.DefaultLogger.Debug("Graceful shutdown complete — HTTP drained, HTTPS drained, SSH closed, plugin subsystems shut down, database pools released")
+		utility.DefaultLogger.Info("shutdown complete")
+		utility.DefaultLogger.Debug("graceful shutdown complete — HTTP drained, HTTPS drained, SSH closed, plugin subsystems shut down, database pools released")
 
 		if restarting {
 			if err := execSelf(); err != nil {

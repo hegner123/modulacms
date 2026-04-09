@@ -61,7 +61,7 @@ func verifyPassword(w http.ResponseWriter, r *http.Request, svc *service.Registr
 
 	fullUser, err := svc.Driver().GetUser(user.UserID)
 	if err != nil || fullUser == nil {
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to verify identity", "type": "error"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to verify identity", "type": "error"}}`)
 		w.WriteHeader(http.StatusInternalServerError)
 		return false
 	}
@@ -107,7 +107,7 @@ func TableCreateHandler(svc *service.Registry) http.HandlerFunc {
 		})
 		if createErr != nil {
 			utility.DefaultLogger.Error("failed to create table", createErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create table", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to create table", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -152,7 +152,7 @@ func TableUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		})
 		if updateErr != nil {
 			utility.DefaultLogger.Error("failed to update table", updateErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to update table", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to update table", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -197,7 +197,7 @@ func TableDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		deleteErr := svc.Driver().DeleteTable(r.Context(), ac, id)
 		if deleteErr != nil {
 			utility.DefaultLogger.Error("failed to delete table", deleteErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete table", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete table", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -212,7 +212,7 @@ func renderTablesTableRows(w http.ResponseWriter, r *http.Request, svc *service.
 	list, listErr := svc.Driver().ListTables()
 	if listErr != nil {
 		utility.DefaultLogger.Error("failed to list tables after mutation", listErr)
-		http.Error(w, "Failed to reload tables", http.StatusInternalServerError)
+		http.Error(w, "failed to reload tables", http.StatusInternalServerError)
 		return
 	}
 

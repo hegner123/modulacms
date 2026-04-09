@@ -36,7 +36,7 @@ func registerRouteTools(srv *server.MCPServer, backend RouteBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_route",
-			mcp.WithDescription("Update a route by ID."),
+			mcp.WithDescription("update a route by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Route ID (ULID)")),
 			mcp.WithString("slug", mcp.Required(), mcp.Description("URL slug")),
 			mcp.WithString("title", mcp.Required(), mcp.Description("Route title")),

@@ -78,7 +78,7 @@ func (d *Dispatcher) Start(ctx context.Context) {
 		}
 	}()
 
-	utility.DefaultLogger.Info("Webhook dispatcher started", "workers", workers)
+	utility.DefaultLogger.Info("webhook dispatcher started", "workers", workers)
 }
 
 // Shutdown stops the dispatcher. In-flight deliveries are allowed to complete
@@ -94,9 +94,9 @@ func (d *Dispatcher) Shutdown() {
 
 	select {
 	case <-shutdownDone:
-		utility.DefaultLogger.Info("Webhook dispatcher shut down cleanly")
+		utility.DefaultLogger.Info("webhook dispatcher shut down cleanly")
 	case <-time.After(10 * time.Second):
-		utility.DefaultLogger.Warn("Webhook dispatcher shutdown timed out after 10s", nil)
+		utility.DefaultLogger.Warn("webhook dispatcher shutdown timed out after 10s", nil)
 	}
 }
 
@@ -107,15 +107,15 @@ func (d *Dispatcher) Dispatch(ctx context.Context, event string, data map[string
 		return
 	}
 
-	utility.DefaultLogger.Info("Webhook event triggered", "event", event)
+	utility.DefaultLogger.Info("webhook event triggered", "event", event)
 
 	webhooks, err := d.driver.ListActiveWebhooks()
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to list active webhooks", err)
+		utility.DefaultLogger.Error("failed to list active webhooks", err)
 		return
 	}
 	if webhooks == nil {
-		utility.DefaultLogger.Debug("No active webhooks registered", "event", event)
+		utility.DefaultLogger.Debug("no active webhooks registered", "event", event)
 		return
 	}
 
@@ -126,7 +126,7 @@ func (d *Dispatcher) Dispatch(ctx context.Context, event string, data map[string
 		Data:       data,
 	})
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to marshal webhook payload", err)
+		utility.DefaultLogger.Error("failed to marshal webhook payload", err)
 		return
 	}
 
@@ -146,22 +146,22 @@ func (d *Dispatcher) Dispatch(ctx context.Context, event string, data map[string
 			CreatedAt: types.TimestampNow(),
 		})
 		if createErr != nil {
-			utility.DefaultLogger.Error("Failed to create webhook delivery", createErr, "webhook_id", wh.WebhookID)
+			utility.DefaultLogger.Error("failed to create webhook delivery", createErr, "webhook_id", wh.WebhookID)
 			continue
 		}
 
-		utility.DefaultLogger.Info("Webhook delivery enqueued", "event", event, "webhook_id", wh.WebhookID, "delivery_id", delivery.DeliveryID, "url", wh.URL)
+		utility.DefaultLogger.Info("webhook delivery enqueued", "event", event, "webhook_id", wh.WebhookID, "delivery_id", delivery.DeliveryID, "url", wh.URL)
 
 		// Non-blocking send — if the channel is full, the retry processor will pick it up.
 		select {
 		case d.ch <- dispatchJob{delivery: *delivery, webhook: wh}:
 		default:
-			utility.DefaultLogger.Warn("Webhook dispatch channel full, delivery will be retried", nil, "delivery_id", delivery.DeliveryID)
+			utility.DefaultLogger.Warn("webhook dispatch channel full, delivery will be retried", nil, "delivery_id", delivery.DeliveryID)
 		}
 	}
 
 	if matched == 0 {
-		utility.DefaultLogger.Debug("No webhooks matched event", "event", event, "total_webhooks", len(*webhooks))
+		utility.DefaultLogger.Debug("no webhooks matched event", "event", event, "total_webhooks", len(*webhooks))
 	}
 }
 
@@ -174,28 +174,28 @@ func (d *Dispatcher) ProcessRetries(ctx context.Context) {
 
 	deliveries, err := d.driver.ListPendingRetries(types.TimestampNow(), 100)
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to list pending retries", err)
+		utility.DefaultLogger.Error("failed to list pending retries", err)
 		return
 	}
 	if deliveries == nil {
 		return
 	}
 
-	utility.DefaultLogger.Info("Processing webhook retries", "count", len(*deliveries))
+	utility.DefaultLogger.Info("processing webhook retries", "count", len(*deliveries))
 
 	for _, del := range *deliveries {
 		wh, whErr := d.driver.GetWebhook(del.WebhookID)
 		if whErr != nil {
-			utility.DefaultLogger.Error("Failed to get webhook for retry", whErr, "webhook_id", del.WebhookID)
+			utility.DefaultLogger.Error("failed to get webhook for retry", whErr, "webhook_id", del.WebhookID)
 			continue
 		}
 
-		utility.DefaultLogger.Info("Retrying webhook delivery", "event", del.Event, "webhook_id", del.WebhookID, "delivery_id", del.DeliveryID, "attempt", del.Attempts+1)
+		utility.DefaultLogger.Info("retrying webhook delivery", "event", del.Event, "webhook_id", del.WebhookID, "delivery_id", del.DeliveryID, "attempt", del.Attempts+1)
 
 		select {
 		case d.ch <- dispatchJob{delivery: del, webhook: *wh}:
 		default:
-			utility.DefaultLogger.Warn("Webhook dispatch channel full during retry", nil, "delivery_id", del.DeliveryID)
+			utility.DefaultLogger.Warn("webhook dispatch channel full during retry", nil, "delivery_id", del.DeliveryID)
 		}
 	}
 }
@@ -255,7 +255,7 @@ func (d *Dispatcher) deliver(ctx context.Context, job dispatchJob) {
 	resp.Body.Close()
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		utility.DefaultLogger.Info("Webhook delivered successfully", "event", del.Event, "webhook_id", wh.WebhookID, "delivery_id", del.DeliveryID, "url", wh.URL, "status_code", resp.StatusCode)
+		utility.DefaultLogger.Info("webhook delivered successfully", "event", del.Event, "webhook_id", wh.WebhookID, "delivery_id", del.DeliveryID, "url", wh.URL, "status_code", resp.StatusCode)
 		now := time.Now().UTC().Format(time.RFC3339)
 		updateErr := d.driver.UpdateWebhookDeliveryStatus(ctx, db.UpdateWebhookDeliveryStatusParams{
 			Status:         db.DeliveryStatusSuccess,
@@ -265,12 +265,12 @@ func (d *Dispatcher) deliver(ctx context.Context, job dispatchJob) {
 			DeliveryID:     del.DeliveryID,
 		})
 		if updateErr != nil {
-			utility.DefaultLogger.Error("Failed to update delivery status to success", updateErr, "delivery_id", del.DeliveryID)
+			utility.DefaultLogger.Error("failed to update delivery status to success", updateErr, "delivery_id", del.DeliveryID)
 		}
 		return
 	}
 
-	utility.DefaultLogger.Warn("Webhook delivery failed", nil, "event", del.Event, "webhook_id", wh.WebhookID, "delivery_id", del.DeliveryID, "url", wh.URL, "status_code", resp.StatusCode)
+	utility.DefaultLogger.Warn("webhook delivery failed", nil, "event", del.Event, "webhook_id", wh.WebhookID, "delivery_id", del.DeliveryID, "url", wh.URL, "status_code", resp.StatusCode)
 	d.handleFailure(ctx, del, int64(resp.StatusCode), fmt.Sprintf("HTTP %d", resp.StatusCode))
 }
 
@@ -301,7 +301,7 @@ func (d *Dispatcher) handleFailure(ctx context.Context, del db.WebhookDelivery, 
 			DeliveryID:     del.DeliveryID,
 		})
 		if updateErr != nil {
-			utility.DefaultLogger.Error("Failed to update delivery for retry", updateErr, "delivery_id", del.DeliveryID)
+			utility.DefaultLogger.Error("failed to update delivery for retry", updateErr, "delivery_id", del.DeliveryID)
 		}
 		return
 	}
@@ -321,7 +321,7 @@ func (d *Dispatcher) failDelivery(ctx context.Context, del db.WebhookDelivery, s
 		DeliveryID:     del.DeliveryID,
 	})
 	if updateErr != nil {
-		utility.DefaultLogger.Error("Failed to update delivery status to failed", updateErr, "delivery_id", del.DeliveryID)
+		utility.DefaultLogger.Error("failed to update delivery status to failed", updateErr, "delivery_id", del.DeliveryID)
 	}
 }
 

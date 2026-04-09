@@ -1532,19 +1532,19 @@ func TestDatatypeCommand_RecorderIdentity(t *testing.T) {
 func TestUpdateDatatype_SuccessMessageFormat(t *testing.T) {
 	t.Parallel()
 	label := "Blog Post"
-	expected := fmt.Sprintf("Successfully updated %v\n", label)
+	expected := fmt.Sprintf("successfully updated %v\n", label)
 
-	if expected != "Successfully updated Blog Post\n" {
-		t.Errorf("message = %q, want %q", expected, "Successfully updated Blog Post\n")
+	if expected != "successfully updated Blog Post\n" {
+		t.Errorf("message = %q, want %q", expected, "successfully updated Blog Post\n")
 	}
 }
 
 func TestUpdateDatatype_SuccessMessageFormat_EmptyLabel(t *testing.T) {
 	t.Parallel()
 	// Edge case: empty label still produces a valid format string
-	expected := fmt.Sprintf("Successfully updated %v\n", "")
-	if expected != "Successfully updated \n" {
-		t.Errorf("message = %q, want %q", expected, "Successfully updated \n")
+	expected := fmt.Sprintf("successfully updated %v\n", "")
+	if expected != "successfully updated \n" {
+		t.Errorf("message = %q, want %q", expected, "successfully updated \n")
 	}
 }
 

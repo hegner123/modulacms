@@ -133,7 +133,7 @@ func (s *DeployScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		s.OperationActive = false
 		s.LastHealth = msg.Health
 		if msg.Health.Err != "" {
-			s.StatusMessage = fmt.Sprintf("Connection failed: %s", msg.Health.Err)
+			s.StatusMessage = fmt.Sprintf("connection failed: %s", msg.Health.Err)
 		} else {
 			s.StatusMessage = fmt.Sprintf("Connected to %s (v%s)", msg.Health.EnvName, msg.Health.Version)
 		}
@@ -150,20 +150,20 @@ func (s *DeployScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		if msg.DryRun {
 			opLabel = "dry-run pull"
 		}
-		s.StatusMessage = fmt.Sprintf("Running %s from %s...", opLabel, msg.EnvName)
+		s.StatusMessage = fmt.Sprintf("running %s from %s...", opLabel, msg.EnvName)
 		return s, nil
 
 	case DeployPullResultMsg:
 		s.OperationActive = false
 		if msg.Err != "" {
-			s.StatusMessage = fmt.Sprintf("Pull failed: %s", msg.Err)
+			s.StatusMessage = fmt.Sprintf("pull failed: %s", msg.Err)
 			if msg.Result != nil {
 				s.LastResult = msg.Result
 				s.LastResult.Errors = append(s.LastResult.Errors, msg.Err)
 			}
 		} else {
 			s.LastResult = msg.Result
-			s.StatusMessage = fmt.Sprintf("Pull completed: %d tables", len(msg.Result.TablesAffected))
+			s.StatusMessage = fmt.Sprintf("pull completed: %d tables", len(msg.Result.TablesAffected))
 		}
 		return s, nil
 
@@ -173,20 +173,20 @@ func (s *DeployScreen) Update(ctx AppContext, msg tea.Msg) (Screen, tea.Cmd) {
 		if msg.DryRun {
 			opLabel = "dry-run push"
 		}
-		s.StatusMessage = fmt.Sprintf("Running %s to %s...", opLabel, msg.EnvName)
+		s.StatusMessage = fmt.Sprintf("running %s to %s...", opLabel, msg.EnvName)
 		return s, nil
 
 	case DeployPushResultMsg:
 		s.OperationActive = false
 		if msg.Err != "" {
-			s.StatusMessage = fmt.Sprintf("Push failed: %s", msg.Err)
+			s.StatusMessage = fmt.Sprintf("push failed: %s", msg.Err)
 			if msg.Result != nil {
 				s.LastResult = msg.Result
 				s.LastResult.Errors = append(s.LastResult.Errors, msg.Err)
 			}
 		} else {
 			s.LastResult = msg.Result
-			s.StatusMessage = fmt.Sprintf("Push completed: %d tables", len(msg.Result.TablesAffected))
+			s.StatusMessage = fmt.Sprintf("push completed: %d tables", len(msg.Result.TablesAffected))
 		}
 		return s, nil
 	}

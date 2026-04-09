@@ -52,21 +52,21 @@ func CategoryLabel(c FieldCategory) string {
 	case CategoryServer:
 		return "Server Settings"
 	case CategoryDatabase:
-		return "Database Settings"
+		return "database Settings"
 	case CategoryStorage:
 		return "Storage (S3) Settings"
 	case CategoryCORS:
 		return "CORS Settings"
 	case CategoryCookie:
-		return "Cookie Settings"
+		return "cookie Settings"
 	case CategoryOAuth:
 		return "OAuth Settings"
 	case CategoryObservability:
-		return "Observability Settings"
+		return "observability Settings"
 	case CategoryEmail:
-		return "Email Settings"
+		return "email Settings"
 	case CategoryPlugin:
-		return "Plugin Settings"
+		return "plugin Settings"
 	case CategoryDeploy:
 		return "Deploy Settings"
 	case CategoryPublishing:
@@ -74,13 +74,13 @@ func CategoryLabel(c FieldCategory) string {
 	case CategoryI18n:
 		return "Internationalization"
 	case CategoryWebhook:
-		return "Webhook Settings"
+		return "webhook Settings"
 	case CategorySearch:
-		return "Search Settings"
+		return "search Settings"
 	case CategoryMCP:
 		return "MCP Settings"
 	case CategoryUpdate:
-		return "Update Settings"
+		return "update Settings"
 	case CategoryMisc:
 		return "Misc Settings"
 	default:
@@ -107,12 +107,12 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "os", Label: "Operating System", Category: CategoryServer, HotReloadable: false, Description: "Target OS", Example: "linux"},
 	{JSONKey: "port", Label: "HTTP Port", Category: CategoryServer, HotReloadable: false, Required: true, Description: "HTTP listen address (e.g. :8080)", Example: ":8080"},
 	{JSONKey: "ssl_port", Label: "HTTPS Port", Category: CategoryServer, HotReloadable: false, Description: "HTTPS listen address (e.g. :4000)", Example: ":4000"},
-	{JSONKey: "cert_dir", Label: "Certificate Directory", Category: CategoryServer, HotReloadable: false, Description: "Path to TLS certificate directory", Example: "/etc/modula/certs"},
+	{JSONKey: "cert_dir", Label: "certificate Directory", Category: CategoryServer, HotReloadable: false, Description: "Path to TLS certificate directory", Example: "/etc/modula/certs"},
 	{JSONKey: "ssh_host", Label: "SSH Host", Category: CategoryServer, HotReloadable: false, Description: "SSH server bind host", Example: "0.0.0.0"},
 	{JSONKey: "ssh_port", Label: "SSH Port", Category: CategoryServer, HotReloadable: false, Required: true, Description: "SSH server port", Example: "2222"},
 	{JSONKey: "client_site", Label: "Client Site", Category: CategoryServer, HotReloadable: true, Description: "Client site hostname", Example: "www.example.com"},
 	{JSONKey: "admin_site", Label: "Admin Site", Category: CategoryServer, HotReloadable: true, Description: "Admin site hostname", Example: "admin.example.com"},
-	{JSONKey: "log_path", Label: "Log Path", Category: CategoryServer, HotReloadable: true, Description: "Path for log files", Example: "/var/log/modula"},
+	{JSONKey: "log_path", Label: "log Path", Category: CategoryServer, HotReloadable: true, Description: "Path for log files", Example: "/var/log/modula"},
 	{JSONKey: "auth_salt", Label: "Auth Salt", Category: CategoryServer, HotReloadable: false, Sensitive: true, Description: "Salt for password hashing", Example: "a-random-32-char-string"},
 	{JSONKey: "node_id", Label: "Node ID", Category: CategoryServer, HotReloadable: false, Description: "Unique node identifier (ULID)", Example: "01HY5N3K0G1JQXKM8V7Z4R6W9T"},
 	{JSONKey: "space_id", Label: "Space ID", Category: CategoryServer, HotReloadable: false, Description: "Space identifier", Example: "my-space"},
@@ -121,29 +121,29 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "max_upload_size", Label: "Max Upload Size", Category: CategoryServer, HotReloadable: true, Description: "Maximum file upload size in bytes", Example: "10485760"},
 
 	// Remote
-	{JSONKey: "remote_url", Label: "Remote URL", Category: CategoryServer, HotReloadable: false, Description: "Base URL of remote ModulaCMS instance (mutually exclusive with db_driver)", Example: "https://cms.example.com"},
+	{JSONKey: "remote_url", Label: "Remote URL", Category: CategoryServer, HotReloadable: false, Description: "base URL of remote ModulaCMS instance (mutually exclusive with db_driver)", Example: "https://cms.example.com"},
 	{JSONKey: "remote_api_key", Label: "Remote API Key", Category: CategoryServer, HotReloadable: false, Sensitive: true, Description: "API key for remote instance authentication", Example: "api-key-here"},
 
 	// Database
-	{JSONKey: "db_driver", Label: "DB Driver", Category: CategoryDatabase, HotReloadable: false, Required: true, Description: "Database driver (sqlite, mysql, postgres)", Example: "sqlite"},
-	{JSONKey: "db_url", Label: "DB URL", Category: CategoryDatabase, HotReloadable: false, Required: true, Description: "Database connection URL", Example: "./modula.db"},
-	{JSONKey: "db_name", Label: "DB Name", Category: CategoryDatabase, HotReloadable: false, Description: "Database name", Example: "modula"},
-	{JSONKey: "db_username", Label: "DB Username", Category: CategoryDatabase, HotReloadable: false, Description: "Database username", Example: "modula"},
-	{JSONKey: "db_password", Label: "DB Password", Category: CategoryDatabase, HotReloadable: false, Sensitive: true, Description: "Database password", Example: "secret"},
+	{JSONKey: "db_driver", Label: "DB Driver", Category: CategoryDatabase, HotReloadable: false, Required: true, Description: "database driver (sqlite, mysql, postgres)", Example: "sqlite"},
+	{JSONKey: "db_url", Label: "DB URL", Category: CategoryDatabase, HotReloadable: false, Required: true, Description: "database connection URL", Example: "./modula.db"},
+	{JSONKey: "db_name", Label: "DB Name", Category: CategoryDatabase, HotReloadable: false, Description: "database name", Example: "modula"},
+	{JSONKey: "db_username", Label: "DB Username", Category: CategoryDatabase, HotReloadable: false, Description: "database username", Example: "modula"},
+	{JSONKey: "db_password", Label: "DB Password", Category: CategoryDatabase, HotReloadable: false, Sensitive: true, Description: "database password", Example: "secret"},
 
 	// Storage (S3)
-	{JSONKey: "bucket_region", Label: "Bucket Region", Category: CategoryStorage, HotReloadable: true, Description: "S3 bucket region", Example: "us-east-1"},
+	{JSONKey: "bucket_region", Label: "bucket Region", Category: CategoryStorage, HotReloadable: true, Description: "S3 bucket region", Example: "us-east-1"},
 	{JSONKey: "bucket_media", Label: "Media Bucket", Category: CategoryStorage, HotReloadable: true, Description: "S3 bucket name for media", Example: "mysite-media"},
-	{JSONKey: "bucket_backup", Label: "Backup Bucket", Category: CategoryStorage, HotReloadable: true, Description: "S3 bucket name for backups", Example: "mysite-backups"},
-	{JSONKey: "bucket_endpoint", Label: "Bucket Endpoint", Category: CategoryStorage, HotReloadable: true, Description: "S3-compatible endpoint (without scheme)", Example: "s3.amazonaws.com"},
-	{JSONKey: "bucket_access_key", Label: "Bucket Access Key", Category: CategoryStorage, HotReloadable: true, Sensitive: true, Description: "S3 access key", Example: "AKIAIOSFODNN7EXAMPLE"},
-	{JSONKey: "bucket_secret_key", Label: "Bucket Secret Key", Category: CategoryStorage, HotReloadable: true, Sensitive: true, Description: "S3 secret key", Example: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"},
-	{JSONKey: "bucket_public_url", Label: "Bucket Public URL", Category: CategoryStorage, HotReloadable: true, Description: "Public-facing URL for media assets", Example: "https://cdn.example.com"},
-	{JSONKey: "bucket_default_acl", Label: "Bucket Default ACL", Category: CategoryStorage, HotReloadable: true, Description: "Default ACL for uploaded objects", Example: "public-read"},
+	{JSONKey: "bucket_backup", Label: "backup Bucket", Category: CategoryStorage, HotReloadable: true, Description: "S3 bucket name for backups", Example: "mysite-backups"},
+	{JSONKey: "bucket_endpoint", Label: "bucket Endpoint", Category: CategoryStorage, HotReloadable: true, Description: "S3-compatible endpoint (without scheme)", Example: "s3.amazonaws.com"},
+	{JSONKey: "bucket_access_key", Label: "bucket Access Key", Category: CategoryStorage, HotReloadable: true, Sensitive: true, Description: "S3 access key", Example: "AKIAIOSFODNN7EXAMPLE"},
+	{JSONKey: "bucket_secret_key", Label: "bucket Secret Key", Category: CategoryStorage, HotReloadable: true, Sensitive: true, Description: "S3 secret key", Example: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"},
+	{JSONKey: "bucket_public_url", Label: "bucket Public URL", Category: CategoryStorage, HotReloadable: true, Description: "Public-facing URL for media assets", Example: "https://cdn.example.com"},
+	{JSONKey: "bucket_default_acl", Label: "bucket Default ACL", Category: CategoryStorage, HotReloadable: true, Description: "Default ACL for uploaded objects", Example: "public-read"},
 	{JSONKey: "bucket_force_path_style", Label: "Force Path Style", Category: CategoryStorage, HotReloadable: true, Description: "Use path-style S3 URLs", Example: "true"},
 	{JSONKey: "bucket_force_http", Label: "Force HTTP", Category: CategoryStorage, HotReloadable: true, Description: "Use HTTP instead of HTTPS for bucket connections (for co-located S3 on same network)", Example: "true"},
-	{JSONKey: "backup_option", Label: "Backup Option", Category: CategoryStorage, HotReloadable: true, Description: "Backup storage location", Example: "s3"},
-	{JSONKey: "backup_paths", Label: "Backup Paths", Category: CategoryStorage, HotReloadable: true, Description: "Additional backup paths", Example: "/var/backups/modula"},
+	{JSONKey: "backup_option", Label: "backup Option", Category: CategoryStorage, HotReloadable: true, Description: "backup storage location", Example: "s3"},
+	{JSONKey: "backup_paths", Label: "backup Paths", Category: CategoryStorage, HotReloadable: true, Description: "Additional backup paths", Example: "/var/backups/modula"},
 
 	// CORS
 	{JSONKey: "cors_origins", Label: "Allowed Origins", Category: CategoryCORS, HotReloadable: true, Description: "CORS allowed origins", Example: "https://example.com,https://admin.example.com"},
@@ -152,10 +152,10 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "cors_credentials", Label: "Allow Credentials", Category: CategoryCORS, HotReloadable: true, Description: "Allow credentials in CORS requests", Example: "true"},
 
 	// Cookie
-	{JSONKey: "cookie_name", Label: "Cookie Name", Category: CategoryCookie, HotReloadable: true, Description: "Authentication cookie name", Example: "modula_session"},
-	{JSONKey: "cookie_duration", Label: "Cookie Duration", Category: CategoryCookie, HotReloadable: true, Description: "Cookie lifetime (e.g. 1w, 24h)", Example: "1w"},
-	{JSONKey: "cookie_secure", Label: "Cookie Secure", Category: CategoryCookie, HotReloadable: true, Description: "Set Secure flag on cookies", Example: "true"},
-	{JSONKey: "cookie_samesite", Label: "Cookie SameSite", Category: CategoryCookie, HotReloadable: true, Description: "SameSite policy (strict, lax, none)", Example: "lax"},
+	{JSONKey: "cookie_name", Label: "cookie Name", Category: CategoryCookie, HotReloadable: true, Description: "Authentication cookie name", Example: "modula_session"},
+	{JSONKey: "cookie_duration", Label: "cookie Duration", Category: CategoryCookie, HotReloadable: true, Description: "cookie lifetime (e.g. 1w, 24h)", Example: "1w"},
+	{JSONKey: "cookie_secure", Label: "cookie Secure", Category: CategoryCookie, HotReloadable: true, Description: "set Secure flag on cookies", Example: "true"},
+	{JSONKey: "cookie_samesite", Label: "cookie SameSite", Category: CategoryCookie, HotReloadable: true, Description: "SameSite policy (strict, lax, none)", Example: "lax"},
 
 	// OAuth
 	{JSONKey: "oauth_client_id", Label: "OAuth Client ID", Category: CategoryOAuth, HotReloadable: true, Sensitive: true, Description: "OAuth client ID", Example: "123456789.apps.googleusercontent.com"},
@@ -167,9 +167,9 @@ var FieldRegistry = []FieldMeta{
 
 	// Observability
 	{JSONKey: "observability_enabled", Label: "Enabled", Category: CategoryObservability, HotReloadable: true, Description: "Enable observability", Example: "true"},
-	{JSONKey: "observability_provider", Label: "Provider", Category: CategoryObservability, HotReloadable: true, Description: "Observability provider (sentry, datadog, etc.)", Example: "sentry"},
-	{JSONKey: "observability_dsn", Label: "DSN", Category: CategoryObservability, HotReloadable: true, Sensitive: true, Description: "Connection string / DSN", Example: "https://key@sentry.io/12345"},
-	{JSONKey: "observability_environment", Label: "Environment", Category: CategoryObservability, HotReloadable: true, Description: "Observability environment label", Example: "production"},
+	{JSONKey: "observability_provider", Label: "Provider", Category: CategoryObservability, HotReloadable: true, Description: "observability provider (sentry, datadog, etc.)", Example: "sentry"},
+	{JSONKey: "observability_dsn", Label: "DSN", Category: CategoryObservability, HotReloadable: true, Sensitive: true, Description: "connection string / DSN", Example: "https://key@sentry.io/12345"},
+	{JSONKey: "observability_environment", Label: "Environment", Category: CategoryObservability, HotReloadable: true, Description: "observability environment label", Example: "production"},
 	{JSONKey: "observability_release", Label: "Release", Category: CategoryObservability, HotReloadable: true, Description: "Version / release identifier", Example: "v1.2.3"},
 	{JSONKey: "observability_sample_rate", Label: "Sample Rate", Category: CategoryObservability, HotReloadable: true, Description: "Event sample rate (0.0–1.0)", Example: "1.0"},
 	{JSONKey: "observability_traces_rate", Label: "Traces Rate", Category: CategoryObservability, HotReloadable: true, Description: "Trace sample rate (0.0–1.0)", Example: "0.2"},
@@ -179,8 +179,8 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "observability_flush_interval", Label: "Flush Interval", Category: CategoryObservability, HotReloadable: true, Description: "Metrics flush interval (e.g. 30s)", Example: "30s"},
 
 	// Email
-	{JSONKey: "email_enabled", Label: "Email Enabled", Category: CategoryEmail, HotReloadable: true, Description: "Enable email sending", Example: "true"},
-	{JSONKey: "email_provider", Label: "Email Provider", Category: CategoryEmail, HotReloadable: true, Description: "Email provider (smtp, sendgrid, ses, postmark)", Example: "smtp"},
+	{JSONKey: "email_enabled", Label: "email Enabled", Category: CategoryEmail, HotReloadable: true, Description: "Enable email sending", Example: "true"},
+	{JSONKey: "email_provider", Label: "email Provider", Category: CategoryEmail, HotReloadable: true, Description: "email provider (smtp, sendgrid, ses, postmark)", Example: "smtp"},
 	{JSONKey: "email_from_address", Label: "From Address", Category: CategoryEmail, HotReloadable: true, Description: "Sender email address", Example: "noreply@example.com"},
 	{JSONKey: "email_from_name", Label: "From Name", Category: CategoryEmail, HotReloadable: true, Description: "Sender display name", Example: "Modula"},
 	{JSONKey: "email_host", Label: "SMTP Host", Category: CategoryEmail, HotReloadable: true, Description: "SMTP server hostname", Example: "smtp.gmail.com"},
@@ -196,10 +196,10 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "password_reset_url", Label: "Password Reset URL", Category: CategoryEmail, HotReloadable: true, Description: "URL template for password reset links in emails", Example: "https://admin.example.com/reset-password"},
 
 	// Plugin — Core
-	{JSONKey: "plugin_enabled", Label: "Plugin Enabled", Category: CategoryPlugin, HotReloadable: false, Description: "Enable plugin system", Example: "true"},
-	{JSONKey: "plugin_directory", Label: "Plugin Directory", Category: CategoryPlugin, HotReloadable: false, Description: "Path to plugins directory", Example: "./plugins"},
+	{JSONKey: "plugin_enabled", Label: "plugin Enabled", Category: CategoryPlugin, HotReloadable: false, Description: "Enable plugin system", Example: "true"},
+	{JSONKey: "plugin_directory", Label: "plugin Directory", Category: CategoryPlugin, HotReloadable: false, Description: "Path to plugins directory", Example: "./plugins"},
 	{JSONKey: "plugin_max_vms", Label: "Max VMs", Category: CategoryPlugin, HotReloadable: true, Description: "Max Lua VMs per plugin", Example: "4"},
-	{JSONKey: "plugin_timeout", Label: "Timeout (s)", Category: CategoryPlugin, HotReloadable: true, Description: "Plugin execution timeout in seconds", Example: "5"},
+	{JSONKey: "plugin_timeout", Label: "Timeout (s)", Category: CategoryPlugin, HotReloadable: true, Description: "plugin execution timeout in seconds", Example: "5"},
 	{JSONKey: "plugin_max_ops", Label: "Max Ops", Category: CategoryPlugin, HotReloadable: true, Description: "Max operations per VM checkout", Example: "1000"},
 	{JSONKey: "plugin_hot_reload", Label: "Hot Reload", Category: CategoryPlugin, HotReloadable: false, Description: "Enable plugin hot reload (file watcher)", Example: "true"},
 	{JSONKey: "plugin_max_failures", Label: "Max Failures", Category: CategoryPlugin, HotReloadable: true, Description: "Circuit breaker failure threshold", Example: "5"},
@@ -207,7 +207,7 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "plugin_sync_interval", Label: "Sync Interval", Category: CategoryPlugin, HotReloadable: true, Description: "DB state poll interval for multi-instance sync (0 disables)", Example: "10s"},
 
 	// Plugin — HTTP
-	{JSONKey: "plugin_rate_limit", Label: "Rate Limit", Category: CategoryPlugin, HotReloadable: true, Description: "Plugin HTTP rate limit (req/sec/IP)", Example: "100"},
+	{JSONKey: "plugin_rate_limit", Label: "Rate Limit", Category: CategoryPlugin, HotReloadable: true, Description: "plugin HTTP rate limit (req/sec/IP)", Example: "100"},
 	{JSONKey: "plugin_max_routes", Label: "Max Routes", Category: CategoryPlugin, HotReloadable: true, Description: "Max HTTP routes per plugin", Example: "50"},
 	{JSONKey: "plugin_max_request_body", Label: "Max Request Body", Category: CategoryPlugin, HotReloadable: true, Description: "Max request body size (bytes)", Example: "1048576"},
 	{JSONKey: "plugin_max_response_body", Label: "Max Response Body", Category: CategoryPlugin, HotReloadable: true, Description: "Max response body size (bytes)", Example: "5242880"},
@@ -237,7 +237,7 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "plugin_request_allow_local", Label: "Request Allow Local", Category: CategoryPlugin, HotReloadable: true, Description: "Allow outbound HTTP to localhost (dev only)", Example: "false"},
 
 	// Deploy
-	{JSONKey: "deploy_snapshot_dir", Label: "Snapshot Directory", Category: CategoryDeploy, HotReloadable: true, Description: "Local directory for deploy snapshots", Example: "./deploy/snapshots"},
+	{JSONKey: "deploy_snapshot_dir", Label: "snapshot Directory", Category: CategoryDeploy, HotReloadable: true, Description: "Local directory for deploy snapshots", Example: "./deploy/snapshots"},
 
 	// Publishing
 	{JSONKey: "composition_max_depth", Label: "Composition Max Depth", Category: CategoryPublishing, HotReloadable: true, Description: "Max depth for recursive content tree composition", Example: "10"},
@@ -257,7 +257,7 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "webhook_delivery_retention_days", Label: "Delivery Retention (days)", Category: CategoryWebhook, HotReloadable: true, Description: "Days to retain delivery records", Example: "30"},
 
 	// Search
-	{JSONKey: "search_enabled", Label: "Search Enabled", Category: CategorySearch, HotReloadable: false, Description: "Enable built-in full-text search index", Example: "true"},
+	{JSONKey: "search_enabled", Label: "search Enabled", Category: CategorySearch, HotReloadable: false, Description: "Enable built-in full-text search index", Example: "true"},
 	{JSONKey: "search_path", Label: "Index Path", Category: CategorySearch, HotReloadable: false, Description: "File path for persisted search index", Example: "search.idx"},
 
 	// MCP
@@ -270,8 +270,8 @@ var FieldRegistry = []FieldMeta{
 
 	// Update
 	{JSONKey: "update_auto_enabled", Label: "Auto Update", Category: CategoryUpdate, HotReloadable: true, Description: "Enable automatic updates", Example: "true"},
-	{JSONKey: "update_check_interval", Label: "Check Interval", Category: CategoryUpdate, HotReloadable: true, Description: "Update check interval (e.g. startup, 24h)", Example: "24h"},
-	{JSONKey: "update_channel", Label: "Channel", Category: CategoryUpdate, HotReloadable: true, Description: "Update channel (stable, beta)", Example: "stable"},
+	{JSONKey: "update_check_interval", Label: "Check Interval", Category: CategoryUpdate, HotReloadable: true, Description: "update check interval (e.g. startup, 24h)", Example: "24h"},
+	{JSONKey: "update_channel", Label: "Channel", Category: CategoryUpdate, HotReloadable: true, Description: "update channel (stable, beta)", Example: "stable"},
 	{JSONKey: "update_notify_only", Label: "Notify Only", Category: CategoryUpdate, HotReloadable: true, Description: "Only notify about updates, don't auto-install", Example: "false"},
 }
 

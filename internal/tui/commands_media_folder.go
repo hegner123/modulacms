@@ -52,10 +52,10 @@ func (m Model) HandleCreateMediaFolder(msg CreateMediaFolderRequestMsg) tea.Cmd 
 
 		result, err := d.CreateMediaFolder(ctx, ac, params)
 		if err != nil {
-			logger.Ferror("Failed to create media folder", err)
+			logger.Ferror("failed to create media folder", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create folder: %v", err),
+				Message: fmt.Sprintf("failed to create folder: %v", err),
 			}
 		}
 
@@ -93,10 +93,10 @@ func (m Model) HandleRenameMediaFolder(msg RenameMediaFolderRequestMsg) tea.Cmd 
 		// Fetch existing folder to preserve all fields
 		existing, err := d.GetMediaFolder(msg.FolderID)
 		if err != nil {
-			logger.Ferror("Failed to get folder for rename", err)
+			logger.Ferror("failed to get folder for rename", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to get folder for rename: %v", err),
+				Message: fmt.Sprintf("failed to get folder for rename: %v", err),
 			}
 		}
 
@@ -117,10 +117,10 @@ func (m Model) HandleRenameMediaFolder(msg RenameMediaFolderRequestMsg) tea.Cmd 
 
 		_, err = d.UpdateMediaFolder(ctx, ac, params)
 		if err != nil {
-			logger.Ferror("Failed to rename media folder", err)
+			logger.Ferror("failed to rename media folder", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to rename folder: %v", err),
+				Message: fmt.Sprintf("failed to rename folder: %v", err),
 			}
 		}
 
@@ -159,10 +159,10 @@ func (m Model) HandleDeleteMediaFolder(msg DeleteMediaFolderRequestMsg) tea.Cmd 
 		// Check for child folders
 		children, err := d.ListMediaFoldersByParent(msg.FolderID)
 		if err != nil {
-			logger.Ferror("Failed to check folder children", err)
+			logger.Ferror("failed to check folder children", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to check folder contents: %v", err),
+				Message: fmt.Sprintf("failed to check folder contents: %v", err),
 			}
 		}
 		if children != nil && len(*children) > 0 {
@@ -175,10 +175,10 @@ func (m Model) HandleDeleteMediaFolder(msg DeleteMediaFolderRequestMsg) tea.Cmd 
 		// Check for media in folder
 		mediaCount, err := d.CountMediaByFolder(types.NullableMediaFolderID{ID: msg.FolderID, Valid: true})
 		if err != nil {
-			logger.Ferror("Failed to check folder media", err)
+			logger.Ferror("failed to check folder media", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to check folder contents: %v", err),
+				Message: fmt.Sprintf("failed to check folder contents: %v", err),
 			}
 		}
 		if mediaCount != nil && *mediaCount > 0 {
@@ -189,10 +189,10 @@ func (m Model) HandleDeleteMediaFolder(msg DeleteMediaFolderRequestMsg) tea.Cmd 
 		}
 
 		if err := d.DeleteMediaFolder(ctx, ac, msg.FolderID); err != nil {
-			logger.Ferror("Failed to delete media folder", err)
+			logger.Ferror("failed to delete media folder", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to delete folder: %v", err),
+				Message: fmt.Sprintf("failed to delete folder: %v", err),
 			}
 		}
 
@@ -231,10 +231,10 @@ func (m Model) HandleMoveMediaToFolder(msg MoveMediaToFolderRequestMsg) tea.Cmd 
 		}
 
 		if err := d.MoveMediaToFolder(ctx, ac, params); err != nil {
-			logger.Ferror("Failed to move media to folder", err)
+			logger.Ferror("failed to move media to folder", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to move media: %v", err),
+				Message: fmt.Sprintf("failed to move media: %v", err),
 			}
 		}
 

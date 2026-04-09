@@ -376,7 +376,7 @@ func (d UserFormDialogModel) Render(windowWidth, windowHeight int) string {
 			content.WriteString(selector)
 		}
 	} else {
-		content.WriteString(d.inputStyle.Width(innerW).Render("No roles available"))
+		content.WriteString(d.inputStyle.Width(innerW).Render("no roles available"))
 	}
 	content.WriteString("\n\n")
 

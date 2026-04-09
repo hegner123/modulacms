@@ -46,7 +46,7 @@ func (m Model) HandleMediaUpload(msg MediaUploadStartMsg) tea.Cmd {
 		filename := filepath.Base(msg.FilePath)
 		baseName := strings.TrimSuffix(filename, filepath.Ext(filename))
 
-		logger.Finfo(fmt.Sprintf("Starting media upload: %s", filename))
+		logger.Finfo(fmt.Sprintf("starting media upload: %s", filename))
 
 		// Remote mode: upload via SDK with progress channel
 		if isRemote {
@@ -108,20 +108,20 @@ func (m Model) HandleMediaUpload(msg MediaUploadStartMsg) tea.Cmd {
 		// Step 1: Create placeholder DB record
 		_, err := media.CreateMedia(baseName, *cfg)
 		if err != nil {
-			logger.Ferror("Failed to create media record", err)
+			logger.Ferror("failed to create media record", err)
 			return ActionResultMsg{
 				Title:   "Upload Error",
-				Message: fmt.Sprintf("Failed to create media record: %v", err),
+				Message: fmt.Sprintf("failed to create media record: %v", err),
 			}
 		}
 
 		// Step 2: Create temp directory for optimized files
 		tmpDir, err := os.MkdirTemp("", media.TempDirPrefix)
 		if err != nil {
-			logger.Ferror("Failed to create temp directory", err)
+			logger.Ferror("failed to create temp directory", err)
 			return ActionResultMsg{
 				Title:   "Upload Error",
-				Message: fmt.Sprintf("Failed to create temp directory: %v", err),
+				Message: fmt.Sprintf("failed to create temp directory: %v", err),
 			}
 		}
 		defer os.RemoveAll(tmpDir)

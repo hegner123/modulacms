@@ -219,7 +219,7 @@ func TestExtractManifest_MissingVersion(t *testing.T) {
 	writePluginFile(t, dir, "no_ver", `
 plugin_info = {
     name        = "no_ver",
-    description = "Missing version field",
+    description = "missing version field",
 }
 `)
 
@@ -627,7 +627,7 @@ func TestLoadAll_FailedPlugin_OnInitError(t *testing.T) {
 plugin_info = {
     name        = "failing",
     version     = "1.0.0",
-    description = "Plugin that fails in on_init",
+    description = "plugin that fails in on_init",
 }
 
 function on_init()
@@ -829,7 +829,7 @@ func TestLoadAll_DependencyOrder(t *testing.T) {
 plugin_info = {
     name        = "base_plugin",
     version     = "1.0.0",
-    description = "Base plugin with no deps",
+    description = "base plugin with no deps",
 }
 
 function on_init()
@@ -889,7 +889,7 @@ func TestLoadAll_FailedDependency_DependentFails(t *testing.T) {
 plugin_info = {
     name        = "broken_base",
     version     = "1.0.0",
-    description = "Base plugin that fails",
+    description = "base plugin that fails",
 }
 
 function on_init()
@@ -946,7 +946,7 @@ func TestShutdown_RunsOnShutdown(t *testing.T) {
 plugin_info = {
     name        = "shutdowner",
     version     = "1.0.0",
-    description = "Plugin with on_shutdown",
+    description = "plugin with on_shutdown",
 }
 
 function on_init()
@@ -996,7 +996,7 @@ func TestShutdown_NoOnShutdown(t *testing.T) {
 plugin_info = {
     name        = "no_shutdown",
     version     = "1.0.0",
-    description = "Plugin without on_shutdown",
+    description = "plugin without on_shutdown",
 }
 `)
 
@@ -1146,14 +1146,14 @@ func TestListPlugins_MultiplePlugins(t *testing.T) {
 plugin_info = {
     name        = "plug_a",
     version     = "1.0.0",
-    description = "Plugin A",
+    description = "plugin A",
 }
 `)
 	writePluginFile(t, dir, "plug_b", `
 plugin_info = {
     name        = "plug_b",
     version     = "1.0.0",
-    description = "Plugin B",
+    description = "plugin B",
 }
 `)
 
@@ -1194,7 +1194,7 @@ func TestLoadAll_OnInitTimeout(t *testing.T) {
 plugin_info = {
     name        = "slow_init",
     version     = "1.0.0",
-    description = "Plugin with slow on_init",
+    description = "plugin with slow on_init",
 }
 
 function on_init()
@@ -1373,7 +1373,7 @@ func TestExtractManifest_WithUI(t *testing.T) {
 plugin_info = {
     name        = "my_plugin",
     version     = "1.0.0",
-    description = "Plugin with UI metadata",
+    description = "plugin with UI metadata",
     ui = {
         tag       = "mcms-my-plugin",
         bundle    = "/static/my-plugin.js",
@@ -1407,7 +1407,7 @@ func TestExtractManifest_UIWithoutTag(t *testing.T) {
 plugin_info = {
     name        = "no_tag",
     version     = "1.0.0",
-    description = "Plugin with UI table but empty tag",
+    description = "plugin with UI table but empty tag",
     ui = {
         bundle = "/static/no-tag.js",
     },

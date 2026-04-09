@@ -2377,7 +2377,7 @@ func TestDatabase_MapUserWithRoleLabelRow_AllFields(t *testing.T) {
 		t.Errorf("Name = %q, want %q", got.Name, "Admin User")
 	}
 	if got.Email != email {
-		t.Errorf("Email = %v, want %v", got.Email, email)
+		t.Errorf("email = %v, want %v", got.Email, email)
 	}
 	// Note: source field is "Roles" but wrapper field is "Role"
 	if got.Role != "admin-role-id" {
@@ -2409,7 +2409,7 @@ func TestDatabase_MapUserWithRoleLabelRow_ZeroValues(t *testing.T) {
 		t.Errorf("Name = %q, want empty string", got.Name)
 	}
 	if got.Email != "" {
-		t.Errorf("Email = %v, want zero value", got.Email)
+		t.Errorf("email = %v, want zero value", got.Email)
 	}
 	if got.Role != "" {
 		t.Errorf("Role = %q, want empty string", got.Role)
@@ -3240,7 +3240,7 @@ func TestDatabase_MapUserWithRoleLabelRow_SpecialCharacters(t *testing.T) {
 				t.Errorf("Name = %q, want %q", got.Name, tt.userName)
 			}
 			if got.Email != tt.email {
-				t.Errorf("Email = %v, want %v", got.Email, tt.email)
+				t.Errorf("email = %v, want %v", got.Email, tt.email)
 			}
 		})
 	}

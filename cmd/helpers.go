@@ -20,10 +20,10 @@ import (
 
 // closeDBWithLog closes the singleton database pool with casual and verbose logging.
 func closeDBWithLog() {
-	utility.DefaultLogger.Info("Pulling the plug on the database pool")
-	utility.DefaultLogger.Debug("Closing main database connection pool — draining active connections, releasing WAL locks, flushing pending writes")
+	utility.DefaultLogger.Info("closing database pool")
+	utility.DefaultLogger.Debug("closing main database connection pool — draining active connections, releasing WAL locks, flushing pending writes")
 	if cerr := db.CloseDB(); cerr != nil {
-		utility.DefaultLogger.Error("Database pool refused to drain cleanly", cerr)
+		utility.DefaultLogger.Error("database pool refused to drain cleanly", cerr)
 	}
 }
 
@@ -68,7 +68,7 @@ func resolveConfigDir() {
 	}
 	cfgDir := filepath.Dir(absCfg)
 	if chErr := os.Chdir(cfgDir); chErr != nil {
-		utility.DefaultLogger.Warn("Failed to change to config directory", chErr, "path", cfgDir)
+		utility.DefaultLogger.Warn("failed to change to config directory", chErr, "path", cfgDir)
 		return
 	}
 	cfgPath = filepath.Base(absCfg)
@@ -148,7 +148,7 @@ func initObservability(ctx context.Context, cfg *config.Config) func() {
 		Tags:          cfg.Observability_Tags,
 	})
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to initialize observability", err)
+		utility.DefaultLogger.Error("failed to initialize observability", err)
 		return noop
 	}
 
@@ -159,9 +159,9 @@ func initObservability(ctx context.Context, cfg *config.Config) func() {
 	// same context so it shuts down together with the observability client.
 	utility.StartRuntimeMetrics(ctx, 15*time.Second)
 
-	utility.DefaultLogger.Info("Observability provider active",
+	utility.DefaultLogger.Info("observability provider active",
 		"provider", cfg.Observability_Provider)
-	utility.DefaultLogger.Debug("Observability client connected and flushing",
+	utility.DefaultLogger.Debug("observability client connected and flushing",
 		"provider", cfg.Observability_Provider,
 		"environment", cfg.Observability_Environment,
 		"interval", cfg.Observability_Flush_Interval,
@@ -170,10 +170,10 @@ func initObservability(ctx context.Context, cfg *config.Config) func() {
 	)
 
 	return func() {
-		utility.DefaultLogger.Info("Closing our eyes — observability shutting down")
-		utility.DefaultLogger.Debug("Flushing remaining observability events and closing provider connection")
+		utility.DefaultLogger.Info("shutting down observability")
+		utility.DefaultLogger.Debug("flushing remaining observability events and closing provider connection")
 		if err := obsClient.Stop(); err != nil {
-			utility.DefaultLogger.Error("Observability shutdown error", err)
+			utility.DefaultLogger.Error("observability shutdown error", err)
 		}
 	}
 }
@@ -202,8 +202,8 @@ func initPluginPool(cfg *config.Config) (*sql.DB, func(), error) {
 		return nil, nil, fmt.Errorf("plugin pool: %w", err)
 	}
 
-	utility.DefaultLogger.Info("Plugin database pool initialized")
-	utility.DefaultLogger.Debug("Isolated plugin database connection pool opened",
+	utility.DefaultLogger.Info("plugin database pool initialized")
+	utility.DefaultLogger.Debug("isolated plugin database connection pool opened",
 		"max_open", pc.MaxOpenConns,
 		"max_idle", pc.MaxIdleConns,
 		"max_lifetime", pc.ConnMaxLifetime,
@@ -211,10 +211,10 @@ func initPluginPool(cfg *config.Config) (*sql.DB, func(), error) {
 	)
 
 	cleanup := func() {
-		utility.DefaultLogger.Info("Plugins are toweling off — closing their pool")
-		utility.DefaultLogger.Debug("Closing isolated plugin database connection pool, draining active plugin query connections")
+		utility.DefaultLogger.Info("closing plugin database pool")
+		utility.DefaultLogger.Debug("closing isolated plugin database connection pool, draining active plugin query connections")
 		if cerr := pool.Close(); cerr != nil {
-			utility.DefaultLogger.Error("Plugin pool refused to drain cleanly", cerr)
+			utility.DefaultLogger.Error("plugin pool refused to drain cleanly", cerr)
 		}
 	}
 
@@ -223,18 +223,18 @@ func initPluginPool(cfg *config.Config) (*sql.DB, func(), error) {
 
 // logConfigSummary logs the loaded configuration details.
 func logConfigSummary(cfg *config.Config) {
-	utility.DefaultLogger.Info("Configuration summary",
+	utility.DefaultLogger.Info("configuration summary",
 		"env", cfg.Environment, "db", string(cfg.Db_Driver),
 		"http", cfg.Port, "https", cfg.SSL_Port, "ssh", cfg.SSH_Port)
-	utility.DefaultLogger.Debug("Database", "driver", cfg.Db_Driver, "url", cfg.Db_URL)
-	utility.DefaultLogger.Debug("Sites", "client", cfg.Client_Site, "admin", cfg.Admin_Site)
-	utility.DefaultLogger.Debug("Ports", "http", cfg.Port, "https", cfg.SSL_Port, "ssh", cfg.SSH_Port)
-	utility.DefaultLogger.Debug("Environment", "env", cfg.Environment, "host", cfg.Environment_Hosts[cfg.Environment.Stage()])
+	utility.DefaultLogger.Debug("database", "driver", cfg.Db_Driver, "url", cfg.Db_URL)
+	utility.DefaultLogger.Debug("sites", "client", cfg.Client_Site, "admin", cfg.Admin_Site)
+	utility.DefaultLogger.Debug("ports", "http", cfg.Port, "https", cfg.SSL_Port, "ssh", cfg.SSH_Port)
+	utility.DefaultLogger.Debug("environment", "env", cfg.Environment, "host", cfg.Environment_Hosts[cfg.Environment.Stage()])
 	if cfg.Oauth_Provider_Name != "" {
 		utility.DefaultLogger.Debug("OAuth", "provider", cfg.Oauth_Provider_Name, "redirect", cfg.Oauth_Redirect_URL)
 	}
 	if cfg.Bucket_Endpoint != "" {
-		utility.DefaultLogger.Debug("Storage", "endpoint", cfg.Bucket_Endpoint, "media", cfg.Bucket_Media, "backup", cfg.Bucket_Backup)
+		utility.DefaultLogger.Debug("storage", "endpoint", cfg.Bucket_Endpoint, "media", cfg.Bucket_Media, "backup", cfg.Bucket_Backup)
 	}
 	utility.DefaultLogger.Debug("CORS", "origins", cfg.Cors_Origins, "credentials", cfg.Cors_Credentials)
 }
@@ -277,7 +277,7 @@ func (r *pluginTableRegistrar) RegisterTable(ctx context.Context, label string) 
 // initPluginManager returns nil but the pool was already created.
 func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB, driver db.DbDriver) *plugin.Manager {
 	if !cfg.Plugin_Enabled {
-		utility.DefaultLogger.Info("Plugin system? Nah, taking the day off")
+		utility.DefaultLogger.Info("plugin system? Nah, taking the day off")
 		utility.DefaultLogger.Debug("plugin_enabled=false in config, skipping plugin manager initialization")
 		return nil
 	}
@@ -407,7 +407,7 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB, dr
 // never arrive). When email is disabled or config is merely incomplete, returns
 // a disabled service.
 func initEmailService(cfg *config.Config) (*email.Service, error) {
-	utility.DefaultLogger.Info("Email init",
+	utility.DefaultLogger.Info("email init",
 		"enabled", cfg.Email_Enabled,
 		"provider", string(cfg.Email_Provider),
 		"from_address", cfg.Email_From_Address,
@@ -418,7 +418,7 @@ func initEmailService(cfg *config.Config) (*email.Service, error) {
 	if cfg.Email_Enabled && cfg.Email_Provider != config.EmailDisabled {
 		switch cfg.Email_Provider {
 		case config.EmailSmtp:
-			utility.DefaultLogger.Info("Email SMTP check",
+			utility.DefaultLogger.Info("email SMTP check",
 				"host", cfg.Email_Host,
 				"port", cfg.Email_Port,
 				"tls", cfg.Email_TLS,
@@ -426,30 +426,30 @@ func initEmailService(cfg *config.Config) (*email.Service, error) {
 				"has_password", cfg.Email_Password != "",
 			)
 		case config.EmailSendGrid:
-			utility.DefaultLogger.Info("Email SendGrid check",
+			utility.DefaultLogger.Info("email SendGrid check",
 				"has_api_key", cfg.Email_API_Key != "",
 				"endpoint", cfg.Email_API_Endpoint,
 			)
 		case config.EmailPostmark:
-			utility.DefaultLogger.Info("Email Postmark check",
+			utility.DefaultLogger.Info("email Postmark check",
 				"has_api_key", cfg.Email_API_Key != "",
 				"endpoint", cfg.Email_API_Endpoint,
 			)
 		case config.EmailSES:
-			utility.DefaultLogger.Info("Email SES check",
+			utility.DefaultLogger.Info("email SES check",
 				"has_access_key", cfg.Email_AWS_Access_Key_ID != "",
 				"has_secret_key", cfg.Email_AWS_Secret_Access_Key != "",
 				"endpoint", cfg.Email_API_Endpoint,
 			)
 		default:
-			utility.DefaultLogger.Warn("Email unknown provider", nil, "provider", string(cfg.Email_Provider))
+			utility.DefaultLogger.Warn("email unknown provider", nil, "provider", string(cfg.Email_Provider))
 		}
 	}
 
 	svc, err := email.NewService(*cfg)
 	if err != nil {
 		if cfg.Email_Enabled {
-			utility.DefaultLogger.Error("Email service init failed with email_enabled=true", err,
+			utility.DefaultLogger.Error("email service init failed with email_enabled=true", err,
 				"provider", string(cfg.Email_Provider),
 			)
 			return nil, fmt.Errorf("email service init failed (email_enabled=true): %w", err)
@@ -459,9 +459,9 @@ func initEmailService(cfg *config.Config) (*email.Service, error) {
 		svc, _ = email.NewService(disabled)
 	}
 	if svc.Enabled() {
-		utility.DefaultLogger.Info("Email service started", "provider", string(cfg.Email_Provider))
+		utility.DefaultLogger.Info("email service started", "provider", string(cfg.Email_Provider))
 	} else {
-		utility.DefaultLogger.Info("Email service disabled")
+		utility.DefaultLogger.Info("email service disabled")
 	}
 	return svc, nil
 }

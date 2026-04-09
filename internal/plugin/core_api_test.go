@@ -595,7 +595,7 @@ func TestCoreAPI_Delete(t *testing.T) {
 	setupContentDataTable(t, conn)
 	now := time.Now().UTC().Format(time.RFC3339)
 	seedCoreRow(t, conn, "content_data", map[string]any{
-		"id": "c_01", "datatype_id": "dt_01", "title": "To delete",
+		"id": "c_01", "datatype_id": "dt_01", "title": "to delete",
 		"status": "draft", "created_at": now, "updated_at": now,
 	})
 

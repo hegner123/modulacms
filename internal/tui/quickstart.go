@@ -93,7 +93,7 @@ func RunQuickstartInstallCmd(cfg *config.Config, userID types.UserID, schemaInde
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Install Failed",
-				Message: fmt.Sprintf("Failed to install %q:\n%s", def.Label, err),
+				Message: fmt.Sprintf("failed to install %q:\n%s", def.Label, err),
 				IsError: true,
 			}
 		}

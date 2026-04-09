@@ -49,7 +49,7 @@ func init() {
 	scaffoldCmd.AddCommand(scaffoldDockerCmd)
 
 	f := scaffoldDockerCmd.Flags()
-	f.StringVar(&scaffoldFlags.DBDriver, "db", "", "Database driver: sqlite, mysql, postgres")
+	f.StringVar(&scaffoldFlags.DBDriver, "db", "", "database driver: sqlite, mysql, postgres")
 	f.StringVar(&scaffoldFlags.Storage, "storage", "", "S3 storage: minio (self-hosted), external")
 	f.StringVar(&scaffoldFlags.Proxy, "proxy", "", "Reverse proxy: caddy, nginx, raw")
 	f.StringVar(&scaffoldFlags.OutDir, "out", "./modula-deploy", "Output directory")

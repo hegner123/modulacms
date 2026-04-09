@@ -274,7 +274,7 @@ func (s *PipelinesScreen) renderByTable() string {
 var pipelineDetailGrid = Grid{
 	Columns: []GridColumn{
 		{Span: 3, Cells: []GridCell{
-			{Height: 1, Title: "All Chains"},
+			{Height: 1, Title: "all Chains"},
 		}},
 		{Span: 6, Cells: []GridCell{
 			{Height: 0.70, Title: "Entries"},

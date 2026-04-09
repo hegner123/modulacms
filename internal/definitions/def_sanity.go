@@ -17,7 +17,7 @@ func init() {
 					{Name: "title", Label: "Title", Type: types.FieldTypeTitle},
 					{Name: "slug", Label: "Slug", Type: types.FieldTypeSlug},
 					{Name: "body", Label: "Body", Type: types.FieldTypeRichText},
-					{Name: "main_image", Label: "Main Image", Type: types.FieldTypeMedia},
+					{Name: "main_image", Label: "main Image", Type: types.FieldTypeMedia},
 					{Name: "published_at", Label: "Published At", Type: types.FieldTypeDatetime},
 				},
 			},

@@ -162,7 +162,7 @@ func (d Database) UpdateMediaDimension(ctx context.Context, ac audited.AuditCont
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update mediaDimension: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.MdID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.MdID)
 	return &msg, nil
 }
 
@@ -273,7 +273,7 @@ func (d MysqlDatabase) UpdateMediaDimension(ctx context.Context, ac audited.Audi
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update mediaDimension: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.MdID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.MdID)
 	return &msg, nil
 }
 
@@ -384,7 +384,7 @@ func (d PsqlDatabase) UpdateMediaDimension(ctx context.Context, ac audited.Audit
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update mediaDimension: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.MdID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.MdID)
 	return &msg, nil
 }
 

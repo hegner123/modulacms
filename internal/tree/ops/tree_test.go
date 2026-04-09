@@ -706,7 +706,7 @@ func TestSave(t *testing.T) {
 		}
 
 		if result.Created != 1 {
-			t.Errorf("Created = %d, want 1", result.Created)
+			t.Errorf("created = %d, want 1", result.Created)
 		}
 		if result.IDMap["temp-1"] != "B" {
 			t.Errorf("IDMap[temp-1] = %v, want B", result.IDMap["temp-1"])
@@ -1080,7 +1080,7 @@ func TestSave_CreateFailure(t *testing.T) {
 	}
 	// The successful create should still have been processed
 	if result.Created != 1 {
-		t.Errorf("Created = %d, want 1 (one succeeded)", result.Created)
+		t.Errorf("created = %d, want 1 (one succeeded)", result.Created)
 	}
 	if result.IDMap["temp-ok"] != "B" {
 		t.Errorf("IDMap[temp-ok] = %v, want B", result.IDMap["temp-ok"])

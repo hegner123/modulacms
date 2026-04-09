@@ -31,7 +31,7 @@ func CheckConfigExists(path string) error {
 	if err != nil {
 		return err
 	}
-	utility.DefaultLogger.Info("Config exists at", p)
+	utility.DefaultLogger.Info("config exists at", p)
 	return nil
 }
 
@@ -44,7 +44,7 @@ func CheckBucket(v *bool, c *config.Config) (string, error) {
 	if c.Bucket_Secret_Key == "" || c.Bucket_Endpoint == "" || c.Bucket_Access_Key == "" {
 		// Empty bucket credentials - this is a non-fatal condition (bucket is optional)
 		if verbose {
-			utility.DefaultLogger.Warn("Bucket fields not completed - S3 storage will be unavailable", nil)
+			utility.DefaultLogger.Warn("bucket fields not completed - S3 storage will be unavailable", nil)
 		}
 		return "Not configured", nil
 	}
@@ -59,12 +59,12 @@ func CheckBucket(v *bool, c *config.Config) (string, error) {
 	if err != nil {
 		installErr := ErrBucketConnect(err)
 		if verbose {
-			utility.DefaultLogger.Error("Bucket connection failed", installErr)
+			utility.DefaultLogger.Error("bucket connection failed", installErr)
 		}
 		return installErr.Error(), installErr
 	}
 	if verbose {
-		utility.DefaultLogger.Info("Bucket Connected Successfully")
+		utility.DefaultLogger.Info("bucket Connected Successfully")
 	}
 	return "Connected", nil
 }

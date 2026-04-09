@@ -88,10 +88,10 @@ func TestEnsureSystemData_Idempotent(t *testing.T) {
 
 	// Run twice
 	if err := EnsureSystemData(ctx, d); err != nil {
-		t.Fatalf("EnsureSystemData (first call): %v", err)
+		t.Fatalf("ensureSystemData (first call): %v", err)
 	}
 	if err := EnsureSystemData(ctx, d); err != nil {
-		t.Fatalf("EnsureSystemData (second call): %v", err)
+		t.Fatalf("ensureSystemData (second call): %v", err)
 	}
 
 	// Should still have exactly one _reference datatype

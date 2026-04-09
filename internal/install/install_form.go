@@ -246,9 +246,9 @@ func GetFullSqlSetup(i *InstallArguments) error {
 	}
 
 	f1 := huh.NewInput().Title("URL to Database Host").Value(&fUrl).Validate(ValidateURL)
-	f2 := huh.NewInput().Title("Database Name").Value(&fName).Validate(ValidateDBName)
-	f3 := huh.NewInput().Title("Database User").Value(&fUser).Validate(ValidateNotEmpty("database user"))
-	f4 := huh.NewInput().Title("Database Password").Value(&fPassword).EchoMode(huh.EchoModePassword)
+	f2 := huh.NewInput().Title("database Name").Value(&fName).Validate(ValidateDBName)
+	f3 := huh.NewInput().Title("database User").Value(&fUser).Validate(ValidateNotEmpty("database user"))
+	f4 := huh.NewInput().Title("database Password").Value(&fPassword).EchoMode(huh.EchoModePassword)
 
 	g := huh.NewGroup(f1, f2, f3, f4)
 	f := huh.NewForm(g)
@@ -272,8 +272,8 @@ func GetLiteSqlSetup(i *InstallArguments) error {
 	fUrl := "modula.db"
 	fName := "modula_db"
 
-	f1 := huh.NewInput().Title("Database file path").Value(&fUrl).Validate(ValidateDBPath)
-	f2 := huh.NewInput().Title("Database Name").Value(&fName).Validate(ValidateDBName)
+	f1 := huh.NewInput().Title("database file path").Value(&fUrl).Validate(ValidateDBPath)
+	f2 := huh.NewInput().Title("database Name").Value(&fName).Validate(ValidateDBName)
 
 	g := huh.NewGroup(f1, f2)
 	f := huh.NewForm(g)
@@ -386,7 +386,7 @@ func GetCertDir(i *InstallArguments) error {
 	certDir := "./"
 
 	f := huh.NewInput().
-		Title("Certificate directory path").
+		Title("certificate directory path").
 		Value(&certDir).
 		Validate(ValidateDirPath)
 
@@ -407,7 +407,7 @@ func GetCookie(i *InstallArguments) error {
 	cookieName := "modula_cms"
 
 	f := huh.NewInput().
-		Title("Cookie name").
+		Title("cookie name").
 		Value(&cookieName).
 		Validate(ValidateCookieName)
 

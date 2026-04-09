@@ -24,7 +24,7 @@ const (
 // matching the tree.Node pattern used elsewhere in the codebase.
 type ContentSelectNode struct {
 	Kind         ContentSelectNodeKind
-	Label        string                       // display label: "/" or "about" or "Main Menu"
+	Label        string                       // display label: "/" or "about" or "main Menu"
 	Slug         string                       // full slug for sorting (empty for standalone)
 	Depth        int                          // visual indent level
 	Expand       bool                         // collapsible group state (only meaningful for NodeGroup)

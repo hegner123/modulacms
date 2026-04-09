@@ -43,7 +43,7 @@ func AdminContentListHandler(svc *service.Registry) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list admin content", err)
-			http.Error(w, "Failed to load admin content", http.StatusInternalServerError)
+			http.Error(w, "failed to load admin content", http.StatusInternalServerError)
 			return
 		}
 
@@ -55,7 +55,7 @@ func AdminContentListHandler(svc *service.Registry) http.HandlerFunc {
 		cnt, cntErr := driver.CountAdminContentDataTopLevel()
 		if cntErr != nil {
 			utility.DefaultLogger.Error("failed to count admin content", cntErr)
-			http.Error(w, "Failed to load admin content", http.StatusInternalServerError)
+			http.Error(w, "failed to load admin content", http.StatusInternalServerError)
 			return
 		}
 
@@ -184,11 +184,11 @@ func AdminContentCreateHandler(svc *service.Registry) http.HandlerFunc {
 		if createErr != nil {
 			utility.DefaultLogger.Error("failed to create admin content", createErr)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create admin content", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to create admin content", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to create admin content", http.StatusInternalServerError)
+			http.Error(w, "failed to create admin content", http.StatusInternalServerError)
 			return
 		}
 
@@ -283,11 +283,11 @@ func AdminContentUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		if _, updateErr := svc.AdminContent.Update(r.Context(), ac, params, existing.Revision); updateErr != nil {
 			utility.DefaultLogger.Error("failed to update admin content", updateErr)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to update admin content", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to update admin content", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to update admin content", http.StatusInternalServerError)
+			http.Error(w, "failed to update admin content", http.StatusInternalServerError)
 			return
 		}
 
@@ -324,7 +324,7 @@ func AdminContentDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		if _, deleteErr := svc.AdminContent.Delete(r.Context(), ac, types.AdminContentID(id), false); deleteErr != nil {
 			utility.DefaultLogger.Error("failed to delete admin content", deleteErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete admin content", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete admin content", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -423,7 +423,7 @@ func AdminContentVersionsHandler(svc *service.Registry) http.HandlerFunc {
 		versions, err := svc.AdminContent.ListVersions(r.Context(), adminContentID)
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list admin content versions", err)
-			http.Error(w, "Failed to load versions", http.StatusInternalServerError)
+			http.Error(w, "failed to load versions", http.StatusInternalServerError)
 			return
 		}
 
@@ -442,7 +442,7 @@ func renderAdminContentEditPage(w http.ResponseWriter, r *http.Request, svc *ser
 	content, err := svc.AdminContent.Get(r.Context(), adminContentID)
 	if err != nil {
 		utility.DefaultLogger.Error("failed to reload admin content for re-render", err)
-		http.Error(w, "Failed to reload admin content", http.StatusInternalServerError)
+		http.Error(w, "failed to reload admin content", http.StatusInternalServerError)
 		return
 	}
 

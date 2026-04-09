@@ -88,13 +88,13 @@ func ImportBulkHandler(w http.ResponseWriter, r *http.Request, svc *service.Regi
 func apiImportContent(w http.ResponseWriter, r *http.Request, svc *service.Registry, format config.OutputFormat) {
 	cfg, cfgErr := svc.Config()
 	if cfgErr != nil {
-		http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+		http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 		return
 	}
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to read request body", err)
+		utility.DefaultLogger.Error("failed to read request body", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

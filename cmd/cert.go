@@ -10,7 +10,7 @@ import (
 // certCmd is the root command for certificate management operations.
 var certCmd = &cobra.Command{
 	Use:   "cert",
-	Short: "Certificate management commands",
+	Short: "certificate management commands",
 	Long: `Manage SSL/TLS certificates for local HTTPS development.
 
 Subcommands:
@@ -44,7 +44,7 @@ Examples:
 		// Root the process in the config directory so relative paths resolve correctly.
 		resolveConfigDir()
 
-		utility.DefaultLogger.Info("Generating self-signed SSL certificates...")
+		utility.DefaultLogger.Info("generating self-signed SSL certificates...")
 
 		// Defaults
 		certDir := "./certs"
@@ -63,25 +63,25 @@ Examples:
 			}
 		}
 
-		utility.DefaultLogger.Info("Certificate directory", certDir)
-		utility.DefaultLogger.Info("Domain", domain)
+		utility.DefaultLogger.Info("certificate directory", certDir)
+		utility.DefaultLogger.Info("domain", domain)
 
 		if err := utility.GenerateSelfSignedCert(certDir, domain); err != nil {
 			return err
 		}
 
-		utility.DefaultLogger.Info("Successfully generated SSL certificates")
+		utility.DefaultLogger.Info("successfully generated SSL certificates")
 		utility.DefaultLogger.Info("  - Certificate: " + certDir + "/localhost.crt")
 		utility.DefaultLogger.Info("  - Private Key: " + certDir + "/localhost.key")
 
 		// Offer to trust the certificate
 		certPath := filepath.Join(certDir, "localhost.crt")
 		if err := utility.TrustCertificate(certPath); err != nil {
-			utility.DefaultLogger.Warn("Failed to trust certificate:", err)
-			utility.DefaultLogger.Info("You can manually trust it later - see LOCAL_HTTPS_SETUP.md")
+			utility.DefaultLogger.Warn("failed to trust certificate:", err)
+			utility.DefaultLogger.Info("you can manually trust it later - see LOCAL_HTTPS_SETUP.md")
 		}
 
-		utility.DefaultLogger.Info("To use HTTPS locally, set environment to 'local' in modula.config.json")
+		utility.DefaultLogger.Info("to use HTTPS locally, set environment to 'local' in modula.config.json")
 		return nil
 	},
 }

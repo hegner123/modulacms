@@ -245,7 +245,7 @@ func (d Database) UpdateAdminContentData(ctx context.Context, ac audited.AuditCo
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminContentData: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminContentDataID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.AdminContentDataID)
 	return &msg, nil
 }
 
@@ -433,7 +433,7 @@ func (d MysqlDatabase) UpdateAdminContentData(ctx context.Context, ac audited.Au
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminContentData: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminContentDataID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.AdminContentDataID)
 	return &msg, nil
 }
 
@@ -621,7 +621,7 @@ func (d PsqlDatabase) UpdateAdminContentData(ctx context.Context, ac audited.Aud
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update adminContentData: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminContentDataID)
+	msg := fmt.Sprintf("successfully updated %v\n", s.AdminContentDataID)
 	return &msg, nil
 }
 

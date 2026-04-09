@@ -1333,13 +1333,13 @@ func TestDeleteAdminContentFieldCmd_GetID_EmptyID(t *testing.T) {
 func TestUpdateAdminContentField_SuccessMessageFormat(t *testing.T) {
 	t.Parallel()
 	acfID := types.NewAdminContentFieldID()
-	expected := fmt.Sprintf("Successfully updated %v\n", acfID)
+	expected := fmt.Sprintf("successfully updated %v\n", acfID)
 
 	// The actual method builds this exact format. Verify the expectation is stable.
 	if expected == "" {
 		t.Fatal("expected non-empty message")
 	}
-	if expected == "Successfully updated \n" {
+	if expected == "successfully updated \n" {
 		t.Fatal("expected message to contain the ID")
 	}
 }

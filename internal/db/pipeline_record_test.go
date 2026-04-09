@@ -19,7 +19,7 @@ func createTestPlugin(t *testing.T, d Database) *Plugin {
 	p, err := d.CreatePlugin(ctx, ac, CreatePluginParams{
 		Name:           "pipeline-test-plugin",
 		Version:        "1.0.0",
-		Description:    "Plugin for pipeline FK tests",
+		Description:    "plugin for pipeline FK tests",
 		Author:         "tester",
 		Status:         types.PluginStatusInstalled,
 		Capabilities:   "[]",
@@ -522,7 +522,7 @@ func TestDatabase_CRUD_Pipeline_DeleteByPluginID(t *testing.T) {
 	p2, err := d.CreatePlugin(ctx, ac, CreatePluginParams{
 		Name:           "delete-cascade-plugin",
 		Version:        "1.0.0",
-		Description:    "Plugin for cascade delete",
+		Description:    "plugin for cascade delete",
 		Author:         "tester",
 		Status:         types.PluginStatusInstalled,
 		Capabilities:   "[]",

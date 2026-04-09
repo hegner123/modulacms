@@ -166,7 +166,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		overlayFile := filepath.Join(projectDir, fmt.Sprintf("modula.%s.config.json", od.env))
 		if _, statErr := os.Stat(overlayFile); statErr != nil {
 			if wErr := writeOverlayFile(overlayFile, od.build()); wErr != nil {
-				utility.DefaultLogger.Warn(fmt.Sprintf("Failed to write %s overlay", od.env), wErr)
+				utility.DefaultLogger.Warn(fmt.Sprintf("failed to write %s overlay", od.env), wErr)
 				results = append(results, initResult{fmt.Sprintf("overlay: %s", od.env), "error", wErr.Error()})
 				continue
 			}
@@ -180,7 +180,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	// Set base if not registered
 	registered := 0
 	if err := reg.SetBase(projectName, basePath); err != nil {
-		utility.DefaultLogger.Warn("Failed to register base config", err)
+		utility.DefaultLogger.Warn("failed to register base config", err)
 	}
 
 	envOrder := []string{"local", "dev", "prod"}
@@ -195,18 +195,18 @@ func runInit(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		if err := reg.Set(projectName, env, overlayFile); err != nil {
-			utility.DefaultLogger.Warn(fmt.Sprintf("Failed to register %s environment", env), err)
+			utility.DefaultLogger.Warn(fmt.Sprintf("failed to register %s environment", env), err)
 			continue
 		}
 		registered++
 	}
 
 	if err := reg.SetDefaultEnv(projectName, "local"); err != nil {
-		utility.DefaultLogger.Warn("Failed to set default environment", err)
+		utility.DefaultLogger.Warn("failed to set default environment", err)
 	}
 	if reg.Default == "" {
 		if err := reg.SetDefault(projectName); err != nil {
-			utility.DefaultLogger.Warn("Failed to set default project", err)
+			utility.DefaultLogger.Warn("failed to set default project", err)
 		}
 	}
 
@@ -220,11 +220,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 	certsDir := filepath.Join(projectDir, "certs")
 	if _, statErr := os.Stat(certsDir); statErr != nil {
 		if mkErr := os.MkdirAll(certsDir, 0750); mkErr != nil {
-			utility.DefaultLogger.Warn("Failed to create certs directory", mkErr)
+			utility.DefaultLogger.Warn("failed to create certs directory", mkErr)
 			results = append(results, initResult{"certificates", "error", mkErr.Error()})
 		} else {
 			if genErr := utility.GenerateSelfSignedCert(certsDir, "localhost"); genErr != nil {
-				utility.DefaultLogger.Warn("Failed to generate certificates", genErr)
+				utility.DefaultLogger.Warn("failed to generate certificates", genErr)
 				results = append(results, initResult{"certificates", "error", genErr.Error()})
 			} else {
 				results = append(results, initResult{"certificates", "created", certsDir})
@@ -389,6 +389,6 @@ func resolveAdminPassword(mode string, interactive bool) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("generating password: %w", err)
 	}
-	utility.DefaultLogger.Finfo("Generated system admin password", "email", "system@modula.local", "password", autoPassword)
+	utility.DefaultLogger.Finfo("generated system admin password", "email", "system@modula.local", "password", autoPassword)
 	return auth.HashPassword(autoPassword)
 }

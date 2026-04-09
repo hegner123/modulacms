@@ -521,7 +521,7 @@ func TestProcessMediaUpload_FilenamePassedToStore(t *testing.T) {
 		t.Errorf("GetMediaByName called with %q, want %q", getByNameArg, expectedFilename)
 	}
 	if !createNameArg.Valid || createNameArg.String != expectedFilename {
-		t.Errorf("CreateMedia name = %+v, want {String:%q Valid:true}", createNameArg, expectedFilename)
+		t.Errorf("createMedia name = %+v, want {String:%q Valid:true}", createNameArg, expectedFilename)
 	}
 }
 

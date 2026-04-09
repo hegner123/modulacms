@@ -126,7 +126,7 @@ func newTestEnv(t *testing.T) testEnv {
 		t.Fatalf("mgr.Load: %v", err)
 	}
 
-	svc := service.NewRegistry(d, mgr, nil, nil, &noopDispatcher{})
+	svc := service.NewRegistry(context.Background(), d, mgr, nil, nil, &noopDispatcher{})
 
 	return testEnv{
 		svc:      svc,
@@ -561,7 +561,7 @@ func TestRouteHandler_PUT_InvalidJSON(t *testing.T) {
 
 func TestRouteHandler_DELETE_ExistingRoute(t *testing.T) {
 	env := newTestEnv(t)
-	seeded := seedRoute(t, env, "/to-delete", "To Delete")
+	seeded := seedRoute(t, env, "/to-delete", "to Delete")
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/routes/?q="+string(seeded.RouteID), nil)
 	w := httptest.NewRecorder()

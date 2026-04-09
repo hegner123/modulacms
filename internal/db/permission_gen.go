@@ -146,7 +146,7 @@ func (d Database) UpdatePermission(ctx context.Context, ac audited.AuditContext,
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update permission: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Label)
 	return &msg, nil
 }
 
@@ -251,7 +251,7 @@ func (d MysqlDatabase) UpdatePermission(ctx context.Context, ac audited.AuditCon
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update permission: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Label)
 	return &msg, nil
 }
 
@@ -356,7 +356,7 @@ func (d PsqlDatabase) UpdatePermission(ctx context.Context, ac audited.AuditCont
 	if err := audited.Update(cmd); err != nil {
 		return nil, fmt.Errorf("failed to update permission: %w", err)
 	}
-	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	msg := fmt.Sprintf("successfully updated %v\n", s.Label)
 	return &msg, nil
 }
 

@@ -56,13 +56,13 @@ func HandleReorderFieldStandalone(cfg config.Config, userID types.UserID, driver
 			FieldID:   msg.AID,
 			SortOrder: msg.BOrder,
 		}); err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder field: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to reorder field: %v", err)}
 		}
 		if err := driver.UpdateFieldSortOrder(ctx, ac, db.UpdateFieldSortOrderParams{
 			FieldID:   msg.BID,
 			SortOrder: msg.AOrder,
 		}); err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder field: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to reorder field: %v", err)}
 		}
 
 		return DatatypeFieldReorderedMsg{Direction: msg.Direction}
@@ -103,13 +103,13 @@ func HandleReorderAdminFieldStandalone(cfg config.Config, userID types.UserID, d
 			AdminFieldID: msg.AID,
 			SortOrder:    msg.BOrder,
 		}); err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder admin field: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to reorder admin field: %v", err)}
 		}
 		if err := driver.UpdateAdminFieldSortOrder(ctx, ac, db.UpdateAdminFieldSortOrderParams{
 			AdminFieldID: msg.BID,
 			SortOrder:    msg.AOrder,
 		}); err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder admin field: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to reorder admin field: %v", err)}
 		}
 
 		return AdminDatatypeFieldReorderedMsg{Direction: msg.Direction}

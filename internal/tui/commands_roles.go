@@ -19,7 +19,7 @@ func (m Model) HandleCreateRole(msg CreateRoleFromDialogRequestMsg) tea.Cmd {
 
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -37,7 +37,7 @@ func (m Model) HandleCreateRole(msg CreateRoleFromDialogRequestMsg) tea.Cmd {
 			SystemProtected: false,
 		})
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to create role: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to create role: %v", err)}
 		}
 
 		return RoleCreatedFromDialogMsg{RoleID: result.RoleID, Label: result.Label}
@@ -51,7 +51,7 @@ func (m Model) HandleUpdateRole(msg UpdateRoleFromDialogRequestMsg) tea.Cmd {
 
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -69,7 +69,7 @@ func (m Model) HandleUpdateRole(msg UpdateRoleFromDialogRequestMsg) tea.Cmd {
 		// Check system protection
 		existing, err := d.GetRole(roleID)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to get role: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to get role: %v", err)}
 		}
 		if existing.SystemProtected && msg.Label != existing.Label {
 			return ActionResultMsg{Title: "Forbidden", Message: "Cannot rename system-protected role"}
@@ -80,7 +80,7 @@ func (m Model) HandleUpdateRole(msg UpdateRoleFromDialogRequestMsg) tea.Cmd {
 			Label:           msg.Label,
 			SystemProtected: existing.SystemProtected,
 		}); err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update role: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to update role: %v", err)}
 		}
 
 		return RoleUpdatedFromDialogMsg{RoleID: roleID, Label: msg.Label}
@@ -103,7 +103,7 @@ func (m Model) HandleDeleteRole(msg DeleteRoleRequestMsg) tea.Cmd {
 		// Check system protection
 		existing, err := d.GetRole(msg.RoleID)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to get role: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to get role: %v", err)}
 		}
 		if existing.SystemProtected {
 			return ActionResultMsg{Title: "Forbidden", Message: "Cannot delete system-protected role"}
@@ -112,8 +112,8 @@ func (m Model) HandleDeleteRole(msg DeleteRoleRequestMsg) tea.Cmd {
 		logger.Finfo(fmt.Sprintf("Deleting role: %s (%s)", msg.RoleID, existing.Label))
 
 		if err := d.DeleteRole(ctx, ac, msg.RoleID); err != nil {
-			logger.Ferror("Failed to delete role", err)
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to delete role: %v", err)}
+			logger.Ferror("failed to delete role", err)
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to delete role: %v", err)}
 		}
 
 		logger.Finfo(fmt.Sprintf("Role deleted: %s", msg.RoleID))

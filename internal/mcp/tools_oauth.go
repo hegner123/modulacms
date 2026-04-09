@@ -18,7 +18,7 @@ func registerOAuthTools(srv *server.MCPServer, backend OAuthBackend) {
 	srv.AddTool(
 		mcp.NewTool("get_user_oauth",
 			mcp.WithDescription("Get a single user OAuth connection by ID."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("User OAuth ID (ULID)")),
+			mcp.WithString("id", mcp.Required(), mcp.Description("user OAuth ID (ULID)")),
 		),
 		handleGetUserOAuth(backend),
 	)
@@ -26,9 +26,9 @@ func registerOAuthTools(srv *server.MCPServer, backend OAuthBackend) {
 	srv.AddTool(
 		mcp.NewTool("create_user_oauth",
 			mcp.WithDescription("Create a new user OAuth connection."),
-			mcp.WithString("user_id", mcp.Description("User ID to associate")),
+			mcp.WithString("user_id", mcp.Description("user ID to associate")),
 			mcp.WithString("oauth_provider", mcp.Required(), mcp.Description("OAuth provider name (e.g. 'google', 'github', 'azure')")),
-			mcp.WithString("oauth_provider_user_id", mcp.Required(), mcp.Description("User ID from the OAuth provider")),
+			mcp.WithString("oauth_provider_user_id", mcp.Required(), mcp.Description("user ID from the OAuth provider")),
 			mcp.WithString("access_token", mcp.Required(), mcp.Description("OAuth access token")),
 			mcp.WithString("refresh_token", mcp.Required(), mcp.Description("OAuth refresh token")),
 			mcp.WithString("token_expires_at", mcp.Required(), mcp.Description("Token expiration timestamp")),
@@ -38,8 +38,8 @@ func registerOAuthTools(srv *server.MCPServer, backend OAuthBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_user_oauth",
-			mcp.WithDescription("Update a user OAuth connection (refresh tokens)."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("User OAuth ID (ULID)")),
+			mcp.WithDescription("update a user OAuth connection (refresh tokens)."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("user OAuth ID (ULID)")),
 			mcp.WithString("access_token", mcp.Required(), mcp.Description("New OAuth access token")),
 			mcp.WithString("refresh_token", mcp.Required(), mcp.Description("New OAuth refresh token")),
 			mcp.WithString("token_expires_at", mcp.Required(), mcp.Description("New token expiration timestamp")),
@@ -50,7 +50,7 @@ func registerOAuthTools(srv *server.MCPServer, backend OAuthBackend) {
 	srv.AddTool(
 		mcp.NewTool("delete_user_oauth",
 			mcp.WithDescription("Delete a user OAuth connection by ID."),
-			mcp.WithString("id", mcp.Required(), mcp.Description("User OAuth ID (ULID)")),
+			mcp.WithString("id", mcp.Required(), mcp.Description("user OAuth ID (ULID)")),
 		),
 		handleDeleteUserOAuth(backend),
 	)

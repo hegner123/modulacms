@@ -56,13 +56,13 @@ func (m Model) HandleCreateAdminContentFromDialog(
 			PrevSiblingID:   types.NullableAdminContentID{},
 		})
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to create admin content: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to create admin content: %v", err)}
 		}
 
 		dtFilter := types.NullableAdminDatatypeID{ID: datatypeID, Valid: true}
 		allFields, fieldListErr := d.ListAdminFieldsByDatatypeID(dtFilter)
 		if fieldListErr != nil {
-			logger.Ferror("Failed to list admin datatype fields", fieldListErr)
+			logger.Ferror("failed to list admin datatype fields", fieldListErr)
 		}
 
 		createdFields := 0
@@ -80,7 +80,7 @@ func (m Model) HandleCreateAdminContentFromDialog(
 					DateModified:       types.TimestampNow(),
 				})
 				if fieldErr != nil {
-					logger.Ferror(fmt.Sprintf("Failed to create admin content field: %v", fieldErr), fieldErr)
+					logger.Ferror(fmt.Sprintf("failed to create admin content field: %v", fieldErr), fieldErr)
 				} else {
 					createdFields++
 				}
@@ -124,7 +124,7 @@ func (m Model) HandleUpdateAdminContentFromDialog(
 		contentFilter := types.NullableAdminContentID{ID: adminContentID, Valid: true}
 		existingFields, err := d.ListAdminContentFieldsByContentDataAndLocale(contentFilter, locale)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to fetch existing fields: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to fetch existing fields: %v", err)}
 		}
 
 		existingMap := make(map[types.AdminFieldID]db.AdminContentFields)
@@ -153,7 +153,7 @@ func (m Model) HandleUpdateAdminContentFromDialog(
 					DateModified:        types.TimestampNow(),
 				})
 				if updateErr != nil {
-					logger.Ferror(fmt.Sprintf("Failed to update admin field %s", fieldID), updateErr)
+					logger.Ferror(fmt.Sprintf("failed to update admin field %s", fieldID), updateErr)
 					updateErrors = append(updateErrors, string(fieldID))
 				} else {
 					updatedCount++
@@ -170,7 +170,7 @@ func (m Model) HandleUpdateAdminContentFromDialog(
 					DateModified:       types.TimestampNow(),
 				})
 				if createErr != nil {
-					logger.Ferror(fmt.Sprintf("Failed to create admin field %s", fieldID), createErr)
+					logger.Ferror(fmt.Sprintf("failed to create admin field %s", fieldID), createErr)
 					updateErrors = append(updateErrors, string(fieldID))
 				} else {
 					updatedCount++
@@ -236,7 +236,7 @@ func (m Model) HandleDeleteAdminContent(msg ConfirmedDeleteAdminContentMsg) tea.
 		}
 
 		if deleteErr := d.DeleteAdminContentData(ctx, ac, msg.AdminContentID); deleteErr != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to delete admin content: %v", deleteErr)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to delete admin content: %v", deleteErr)}
 		}
 
 		logger.Finfo(fmt.Sprintf("Admin content deleted: %s", msg.AdminContentID))
@@ -292,7 +292,7 @@ func (m Model) HandleMoveAdminContent(msg AdminMoveContentRequestMsg) tea.Cmd {
 		// STEP 2: Attach source as last child of target
 		newPrevID, attachErr := attachAsLastChild(ctx, ac, ops, sourceNode.id, string(msg.TargetID))
 		if attachErr != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to attach content: %v", attachErr)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to attach content: %v", attachErr)}
 		}
 
 		// STEP 3: Update source with new parent
@@ -311,7 +311,7 @@ func (m Model) HandleMoveAdminContent(msg AdminMoveContentRequestMsg) tea.Cmd {
 			DateModified:       types.TimestampNow(),
 		}
 		if _, updateErr := d.UpdateAdminContentData(ctx, ac, sourceParams); updateErr != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update source: %v", updateErr)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to update source: %v", updateErr)}
 		}
 
 		logger.Finfo(fmt.Sprintf("Admin content moved: %s -> %s", msg.SourceID, msg.TargetID))
@@ -328,7 +328,7 @@ func (m Model) HandleAdminReorderSibling(msg AdminReorderSiblingRequestMsg) tea.
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -348,7 +348,7 @@ func (m Model) HandleAdminReorderSibling(msg AdminReorderSiblingRequestMsg) tea.
 
 		if msg.Direction == "up" {
 			if a.prevSiblingID.isEmpty() {
-				return ActionResultMsg{Title: "Info", Message: "Already at top"}
+				return ActionResultMsg{Title: "Info", Message: "already at top"}
 			}
 			b, bErr := ops.getNode(a.prevSiblingID.ID)
 			if bErr != nil || b == nil {
@@ -366,7 +366,7 @@ func (m Model) HandleAdminReorderSibling(msg AdminReorderSiblingRequestMsg) tea.
 		} else {
 			// Move down: swap A with its next sibling B
 			if a.nextSiblingID.isEmpty() {
-				return ActionResultMsg{Title: "Info", Message: "Already at bottom"}
+				return ActionResultMsg{Title: "Info", Message: "already at bottom"}
 			}
 			b, bErr := ops.getNode(a.nextSiblingID.ID)
 			if bErr != nil || b == nil {
@@ -404,7 +404,7 @@ func (m Model) HandleCopyAdminContent(msg AdminCopyContentRequestMsg) tea.Cmd {
 
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -422,7 +422,7 @@ func (m Model) HandleCopyAdminContent(msg AdminCopyContentRequestMsg) tea.Cmd {
 		// Fetch source fields
 		sourceFields, sfErr := d.ListAdminContentFieldsByContentDataIDs(ctx, []types.AdminContentID{msg.SourceID}, locale)
 		if sfErr != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to read source fields: %v", sfErr)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to read source fields: %v", sfErr)}
 		}
 
 		now := types.TimestampNow()
@@ -439,14 +439,14 @@ func (m Model) HandleCopyAdminContent(msg AdminCopyContentRequestMsg) tea.Cmd {
 			DateModified:    now,
 		})
 		if createErr != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to create admin content copy: %v", createErr)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to create admin content copy: %v", createErr)}
 		}
 
 		// Update sibling pointers: source.next -> new, old-next.prev -> new
 		ops := newAdminTreeOps(d)
 		sourceNode := adminContentToTreeNode(source)
 		if spliceErr := spliceAfter(ctx, ac, ops, sourceNode, string(newContent.AdminContentDataID)); spliceErr != nil {
-			logger.Ferror("Failed to update sibling pointers after admin copy", spliceErr)
+			logger.Ferror("failed to update sibling pointers after admin copy", spliceErr)
 		}
 
 		// Copy fields
@@ -464,7 +464,7 @@ func (m Model) HandleCopyAdminContent(msg AdminCopyContentRequestMsg) tea.Cmd {
 					DateModified:       now,
 				})
 				if fieldErr != nil {
-					logger.Ferror(fmt.Sprintf("Failed to copy admin field: %v", fieldErr), fieldErr)
+					logger.Ferror(fmt.Sprintf("failed to copy admin field: %v", fieldErr), fieldErr)
 				} else {
 					fieldCount++
 				}
@@ -485,7 +485,7 @@ func (m Model) HandleAdminConfirmedPublish(msg ConfirmedPublishAdminContentMsg) 
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -502,7 +502,7 @@ func (m Model) HandleAdminConfirmedPublish(msg ConfirmedPublishAdminContentMsg) 
 		publishAll := !cfg.Node_Level_Publish
 		pubErr := publishing.PublishAdminContent(ctx, d, msg.AdminContentID, locale, userID, ac, retentionCap, publishAll, dispatcher)
 		if pubErr != nil {
-			logger.Ferror(fmt.Sprintf("Failed to publish admin content %s", msg.AdminContentID), pubErr)
+			logger.Ferror(fmt.Sprintf("failed to publish admin content %s", msg.AdminContentID), pubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Publish failed: %v", pubErr)}
 		}
 
@@ -516,7 +516,7 @@ func (m Model) HandleAdminConfirmedUnpublish(msg ConfirmedUnpublishAdminContentM
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -531,7 +531,7 @@ func (m Model) HandleAdminConfirmedUnpublish(msg ConfirmedUnpublishAdminContentM
 
 		unpubErr := publishing.UnpublishAdminContent(ctx, d, msg.AdminContentID, locale, userID, ac, dispatcher)
 		if unpubErr != nil {
-			logger.Ferror(fmt.Sprintf("Failed to unpublish admin content %s", msg.AdminContentID), unpubErr)
+			logger.Ferror(fmt.Sprintf("failed to unpublish admin content %s", msg.AdminContentID), unpubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Unpublish failed: %v", unpubErr)}
 		}
 
@@ -549,7 +549,7 @@ func (m Model) HandleAdminListVersions(msg AdminListVersionsRequestMsg) tea.Cmd 
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -557,7 +557,7 @@ func (m Model) HandleAdminListVersions(msg AdminListVersionsRequestMsg) tea.Cmd 
 		d := db.ConfigDB(*cfg)
 		versions, err := d.ListAdminContentVersionsByContent(msg.AdminContentID)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to list admin versions: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to list admin versions: %v", err)}
 		}
 		var versionList []db.AdminContentVersion
 		if versions != nil {
@@ -576,7 +576,7 @@ func (m Model) HandleAdminConfirmedRestoreVersion(msg ConfirmedRestoreAdminVersi
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -589,8 +589,8 @@ func (m Model) HandleAdminConfirmedRestoreVersion(msg ConfirmedRestoreAdminVersi
 
 		result, err := publishing.RestoreAdminContent(ctx, d, msg.AdminContentID, msg.VersionID, userID, ac)
 		if err != nil {
-			logger.Ferror(fmt.Sprintf("Failed to restore admin version for %s", msg.AdminContentID), err)
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Restore failed: %v", err)}
+			logger.Ferror(fmt.Sprintf("failed to restore admin version for %s", msg.AdminContentID), err)
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("restore failed: %v", err)}
 		}
 
 		logger.Finfo(fmt.Sprintf("Admin content %s restored from version %s (%d fields)", msg.AdminContentID, msg.VersionID, result.FieldsRestored))
@@ -614,7 +614,7 @@ func (m Model) HandleDeleteAdminContentField(msg ConfirmedDeleteAdminContentFiel
 
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -625,7 +625,7 @@ func (m Model) HandleDeleteAdminContentField(msg ConfirmedDeleteAdminContentFiel
 
 		err := d.DeleteAdminContentField(ctx, ac, msg.AdminContentFieldID)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to delete admin field: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to delete admin field: %v", err)}
 		}
 
 		return ContentFieldDeletedMsg{
@@ -648,7 +648,7 @@ func (m Model) HandleAddAdminContentField(
 
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -668,7 +668,7 @@ func (m Model) HandleAddAdminContentField(
 			DateModified:       types.TimestampNow(),
 		})
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to add admin content field: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to add admin content field: %v", err)}
 		}
 
 		return ContentFieldAddedMsg{
@@ -693,7 +693,7 @@ func (m Model) HandleEditAdminSingleField(
 
 	if cfg == nil {
 		return func() tea.Msg {
-			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+			return ActionResultMsg{Title: "Error", Message: "configuration not loaded"}
 		}
 	}
 
@@ -719,7 +719,7 @@ func (m Model) HandleEditAdminSingleField(
 			DateModified:        types.TimestampNow(),
 		})
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update admin field: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to update admin field: %v", err)}
 		}
 
 		return ContentFieldUpdatedMsg{

@@ -33,7 +33,7 @@ func (m Model) CreateContentWithFields(
 		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
 		// Debug logging
-		logger.Finfo(fmt.Sprintf("Creating ContentData: DatatypeID=%s, RouteID=%s, AuthorID=%s", datatypeID, routeID, authorID))
+		logger.Finfo(fmt.Sprintf("creating ContentData: DatatypeID=%s, RouteID=%s, AuthorID=%s", datatypeID, routeID, authorID))
 
 		// Step 1: Create ContentData using typed DbDriver method
 		// RootID is not set here because root nodes need their own ID, which
@@ -81,7 +81,7 @@ func (m Model) CreateContentWithFields(
 			DateModified:  types.TimestampNow(),
 		})
 		if rootUpdateErr != nil {
-			logger.Ferror("Failed to set root_id on new root content", rootUpdateErr)
+			logger.Ferror("failed to set root_id on new root content", rootUpdateErr)
 		}
 
 		// Step 2: Create ContentFields for every field defined on the datatype.
@@ -92,7 +92,7 @@ func (m Model) CreateContentWithFields(
 
 		allFields, fieldListErr := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: datatypeID, Valid: true})
 		if fieldListErr != nil {
-			logger.Ferror("Failed to list datatype fields, falling back to user-provided fields only", fieldListErr)
+			logger.Ferror("failed to list datatype fields, falling back to user-provided fields only", fieldListErr)
 		}
 
 		if allFields != nil && len(*allFields) > 0 {
@@ -172,7 +172,7 @@ func (m Model) HandleCreateContentFromDialog(
 		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
 		// Debug logging
-		logger.Finfo(fmt.Sprintf("Creating ContentData from dialog: DatatypeID=%s, RouteID=%s, AuthorID=%s, HasParent=%v",
+		logger.Finfo(fmt.Sprintf("creating ContentData from dialog: DatatypeID=%s, RouteID=%s, AuthorID=%s, HasParent=%v",
 			msg.DatatypeID, msg.RouteID, authorID, msg.ParentID.Valid))
 
 		// Step 0: Determine root_id and route_id before creation.
@@ -183,7 +183,7 @@ func (m Model) HandleCreateContentFromDialog(
 		if msg.ParentID.Valid {
 			parentData, lookupErr := d.GetContentData(msg.ParentID.ID)
 			if lookupErr != nil {
-				logger.Ferror("Failed to look up parent content data for root_id", lookupErr)
+				logger.Ferror("failed to look up parent content data for root_id", lookupErr)
 			} else if parentData != nil {
 				rootID = parentData.RootID
 				// Inherit route from parent when not explicitly provided.
@@ -240,7 +240,7 @@ func (m Model) HandleCreateContentFromDialog(
 				DateModified:  types.TimestampNow(),
 			})
 			if rootUpdateErr != nil {
-				logger.Ferror("Failed to set root_id on new root content", rootUpdateErr)
+				logger.Ferror("failed to set root_id on new root content", rootUpdateErr)
 			}
 		}
 
@@ -252,7 +252,7 @@ func (m Model) HandleCreateContentFromDialog(
 			ops := newContentTreeOps(d)
 			prevID, attachErr := attachAsLastChild(ctx, ac, ops, string(contentData.ContentDataID), string(msg.ParentID.ID))
 			if attachErr != nil {
-				logger.Ferror("Failed to attach content as last child", attachErr)
+				logger.Ferror("failed to attach content as last child", attachErr)
 			} else if prevID.Valid {
 				// Update the new node's prev_sibling_id
 				_, prevErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
@@ -270,7 +270,7 @@ func (m Model) HandleCreateContentFromDialog(
 					DateModified:  types.TimestampNow(),
 				})
 				if prevErr != nil {
-					logger.Ferror("Failed to set prev_sibling_id on new content", prevErr)
+					logger.Ferror("failed to set prev_sibling_id on new content", prevErr)
 				}
 			}
 		}
@@ -281,7 +281,7 @@ func (m Model) HandleCreateContentFromDialog(
 
 		allFields, fieldListErr := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true})
 		if fieldListErr != nil {
-			logger.Ferror("Failed to list datatype fields, falling back to user-provided fields only", fieldListErr)
+			logger.Ferror("failed to list datatype fields, falling back to user-provided fields only", fieldListErr)
 		}
 
 		if allFields != nil && len(*allFields) > 0 {
@@ -362,20 +362,20 @@ func (m Model) HandleFetchContentForEdit(msg FetchContentForEditMsg) tea.Cmd {
 		contentDataID := types.NullableContentID{ID: msg.ContentID, Valid: true}
 		contentFields, err := d.ListContentFieldsByContentData(contentDataID)
 		if err != nil {
-			logger.Ferror("Failed to fetch content fields for edit", err)
+			logger.Ferror("failed to fetch content fields for edit", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to fetch content fields: %v", err),
+				Message: fmt.Sprintf("failed to fetch content fields: %v", err),
 			}
 		}
 
 		// Get field definitions for this datatype by parent_id
 		fieldList, err := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true})
 		if err != nil {
-			logger.Ferror("Failed to fetch datatype fields", err)
+			logger.Ferror("failed to fetch datatype fields", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to fetch field definitions: %v", err),
+				Message: fmt.Sprintf("failed to fetch field definitions: %v", err),
 			}
 		}
 
@@ -450,10 +450,10 @@ func (m Model) HandleUpdateContentFromDialog(
 		contentDataID := types.NullableContentID{ID: msg.ContentID, Valid: true}
 		existingFields, err := d.ListContentFieldsByContentData(contentDataID)
 		if err != nil {
-			logger.Ferror("Failed to fetch existing content fields", err)
+			logger.Ferror("failed to fetch existing content fields", err)
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: fmt.Sprintf("Failed to fetch existing fields: %v", err),
+				Message: fmt.Sprintf("failed to fetch existing fields: %v", err),
 			}
 		}
 
@@ -486,7 +486,7 @@ func (m Model) HandleUpdateContentFromDialog(
 					DateModified:   types.TimestampNow(),
 				})
 				if err != nil {
-					logger.Ferror(fmt.Sprintf("Failed to update field %s", fieldID), err)
+					logger.Ferror(fmt.Sprintf("failed to update field %s", fieldID), err)
 					updateErrors = append(updateErrors, string(fieldID))
 				} else {
 					updatedCount++
@@ -503,7 +503,7 @@ func (m Model) HandleUpdateContentFromDialog(
 					DateModified:  types.TimestampNow(),
 				})
 				if fieldErr != nil || fieldResult.ContentFieldID.IsZero() {
-					logger.Ferror(fmt.Sprintf("Failed to create field %s", fieldID), fieldErr)
+					logger.Ferror(fmt.Sprintf("failed to create field %s", fieldID), fieldErr)
 					updateErrors = append(updateErrors, string(fieldID))
 				} else {
 					updatedCount++
@@ -883,7 +883,7 @@ func (m Model) HandleEditSingleField(contentFieldID types.ContentFieldID, conten
 			DateModified:   types.TimestampNow(),
 		})
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update field: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to update field: %v", err)}
 		}
 
 		return ContentFieldUpdatedMsg{
@@ -905,7 +905,7 @@ func (m Model) HandleDeleteContentField(contentFieldID types.ContentFieldID, con
 
 		err := d.DeleteContentField(ctx, ac, contentFieldID)
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to delete field: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to delete field: %v", err)}
 		}
 
 		return ContentFieldDeletedMsg{
@@ -935,7 +935,7 @@ func (m Model) HandleAddContentField(contentID types.ContentID, fieldID types.Fi
 			DateModified:  types.TimestampNow(),
 		})
 		if err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to add content field: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to add content field: %v", err)}
 		}
 
 		return ContentFieldAddedMsg{
@@ -959,13 +959,13 @@ func (m Model) HandleReorderField(aID string, bID string, aOrder int64, bOrder i
 			FieldID:   types.FieldID(aID),
 			SortOrder: bOrder,
 		}); err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to reorder: %v", err)}
 		}
 		if err := d.UpdateFieldSortOrder(ctx, ac, db.UpdateFieldSortOrderParams{
 			FieldID:   types.FieldID(bID),
 			SortOrder: aOrder,
 		}); err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to reorder: %v", err)}
 		}
 
 		return FieldReorderedMsg{
@@ -1011,13 +1011,13 @@ func (m Model) HandleReorderDatatype(msg ReorderDatatypeRequestMsg) tea.Cmd {
 			DatatypeID: msg.AID,
 			SortOrder:  msg.BOrder,
 		}); err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to reorder: %v", err)}
 		}
 		if err := d.UpdateDatatypeSortOrder(ctx, ac, db.UpdateDatatypeSortOrderParams{
 			DatatypeID: msg.BID,
 			SortOrder:  msg.AOrder,
 		}); err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to reorder: %v", err)}
 		}
 
 		return DatatypeReorderedMsg{Direction: msg.Direction}
@@ -1058,13 +1058,13 @@ func (m Model) HandleReorderAdminDatatype(msg ReorderAdminDatatypeRequestMsg) te
 			AdminDatatypeID: msg.AID,
 			SortOrder:       msg.BOrder,
 		}); err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to reorder: %v", err)}
 		}
 		if err := d.UpdateAdminDatatypeSortOrder(ctx, ac, db.UpdateAdminDatatypeSortOrderParams{
 			AdminDatatypeID: msg.BID,
 			SortOrder:       msg.AOrder,
 		}); err != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("failed to reorder: %v", err)}
 		}
 
 		return AdminDatatypeReorderedMsg{Direction: msg.Direction}
