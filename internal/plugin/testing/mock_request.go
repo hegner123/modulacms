@@ -69,6 +69,11 @@ func (m *MockRequestEngine) ClearRules() {
 	m.rules = nil
 }
 
+// MockOutboundOpts returns a zero-value OutboundRequestOpts for use in tests.
+func MockOutboundOpts() plugin.OutboundRequestOpts {
+	return plugin.OutboundRequestOpts{}
+}
+
 func (m *MockRequestEngine) buildResponse(resp map[string]any) map[string]any {
 	status := 200
 	if s, ok := resp["status"]; ok {

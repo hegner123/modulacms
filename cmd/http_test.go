@@ -163,7 +163,7 @@ func TestHandleSimpleResponse_Success(t *testing.T) {
 	}
 
 	output := stdout.String()
-	if !strings.Contains(output, `Plugin "my_plugin" reloaded successfully.`) {
+	if !strings.Contains(output, `plugin "my_plugin" reloaded successfully.`) {
 		t.Errorf("expected success message, got: %q", output)
 	}
 }
