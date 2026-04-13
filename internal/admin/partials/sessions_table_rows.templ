@@ -25,7 +25,7 @@ templ SessionsTableRows(items []db.Sessions, userNames map[string]string) {
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.DateCreated.String() }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{ item.ExpiresAt.String() }</td>
             <td class="whitespace-nowrap px-4 py-4 text-sm">
-                <div class="flex items-center justify-end gap-3">
+                <div class="flex items-center justify-center gap-3">
                     @CopyIDButton(item.SessionID.String())
                     <mcms-confirm
                         label="Revoke"

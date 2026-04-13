@@ -1,0 +1,20 @@
+package partials
+
+templ ContentBreadcrumbNav(crumbs ContentBreadcrumb) {
+    for i, seg := range crumbs.Segments {
+        if i > 0 {
+            <span class="text-gray-600">/</span>
+        }
+        if seg.Href != "" && i < len(crumbs.Segments)-1 {
+            <a
+                href={ templ.SafeURL(seg.Href) }
+                hx-get={ seg.Href }
+                hx-target="#content-main-panel"
+                hx-push-url="true"
+                class="text-gray-400 hover:text-white"
+            >{ seg.Label }</a>
+        } else {
+            <span class="text-white">{ seg.Label }</span>
+        }
+    }
+}

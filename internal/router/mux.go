@@ -356,6 +356,12 @@ func NewModulaMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDr
 	mux.Handle("POST /api/v1/media/move", middleware.RequirePermission("media:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		apiBatchMoveMedia(w, r, svc)
 	})))
+	mux.Handle("GET /api/v1/media/reprocess/status", middleware.RequirePermission("media:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		MediaReprocessStatusHandler(w, r, svc)
+	})))
+	mux.Handle("POST /api/v1/media/reprocess", middleware.RequirePermission("media:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		MediaReprocessTriggerHandler(w, r, svc)
+	})))
 	mux.Handle("/api/v1/media/", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediaHandler(w, r, svc)
 	})))
@@ -843,9 +849,13 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	// Dashboard (requires auth but no specific permission)
 	mux.Handle("GET /admin/{$}", adminAuth(csrf(http.HandlerFunc(adminhandlers.DashboardHandler(svc)))))
 
-	// Content
-	mux.Handle("GET /admin/content", viewing("content", adminhandlers.ContentListHandler(driver, mgr, searchSvc)))
-	mux.Handle("GET /admin/content/{id}", viewing("content", adminhandlers.ContentEditHandler(driver, mgr)))
+	// Content (redirects to content-tree)
+	mux.HandleFunc("GET /admin/content", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/content-tree", http.StatusFound)
+	})
+	mux.HandleFunc("GET /admin/content/{id}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/content-tree/page/"+r.PathValue("id"), http.StatusFound)
+	})
 	mux.Handle("POST /admin/content", mutating("content:create", adminhandlers.ContentCreateHandler(driver, mgr)))
 	mux.Handle("POST /admin/content/{id}", mutating("content:update", adminhandlers.ContentUpdateHandler(driver, mgr)))
 	mux.Handle("DELETE /admin/content/{id}", mutating("content:delete", adminhandlers.ContentDeleteHandler(driver, mgr)))
@@ -860,6 +870,17 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/content/{id}/versions", mutating("content:update", adminhandlers.ContentCreateVersionHandler(driver, mgr)))
 	mux.Handle("POST /admin/content/{id}/restore", mutating("content:update", adminhandlers.ContentRestoreVersionHandler(driver, mgr)))
 	mux.Handle("GET /admin/content/{id}/versions/compare", viewing("content", adminhandlers.ContentVersionCompareHandler(driver)))
+
+	// Content tree (two-panel layout)
+	mux.Handle("GET /admin/content-tree", viewing("content", adminhandlers.ContentTreePageHandler(driver, mgr)))
+	mux.Handle("GET /admin/content-tree/sidebar", viewing("content", adminhandlers.ContentTreeSidebarHandler(driver, mgr)))
+	mux.Handle("GET /admin/content-tree/sidebar/{routeID}", viewing("content", adminhandlers.ContentTreeRouteChildrenHandler(driver)))
+	mux.Handle("GET /admin/content-tree/page/{contentID}", viewing("content", adminhandlers.ContentTreePageViewHandler(driver, mgr)))
+	mux.Handle("GET /admin/content-tree/drawer/{contentID}", viewing("content", adminhandlers.ContentTreeDrawerHandler(driver, mgr)))
+	mux.Handle("POST /admin/content-tree/drawer/{contentID}", mutating("content:update", adminhandlers.ContentTreeDrawerSaveHandler(driver, mgr)))
+	mux.Handle("POST /admin/content-tree/create", mutating("content:create", adminhandlers.ContentTreeCreateHandler(driver, mgr)))
+	mux.Handle("GET /admin/content-tree/create-options/{parentID}", viewing("content", adminhandlers.ContentTreeCreateOptionsHandler(driver)))
+	mux.Handle("DELETE /admin/content-tree/block/{contentID}", mutating("content:delete", adminhandlers.ContentTreeDeleteBlockHandler(svc, mgr)))
 
 	// Admin API — config endpoints
 	mux.Handle("GET /admin/api/config/richtext-toolbar", viewing("config", adminhandlers.RichtextToolbarHandler(mgr)))
@@ -934,6 +955,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/media/dimensions", mutating("media:create", adminhandlers.MediaDimensionCreateHandler(svc)))
 	mux.Handle("POST /admin/media/dimensions/{id}", mutating("media:update", adminhandlers.MediaDimensionUpdateHandler(svc)))
 	mux.Handle("DELETE /admin/media/dimensions/{id}", mutating("media:delete", adminhandlers.MediaDimensionDeleteHandler(svc)))
+	mux.Handle("GET /admin/media/dimensions/reprocess-status", viewing("media", adminhandlers.MediaDimensionReprocessStatusHandler(svc)))
 
 	// Routes
 	mux.Handle("GET /admin/routes", viewing("routes", adminhandlers.RoutesListHandler(svc)))

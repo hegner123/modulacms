@@ -1,0 +1,128 @@
+package partials
+
+import "github.com/hegner123/modulacms/internal/db"
+
+templ ContentCreatePicker(datatypes []db.Datatypes, parentID string, csrfToken string) {
+    <mcms-dialog id="add-block-picker" aria-labelledby="add-block-title">
+        <div class="w-full max-w-lg">
+            <!-- Search input -->
+            <div class="relative">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="pointer-events-none absolute left-4 top-3.5 size-5 text-gray-500">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z"></path>
+                </svg>
+                <input
+                    type="text"
+                    id="add-block-search"
+                    placeholder="Search datatypes..."
+                    class="h-12 w-full border-0 bg-transparent pr-4 pl-11 text-sm text-white outline-none placeholder:text-gray-500 focus:ring-0"
+                    autocomplete="off"
+                />
+            </div>
+            <!-- Results -->
+            <div id="add-block-results" class="max-h-80 overflow-y-auto border-t border-white/10 py-2">
+                for _, dt := range datatypes {
+                    <form
+                        class="block"
+                        hx-post="/admin/content-tree/create"
+                        hx-swap="none"
+                    >
+                        @CSRFField(csrfToken)
+                        <input type="hidden" name="parent_id" value={ parentID }/>
+                        <input type="hidden" name="datatype_id" value={ dt.DatatypeID.String() }/>
+                        <button
+                            type="submit"
+                            data-picker-item
+                            data-label={ dt.Label }
+                            data-type={ dt.Type }
+                            class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-white/5 focus:bg-white/5 focus:outline-none"
+                        >
+                            <div class="flex-1">
+                                <div class="font-medium text-white">{ dt.Label }</div>
+                                if dt.Type != "" {
+                                    <div class="text-xs text-gray-500">{ dt.Type }</div>
+                                }
+                            </div>
+                        </button>
+                    </form>
+                }
+            </div>
+            <!-- Footer -->
+            <div class="flex items-center border-t border-white/10 px-4 py-2.5 text-xs text-gray-500">
+                <kbd class="mr-1 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-gray-400">&#8593;&#8595;</kbd> navigate
+                <kbd class="mx-1 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-gray-400">&#8629;</kbd> select
+                <kbd class="ml-1 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-gray-400">esc</kbd> close
+            </div>
+        </div>
+        <script>
+            (function() {
+                var dialog = document.getElementById('add-block-picker');
+                if (!dialog) return;
+                var input = document.getElementById('add-block-search');
+                var results = document.getElementById('add-block-results');
+                if (!input || !results) return;
+
+                var activeIdx = -1;
+
+                function getVisible() {
+                    var items = results.querySelectorAll('[data-picker-item]');
+                    var visible = [];
+                    for (var i = 0; i < items.length; i++) {
+                        if (items[i].closest('form').style.display !== 'none') visible.push(items[i]);
+                    }
+                    return visible;
+                }
+
+                function highlight(idx) {
+                    var visible = getVisible();
+                    for (var i = 0; i < visible.length; i++) {
+                        if (i === idx) {
+                            visible[i].classList.add('bg-white/5');
+                            visible[i].scrollIntoView({ block: 'nearest' });
+                        } else {
+                            visible[i].classList.remove('bg-white/5');
+                        }
+                    }
+                    activeIdx = idx;
+                }
+
+                input.addEventListener('input', function() {
+                    var q = input.value.toLowerCase();
+                    var forms = results.querySelectorAll('form');
+                    for (var i = 0; i < forms.length; i++) {
+                        var item = forms[i].querySelector('[data-picker-item]');
+                        var label = (item.getAttribute('data-label') || '').toLowerCase();
+                        var type = (item.getAttribute('data-type') || '').toLowerCase();
+                        forms[i].style.display = (label.indexOf(q) !== -1 || type.indexOf(q) !== -1) ? '' : 'none';
+                    }
+                    activeIdx = -1;
+                    highlight(0);
+                });
+
+                input.addEventListener('keydown', function(e) {
+                    var visible = getVisible();
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        highlight(Math.min(activeIdx + 1, visible.length - 1));
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        highlight(Math.max(activeIdx - 1, 0));
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (activeIdx >= 0 && activeIdx < visible.length) {
+                            visible[activeIdx].click();
+                        }
+                    }
+                });
+
+                // Focus input when dialog opens
+                dialog.addEventListener('mcms-dialog:open', function() {
+                    input.value = '';
+                    var forms = results.querySelectorAll('form');
+                    for (var i = 0; i < forms.length; i++) forms[i].style.display = '';
+                    activeIdx = -1;
+                    requestAnimationFrame(function() { input.focus(); });
+                });
+            })();
+        </script>
+    </mcms-dialog>
+}

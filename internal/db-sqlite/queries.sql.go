@@ -12065,6 +12065,86 @@ func (q *Queries) ListContentFieldsByContentDataPaginated(ctx context.Context, a
 	return items, nil
 }
 
+const listContentFieldsByContentIDs = `-- name: ListContentFieldsByContentIDs :many
+SELECT
+    cf.content_field_id, cf.route_id,
+    cf.root_id, cf.content_data_id, cf.field_id,
+    cf.field_value, cf.author_id,
+    cf.date_created, cf.date_modified,
+    f.field_id AS f_field_id,
+    f.label AS f_label,
+    f.type AS f_type
+FROM content_fields cf
+JOIN fields f ON cf.field_id = f.field_id
+WHERE cf.content_data_id IN (/*SLICE:content_ids*/?)
+ORDER BY cf.content_data_id, cf.field_id
+`
+
+type ListContentFieldsByContentIDsParams struct {
+	ContentIds []types.NullableContentID `json:"content_ids"`
+}
+
+type ListContentFieldsByContentIDsRow struct {
+	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
+	RouteID        types.NullableRouteID   `json:"route_id"`
+	RootID         types.NullableContentID `json:"root_id"`
+	ContentDataID  types.NullableContentID `json:"content_data_id"`
+	FieldID        types.NullableFieldID   `json:"field_id"`
+	FieldValue     string                  `json:"field_value"`
+	AuthorID       types.UserID            `json:"author_id"`
+	DateCreated    types.Timestamp         `json:"date_created"`
+	DateModified   types.Timestamp         `json:"date_modified"`
+	FFieldId       types.FieldID           `json:"f_field_id"`
+	FLabel         string                  `json:"f_label"`
+	FType          types.FieldType         `json:"f_type"`
+}
+
+func (q *Queries) ListContentFieldsByContentIDs(ctx context.Context, arg ListContentFieldsByContentIDsParams) ([]ListContentFieldsByContentIDsRow, error) {
+	query := listContentFieldsByContentIDs
+	var queryParams []interface{}
+	if len(arg.ContentIds) > 0 {
+		for _, v := range arg.ContentIds {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:content_ids*/?", strings.Repeat(",?", len(arg.ContentIds))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:content_ids*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListContentFieldsByContentIDsRow{}
+	for rows.Next() {
+		var i ListContentFieldsByContentIDsRow
+		if err := rows.Scan(
+			&i.ContentFieldID,
+			&i.RouteID,
+			&i.RootID,
+			&i.ContentDataID,
+			&i.FieldID,
+			&i.FieldValue,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.FFieldId,
+			&i.FLabel,
+			&i.FType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listContentFieldsByRootID = `-- name: ListContentFieldsByRootID :many
 SELECT content_field_id, route_id, root_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE root_id = ?

@@ -115,6 +115,7 @@ type ContentFieldRepository interface {
 	ListContentFieldsByRoutePaginated(ListContentFieldsByRoutePaginatedParams) (*[]ContentFields, error)
 	ListContentFieldsByContentDataPaginated(ListContentFieldsByContentDataPaginatedParams) (*[]ContentFields, error)
 	ListContentFieldsWithFieldByContentData(types.NullableContentID) (*[]ContentFieldWithFieldRow, error)
+	ListContentFieldsWithFieldByContentIDs([]types.ContentID) (*[]ContentFieldWithFieldRow, error)
 	ListContentFieldsByContentDataAndLocale(types.NullableContentID, string) (*[]ContentFields, error)
 	ListContentFieldsByContentDataIDs(context.Context, []types.ContentID, string) (*[]ContentFields, error)
 	ListContentFieldsByRootID(types.NullableContentID) (*[]ContentFields, error)

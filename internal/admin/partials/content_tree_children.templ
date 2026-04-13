@@ -1,0 +1,43 @@
+package partials
+
+import "github.com/hegner123/modulacms/internal/db"
+
+// ContentTreeChildNode represents a content node in the block sidebar tree.
+type ContentTreeChildNode struct {
+    ContentData   db.ContentData
+    DatatypeLabel string
+    DisplayName   string
+    HasChildren   bool
+    Children      []ContentTreeChildNode
+    Depth         int
+    IsDirty       bool
+}
+
+templ ContentTreeChildren(nodes []ContentTreeChildNode) {
+    <ul class="space-y-0.5">
+        for _, node := range nodes {
+            <li
+                data-id={ node.ContentData.ContentDataID.String() }
+                if node.HasChildren {
+                    data-has-children="true"
+                }
+                if !node.HasChildren {
+                    data-leaf="true"
+                    data-leaf-url={ "/admin/content-tree/page/" + node.ContentData.ContentDataID.String() }
+                }
+            >
+                { childDisplayLabel(node) }
+            </li>
+        }
+    </ul>
+}
+
+func childDisplayLabel(n ContentTreeChildNode) string {
+    if n.DisplayName != "" {
+        return n.DisplayName
+    }
+    if n.DatatypeLabel != "" {
+        return n.DatatypeLabel
+    }
+    return "Untitled"
+}

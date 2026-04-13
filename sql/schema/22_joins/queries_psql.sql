@@ -198,6 +198,20 @@ JOIN fields f ON cf.field_id = f.field_id
 WHERE cf.content_data_id = $1
 ORDER BY cf.field_id;
 
+-- name: ListContentFieldsByContentIDs :many
+SELECT
+    cf.content_field_id, cf.route_id,
+    cf.root_id, cf.content_data_id, cf.field_id,
+    cf.field_value, cf.author_id,
+    cf.date_created, cf.date_modified,
+    f.field_id AS f_field_id,
+    f.label AS f_label,
+    f.type AS f_type
+FROM content_fields cf
+JOIN fields f ON cf.field_id = f.field_id
+WHERE cf.content_data_id = ANY($1::text[])
+ORDER BY cf.content_data_id, cf.field_id;
+
 -- name: ListFieldsWithSortOrderByDatatypeID :many
 SELECT
     f.sort_order,

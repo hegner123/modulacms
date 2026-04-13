@@ -128,7 +128,7 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager, searchSvc *sear
 				}, types.ContentStatus(statusFilter))
 				if err != nil {
 					utility.DefaultLogger.Error("failed to list content by status", err)
-					http.Error(w, "Failed to load content", http.StatusInternalServerError)
+					http.Error(w, "failed to load content", http.StatusInternalServerError)
 					return
 				}
 				if items != nil {
@@ -137,7 +137,7 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager, searchSvc *sear
 				cnt, cntErr := driver.CountContentDataTopLevelByStatus(types.ContentStatus(statusFilter))
 				if cntErr != nil {
 					utility.DefaultLogger.Error("failed to count content by status", cntErr)
-					http.Error(w, "Failed to load content", http.StatusInternalServerError)
+					http.Error(w, "failed to load content", http.StatusInternalServerError)
 					return
 				}
 				total = cnt
@@ -148,7 +148,7 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager, searchSvc *sear
 				})
 				if err != nil {
 					utility.DefaultLogger.Error("failed to list content", err)
-					http.Error(w, "Failed to load content", http.StatusInternalServerError)
+					http.Error(w, "failed to load content", http.StatusInternalServerError)
 					return
 				}
 				if items != nil {
@@ -157,7 +157,7 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager, searchSvc *sear
 				cnt, cntErr := driver.CountContentDataTopLevel()
 				if cntErr != nil {
 					utility.DefaultLogger.Error("failed to count content", cntErr)
-					http.Error(w, "Failed to load content", http.StatusInternalServerError)
+					http.Error(w, "failed to load content", http.StatusInternalServerError)
 					return
 				}
 				total = cnt
@@ -490,7 +490,7 @@ func ContentEditHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		)
 		if fieldsErr != nil {
 			utility.DefaultLogger.Error("failed to get content fields", fieldsErr)
-			http.Error(w, "Failed to load content fields", http.StatusInternalServerError)
+			http.Error(w, "failed to load content fields", http.StatusInternalServerError)
 			return
 		}
 
@@ -589,7 +589,7 @@ func ContentCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 
 		cfg, err := mgr.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -635,11 +635,11 @@ func ContentCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 			if routeErr != nil {
 				utility.DefaultLogger.Error("failed to create route for content", routeErr)
 				if IsHTMX(r) {
-					w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create route", "type": "error"}}`)
+					w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to create route", "type": "error"}}`)
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
-				http.Error(w, "Failed to create route", http.StatusInternalServerError)
+				http.Error(w, "failed to create route", http.StatusInternalServerError)
 				return
 			}
 			routeID = types.NullableRouteID{ID: route.RouteID, Valid: true}
@@ -659,11 +659,11 @@ func ContentCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 		if createErr != nil {
 			utility.DefaultLogger.Error("failed to create content", createErr)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create content", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to create content", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to create content", http.StatusInternalServerError)
+			http.Error(w, "failed to create content", http.StatusInternalServerError)
 			return
 		}
 
@@ -698,11 +698,11 @@ func ContentCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 
 		if IsHTMX(r) {
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Content created", "type": "success"}}`)
-			w.Header().Set("HX-Redirect", "/admin/content/"+created.ContentDataID.String())
+			w.Header().Set("HX-Redirect", "/admin/content-tree/page/"+created.ContentDataID.String())
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		http.Redirect(w, r, "/admin/content/"+created.ContentDataID.String(), http.StatusSeeOther)
+		http.Redirect(w, r, "/admin/content-tree/page/"+created.ContentDataID.String(), http.StatusSeeOther)
 	}
 }
 
@@ -722,7 +722,7 @@ func ContentUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 
 		cfg, err := mgr.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -768,11 +768,11 @@ func ContentUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 		if _, updateErr := driver.UpdateContentData(r.Context(), ac, params); updateErr != nil {
 			utility.DefaultLogger.Error("failed to update content", updateErr)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to update content", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to update content", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to update content", http.StatusInternalServerError)
+			http.Error(w, "failed to update content", http.StatusInternalServerError)
 			return
 		}
 
@@ -802,7 +802,7 @@ func ContentDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 
 		cfg, err := mgr.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -821,7 +821,7 @@ func ContentDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 
 		if deleteErr := driver.DeleteContentData(r.Context(), ac, types.ContentID(id)); deleteErr != nil {
 			utility.DefaultLogger.Error("failed to delete content", deleteErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete content", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete content", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -854,14 +854,14 @@ func ContentReorderHandler(svc *service.Registry, mgr *config.Manager) http.Hand
 		}
 
 		if len(req.OrderedIDs) == 0 {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "No items to reorder", "type": "warning"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "no items to reorder", "type": "warning"}}`)
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 
 		cfg, err := mgr.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -938,7 +938,7 @@ func ContentMoveHandler(svc *service.Registry, mgr *config.Manager) http.Handler
 
 		cfg, err := mgr.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -1083,14 +1083,14 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 		}
 
 		if len(req.Creates) == 0 && len(req.Updates) == 0 && len(req.Deletes) == 0 && len(req.FieldUpdates) == 0 {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "No changes to save", "type": "info"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "no changes to save", "type": "info"}}`)
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 
 		cfg, err := mgr.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -1521,7 +1521,7 @@ func DatatypeFieldsJSONHandler(svc *service.Registry) http.HandlerFunc {
 		)
 		if fieldsErr != nil {
 			utility.DefaultLogger.Error("failed to list fields for datatype", fieldsErr)
-			http.Error(w, "Failed to load fields", http.StatusInternalServerError)
+			http.Error(w, "failed to load fields", http.StatusInternalServerError)
 			return
 		}
 
@@ -1573,7 +1573,7 @@ func ContentPublishHandler(driver db.DbDriver, mgr *config.Manager, dispatcher p
 
 		cfg, err := mgr.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -1620,7 +1620,7 @@ func ContentUnpublishHandler(driver db.DbDriver, mgr *config.Manager, dispatcher
 
 		cfg, err := mgr.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -1660,7 +1660,7 @@ func ContentVersionsHandler(driver db.DbDriver) http.HandlerFunc {
 		versions, err := driver.ListContentVersionsByContent(contentID)
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list versions", err)
-			http.Error(w, "Failed to load versions", http.StatusInternalServerError)
+			http.Error(w, "failed to load versions", http.StatusInternalServerError)
 			return
 		}
 
@@ -1696,7 +1696,7 @@ func ContentCreateVersionHandler(driver db.DbDriver, mgr *config.Manager) http.H
 
 		cfg, err := mgr.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -1707,7 +1707,7 @@ func ContentCreateVersionHandler(driver db.DbDriver, mgr *config.Manager) http.H
 		snapshot, snapErr := publishing.BuildSnapshot(driver, r.Context(), contentID, locale)
 		if snapErr != nil {
 			utility.DefaultLogger.Error("failed to build snapshot for manual version", snapErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create version", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to create version", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -1715,7 +1715,7 @@ func ContentCreateVersionHandler(driver db.DbDriver, mgr *config.Manager) http.H
 		snapshotBytes, marshalErr := json.Marshal(snapshot)
 		if marshalErr != nil {
 			utility.DefaultLogger.Error("failed to marshal snapshot", marshalErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create version", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to create version", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -1723,7 +1723,7 @@ func ContentCreateVersionHandler(driver db.DbDriver, mgr *config.Manager) http.H
 		maxVersion, maxErr := driver.GetMaxVersionNumber(contentID, locale)
 		if maxErr != nil {
 			utility.DefaultLogger.Error("failed to get max version number", maxErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create version", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to create version", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -1751,7 +1751,7 @@ func ContentCreateVersionHandler(driver db.DbDriver, mgr *config.Manager) http.H
 		})
 		if createErr != nil {
 			utility.DefaultLogger.Error("failed to create manual version", createErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create version", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to create version", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -1802,7 +1802,7 @@ func ContentRestoreVersionHandler(driver db.DbDriver, mgr *config.Manager) http.
 
 		cfg, err := mgr.Config()
 		if err != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -1825,7 +1825,7 @@ func ContentRestoreVersionHandler(driver db.DbDriver, mgr *config.Manager) http.
 		result, restoreErr := publishing.RestoreContent(r.Context(), driver, contentID, cvID, user.UserID, ac)
 		if restoreErr != nil {
 			utility.DefaultLogger.Error("admin restore content failed", restoreErr)
-			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Restore failed: %s", "type": "error"}}`, restoreErr.Error())
+			toastMsg := fmt.Sprintf(`{"showToast": {"message": "restore failed: %s", "type": "error"}}`, restoreErr.Error())
 			w.Header().Set("HX-Trigger", toastMsg)
 			renderContentEditPage(w, r, driver, contentID)
 			return
@@ -1856,14 +1856,14 @@ func ContentVersionCompareHandler(driver db.DbDriver) http.HandlerFunc {
 		versionA, errA := driver.GetContentVersion(types.ContentVersionID(aID))
 		if errA != nil {
 			utility.DefaultLogger.Error("failed to get version A", errA)
-			http.Error(w, "Failed to load version A", http.StatusInternalServerError)
+			http.Error(w, "failed to load version A", http.StatusInternalServerError)
 			return
 		}
 
 		versionB, errB := driver.GetContentVersion(types.ContentVersionID(bID))
 		if errB != nil {
 			utility.DefaultLogger.Error("failed to get version B", errB)
-			http.Error(w, "Failed to load version B", http.StatusInternalServerError)
+			http.Error(w, "failed to load version B", http.StatusInternalServerError)
 			return
 		}
 
@@ -1873,11 +1873,20 @@ func ContentVersionCompareHandler(driver db.DbDriver) http.HandlerFunc {
 
 // renderContentEditPage is a shared helper that re-renders the content edit page.
 // Used by publish/unpublish/restore handlers to refresh the page after mutations.
+// If the request originated from the content tree, redirects back there instead
+// of rendering the old block editor page.
 func renderContentEditPage(w http.ResponseWriter, r *http.Request, driver db.DbDriver, contentID types.ContentID) {
+	// If the request came from the content tree page, redirect back to it
+	currentURL := r.Header.Get("HX-Current-URL")
+	if strings.Contains(currentURL, "/admin/content-tree/") {
+		w.Header().Set("HX-Redirect", "/admin/content-tree/page/"+contentID.String())
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	content, err := driver.GetContentData(contentID)
 	if err != nil {
 		utility.DefaultLogger.Error("failed to get content for re-render", err)
-		http.Error(w, "Failed to load content", http.StatusInternalServerError)
+		http.Error(w, "failed to load content", http.StatusInternalServerError)
 		return
 	}
 
@@ -1886,7 +1895,7 @@ func renderContentEditPage(w http.ResponseWriter, r *http.Request, driver db.DbD
 	)
 	if fieldsErr != nil {
 		utility.DefaultLogger.Error("failed to get content fields for re-render", fieldsErr)
-		http.Error(w, "Failed to load content fields", http.StatusInternalServerError)
+		http.Error(w, "failed to load content fields", http.StatusInternalServerError)
 		return
 	}
 

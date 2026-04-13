@@ -217,7 +217,7 @@ class McmsCommandPalette extends HTMLElement {
     _defaultPages() {
         const items = [
             { label: 'Dashboard', href: '/admin/', section: '' },
-            { label: 'Content', href: '/admin/content', section: 'Content' },
+            { label: 'Content', href: '/admin/content-tree', section: 'Content' },
             { label: 'Datatypes', href: '/admin/datatypes', section: 'Content' },
             { label: 'Field Types', href: '/admin/field-types', section: 'Content' },
             { label: 'Routes', href: '/admin/routes', section: 'Content' },

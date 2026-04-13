@@ -1,0 +1,150 @@
+package partials
+
+templ ContentTreeSidebar(routes []RouteTreeNode, globals []RouteTreeNode, search string, csrfToken string) {
+    <div class="mb-3 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-white">Content Tree</h3>
+        <button
+            type="button"
+            class="rounded-md bg-[var(--color-primary)] px-2.5 py-1 text-xs font-medium text-white hover:bg-[var(--color-primary-hover)]"
+            onclick="document.getElementById('create-content-dialog').open()"
+        >New</button>
+    </div>
+    <input
+        type="search"
+        name="search"
+        placeholder="Search..."
+        value={ search }
+        hx-get="/admin/content-tree/sidebar"
+        hx-target="#content-tree-sidebar"
+        hx-trigger="input changed delay:300ms"
+        hx-push-url="false"
+        class="mb-3 w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+        data-search-input
+    />
+    if len(routes) == 0 && len(globals) == 0 {
+        <div class="py-8 text-center">
+            if search != "" {
+                <p class="text-sm text-gray-500">No routes match "{ search }"</p>
+            } else {
+                <p class="text-sm text-gray-500">No routes found.</p>
+                <a href="/admin/routes" class="mt-2 inline-block text-sm text-[var(--color-primary)] hover:underline">Create a route</a>
+            }
+        </div>
+    } else {
+        <div id="route-segment-tree" class="space-y-0.5">
+            @routeTreeNodes(routes, 0)
+        </div>
+        if len(globals) > 0 {
+            <div class="my-3 border-t border-white/10 pt-3">
+                <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Site-wide</p>
+            </div>
+            <div class="space-y-0.5">
+                for _, g := range globals {
+                    <a
+                        href={ templ.SafeURL("/admin/content-tree/page/" + g.ContentDataID.String()) }
+                        hx-get={ "/admin/content-tree/page/" + g.ContentDataID.String() }
+                        hx-target="#content-main-panel"
+                        hx-push-url="true"
+                        class="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-gray-400 transition-colors hover:bg-[var(--color-surface-hover)] hover:text-white no-underline"
+                    >
+                        <i data-lucide="globe" class="size-3.5 shrink-0 text-gray-500"></i>
+                        <span class="truncate">{ g.Label }</span>
+                    </a>
+                }
+            </div>
+        }
+        <script>
+            (function() {
+                var tree = document.getElementById('route-segment-tree');
+                if (!tree) return;
+                tree.addEventListener('click', function(e) {
+                    var toggle = e.target.closest('[data-seg-toggle]');
+                    if (!toggle) return;
+                    e.preventDefault();
+                    var group = toggle.closest('[data-seg-group]');
+                    if (!group) return;
+                    var children = group.querySelector('[data-seg-children]');
+                    if (!children) return;
+                    var expanded = group.hasAttribute('data-expanded');
+                    if (expanded) {
+                        group.removeAttribute('data-expanded');
+                        children.style.display = 'none';
+                        toggle.textContent = '\u25B6';
+                    } else {
+                        group.setAttribute('data-expanded', '');
+                        children.style.display = '';
+                        toggle.textContent = '\u25BC';
+                    }
+                });
+            })();
+        </script>
+    }
+}
+
+templ routeTreeNodes(nodes []RouteTreeNode, depth int) {
+    for _, node := range nodes {
+        if len(node.Children) > 0 {
+            <div data-seg-group style={ depthIndent(depth) }>
+                <div class="flex items-center gap-1">
+                    <button
+                        data-seg-toggle
+                        class="flex items-center justify-center w-5 h-5 rounded text-gray-500 hover:text-white bg-transparent border-none text-xs cursor-pointer"
+                        type="button"
+                        aria-label="Toggle group"
+                    >&#9654;</button>
+                    if node.IsRoute && !node.ContentDataID.IsZero() {
+                        <a
+                            href={ templ.SafeURL("/admin/content-tree/page/" + node.ContentDataID.String()) }
+                            hx-get={ "/admin/content-tree/page/" + node.ContentDataID.String() }
+                            hx-target="#content-main-panel"
+                            hx-push-url="true"
+                            class="flex-1 truncate rounded-md px-1.5 py-1 text-sm text-gray-300 transition-colors hover:bg-[var(--color-surface-hover)] hover:text-white no-underline"
+                        >{ node.Label }</a>
+                    } else {
+                        <span class="flex-1 truncate px-1.5 py-1 text-sm text-gray-500">{ node.Label }</span>
+                    }
+                </div>
+                <div data-seg-children style="display:none">
+                    @routeTreeNodes(node.Children, depth+1)
+                </div>
+            </div>
+        } else if node.IsRoute && !node.ContentDataID.IsZero() {
+            <a
+                href={ templ.SafeURL("/admin/content-tree/page/" + node.ContentDataID.String()) }
+                hx-get={ "/admin/content-tree/page/" + node.ContentDataID.String() }
+                hx-target="#content-main-panel"
+                hx-push-url="true"
+                class="flex items-center gap-2 rounded-md py-1 text-sm text-gray-400 transition-colors hover:bg-[var(--color-surface-hover)] hover:text-white no-underline"
+                style={ depthIndentLeaf(depth) }
+            >
+                <i data-lucide="file-text" class="size-3 shrink-0 text-gray-600"></i>
+                <span class="truncate">{ node.Label }</span>
+            </a>
+        }
+    }
+}
+
+func depthIndent(depth int) string {
+    if depth == 0 {
+        return ""
+    }
+    px := depth * 12
+    return "margin-left: " + intToStr(px) + "px"
+}
+
+func depthIndentLeaf(depth int) string {
+    px := depth*12 + 24
+    return "padding-left: " + intToStr(px) + "px"
+}
+
+func intToStr(n int) string {
+    if n == 0 {
+        return "0"
+    }
+    s := ""
+    for n > 0 {
+        s = string(rune('0'+n%10)) + s
+        n /= 10
+    }
+    return s
+}

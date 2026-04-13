@@ -1,0 +1,39 @@
+package partials
+
+import "github.com/hegner123/modulacms/internal/db"
+
+templ ContentCreateCards(datatypes []db.Datatypes, parentID string, csrfToken string) {
+    <div class="space-y-3">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white">Add a block</h3>
+            <button
+                type="button"
+                class="text-sm text-gray-400 hover:text-white"
+                onclick="this.closest('#create-options-panel').innerHTML = ''"
+            >&times;</button>
+        </div>
+        if len(datatypes) == 0 {
+            <p class="text-sm text-gray-500">No datatypes available.</p>
+        } else {
+            <div class="grid grid-cols-2 gap-2">
+                for _, dt := range datatypes {
+                    <form
+                        hx-post="/admin/content-tree/create"
+                        hx-swap="none"
+                        class="group cursor-pointer rounded-lg border border-white/10 bg-[var(--color-surface)] p-3 transition-colors hover:border-[var(--color-primary)]/50 hover:bg-[var(--color-surface-hover)]"
+                    >
+                        @CSRFField(csrfToken)
+                        <input type="hidden" name="parent_id" value={ parentID }/>
+                        <input type="hidden" name="datatype_id" value={ dt.DatatypeID.String() }/>
+                        <button type="submit" class="w-full text-left">
+                            <div class="text-sm font-medium text-white">{ dt.Label }</div>
+                            if dt.Type != "" {
+                                <div class="mt-0.5 text-xs text-gray-500">{ dt.Type }</div>
+                            }
+                        </button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+}

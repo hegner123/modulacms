@@ -2029,6 +2029,24 @@ func (r *RemoteDriver) ListContentFieldsWithFieldByContentData(contentDataID typ
 	})
 }
 
+func (r *RemoteDriver) ListContentFieldsWithFieldByContentIDs(contentIDs []types.ContentID) (*[]db.ContentFieldWithFieldRow, error) {
+	return doRead(r, func() (*[]db.ContentFieldWithFieldRow, error) {
+		// Batch load by calling the single-item method for each ID and merging results.
+		var result []db.ContentFieldWithFieldRow
+		for _, id := range contentIDs {
+			nid := types.NullableContentID{Valid: true, ID: id}
+			rows, err := r.ListContentFieldsWithFieldByContentData(nid)
+			if err != nil {
+				return nil, fmt.Errorf("remote: ListContentFieldsWithFieldByContentIDs: %w", err)
+			}
+			if rows != nil {
+				result = append(result, *rows...)
+			}
+		}
+		return &result, nil
+	})
+}
+
 func (r *RemoteDriver) ListContentFieldsByContentDataAndLocale(contentDataID types.NullableContentID, locale string) (*[]db.ContentFields, error) {
 	return doRead(r, func() (*[]db.ContentFields, error) {
 		ctx := context.Background()

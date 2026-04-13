@@ -1,0 +1,250 @@
+package partials
+
+import "github.com/hegner123/modulacms/internal/db/types"
+import "strings"
+
+templ ContentPageView(pageTitle string, status types.ContentStatus, contentID types.ContentID, blocks []ContentBlockSummary, hasPublishPerm bool, csrfToken string) {
+    <div class="mb-6 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <h1 class="text-lg font-semibold text-white">{ pageTitle }</h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <!-- Version history -->
+            <button
+                type="button"
+                class="rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20"
+                onclick="document.getElementById('version-history-dialog').open()"
+            >
+                <span class="flex items-center gap-1.5">
+                    <i data-lucide="history" class="size-3.5"></i>
+                    Versions
+                </span>
+            </button>
+            <!-- Publish/Unpublish -->
+            if hasPublishPerm {
+                <mcms-publish-button
+                    status={ string(status) }
+                    publish-url={ "/admin/content/" + contentID.String() + "/publish" }
+                    unpublish-url={ "/admin/content/" + contentID.String() + "/unpublish" }
+                ></mcms-publish-button>
+            }
+        </div>
+    </div>
+    <div id="block-content-list" class="divide-y divide-white/5">
+        if len(blocks) == 0 {
+            @EmptyState("This page has no content blocks yet.")
+        } else {
+            for _, block := range blocks {
+                @contentBlockSection(block)
+            }
+        }
+    </div>
+    <!-- Version history dialog -->
+    <mcms-dialog id="version-history-dialog" aria-labelledby="version-dialog-title">
+        <div class="px-5 py-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                <h2 id="version-dialog-title" class="text-lg font-semibold text-white">Version History</h2>
+                <button class="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-white/20" aria-label="Close dialog" onclick="this.closest('mcms-dialog').close()">&times;</button>
+            </div>
+            <div
+                id="version-list-panel"
+                hx-get={ "/admin/content/" + contentID.String() + "/versions" }
+                hx-trigger="intersect once"
+                hx-swap="innerHTML"
+            >
+                <p class="text-sm text-gray-500">Loading versions...</p>
+            </div>
+        </div>
+    </mcms-dialog>
+    <!-- Hover coupling between sidebar and preview -->
+    <script>
+        (function() {
+            var HIGHLIGHT = 'rgba(59,130,246,0.08)';
+            function findPeers(contentId) {
+                return document.querySelectorAll('[data-content-id="' + contentId + '"]');
+            }
+            function onEnter(e) {
+                var el = e.target.closest('[data-content-id]');
+                if (!el) return;
+                var id = el.getAttribute('data-content-id');
+                var peers = findPeers(id);
+                for (var i = 0; i < peers.length; i++) {
+                    peers[i].setAttribute('data-hover-highlight', '');
+                    peers[i].style.boxShadow = 'inset 0 0 0 1px rgba(59,130,246,0.3)';
+                }
+            }
+            function onLeave(e) {
+                var el = e.target.closest('[data-content-id]');
+                if (!el) return;
+                var id = el.getAttribute('data-content-id');
+                var peers = findPeers(id);
+                for (var i = 0; i < peers.length; i++) {
+                    peers[i].removeAttribute('data-hover-highlight');
+                    peers[i].style.boxShadow = '';
+                }
+            }
+            document.addEventListener('mouseenter', function(e) { onEnter(e); }, true);
+            document.addEventListener('mouseleave', function(e) { onLeave(e); }, true);
+
+            // Click-to-reveal: clicking a block in the preview expands its
+            // ancestors in the sidebar so the node becomes visible.
+            var previewList = document.getElementById('block-content-list');
+            if (previewList) {
+                previewList.addEventListener('click', function(e) {
+                    var el = e.target.closest('[data-content-id]');
+                    if (!el) return;
+                    var id = el.getAttribute('data-content-id');
+                    var sidebar = document.getElementById('block-sidebar-list');
+                    if (!sidebar) return;
+                    var sidebarNode = sidebar.querySelector('[data-block-id="' + id + '"]');
+                    if (!sidebarNode) return;
+                    // Walk up and expand any collapsed ancestor groups
+                    var parent = sidebarNode.parentElement;
+                    while (parent && parent !== sidebar) {
+                        if (parent.hasAttribute('data-block-children') && parent.style.display === 'none') {
+                            parent.style.display = '';
+                            var group = parent.closest('[data-block-group]');
+                            if (group) {
+                                group.setAttribute('data-expanded', '');
+                                var toggle = group.querySelector('[data-block-toggle]');
+                                if (toggle) toggle.textContent = '\u25BC';
+                            }
+                        }
+                        parent = parent.parentElement;
+                    }
+                    // Scroll the sidebar node into view
+                    sidebarNode.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                });
+            }
+        })();
+    </script>
+}
+
+// ContentBlockSectionOOB renders a block section with hx-swap-oob for live updates after save.
+templ ContentBlockSectionOOB(block ContentBlockSummary) {
+    <section
+        id={ "block-section-" + block.ContentDataID.String() }
+        hx-swap-oob="true"
+        data-content-id={ block.ContentDataID.String() }
+        class="cursor-pointer py-4 px-4 rounded-lg transition-all duration-150 hover:bg-white/[0.03]"
+        style={ previewDepthStyle(block.Depth) }
+        hx-get={ "/admin/content-tree/drawer/" + block.ContentDataID.String() }
+        hx-target="#content-drawer"
+        hx-swap="innerHTML"
+    >
+        <div class="flex items-center gap-3 mb-2">
+            <span class={ "inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider", sectionBadgeClass(block.DatatypeType) }>
+                { block.DatatypeLabel }
+                if block.IsDirty {
+                    <span class="ml-1 text-[var(--color-warning)]">*</span>
+                }
+            </span>
+            <div class="flex-1 border-t border-white/5"></div>
+        </div>
+        <div>
+            if block.ResolvedLabel != "" {
+                <p class="text-sm text-white">{ block.ResolvedLabel }</p>
+            } else if len(block.Fields) > 0 {
+                @inlineFields(block.Fields)
+            } else {
+                <p class="text-sm text-gray-500 italic">No fields</p>
+            }
+        </div>
+    </section>
+}
+
+templ contentBlockSection(block ContentBlockSummary) {
+    <section
+        id={ "block-section-" + block.ContentDataID.String() }
+        data-content-id={ block.ContentDataID.String() }
+        class="cursor-pointer py-4 px-4 rounded-lg transition-all duration-150 hover:bg-white/[0.03]"
+        style={ previewDepthStyle(block.Depth) }
+        hx-get={ "/admin/content-tree/drawer/" + block.ContentDataID.String() }
+        hx-target="#content-drawer"
+        hx-swap="innerHTML"
+    >
+        <!-- Section divider with datatype label -->
+        <div class="flex items-center gap-3 mb-2">
+            <span class={ "inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider", sectionBadgeClass(block.DatatypeType) }>
+                { block.DatatypeLabel }
+                if block.IsDirty {
+                    <span class="ml-1 text-[var(--color-warning)]">*</span>
+                }
+            </span>
+            <div class="flex-1 border-t border-white/5"></div>
+        </div>
+        <!-- Inline content -->
+        <div>
+            if block.ResolvedLabel != "" {
+                <p class="text-sm text-white">{ block.ResolvedLabel }</p>
+            } else if len(block.Fields) > 0 {
+                @inlineFields(block.Fields)
+            } else {
+                <p class="text-sm text-gray-500 italic">No fields</p>
+            }
+        </div>
+    </section>
+}
+
+templ inlineFields(fields []BlockFieldSummary) {
+    for _, field := range fields {
+        if fieldDisplayValue(field) != "" {
+            if field.Type == "richtext" || field.Type == "textarea" {
+                <div class="mt-1 text-sm text-gray-300 line-clamp-3 whitespace-pre-wrap">{ truncateForDisplay(fieldDisplayValue(field), 300) }</div>
+            } else if field.Type == "_title" {
+                <p class="text-base font-medium text-white">{ fieldDisplayValue(field) }</p>
+            } else if field.Type == "_id" {
+                if field.ResolvedValue != "" {
+                    <p class="text-sm text-gray-300">{ field.ResolvedValue }</p>
+                }
+            } else if field.Type == "boolean" || field.Type == "number" {
+                // skip from inline display
+            } else {
+                <p class="text-sm text-gray-300">{ fieldDisplayValue(field) }</p>
+            }
+        }
+    }
+}
+
+func fieldDisplayValue(f BlockFieldSummary) string {
+    if f.ResolvedValue != "" {
+        return f.ResolvedValue
+    }
+    return f.Value
+}
+
+func truncateForDisplay(val string, maxLen int) string {
+    if len(val) <= maxLen {
+        return val
+    }
+    return val[:maxLen] + "..."
+}
+
+// previewDepthStyle returns margin-left and background tint for nesting in the preview pane.
+func previewDepthStyle(depth int) string {
+    if depth == 0 {
+        return ""
+    }
+    ml := depth * 24
+    pct := depth * 2
+    if pct > 10 {
+        pct = 10
+    }
+    return "margin-left: " + intToStr(ml) + "px; background-color: rgba(255,255,255,0.0" + intToStr(pct) + "); border-radius: 0.5rem;"
+}
+
+func sectionBadgeClass(dtType string) string {
+    if strings.HasPrefix(dtType, "_root") {
+        return "bg-[var(--color-primary-100)] text-[var(--color-primary)]"
+    }
+    if strings.HasPrefix(dtType, "_reference") {
+        return "bg-[var(--color-warning-100)] text-[var(--color-warning)]"
+    }
+    if strings.HasPrefix(dtType, "_global") {
+        return "bg-[var(--color-success-100)] text-[var(--color-success)]"
+    }
+    if strings.HasPrefix(dtType, "_collection") {
+        return "bg-purple-500/10 text-purple-400"
+    }
+    return "bg-white/5 text-gray-500"
+}

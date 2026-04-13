@@ -10,12 +10,12 @@ templ Base(title string, csrfToken string, version string) {
         <link rel="icon" type="image/svg+xml" href="/admin/favicon.svg"/>
         <title>{ title } — ModulaCMS</title>
         <link rel="stylesheet" href={ "/admin/static/css/tailwind.css?v=" + version }/>
-        <link rel="stylesheet" href={ "/admin/static/css/block-editor.css?v=" + version }/>
         <script src={ "/admin/static/js/htmx.min.js?v=" + version }></script>
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src={ "/admin/static/js/mcms-settings.js?v=" + version }></script>
         <script src={ "/admin/static/js/admin.js?v=" + version } defer></script>
-        <script type="module" src={ "/admin/static/js/block-editor.js?v=" + version }></script>
+        <script src={ "/admin/static/js/components/mcms-drawer.js?v=" + version } defer></script>
+        <script src={ "/admin/static/js/components/mcms-block-picker.js?v=" + version } defer></script>
     </head>
     <body hx-headers='{"X-CSRF-Token": ""}' class="h-full bg-(--color-bg) text-(--color-text) antialiased">
         { children... }

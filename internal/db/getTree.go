@@ -488,6 +488,42 @@ func (d Database) ListContentFieldsWithFieldByContentData(contentDataID types.Nu
 	return &res, nil
 }
 
+// ListContentFieldsWithFieldByContentIDs batch-loads content fields joined with field definitions
+// for multiple content data IDs in a single query. (SQLite)
+func (d Database) ListContentFieldsWithFieldByContentIDs(contentIDs []types.ContentID) (*[]ContentFieldWithFieldRow, error) {
+	if len(contentIDs) == 0 {
+		empty := []ContentFieldWithFieldRow{}
+		return &empty, nil
+	}
+	queries := mdb.New(d.Connection)
+	ids := make([]types.NullableContentID, len(contentIDs))
+	for i, id := range contentIDs {
+		ids[i] = types.NullableContentID{Valid: true, ID: id}
+	}
+	rows, err := queries.ListContentFieldsByContentIDs(d.Context, mdb.ListContentFieldsByContentIDsParams{ContentIds: ids})
+	if err != nil {
+		return nil, fmt.Errorf("failed to batch-list content fields with field definitions: %w", err)
+	}
+	res := make([]ContentFieldWithFieldRow, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, ContentFieldWithFieldRow{
+			ContentFieldID: v.ContentFieldID,
+			RouteID:        v.RouteID,
+			RootID:         v.RootID,
+			ContentDataID:  v.ContentDataID,
+			FieldID:        v.FieldID,
+			FieldValue:     v.FieldValue,
+			AuthorID:       v.AuthorID,
+			DateCreated:    v.DateCreated,
+			DateModified:   v.DateModified,
+			FFieldID:       v.FFieldId,
+			FLabel:         v.FLabel,
+			FType:          v.FType,
+		})
+	}
+	return &res, nil
+}
+
 // MapUserWithRoleLabelRow maps SQLite user+role JOIN row to wrapper struct.
 func (d Database) MapUserWithRoleLabelRow(a mdb.ListUsersWithRoleLabelRow) UserWithRoleLabelRow {
 	return UserWithRoleLabelRow{
@@ -885,6 +921,42 @@ func (d MysqlDatabase) ListContentFieldsWithFieldByContentData(contentDataID typ
 	return &res, nil
 }
 
+// ListContentFieldsWithFieldByContentIDs batch-loads content fields joined with field definitions
+// for multiple content data IDs in a single query. (MySQL)
+func (d MysqlDatabase) ListContentFieldsWithFieldByContentIDs(contentIDs []types.ContentID) (*[]ContentFieldWithFieldRow, error) {
+	if len(contentIDs) == 0 {
+		empty := []ContentFieldWithFieldRow{}
+		return &empty, nil
+	}
+	queries := mdbm.New(d.Connection)
+	ids := make([]types.NullableContentID, len(contentIDs))
+	for i, id := range contentIDs {
+		ids[i] = types.NullableContentID{Valid: true, ID: id}
+	}
+	rows, err := queries.ListContentFieldsByContentIDs(d.Context, mdbm.ListContentFieldsByContentIDsParams{ContentIds: ids})
+	if err != nil {
+		return nil, fmt.Errorf("failed to batch-list content fields with field definitions: %w", err)
+	}
+	res := make([]ContentFieldWithFieldRow, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, ContentFieldWithFieldRow{
+			ContentFieldID: v.ContentFieldID,
+			RouteID:        v.RouteID,
+			RootID:         v.RootID,
+			ContentDataID:  v.ContentDataID,
+			FieldID:        v.FieldID,
+			FieldValue:     v.FieldValue,
+			AuthorID:       v.AuthorID,
+			DateCreated:    v.DateCreated,
+			DateModified:   v.DateModified,
+			FFieldID:       v.FFieldId,
+			FLabel:         v.FLabel,
+			FType:          v.FType,
+		})
+	}
+	return &res, nil
+}
+
 // MapUserWithRoleLabelRow maps MySQL user+role JOIN row to wrapper struct.
 func (d MysqlDatabase) MapUserWithRoleLabelRow(a mdbm.ListUsersWithRoleLabelRow) UserWithRoleLabelRow {
 	return UserWithRoleLabelRow{
@@ -1278,6 +1350,42 @@ func (d PsqlDatabase) ListContentFieldsWithFieldByContentData(contentDataID type
 	res := []ContentFieldWithFieldRow{}
 	for _, v := range rows {
 		res = append(res, d.MapContentFieldWithFieldRow(v))
+	}
+	return &res, nil
+}
+
+// ListContentFieldsWithFieldByContentIDs batch-loads content fields joined with field definitions
+// for multiple content data IDs in a single query. (PostgreSQL)
+func (d PsqlDatabase) ListContentFieldsWithFieldByContentIDs(contentIDs []types.ContentID) (*[]ContentFieldWithFieldRow, error) {
+	if len(contentIDs) == 0 {
+		empty := []ContentFieldWithFieldRow{}
+		return &empty, nil
+	}
+	queries := mdbp.New(d.Connection)
+	ids := make([]string, len(contentIDs))
+	for i, id := range contentIDs {
+		ids[i] = id.String()
+	}
+	rows, err := queries.ListContentFieldsByContentIDs(d.Context, mdbp.ListContentFieldsByContentIDsParams{Column1: ids})
+	if err != nil {
+		return nil, fmt.Errorf("failed to batch-list content fields with field definitions: %w", err)
+	}
+	res := make([]ContentFieldWithFieldRow, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, ContentFieldWithFieldRow{
+			ContentFieldID: v.ContentFieldID,
+			RouteID:        v.RouteID,
+			RootID:         v.RootID,
+			ContentDataID:  v.ContentDataID,
+			FieldID:        v.FieldID,
+			FieldValue:     v.FieldValue,
+			AuthorID:       v.AuthorID,
+			DateCreated:    v.DateCreated,
+			DateModified:   v.DateModified,
+			FFieldID:       v.FFieldId,
+			FLabel:         v.FLabel,
+			FType:          v.FType,
+		})
 	}
 	return &res, nil
 }

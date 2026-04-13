@@ -1,0 +1,132 @@
+package partials
+
+import "github.com/hegner123/modulacms/internal/db"
+
+// DrawerMeta holds display metadata for the content drawer.
+type DrawerMeta struct {
+    DatatypeLabel string
+    ContentID     string
+    CSRFToken     string
+}
+
+// DrawerField pairs a content field value with its full field definition.
+type DrawerField struct {
+    ContentField db.ContentFieldWithFieldRow
+    FieldDef     *db.Fields // nil if definition not found
+}
+
+// fieldDataAttr returns the field's Data JSON for select options, etc.
+func fieldDataAttr(f DrawerField) string {
+    if f.FieldDef != nil {
+        return f.FieldDef.Data
+    }
+    return "{}"
+}
+
+// selectChoices extracts options from field Data JSON for the choices attribute.
+// Input: {"options":["a","b","c"]} -> Output: [{"value":"a","label":"a"},...]
+func selectChoices(f DrawerField) string {
+    if f.FieldDef == nil {
+        return "[]"
+    }
+    data := f.FieldDef.Data
+    if data == "" || data == "{}" {
+        return "[]"
+    }
+    // Parse options array from data JSON manually (avoid import cycle with encoding/json)
+    // The field-renderer JS handles the raw {"options":["a","b"]} format via choices attr
+    return data
+}
+
+templ ContentDrawer(fields []DrawerField, meta DrawerMeta) {
+    <mcms-drawer>
+        <div class="flex h-full flex-col bg-[var(--color-surface)] border-l border-white/10">
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-white/10 px-5 py-3">
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center rounded-md bg-white/10 px-2 py-0.5 text-xs font-medium text-gray-400">
+                        { meta.DatatypeLabel }
+                    </span>
+                    <span id="drawer-save-status" class="text-xs text-gray-600"></span>
+                </div>
+                <button
+                    type="button"
+                    class="rounded-md bg-white/10 px-2 py-1 text-sm text-white hover:bg-white/20"
+                    aria-label="Close drawer"
+                    data-drawer-close
+                >&times;</button>
+            </div>
+            <!-- Body: field editors with auto-save -->
+            <form
+                id="drawer-form"
+                class="flex flex-1 flex-col overflow-y-auto"
+                hx-post={ "/admin/content-tree/drawer/" + meta.ContentID }
+                hx-swap="none"
+                hx-trigger="input changed delay:800ms from:find input, input changed delay:800ms from:find textarea, change from:find select, change from:find [type=checkbox]"
+                hx-indicator="#drawer-save-status"
+            >
+                @CSRFField(meta.CSRFToken)
+                <div class="flex-1 space-y-4 p-5">
+                    if len(fields) == 0 {
+                        <p class="text-sm text-gray-500">No fields configured for this block.</p>
+                    }
+                    for _, field := range fields {
+                        <mcms-field-renderer
+                            type={ string(field.ContentField.FType) }
+                            name={ "field_" + field.ContentField.ContentFieldID.String() }
+                            value={ field.ContentField.FieldValue }
+                            label={ field.ContentField.FLabel }
+                            if string(field.ContentField.FType) == "select" {
+                                choices={ selectChoices(field) }
+                            }
+                        ></mcms-field-renderer>
+                    }
+                </div>
+                <!-- Footer: manual save as fallback -->
+                <div class="flex items-center justify-between border-t border-white/10 px-5 py-3">
+                    <span class="text-xs text-gray-600">Auto-saves on edit</span>
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            class="rounded-md bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20"
+                            data-drawer-close
+                        >Close</button>
+                        <button
+                            type="submit"
+                            class="rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+                        >Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <script>
+            (function() {
+                var drawer = document.querySelector('#content-drawer mcms-drawer');
+                if (!drawer) return;
+                var status = document.getElementById('drawer-save-status');
+                var form = document.getElementById('drawer-form');
+                if (!form) return;
+
+                // Close buttons
+                var closeBtns = drawer.querySelectorAll('[data-drawer-close]');
+                for (var i = 0; i < closeBtns.length; i++) {
+                    closeBtns[i].addEventListener('click', function() { drawer.close(); });
+                }
+
+                // Save status indicator
+                form.addEventListener('htmx:beforeRequest', function() {
+                    if (status) status.textContent = 'Saving...';
+                });
+                form.addEventListener('htmx:afterRequest', function(e) {
+                    if (!status) return;
+                    if (e.detail.successful) {
+                        status.textContent = 'Saved';
+                        setTimeout(function() { if (status) status.textContent = ''; }, 2000);
+                    } else {
+                        status.textContent = 'Save failed';
+                    }
+                });
+            })();
+        </script>
+    </mcms-drawer>
+}

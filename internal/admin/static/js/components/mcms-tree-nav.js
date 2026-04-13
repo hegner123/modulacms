@@ -266,6 +266,19 @@ class McmsTreeNav extends HTMLElement {
             label.textContent = textContent || nodeId;
         }
 
+        // data-leaf nodes: clicking the label fires an HTMX GET for the page view
+        if (li.hasAttribute('data-leaf') && nodeId) {
+            var leafUrl = li.getAttribute('data-leaf-url');
+            if (leafUrl) {
+                label.setAttribute('hx-get', leafUrl);
+                label.setAttribute('hx-target', '#content-main-panel');
+                label.setAttribute('hx-push-url', 'true');
+                if (typeof htmx !== 'undefined') {
+                    htmx.process(label);
+                }
+            }
+        }
+
         // Insert toggle and label before the child <ul>
         if (childUl) {
             li.insertBefore(toggle, childUl);
@@ -372,7 +385,14 @@ class McmsTreeNav extends HTMLElement {
         toggle.setAttribute('data-loading', '');
         toggle.classList.add('loading'); // DUAL: data-loading + class
 
-        var url = '/admin/content/tree/' + encodeURIComponent(nodeId) + '/children';
+        // Use configurable URL pattern from data-children-url, or fall back to default.
+        var urlPattern = this.getAttribute('data-children-url');
+        var url;
+        if (urlPattern) {
+            url = urlPattern.replace('{id}', encodeURIComponent(nodeId));
+        } else {
+            url = '/admin/content/tree/' + encodeURIComponent(nodeId) + '/children';
+        }
         var self = this;
 
         if (typeof htmx !== 'undefined') {

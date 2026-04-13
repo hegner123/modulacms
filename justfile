@@ -46,6 +46,7 @@ test-minio:
 # [Test] Run S3 integration tests (requires MinIO running)
 test-integration:
     {{gotest}} -tags integration -v -count=1 ./internal/media/ -run TestIntegration
+    {{gotest}} -tags integration -v -count=1 ./internal/bucket/ -run TestIntegration
 
 # [Test] Stop MinIO after integration tests
 test-minio-down:
@@ -69,7 +70,7 @@ check:
 # [Dev] Build local x86 binary for development
 dev:
     #!/usr/bin/env bash
-    just admin bundle
+
     echo "" > debug.log
     VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
     COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -117,7 +118,7 @@ install: build
 # [Build] Build production binary to out/bin/
 build:
     #!/usr/bin/env bash
-    just admin bundle
+
     just admin generate
     VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
     COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -133,7 +134,7 @@ build:
 build-target goos goarch:
     #!/usr/bin/env bash
     set -euo pipefail
-    just admin bundle
+
     VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
     COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
     BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
@@ -151,7 +152,7 @@ build-target goos goarch:
 build-all:
     #!/usr/bin/env bash
     set -euo pipefail
-    just admin bundle
+
     VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
     COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
     BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
@@ -189,7 +190,7 @@ watch:
 
 # [Docs] Copy documentation to the website repo
 doc-copy:
-    cp -R documentation/ /Users/home/Documents/Code/Go_dev/cms/modulacms.com/documentation/ && echo "success"
+    rsync -av --delete documentation/ /Users/home/Documents/Code/Go_dev/cms/modulacms.com/documentation/
 
 # [Docs] Check documentation staleness against upstream (or explicit range)
 doc-check *RANGE:
@@ -296,7 +297,7 @@ rollback:
     ROLLBACK
 
 # [Admin] Manage admin panel codegen: just admin <action>
-# Actions: generate, watch, verify, bundle, bundle-watch, bundle-verify
+# Actions: generate, watch, verify
 admin action:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -304,11 +305,7 @@ admin action:
         generate)      templ generate && tailwindcss -i internal/admin/static/css/input.css -o internal/admin/static/css/tailwind.css --minify ;;
         watch)         templ generate --watch & tailwindcss -i internal/admin/static/css/input.css -o internal/admin/static/css/tailwind.css --watch ;;
         verify)        templ generate && tailwindcss -i internal/admin/static/css/input.css -o internal/admin/static/css/tailwind.css --minify && git diff --exit-code internal/admin/ ;;
-        bundle)        esbuild internal/admin/static/js/block-editor-src/index.js --bundle --format=esm --banner:js="// AUTO-GENERATED — DO NOT EDIT. Source: block-editor-src/. Regenerate: just admin bundle" --outfile=internal/admin/static/js/block-editor.js ;;
-        bundle-watch)  esbuild internal/admin/static/js/block-editor-src/index.js --bundle --format=esm --banner:js="// AUTO-GENERATED — DO NOT EDIT. Source: block-editor-src/. Regenerate: just admin bundle" --outfile=internal/admin/static/js/block-editor.js --watch ;;
-        bundle-verify) just admin bundle && git diff --exit-code internal/admin/static/js/block-editor.js ;;
-        test)          cd internal/admin/static/js/block-editor-src && npx vitest run ;;
-        *)             echo "Unknown action: {{action}}"; echo "Actions: generate, watch, verify, bundle, bundle-watch, bundle-verify, test"; exit 1 ;;
+        *)             echo "Unknown action: {{action}}"; echo "Actions: generate, watch, verify"; exit 1 ;;
     esac
 
 # [Codegen] Generate sqlc.yml from shared definitions

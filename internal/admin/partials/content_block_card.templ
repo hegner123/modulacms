@@ -1,0 +1,68 @@
+package partials
+
+import "strconv"
+
+templ ContentBlockCard(block ContentBlockSummary, depth int) {
+    <div
+        id={ "block-card-" + block.ContentDataID.String() }
+        class="group relative cursor-pointer rounded-lg border border-white/10 bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-primary)]/50 hover:bg-[var(--color-surface-hover)]"
+        style={ "margin-left: " + strconv.Itoa(depth*24) + "px" }
+        hx-get={ "/admin/content-tree/drawer/" + block.ContentDataID.String() }
+        hx-target="#content-drawer"
+        hx-swap="innerHTML"
+    >
+        <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+                <span class={ "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium", datatypeBadgeClass(block.DatatypeType) }>
+                    { block.DatatypeLabel }
+                </span>
+                if block.ChildCount > 0 {
+                    <span class="text-xs text-gray-500">{ strconv.Itoa(block.ChildCount) } children</span>
+                }
+            </div>
+            <div class="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <span class="text-xs text-[var(--color-primary)]">Edit</span>
+                <mcms-confirm
+                    label=""
+                    message={ "Delete this block" + deleteChildrenSuffix(block.ChildCount) + "?" }
+                    button-class="text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]"
+                    hx-delete={ "/admin/content-tree/block/" + block.ContentDataID.String() }
+                    hx-target={ "#block-card-" + block.ContentDataID.String() }
+                    hx-swap="outerHTML"
+                >
+                    <i data-lucide="trash-2" class="size-3.5"></i>
+                </mcms-confirm>
+            </div>
+        </div>
+        if len(block.Fields) > 0 {
+            <div class="mt-2 space-y-1">
+                for _, field := range block.Fields {
+                    <div class="flex items-baseline gap-2 text-sm">
+                        <span class="shrink-0 text-gray-500">{ field.Label }:</span>
+                        <span class="truncate text-gray-300">{ field.Value }</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+func datatypeBadgeClass(dtType string) string {
+    switch {
+    case dtType == "_root":
+        return "bg-[var(--color-primary-100)] text-[var(--color-primary)]"
+    case dtType == "_global":
+        return "bg-[var(--color-success-100)] text-[var(--color-success)]"
+    case dtType == "_collection":
+        return "bg-[var(--color-warning-100)] text-[var(--color-warning)]"
+    default:
+        return "bg-white/10 text-gray-400"
+    }
+}
+
+func deleteChildrenSuffix(count int) string {
+    if count == 0 {
+        return ""
+    }
+    return " and its " + strconv.Itoa(count) + " children"
+}

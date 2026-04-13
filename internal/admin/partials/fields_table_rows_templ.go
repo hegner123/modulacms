@@ -105,7 +105,7 @@ func FieldsTableRows(items []db.Fields, pg PaginationPageData) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</td><td class=\"py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6\"><div class=\"flex items-center justify-end gap-3\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</td><td class=\"py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6\"><div class=\"flex items-center justify-center gap-3\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

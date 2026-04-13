@@ -1,0 +1,86 @@
+package pages
+
+import "github.com/hegner123/modulacms/internal/admin/layouts"
+
+templ ContentTreeContent() {
+    <div class="-m-6 flex h-[calc(100%+3rem)] gap-0">
+        <!-- Sidebar: route tree / block tree -->
+        <div id="content-tree-sidebar" class="w-72 shrink-0 overflow-y-auto border-r border-white/10 bg-[var(--color-surface)] p-4">
+            <p class="text-sm text-gray-500">Loading tree...</p>
+        </div>
+        <!-- Main area: page view / empty state -->
+        <div class="flex min-w-0 flex-1 flex-col">
+            <!-- Breadcrumb bar -->
+            <nav id="content-breadcrumb" class="flex items-center gap-2 border-b border-white/10 px-6 py-3 text-sm text-gray-400">
+                <span class="text-white">Content Tree</span>
+            </nav>
+            <!-- Page view / drawer target -->
+            <div id="content-main-panel" class="flex-1 overflow-y-auto p-6">
+                @contentTreeEmptyState()
+            </div>
+        </div>
+    </div>
+    <!-- Drawer container (populated by Phase 3) -->
+    <div id="content-drawer"></div>
+}
+
+templ ContentTreeContentWithSidebar(sidebar templ.Component) {
+    <div class="-m-6 flex h-[calc(100%+3rem)] gap-0">
+        <!-- Sidebar: route tree / block tree -->
+        <div id="content-tree-sidebar" class="w-72 shrink-0 overflow-y-auto border-r border-white/10 bg-[var(--color-surface)] p-4">
+            @sidebar
+        </div>
+        <!-- Main area: page view / empty state -->
+        <div class="flex min-w-0 flex-1 flex-col">
+            <!-- Breadcrumb bar -->
+            <nav id="content-breadcrumb" class="flex items-center gap-2 border-b border-white/10 px-6 py-3 text-sm text-gray-400">
+                <span class="text-white">Content Tree</span>
+            </nav>
+            <!-- Page view / drawer target -->
+            <div id="content-main-panel" class="flex-1 overflow-y-auto p-6">
+                @contentTreeEmptyState()
+            </div>
+        </div>
+    </div>
+    <!-- Drawer container (populated by Phase 3) -->
+    <div id="content-drawer"></div>
+}
+
+templ contentTreeEmptyState() {
+    <div class="flex flex-col items-center justify-center py-24 text-center">
+        <i data-lucide="file-text" class="mb-4 size-12 text-gray-600"></i>
+        <h2 class="text-lg font-semibold text-white">Select a page</h2>
+        <p class="mt-2 text-sm text-gray-400">Choose a route or content node from the sidebar to view its blocks.</p>
+    </div>
+}
+
+templ ContentTree(layout layouts.AdminData) {
+    @layouts.Admin(layout) {
+        @ContentTreeContent()
+    }
+}
+
+templ ContentTreeWithSidebar(layout layouts.AdminData, sidebar templ.Component) {
+    @layouts.Admin(layout) {
+        @ContentTreeContentWithSidebar(sidebar)
+    }
+}
+
+templ ContentTreeWithPageView(layout layouts.AdminData, sidebar templ.Component, breadcrumb templ.Component, pageView templ.Component) {
+    @layouts.Admin(layout) {
+        <div class="-m-6 flex h-[calc(100%+3rem)] gap-0">
+            <div id="content-tree-sidebar" class="w-72 shrink-0 overflow-y-auto border-r border-white/10 bg-[var(--color-surface)] p-4">
+                @sidebar
+            </div>
+            <div class="flex min-w-0 flex-1 flex-col">
+                <nav id="content-breadcrumb" class="flex items-center gap-2 border-b border-white/10 px-6 py-3 text-sm text-gray-400">
+                    @breadcrumb
+                </nav>
+                <div id="content-main-panel" class="flex-1 overflow-y-auto p-6">
+                    @pageView
+                </div>
+            </div>
+        </div>
+        <div id="content-drawer"></div>
+    }
+}

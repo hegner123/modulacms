@@ -15,7 +15,7 @@ templ FieldTypesTableRows(fieldTypes []db.FieldTypes) {
                 <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ ft.Label }</td>
                 <td class="whitespace-nowrap px-4 py-4 text-sm"><code class="rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono text-white">{ ft.Type }</code></td>
                 <td class="py-4 pr-4 pl-3 text-sm font-medium whitespace-nowrap sm:pr-6">
-                    <div class="flex items-center justify-end gap-3">
+                    <div class="flex items-center justify-center gap-3">
                         @CopyIDButton(ft.FieldTypeID.String())
                         <mcms-confirm
                             label="Delete"
@@ -43,7 +43,7 @@ templ AdminFieldTypesTableRows(fieldTypes []db.AdminFieldTypes) {
                 <td class="whitespace-nowrap px-4 py-4 text-sm text-white">{ ft.Label }</td>
                 <td class="whitespace-nowrap px-4 py-4 text-sm"><code class="rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono text-white">{ ft.Type }</code></td>
                 <td class="whitespace-nowrap px-4 py-4 text-sm">
-                    <div class="flex items-center justify-end gap-3">
+                    <div class="flex items-center justify-center gap-3">
                         @CopyIDButton(ft.AdminFieldTypeID.String())
                         <mcms-confirm
                             label="Delete"
