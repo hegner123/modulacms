@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/time/rate"
 )
 
@@ -11,8 +12,9 @@ import (
 // This includes: logging, CORS, authentication, public endpoint protection, and
 // permission injection. PermissionInjector is added here (not in AuthenticatedChain)
 // to avoid double injection since DefaultMiddlewareChain wraps the entire mux.
-// Accepts *config.Manager for hot-reloadable config access.
-func DefaultMiddlewareChain(mgr *config.Manager, pc *PermissionCache) func(http.Handler) http.Handler {
+// Accepts *config.Manager for hot-reloadable config access and *utility.ObservabilityClient
+// for provider-specific HTTP transaction tracing.
+func DefaultMiddlewareChain(mgr *config.Manager, pc *PermissionCache, obs *utility.ObservabilityClient) func(http.Handler) http.Handler {
 	cfg, err := mgr.Config()
 	if err != nil {
 		// Fallback: return a chain that rejects all requests.
@@ -22,17 +24,29 @@ func DefaultMiddlewareChain(mgr *config.Manager, pc *PermissionCache) func(http.
 			})
 		}
 	}
+
+	// The observability middleware is provider-specific (Sentry creates
+	// transactions, console is a pass-through). Selected at startup via the
+	// observability_provider config field.
+	var obsMw func(http.Handler) http.Handler
+	if obs != nil {
+		obsMw = obs.HTTPMiddleware()
+	} else {
+		obsMw = func(next http.Handler) http.Handler { return next }
+	}
+
 	return Chain(
-		RecoveryMiddleware(),              // 1. Panic recovery + error capture
-		RequestIDMiddleware(),             // 2. Request ID generation
-		ClientIPMiddleware(),              // 3. Client IP resolution
-		UserAgentMiddleware(),             // 4. User-Agent + Client Hints parsing
-		HTTPLoggingMiddleware(),           // 5. Request/response logging
-		HTTPMetricsMiddleware(),           // 6. Request metrics recording
-		CorsMiddleware(cfg),               // 7. CORS headers
-		HTTPAuthenticationMiddleware(cfg), // 8. Session authentication
-		HTTPPublicEndpointMiddleware(cfg), // 9. Public endpoint protection
-		PermissionInjector(pc),            // 10. Permission set injection
+		RecoveryMiddleware(obs),           // 1. Panic recovery + error capture
+		obsMw,                             // 2. Observability transaction tracing
+		RequestIDMiddleware(),             // 3. Request ID generation
+		ClientIPMiddleware(),              // 4. Client IP resolution
+		UserAgentMiddleware(),             // 5. User-Agent + Client Hints parsing
+		HTTPLoggingMiddleware(),           // 6. Request/response logging
+		HTTPMetricsMiddleware(),           // 7. Request metrics recording
+		CorsMiddleware(cfg),               // 8. CORS headers
+		HTTPAuthenticationMiddleware(cfg), // 9. Session authentication
+		HTTPPublicEndpointMiddleware(cfg), // 10. Public endpoint protection
+		PermissionInjector(pc),            // 11. Permission set injection
 	)
 }
 

@@ -424,7 +424,7 @@ Examples:
 			fullHandler := middleware.Chain(
 				middleware.HookRunnerMiddleware(hookRunner),
 				middleware.ReadHookRunnerMiddleware(readHookRunner),
-			)(middleware.DefaultMiddlewareChain(mgr, pc)(mux))
+			)(middleware.DefaultMiddlewareChain(mgr, pc, utility.GlobalObservability)(mux))
 
 			// MCP server (Model Context Protocol for AI tooling).
 			// Direct mode: tools call services directly without HTTP round-trips.

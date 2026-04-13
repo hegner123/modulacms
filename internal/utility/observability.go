@@ -3,6 +3,7 @@ package utility
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -10,19 +11,32 @@ import (
 	"github.com/getsentry/sentry-go"
 )
 
-// ObservabilityProvider defines the interface for different observability backends
+// ObservabilityProvider defines the interface for different observability backends.
+// Implementations handle error tracking, metrics, HTTP transaction tracing, and
+// request-scoped error capture. The provider is selected via the config file's
+// observability_provider field.
 type ObservabilityProvider interface {
-	// SendMetric sends a single metric to the provider
+	// SendMetric sends a single metric to the provider.
 	SendMetric(metric Metric) error
 
-	// SendError sends an error event to the provider
+	// SendError sends an error event to the provider.
 	SendError(err error, context map[string]any) error
 
-	// Flush ensures all buffered data is sent
+	// Flush ensures all buffered data is sent.
 	Flush(timeout time.Duration) error
 
-	// Close shuts down the provider
+	// Close shuts down the provider.
 	Close() error
+
+	// HTTPMiddleware returns provider-specific HTTP middleware for transaction
+	// tracing and per-request context setup. Sentry creates transactions with
+	// hub-per-request. Console is a pass-through.
+	HTTPMiddleware() func(http.Handler) http.Handler
+
+	// CaptureRequestError captures an error with request-scoped context. Unlike
+	// SendError, this has access to the HTTP request so providers can extract
+	// per-request state (e.g. Sentry hub from context) for enriched capture.
+	CaptureRequestError(err error, r *http.Request, context map[string]any)
 }
 
 // ObservabilityClient manages metrics export to external providers
@@ -61,26 +75,27 @@ func NewObservabilityClient(config ObservabilityConfig) (*ObservabilityClient, e
 	}
 
 	// Parse flush interval
-	flushInterval, err := time.ParseDuration(config.FlushInterval)
-	if err != nil {
+	flushInterval, parseErr := time.ParseDuration(config.FlushInterval)
+	if parseErr != nil {
 		flushInterval = 30 * time.Second
-		DefaultLogger.Warn("invalid observability flush interval, defaulting to 30s", err, "raw", config.FlushInterval)
+		DefaultLogger.Warn("invalid observability flush interval, defaulting to 30s", parseErr, "raw", config.FlushInterval)
 	}
 
 	// Create provider based on config
 	DefaultLogger.Info("initializing observability provider", "provider", config.Provider)
 	var provider ObservabilityProvider
+	var providerErr error
 	switch config.Provider {
 	case "sentry":
-		provider, err = NewSentryProvider(config)
+		provider, providerErr = NewSentryProvider(config)
 	case "console":
 		provider = NewConsoleProvider()
 	default:
 		return nil, fmt.Errorf("unsupported observability provider: %s", config.Provider)
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to create provider: %w", err)
+	if providerErr != nil {
+		return nil, fmt.Errorf("failed to create provider: %w", providerErr)
 	}
 
 	DefaultLogger.Info("observability provider ready",
@@ -206,6 +221,23 @@ func (p *ConsoleProvider) Close() error {
 	return nil
 }
 
+// HTTPMiddleware returns a pass-through middleware for the console provider.
+func (p *ConsoleProvider) HTTPMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return next
+	}
+}
+
+// CaptureRequestError logs the error with request details.
+func (p *ConsoleProvider) CaptureRequestError(err error, r *http.Request, context map[string]any) {
+	DefaultLogger.Error("request error captured",
+		err,
+		"method", r.Method,
+		"path", r.URL.Path,
+		"context", context,
+	)
+}
+
 // logWriter is an io.Writer adapter that routes Sentry SDK debug output
 // through DefaultLogger so all log output uses the same format and destination.
 type logWriter struct{}
@@ -312,6 +344,89 @@ func (p *SentryProvider) Close() error {
 	return nil
 }
 
+// HTTPMiddleware returns Sentry-specific middleware that creates a per-request
+// hub clone and starts an HTTP transaction for performance monitoring.
+func (p *SentryProvider) HTTPMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			hub := sentry.GetHubFromContext(r.Context())
+			if hub == nil {
+				hub = sentry.CurrentHub().Clone()
+			}
+			ctx := sentry.SetHubOnContext(r.Context(), hub)
+
+			transactionName := fmt.Sprintf("%s %s", r.Method, r.URL.Path)
+			options := []sentry.SpanOption{
+				sentry.WithOpName("http.server"),
+				sentry.WithTransactionSource(sentry.SourceURL),
+				sentry.ContinueFromRequest(r),
+			}
+			transaction := sentry.StartTransaction(ctx, transactionName, options...)
+			defer transaction.Finish()
+
+			transaction.SetData("http.method", r.Method)
+			transaction.SetData("http.url", r.URL.String())
+			transaction.SetData("http.query", r.URL.RawQuery)
+			transaction.SetTag("http.method", r.Method)
+			transaction.SetTag("http.path", r.URL.Path)
+
+			rw := &sentryResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+			next.ServeHTTP(rw, r.WithContext(transaction.Context()))
+
+			transaction.Status = sentry.HTTPtoSpanStatus(rw.statusCode)
+			transaction.SetData("http.status_code", rw.statusCode)
+			transaction.SetTag("http.status_code", fmt.Sprintf("%d", rw.statusCode))
+		})
+	}
+}
+
+// CaptureRequestError captures an exception using the per-request Sentry hub,
+// preserving transaction context and scope set by HTTPMiddleware.
+func (p *SentryProvider) CaptureRequestError(err error, r *http.Request, ctx map[string]any) {
+	hub := sentry.GetHubFromContext(r.Context())
+	if hub == nil {
+		hub = sentry.CurrentHub()
+	}
+	hub.WithScope(func(scope *sentry.Scope) {
+		for k, v := range ctx {
+			scope.SetExtra(k, v)
+		}
+		hub.CaptureException(err)
+	})
+}
+
+// sentryResponseWriter wraps http.ResponseWriter to capture the status code
+// for Sentry transaction tagging.
+type sentryResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *sentryResponseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+// HTTPMiddleware returns the configured provider's HTTP middleware. Returns a
+// pass-through when observability is disabled.
+func (c *ObservabilityClient) HTTPMiddleware() func(http.Handler) http.Handler {
+	if !c.enabled || c.provider == nil {
+		return func(next http.Handler) http.Handler {
+			return next
+		}
+	}
+	return c.provider.HTTPMiddleware()
+}
+
+// CaptureRequestError delegates to the provider's request-aware error capture.
+// No-op when observability is disabled.
+func (c *ObservabilityClient) CaptureRequestError(err error, r *http.Request, ctx map[string]any) {
+	if !c.enabled || c.provider == nil {
+		return
+	}
+	c.provider.CaptureRequestError(err, r, ctx)
+}
+
 // CaptureError sends an error directly to the observability provider with
 // enriched context. Use this at explicit error boundaries (panics, server
 // crashes) where you want to attach extra metadata beyond what the logger
@@ -324,6 +439,18 @@ func CaptureError(err error, context map[string]any) {
 	// Log to console without re-triggering the observability send — use Warn
 	// level so it still prints but does not recurse into SendError.
 	DefaultLogger.Warn("error captured for observability", err, "context", context)
+}
+
+// NewObservabilityClientFromProvider creates an ObservabilityClient with an
+// explicit provider, bypassing config-based selection. Useful for testing and
+// for callers that construct their own provider.
+func NewObservabilityClientFromProvider(provider ObservabilityProvider) *ObservabilityClient {
+	return &ObservabilityClient{
+		provider: provider,
+		metrics:  GlobalMetrics,
+		stopChan: make(chan struct{}),
+		enabled:  true,
+	}
 }
 
 // GlobalObservability is the global observability client instance
