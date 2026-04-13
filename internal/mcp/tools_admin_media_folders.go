@@ -35,7 +35,7 @@ func registerAdminMediaFolderTools(srv *server.MCPServer, backend AdminMediaFold
 
 	srv.AddTool(
 		mcp.NewTool("admin_update_media_folder",
-			mcp.WithDescription("update an admin media folder. Rename or move to a different parent. Only provided fields are changed."),
+			mcp.WithDescription("Update an admin media folder. Rename or move to a different parent. Only provided fields are changed."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin media folder ID (ULID)")),
 			mcp.WithString("name", mcp.Description("New folder name")),
 			mcp.WithString("parent_id", mcp.Description("New parent folder ID (ULID). Use empty string to move to root.")),
@@ -58,6 +58,25 @@ func registerAdminMediaFolderTools(srv *server.MCPServer, backend AdminMediaFold
 			mcp.WithString("folder_id", mcp.Description("Target folder ID (ULID). Omit or empty string to move to root.")),
 		),
 		handleAdminMoveMediaToFolder(backend),
+	)
+
+	// admin_get_media_folder_tree
+	srv.AddTool(
+		mcp.NewTool("admin_get_media_folder_tree",
+			mcp.WithDescription("Get the full admin media folder tree hierarchy."),
+		),
+		handleAdminGetMediaFolderTree(backend),
+	)
+
+	// admin_list_media_in_folder
+	srv.AddTool(
+		mcp.NewTool("admin_list_media_in_folder",
+			mcp.WithDescription("List admin media files within a specific folder."),
+			mcp.WithString("folder_id", mcp.Required(), mcp.Description("Admin media folder ID (ULID)")),
+			mcp.WithNumber("limit", mcp.Description("Max items to return (default 20, max 1000)"), mcp.DefaultNumber(20)),
+			mcp.WithNumber("offset", mcp.Description("Number of items to skip (default 0)"), mcp.DefaultNumber(0)),
+		),
+		handleAdminListMediaInFolder(backend),
 	)
 }
 
@@ -158,6 +177,32 @@ func handleAdminMoveMediaToFolder(backend AdminMediaFolderBackend) server.ToolHa
 			return nil, err
 		}
 		data, err := backend.MoveAdminMediaToFolder(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleAdminGetMediaFolderTree(backend AdminMediaFolderBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		data, err := backend.AdminGetMediaFolderTree(ctx)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleAdminListMediaInFolder(backend AdminMediaFolderBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		folderID, err := req.RequireString("folder_id")
+		if err != nil {
+			return mcp.NewToolResultError("folder_id is required"), nil
+		}
+		limit := int64(req.GetFloat("limit", 20))
+		offset := int64(req.GetFloat("offset", 0))
+		data, err := backend.AdminListMediaInFolder(ctx, folderID, limit, offset)
 		if err != nil {
 			return errResult(err), nil
 		}

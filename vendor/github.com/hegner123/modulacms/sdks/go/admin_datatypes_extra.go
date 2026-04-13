@@ -2,6 +2,7 @@ package modula
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 )
@@ -44,4 +45,17 @@ func (r *AdminDatatypesExtraResource) MaxSortOrder(ctx context.Context, parentID
 		return 0, fmt.Errorf("get max admin datatype sort order: %w", err)
 	}
 	return result.MaxSortOrder, nil
+}
+
+// GetFull returns a single admin datatype with all its field definitions as raw JSON.
+// The response shape includes the admin datatype plus nested field definitions whose
+// structure depends on the field types configured for this datatype.
+func (r *AdminDatatypesExtraResource) GetFull(ctx context.Context, id AdminDatatypeID) (json.RawMessage, error) {
+	params := url.Values{}
+	params.Set("q", string(id))
+	var result json.RawMessage
+	if err := r.http.get(ctx, "/api/v1/admindatatypes/full", params, &result); err != nil {
+		return nil, fmt.Errorf("get admin datatype full %s: %w", string(id), err)
+	}
+	return result, nil
 }

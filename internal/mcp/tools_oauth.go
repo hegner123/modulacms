@@ -38,7 +38,7 @@ func registerOAuthTools(srv *server.MCPServer, backend OAuthBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_user_oauth",
-			mcp.WithDescription("update a user OAuth connection (refresh tokens)."),
+			mcp.WithDescription("Update a user OAuth connection (refresh tokens)."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("user OAuth ID (ULID)")),
 			mcp.WithString("access_token", mcp.Required(), mcp.Description("New OAuth access token")),
 			mcp.WithString("refresh_token", mcp.Required(), mcp.Description("New OAuth refresh token")),

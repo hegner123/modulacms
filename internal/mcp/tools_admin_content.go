@@ -40,7 +40,7 @@ func registerAdminContentTools(srv *server.MCPServer, backend AdminContentBacken
 
 	srv.AddTool(
 		mcp.NewTool("admin_update_content",
-			mcp.WithDescription("update an existing admin content data entry."),
+			mcp.WithDescription("Update an existing admin content data entry."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin content data ID (ULID)")),
 			mcp.WithString("status", mcp.Required(), mcp.Description("Content status"), mcp.Enum("draft", "published", "archived", "pending")),
 			mcp.WithString("parent_id", mcp.Description("Parent admin content ID")),
@@ -79,6 +79,23 @@ func registerAdminContentTools(srv *server.MCPServer, backend AdminContentBacken
 	)
 
 	srv.AddTool(
+		mcp.NewTool("admin_get_content_full",
+			mcp.WithDescription("List admin content items with full details (author, datatype, fields)."),
+			mcp.WithNumber("limit", mcp.Description("Max items (default 20)"), mcp.DefaultNumber(20)),
+			mcp.WithNumber("offset", mcp.Description("Items to skip (default 0)"), mcp.DefaultNumber(0)),
+		),
+		handleAdminGetContentFull(backend),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("get_admin_tree",
+			mcp.WithDescription("Get the admin content tree. Optionally filter by route slug."),
+			mcp.WithString("slug", mcp.Description("Route slug to filter by")),
+		),
+		handleGetAdminTree(backend),
+	)
+
+	srv.AddTool(
 		mcp.NewTool("admin_list_content_fields",
 			mcp.WithDescription("List admin content field records with pagination."),
 			mcp.WithNumber("limit", mcp.Description("Max items (default 20)"), mcp.DefaultNumber(20)),
@@ -109,7 +126,7 @@ func registerAdminContentTools(srv *server.MCPServer, backend AdminContentBacken
 
 	srv.AddTool(
 		mcp.NewTool("admin_update_content_field",
-			mcp.WithDescription("update an existing admin content field."),
+			mcp.WithDescription("Update an existing admin content field."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin content field ID (ULID)")),
 			mcp.WithString("admin_field_value", mcp.Required(), mcp.Description("New field value")),
 			mcp.WithString("admin_content_data_id", mcp.Description("Admin content data ID")),
@@ -280,6 +297,29 @@ func handleAdminMoveContent(backend AdminContentBackend) server.ToolHandlerFunc 
 			return nil, err
 		}
 		data, err := backend.MoveAdminContent(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleAdminGetContentFull(backend AdminContentBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		limit := int64(req.GetFloat("limit", 20))
+		offset := int64(req.GetFloat("offset", 0))
+		data, err := backend.AdminGetContentFull(ctx, limit, offset)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleGetAdminTree(backend AdminContentBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		slug := req.GetString("slug", "")
+		data, err := backend.GetAdminTree(ctx, slug)
 		if err != nil {
 			return errResult(err), nil
 		}

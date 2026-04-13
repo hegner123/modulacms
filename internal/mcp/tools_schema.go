@@ -40,7 +40,7 @@ func registerSchemaTools(srv *server.MCPServer, backend SchemaBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_datatype",
-			mcp.WithDescription("update an existing datatype. This is a full replacement."),
+			mcp.WithDescription("Update an existing datatype."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Datatype ID (ULID)")),
 			mcp.WithString("name", mcp.Description("Machine-readable name (used as JSON key). If omitted, derived from label.")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Datatype label")),
@@ -93,7 +93,7 @@ func registerSchemaTools(srv *server.MCPServer, backend SchemaBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_field",
-			mcp.WithDescription("update an existing field definition. This is a full replacement."),
+			mcp.WithDescription("Update an existing field definition."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Field ID (ULID)")),
 			mcp.WithString("name", mcp.Description("Machine-readable name (used as JSON key). If omitted, derived from label.")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Field label")),
@@ -119,10 +119,51 @@ func registerSchemaTools(srv *server.MCPServer, backend SchemaBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("get_datatype_full",
-			mcp.WithDescription("Get a single datatype with its linked fields joined. If id is omitted, returns all datatypes with fields."),
-			mcp.WithString("id", mcp.Description("Datatype ID (ULID). Omit to list all with fields.")),
+			mcp.WithDescription("Get a single datatype with its linked fields joined."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Datatype ID (ULID)")),
 		),
 		handleGetDatatypeFull(backend),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("list_datatypes_full",
+			mcp.WithDescription("List all datatypes with their linked fields joined."),
+		),
+		handleListDatatypesFull(backend),
+	)
+
+	// --- Sort Ordering ---
+
+	srv.AddTool(
+		mcp.NewTool("get_datatype_max_sort_order",
+			mcp.WithDescription("Get the maximum sort order value across datatypes."),
+		),
+		handleGetDatatypeMaxSortOrder(backend),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("update_datatype_sort_order",
+			mcp.WithDescription("Update a datatype's sort order."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Datatype ID (ULID)")),
+			mcp.WithNumber("sort_order", mcp.Required(), mcp.Description("New sort order value")),
+		),
+		handleUpdateDatatypeSortOrder(backend),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("get_field_max_sort_order",
+			mcp.WithDescription("Get the maximum sort order value across fields."),
+		),
+		handleGetFieldMaxSortOrder(backend),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("update_field_sort_order",
+			mcp.WithDescription("Update a field's sort order."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Field ID (ULID)")),
+			mcp.WithNumber("sort_order", mcp.Required(), mcp.Description("New sort order value")),
+		),
+		handleUpdateFieldSortOrder(backend),
 	)
 
 	// --- Field Types ---
@@ -153,7 +194,7 @@ func registerSchemaTools(srv *server.MCPServer, backend SchemaBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_field_type",
-			mcp.WithDescription("update a field type definition."),
+			mcp.WithDescription("Update a field type definition."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Field type ID (ULID)")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Field type key")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Human-readable label")),
@@ -241,7 +282,7 @@ func handleUpdateDatatype(backend SchemaBackend) server.ToolHandlerFunc {
 		}
 		params, err := marshalParams(map[string]any{
 			"datatype_id": id,
-			"name":        req.GetString("name", ""),
+			"name":        optionalStrPtr(req, "name"),
 			"label":       label,
 			"type":        typ,
 			"parent_id":   optionalStrPtr(req, "parent_id"),
@@ -345,13 +386,13 @@ func handleUpdateField(backend SchemaBackend) server.ToolHandlerFunc {
 		}
 		params, err := marshalParams(map[string]any{
 			"field_id":   id,
-			"name":       req.GetString("name", ""),
+			"name":       optionalStrPtr(req, "name"),
 			"label":      label,
 			"type":       ft,
 			"parent_id":  optionalStrPtr(req, "parent_id"),
-			"data":       req.GetString("data", ""),
-			"validation": req.GetString("validation", ""),
-			"ui_config":  req.GetString("ui_config", ""),
+			"data":       optionalStrPtr(req, "data"),
+			"validation": optionalStrPtr(req, "validation"),
+			"ui_config":  optionalStrPtr(req, "ui_config"),
 			"author_id":  optionalStrPtr(req, "author_id"),
 		})
 		if err != nil {
@@ -383,12 +424,75 @@ func handleDeleteField(backend SchemaBackend) server.ToolHandlerFunc {
 
 func handleGetDatatypeFull(backend SchemaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		id := req.GetString("id", "")
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
 		data, err := backend.GetDatatypeFull(ctx, id)
 		if err != nil {
 			return errResult(err), nil
 		}
 		return rawJSONResult(data), nil
+	}
+}
+
+func handleListDatatypesFull(backend SchemaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		data, err := backend.GetDatatypeFull(ctx, "")
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+// --- Sort Ordering Handlers ---
+
+func handleGetDatatypeMaxSortOrder(backend SchemaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		data, err := backend.GetDatatypeMaxSortOrder(ctx)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleUpdateDatatypeSortOrder(backend SchemaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		sortOrder := int64(req.GetFloat("sort_order", 0))
+		if err := backend.UpdateDatatypeSortOrder(ctx, id, sortOrder); err != nil {
+			return errResult(err), nil
+		}
+		return mcp.NewToolResultText("updated"), nil
+	}
+}
+
+func handleGetFieldMaxSortOrder(backend SchemaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		data, err := backend.GetFieldMaxSortOrder(ctx)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleUpdateFieldSortOrder(backend SchemaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		sortOrder := int64(req.GetFloat("sort_order", 0))
+		if err := backend.UpdateFieldSortOrder(ctx, id, sortOrder); err != nil {
+			return errResult(err), nil
+		}
+		return mcp.NewToolResultText("updated"), nil
 	}
 }
 

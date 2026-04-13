@@ -55,3 +55,14 @@ func (r *LocaleResource) CreateTranslation(ctx context.Context, contentDataID st
 	}
 	return &resp, nil
 }
+
+// CreateAdminTranslation creates locale-specific content field values for an admin content node.
+// The adminContentDataID identifies the admin content node to translate, and the request
+// specifies the target locale. This is the admin-side equivalent of [LocaleResource.CreateTranslation].
+func (r *LocaleResource) CreateAdminTranslation(ctx context.Context, adminContentDataID string, req CreateTranslationRequest) (*CreateTranslationResponse, error) {
+	var resp CreateTranslationResponse
+	if err := r.http.post(ctx, "/api/v1/admin/admincontentdata/"+adminContentDataID+"/translations", req, &resp); err != nil {
+		return nil, fmt.Errorf("create admin translation for %s: %w", adminContentDataID, err)
+	}
+	return &resp, nil
+}

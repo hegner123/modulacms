@@ -46,6 +46,14 @@ func newServer(backends *Backends, cm *ConnectionManager) *server.MCPServer {
 	registerAdminRouteTools(srv, backends.AdminRoutes)
 	registerAdminMediaTools(srv, backends.AdminMedia, backends.AdminMediaFolders)
 	registerAdminMediaFolderTools(srv, backends.AdminMediaFolders)
+	registerPublishingTools(srv, backends.Publishing)
+	registerVersionTools(srv, backends.Versions)
+	registerWebhookTools(srv, backends.Webhooks)
+	registerLocaleTools(srv, backends.Locales)
+	registerValidationTools(srv, backends.Validations)
+	registerSearchTools(srv, backends.Search)
+	registerActivityTools(srv, backends.Activity)
+	registerAuthTools(srv, backends.Auth)
 
 	return srv
 }

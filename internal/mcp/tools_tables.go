@@ -33,7 +33,7 @@ func registerTableTools(srv *server.MCPServer, backend TableBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_table",
-			mcp.WithDescription("update a table record."),
+			mcp.WithDescription("Update a table record."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Table ID (ULID)")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("New table label")),
 		),

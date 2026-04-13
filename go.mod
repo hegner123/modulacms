@@ -22,6 +22,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/ssh v0.0.0-20250826160808-ebfa259c7309
 	github.com/charmbracelet/x/ansi v0.11.6
+	github.com/getsentry/sentry-go v0.44.1
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/kolesa-team/go-webp v1.0.5
 	github.com/lib/pq v1.10.9
@@ -62,7 +63,6 @@ require (
 	github.com/creack/pty v1.1.24 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
-	github.com/getsentry/sentry-go v0.44.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

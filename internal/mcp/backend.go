@@ -33,6 +33,11 @@ type ContentBackend interface {
 	SaveContentTree(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	HealContent(ctx context.Context, dryRun bool) (json.RawMessage, error)
 	BatchUpdateContent(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	QueryContent(ctx context.Context, datatype string, params json.RawMessage) (json.RawMessage, error)
+	GetGlobals(ctx context.Context, format string) (json.RawMessage, error)
+	GetContentFull(ctx context.Context, id string) (json.RawMessage, error)
+	GetContentByRoute(ctx context.Context, routeID string) (json.RawMessage, error)
+	CreateContentComposite(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 }
 
 // AdminContentBackend abstracts admin content operations for MCP tools.
@@ -49,6 +54,8 @@ type AdminContentBackend interface {
 	CreateAdminContentField(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	UpdateAdminContentField(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	DeleteAdminContentField(ctx context.Context, id string) error
+	AdminGetContentFull(ctx context.Context, limit, offset int64) (json.RawMessage, error)
+	GetAdminTree(ctx context.Context, slug string) (json.RawMessage, error)
 }
 
 // SchemaBackend abstracts schema operations (datatypes, fields, field types).
@@ -69,6 +76,10 @@ type SchemaBackend interface {
 	CreateFieldType(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	UpdateFieldType(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	DeleteFieldType(ctx context.Context, id string) error
+	GetDatatypeMaxSortOrder(ctx context.Context) (json.RawMessage, error)
+	UpdateDatatypeSortOrder(ctx context.Context, id string, sortOrder int64) error
+	GetFieldMaxSortOrder(ctx context.Context) (json.RawMessage, error)
+	UpdateFieldSortOrder(ctx context.Context, id string, sortOrder int64) error
 }
 
 // AdminSchemaBackend abstracts admin schema operations.
@@ -83,6 +94,8 @@ type AdminSchemaBackend interface {
 	CreateAdminField(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	UpdateAdminField(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	DeleteAdminField(ctx context.Context, id string) error
+	AdminGetDatatypeMaxSortOrder(ctx context.Context) (json.RawMessage, error)
+	AdminUpdateDatatypeSortOrder(ctx context.Context, id string, sortOrder int64) error
 }
 
 // MediaBackend abstracts media operations.
@@ -94,11 +107,16 @@ type MediaBackend interface {
 	UploadMedia(ctx context.Context, reader io.Reader, filename string) (json.RawMessage, error)
 	MediaHealth(ctx context.Context) (json.RawMessage, error)
 	MediaCleanup(ctx context.Context) (json.RawMessage, error)
+	MediaCleanupCheck(ctx context.Context) (json.RawMessage, error)
 	ListMediaDimensions(ctx context.Context) (json.RawMessage, error)
 	GetMediaDimension(ctx context.Context, id string) (json.RawMessage, error)
 	CreateMediaDimension(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	UpdateMediaDimension(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	DeleteMediaDimension(ctx context.Context, id string) error
+	DownloadMedia(ctx context.Context, id string) (json.RawMessage, error)
+	GetMediaFull(ctx context.Context) (json.RawMessage, error)
+	GetMediaReferences(ctx context.Context, id string) (json.RawMessage, error)
+	ReprocessMedia(ctx context.Context) (json.RawMessage, error)
 }
 
 // MediaFolderBackend abstracts media folder operations.
@@ -109,6 +127,8 @@ type MediaFolderBackend interface {
 	UpdateMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	DeleteMediaFolder(ctx context.Context, id string) (json.RawMessage, error)
 	MoveMediaToFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	GetMediaFolderTree(ctx context.Context) (json.RawMessage, error)
+	ListMediaInFolder(ctx context.Context, folderID string, limit, offset int64) (json.RawMessage, error)
 }
 
 // RouteBackend abstracts public route operations.
@@ -118,6 +138,7 @@ type RouteBackend interface {
 	CreateRoute(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	UpdateRoute(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	DeleteRoute(ctx context.Context, id string) error
+	ListRoutesFull(ctx context.Context) (json.RawMessage, error)
 }
 
 // AdminRouteBackend abstracts admin route and admin field type operations.
@@ -144,6 +165,8 @@ type UserBackend interface {
 	DeleteUser(ctx context.Context, id string) error
 	ListUsersFull(ctx context.Context) (json.RawMessage, error)
 	GetUserFull(ctx context.Context, id string) (json.RawMessage, error)
+	ReassignAndDeleteUser(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	ListUserSessions(ctx context.Context) (json.RawMessage, error)
 }
 
 // RBACBackend abstracts role-based access control operations.
@@ -263,11 +286,96 @@ type AdminMediaFolderBackend interface {
 	UpdateAdminMediaFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
 	DeleteAdminMediaFolder(ctx context.Context, id string) (json.RawMessage, error)
 	MoveAdminMediaToFolder(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	AdminGetMediaFolderTree(ctx context.Context) (json.RawMessage, error)
+	AdminListMediaInFolder(ctx context.Context, folderID string, limit, offset int64) (json.RawMessage, error)
 }
 
 // HealthBackend abstracts server health checks.
 type HealthBackend interface {
 	Health(ctx context.Context) (json.RawMessage, error)
+	GetMetrics(ctx context.Context) (json.RawMessage, error)
+	GetEnvironment(ctx context.Context) (json.RawMessage, error)
+}
+
+// ActivityBackend abstracts activity feed operations.
+type ActivityBackend interface {
+	ListRecentActivity(ctx context.Context, limit int64) (json.RawMessage, error)
+}
+
+// AuthBackend abstracts non-interactive auth operations.
+type AuthBackend interface {
+	RegisterUser(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	RequestPasswordReset(ctx context.Context, email string) (json.RawMessage, error)
+}
+
+// PublishingBackend abstracts content publishing operations.
+type PublishingBackend interface {
+	PublishContent(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	UnpublishContent(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	ScheduleContent(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	AdminPublishContent(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	AdminUnpublishContent(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	AdminScheduleContent(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+}
+
+// VersionBackend abstracts content version operations.
+type VersionBackend interface {
+	ListVersions(ctx context.Context, contentID string) (json.RawMessage, error)
+	GetVersion(ctx context.Context, versionID string) (json.RawMessage, error)
+	CreateVersion(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	DeleteVersion(ctx context.Context, versionID string) error
+	RestoreVersion(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	AdminListVersions(ctx context.Context, contentID string) (json.RawMessage, error)
+	AdminGetVersion(ctx context.Context, versionID string) (json.RawMessage, error)
+	AdminCreateVersion(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	AdminDeleteVersion(ctx context.Context, versionID string) error
+	AdminRestoreVersion(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+}
+
+// WebhookBackend abstracts webhook management operations.
+type WebhookBackend interface {
+	ListWebhooks(ctx context.Context) (json.RawMessage, error)
+	GetWebhook(ctx context.Context, id string) (json.RawMessage, error)
+	CreateWebhook(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	UpdateWebhook(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	DeleteWebhook(ctx context.Context, id string) error
+	TestWebhook(ctx context.Context, id string) (json.RawMessage, error)
+	ListWebhookDeliveries(ctx context.Context, webhookID string) (json.RawMessage, error)
+	RetryWebhookDelivery(ctx context.Context, deliveryID string) error
+}
+
+// LocaleBackend abstracts locale management operations.
+type LocaleBackend interface {
+	ListLocales(ctx context.Context) (json.RawMessage, error)
+	ListAdminLocales(ctx context.Context) (json.RawMessage, error)
+	GetLocale(ctx context.Context, id string) (json.RawMessage, error)
+	CreateLocale(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	UpdateLocale(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	DeleteLocale(ctx context.Context, id string) error
+	CreateTranslation(ctx context.Context, contentDataID string, params json.RawMessage) (json.RawMessage, error)
+	AdminCreateTranslation(ctx context.Context, adminContentDataID string, params json.RawMessage) (json.RawMessage, error)
+}
+
+// ValidationBackend abstracts validation rule operations.
+type ValidationBackend interface {
+	ListValidations(ctx context.Context) (json.RawMessage, error)
+	GetValidation(ctx context.Context, id string) (json.RawMessage, error)
+	CreateValidation(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	UpdateValidation(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	DeleteValidation(ctx context.Context, id string) error
+	SearchValidations(ctx context.Context, query string) (json.RawMessage, error)
+	AdminListValidations(ctx context.Context) (json.RawMessage, error)
+	AdminGetValidation(ctx context.Context, id string) (json.RawMessage, error)
+	AdminCreateValidation(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	AdminUpdateValidation(ctx context.Context, params json.RawMessage) (json.RawMessage, error)
+	AdminDeleteValidation(ctx context.Context, id string) error
+	AdminSearchValidations(ctx context.Context, query string) (json.RawMessage, error)
+}
+
+// SearchBackend abstracts content search operations.
+type SearchBackend interface {
+	SearchContent(ctx context.Context, query string, limit, offset int64) (json.RawMessage, error)
+	RebuildSearchIndex(ctx context.Context) (json.RawMessage, error)
 }
 
 // Backends holds all domain backends for MCP tool registration.
@@ -296,4 +404,12 @@ type Backends struct {
 	Import            ImportBackend
 	Deploy            DeployBackend
 	Health            HealthBackend
+	Publishing        PublishingBackend
+	Versions          VersionBackend
+	Webhooks          WebhookBackend
+	Locales           LocaleBackend
+	Validations       ValidationBackend
+	Search            SearchBackend
+	Activity          ActivityBackend
+	Auth              AuthBackend
 }

@@ -44,7 +44,7 @@ func registerUserTools(srv *server.MCPServer, backend UserBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_user",
-			mcp.WithDescription("update an existing user. This is a full replacement — provide all fields you want to keep. Omitting a field sets it to empty. Password can be omitted to keep the current password."),
+			mcp.WithDescription("Update an existing user."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("user ID (ULID)")),
 			mcp.WithString("username", mcp.Description("Username")),
 			mcp.WithString("name", mcp.Description("Display name")),
@@ -76,6 +76,22 @@ func registerUserTools(srv *server.MCPServer, backend UserBackend) {
 			mcp.WithString("id", mcp.Required(), mcp.Description("user ID (ULID)")),
 		),
 		handleGetUserFull(backend),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("reassign_and_delete_user",
+			mcp.WithDescription("Reassign all content from one user to another, then delete the original user."),
+			mcp.WithString("user_id", mcp.Required(), mcp.Description("ID of the user to delete (ULID)")),
+			mcp.WithString("reassign_to", mcp.Required(), mcp.Description("ID of the user to receive reassigned content (ULID)")),
+		),
+		handleReassignAndDeleteUser(backend),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("list_user_sessions",
+			mcp.WithDescription("List sessions for the authenticated user."),
+		),
+		handleListUserSessions(backend),
 	)
 }
 
@@ -161,11 +177,11 @@ func handleUpdateUser(backend UserBackend) server.ToolHandlerFunc {
 		}
 		params, err := marshalParams(map[string]any{
 			"user_id":  id,
-			"username": req.GetString("username", ""),
-			"name":     req.GetString("name", ""),
-			"email":    req.GetString("email", ""),
-			"password": req.GetString("password", ""),
-			"role":     req.GetString("role", ""),
+			"username": optionalStrPtr(req, "username"),
+			"name":     optionalStrPtr(req, "name"),
+			"email":    optionalStrPtr(req, "email"),
+			"password": optionalStrPtr(req, "password"),
+			"role":     optionalStrPtr(req, "role"),
 		})
 		if err != nil {
 			return nil, err
@@ -209,6 +225,41 @@ func handleGetUserFull(backend UserBackend) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("id is required"), nil
 		}
 		data, err := backend.GetUserFull(ctx, id)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleReassignAndDeleteUser(backend UserBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		userID, err := req.RequireString("user_id")
+		if err != nil {
+			return mcp.NewToolResultError("user_id is required"), nil
+		}
+		reassignTo, err := req.RequireString("reassign_to")
+		if err != nil {
+			return mcp.NewToolResultError("reassign_to is required"), nil
+		}
+		params, err := marshalParams(map[string]any{
+			"user_id":     userID,
+			"reassign_to": reassignTo,
+		})
+		if err != nil {
+			return nil, err
+		}
+		data, err := backend.ReassignAndDeleteUser(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleListUserSessions(backend UserBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		data, err := backend.ListUserSessions(ctx)
 		if err != nil {
 			return errResult(err), nil
 		}

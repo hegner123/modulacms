@@ -24,6 +24,13 @@ func registerRouteTools(srv *server.MCPServer, backend RouteBackend) {
 	)
 
 	srv.AddTool(
+		mcp.NewTool("list_routes_full",
+			mcp.WithDescription("List all routes with full details including content tree and author information."),
+		),
+		handleListRoutesFull(backend),
+	)
+
+	srv.AddTool(
 		mcp.NewTool("create_route",
 			mcp.WithDescription("Create a new route."),
 			mcp.WithString("slug", mcp.Required(), mcp.Description("URL slug (e.g. 'about' or 'blog/my-post')")),
@@ -36,7 +43,7 @@ func registerRouteTools(srv *server.MCPServer, backend RouteBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_route",
-			mcp.WithDescription("update a route by ID."),
+			mcp.WithDescription("Update a route by ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Route ID (ULID)")),
 			mcp.WithString("slug", mcp.Required(), mcp.Description("URL slug")),
 			mcp.WithString("title", mcp.Required(), mcp.Description("Route title")),
@@ -151,5 +158,15 @@ func handleDeleteRoute(backend RouteBackend) server.ToolHandlerFunc {
 			return errResult(err), nil
 		}
 		return mcp.NewToolResultText("deleted"), nil
+	}
+}
+
+func handleListRoutesFull(backend RouteBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		data, err := backend.ListRoutesFull(ctx)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
 	}
 }

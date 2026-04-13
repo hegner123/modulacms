@@ -13,7 +13,7 @@ import (
 func registerMediaTools(srv *server.MCPServer, backend MediaBackend, folderBackend MediaFolderBackend) {
 	srv.AddTool(
 		mcp.NewTool("list_media",
-			mcp.WithDescription("List media assets with pagination. Media files must be uploaded through the CMS web interface or API directly. This MCP server can view and update media metadata but cannot upload new files."),
+			mcp.WithDescription("List media assets with pagination."),
 			mcp.WithNumber("limit", mcp.Description("Max items to return (default 20, max 1000)"), mcp.DefaultNumber(20)),
 			mcp.WithNumber("offset", mcp.Description("Number of items to skip (default 0)"), mcp.DefaultNumber(0)),
 		),
@@ -30,7 +30,7 @@ func registerMediaTools(srv *server.MCPServer, backend MediaBackend, folderBacke
 
 	srv.AddTool(
 		mcp.NewTool("update_media",
-			mcp.WithDescription("update media asset metadata. Only provided fields are changed; omitted fields remain unchanged."),
+			mcp.WithDescription("Update media asset metadata. Only provided fields are changed; omitted fields remain unchanged."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Media ID (ULID)")),
 			mcp.WithString("name", mcp.Description("File name")),
 			mcp.WithString("display_name", mcp.Description("Display name")),
@@ -71,18 +71,27 @@ func registerMediaTools(srv *server.MCPServer, backend MediaBackend, folderBacke
 		handleMediaHealth(backend),
 	)
 
-	// media_cleanup
+	// media_cleanup_check
 	srv.AddTool(
-		mcp.NewTool("media_cleanup",
-			mcp.WithDescription("Run orphaned media cleanup. Removes media records without backing files."),
+		mcp.NewTool("media_cleanup_check",
+			mcp.WithDescription("List orphaned S3 objects that have no corresponding database record. Returns total_objects, tracked_keys, and orphaned_keys. Use media_cleanup_apply to delete the listed orphans."),
 		),
-		handleMediaCleanup(backend),
+		handleMediaCleanupCheck(backend),
+	)
+
+	// media_cleanup_apply
+	srv.AddTool(
+		mcp.NewTool("media_cleanup_apply",
+			mcp.WithDescription("Delete orphaned S3 objects listed by media_cleanup_check. This is destructive and cannot be undone. Run media_cleanup_check first to see what will be deleted."),
+			mcp.WithBoolean("confirm", mcp.Required(), mcp.Description("Must be true to proceed with deletion")),
+		),
+		handleMediaCleanupApply(backend),
 	)
 
 	// list_media_dimensions
 	srv.AddTool(
 		mcp.NewTool("list_media_dimensions",
-			mcp.WithDescription("List all media dimension presets."),
+			mcp.WithDescription("List all media dimension presets. Dimensions are shared across both public and admin media systems."),
 		),
 		handleListMediaDimensions(backend),
 	)
@@ -110,7 +119,7 @@ func registerMediaTools(srv *server.MCPServer, backend MediaBackend, folderBacke
 	// update_media_dimension
 	srv.AddTool(
 		mcp.NewTool("update_media_dimension",
-			mcp.WithDescription("update a media dimension preset."),
+			mcp.WithDescription("Update a media dimension preset."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Media dimension ID (ULID)")),
 			mcp.WithString("label", mcp.Description("Dimension label")),
 			mcp.WithNumber("width", mcp.Description("Width in pixels")),
@@ -126,6 +135,40 @@ func registerMediaTools(srv *server.MCPServer, backend MediaBackend, folderBacke
 			mcp.WithString("id", mcp.Required(), mcp.Description("Media dimension ID (ULID)")),
 		),
 		handleDeleteMediaDimension(backend),
+	)
+
+	// download_media
+	srv.AddTool(
+		mcp.NewTool("download_media",
+			mcp.WithDescription("Get a download URL for a media file."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Media ID (ULID)")),
+		),
+		handleDownloadMedia(backend),
+	)
+
+	// get_media_full
+	srv.AddTool(
+		mcp.NewTool("get_media_full",
+			mcp.WithDescription("List all media with full details."),
+		),
+		handleGetMediaFull(backend),
+	)
+
+	// get_media_references
+	srv.AddTool(
+		mcp.NewTool("get_media_references",
+			mcp.WithDescription("List content fields that reference a media asset."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Media ID (ULID)")),
+		),
+		handleGetMediaReferences(backend),
+	)
+
+	// reprocess_media
+	srv.AddTool(
+		mcp.NewTool("reprocess_media",
+			mcp.WithDescription("Reprocess all media files (regenerate dimensions and thumbnails)."),
+		),
+		handleReprocessMedia(backend),
 	)
 }
 
@@ -265,8 +308,22 @@ func handleMediaHealth(backend MediaBackend) server.ToolHandlerFunc {
 	}
 }
 
-func handleMediaCleanup(backend MediaBackend) server.ToolHandlerFunc {
+func handleMediaCleanupCheck(backend MediaBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		data, err := backend.MediaCleanupCheck(ctx)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleMediaCleanupApply(backend MediaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		confirm := req.GetBool("confirm", false)
+		if !confirm {
+			return mcp.NewToolResultError("Set confirm to true to proceed with destructive cleanup"), nil
+		}
 		data, err := backend.MediaCleanup(ctx)
 		if err != nil {
 			return errResult(err), nil
@@ -351,5 +408,53 @@ func handleDeleteMediaDimension(backend MediaBackend) server.ToolHandlerFunc {
 			return errResult(err), nil
 		}
 		return mcp.NewToolResultText("deleted"), nil
+	}
+}
+
+func handleDownloadMedia(backend MediaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		data, err := backend.DownloadMedia(ctx, id)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleGetMediaFull(backend MediaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		data, err := backend.GetMediaFull(ctx)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleGetMediaReferences(backend MediaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		data, err := backend.GetMediaReferences(ctx, id)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleReprocessMedia(backend MediaBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		data, err := backend.ReprocessMedia(ctx)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
 	}
 }

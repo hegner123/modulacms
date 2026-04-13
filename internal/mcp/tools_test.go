@@ -752,6 +752,392 @@ func TestToolRegistration_AllGroupsRegistered(t *testing.T) {
 	registerAdminRouteTools(srv, backends.AdminRoutes)
 	registerAdminMediaTools(srv, backends.AdminMedia, backends.AdminMediaFolders)
 	registerAdminMediaFolderTools(srv, backends.AdminMediaFolders)
+	registerPublishingTools(srv, backends.Publishing)
+	registerVersionTools(srv, backends.Versions)
+	registerWebhookTools(srv, backends.Webhooks)
+	registerLocaleTools(srv, backends.Locales)
+	registerValidationTools(srv, backends.Validations)
+	registerSearchTools(srv, backends.Search)
+	registerActivityTools(srv, backends.Activity)
+	registerAuthTools(srv, backends.Auth)
+}
+
+// --- A2: Partial-update semantics ---
+// These tests verify that omitted optional fields produce null (not "") in the
+// JSON params the handler passes to the backend. The recording backends capture
+// the raw json.RawMessage before the SDK typed structs normalize null -> "".
+
+// recordingUserBackend captures the raw params from UpdateUser.
+type recordingUserBackend struct {
+	UserBackend
+	lastParams json.RawMessage
+}
+
+func (r *recordingUserBackend) UpdateUser(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	r.lastParams = params
+	return json.RawMessage(`{"user_id":"usr-001"}`), nil
+}
+
+// recordingSessionBackend captures the raw params from UpdateSession.
+type recordingSessionBackend struct {
+	SessionBackend
+	lastParams json.RawMessage
+}
+
+func (r *recordingSessionBackend) UpdateSession(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	r.lastParams = params
+	return json.RawMessage(`{"session_id":"sess-001"}`), nil
+}
+
+// recordingSchemaBackend captures the raw params from UpdateDatatype/UpdateField.
+type recordingSchemaBackend struct {
+	SchemaBackend
+	lastParams json.RawMessage
+}
+
+func (r *recordingSchemaBackend) UpdateDatatype(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	r.lastParams = params
+	return json.RawMessage(`{"datatype_id":"dt-001"}`), nil
+}
+
+func (r *recordingSchemaBackend) UpdateField(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	r.lastParams = params
+	return json.RawMessage(`{"field_id":"fld-001"}`), nil
+}
+
+func (r *recordingSchemaBackend) GetDatatypeFull(ctx context.Context, id string) (json.RawMessage, error) {
+	if id == "" {
+		return json.RawMessage(`[{"datatype_id":"dt-001","fields":[]}]`), nil
+	}
+	return json.RawMessage(`{"datatype_id":"` + id + `","fields":[]}`), nil
+}
+
+// recordingAdminSchemaBackend captures the raw params from admin UpdateDatatype/UpdateField.
+type recordingAdminSchemaBackend struct {
+	AdminSchemaBackend
+	lastParams json.RawMessage
+}
+
+func (r *recordingAdminSchemaBackend) UpdateAdminDatatype(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	r.lastParams = params
+	return json.RawMessage(`{"admin_datatype_id":"adt-001"}`), nil
+}
+
+func (r *recordingAdminSchemaBackend) UpdateAdminField(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+	r.lastParams = params
+	return json.RawMessage(`{"admin_field_id":"afld-001"}`), nil
+}
+
+// assertNullFields checks that each named field is JSON null in the raw params.
+func assertNullFields(t *testing.T, raw json.RawMessage, fields []string) {
+	t.Helper()
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &m); err != nil {
+		t.Fatalf("failed to unmarshal params: %v", err)
+	}
+	for _, field := range fields {
+		v, ok := m[field]
+		if !ok {
+			continue // absent is acceptable (even better than null)
+		}
+		if string(v) != "null" {
+			t.Errorf("%s = %s, want null (field was omitted, should not overwrite existing data)", field, string(v))
+		}
+	}
+}
+
+func TestHandleUpdateUser_OmittedFieldsAreNull(t *testing.T) {
+	rec := &recordingUserBackend{}
+	handler := handleUpdateUser(rec)
+
+	result := callTool(t, handler, map[string]any{
+		"id":       "usr-001",
+		"username": "newname",
+	})
+	if result.IsError {
+		t.Fatalf("unexpected error: %s", resultText(t, result))
+	}
+
+	// Verify provided field is present
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(rec.lastParams, &m); err != nil {
+		t.Fatalf("failed to unmarshal params: %v", err)
+	}
+	if string(m["username"]) != `"newname"` {
+		t.Errorf("username = %s, want %q", string(m["username"]), "newname")
+	}
+
+	// Omitted fields must be null, NOT empty string ""
+	assertNullFields(t, rec.lastParams, []string{"name", "email", "password", "role"})
+}
+
+func TestHandleUpdateSession_OmittedExpiresAtIsNull(t *testing.T) {
+	rec := &recordingSessionBackend{}
+	handler := handleUpdateSession(rec)
+
+	result := callTool(t, handler, map[string]any{
+		"id":         "sess-001",
+		"ip_address": "10.0.0.1",
+	})
+	if result.IsError {
+		t.Fatalf("unexpected error: %s", resultText(t, result))
+	}
+
+	assertNullFields(t, rec.lastParams, []string{"expires_at"})
+}
+
+func TestHandleUpdateDatatype_OmittedNameIsNull(t *testing.T) {
+	rec := &recordingSchemaBackend{}
+	handler := handleUpdateDatatype(rec)
+
+	result := callTool(t, handler, map[string]any{
+		"id":    "dt-001",
+		"label": "Blog Post",
+		"type":  "collection",
+	})
+	if result.IsError {
+		t.Fatalf("unexpected error: %s", resultText(t, result))
+	}
+
+	assertNullFields(t, rec.lastParams, []string{"name"})
+}
+
+func TestHandleAdminUpdateDatatype_OmittedNameIsNull(t *testing.T) {
+	rec := &recordingAdminSchemaBackend{}
+	handler := handleAdminUpdateDatatype(rec)
+
+	result := callTool(t, handler, map[string]any{
+		"id":    "adt-001",
+		"label": "Sidebar Widget",
+		"type":  "single",
+	})
+	if result.IsError {
+		t.Fatalf("unexpected error: %s", resultText(t, result))
+	}
+
+	assertNullFields(t, rec.lastParams, []string{"name"})
+}
+
+func TestHandleUpdateField_OmittedFieldsAreNull(t *testing.T) {
+	rec := &recordingSchemaBackend{}
+	handler := handleUpdateField(rec)
+
+	result := callTool(t, handler, map[string]any{
+		"id":         "fld-001",
+		"label":      "Title",
+		"field_type": "text",
+	})
+	if result.IsError {
+		t.Fatalf("unexpected error: %s", resultText(t, result))
+	}
+
+	assertNullFields(t, rec.lastParams, []string{"name", "data", "validation", "ui_config"})
+}
+
+func TestHandleAdminUpdateField_OmittedFieldsAreNull(t *testing.T) {
+	rec := &recordingAdminSchemaBackend{}
+	handler := handleAdminUpdateField(rec)
+
+	result := callTool(t, handler, map[string]any{
+		"id":         "afld-001",
+		"label":      "Heading",
+		"field_type": "text",
+	})
+	if result.IsError {
+		t.Fatalf("unexpected error: %s", resultText(t, result))
+	}
+
+	assertNullFields(t, rec.lastParams, []string{"name", "data", "validation", "ui_config"})
+}
+
+// --- A3: media_cleanup_apply confirm gate ---
+
+// recordingMediaBackend captures calls to MediaCleanup and MediaCleanupCheck.
+type recordingMediaBackend struct {
+	MediaBackend
+	cleanupCalled bool
+	checkCalled   bool
+}
+
+func (r *recordingMediaBackend) MediaCleanup(ctx context.Context) (json.RawMessage, error) {
+	r.cleanupCalled = true
+	return json.RawMessage(`{"deleted":3}`), nil
+}
+
+func (r *recordingMediaBackend) MediaCleanupCheck(ctx context.Context) (json.RawMessage, error) {
+	r.checkCalled = true
+	return json.RawMessage(`{"total_objects":10,"tracked_keys":7,"orphaned_keys":["a","b","c"]}`), nil
+}
+
+func TestHandleMediaCleanupApply_ConfirmTrue(t *testing.T) {
+	rec := &recordingMediaBackend{}
+	handler := handleMediaCleanupApply(rec)
+
+	result := callTool(t, handler, map[string]any{"confirm": true})
+	if result.IsError {
+		t.Fatalf("unexpected error: %s", resultText(t, result))
+	}
+	if !rec.cleanupCalled {
+		t.Error("MediaCleanup was not called when confirm=true")
+	}
+}
+
+func TestHandleMediaCleanupApply_ConfirmFalse(t *testing.T) {
+	rec := &recordingMediaBackend{}
+	handler := handleMediaCleanupApply(rec)
+
+	result := callTool(t, handler, map[string]any{"confirm": false})
+	if !result.IsError {
+		t.Fatal("expected error when confirm=false")
+	}
+	if rec.cleanupCalled {
+		t.Error("MediaCleanup was called when confirm=false, should have been rejected")
+	}
+}
+
+func TestHandleMediaCleanupApply_ConfirmOmitted(t *testing.T) {
+	rec := &recordingMediaBackend{}
+	handler := handleMediaCleanupApply(rec)
+
+	result := callTool(t, handler, map[string]any{})
+	if !result.IsError {
+		t.Fatal("expected error when confirm is omitted")
+	}
+	if rec.cleanupCalled {
+		t.Error("MediaCleanup was called when confirm was omitted, should have been rejected")
+	}
+}
+
+func TestHandleMediaCleanupCheck_ReturnsOrphans(t *testing.T) {
+	rec := &recordingMediaBackend{}
+	handler := handleMediaCleanupCheck(rec)
+
+	result := callTool(t, handler, nil)
+	if result.IsError {
+		t.Fatalf("unexpected error: %s", resultText(t, result))
+	}
+	if !rec.checkCalled {
+		t.Error("MediaCleanupCheck was not called")
+	}
+	text := resultText(t, result)
+	var body map[string]any
+	if err := json.Unmarshal([]byte(text), &body); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+	keys, ok := body["orphaned_keys"].([]any)
+	if !ok {
+		t.Fatal("orphaned_keys missing or not an array")
+	}
+	if len(keys) != 3 {
+		t.Errorf("orphaned_keys length = %d, want 3", len(keys))
+	}
+}
+
+// --- A7: get_datatype_full requires ID, list_datatypes_full does not ---
+
+func TestHandleGetDatatypeFull_MissingID(t *testing.T) {
+	rec := &recordingSchemaBackend{}
+	handler := handleGetDatatypeFull(rec)
+
+	result := callTool(t, handler, map[string]any{})
+	if !result.IsError {
+		t.Fatal("expected error when id is omitted from get_datatype_full")
+	}
+	text := resultText(t, result)
+	if text != "id is required" {
+		t.Errorf("error text = %q, want %q", text, "id is required")
+	}
+}
+
+func TestHandleListDatatypesFull_NoIDNeeded(t *testing.T) {
+	rec := &recordingSchemaBackend{}
+	// Override GetDatatypeFull to capture the empty-string call
+	rec.lastParams = nil
+	handler := handleListDatatypesFull(rec)
+
+	result := callTool(t, handler, map[string]any{})
+	if result.IsError {
+		t.Fatalf("unexpected error: %s", resultText(t, result))
+	}
+}
+
+// --- Adversarial: wrong parameter types and empty required IDs ---
+
+func TestRequireString_RejectsNumericID(t *testing.T) {
+	// LLMs sometimes send {"id": 123} instead of {"id": "123"}.
+	// RequireString must reject this.
+	handler := handleGetRoute(nil) // backend not called, error before that
+	result := callTool(t, handler, map[string]any{"id": 123})
+	if !result.IsError {
+		t.Fatal("expected error when id is a number, not a string")
+	}
+}
+
+func TestRequireString_RejectsMissingID(t *testing.T) {
+	handler := handleGetRoute(nil)
+	result := callTool(t, handler, map[string]any{})
+	if !result.IsError {
+		t.Fatal("expected error when id is missing")
+	}
+}
+
+func TestRequireString_AcceptsEmptyString(t *testing.T) {
+	// Empty string passes RequireString (no error). This is a known limitation.
+	// Handlers that need non-empty IDs should validate separately.
+	// We verify this by calling RequireString directly.
+	req := makeReq(map[string]any{"id": ""})
+	val, err := req.RequireString("id")
+	if err != nil {
+		t.Fatalf("RequireString rejected empty string: %v", err)
+	}
+	if val != "" {
+		t.Errorf("val = %q, want empty string", val)
+	}
+	// This documents: empty string IDs pass RequireString and reach the backend.
+	// A future improvement would add non-empty validation at the handler level.
+}
+
+func TestGetBool_CoercesStringTrue(t *testing.T) {
+	// LLMs sometimes send {"confirm": "true"} (string) instead of {"confirm": true} (bool).
+	// GetBool coerces string "true" to true. Document this behavior: the confirm gate
+	// accepts string "true", which is acceptable since the intent is unambiguous.
+	rec := &recordingMediaBackend{}
+	handler := handleMediaCleanupApply(rec)
+	result := callTool(t, handler, map[string]any{"confirm": "true"})
+	if result.IsError {
+		t.Fatalf("unexpected error: GetBool should coerce string 'true' to true: %s", resultText(t, result))
+	}
+	if !rec.cleanupCalled {
+		t.Error("MediaCleanup should have been called since GetBool coerces string 'true'")
+	}
+}
+
+func TestGetBool_CoercesNumericOne(t *testing.T) {
+	// LLMs might send {"confirm": 1} instead of {"confirm": true}.
+	// GetBool coerces float64(1) to true (nonzero = true).
+	// Document this behavior: numeric 1 passes the confirm gate.
+	rec := &recordingMediaBackend{}
+	handler := handleMediaCleanupApply(rec)
+	result := callTool(t, handler, map[string]any{"confirm": float64(1)})
+	if result.IsError {
+		t.Fatalf("unexpected error: GetBool should coerce numeric 1 to true: %s", resultText(t, result))
+	}
+	if !rec.cleanupCalled {
+		t.Error("MediaCleanup should have been called since GetBool coerces numeric 1")
+	}
+}
+
+func TestGetBool_RejectsMapValue(t *testing.T) {
+	// Non-coercible types (map, array, nil) should fall through to default (false).
+	rec := &recordingMediaBackend{}
+	handler := handleMediaCleanupApply(rec)
+	result := callTool(t, handler, map[string]any{"confirm": map[string]any{"yes": true}})
+	if !result.IsError {
+		t.Fatal("expected error: map value should not pass boolean confirm gate")
+	}
+	if rec.cleanupCalled {
+		t.Error("MediaCleanup was called with non-boolean confirm value")
+	}
 }
 
 // --- Auth header propagation ---

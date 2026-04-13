@@ -43,7 +43,7 @@ func registerContentTools(srv *server.MCPServer, backend ContentBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_content",
-			mcp.WithDescription("update an existing content data entry. This is a full replacement — all fields are sent. Omitted pointer fields (parent_id, route_id, etc.) will be set to null. Status values: draft, published, archived, pending."),
+			mcp.WithDescription("Update an existing content data entry."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Content data ID (ULID)")),
 			mcp.WithString("status", mcp.Required(), mcp.Description("Content status: draft, published, archived, pending"), mcp.Enum("draft", "published", "archived", "pending")),
 			mcp.WithString("parent_id", mcp.Description("Parent content data ID")),
@@ -108,7 +108,7 @@ func registerContentTools(srv *server.MCPServer, backend ContentBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_content_field",
-			mcp.WithDescription("update an existing content field value."),
+			mcp.WithDescription("Update an existing content field value."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Content field ID (ULID)")),
 			mcp.WithString("field_value", mcp.Required(), mcp.Description("The new field value")),
 			mcp.WithString("content_data_id", mcp.Description("Content data ID")),
@@ -197,6 +197,53 @@ Response includes: content_data_id, content_data_updated, content_data_error, fi
 			mcp.WithObject("fields", mcp.Description("Map of field_id to new field value. Existing fields are updated; missing fields are created.")),
 		),
 		handleBatchUpdateContent(backend),
+	)
+
+	// --- Query & Delivery Extras ---
+
+	srv.AddTool(
+		mcp.NewTool("query_content",
+			mcp.WithDescription("Query content by datatype with optional filters, sorting, and pagination."),
+			mcp.WithString("datatype", mcp.Required(), mcp.Description("Datatype name or slug to query (e.g. 'blog-posts')")),
+			mcp.WithObject("filter", mcp.Description("Filter key-value pairs to apply to the query")),
+			mcp.WithString("sort", mcp.Description("Sort field with optional '-' prefix for descending (e.g. '-date_created')")),
+			mcp.WithNumber("limit", mcp.Description("Max items to return"), mcp.DefaultNumber(20)),
+			mcp.WithNumber("offset", mcp.Description("Number of items to skip"), mcp.DefaultNumber(0)),
+		),
+		handleQueryContent(backend),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("get_globals",
+			mcp.WithDescription("Get published global content trees."),
+			mcp.WithString("format", mcp.Description("Response format (currently unused, reserved for future use)")),
+		),
+		handleGetGlobals(backend),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("get_content_full",
+			mcp.WithDescription("Get a content item with author, datatype, and fields composed into a single response."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Content data ID (ULID)")),
+		),
+		handleGetContentFull(backend),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("get_content_by_route",
+			mcp.WithDescription("Get content items associated with a specific route."),
+			mcp.WithString("route_id", mcp.Required(), mcp.Description("Route ID (ULID)")),
+		),
+		handleGetContentByRoute(backend),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("create_content_composite",
+			mcp.WithDescription("Create a content item with field values in a single request, eliminating the N+1 call pattern."),
+			mcp.WithObject("content", mcp.Required(), mcp.Description("Content data params: datatype_id (required), parent_id, route_id, status")),
+			mcp.WithObject("fields", mcp.Description("Map of field_id to field value. All fields are created atomically with the content item.")),
+		),
+		handleCreateContentComposite(backend),
 	)
 }
 
@@ -562,6 +609,110 @@ func handleHealContent(backend ContentBackend) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		dryRun := req.GetBool("dry_run", false)
 		data, err := backend.HealContent(ctx, dryRun)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+// --- Query & Delivery Extra Handlers ---
+
+func handleQueryContent(backend ContentBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		datatype, err := req.RequireString("datatype")
+		if err != nil {
+			return mcp.NewToolResultError("datatype is required"), nil
+		}
+		args := req.GetArguments()
+		qp := map[string]any{}
+		if sort := req.GetString("sort", ""); sort != "" {
+			qp["sort"] = sort
+		}
+		limit := int64(req.GetFloat("limit", 20))
+		if limit > 0 {
+			qp["limit"] = limit
+		}
+		offset := int64(req.GetFloat("offset", 0))
+		if offset > 0 {
+			qp["offset"] = offset
+		}
+		if filter, ok := args["filter"]; ok {
+			qp["filter"] = filter
+		}
+		params, err := json.Marshal(qp)
+		if err != nil {
+			return nil, err
+		}
+		data, err := backend.QueryContent(ctx, datatype, json.RawMessage(params))
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleGetGlobals(backend ContentBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		format := req.GetString("format", "")
+		data, err := backend.GetGlobals(ctx, format)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleGetContentFull(backend ContentBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		data, err := backend.GetContentFull(ctx, id)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleGetContentByRoute(backend ContentBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		routeID, err := req.RequireString("route_id")
+		if err != nil {
+			return mcp.NewToolResultError("route_id is required"), nil
+		}
+		data, err := backend.GetContentByRoute(ctx, routeID)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleCreateContentComposite(backend ContentBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args := req.GetArguments()
+		rawContent, ok := args["content"]
+		if !ok {
+			return mcp.NewToolResultError("content is required"), nil
+		}
+		body := map[string]any{}
+		// Merge content fields into the top-level body (the SDK expects a flat ContentCreateParams).
+		if contentMap, mapOk := rawContent.(map[string]any); mapOk {
+			for k, v := range contentMap {
+				body[k] = v
+			}
+		}
+		if fields, fOk := args["fields"]; fOk {
+			body["fields"] = fields
+		}
+		params, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+		data, err := backend.CreateContentComposite(ctx, json.RawMessage(params))
 		if err != nil {
 			return errResult(err), nil
 		}

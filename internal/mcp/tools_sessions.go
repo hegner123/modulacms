@@ -25,7 +25,7 @@ func registerSessionTools(srv *server.MCPServer, backend SessionBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_session",
-			mcp.WithDescription("update an existing session."),
+			mcp.WithDescription("Update an existing session."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("session ID (ULID)")),
 			mcp.WithString("user_id", mcp.Description("user ID")),
 			mcp.WithString("expires_at", mcp.Description("Expiration timestamp (RFC3339)")),
@@ -79,7 +79,7 @@ func handleUpdateSession(backend SessionBackend) server.ToolHandlerFunc {
 		params, err := marshalParams(map[string]any{
 			"session_id":   id,
 			"user_id":      optionalStrPtr(req, "user_id"),
-			"expires_at":   req.GetString("expires_at", ""),
+			"expires_at":   optionalStrPtr(req, "expires_at"),
 			"last_access":  optionalStrPtr(req, "last_access"),
 			"ip_address":   optionalStrPtr(req, "ip_address"),
 			"user_agent":   optionalStrPtr(req, "user_agent"),

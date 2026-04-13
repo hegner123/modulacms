@@ -10,32 +10,32 @@ import (
 
 func registerDeployTools(srv *server.MCPServer, backend DeployBackend) {
 	srv.AddTool(
-		mcp.NewTool("deploy_health",
-			mcp.WithDescription("Check deploy sync health status. Returns status, version, and node ID."),
+		mcp.NewTool("sync_health",
+			mcp.WithDescription("Check sync health status between ModulaCMS environments. Returns status, version, and node ID. This is for synchronizing data between ModulaCMS environments, not for importing from external CMS platforms."),
 		),
 		handleDeployHealth(backend),
 	)
 
 	srv.AddTool(
-		mcp.NewTool("deploy_export",
-			mcp.WithDescription("export a sync payload from the server. Optionally filter by table names."),
+		mcp.NewTool("sync_export",
+			mcp.WithDescription("Export a sync payload from the server. Optionally filter by table names. This is for synchronizing data between ModulaCMS environments, not for importing from external CMS platforms."),
 			mcp.WithObject("tables", mcp.Description("Array of table names to export. Omit for full export.")),
 		),
 		handleDeployExport(backend),
 	)
 
 	srv.AddTool(
-		mcp.NewTool("deploy_import",
-			mcp.WithDescription("import a sync payload into the server. The payload should be the raw JSON from deploy_export."),
-			mcp.WithObject("payload", mcp.Required(), mcp.Description("Sync payload JSON from deploy_export")),
+		mcp.NewTool("sync_import",
+			mcp.WithDescription("Import a sync payload into the server. The payload should be the raw JSON from sync_export. This is for synchronizing data between ModulaCMS environments, not for importing from external CMS platforms."),
+			mcp.WithObject("payload", mcp.Required(), mcp.Description("Sync payload JSON from sync_export")),
 		),
 		handleDeployImport(backend),
 	)
 
 	srv.AddTool(
-		mcp.NewTool("deploy_dry_run",
-			mcp.WithDescription("Dry-run import: shows what would change without writing. Same payload format as deploy_import."),
-			mcp.WithObject("payload", mcp.Required(), mcp.Description("Sync payload JSON from deploy_export")),
+		mcp.NewTool("sync_preview",
+			mcp.WithDescription("Preview a sync import: shows what would change without writing. Same payload format as sync_import. This is for synchronizing data between ModulaCMS environments, not for importing from external CMS platforms."),
+			mcp.WithObject("payload", mcp.Required(), mcp.Description("Sync payload JSON from sync_export")),
 		),
 		handleDeployDryRun(backend),
 	)

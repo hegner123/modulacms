@@ -35,7 +35,7 @@ func registerMediaFolderTools(srv *server.MCPServer, backend MediaFolderBackend)
 
 	srv.AddTool(
 		mcp.NewTool("update_media_folder",
-			mcp.WithDescription("update a media folder. Rename or move to a different parent. Only provided fields are changed."),
+			mcp.WithDescription("Update a media folder. Rename or move to a different parent. Only provided fields are changed."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Media folder ID (ULID)")),
 			mcp.WithString("name", mcp.Description("New folder name")),
 			mcp.WithString("parent_id", mcp.Description("New parent folder ID (ULID). Use empty string to move to root.")),
@@ -58,6 +58,25 @@ func registerMediaFolderTools(srv *server.MCPServer, backend MediaFolderBackend)
 			mcp.WithString("folder_id", mcp.Description("Target folder ID (ULID). Omit or empty string to move to root.")),
 		),
 		handleMoveMediaToFolder(backend),
+	)
+
+	// get_media_folder_tree
+	srv.AddTool(
+		mcp.NewTool("get_media_folder_tree",
+			mcp.WithDescription("Get the full media folder tree hierarchy."),
+		),
+		handleGetMediaFolderTree(backend),
+	)
+
+	// list_media_in_folder
+	srv.AddTool(
+		mcp.NewTool("list_media_in_folder",
+			mcp.WithDescription("List media files within a specific folder."),
+			mcp.WithString("folder_id", mcp.Required(), mcp.Description("Media folder ID (ULID)")),
+			mcp.WithNumber("limit", mcp.Description("Max items to return (default 20, max 1000)"), mcp.DefaultNumber(20)),
+			mcp.WithNumber("offset", mcp.Description("Number of items to skip (default 0)"), mcp.DefaultNumber(0)),
+		),
+		handleListMediaInFolder(backend),
 	)
 }
 
@@ -158,6 +177,32 @@ func handleMoveMediaToFolder(backend MediaFolderBackend) server.ToolHandlerFunc 
 			return nil, err
 		}
 		data, err := backend.MoveMediaToFolder(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleGetMediaFolderTree(backend MediaFolderBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		data, err := backend.GetMediaFolderTree(ctx)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return rawJSONResult(data), nil
+	}
+}
+
+func handleListMediaInFolder(backend MediaFolderBackend) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		folderID, err := req.RequireString("folder_id")
+		if err != nil {
+			return mcp.NewToolResultError("folder_id is required"), nil
+		}
+		limit := int64(req.GetFloat("limit", 20))
+		offset := int64(req.GetFloat("offset", 0))
+		data, err := backend.ListMediaInFolder(ctx, folderID, limit, offset)
 		if err != nil {
 			return errResult(err), nil
 		}

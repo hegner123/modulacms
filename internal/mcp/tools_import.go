@@ -10,7 +10,7 @@ import (
 func registerImportTools(srv *server.MCPServer, backend ImportBackend) {
 	srv.AddTool(
 		mcp.NewTool("import_content",
-			mcp.WithDescription("import content from another CMS format. Payloads should be kept under ~5MB. The format determines how the data is parsed and mapped to ModulaCMS entities."),
+			mcp.WithDescription("Import content from another CMS format (Contentful, Sanity, etc.). Payloads should be kept under ~5MB. The format determines how the data is parsed and mapped to ModulaCMS entities. To sync between ModulaCMS environments, use sync_import instead."),
 			mcp.WithString("format", mcp.Required(), mcp.Description("Source CMS format"), mcp.Enum("contentful", "sanity", "strapi", "wordpress", "clean")),
 			mcp.WithObject("data", mcp.Required(), mcp.Description("import data as a JSON object (structure depends on format)")),
 		),
@@ -19,7 +19,7 @@ func registerImportTools(srv *server.MCPServer, backend ImportBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("import_bulk",
-			mcp.WithDescription("Bulk import data. Accepts a raw JSON object that is posted directly to the bulk import endpoint."),
+			mcp.WithDescription("Bulk import data via the generic import endpoint. Accepts format and data parameters. For format-specific imports (Contentful, Sanity, etc.), use import_content instead."),
 			mcp.WithString("format", mcp.Required(), mcp.Description("import format"), mcp.Enum("contentful", "sanity", "strapi", "wordpress", "clean")),
 			mcp.WithObject("data", mcp.Required(), mcp.Description("import data as a JSON object")),
 		),

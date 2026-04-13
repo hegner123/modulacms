@@ -282,19 +282,19 @@ type UpdateDatatypeFieldParams struct {
 // Dimensions for size metadata, and FocalX/FocalY (0.0-1.0) for focal point cropping.
 // Media creation is handled via multipart upload; see MediaUploadResource.
 type Media struct {
-	MediaID      MediaID   `json:"media_id"`
-	Name         *string   `json:"name"`
-	DisplayName  *string   `json:"display_name"`
-	Alt          *string   `json:"alt"`
-	Caption      *string   `json:"caption"`
-	Description  *string   `json:"description"`
-	Class        *string   `json:"class"`
-	Mimetype     *string   `json:"mimetype"`
-	Dimensions   *string   `json:"dimensions"`
-	URL          URL       `json:"url"`
-	Srcset       *string   `json:"srcset"`
-	FocalX       *float64  `json:"focal_x"`
-	FocalY       *float64  `json:"focal_y"`
+	MediaID      MediaID        `json:"media_id"`
+	Name         *string        `json:"name"`
+	DisplayName  *string        `json:"display_name"`
+	Alt          *string        `json:"alt"`
+	Caption      *string        `json:"caption"`
+	Description  *string        `json:"description"`
+	Class        *string        `json:"class"`
+	Mimetype     *string        `json:"mimetype"`
+	Dimensions   *string        `json:"dimensions"`
+	URL          URL            `json:"url"`
+	Srcset       *string        `json:"srcset"`
+	FocalX       *float64       `json:"focal_x"`
+	FocalY       *float64       `json:"focal_y"`
 	AuthorID     *UserID        `json:"author_id"`
 	FolderID     *MediaFolderID `json:"folder_id"`
 	DateCreated  Timestamp      `json:"date_created"`

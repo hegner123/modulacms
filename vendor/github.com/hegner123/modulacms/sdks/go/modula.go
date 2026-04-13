@@ -236,6 +236,46 @@ type Client struct {
 	// Health provides server health check endpoints.
 	Health *HealthResource
 
+	// --- Environment ---
+
+	// Environment provides server environment metadata (deployment target, stage).
+	Environment *EnvironmentResource
+
+	// --- Activity ---
+
+	// Activity provides access to the audit activity feed.
+	Activity *ActivityResource
+
+	// --- Metrics ---
+
+	// Metrics provides access to the admin server metrics snapshot.
+	Metrics *MetricsResource
+
+	// --- Content data full ---
+
+	// ContentDataFull provides composed content data endpoints with author, datatype, and fields.
+	ContentDataFull *ContentDataFullResource
+
+	// --- Media download ---
+
+	// MediaDownload provides pre-signed download URL generation for media files.
+	MediaDownload *MediaDownloadResource
+
+	// --- Routes full ---
+
+	// RoutesFull provides composed route endpoints with content tree data.
+	RoutesFull *RoutesFullResource
+
+	// --- Media full ---
+
+	// MediaFull provides composed media listing with author information.
+	MediaFull *MediaFullResource
+
+	// --- User sessions ---
+
+	// UserSessions provides session information for specific users.
+	UserSessions *UserSessionsResource
+
 	// --- Users full ---
 
 	// UsersFull provides extended user operations including role details.
@@ -424,6 +464,30 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 		// Health
 		Health: &HealthResource{http: h},
+
+		// Environment
+		Environment: &EnvironmentResource{http: h},
+
+		// Activity
+		Activity: &ActivityResource{http: h},
+
+		// Metrics
+		Metrics: &MetricsResource{http: h},
+
+		// Content data full
+		ContentDataFull: &ContentDataFullResource{http: h},
+
+		// Media download
+		MediaDownload: &MediaDownloadResource{http: h},
+
+		// Routes full
+		RoutesFull: &RoutesFullResource{http: h},
+
+		// Media full
+		MediaFull: &MediaFullResource{http: h},
+
+		// User sessions
+		UserSessions: &UserSessionsResource{http: h},
 
 		// Users full
 		UsersFull: &UsersFullResource{http: h},

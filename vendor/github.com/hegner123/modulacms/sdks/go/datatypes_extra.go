@@ -2,6 +2,7 @@ package modula
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 )
@@ -43,4 +44,28 @@ func (r *DatatypesExtraResource) MaxSortOrder(ctx context.Context, parentID *Dat
 		return 0, fmt.Errorf("get max datatype sort order: %w", err)
 	}
 	return result.MaxSortOrder, nil
+}
+
+// GetFull returns a single datatype with all its field definitions as raw JSON.
+// The response shape includes the datatype plus nested field definitions whose
+// structure depends on the field types configured for this datatype.
+func (r *DatatypesExtraResource) GetFull(ctx context.Context, id DatatypeID) (json.RawMessage, error) {
+	params := url.Values{}
+	params.Set("q", string(id))
+	var result json.RawMessage
+	if err := r.http.get(ctx, "/api/v1/datatype/full", params, &result); err != nil {
+		return nil, fmt.Errorf("get datatype full %s: %w", string(id), err)
+	}
+	return result, nil
+}
+
+// ListFull returns all datatypes with their field counts and parent labels.
+// The response is returned as [json.RawMessage] because the shape includes
+// computed fields (field_count, parent_label) beyond the standard Datatype struct.
+func (r *DatatypesExtraResource) ListFull(ctx context.Context) (json.RawMessage, error) {
+	var result json.RawMessage
+	if err := r.http.get(ctx, "/api/v1/datatype/full/list", nil, &result); err != nil {
+		return nil, fmt.Errorf("list datatypes full: %w", err)
+	}
+	return result, nil
 }

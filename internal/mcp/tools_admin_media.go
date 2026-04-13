@@ -30,7 +30,7 @@ func registerAdminMediaTools(srv *server.MCPServer, backend AdminMediaBackend, f
 
 	srv.AddTool(
 		mcp.NewTool("admin_update_media",
-			mcp.WithDescription("update admin media asset metadata. Only provided fields are changed; omitted fields remain unchanged."),
+			mcp.WithDescription("Update admin media asset metadata. Only provided fields are changed; omitted fields remain unchanged."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Admin media ID (ULID)")),
 			mcp.WithString("name", mcp.Description("File name")),
 			mcp.WithString("display_name", mcp.Description("Display name")),
@@ -62,15 +62,6 @@ func registerAdminMediaTools(srv *server.MCPServer, backend AdminMediaBackend, f
 		handleAdminUploadMedia(backend, folderBackend),
 	)
 
-	// admin_list_media_dimensions reuses the public media dimensions — they are shared.
-	// The issue specifies this tool but dimensions are global, not per-content-system.
-	// We register it here pointing at the same shared dimension data.
-	srv.AddTool(
-		mcp.NewTool("admin_list_media_dimensions",
-			mcp.WithDescription("List all media dimension presets. Dimensions are shared between public and admin media."),
-		),
-		handleAdminListMediaDimensions(backend),
-	)
 }
 
 func handleAdminListMedia(backend AdminMediaBackend) server.ToolHandlerFunc {
@@ -195,16 +186,6 @@ func handleAdminUploadMedia(backend AdminMediaBackend, folderBackend AdminMediaF
 			}
 		}
 
-		return rawJSONResult(data), nil
-	}
-}
-
-func handleAdminListMediaDimensions(backend AdminMediaBackend) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		data, err := backend.ListMediaDimensions(ctx)
-		if err != nil {
-			return errResult(err), nil
-		}
 		return rawJSONResult(data), nil
 	}
 }

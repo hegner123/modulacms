@@ -25,7 +25,7 @@ func registerConfigTools(srv *server.MCPServer, backend ConfigBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_config",
-			mcp.WithDescription("update server configuration. Pass a JSON object of key-value pairs. Use get_config_meta first to discover valid keys. Non-hot-reloadable changes may require a server restart."),
+			mcp.WithDescription("Update server configuration. Pass a JSON object of key-value pairs. Use get_config_meta first to discover valid keys. Non-hot-reloadable changes may require a server restart."),
 			mcp.WithObject("updates", mcp.Required(), mcp.Description("JSON object of config key-value pairs to update")),
 		),
 		handleUpdateConfig(backend),

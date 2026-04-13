@@ -33,7 +33,7 @@ func registerRBACTools(srv *server.MCPServer, backend RBACBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("remove_role_permission",
-			mcp.WithDescription("Remove a permission from a role. Requires the role-permission association ID."),
+			mcp.WithDescription("Remove a permission from a role by association ID. Use list_role_permissions or list_role_permissions_by_role to find the association ID."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Role-permission association ID (ULID)")),
 		),
 		handleRemoveRolePermission(backend),
@@ -59,7 +59,7 @@ func registerRBACTools(srv *server.MCPServer, backend RBACBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_role",
-			mcp.WithDescription("update a role's label."),
+			mcp.WithDescription("Update a role's label."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Role ID (ULID)")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("New role label")),
 		),
@@ -94,7 +94,7 @@ func registerRBACTools(srv *server.MCPServer, backend RBACBackend) {
 
 	srv.AddTool(
 		mcp.NewTool("update_permission",
-			mcp.WithDescription("update a permission's label."),
+			mcp.WithDescription("Update a permission's label."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("permission ID (ULID)")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("New permission label (resource:operation format)")),
 		),

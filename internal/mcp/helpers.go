@@ -8,6 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
 	modula "github.com/hegner123/modulacms/sdks/go"
 )
@@ -152,4 +153,108 @@ func optionalFloat64Ptr(req mcp.CallToolRequest, key string) *float64 {
 		return nil
 	}
 	return &f
+}
+
+// mediaFolderTreeNode is a nested tree representation of a media folder.
+type mediaFolderTreeNode struct {
+	FolderID     types.MediaFolderID         `json:"folder_id"`
+	Name         string                      `json:"name"`
+	ParentID     types.NullableMediaFolderID `json:"parent_id"`
+	DateCreated  types.Timestamp             `json:"date_created"`
+	DateModified types.Timestamp             `json:"date_modified"`
+	Children     []mediaFolderTreeNode       `json:"children"`
+}
+
+// buildMediaFolderTree assembles a flat list of folders into a nested tree.
+func buildMediaFolderTree(folders *[]db.MediaFolder) []mediaFolderTreeNode {
+	if folders == nil || len(*folders) == 0 {
+		return []mediaFolderTreeNode{}
+	}
+	folderByID := make(map[types.MediaFolderID]db.MediaFolder, len(*folders))
+	for _, f := range *folders {
+		folderByID[f.FolderID] = f
+	}
+	childrenOf := make(map[types.MediaFolderID][]types.MediaFolderID)
+	var rootIDs []types.MediaFolderID
+	for _, f := range *folders {
+		if !f.ParentID.Valid {
+			rootIDs = append(rootIDs, f.FolderID)
+		} else {
+			pid := types.MediaFolderID(f.ParentID.ID)
+			childrenOf[pid] = append(childrenOf[pid], f.FolderID)
+		}
+	}
+	var buildNode func(id types.MediaFolderID) mediaFolderTreeNode
+	buildNode = func(id types.MediaFolderID) mediaFolderTreeNode {
+		f := folderByID[id]
+		node := mediaFolderTreeNode{
+			FolderID:     f.FolderID,
+			Name:         f.Name,
+			ParentID:     f.ParentID,
+			DateCreated:  f.DateCreated,
+			DateModified: f.DateModified,
+			Children:     make([]mediaFolderTreeNode, 0, len(childrenOf[id])),
+		}
+		for _, childID := range childrenOf[id] {
+			node.Children = append(node.Children, buildNode(childID))
+		}
+		return node
+	}
+	roots := make([]mediaFolderTreeNode, 0, len(rootIDs))
+	for _, rid := range rootIDs {
+		roots = append(roots, buildNode(rid))
+	}
+	return roots
+}
+
+// adminMediaFolderTreeNode is a nested tree representation of an admin media folder.
+type adminMediaFolderTreeNode struct {
+	FolderID     types.AdminMediaFolderID         `json:"folder_id"`
+	Name         string                           `json:"name"`
+	ParentID     types.NullableAdminMediaFolderID `json:"parent_id"`
+	DateCreated  types.Timestamp                  `json:"date_created"`
+	DateModified types.Timestamp                  `json:"date_modified"`
+	Children     []adminMediaFolderTreeNode       `json:"children"`
+}
+
+// buildAdminMediaFolderTree assembles a flat list of admin folders into a nested tree.
+func buildAdminMediaFolderTree(folders *[]db.AdminMediaFolder) []adminMediaFolderTreeNode {
+	if folders == nil || len(*folders) == 0 {
+		return []adminMediaFolderTreeNode{}
+	}
+	folderByID := make(map[types.AdminMediaFolderID]db.AdminMediaFolder, len(*folders))
+	for _, f := range *folders {
+		folderByID[f.AdminFolderID] = f
+	}
+	childrenOf := make(map[types.AdminMediaFolderID][]types.AdminMediaFolderID)
+	var rootIDs []types.AdminMediaFolderID
+	for _, f := range *folders {
+		if !f.ParentID.Valid {
+			rootIDs = append(rootIDs, f.AdminFolderID)
+		} else {
+			pid := types.AdminMediaFolderID(f.ParentID.ID)
+			childrenOf[pid] = append(childrenOf[pid], f.AdminFolderID)
+		}
+	}
+	var buildNode func(id types.AdminMediaFolderID) adminMediaFolderTreeNode
+	buildNode = func(id types.AdminMediaFolderID) adminMediaFolderTreeNode {
+		f := folderByID[id]
+		node := adminMediaFolderTreeNode{
+			FolderID:     f.AdminFolderID,
+			Name:         f.Name,
+			ParentID:     f.ParentID,
+			DateCreated:  f.DateCreated,
+			DateModified: f.DateModified,
+			Children:     make([]adminMediaFolderTreeNode, 0, len(childrenOf[id])),
+		}
+		for _, childID := range childrenOf[id] {
+			node.Children = append(node.Children, buildNode(childID))
+		}
+		return node
+	}
+	roots := make([]adminMediaFolderTreeNode, 0, len(rootIDs))
+	for _, rid := range rootIDs {
+		roots = append(roots, buildNode(rid))
+	}
+	return roots
 }
