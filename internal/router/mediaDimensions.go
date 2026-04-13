@@ -86,9 +86,14 @@ func apiCreateMediaDimension(w http.ResponseWriter, r *http.Request, svc *servic
 		return
 	}
 
+	started := svc.Media.TriggerReprocess()
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(created)
+	json.NewEncoder(w).Encode(map[string]any{
+		"data":               created,
+		"reprocess_started":  started,
+	})
 }
 
 func apiUpdateMediaDimension(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
@@ -111,9 +116,14 @@ func apiUpdateMediaDimension(w http.ResponseWriter, r *http.Request, svc *servic
 		return
 	}
 
+	started := svc.Media.TriggerReprocess()
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updated)
+	json.NewEncoder(w).Encode(map[string]any{
+		"data":               updated,
+		"reprocess_started":  started,
+	})
 }
 
 func apiDeleteMediaDimension(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
@@ -135,6 +145,11 @@ func apiDeleteMediaDimension(w http.ResponseWriter, r *http.Request, svc *servic
 		return
 	}
 
+	started := svc.Media.TriggerReprocess()
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]any{
+		"reprocess_started": started,
+	})
 }

@@ -632,19 +632,36 @@ func TestOptimizeUpload_CropNoSkew(t *testing.T) {
 					vBounds.Dx(), vBounds.Dy(), tt.width, tt.height)
 			}
 
-			// The center crop offset into the source image
-			offsetX := (300 - int(tt.width)) / 2
-			offsetY := (300 - int(tt.height)) / 2
+			// Compute the aspect-ratio crop region (mirrors the algorithm)
+			targetAR := float64(tt.width) / float64(tt.height)
+			sourceAR := float64(300) / float64(300) // 1.0
+			var cropW, cropH int
+			if sourceAR > targetAR {
+				cropH = 300
+				cropW = int(float64(300) * targetAR)
+			} else {
+				cropW = 300
+				cropH = int(float64(300) / targetAR)
+			}
+			cropX0 := (300 - cropW) / 2
+			cropY0 := (300 - cropH) / 2
 
 			// Sample every 5px across the output and compare to the
-			// corresponding source pixel. Track the worst deviation.
+			// corresponding source pixel via the crop+scale mapping.
+			// Use center-of-pixel mapping for accuracy with bilinear scaling.
 			var maxDiff uint32
 			var worstPt image.Point
 
+			scaleX := float64(cropW) / float64(tt.width)
+			scaleY := float64(cropH) / float64(tt.height)
+
 			for y := 0; y < int(tt.height); y += 5 {
 				for x := 0; x < int(tt.width); x += 5 {
+					srcX := cropX0 + int((float64(x)+0.5)*scaleX)
+					srcY := cropY0 + int((float64(y)+0.5)*scaleY)
+
 					gr, gg, gb, _ := variantImg.At(x, y).RGBA()
-					wr, wg, wb, _ := srcImg.At(x+offsetX, y+offsetY).RGBA()
+					wr, wg, wb, _ := srcImg.At(srcX, srcY).RGBA()
 
 					diff := absDiffU32(gr, wr) + absDiffU32(gg, wg) + absDiffU32(gb, wb)
 					if diff > maxDiff {
@@ -654,16 +671,18 @@ func TestOptimizeUpload_CropNoSkew(t *testing.T) {
 				}
 			}
 
-			// Tolerance: lossy WebP at quality 80 can deviate significantly near
-			// color boundaries and image edges due to block-based compression.
-			const maxTolerance = 65000
+			// Tolerance: lossy WebP at quality 80 plus bilinear scaling
+			// can deviate near color boundaries and image edges.
+			const maxTolerance = 80000
 			if maxDiff > maxTolerance {
+				srcX := cropX0 + int((float64(worstPt.X)+0.5)*scaleX)
+				srcY := cropY0 + int((float64(worstPt.Y)+0.5)*scaleY)
 				gr, gg, gb, _ := variantImg.At(worstPt.X, worstPt.Y).RGBA()
-				wr, wg, wb, _ := srcImg.At(worstPt.X+offsetX, worstPt.Y+offsetY).RGBA()
-				t.Errorf("skew detected at output pixel (%d,%d) → source (%d,%d): "+
+				wr, wg, wb, _ := srcImg.At(srcX, srcY).RGBA()
+				t.Errorf("skew detected at output pixel (%d,%d) -> source (%d,%d): "+
 					"got RGB(%d,%d,%d), want RGB(%d,%d,%d), channel-sum diff=%d",
 					worstPt.X, worstPt.Y,
-					worstPt.X+offsetX, worstPt.Y+offsetY,
+					srcX, srcY,
 					gr>>8, gg>>8, gb>>8,
 					wr>>8, wg>>8, wb>>8,
 					maxDiff)
@@ -673,9 +692,13 @@ func TestOptimizeUpload_CropNoSkew(t *testing.T) {
 }
 
 // TestOptimizeUpload_CropNoSkew_GridCellCenters verifies that the center pixel
-// of each visible grid cell in a cropped output exactly matches the
-// corresponding cell center in the source. Grid cells are 50x50 in the
-// 300x300 fixture, so cell (col, row) has its center at (col*50+25, row*50+25).
+// of each visible grid cell in a scaled output matches the corresponding cell
+// center in the source when mapped through the crop+scale transform.
+// Grid cells are 50x50 in the 300x300 fixture.
+//
+// With the aspect-ratio crop algorithm, a 200x200 target from a 300x300 source
+// (same AR) uses the full 300x300 image and scales to 200x200. Variant pixel
+// (vx, vy) maps to source pixel (vx*300/200, vy*300/200).
 func TestOptimizeUpload_CropNoSkew_GridCellCenters(t *testing.T) {
 	t.Parallel()
 
@@ -685,8 +708,7 @@ func TestOptimizeUpload_CropNoSkew_GridCellCenters(t *testing.T) {
 	dstDir := t.TempDir()
 	srcPath := copyFixtureToDir(t, srcDir)
 
-	// Crop 200x200 from center → offset (50, 50)
-	// Visible cells: columns 1-4, rows 1-4 (partial edges excluded by sampling centers)
+	// 200x200 from 300x300: same AR, full image scaled down (scale = 200/300)
 	dims := []db.MediaDimensions{dim(200, 200)}
 	lister := &mockDimensionLister{dims: &dims}
 
@@ -709,28 +731,27 @@ func TestOptimizeUpload_CropNoSkew_GridCellCenters(t *testing.T) {
 		t.Fatalf("decode variant: %v", err)
 	}
 
-	const offsetX = 50
-	const offsetY = 50
+	// Source cell centers: (25, 75, 125, 175, 225, 275)
+	// Mapped to variant coords via scale 200/300:
+	// 25*200/300=16, 75*200/300=50, 125*200/300=83, 175*200/300=116, 225*200/300=150, 275*200/300=183
+	type gridPoint struct {
+		variantPos int
+		sourcePos  int
+	}
+	points := []gridPoint{
+		{16, 25}, {50, 75}, {83, 125}, {116, 175}, {150, 225}, {183, 275},
+	}
 
-	// Check every grid cell center that falls within the 200x200 output.
-	// Cell centers in source: 25, 75, 125, 175, 225, 275
-	// After subtracting offset 50: -25, 25, 75, 125, 175, 225
-	// Valid output positions (0-199): 25, 75, 125, 175
-	cellCenters := []int{25, 75, 125, 175}
+	for _, py := range points {
+		for _, px := range points {
+			gr, gg, gb, _ := variantImg.At(px.variantPos, py.variantPos).RGBA()
+			wr, wg, wb, _ := srcImg.At(px.sourcePos, py.sourcePos).RGBA()
 
-	for _, oy := range cellCenters {
-		for _, ox := range cellCenters {
-			srcX := ox + offsetX
-			srcY := oy + offsetY
-
-			gr, gg, gb, _ := variantImg.At(ox, oy).RGBA()
-			wr, wg, wb, _ := srcImg.At(srcX, srcY).RGBA()
-
-			const tol = 6000 // ≈23 in 8-bit per channel (lossy WebP at quality 80)
+			const tol = 10000 // bilinear scaling + lossy WebP at quality 80
 			if absDiffU32(gr, wr) > tol || absDiffU32(gg, wg) > tol || absDiffU32(gb, wb) > tol {
-				t.Errorf("grid cell center (%d,%d) → source (%d,%d): "+
+				t.Errorf("grid cell center variant(%d,%d) -> source(%d,%d): "+
 					"got RGB(%d,%d,%d), want RGB(%d,%d,%d)",
-					ox, oy, srcX, srcY,
+					px.variantPos, py.variantPos, px.sourcePos, py.sourcePos,
 					gr>>8, gg>>8, gb>>8,
 					wr>>8, wg>>8, wb>>8)
 			}
@@ -879,9 +900,11 @@ func TestOptimizeUpload_FocalPointTopLeft(t *testing.T) {
 	dstDir := t.TempDir()
 	srcPath := copyFixtureToDir(t, srcDir)
 
-	// Focal point at top-left corner
+	// Use a wide target so the focal point actually shifts the crop.
+	// 300x150 from 300x300: targetAR=2.0, sourceAR=1.0. Source is taller.
+	// cropW=300, cropH=150. Focal at top-left clamps crop to (0,0)-(300,150).
 	fp := &image.Point{X: 0, Y: 0}
-	dims := []db.MediaDimensions{dim(150, 150)}
+	dims := []db.MediaDimensions{dim(300, 150)}
 	lister := &mockDimensionLister{dims: &dims}
 
 	files, err := OptimizeUpload(srcPath, dstDir, lister, fp)
@@ -903,9 +926,9 @@ func TestOptimizeUpload_FocalPointTopLeft(t *testing.T) {
 		t.Fatalf("decode variant: %v", err)
 	}
 
-	// With focal (0,0) and crop 150x150, the crop window should be clamped to (0,0)-(150,150)
-	// Check that the top-left pixel of the variant matches the top-left of the source
-	const tol = 16000 // lossy WebP at quality 80 — corners have worst artifacts
+	// Output is 300x150, crop was (0,0)-(300,150), no scaling in X, 1:1 in Y.
+	// Top-left pixel of variant should match source top-left.
+	const tol = 16000 // lossy WebP at quality 80 -- corners have worst artifacts
 	gr, gg, gb, _ := variantImg.At(0, 0).RGBA()
 	wr, wg, wb, _ := srcImg.At(0, 0).RGBA()
 	if absDiffU32(gr, wr) > tol || absDiffU32(gg, wg) > tol || absDiffU32(gb, wb) > tol {
@@ -922,9 +945,11 @@ func TestOptimizeUpload_FocalPointBottomRight(t *testing.T) {
 	dstDir := t.TempDir()
 	srcPath := copyFixtureToDir(t, srcDir)
 
-	// Focal point at bottom-right corner
+	// Use a wide target so the focal point shifts the crop.
+	// 300x150 from 300x300: targetAR=2.0, sourceAR=1.0. Source is taller.
+	// cropW=300, cropH=150. Focal at (299,299) clamps crop to (0,150)-(300,300).
 	fp := &image.Point{X: 299, Y: 299}
-	dims := []db.MediaDimensions{dim(150, 150)}
+	dims := []db.MediaDimensions{dim(300, 150)}
 	lister := &mockDimensionLister{dims: &dims}
 
 	files, err := OptimizeUpload(srcPath, dstDir, lister, fp)
@@ -946,10 +971,10 @@ func TestOptimizeUpload_FocalPointBottomRight(t *testing.T) {
 		t.Fatalf("decode variant: %v", err)
 	}
 
-	// With focal (299,299) and crop 150x150, the window clamps to (150,150)-(300,300)
-	// The bottom-right of the variant (149,149) should match source pixel (299,299)
-	const tol = 16000 // lossy WebP at quality 80 — corners have worst artifacts
-	gr, gg, gb, _ := variantImg.At(149, 149).RGBA()
+	// Output is 300x150, crop was (0,150)-(300,300). No scaling in X, 1:1 in Y.
+	// Bottom-right of variant (299,149) should match source pixel (299,299).
+	const tol = 16000 // lossy WebP at quality 80 -- corners have worst artifacts
+	gr, gg, gb, _ := variantImg.At(299, 149).RGBA()
 	wr, wg, wb, _ := srcImg.At(299, 299).RGBA()
 	if absDiffU32(gr, wr) > tol || absDiffU32(gg, wg) > tol || absDiffU32(gb, wb) > tol {
 		t.Errorf("bottom-right pixel mismatch: got RGB(%d,%d,%d), want RGB(%d,%d,%d)",
@@ -964,9 +989,10 @@ func TestOptimizeUpload_FocalPointEdgeClamping(t *testing.T) {
 	dstDir := t.TempDir()
 	srcPath := copyFixtureToDir(t, srcDir)
 
-	// Focal near left edge — crop window should shift right to stay within bounds
-	fp := &image.Point{X: 10, Y: 150}
-	dims := []db.MediaDimensions{dim(200, 200)}
+	// Use a wide target to create a narrower crop region where clamping matters.
+	// 200x100 from 300x300: cropW=300, cropH=150. Focal near top edge.
+	fp := &image.Point{X: 150, Y: 10}
+	dims := []db.MediaDimensions{dim(200, 100)}
 	lister := &mockDimensionLister{dims: &dims}
 
 	files, err := OptimizeUpload(srcPath, dstDir, lister, fp)
@@ -990,8 +1016,8 @@ func TestOptimizeUpload_FocalPointEdgeClamping(t *testing.T) {
 	}
 
 	vBounds := variantImg.Bounds()
-	if vBounds.Dx() != 200 || vBounds.Dy() != 200 {
-		t.Errorf("variant dimensions = %dx%d, want 200x200", vBounds.Dx(), vBounds.Dy())
+	if vBounds.Dx() != 200 || vBounds.Dy() != 100 {
+		t.Errorf("variant dimensions = %dx%d, want 200x100", vBounds.Dx(), vBounds.Dy())
 	}
 }
 

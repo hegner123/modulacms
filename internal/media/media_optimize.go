@@ -26,9 +26,10 @@ type DimensionLister interface {
 }
 
 // OptimizeUpload generates multiple image resolutions from srcFile.
-// It decodes the source, validates dimensions, copies the original to dstPath,
-// then crops (centered on focalPoint if non-nil, else image center) and scales
-// to each dimension from the lister.
+// It decodes the source, validates dimensions, then for each dimension preset
+// computes an aspect-ratio crop (the largest source region matching the target
+// aspect ratio), centers that crop on focalPoint (or image center if nil), and
+// scales the cropped region to the exact target size using bilinear interpolation.
 func OptimizeUpload(srcFile string, dstPath string, lister DimensionLister, focalPoint *image.Point) (*[]string, error) {
 	// Open the source file.
 	file, err := os.Open(srcFile)
@@ -100,24 +101,47 @@ func OptimizeUpload(srcFile string, dstPath string, lister DimensionLister, foca
 		centerY = focalPoint.Y
 	}
 
-	// Crop and scale images.
+	// Aspect-ratio crop + scale: for each dimension preset, compute the
+	// largest source region that matches the target aspect ratio, center it
+	// on the focal point, then scale to the exact target size.
 	for _, dim := range *dimensions {
 		if !dim.Width.Valid || !dim.Height.Valid {
 			continue
 		}
 
-		cropWidth := int(dim.Width.Int64)
-		cropHeight := int(dim.Height.Int64)
+		targetWidth := int(dim.Width.Int64)
+		targetHeight := int(dim.Height.Int64)
 
-		if cropWidth <= 0 || cropHeight <= 0 {
+		if targetWidth <= 0 || targetHeight <= 0 {
 			continue
 		}
 
 		// Skip dimensions larger than the source to avoid upscaling
-		if cropWidth > srcWidth || cropHeight > srcHeight {
+		if targetWidth > srcWidth || targetHeight > srcHeight {
 			continue
 		}
 
+		// Compute the crop region that matches the target aspect ratio
+		targetAR := float64(dim.Width.Int64) / float64(dim.Height.Int64)
+		sourceAR := float64(srcWidth) / float64(srcHeight)
+
+		var cropWidth, cropHeight int
+		if sourceAR > targetAR {
+			// Source is wider than target: use full height, narrow the width
+			cropHeight = srcHeight
+			cropWidth = int(float64(srcHeight) * targetAR)
+		} else {
+			// Source is taller (or same AR): use full width, shorten the height
+			cropWidth = srcWidth
+			cropHeight = int(float64(srcWidth) / targetAR)
+		}
+
+		// Guard against degenerate aspect ratios producing zero-size crops
+		if cropWidth <= 0 || cropHeight <= 0 {
+			continue
+		}
+
+		// Center the crop rectangle on the focal point (or image center)
 		x0 := centerX - cropWidth/2
 		y0 := centerY - cropHeight/2
 
@@ -137,7 +161,8 @@ func OptimizeUpload(srcFile string, dstPath string, lister DimensionLister, foca
 
 		cropRect := image.Rect(x0, y0, x0+cropWidth, y0+cropHeight)
 
-		dstRect := image.Rect(0, 0, cropWidth, cropHeight)
+		// Scale the cropped region to the exact target dimensions
+		dstRect := image.Rect(0, 0, targetWidth, targetHeight)
 		img := image.NewRGBA(dstRect)
 		scaler.Scale(img, dstRect, decodedImg, cropRect, draw.Over, nil)
 		images = append(images, img)

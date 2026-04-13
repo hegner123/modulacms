@@ -21,7 +21,7 @@ func MediaDimensionsListHandler(svc *service.Registry) http.HandlerFunc {
 		items, err := svc.Media.ListMediaDimensions(r.Context())
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list media dimensions", err)
-			http.Error(w, "Failed to load media dimensions", http.StatusInternalServerError)
+			http.Error(w, "failed to load media dimensions", http.StatusInternalServerError)
 			return
 		}
 
@@ -30,10 +30,12 @@ func MediaDimensionsListHandler(svc *service.Registry) http.HandlerFunc {
 			dimensions = *items
 		}
 
+		status := svc.Media.GetReprocessStatus()
+
 		if IsNavHTMX(r) {
 			csrfToken := CSRFTokenFromContext(r.Context())
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Media Dimensions"}`)
-			Render(w, r, pages.MediaDimensionsListContent(dimensions, csrfToken))
+			Render(w, r, pages.MediaDimensionsListContent(dimensions, csrfToken, status))
 			return
 		}
 
@@ -43,7 +45,16 @@ func MediaDimensionsListHandler(svc *service.Registry) http.HandlerFunc {
 		}
 
 		layout := NewAdminData(r, "Media Dimensions")
-		Render(w, r, pages.MediaDimensionsList(layout, dimensions))
+		Render(w, r, pages.MediaDimensionsList(layout, dimensions, status))
+	}
+}
+
+// MediaDimensionReprocessStatusHandler returns the current reprocess status
+// as an HTMX partial for polling.
+func MediaDimensionReprocessStatusHandler(svc *service.Registry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		status := svc.Media.GetReprocessStatus()
+		Render(w, r, partials.ReprocessStatus(status))
 	}
 }
 
@@ -52,7 +63,7 @@ func MediaDimensionCreateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -100,14 +111,16 @@ func MediaDimensionCreateHandler(svc *service.Registry) http.HandlerFunc {
 		if createErr != nil {
 			utility.DefaultLogger.Error("failed to create media dimension", createErr)
 			if IsHTMX(r) {
-				msg := fmt.Sprintf(`{"showToast": {"message": "Failed to create dimension: %s", "type": "error"}}`, createErr.Error())
+				msg := fmt.Sprintf(`{"showToast": {"message": "failed to create dimension: %s", "type": "error"}}`, createErr.Error())
 				w.Header().Set("HX-Trigger", msg)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to create media dimension", http.StatusInternalServerError)
+			http.Error(w, "failed to create media dimension", http.StatusInternalServerError)
 			return
 		}
+
+		svc.Media.TriggerReprocess()
 
 		if IsHTMX(r) {
 			items, listErr := svc.Media.ListMediaDimensions(r.Context())
@@ -120,7 +133,7 @@ func MediaDimensionCreateHandler(svc *service.Registry) http.HandlerFunc {
 			if items != nil {
 				dimensions = *items
 			}
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Dimension preset created", "type": "success"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Dimension saved. Regenerating image variants in background...", "type": "success"}}`)
 			Render(w, r, partials.MediaDimensionsTableRows(dimensions))
 			return
 		}
@@ -133,7 +146,7 @@ func MediaDimensionUpdateHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -188,13 +201,15 @@ func MediaDimensionUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		if updateErr != nil {
 			utility.DefaultLogger.Error("failed to update media dimension", updateErr)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to update dimension", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to update dimension", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to update media dimension", http.StatusInternalServerError)
+			http.Error(w, "failed to update media dimension", http.StatusInternalServerError)
 			return
 		}
+
+		svc.Media.TriggerReprocess()
 
 		if IsHTMX(r) {
 			items, listErr := svc.Media.ListMediaDimensions(r.Context())
@@ -207,7 +222,7 @@ func MediaDimensionUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			if items != nil {
 				dimensions = *items
 			}
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Dimension preset updated", "type": "success"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Dimension saved. Regenerating image variants in background...", "type": "success"}}`)
 			Render(w, r, partials.MediaDimensionsTableRows(dimensions))
 			return
 		}
@@ -220,7 +235,7 @@ func MediaDimensionDeleteHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -239,12 +254,14 @@ func MediaDimensionDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		if err := svc.Media.DeleteMediaDimension(r.Context(), ac, id); err != nil {
 			utility.DefaultLogger.Error("failed to delete media dimension", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete dimension", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete dimension", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Dimension preset deleted", "type": "success"}}`)
+		svc.Media.TriggerReprocess()
+
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Dimension deleted. Regenerating image variants in background...", "type": "success"}}`)
 		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -1,0 +1,38 @@
+package partials
+
+import (
+	"fmt"
+	"github.com/hegner123/modulacms/internal/service"
+)
+
+templ ReprocessStatus(status service.ReprocessStatus) {
+	if status.Running {
+		<div
+			id="reprocess-status"
+			hx-get="/admin/media/dimensions/reprocess-status"
+			hx-trigger="every 3s"
+			hx-swap="outerHTML"
+			class="mt-4 rounded-lg border border-white/10 bg-white/5 p-4"
+		>
+			<div class="flex items-center justify-between mb-2">
+				<span class="text-sm font-medium text-gray-300">Regenerating image variants...</span>
+				<span class="text-sm text-gray-400">
+					{ fmt.Sprintf("%d / %d", status.Completed, status.Total) }
+					if status.Failed > 0 {
+						<span class="text-red-400 ml-2">({ fmt.Sprintf("%d failed", status.Failed) })</span>
+					}
+				</span>
+			</div>
+			<div class="w-full bg-white/10 rounded-full h-2">
+				if status.Total > 0 {
+					<div
+						class="bg-[var(--color-primary)] h-2 rounded-full transition-all duration-300"
+						style={ fmt.Sprintf("width: %d%%", status.Completed*100/status.Total) }
+					></div>
+				}
+			</div>
+		</div>
+	} else {
+		<div id="reprocess-status"></div>
+	}
+}

@@ -47,7 +47,7 @@ func AdminMediaListHandler(svc *service.Registry) http.HandlerFunc {
 			})
 			if err != nil {
 				utility.DefaultLogger.Error("failed to list admin media by folder", err)
-				http.Error(w, "Failed to load admin media", http.StatusInternalServerError)
+				http.Error(w, "failed to load admin media", http.StatusInternalServerError)
 				return
 			}
 			if items != nil {
@@ -57,7 +57,7 @@ func AdminMediaListHandler(svc *service.Registry) http.HandlerFunc {
 			count, err := d.CountAdminMediaByFolder(folderNullable)
 			if err != nil {
 				utility.DefaultLogger.Error("failed to count admin media by folder", err)
-				http.Error(w, "Failed to load admin media", http.StatusInternalServerError)
+				http.Error(w, "failed to load admin media", http.StatusInternalServerError)
 				return
 			}
 			if count != nil {
@@ -67,7 +67,7 @@ func AdminMediaListHandler(svc *service.Registry) http.HandlerFunc {
 			items, err := d.ListAdminMediaUnfiledPaginated(db.PaginationParams{Limit: limit, Offset: offset})
 			if err != nil {
 				utility.DefaultLogger.Error("failed to list unfiled admin media", err)
-				http.Error(w, "Failed to load admin media", http.StatusInternalServerError)
+				http.Error(w, "failed to load admin media", http.StatusInternalServerError)
 				return
 			}
 			if items != nil {
@@ -76,7 +76,7 @@ func AdminMediaListHandler(svc *service.Registry) http.HandlerFunc {
 			count, err := d.CountAdminMediaUnfiled()
 			if err != nil {
 				utility.DefaultLogger.Error("failed to count unfiled admin media", err)
-				http.Error(w, "Failed to load admin media", http.StatusInternalServerError)
+				http.Error(w, "failed to load admin media", http.StatusInternalServerError)
 				return
 			}
 			if count != nil {
@@ -215,7 +215,7 @@ func AdminMediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -226,7 +226,7 @@ func AdminMediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			http.Error(w, "Failed to parse upload", http.StatusBadRequest)
+			http.Error(w, "failed to parse upload", http.StatusBadRequest)
 			return
 		}
 
@@ -240,11 +240,11 @@ func AdminMediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 		if fileErr != nil {
 			utility.DefaultLogger.Error("no file in upload", fileErr)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "No file selected", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "no file selected", "type": "error"}}`)
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			http.Error(w, "No file uploaded", http.StatusBadRequest)
+			http.Error(w, "no file uploaded", http.StatusBadRequest)
 			return
 		}
 		defer file.Close()
@@ -360,7 +360,7 @@ func AdminMediaUploadHandler(svc *service.Registry) http.HandlerFunc {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to create admin media", http.StatusInternalServerError)
+			http.Error(w, "failed to create admin media", http.StatusInternalServerError)
 			return
 		}
 
@@ -391,7 +391,7 @@ func AdminMediaUpdateHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -433,21 +433,19 @@ func AdminMediaUpdateHandler(svc *service.Registry) http.HandlerFunc {
 		if _, err := d.UpdateAdminMedia(r.Context(), ac, updateParams); err != nil {
 			utility.DefaultLogger.Error("failed to update admin media", err)
 			if IsHTMX(r) {
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to update admin media", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to update admin media", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Error(w, "Failed to update admin media", http.StatusInternalServerError)
+			http.Error(w, "failed to update admin media", http.StatusInternalServerError)
 			return
 		}
 
 		// Re-crop variants if focal point changed
 		focalChanged := updateParams.FocalX.Valid || updateParams.FocalY.Valid
 		if focalChanged {
-			record, getErr := d.GetAdminMedia(adminMediaID)
-			if getErr == nil && mediapkg.IsImageMIME(record.Mimetype.String) {
-				// Re-process admin media variants (reuses shared pipeline)
-				utility.DefaultLogger.Info("focal point changed, reprocessing admin media variants", "id", id)
+			if reprocessErr := svc.Media.ReprocessAdminMediaVariants(r.Context(), ac, adminMediaID); reprocessErr != nil {
+				utility.DefaultLogger.Error("failed to reprocess admin media variants", reprocessErr, "id", id)
 			}
 		}
 
@@ -477,7 +475,7 @@ func AdminMediaDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -492,7 +490,7 @@ func AdminMediaDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		if err := d.DeleteAdminMedia(r.Context(), ac, types.AdminMediaID(id)); err != nil {
 			utility.DefaultLogger.Error("failed to delete admin media", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete admin media", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete admin media", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -514,7 +512,7 @@ func AdminMediaBulkDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -526,7 +524,7 @@ func AdminMediaBulkDeleteHandler(svc *service.Registry) http.HandlerFunc {
 			return
 		}
 		if len(body.IDs) == 0 {
-			http.Error(w, "No IDs provided", http.StatusBadRequest)
+			http.Error(w, "no IDs provided", http.StatusBadRequest)
 			return
 		}
 
@@ -596,7 +594,7 @@ func AdminMediaFolderCreateHandler(svc *service.Registry) http.HandlerFunc {
 			breadcrumb, err := d.GetAdminMediaFolderBreadcrumb(pid)
 			if err != nil {
 				utility.DefaultLogger.Error("check admin media folder depth", err)
-				w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to validate folder depth", "type": "error"}}`)
+				w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to validate folder depth", "type": "error"}}`)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -615,7 +613,7 @@ func AdminMediaFolderCreateHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -635,7 +633,7 @@ func AdminMediaFolderCreateHandler(svc *service.Registry) http.HandlerFunc {
 			DateModified: now,
 		}); err != nil {
 			utility.DefaultLogger.Error("failed to create admin media folder", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create folder", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to create folder", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -717,7 +715,7 @@ func AdminMediaFolderUpdateHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -736,7 +734,7 @@ func AdminMediaFolderUpdateHandler(svc *service.Registry) http.HandlerFunc {
 			DateModified:  types.NewTimestamp(time.Now().UTC()),
 		}); err != nil {
 			utility.DefaultLogger.Error("failed to update admin media folder", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to update folder", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to update folder", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -778,7 +776,7 @@ func AdminMediaFolderDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		children, err := d.ListAdminMediaFoldersByParent(folderID)
 		if err != nil {
 			utility.DefaultLogger.Error("list admin media child folders", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to check folder contents", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to check folder contents", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -792,7 +790,7 @@ func AdminMediaFolderDeleteHandler(svc *service.Registry) http.HandlerFunc {
 		mediaCount, err := d.CountAdminMediaByFolder(folderNullable)
 		if err != nil {
 			utility.DefaultLogger.Error("count admin media in folder", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to check folder contents", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to check folder contents", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -804,7 +802,7 @@ func AdminMediaFolderDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -818,7 +816,7 @@ func AdminMediaFolderDeleteHandler(svc *service.Registry) http.HandlerFunc {
 
 		if err := d.DeleteAdminMediaFolder(r.Context(), ac, folderID); err != nil {
 			utility.DefaultLogger.Error("failed to delete admin media folder", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to delete folder", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to delete folder", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -870,7 +868,7 @@ func AdminMediaMoveToFolderHandler(svc *service.Registry) http.HandlerFunc {
 
 		c, cfgErr := svc.Config()
 		if cfgErr != nil {
-			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			http.Error(w, "configuration unavailable", http.StatusInternalServerError)
 			return
 		}
 
@@ -889,7 +887,7 @@ func AdminMediaMoveToFolderHandler(svc *service.Registry) http.HandlerFunc {
 			AdminMediaID: adminMediaID,
 		}); err != nil {
 			utility.DefaultLogger.Error("failed to move admin media to folder", err, "admin_media_id", adminMediaID, "folder_id", folderID)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to move admin media", "type": "error"}}`)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "failed to move admin media", "type": "error"}}`)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

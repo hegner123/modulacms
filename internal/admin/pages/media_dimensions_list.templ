@@ -4,9 +4,10 @@ import (
 	"github.com/hegner123/modulacms/internal/admin/layouts"
 	"github.com/hegner123/modulacms/internal/admin/partials"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
-templ MediaDimensionsListContent(items []db.MediaDimensions, csrfToken string) {
+templ MediaDimensionsListContent(items []db.MediaDimensions, csrfToken string, reprocessStatus service.ReprocessStatus) {
 	<div class="sm:flex sm:items-center">
 		<div class="sm:flex-auto">
 			<h1 class="text-base/7 font-semibold text-white">Media Dimensions</h1>
@@ -81,7 +82,7 @@ templ MediaDimensionsListContent(items []db.MediaDimensions, csrfToken string) {
 								<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Width</th>
 								<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Height</th>
 								<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Aspect Ratio</th>
-								<th scope="col" class="px-4 py-3.5 text-left text-sm font-semibold text-white">Actions</th>
+								<th scope="col" class="px-4 py-3.5 text-center text-sm font-semibold text-white">Actions</th>
 							</tr>
 						</thead>
 						<tbody id="dimensions-table-body" class="divide-y divide-white/5">
@@ -92,10 +93,11 @@ templ MediaDimensionsListContent(items []db.MediaDimensions, csrfToken string) {
 			</div>
 		</div>
 	</div>
+	@partials.ReprocessStatus(reprocessStatus)
 }
 
-templ MediaDimensionsList(layout layouts.AdminData, items []db.MediaDimensions) {
+templ MediaDimensionsList(layout layouts.AdminData, items []db.MediaDimensions, reprocessStatus service.ReprocessStatus) {
 	@layouts.Admin(layout) {
-		@MediaDimensionsListContent(items, layout.CSRFToken)
+		@MediaDimensionsListContent(items, layout.CSRFToken, reprocessStatus)
 	}
 }

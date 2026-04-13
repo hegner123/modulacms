@@ -10,6 +10,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/email"
@@ -59,7 +61,11 @@ type Registry struct {
 }
 
 // NewRegistry creates a Registry with the given infrastructure dependencies.
+// The ctx parameter is a service-scoped context derived from the server's root
+// context, canceled on graceful shutdown. It is threaded into services that run
+// background goroutines (e.g., MediaService bulk reprocess).
 func NewRegistry(
+	ctx context.Context,
 	driver db.DbDriver,
 	mgr *config.Manager,
 	pc *middleware.PermissionCache,
@@ -76,7 +82,7 @@ func NewRegistry(
 	reg.Schema = NewSchemaService(driver, driver)
 	reg.Content = NewContentService(driver, mgr, dispatcher)
 	reg.AdminContent = NewAdminContentService(driver, mgr, dispatcher)
-	reg.Media = NewMediaService(driver, mgr)
+	reg.Media = NewMediaService(ctx, driver, mgr)
 	reg.Routes = NewRouteService(driver, mgr)
 	reg.Users = NewUserService(driver, mgr)
 	reg.RBAC = NewRBACService(driver, mgr, pc)

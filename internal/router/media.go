@@ -302,6 +302,27 @@ func apiDeleteMedia(w http.ResponseWriter, r *http.Request, svc *service.Registr
 	w.WriteHeader(http.StatusOK)
 }
 
+// MediaReprocessStatusHandler returns the current bulk reprocess job status.
+func MediaReprocessStatusHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	status := svc.Media.GetReprocessStatus()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(status)
+}
+
+// MediaReprocessTriggerHandler manually triggers a bulk reprocess of all media variants.
+func MediaReprocessTriggerHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
+	started := svc.Media.TriggerReprocess()
+
+	w.Header().Set("Content-Type", "application/json")
+	if started {
+		w.WriteHeader(http.StatusAccepted)
+		json.NewEncoder(w).Encode(map[string]any{"reprocess_started": true, "message": "Bulk reprocess started"})
+	} else {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]any{"reprocess_started": false, "message": "Reprocess already running, restart queued"})
+	}
+}
+
 // MediaHealthHandler checks for orphaned files in the media S3 bucket.
 func MediaHealthHandler(w http.ResponseWriter, r *http.Request, svc *service.Registry) {
 	result, err := svc.Media.MediaHealth(r.Context())

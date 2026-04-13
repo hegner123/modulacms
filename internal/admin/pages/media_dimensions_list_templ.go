@@ -12,9 +12,10 @@ import (
 	"github.com/hegner123/modulacms/internal/admin/layouts"
 	"github.com/hegner123/modulacms/internal/admin/partials"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/service"
 )
 
-func MediaDimensionsListContent(items []db.MediaDimensions, csrfToken string) templ.Component {
+func MediaDimensionsListContent(items []db.MediaDimensions, csrfToken string, reprocessStatus service.ReprocessStatus) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -43,7 +44,7 @@ func MediaDimensionsListContent(items []db.MediaDimensions, csrfToken string) te
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-col gap-1\"><label for=\"label\" class=\"text-sm font-medium text-gray-400\">Label</label> <input type=\"text\" id=\"label\" name=\"label\" placeholder=\"e.g. thumbnail\" required class=\"rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]\"></div><div class=\"flex flex-col gap-1\"><label for=\"width\" class=\"text-sm font-medium text-gray-400\">Width (px)</label> <input type=\"number\" id=\"width\" name=\"width\" min=\"1\" placeholder=\"150\" required class=\"w-24 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]\"></div><div class=\"flex flex-col gap-1\"><label for=\"height\" class=\"text-sm font-medium text-gray-400\">Height (px)</label> <input type=\"number\" id=\"height\" name=\"height\" min=\"1\" placeholder=\"150\" required class=\"w-24 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]\"></div><div class=\"flex flex-col gap-1\"><label for=\"aspect_ratio\" class=\"text-sm font-medium text-gray-400\">Aspect Ratio</label> <input type=\"text\" id=\"aspect_ratio\" name=\"aspect_ratio\" placeholder=\"e.g. 1:1\" class=\"w-24 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]\"></div><button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create Preset</button></form></div><div class=\"mt-8 flow-root\"><div class=\"overflow-x-auto\"><div class=\"min-w-full py-2 align-middle\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Label</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Width</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Height</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Aspect Ratio</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Actions</th></tr></thead> <tbody id=\"dimensions-table-body\" class=\"divide-y divide-white/5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex flex-col gap-1\"><label for=\"label\" class=\"text-sm font-medium text-gray-400\">Label</label> <input type=\"text\" id=\"label\" name=\"label\" placeholder=\"e.g. thumbnail\" required class=\"rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]\"></div><div class=\"flex flex-col gap-1\"><label for=\"width\" class=\"text-sm font-medium text-gray-400\">Width (px)</label> <input type=\"number\" id=\"width\" name=\"width\" min=\"1\" placeholder=\"150\" required class=\"w-24 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]\"></div><div class=\"flex flex-col gap-1\"><label for=\"height\" class=\"text-sm font-medium text-gray-400\">Height (px)</label> <input type=\"number\" id=\"height\" name=\"height\" min=\"1\" placeholder=\"150\" required class=\"w-24 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]\"></div><div class=\"flex flex-col gap-1\"><label for=\"aspect_ratio\" class=\"text-sm font-medium text-gray-400\">Aspect Ratio</label> <input type=\"text\" id=\"aspect_ratio\" name=\"aspect_ratio\" placeholder=\"e.g. 1:1\" class=\"w-24 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]\"></div><button type=\"submit\" class=\"rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-primary-hover)]\">Create Preset</button></form></div><div class=\"mt-8 flow-root\"><div class=\"overflow-x-auto\"><div class=\"min-w-full py-2 align-middle\"><div class=\"overflow-hidden rounded-lg border border-white/10 shadow-sm\"><table class=\"min-w-full divide-y divide-white/10\"><thead class=\"bg-white/5\"><tr><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Label</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Width</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Height</th><th scope=\"col\" class=\"px-4 py-3.5 text-left text-sm font-semibold text-white\">Aspect Ratio</th><th scope=\"col\" class=\"px-4 py-3.5 text-center text-sm font-semibold text-white\">Actions</th></tr></thead> <tbody id=\"dimensions-table-body\" class=\"divide-y divide-white/5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -55,11 +56,15 @@ func MediaDimensionsListContent(items []db.MediaDimensions, csrfToken string) te
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = partials.ReprocessStatus(reprocessStatus).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		return nil
 	})
 }
 
-func MediaDimensionsList(layout layouts.AdminData, items []db.MediaDimensions) templ.Component {
+func MediaDimensionsList(layout layouts.AdminData, items []db.MediaDimensions, reprocessStatus service.ReprocessStatus) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -92,7 +97,7 @@ func MediaDimensionsList(layout layouts.AdminData, items []db.MediaDimensions) t
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = MediaDimensionsListContent(items, layout.CSRFToken).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = MediaDimensionsListContent(items, layout.CSRFToken, reprocessStatus).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

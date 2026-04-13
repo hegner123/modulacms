@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -29,16 +30,33 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// ReprocessStatus tracks the progress of a bulk media reprocess job.
+type ReprocessStatus struct {
+	Running   bool      `json:"running"`
+	Total     int       `json:"total"`
+	Completed int       `json:"completed"`
+	Failed    int       `json:"failed"`
+	StartedAt time.Time `json:"started_at,omitempty"`
+}
+
 // MediaService manages media upload, metadata, health checks,
 // orphan cleanup, and dimension presets.
 type MediaService struct {
 	driver db.DbDriver
 	mgr    *config.Manager
+	ctx    context.Context // service-scoped context, canceled on graceful shutdown
+
+	mu              sync.RWMutex
+	reprocessStatus ReprocessStatus
+	restartQueued   bool
 }
 
 // NewMediaService creates a MediaService with the given dependencies.
-func NewMediaService(driver db.DbDriver, mgr *config.Manager) *MediaService {
-	return &MediaService{driver: driver, mgr: mgr}
+// The ctx parameter is a service-scoped context derived from the server's root
+// context, canceled on graceful shutdown. It is used for background goroutines
+// (e.g., bulk media reprocessing) that must not depend on HTTP request contexts.
+func NewMediaService(ctx context.Context, driver db.DbDriver, mgr *config.Manager) *MediaService {
+	return &MediaService{ctx: ctx, driver: driver, mgr: mgr}
 }
 
 // UploadMediaParams holds inputs for uploading a new media file.
@@ -422,6 +440,114 @@ func (m *MediaService) DeleteMediaDimension(ctx context.Context, ac audited.Audi
 	return nil
 }
 
+// GetReprocessStatus returns the current bulk reprocess job status.
+func (m *MediaService) GetReprocessStatus() ReprocessStatus {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.reprocessStatus
+}
+
+// TriggerReprocess starts a background bulk reprocess of all media variants.
+// If a reprocess is already running, it queues a restart after the current run
+// finishes. Returns true if a new run was started, false if queued.
+func (m *MediaService) TriggerReprocess() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.reprocessStatus.Running {
+		m.restartQueued = true
+		return false
+	}
+
+	go m.runReprocessAll()
+	return true
+}
+
+// runReprocessAll executes the bulk reprocess loop. It runs in a background
+// goroutine using the service-scoped context. After each run, if restartQueued
+// is set, it resets and starts another run to pick up dimension changes.
+func (m *MediaService) runReprocessAll() {
+	for {
+		m.executeReprocessRun()
+
+		m.mu.Lock()
+		if m.restartQueued {
+			m.restartQueued = false
+			m.mu.Unlock()
+			continue
+		}
+		m.mu.Unlock()
+		return
+	}
+}
+
+// executeReprocessRun performs a single pass over all image media records,
+// reprocessing their variants with current dimension presets.
+func (m *MediaService) executeReprocessRun() {
+	// System-level audit context (no HTTP request user).
+	ac := audited.Ctx(types.NewNodeID(), types.UserID(""), "media-reprocess-worker", "127.0.0.1")
+
+	allMedia, err := m.driver.ListMedia()
+	if err != nil {
+		utility.DefaultLogger.Error("reprocess: failed to list media", err)
+		return
+	}
+	if allMedia == nil {
+		return
+	}
+
+	// Filter to images only
+	var imageMedia []db.Media
+	for _, record := range *allMedia {
+		if media.IsImageMIME(record.Mimetype.String) {
+			imageMedia = append(imageMedia, record)
+		}
+	}
+
+	m.mu.Lock()
+	m.reprocessStatus = ReprocessStatus{
+		Running:   true,
+		Total:     len(imageMedia),
+		Completed: 0,
+		Failed:    0,
+		StartedAt: time.Now().UTC(),
+	}
+	m.mu.Unlock()
+
+	for _, record := range imageMedia {
+		// Check for graceful shutdown between records
+		select {
+		case <-m.ctx.Done():
+			m.mu.Lock()
+			m.reprocessStatus.Running = false
+			m.mu.Unlock()
+			utility.DefaultLogger.Info("reprocess: stopped by shutdown", "completed", m.reprocessStatus.Completed)
+			return
+		default:
+		}
+
+		if err := m.ReprocessMediaVariants(m.ctx, ac, record.MediaID); err != nil {
+			utility.DefaultLogger.Warn("reprocess: failed for media", err, "media_id", string(record.MediaID))
+			m.mu.Lock()
+			m.reprocessStatus.Failed++
+			m.mu.Unlock()
+		}
+
+		m.mu.Lock()
+		m.reprocessStatus.Completed++
+		m.mu.Unlock()
+	}
+
+	m.mu.Lock()
+	m.reprocessStatus.Running = false
+	m.mu.Unlock()
+
+	utility.DefaultLogger.Info("reprocess: bulk run complete",
+		"total", len(imageMedia),
+		"completed", m.reprocessStatus.Completed,
+		"failed", m.reprocessStatus.Failed)
+}
+
 // ReprocessMediaVariants re-generates cropped image variants using the current
 // focal point and re-uploads them to S3, then updates the media record's srcset.
 // Non-image media returns nil immediately.
@@ -578,6 +704,179 @@ func (m *MediaService) ReprocessMediaVariants(ctx context.Context, ac audited.Au
 	if _, err := m.driver.UpdateMedia(ctx, ac, dbParams); err != nil {
 		rollbackVariantUploads(s3Session, cfg.Bucket_Media, uploadedKeys)
 		return fmt.Errorf("reprocess: update media record: %w", err)
+	}
+
+	return nil
+}
+
+// ReprocessAdminMediaVariants re-generates cropped image variants for an admin
+// media record using the current focal point and re-uploads them to S3, then
+// updates the admin media record's srcset. Non-image media returns nil immediately.
+func (m *MediaService) ReprocessAdminMediaVariants(ctx context.Context, ac audited.AuditContext, adminMediaID types.AdminMediaID) error {
+	record, err := m.driver.GetAdminMedia(adminMediaID)
+	if err != nil {
+		return &NotFoundError{Resource: "admin_media", ID: string(adminMediaID)}
+	}
+
+	if !media.IsImageMIME(record.Mimetype.String) {
+		return nil
+	}
+
+	cfg, err := m.mgr.Config()
+	if err != nil {
+		return &InternalError{Err: fmt.Errorf("load config: %w", err)}
+	}
+
+	// Admin media uses its own bucket config with fallback to shared bucket
+	bucketName := cfg.AdminBucketMedia()
+
+	s3Creds := bucket.S3Credentials{
+		AccessKey:      cfg.Bucket_Access_Key,
+		SecretKey:      cfg.Bucket_Secret_Key,
+		URL:            cfg.AdminBucketEndpointURL(),
+		Region:         cfg.Bucket_Region,
+		ForcePathStyle: cfg.Bucket_Force_Path_Style,
+	}
+	s3Session, err := s3Creds.GetBucket()
+	if err != nil {
+		return &InternalError{Err: fmt.Errorf("S3 session: %w", err)}
+	}
+
+	// Extract the S3 key from the admin media URL
+	endpointPrefix := cfg.AdminBucketPublicURL() + "/" + bucketName + "/"
+	originalKey := strings.TrimPrefix(string(record.URL), endpointPrefix)
+	if originalKey == "" || originalKey == string(record.URL) {
+		return fmt.Errorf("reprocess admin: could not extract S3 key from URL %s", record.URL)
+	}
+
+	// Create temp directory for downloaded original and generated variants
+	tmpDir, err := os.MkdirTemp("", media.TempDirPrefix)
+	if err != nil {
+		return fmt.Errorf("reprocess admin: create temp dir: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Download the original file from S3
+	resp, err := s3Session.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(originalKey),
+	})
+	if err != nil {
+		return fmt.Errorf("reprocess admin: download original from S3: %w", err)
+	}
+	defer resp.Body.Close()
+
+	originalFilename := filepath.Base(originalKey)
+	localPath := filepath.Join(tmpDir, originalFilename)
+	localFile, err := os.Create(localPath)
+	if err != nil {
+		return fmt.Errorf("reprocess admin: create local file: %w", err)
+	}
+	if _, err := io.Copy(localFile, resp.Body); err != nil {
+		localFile.Close()
+		return fmt.Errorf("reprocess admin: write local file: %w", err)
+	}
+	if err := localFile.Close(); err != nil {
+		return fmt.Errorf("reprocess admin: close local file: %w", err)
+	}
+
+	// Decode image headers to get bounds for focal point conversion
+	var focalPoint *image.Point
+	if record.FocalX.Valid && record.FocalY.Valid {
+		headerFile, openErr := os.Open(localPath)
+		if openErr != nil {
+			return fmt.Errorf("reprocess admin: open for header decode: %w", openErr)
+		}
+		imgConfig, _, decErr := image.DecodeConfig(headerFile)
+		headerFile.Close()
+		if decErr != nil {
+			return fmt.Errorf("reprocess admin: decode image config: %w", decErr)
+		}
+		imgBounds := image.Rect(0, 0, imgConfig.Width, imgConfig.Height)
+		focalPoint = media.FocalPointToPixels(record.FocalX, record.FocalY, imgBounds)
+	}
+
+	// Generate optimized variants
+	optimized, err := media.OptimizeUpload(localPath, tmpDir, m.driver, focalPoint)
+	if err != nil {
+		return fmt.Errorf("reprocess admin: optimization failed: %w", err)
+	}
+	if optimized == nil || len(*optimized) == 0 {
+		return nil
+	}
+
+	// Delete old variant S3 objects (from existing srcset)
+	if record.Srcset.Valid && record.Srcset.String != "" {
+		var oldSrcsetURLs []string
+		if jsonErr := json.Unmarshal([]byte(record.Srcset.String), &oldSrcsetURLs); jsonErr == nil {
+			for _, u := range oldSrcsetURLs {
+				oldKey := strings.TrimPrefix(u, endpointPrefix)
+				if oldKey == originalKey {
+					continue
+				}
+				_, delErr := s3Session.DeleteObject(&s3.DeleteObjectInput{
+					Bucket: aws.String(bucketName),
+					Key:    aws.String(oldKey),
+				})
+				if delErr != nil {
+					utility.DefaultLogger.Warn("reprocess admin: failed to delete old variant", delErr, "key", oldKey)
+				}
+			}
+		}
+	}
+
+	// Upload new variants to S3
+	mediaPath := media.MediaPathFromURL(string(record.URL), endpointPrefix)
+	acl := cfg.Bucket_Default_ACL
+	if acl == "" {
+		acl = "public-read"
+	}
+
+	srcset := []string{}
+	uploadedKeys := []string{}
+
+	for _, fullPath := range *optimized {
+		f, openErr := os.Open(fullPath)
+		if openErr != nil {
+			rollbackVariantUploads(s3Session, bucketName, uploadedKeys)
+			return fmt.Errorf("reprocess admin: open variant file: %w", openErr)
+		}
+
+		variantFilename := filepath.Base(fullPath)
+		s3Key := fmt.Sprintf("%s/%s", mediaPath, variantFilename)
+		uploadURL := fmt.Sprintf("%s/%s/%s", cfg.AdminBucketPublicURL(), bucketName, s3Key)
+
+		prep, prepErr := bucket.UploadPrep(s3Key, bucketName, f, acl)
+		if prepErr != nil {
+			f.Close()
+			rollbackVariantUploads(s3Session, bucketName, uploadedKeys)
+			return fmt.Errorf("reprocess admin: upload prep: %w", prepErr)
+		}
+
+		_, upErr := bucket.ObjectUpload(s3Session, prep)
+		f.Close()
+		if upErr != nil {
+			rollbackVariantUploads(s3Session, bucketName, uploadedKeys)
+			return fmt.Errorf("reprocess admin: S3 upload: %w", upErr)
+		}
+
+		uploadedKeys = append(uploadedKeys, s3Key)
+		srcset = append(srcset, uploadURL)
+	}
+
+	// Update srcset in database
+	srcsetJSON, err := json.Marshal(srcset)
+	if err != nil {
+		rollbackVariantUploads(s3Session, bucketName, uploadedKeys)
+		return fmt.Errorf("reprocess admin: marshal srcset: %w", err)
+	}
+
+	dbParams := media.MapAdminMediaParams(*record)
+	dbParams.Srcset = db.NewNullString(string(srcsetJSON))
+
+	if _, err := m.driver.UpdateAdminMedia(ctx, ac, dbParams); err != nil {
+		rollbackVariantUploads(s3Session, bucketName, uploadedKeys)
+		return fmt.Errorf("reprocess admin: update admin media record: %w", err)
 	}
 
 	return nil
