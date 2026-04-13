@@ -166,7 +166,7 @@ fmt.Printf("Authenticated as %s (%s)\n", user.Username, user.Email)
 
 ## Next Steps
 
-- [Content Operations](content-operations.md) -- CRUD, trees, publishing, queries
-- [Error Handling](error-handling.md) -- error classification patterns
-- [Pagination](pagination.md) -- paginated listings and iteration
-- [Reference](reference.md) -- full resource index
+- [Content Operations](/docs/sdks/go/content-operations) -- CRUD, trees, publishing, queries
+- [Error Handling](/docs/sdks/go/error-handling) -- error classification patterns
+- [Pagination](/docs/sdks/go/pagination) -- paginated listings and iteration
+- [Reference](/docs/sdks/go/reference) -- full resource index

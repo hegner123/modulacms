@@ -48,5 +48,5 @@ This separation also means you can version, audit, and roll back admin panel cha
 
 ## Next steps
 
-- [Build a custom admin interface](building-interfaces.md) -- step-by-step guide to creating admin screens via the API
-- [Authentication and access control](authentication.md) -- log in, manage users, and control permissions
+- [Build a custom admin interface](/docs/custom-admin/building-interfaces) -- step-by-step guide to creating admin screens via the API
+- [Authentication and access control](/docs/custom-admin/authentication) -- log in, manage users, and control permissions

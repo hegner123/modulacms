@@ -262,6 +262,6 @@ let datatypes = try await withRetry {
 
 ## Next Steps
 
-- [Getting Started](getting-started.md) -- installation, client setup, first requests
-- [Content Operations](content-operations.md) -- CRUD, content delivery, trees, media
-- [Reference](reference.md) -- all resources, ID types, enums
+- [Getting Started](/docs/sdks/swift/getting-started) -- installation, client setup, first requests
+- [Content Operations](/docs/sdks/swift/content-operations) -- CRUD, content delivery, trees, media
+- [Reference](/docs/sdks/swift/reference) -- all resources, ID types, enums

@@ -451,4 +451,4 @@ All list endpoints support pagination with `limit` and `offset` query parameters
 
 ## Next steps
 
-Now that you have a content schema, [create content and organize it into trees](creating-content.md).
+Now that you have a content schema, [create content and organize it into trees](/docs/building-content/creating-content).

@@ -253,6 +253,6 @@ const result = await client.query('blog-posts', {
 
 ## Next Steps
 
-- [Content modeling guide](../building-content/content-modeling.md) -- define datatypes and fields (including the translatable flag)
-- [Deploy sync](deploy-sync.md) -- export and import translated content between environments
-- [Configuration reference](../getting-started/configuration.md) -- all config fields
+- [Content modeling guide](/docs/building-content/content-modeling) -- define datatypes and fields (including the translatable flag)
+- [Deploy sync](/docs/integrations/deploy-sync) -- export and import translated content between environments
+- [Configuration reference](/docs/getting-started/configuration) -- all config fields

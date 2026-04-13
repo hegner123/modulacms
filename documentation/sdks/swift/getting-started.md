@@ -207,6 +207,6 @@ actor ContentManager {
 
 ## Next Steps
 
-- [Content Operations](content-operations.md) -- CRUD, content delivery, trees, media upload, query API
-- [Error Handling](error-handling.md) -- APIError, do/catch patterns, network vs API errors
-- [Reference](reference.md) -- all resources, ID types, enums, JSONValue
+- [Content Operations](/docs/sdks/swift/content-operations) -- CRUD, content delivery, trees, media upload, query API
+- [Error Handling](/docs/sdks/swift/error-handling) -- APIError, do/catch patterns, network vs API errors
+- [Reference](/docs/sdks/swift/reference) -- all resources, ID types, enums, JSONValue

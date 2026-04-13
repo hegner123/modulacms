@@ -51,6 +51,6 @@ All three SDKs follow these conventions:
 
 ## Getting Started
 
-- [Go SDK](go/getting-started.md)
-- [TypeScript SDK](typescript/getting-started.md)
-- [Swift SDK](swift/getting-started.md)
+- [Go SDK](/docs/sdks/go/getting-started)
+- [TypeScript SDK](/docs/sdks/typescript/getting-started)
+- [Swift SDK](/docs/sdks/swift/getting-started)

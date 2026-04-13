@@ -153,6 +153,6 @@ Both endpoints are public and rate-limited to 10 requests per minute per IP.
 
 ## Next Steps
 
-- [Authentication guide](../custom-admin/authentication.md) -- password login, API keys, RBAC
-- [Email](email.md) -- configure email for password reset flows
-- [Configuration reference](../getting-started/configuration.md) -- all config fields
+- [Authentication guide](/docs/custom-admin/authentication) -- password login, API keys, RBAC
+- [Email](/docs/integrations/email) -- configure email for password reset flows
+- [Configuration reference](/docs/getting-started/configuration) -- all config fields

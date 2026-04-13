@@ -16,7 +16,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
   -d '{"email": "admin@example.com", "password": "your-password"}'
 ```
 
-Include the session cookie in subsequent requests. See [Authentication and access control](authentication.md) for session management details.
+Include the session cookie in subsequent requests. See [Authentication and access control](/docs/custom-admin/authentication) for session management details.
 
 ### API keys
 

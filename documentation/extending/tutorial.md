@@ -2,7 +2,7 @@
 
 Build a complete plugin with database tables, REST endpoints, a content hook, middleware, and a helper module.
 
-> **Good to know**: This tutorial requires a running ModulaCMS instance with `plugin_enabled: true` in `modula.config.json`. See [configuration](configuration.md) for setup.
+> **Good to know**: This tutorial requires a running ModulaCMS instance with `plugin_enabled: true` in `modula.config.json`. See [configuration](/docs/extending/configuration) for setup.
 
 ## 1. Scaffold the Plugin
 
@@ -317,7 +317,7 @@ modulacms plugin approve bookmarks --route "DELETE /bookmarks/{id}"
 modulacms plugin approve bookmarks --hook "after_create:content_data"
 ```
 
-See [approval workflow](approval.md) for CLI, API, and TUI approval details.
+See [approval workflow](/docs/extending/approval) for CLI, API, and TUI approval details.
 
 ## 10. Test with curl
 
@@ -605,4 +605,4 @@ modula plugin test ./plugins/bookmarks
 
 No running server needed. Tests run in an isolated in-memory database with all CMS tables and your plugin's tables bootstrapped.
 
-See [Testing Plugins](testing.md) for the full test API, including assertions, hook testing, and outbound HTTP mocking.
+See [Testing Plugins](/docs/extending/testing) for the full test API, including assertions, hook testing, and outbound HTTP mocking.

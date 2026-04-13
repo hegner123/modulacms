@@ -204,7 +204,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 ## Error Handling
 
-All `ModulaClient` methods throw `ModulaError` on failure. See [Error Handling](error-handling.md) for details.
+All `ModulaClient` methods throw `ModulaError` on failure. See [Error Handling](/docs/sdks/typescript/error-handling) for details.
 
 ```typescript
 import { ModulaError } from '@modulacms/sdk'

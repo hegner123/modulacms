@@ -453,6 +453,6 @@ If the snapshot directory is empty or the backup was skipped, you'll need to re-
 
 ## Next Steps
 
-- [Webhooks](webhooks.md) -- trigger external actions when content changes
-- [S3 storage](s3-storage.md) -- configure media storage (media files are not included in deploy sync)
-- [Configuration reference](../getting-started/configuration.md) -- all config fields
+- [Webhooks](/docs/integrations/webhooks) -- trigger external actions when content changes
+- [S3 storage](/docs/integrations/s3-storage) -- configure media storage (media files are not included in deploy sync)
+- [Configuration reference](/docs/getting-started/configuration) -- all config fields

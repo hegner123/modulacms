@@ -207,7 +207,7 @@ curl -X DELETE "http://localhost:8080/api/v1/contentdata/?q=01JNRWCN5GPRZ8S6P0Y5
 
 ## Content delivery
 
-When you [publish content](publishing.md), ModulaCMS assembles the tree into a snapshot. Frontend clients requesting content by slug receive this snapshot as nested JSON:
+When you [publish content](/docs/building-content/publishing), ModulaCMS assembles the tree into a snapshot. Frontend clients requesting content by slug receive this snapshot as nested JSON:
 
 ```json
 {
@@ -275,4 +275,4 @@ curl -X POST http://localhost:8080/api/v1/admin/content/heal \
 
 ## Next steps
 
-Your content is organized and populated. [Publish it to make it live](publishing.md).
+Your content is organized and populated. [Publish it to make it live](/docs/building-content/publishing).

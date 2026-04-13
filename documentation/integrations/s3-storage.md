@@ -189,6 +189,6 @@ ModulaCMS uploads the original file and generates optimized image variants (WebP
 
 ## Next Steps
 
-- [Media management guide](../building-content/media.md) -- uploading, optimization, dimension presets
-- [Observability](observability.md) -- storage health checks and monitoring
-- [Configuration reference](../getting-started/configuration.md) -- all config fields
+- [Media management guide](/docs/building-content/media) -- uploading, optimization, dimension presets
+- [Observability](/docs/integrations/observability) -- storage health checks and monitoring
+- [Configuration reference](/docs/getting-started/configuration) -- all config fields

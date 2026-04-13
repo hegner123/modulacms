@@ -350,7 +350,7 @@ public func isDuplicateMedia(_ error: Error) -> Bool
 public func isInvalidMediaPath(_ error: Error) -> Bool
 ```
 
-See [Error Handling](error-handling.md) for usage patterns.
+See [Error Handling](/docs/sdks/swift/error-handling) for usage patterns.
 
 ## Pagination Types
 
@@ -383,7 +383,7 @@ public struct ClientConfig: Sendable {
 
 ## Related Documentation
 
-- [Getting Started](getting-started.md) -- installation, client setup, first requests
-- [Content Operations](content-operations.md) -- CRUD, content delivery, trees, media
-- [Error Handling](error-handling.md) -- APIError, do/catch patterns
-- [REST API Reference](../../api/rest-api.md) -- full HTTP endpoint documentation
+- [Getting Started](/docs/sdks/swift/getting-started) -- installation, client setup, first requests
+- [Content Operations](/docs/sdks/swift/content-operations) -- CRUD, content delivery, trees, media
+- [Error Handling](/docs/sdks/swift/error-handling) -- APIError, do/catch patterns
+- [REST API Reference](/docs/api/rest-api) -- full HTTP endpoint documentation

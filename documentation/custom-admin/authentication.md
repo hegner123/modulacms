@@ -58,7 +58,7 @@ curl -X POST http://localhost:8080/api/v1/tokens \
 
 ModulaCMS supports OAuth 2.0 with Google, GitHub, Azure AD, or any standard OAuth provider. Initiate the flow by redirecting users to `/api/v1/auth/oauth/login`. After the user authenticates with the provider, ModulaCMS provisions or links the user account, creates a session, and redirects to your configured success URL.
 
-For setup details, see [OAuth integration](../integrations/oauth.md).
+For setup details, see [OAuth integration](/docs/integrations/oauth).
 
 ## Get the current user
 
@@ -305,5 +305,5 @@ ModulaCMS always sets cookies with `HttpOnly` enabled and `Path` set to `/`.
 
 ## Next steps
 
-- [Build a custom admin interface](building-interfaces.md) -- create admin screens and manage content via the API
-- [OAuth integration](../integrations/oauth.md) -- set up Google, GitHub, or Azure AD login
+- [Build a custom admin interface](/docs/custom-admin/building-interfaces) -- create admin screens and manage content via the API
+- [OAuth integration](/docs/integrations/oauth) -- set up Google, GitHub, or Azure AD login

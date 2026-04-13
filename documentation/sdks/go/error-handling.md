@@ -199,6 +199,6 @@ if err != nil {
 
 ## Next Steps
 
-- [Getting Started](getting-started.md) -- client setup and authentication
-- [Content Operations](content-operations.md) -- CRUD, trees, publishing
-- [Pagination](pagination.md) -- paginated listings
+- [Getting Started](/docs/sdks/go/getting-started) -- client setup and authentication
+- [Content Operations](/docs/sdks/go/content-operations) -- CRUD, trees, publishing
+- [Pagination](/docs/sdks/go/pagination) -- paginated listings

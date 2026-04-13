@@ -137,10 +137,10 @@ result, err := client.Query.Query(ctx, "blog-posts", &modula.QueryParams{
 // result.Total, result.Limit, result.Offset work the same way.
 ```
 
-See [Content Operations](content-operations.md#querying-content) for full query documentation.
+See [Content Operations](/docs/sdks/go/content-operations#querying-content) for full query documentation.
 
 ## Next Steps
 
-- [Content Operations](content-operations.md) -- CRUD, trees, publishing, querying
-- [Error Handling](error-handling.md) -- handling pagination errors
-- [Reference](reference.md) -- full resource index
+- [Content Operations](/docs/sdks/go/content-operations) -- CRUD, trees, publishing, querying
+- [Error Handling](/docs/sdks/go/error-handling) -- handling pagination errors
+- [Reference](/docs/sdks/go/reference) -- full resource index

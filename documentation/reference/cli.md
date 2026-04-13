@@ -449,7 +449,7 @@ modula plugin test ./plugins/my-plugin --json
 
 Exit codes: `0` all passed, `1` failures, `2` load error.
 
-See [Testing Plugins](../extending/testing.md) for the full test API.
+See [Testing Plugins](/docs/extending/testing) for the full test API.
 
 #### plugin approve / revoke (online)
 
@@ -559,6 +559,6 @@ Commands that support `--json` output structured JSON to stdout. Errors still go
 
 ## Next Steps
 
-- [Configuration](../getting-started/configuration.md) for all config fields
-- [Plugin development](../extending/overview.md) for building plugins
-- [Deployment](../deployment/production.md) for production setup
+- [Configuration](/docs/getting-started/configuration) for all config fields
+- [Plugin development](/docs/extending/overview) for building plugins
+- [Deployment](/docs/deployment/production) for production setup

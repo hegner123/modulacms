@@ -319,7 +319,7 @@ The admin panel favicon changes color based on the environment stage, so you can
 | Staging | Amber |
 | Production | Red |
 
-The `output_format` field sets the default response structure for content delivery endpoints. Valid values: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, `raw`. Defaults to `raw` when empty. See the [Routing guide](../building-content/routing.md) for details on output formats.
+The `output_format` field sets the default response structure for content delivery endpoints. Valid values: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, `raw`. Defaults to `raw` when empty. See the [Routing guide](/docs/building-content/routing) for details on output formats.
 
 ### Environment Hosts
 
@@ -360,7 +360,7 @@ SQLite uses a file path for `db_url`. MySQL and PostgreSQL use a `host:port` for
 
 ## S3 Storage Settings
 
-ModulaCMS stores media assets and backups in S3-compatible storage. Any S3-compatible provider works: AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, Cloudflare R2. See the [Media Management guide](../building-content/media.md) for upload and optimization details.
+ModulaCMS stores media assets and backups in S3-compatible storage. Any S3-compatible provider works: AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, Cloudflare R2. See the [Media Management guide](/docs/building-content/media) for upload and optimization details.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -429,7 +429,7 @@ All cookie fields are hot-reloadable.
 
 ## OAuth Settings
 
-ModulaCMS supports OAuth with any OpenID Connect-compatible provider (Google, GitHub, Azure AD, etc.). Configure one provider per instance. See the [Authentication guide](../custom-admin/authentication.md) for setup instructions.
+ModulaCMS supports OAuth with any OpenID Connect-compatible provider (Google, GitHub, Azure AD, etc.). Configure one provider per instance. See the [Authentication guide](/docs/custom-admin/authentication) for setup instructions.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -493,7 +493,7 @@ All email fields are hot-reloadable.
 
 ## Plugin System Settings
 
-ModulaCMS has a Lua-based plugin system with sandboxed VMs and configurable resource limits. See the [Managing Plugins guide](../extending/overview.md) for setup and the [Plugin Tutorial](../extending/tutorial.md) for building your own.
+ModulaCMS has a Lua-based plugin system with sandboxed VMs and configurable resource limits. See the [Managing Plugins guide](/docs/extending/overview) for setup and the [Plugin Tutorial](/docs/extending/tutorial) for building your own.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -824,6 +824,6 @@ Fields not shown here (database credentials, S3 credentials, OAuth endpoints, em
 
 ## Next steps
 
-- [Authentication guide](../custom-admin/authentication.md) -- set up OAuth, sessions, and API tokens
-- [Media Management guide](../building-content/media.md) -- configure S3 storage and upload files
-- [Managing Plugins guide](../extending/overview.md) -- enable and configure the plugin system
+- [Authentication guide](/docs/custom-admin/authentication) -- set up OAuth, sessions, and API tokens
+- [Media Management guide](/docs/building-content/media) -- configure S3 storage and upload files
+- [Managing Plugins guide](/docs/extending/overview) -- enable and configure the plugin system

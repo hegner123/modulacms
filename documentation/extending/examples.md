@@ -2,7 +2,7 @@
 
 Learn common plugin patterns through complete, working examples with full `init.lua` source code.
 
-For a step-by-step walkthrough of building a plugin from scratch, see the [tutorial](tutorial.md).
+For a step-by-step walkthrough of building a plugin from scratch, see the [tutorial](/docs/extending/tutorial).
 
 ## Task Tracker
 

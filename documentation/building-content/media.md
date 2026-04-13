@@ -385,7 +385,7 @@ Example for MinIO running locally:
 
 > **Good to know**: When running in Docker, `bucket_endpoint` typically points to a container hostname (e.g., `minio:9000`) that browsers cannot resolve. Set `bucket_public_url` to the externally reachable address so that media URLs in API responses work in the browser.
 
-> Having trouble with uploads or S3 connections? See [Troubleshooting: Media and S3 Storage](../reference/troubleshooting.md#media-and-s3-storage).
+> Having trouble with uploads or S3 connections? See [Troubleshooting: Media and S3 Storage](/docs/reference/troubleshooting#media-and-s3-storage).
 
 ## API reference
 
@@ -412,6 +412,6 @@ Example for MinIO running locally:
 
 ## Next steps
 
-- [Serving your frontend](serving-your-frontend.md) -- render content and images in a real app
-- [Routing](routing.md) -- create routes that map URLs to content
-- [Querying content](querying.md) -- filter and paginate content collections
+- [Serving your frontend](/docs/building-content/serving-your-frontend) -- render content and images in a real app
+- [Routing](/docs/building-content/routing) -- create routes that map URLs to content
+- [Querying content](/docs/building-content/querying) -- filter and paginate content collections

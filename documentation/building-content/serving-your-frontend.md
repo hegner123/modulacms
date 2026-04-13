@@ -227,7 +227,7 @@ for _, r := range routes {
 }
 ```
 
-> **Good to know**: Build nested navigation by using slug conventions. Slugs like `blog`, `blog/tutorials`, and `blog/news` imply a hierarchy you can parse on the client. See [routing](routing.md) for a full hierarchical nav example.
+> **Good to know**: Build nested navigation by using slug conventions. Slugs like `blog`, `blog/tutorials`, and `blog/news` imply a hierarchy you can parse on the client. See [routing](/docs/building-content/routing) for a full hierarchical nav example.
 
 ## Search and filter content
 
@@ -284,7 +284,7 @@ const results = await client.queryContent('blog-post', {
 })
 ```
 
-> **Good to know**: See [querying content](querying.md) for the full filter syntax, all operators, and pagination patterns.
+> **Good to know**: See [querying content](/docs/building-content/querying) for the full filter syntax, all operators, and pagination patterns.
 
 ## Handle errors
 
@@ -327,6 +327,6 @@ if err != nil {
 
 ## Next steps
 
-- [Routing](routing.md) -- create routes and configure output formats
-- [Querying content](querying.md) -- filter, sort, and paginate content by datatype
-- [Media](media.md) -- serve responsive images in your frontend
+- [Routing](/docs/building-content/routing) -- create routes and configure output formats
+- [Querying content](/docs/building-content/querying) -- filter, sort, and paginate content by datatype
+- [Media](/docs/building-content/media) -- serve responsive images in your frontend

@@ -155,8 +155,8 @@ await client.publishing.publish({ content_data_id: contentId })
 
 ## Next Steps
 
-- [Read-Only SDK](read-only-sdk.md) -- content delivery for frontend apps
-- [Admin SDK](admin-sdk.md) -- full CRUD operations
-- [Type Safety](type-safety.md) -- branded IDs and entity types
-- [Error Handling](error-handling.md) -- error types and patterns
-- [Reference](reference.md) -- quick reference tables
+- [Read-Only SDK](/docs/sdks/typescript/read-only-sdk) -- content delivery for frontend apps
+- [Admin SDK](/docs/sdks/typescript/admin-sdk) -- full CRUD operations
+- [Type Safety](/docs/sdks/typescript/type-safety) -- branded IDs and entity types
+- [Error Handling](/docs/sdks/typescript/error-handling) -- error types and patterns
+- [Reference](/docs/sdks/typescript/reference) -- quick reference tables

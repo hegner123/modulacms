@@ -150,6 +150,6 @@ ModulaCMS redacts `email_password`, `email_api_key`, `email_aws_access_key_id`, 
 
 ## Next Steps
 
-- [Authentication guide](../custom-admin/authentication.md) -- password reset flow details
-- [OAuth](oauth.md) -- set up third-party login as an alternative to password-based auth
-- [Configuration reference](../getting-started/configuration.md) -- all config fields
+- [Authentication guide](/docs/custom-admin/authentication) -- password reset flow details
+- [OAuth](/docs/integrations/oauth) -- set up third-party login as an alternative to password-based auth
+- [Configuration reference](/docs/getting-started/configuration) -- all config fields

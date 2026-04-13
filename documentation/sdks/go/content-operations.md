@@ -312,6 +312,6 @@ report, err = client.ContentHeal.Heal(ctx, false)
 
 ## Next Steps
 
-- [Error Handling](error-handling.md) -- error classification and recovery patterns
-- [Pagination](pagination.md) -- iteration patterns for large datasets
-- [Reference](reference.md) -- full resource index
+- [Error Handling](/docs/sdks/go/error-handling) -- error classification and recovery patterns
+- [Pagination](/docs/sdks/go/pagination) -- iteration patterns for large datasets
+- [Reference](/docs/sdks/go/reference) -- full resource index

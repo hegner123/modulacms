@@ -7,7 +7,7 @@ Add a feature to ModulaCMS by following the standard flow from schema design thr
 Before writing code, determine the scope:
 
 - **Feature stores new data in an existing table** -- Add a column to the existing schema, update queries, regenerate sqlc code.
-- **Feature introduces a new domain concept** -- Create a new table with the full workflow described in [Adding Tables](adding-tables.md).
+- **Feature introduces a new domain concept** -- Create a new table with the full workflow described in [Adding Tables](/docs/contributing/adding-tables).
 - **Feature uses existing data in a new way** -- Skip directly to business logic. No schema or sqlc changes needed.
 
 ## Follow the Development Flow
@@ -40,7 +40,7 @@ Not every feature touches every layer. A read-only export feature skips the sche
 
 ## Step 1: Write Schema and Queries
 
-If the feature requires database changes, follow the [Adding Tables](adding-tables.md) guide for new tables, or add ALTER TABLE statements to a new migration directory for column additions.
+If the feature requires database changes, follow the [Adding Tables](/docs/contributing/adding-tables) guide for new tables, or add ALTER TABLE statements to a new migration directory for column additions.
 
 Key points:
 - Create migrations for all three databases (SQLite, MySQL, PostgreSQL)
@@ -161,7 +161,7 @@ Test the feature locally by connecting to the TUI via SSH and hitting the API en
 
 ### Creating a New Table
 
-Follow [Adding Tables](adding-tables.md) for the full schema-to-code workflow, then continue with business logic, interfaces, and testing from this guide.
+Follow [Adding Tables](/docs/contributing/adding-tables) for the full schema-to-code workflow, then continue with business logic, interfaces, and testing from this guide.
 
 ### Read-Only Feature (No Database Changes)
 

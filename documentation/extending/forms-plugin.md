@@ -4,7 +4,7 @@ Collect form submissions, validate input, and queue webhook deliveries from any 
 
 The forms plugin ships with ModulaCMS as a Lua plugin at `plugins/forms/`. It provides 21 REST API endpoints for building forms, managing fields, accepting submissions, and configuring webhook notifications. A companion web components package (`@modulacms/forms`) renders forms, displays entries, and provides a drag-and-drop form builder for admin panels.
 
-> **Good to know**: The forms plugin requires `plugin_enabled: true` in `modula.config.json`. See [configuration](configuration.md) for plugin setup.
+> **Good to know**: The forms plugin requires `plugin_enabled: true` in `modula.config.json`. See [configuration](/docs/extending/configuration) for plugin setup.
 
 ## Quick Start
 
@@ -376,7 +376,7 @@ The web components read `captcha_config` and render the provider's challenge wid
 
 ## Next Steps
 
-- [Embed forms on your site](../integrations/forms-components.md) using the `@modulacms/forms` web components
-- [Lua API reference](lua-api.md) for extending plugin behavior
-- [Plugin approval](approval.md) for managing route permissions
-- [Webhook integration](../integrations/webhooks.md) for processing the delivery queue
+- [Embed forms on your site](/docs/integrations/forms-components) using the `@modulacms/forms` web components
+- [Lua API reference](/docs/extending/lua-api) for extending plugin behavior
+- [Plugin approval](/docs/extending/approval) for managing route permissions
+- [Webhook integration](/docs/integrations/webhooks) for processing the delivery queue

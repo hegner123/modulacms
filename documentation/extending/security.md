@@ -29,7 +29,7 @@ Each plugin runs in a restricted Lua 5.1 environment. Before any plugin code exe
 
 ### Available Standard Library
 
-Only safe standard library functions remain. See the [Lua API reference](lua-api.md#allowed-lua-standard-library) for the complete list. In summary: `base` (type checks, iteration, error handling, metatable get/set), `string` (manipulation, pattern matching), `table` (insert, remove, sort, concat), `math` (arithmetic, random).
+Only safe standard library functions remain. See the [Lua API reference](/docs/extending/lua-api#allowed-lua-standard-library) for the complete list. In summary: `base` (type checks, iteration, error handling, metatable get/set), `string` (manipulation, pattern matching), `table` (insert, remove, sort, concat), `math` (arithmetic, random).
 
 > **Good to know**: The `coroutine` library is additionally available for plugins that declare `screens` or `interfaces` in their manifest, enabling the TUI coroutine bridge for plugin-driven terminal UI.
 
@@ -145,7 +145,7 @@ All routes and hooks start unapproved. Plugin code does not execute until an adm
 - **Unapproved routes** return 404 as if they don't exist.
 - **Unapproved hooks** are silently skipped.
 
-When a plugin's `version` field changes, ModulaCMS automatically revokes all approvals. The admin must re-approve after reviewing the updated code. See [approval workflow](approval.md) for the full process.
+When a plugin's `version` field changes, ModulaCMS automatically revokes all approvals. The admin must re-approve after reviewing the updated code. See [approval workflow](/docs/extending/approval) for the full process.
 
 ## Hot Reload Security
 

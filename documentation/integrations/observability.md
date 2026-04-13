@@ -200,6 +200,6 @@ Use `observability_tags` to attach key-value metadata to all events and metrics.
 
 ## Next Steps
 
-- [Configuration reference](../getting-started/configuration.md) -- all config fields
-- [Deploy sync](deploy-sync.md) -- health checks for content sync between instances
-- [S3 storage](s3-storage.md) -- configure media storage (affects the storage health check)
+- [Configuration reference](/docs/getting-started/configuration) -- all config fields
+- [Deploy sync](/docs/integrations/deploy-sync) -- health checks for content sync between instances
+- [S3 storage](/docs/integrations/s3-storage) -- configure media storage (affects the storage health check)

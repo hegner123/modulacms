@@ -295,4 +295,4 @@ Admin requests use `admin_content_data_id` and `admin_content_version_id` instea
 
 ## Next steps
 
-Learn how to [fetch and display your published content](serving-your-frontend.md) in a frontend application.
+Learn how to [fetch and display your published content](/docs/building-content/serving-your-frontend) in a frontend application.

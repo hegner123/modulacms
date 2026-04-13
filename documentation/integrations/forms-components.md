@@ -509,6 +509,6 @@ The components use Shadow DOM and Custom Elements v1, supported in all modern br
 
 ## Next Steps
 
-- [Forms Plugin reference](../extending/forms-plugin.md) for the full REST API
-- [Plugin SDK](../sdks/overview.md) for building custom plugin UIs
-- [Webhooks](webhooks.md) for processing the delivery queue
+- [Forms Plugin reference](/docs/extending/forms-plugin) for the full REST API
+- [Plugin SDK](/docs/sdks/overview) for building custom plugin UIs
+- [Webhooks](/docs/integrations/webhooks) for processing the delivery queue

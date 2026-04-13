@@ -13,7 +13,7 @@ const client = createAdminClient({
 })
 ```
 
-See [Getting Started](getting-started.md) for `ClientConfig` options.
+See [Getting Started](/docs/sdks/typescript/getting-started) for `ClientConfig` options.
 
 ## CrudResource Pattern
 
@@ -442,7 +442,7 @@ const result = await client.query.query('blog-post', {
 })
 ```
 
-See [Read-Only SDK](read-only-sdk.md) for `QueryParams` details.
+See [Read-Only SDK](/docs/sdks/typescript/read-only-sdk) for `QueryParams` details.
 
 ## Configuration
 

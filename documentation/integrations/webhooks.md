@@ -357,6 +357,6 @@ All webhook endpoints require authentication and `webhook:*` permissions (admin-
 
 ## Next Steps
 
-- [Deploy sync](deploy-sync.md) -- export and import content between instances
-- [Observability](observability.md) -- monitor webhook delivery health
-- [Configuration reference](../getting-started/configuration.md) -- all config fields
+- [Deploy sync](/docs/integrations/deploy-sync) -- export and import content between instances
+- [Observability](/docs/integrations/observability) -- monitor webhook delivery health
+- [Configuration reference](/docs/getting-started/configuration) -- all config fields

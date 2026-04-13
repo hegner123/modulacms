@@ -1,6 +1,6 @@
 # Quickstart
 
-Get a ModulaCMS project running in three steps. This guide assumes you have the `modula` binary installed. If not, follow the [Installation guide](installation.md) first.
+Get a ModulaCMS project running in three steps. This guide assumes you have the `modula` binary installed. If not, follow the [Installation guide](/docs/getting-started/installation) first.
 
 ## 1. Create a project
 
@@ -60,6 +60,6 @@ modula connect mysite       # connect via SSH/TUI
 
 ## Next steps
 
-- [Configuration](configuration.md) -- customize ports, database, S3 storage, OAuth, and more
-- [Content Modeling](../building-content/content-modeling.md) -- design datatypes and fields for your content
-- [SDK Overview](../sdks/overview.md) -- choose a client library for your frontend
+- [Configuration](/docs/getting-started/configuration) -- customize ports, database, S3 storage, OAuth, and more
+- [Content Modeling](/docs/building-content/content-modeling) -- design datatypes and fields for your content
+- [SDK Overview](/docs/sdks/overview) -- choose a client library for your frontend

@@ -1,0 +1,1178 @@
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│                    ██╗██╗ ╔███╗ ███╗  ██╗██╗ ██╗    ██╗                      │
+│                    █╔██╔█ ██╔██ ██╔█╗ ██║██║ ██║   ████╗                     │
+│                    █║██║█ ██║██ ██║█║ ██║██║ ██║   ██╔█║                     │
+│                    █║╚╝║█ ██╚██ ██╔█╝ ██╚██║ ██║   ██║ ║                     │
+│                    ╚╝  ╚╝ ╚███╝ ███╔╝ ╚███╔╝ ████╗ ╚═╝ ╚                     │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  ![CI/CD
+  (https://github.com/hegner123/modulacms/actions/workflows/go.yml/badge.svg)](https://github.com/hegner123/modulacms/actions/workflows/go.yml)
+  ![Windows
+  (https://github.com/hegner123/modulacms/actions/workflows/windows.yml/badge.svg)](https://github.com/hegner123/modulacms/actions/workflows/windows.yml)
+
+  A headless CMS written in Go, built on three core values: <<performance>>,
+  <<flexibility>>, and <<transparency>>.
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                 Requirements                                 │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+┌──────────────┬────────────────────────────────────────────────────┐
+│ Requirement  │ Details                                            │
+├━━━━━━━━━━━━━━┼━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┤
+│ Go           │ 1.24+                                              │
+│ CGO          │ Must be enabled ([CGO_ENABLED=1])                  │
+│ C compiler   │ GCC or Clang (for the SQLite driver)               │
+│ OS           │ Linux or macOS                                     │
+│ Build runner │ just (https://github.com/casey/just#installation)  │
+└──────────────┴────────────────────────────────────────────────────┘
+
+  CGO is required because the SQLite driver ([mattn/go-sqlite3]) is a C
+  library. Even if you use MySQL or PostgreSQL, the binary still compiles with
+  the SQLite driver.
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                 Quick Start                                  │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  │ 1. Build and install
+  └───────────────────────┘
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ git clone https://github.com/hegner123/modulacms.git                         │
+│ cd modulacms                                                                 │
+│ just build                                                                   │
+│ cp out/bin/modula /usr/local/bin/modula                                      │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Verify: [modula version]
+
+  │ 2. Create a project
+  └──────────────────────┘
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ mkdir ~/mysite && cd ~/mysite                                                │
+│ modula init                                                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  [modula init] runs an interactive setup wizard that prompts for database
+  driver, connection details, ports, and admin credentials. It creates
+  [modula.config.json], initializes the database schema, seeds three bootstrap
+  roles (admin, editor, viewer) with 72 permissions, and registers the project
+  in [~/.modula/configs.json].
+
+  For non-interactive setup with defaults:
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ modula init --yes --admin-password your-password                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Defaults: SQLite database ([modula.db] in working directory), HTTP on
+  [:8080], HTTPS on [:4000], SSH on [:2233], development environment. The
+  admin credentials are printed to the startup log.
+
+  │ 3. Start the server
+  └──────────────────────┘
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ modula serve                                                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Three servers start concurrently:
+
+┌────────┬──────────────────┬──────────────────────────────────────────┐
+│ Server │ Default Address  │ Purpose                                  │
+├━━━━━━━━┼━━━━━━━━━━━━━━━━━━┼━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┤
+│ HTTP   │ [localhost:8080] │ REST API + admin panel                   │
+│ HTTPS  │ [localhost:4000] │ TLS-secured API (autocert in production) │
+│ SSH    │ [localhost:2233] │ Terminal UI                              │
+└────────┴──────────────────┴──────────────────────────────────────────┘
+
+  Graceful shutdown: first SIGINT/SIGTERM triggers a 30-second shutdown;
+  second signal forces exit.
+
+  │ 4. Connect
+  └─────────────┘
+
+  <<Web admin panel:>> http://localhost:8080/admin/
+  (http://localhost:8080/admin/)
+
+  Log in with [system@modulacms.local] and the password from init.
+
+  <<Terminal UI:>> [ssh localhost -p 2233]
+
+  <<REST API:>>
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ curl -X POST http://localhost:8080/api/v1/auth/login \                       │
+│   -H "Content-Type: application/json" \                                      │
+│   -d '{"email": "system@modulacms.local", "password": "YOUR_PASSWORD"}' \    │
+│   -c cookies.txt                                                             │
+│                                                                              │
+│ curl http://localhost:8080/api/v1/datatype -b cookies.txt                    │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Once registered, manage a project from any directory:
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ modula connect              # default project, default env                   │
+│ modula connect mysite       # specific project                               │
+│ modula connect mysite prod  # specific project + env                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                             Build & Development                              │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ just dev              # Build local binary with version info via ldflags     │
+│ just run              # Build and run                                        │
+│ just build            # Production binary to out/bin/                        │
+│ just build-target darwin arm64  # Cross-compile for specific OS/arch         │
+│ just build-all        # Build all release targets (darwin/linux, amd64/arm64 │
+│ just check            # Compile-check without producing artifacts            │
+│ just clean            # Remove build artifacts                               │
+│ just vendor           # Update vendor directory                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                   Testing                                    │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ just test             # Run all tests (creates/cleans testdb/ and backups/)  │
+│ just coverage         # Tests with coverage report                           │
+│ just lint             # Run all linters (Go, Dockerfile, YAML)               │
+│                                                                              │
+│ # Single package or test                                                     │
+│ go test -v ./internal/db                                                     │
+│ go test -v ./internal/db -run TestSpecificName                               │
+│                                                                              │
+│ # S3 integration tests (requires MinIO)                                      │
+│ just test-minio       # Start MinIO container                                │
+│ just test-integration # Run integration tests                                │
+│ just test-minio-down  # Stop MinIO                                           │
+│                                                                              │
+│ # Cross-backend DB integration tests                                         │
+│ just docker-infra         # Start Postgres, MySQL, MinIO                     │
+│ just test-integration-db  # Run cross-backend tests                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                    Docker                                    │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  Unified via [just dc <backend> <action>]:
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ # Backends: full, sqlite, mysql, postgres, prod                              │
+│ # Actions: up, down, reset, dev, fresh, logs, destroy (full only), minio-res │
+│                                                                              │
+│ just dc full up       # Full stack (CMS + all databases + MinIO)             │
+│ just dc full down     # Stop containers, keep volumes                        │
+│ just dc full reset    # Stop containers and delete volumes                   │
+│ just dc full dev      # Rebuild and restart CMS container only               │
+│ just dc full fresh    # Reset volumes then rebuild everything                │
+│ just dc full logs     # Tail CMS logs                                        │
+│ just dc full destroy  # Remove containers, volumes, and images               │
+│                                                                              │
+│ just dc sqlite up     # SQLite stack                                         │
+│ just dc mysql up      # MySQL stack                                          │
+│ just dc postgres up   # PostgreSQL stack                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Other Docker commands:
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ just docker-infra     # Infrastructure only (Postgres, MySQL, MinIO)         │
+│ just docker-build     # Build standalone CMS image (for CI)                  │
+│ just docker-release   # Tag and push image with version tags                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  The Docker image exposes ports 8080 (HTTP), 4000 (HTTPS), and 2233 (SSH),
+  with volumes for [/app/data], [/app/certs], [/app/.ssh], [/app/backups], and
+  [/app/plugins].
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                 Architecture                                 │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  │ Runtime
+  └──────────┘
+
+  The [serve] command starts three concurrent servers sharing a single
+  [DbDriver] instance:
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ HTTP  (default :8080)  ─┐                                                    │
+│ HTTPS (default :8443)  ─┤── stdlib ServeMux (Go 1.22+) ── Middleware Chain ─ │
+│ SSH   (default :2222)  ─┘   Charmbracelet Wish ── Bubbletea TUI ──────────── │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Graceful shutdown: first SIGINT/SIGTERM triggers a 30-second shutdown;
+  second signal forces exit. Shutdown order: HTTP servers, plugin system,
+  database connections.
+
+  │ Request Flow
+  └───────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Client Request                                                               │
+│   -> Request ID                                                              │
+│   -> Logging                                                                 │
+│   -> CORS                                                                    │
+│   -> Authentication (cookie session or Bearer API key)                       │
+│   -> Rate Limiting (auth endpoints: 10 req/min per IP)                       │
+│   -> Permission Injection (RBAC)                                             │
+│   -> Route Handler                                                           │
+│   -> DbDriver Interface                                                      │
+│   -> Database-specific wrapper (SQLite / MySQL / PostgreSQL)                 │
+│   -> sqlc-generated queries                                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Tri-Database Pattern
+  └───────────────────────┘
+
+  One codebase supports three databases through a layered abstraction:
+
+  ├─ 1┤ <<SQL schemas>> in [sql/schema/] define tables and queries per dialect
+        (SQLite, MySQL, PostgreSQL)
+  ├─ 2┤ <<sqlc>> generates type-safe Go code into [internal/db-sqlite/],
+        [internal/db-mysql/], [internal/db-psql/]
+  ├─ 3┤ <<`DbDriver` interface>> (~150 methods in [internal/db/db.go]) provides
+        the contract
+  ├─ 4┤ <<Wrapper structs>> ([Database], [MysqlDatabase], [PsqlDatabase])
+        implement the interface, converting between sqlc types and application
+        types
+
+  Switch databases by setting [db_driver] in [modula.config.json] to
+  ["sqlite"], ["mysql"], or ["postgres"].
+
+  │ Content Model
+  └────────────────┘
+
+  Content uses a tree structure with sibling pointers for O(1) navigation and
+  reordering:
+
+  ├─ * [parent_id]: parent node
+  ├─ * [first_child_id]: leftmost child
+  ├─ * [next_sibling_id] / [prev_sibling_id]: doubly-linked sibling list
+
+  Content items have a status lifecycle: <<draft>> -> <<pending>> ->
+  <<published>> -> <<archived>>.
+
+  │ Data Model
+  └─────────────┘
+
+  27 schema directories define the full entity model:
+
+┌─────────────┬───────────────────────────────────────────────────────────────┐
+│ Entity Grou │ Tables                                                        │
+├━━━━━━━━━━━━━┼━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┤
+│ <<Content>> │ content/data, content/fields, content_relations, admin varian │
+│ <<Schema>>  │ datatypes, fields, datatype_fields, admin variants            │
+│ <<Media>>   │ media, media_dimensions                                       │
+│ <<Routing>> │ routes, admin_routes                                          │
+│ <<Users & A │ users, roles, permissions, role/permissions, tokens, user/oau │
+│ <<i18n>>    │ locales                                                       │
+│ <<Webhooks> │ webhooks, webhook_deliveries                                  │
+│ <<System>>  │ backups, change_events, tables                                │
+└─────────────┴───────────────────────────────────────────────────────────────┘
+
+  All entity IDs are 26-character ULIDs wrapped in distinct Go types
+  ([ContentID], [UserID], [FieldID], etc.) that provide compile-time type
+  safety.
+
+  │ RBAC Authorization
+  └─────────────────────┘
+
+  Role-based access control with [resource:operation] granular permissions:
+
+┌────────────┬─────────────┬───────────────────────────────────────────────────┐
+│ Role       │ Permissions │ Description                                       │
+├━━━━━━━━━━━━┼━━━━━━━━━━━━━┼━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┤
+│ <<admin>>  │ 47 (all)    │ Bypasses all permission checks                    │
+│ <<editor>> │ 28          │ CRUD on content, media, routes, datatypes, fields │
+│ <<viewer>> │ 3           │ Read-only: content, media, routes                 │
+└────────────┴─────────────┴───────────────────────────────────────────────────┘
+
+  The [PermissionCache] maintains an in-memory role-to-permissions map with
+  lock-free reads and 60-second periodic refresh. System-protected roles and
+  permissions cannot be deleted or renamed.
+
+  │ Audited Commands
+  └───────────────────┘
+
+  All database mutations are wrapped in transactions that atomically record
+  [change_events] rows capturing:
+
+  ├─ * Operation type (INSERT, UPDATE, DELETE)
+  ├─ * Old and new JSON values
+  ├─ * User ID, request ID, IP address
+  ├─ * Hybrid Logical Clock timestamps for distributed ordering
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                 Admin Panel                                  │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  Server-rendered HTMX + templ web interface. No SPA: all pages are
+  server-rendered with HTMX for interactivity.
+
+  ├─ * <<Content>>: tree navigation, block editor with drag-and-drop, inline
+       field editing
+  ├─ * <<Schema>>: datatypes, fields, and field-datatype associations
+  ├─ * <<Media>>: upload, browse, image preview with dimension presets
+  ├─ * <<Users & Roles>>: user management, role assignment, permission
+       configuration
+  ├─ * <<Routes>>: URL slug management
+  ├─ * <<Plugins>>: browse, enable, disable, view details
+  ├─ * <<Webhooks>>: create, test, view delivery history
+  ├─ * <<Locales>>: i18n configuration and locale management
+  ├─ * <<Settings>>: server configuration
+  ├─ * <<Audit Log>>: change event browser
+  ├─ * <<Import>>: bulk import from external CMS platforms
+  ├─ * <<Sessions & Tokens>>: active session and API token management
+
+  Light DOM web components ([mcms-*]) provide dialog, data-table,
+  field-renderer, media-picker, tree-nav, toast, confirm, and search widgets.
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ just admin generate      # Regenerate templ Go code                          │
+│ just admin watch         # Watch .templ files for changes                    │
+│ just admin bundle        # Bundle block editor JS via esbuild                │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                     API                                      │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  All endpoints are prefixed with [/api/v1/] and follow standard REST
+  conventions. Content delivery uses slug-based routing at
+  [/api/v1/content/{slug}].
+
+  │ Authentication
+  └─────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ POST   /api/v1/auth/login          # Session login                           │
+│ POST   /api/v1/auth/logout         # Session logout                          │
+│ GET    /api/v1/auth/me             # Current user profile                    │
+│ POST   /api/v1/auth/register       # Registration                            │
+│ POST   /api/v1/auth/reset          # Password reset                          │
+│ GET    /api/v1/auth/oauth/login    # OAuth flow initiation                   │
+│ GET    /api/v1/auth/oauth/callback # OAuth callback                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Content Management
+  └─────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ GET|POST          /api/v1/contentdata            # List / Create             │
+│ GET|PUT|DELETE    /api/v1/contentdata/{id}        # Get / Update / Delete    │
+│ POST              /api/v1/content/create          # Create content with fiel │
+│ POST              /api/v1/content/batch           # Batch operations         │
+│ POST              /api/v1/contentdata/move        # Move node in tree        │
+│ POST              /api/v1/contentdata/reorder     # Reorder siblings         │
+│                                                                              │
+│ GET|POST          /api/v1/contentfields           # Content field values     │
+│ GET|POST          /api/v1/contentrelations        # Content relationships    │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Publishing & Versioning
+  └──────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ POST              /api/v1/content/publish         # Publish content (creates │
+│ POST              /api/v1/content/unpublish       # Unpublish content        │
+│ POST              /api/v1/content/schedule        # Schedule future publish  │
+│ GET               /api/v1/content/versions        # List versions            │
+│ POST              /api/v1/content/versions        # Create manual version    │
+│ DELETE            /api/v1/content/versions/{id}   # Delete version           │
+│ POST              /api/v1/content/restore         # Restore from version     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Admin content mirrors exist at [/api/v1/admin/content/] for draft
+  management.
+
+  │ Content Delivery
+  └───────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ GET               /api/v1/content/{slug}          # Published content by slu │
+│ GET               /api/v1/content/{slug}?preview=true  # Live draft (require │
+│ GET               /api/v1/content/{slug}?locale=en     # Locale-specific del │
+│ GET               /api/v1/content/{slug}?format=clean  # Format override     │
+│ GET               /api/v1/globals                 # All global content trees │
+│ GET               /api/v1/query/{datatype}        # Query by datatype        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  The [format] query parameter controls response structure: [contentful],
+  [sanity], [strapi], [wordpress], [clean], or [raw].
+
+  │ Schema
+  └─────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ GET|POST          /api/v1/datatype               # Datatypes                 │
+│ GET|POST          /api/v1/fields                 # Field definitions         │
+│ GET|POST          /api/v1/datatypefields         # Datatype-field associatio │
+│ GET|POST          /api/v1/tables                 # Custom tables             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Media
+  └────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ GET               /api/v1/media                  # List (paginated)          │
+│ POST              /api/v1/media                  # Upload (multipart/form-da │
+│ DELETE            /api/v1/media/{id}             # Delete                    │
+│ GET               /api/v1/media/health           # S3 connectivity check     │
+│ DELETE            /api/v1/media/cleanup          # Remove orphaned S3 object │
+│ GET|POST          /api/v1/mediadimensions        # Dimension presets         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Routes & Locales
+  └───────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ GET|POST          /api/v1/routes                 # Route management          │
+│ GET               /api/v1/locales                # Public locale list        │
+│ CRUD              /api/v1/admin/locales          # Admin locale management   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Users & Access Control
+  └─────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ GET|POST          /api/v1/users                  # User management           │
+│ POST              /api/v1/users/reassign-delete  # Reassign content and dele │
+│ GET|POST          /api/v1/roles                  # Roles                     │
+│ GET|POST          /api/v1/permissions            # Permissions               │
+│ GET|POST          /api/v1/role-permissions       # Role-permission mappings  │
+│ GET|POST|DELETE   /api/v1/ssh-keys               # SSH key management        │
+│ GET|POST|DELETE   /api/v1/sessions               # Session management        │
+│ GET|POST|DELETE   /api/v1/tokens                 # API token management      │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Webhooks
+  └───────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ CRUD              /api/v1/admin/webhooks         # Webhook management        │
+│ POST              /api/v1/admin/webhooks/{id}/test       # Test delivery     │
+│ GET               /api/v1/admin/webhooks/{id}/deliveries # Delivery history  │
+│ POST              /api/v1/admin/webhooks/deliveries/{id}/retry # Retry deliv │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Import & Configuration
+  └─────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ POST   /api/v1/import/contentful   # Import from Contentful                  │
+│ POST   /api/v1/import/sanity       # Import from Sanity                      │
+│ POST   /api/v1/import/strapi       # Import from Strapi                      │
+│ POST   /api/v1/import/wordpress    # Import from WordPress                   │
+│ POST   /api/v1/import/clean        # Import Modula format                    │
+│ POST   /api/v1/import              # Bulk import                             │
+│                                                                              │
+│ GET               /api/v1/admin/config           # Get config (redacted)     │
+│ PATCH             /api/v1/admin/config           # Update config             │
+│ GET               /api/v1/admin/config/meta      # Config field metadata     │
+│ GET               /api/v1/admin/plugins          # List plugins              │
+│ GET               /api/v1/admin/plugins/routes   # Plugin route approval     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                 Terminal UI                                  │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  The SSH-accessible TUI is built with Charmbracelet Bubbletea following the
+  Elm Architecture (Model-Update-View). Each screen implements a [Screen]
+  interface with its own state, update, and view methods.
+
+  ├─ * <<Content>>: browse, create, edit content with tree navigation (regular
+       and admin views)
+  ├─ * <<Datatypes & Fields>>: define and manage content schemas
+  ├─ * <<Media>>: upload and manage media assets with file picker
+  ├─ * <<Users>>: user management with role assignment
+  ├─ * <<Routes>>: URL slug configuration
+  ├─ * <<Plugins>>: browse, enable, disable, reload Lua plugins
+  ├─ * <<Webhooks>>: webhook management and delivery monitoring
+  ├─ * <<Pipelines>>: pipeline entry management
+  ├─ * <<Deploy>>: content sync between environments
+  ├─ * <<Configuration>>: edit server configuration
+  ├─ * <<Database>>: database info and table browser
+  ├─ * <<Quick Start>>: guided setup wizard
+
+  UI features: responsive panel layouts with three screen modes
+  (normal/wide/full), accordion focus, panel tabs, scroll indicators, adaptive
+  statusbar, compact/full header with breadcrumbs.
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                Connect System                                │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  The [connect] command provides a project registry for managing multiple CMS
+  instances and environments from a single CLI. Each project can have multiple
+  environments (local, dev, staging, prod), each pointing to a different
+  [modula.config.json]. The registry lives at [~/.modula/configs.json].
+
+  │ Local vs Remote
+  └──────────────────┘
+
+  When a config has [db_driver] set, the TUI connects directly to the local
+  database. When a config has [remote_url] and [remote_api_key] set instead,
+  the TUI connects to a remote CMS server over HTTPS using the Go SDK as a
+  [DbDriver] implementation. This means the same TUI works identically whether
+  managing a local database or a remote server: the [RemoteDriver] in
+  [internal/remote/] implements the full [DbDriver] interface by delegating to
+  SDK calls.
+
+  Remote connections include:
+
+  ├─ * <<Health check>> on startup (fails fast if server unreachable)
+  ├─ * <<Connection tracking>> with atomic status
+       (connected/disconnected/unknown), reflected in the TUI status bar
+  ├─ * <<Retry logic>> for transient failures (502/503/504, timeouts) with a
+       single retry after 1s delay
+  ├─ * <<Graceful degradation>>: DDL and infrastructure methods return
+       [ErrNotSupported] or [ErrRemoteMode]
+
+  │ Registry Management
+  └──────────────────────┘
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ # Register a project environment                                             │
+│ modula connect set mysite local ./modula.config.json                         │
+│ modula connect set mysite prod /srv/mysite/modula.config.json                │
+│                                                                              │
+│ # Connect to a project                                                       │
+│ modula connect                      # default project, default env           │
+│ modula connect mysite               # mysite, default env                    │
+│ modula connect mysite prod          # mysite, prod env                       │
+│                                                                              │
+│ # Manage defaults                                                            │
+│ modula connect default mysite       # set default project                    │
+│ modula connect default mysite prod  # set default env for project            │
+│                                                                              │
+│ # List and remove                                                            │
+│ modula connect list                 # show all projects and environments     │
+│ modula connect remove mysite        # remove entire project                  │
+│ modula connect remove mysite --env dev  # remove single environment          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Resolution Order
+  └───────────────────┘
+
+  ├─ 1┤ Both name and env given: use that exact project + environment
+  ├─ 2┤ Only name given: use that project's default environment
+  ├─ 3┤ Neither given: use the default project's default environment
+  ├─ 4┤ Registry empty: look for [modula.config.json] in the current directory
+
+  │ Config Fields
+  └────────────────┘
+
+┌────────────┬────────────────────────────────────────────────────────────────┐
+│ Field      │ Purpose                                                        │
+├━━━━━━━━━━━━┼━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┤
+│ [remote_ur │ Base URL of the remote CMS server (e.g. [https://cms.example.c │
+│ [remote_ap │ API key for authenticating SDK calls to the remote server      │
+│ [db_driver │ Local database driver ([sqlite], [mysql], [postgres]): mutuall │
+└────────────┴────────────────────────────────────────────────────────────────┘
+
+  A config must have either [remote_url] or [db_driver] set (not both).
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                              Lua Plugin System                               │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  Plugins extend Modula with sandboxed Lua scripts via gopher-lua.
+
+  │ Plugin Structure
+  └───────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ plugins/my-plugin/                                                           │
+│   init.lua          # Entry point with plugin_info table                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Capabilities
+  └───────────────┘
+
+  ├─ * <<Database>>: query builder with safe identifier validation, isolated
+       per-plugin tables
+  ├─ * <<Content Hooks>>: before/after hooks on create, update, delete, publish,
+       archive
+  ├─ * <<HTTP Routes>>: register custom endpoints with approval workflow
+  ├─ * <<Logging>>: structured logging integrated with CMS slog
+  ├─ * <<Schema>>: define custom tables with drift detection
+
+  │ Safety
+  └─────────┘
+
+  ├─ * Operation counting per VM checkout (default 1000 ops)
+  ├─ * Per-hook timeout (default 2000ms) and per-event timeout (default 5000ms)
+  ├─ * Circuit breaker: max consecutive failures trips the plugin
+  ├─ * Connection pool limits and request/response size limits
+  ├─ * Plugins cannot access core CMS tables or other plugins' tables
+  ├─ * Hot-reload with file watcher (opt-in for production)
+
+  │ CLI
+  └──────┘
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ ./modula plugin list               # List plugins                            │
+│ ./modula plugin init my-plugin     # Create scaffold                         │
+│ ./modula plugin validate ./path    # Validate structure                      │
+│ ./modula plugin reload my-plugin   # Hot-reload (requires running server)    │
+│ ./modula plugin enable my-plugin   # Enable                                  │
+│ ./modula plugin disable my-plugin  # Disable                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                    Deploy                                    │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  The [deploy] command syncs content between environments via JSON exports and
+  the Go SDK.
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ modula deploy export -o export.json           # Export content to JSON       │
+│ modula deploy import -f export.json           # Import from JSON             │
+│ modula deploy pull --env prod                 # Download from remote         │
+│ modula deploy push --env staging              # Upload to remote             │
+│ modula deploy snapshot list                   # List import snapshots        │
+│ modula deploy snapshot show <id>              # Show snapshot details        │
+│ modula deploy snapshot restore <id>           # Restore from snapshot        │
+│ modula deploy env list                        # List configured environments │
+│ modula deploy env test                        # Test environment connectivit │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                  MCP Server                                  │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  Modula includes a built-in Model Context Protocol server with 40+ tools for
+  AI-assisted content management. The MCP server connects to a running Modula
+  instance via the Go SDK: no separate binary to build or install.
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ # Start the MCP server over stdio                                            │
+│ MODULA_URL=http://localhost:8080 MODULA_API_KEY=your-key modula mcp          │
+│                                                                              │
+│ # Or use flags                                                               │
+│ modula mcp --url http://localhost:8080 --api-key your-key                    │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Tools cover content CRUD, content fields, batch operations, schema
+  management, media, routes, users, roles, permissions, configuration, and
+  import.
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                Configuration                                 │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  Configuration lives in [modula.config.json] at the project root. Environment
+  variables can be referenced as [${VAR}] or [${VAR:-default}].
+
+  Key configuration categories:
+
+┌────────────┬────────────────────────────────────────────────────────────────┐
+│ Category   │ Fields                                                         │
+├━━━━━━━━━━━━┼━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┤
+│ <<Database │ [db_driver], [db_url], [db_name], [db_user], [db_password]     │
+│ <<Server>> │ [port], [ssl_port], [ssh_port], [environment], [cert_dir]      │
+│ <<Auth>>   │ [auth_salt], [cookie_*], [oauth_*]                             │
+│ <<S3 Stora │ [bucket_endpoint], [bucket_media], [bucket_backup], [bucket_ac │
+│ <<Email>>  │ [email_enabled], [email_provider] (smtp/sendgrid/ses/postmark) │
+│ <<CORS>>   │ [cors_origins], [cors_methods], [cors_headers], [cors_credenti │
+│ <<i18n>>   │ [i18n_enabled], [i18n_default_locale], [i18n_fallback_chain]   │
+│ <<Output>> │ [output_format] (contentful/sanity/strapi/wordpress/clean/raw) │
+│ <<Plugins> │ [plugin_enabled], [plugin_directory], [plugin_max_vms], [plugi │
+│ <<Observab │ [observability_enabled], [observability_provider] (sentry/data │
+└────────────┴────────────────────────────────────────────────────────────────┘
+
+  Runtime configuration can be updated via the REST API ([PATCH
+  /api/v1/admin/config]) with hot-reload support for applicable fields.
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                             SQL Code Generation                              │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ just sqlc    # Regenerate Go code from SQL queries                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  This runs [sqlc generate] against [sql/sqlc.yml], producing type-safe Go
+  code in three packages:
+
+  ├─ * [internal/db-sqlite/] (package [mdb])
+  ├─ * [internal/db-mysql/] (package [mdbm])
+  ├─ * [internal/db-psql/] (package [mdbp])
+
+  Never edit files in these directories by hand: they are overwritten by sqlc.
+  After modifying schema or queries, run [just sqlc], then update the
+  [DbDriver] interface and implement methods on all three wrapper structs.
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                     SDKs                                     │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  Modula provides official SDKs for TypeScript, Go, and Swift. All SDKs have
+  zero external dependencies beyond their respective standard libraries.
+
+  │ TypeScript
+  └─────────────┘
+
+  The [sdks/typescript/] directory is a pnpm workspace monorepo with three
+  packages:
+
+┌───────────────────┬───────────────────┬────────────────────────────────────┐
+│ Package           │ npm               │ Purpose                            │
+├━━━━━━━━━━━━━━━━━━━┼━━━━━━━━━━━━━━━━━━━┼━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┤
+│ [types/]          │ [@modulacms/types │ Shared entity types, 30 branded ID │
+│ [modulacms-sdk/]  │ [@modulacms/sdk]  │ Read-only content delivery client  │
+│ [modulacms-admin- │ [@modulacms/admin │ Full admin CRUD client             │
+└───────────────────┴───────────────────┴────────────────────────────────────┘
+
+  <<Requirements:>> TypeScript 5.7+, Node 18+ (Fetch API), pnpm 9+
+
+  <<Install:>>
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ npm install @modulacms/sdk             # Content delivery                    │
+│ npm install @modulacms/admin-sdk       # Admin operations                    │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  <<Content Delivery:>>
+
+┌────────────────────── typescript ────────────────────────────────────────────┐
+│ import { ModulaClient } from "@modulacms/sdk"                                │
+│                                                                              │
+│ const cms = new ModulaClient({                                               │
+│   baseUrl: "https://cms.example.com",                                        │
+│   defaultFormat: "clean",                                                    │
+│ })                                                                           │
+│                                                                              │
+│ const page = await cms.getPage("blog/hello-world")                           │
+│ const media = await cms.listMedia()                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  <<Admin SDK:>>
+
+┌────────────────────── typescript ────────────────────────────────────────────┐
+│ import { createAdminClient } from "@modulacms/admin-sdk"                     │
+│                                                                              │
+│ const client = createAdminClient({                                           │
+│   baseUrl: "https://cms.example.com",                                        │
+│   apiKey: "your-api-key",                                                    │
+│ })                                                                           │
+│                                                                              │
+│ await client.auth.login({ email: "admin@example.com", password: "pass" })    │
+│ const users = await client.users.list()                                      │
+│ const content = await client.contentData.create({ status: "draft", ... })    │
+│ await client.mediaUpload.upload(file)                                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Both SDKs ship as dual ESM + CommonJS builds via tsup with full type
+  declarations.
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ just sdk ts install      # pnpm install (workspace root)                     │
+│ just sdk ts build        # Build all packages                                │
+│ just sdk ts test         # Run all SDK tests (Vitest)                        │
+│ just sdk ts typecheck    # Typecheck all packages                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Go
+  └─────┘
+
+  The Go SDK provides a type-safe client with a generic [Resource[Entity,
+  CreateParams, UpdateParams, ID]] pattern for CRUD operations.
+
+  <<Import:>> [github.com/hegner123/modulacms/sdks/go]
+
+┌──────────────────────── go ──────────────────────────────────────────────────┐
+│ import modula "github.com/hegner123/modulacms/sdks/go"                       │
+│                                                                              │
+│ client, err := modula.NewClient(modula.ClientConfig{                         │
+│     BaseURL: "https://cms.example.com",                                      │
+│     APIKey:  "your-api-key",                                                 │
+│ })                                                                           │
+│                                                                              │
+│ // Authentication                                                            │
+│ me, err := client.Auth.Me(ctx)                                               │
+│                                                                              │
+│ // CRUD with typed IDs and pagination                                        │
+│ users, err := client.Users.ListPaginated(ctx, modula.PaginationParams{Limit: │
+│ content, err := client.ContentData.Create(ctx, modula.CreateContentDataParam │
+│                                                                              │
+│ // Media upload                                                              │
+│ media, err := client.MediaUpload.Upload(ctx, file, "photo.jpg", &modula.Medi │
+│     Path: "blog/headers",                                                    │
+│ })                                                                           │
+│                                                                              │
+│ // Content delivery                                                          │
+│ page, err := client.Content.GetPage(ctx, "blog/hello-world", "clean")        │
+│                                                                              │
+│ // Error classification                                                      │
+│ if modula.IsNotFound(err) { ... }                                            │
+│ if modula.IsUnauthorized(err) { ... }                                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  The SDK exposes 23+ typed resource endpoints including content, schema,
+  media, users, roles, permissions, plugins, configuration, sessions, SSH
+  keys, and bulk import.
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ just sdk go test      # Run Go SDK tests                                     │
+│ just sdk go vet       # Vet Go SDK                                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  │ Swift
+  └────────┘
+
+  The Swift SDK is a zero-dependency Swift Package Manager package supporting
+  Apple platforms.
+
+  <<Platforms:>> iOS 16+, macOS 13+, tvOS 16+, watchOS 9+ <<Swift:>> 5.9+
+
+┌─────────────────────── swift ────────────────────────────────────────────────┐
+│ import Modula                                                                │
+│                                                                              │
+│ let client = try ModulaClient(config: ClientConfig(                          │
+│     baseURL: "https://cms.example.com",                                      │
+│     apiKey: "your-api-key"                                                   │
+│ ))                                                                           │
+│                                                                              │
+│ // Authentication                                                            │
+│ let login = try await client.auth.login(params: LoginParams(                 │
+│     email: "admin@example.com",                                              │
+│     password: "pass"                                                         │
+│ ))                                                                           │
+│                                                                              │
+│ // CRUD with branded IDs                                                     │
+│ let users = try await client.users.listPaginated(params: PaginationParams(li │
+│ let content = try await client.contentData.create(params: CreateContentDataP │
+│                                                                              │
+│ // Media upload                                                              │
+│ let media = try await client.mediaUpload.upload(                             │
+│     data: imageData,                                                         │
+│     filename: "photo.jpg",                                                   │
+│     options: MediaUploadResource.UploadOptions(path: "photos")               │
+│ )                                                                            │
+│                                                                              │
+│ // Content delivery                                                          │
+│ let page = try await client.content.getPage(slug: "blog/hello-world", format │
+│                                                                              │
+│ // Error handling                                                            │
+│ do {                                                                         │
+│     let user = try await client.users.get(id: userID)                        │
+│ } catch let error as APIError where isNotFound(error) {                      │
+│     print("User not found")                                                  │
+│ }                                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  The SDK uses async/await throughout, marks all types as [Sendable] for actor
+  isolation, and provides 30 branded ID types via a [ResourceID] protocol. It
+  covers 26 CRUD resources plus 13 specialized endpoints (auth, media upload,
+  admin tree, plugins, config, etc.).
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ just sdk swift build  # Build Swift SDK                                      │
+│ just sdk swift test   # Run Swift SDK tests                                  │
+│ just sdk swift clean  # Clean build artifacts                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                               Backup & Restore                               │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+┌──────────────────────── bash ────────────────────────────────────────────────┐
+│ ./modula backup create              # Create full backup (ZIP with SQL dump  │
+│ ./modula backup restore backup.zip  # Restore from backup                    │
+│ ./modula backup list                # List backup history                    │
+│ ./modula backup delete {id}         # Delete backup record                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Backups are ZIP archives containing a database-specific SQL dump and a JSON
+  manifest with driver, timestamp, version, and node ID. Storage is local
+  ([backups/] directory) or S3.
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                 CLI Commands                                 │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ modula [--config=path] [--verbose] <command>                                 │
+│                                                                              │
+│   serve              Start HTTP/HTTPS/SSH servers                            │
+│   serve --wizard     Interactive setup before starting                       │
+│   install            Interactive installation wizard                         │
+│   install --yes      Non-interactive with defaults                           │
+│   tui                Launch terminal UI standalone                           │
+│   db init            Initialize database and bootstrap data                  │
+│   db wipe            Drop all tables                                         │
+│   backup create      Create full backup                                      │
+│   backup restore     Restore from backup                                     │
+│   backup list        List backup history                                     │
+│   config show        Print config as JSON                                    │
+│   config validate    Validate modula.config.json                             │
+│   config set         Update config field                                     │
+│   config fields      List all config fields with metadata                    │
+│   cert generate      Generate self-signed certificates                       │
+│   cert check         Verify certificate validity                             │
+│   update check       Check for updates                                       │
+│   update install     Install new version                                     │
+│   connect            Launch TUI for a registered project (default project +  │
+│   connect <name>     Launch TUI for named project (default env)              │
+│   connect <name> <env>  Launch TUI for named project + specific env          │
+│   connect set        Register a project environment                          │
+│   connect list       List registered projects and environments               │
+│   connect remove     Remove a project or environment                         │
+│   connect default    Set the default project or environment                  │
+│   deploy export      Export content data to JSON file                        │
+│   deploy import      Import content from JSON export                         │
+│   deploy pull        Download data from remote environment                   │
+│   deploy push        Upload local data to remote environment                 │
+│   deploy snapshot    List, show, or restore import snapshots                 │
+│   deploy env         List and test configured deploy environments            │
+│   mcp                Start the MCP server over stdio (requires MODULA_URL +  │
+│   pipeline list      Show all pipeline entries                               │
+│   pipeline show      Show pipelines for a specific table                     │
+│   plugin list        List plugins                                            │
+│   plugin init        Create plugin scaffold                                  │
+│   plugin validate    Validate plugin structure                               │
+│   plugin reload      Hot-reload plugin                                       │
+│   plugin enable      Enable plugin                                           │
+│   plugin disable     Disable plugin                                          │
+│   version            Show version info                                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                    CI/CD                                     │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  Two GitHub Actions workflows:
+
+  ├─ * <<Go>> ([.github/workflows/go.yml]): runs on Go source changes (excludes
+       [sdks/**]), tests with libwebp-dev on Ubuntu
+  ├─ * <<SDKs>> ([.github/workflows/sdks.yml]): runs on SDK changes, tests
+       TypeScript (pnpm + Vitest), Go SDK, and Swift SDK (SPM build + test)
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                              Project Structure                               │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ cmd/                          Cobra CLI commands (serve, install, tui, conne │
+│ internal/                                                                    │
+│   admin/                      HTMX admin panel: CSRF, auth middleware, stati │
+│   admin/handlers/             Admin page handlers (render, auth, CRUD for al │
+│   admin/pages/                templ full-page components (~28 pages)         │
+│   admin/static/               CSS, JS, block editor, web components (go:embe │
+│   auth/                       Authentication (bcrypt, OAuth, sessions)       │
+│   backup/                     Backup/restore (SQL dump + ZIP)                │
+│   config/                     Configuration loading, validation, hot-reload  │
+│   db/                         DbDriver interface, wrapper structs, applicati │
+│   db/types/                   ULID-based typed IDs, enums, nullable wrappers │
+│   db/audited/                 Audited command pattern for change events      │
+│   db-sqlite/, db-mysql/, db-psql/  sqlc-generated code (do not edit)         │
+│   definitions/                CMS format definitions (Contentful, Sanity, St │
+│   deploy/                     Content sync: export, import, push, pull, snap │
+│   email/                      Transactional email (SMTP, SendGrid, SES, Post │
+│   install/                    Setup wizard and bootstrap                     │
+│   media/                      Image optimization, S3 upload                  │
+│   middleware/                  CORS, rate limiting, sessions, RBAC authoriza │
+│   model/                      Domain structs (Node, Datatype, Field)         │
+│   plugin/                     Lua plugin system (gopher-lua)                 │
+│   publishing/                 Publish, snapshot, version management          │
+│   registry/                   Project registry (~/.modula/configs.json)      │
+│   remote/                     RemoteDriver: DbDriver over Go SDK (HTTPS)     │
+│   router/                     HTTP route registration, slug handling, global │
+│   service/                    Service layer (SchemaService with composable s │
+│   transform/                  Content format transformers                    │
+│   tui/                        Bubbletea TUI (Screen interface, PanelScreen b │
+│   utility/                    Logging (slog), version info, helpers          │
+│   validation/                 Composable field validation rules              │
+│ mcp/                          MCP server (40+ tools for AI-assisted CMS mana │
+│ sql/                                                                         │
+│   schema/                     27 numbered schema directories (DDL + queries  │
+│   sqlc.yml                    sqlc configuration                             │
+│ sdks/                                                                        │
+│   typescript/                                                                │
+│     types/                    @modulacms/types (shared types, branded IDs, e │
+│     modulacms-sdk/            @modulacms/sdk (read-only content delivery)    │
+│     modulacms-admin-sdk/      @modulacms/admin-sdk (full admin CRUD)         │
+│   go/                         Go SDK (generic Resource[E,C,U,ID] pattern)    │
+│   swift/                      Swift SDK (SPM, zero dependencies, async/await │
+│ deploy/                                                                      │
+│   docker/                     Docker Compose files per database              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                 Performance                                  │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  Modula is built in Go and ships as a single compiled binary. There is no
+  runtime to install, no interpreter overhead, and no dependency tree to
+  manage in production. One artifact runs everything: API server, admin panel,
+  SSH terminal UI, and background services.
+
+  ├─ * <<Single binary>>: one compiled artifact, zero runtime dependencies
+  ├─ * <<Three concurrent servers>>: HTTP, HTTPS (Let's Encrypt autocert), and
+       SSH start together and share a single database connection pool with
+       graceful shutdown on SIGINT/SIGTERM
+  ├─ * <<Indexed SQL databases>>: SQLite, MySQL, and PostgreSQL via
+       sqlc-generated type-safe queries with prepared statements: no ORM, no
+       reflection
+  ├─ * <<REST API>>: stdlib [net/http] ServeMux (Go 1.22+) with an eight-layer
+       middleware chain; no framework overhead
+  ├─ * <<SSH TUI>>: full content management over SSH using Charmbracelet
+       Bubbletea with responsive panel layouts, eliminating round-trips to a web
+       browser
+  ├─ * <<Lock-free permission cache>>: RBAC permissions are held in memory with
+       build-then-swap updates and [RWMutex] for reader-heavy workloads;
+       permission checks are O(1) map lookups
+  ├─ * <<O(1) content tree navigation>>: content uses doubly-linked sibling
+       pointers ([next_sibling_id], [prev_sibling_id], [first_child_id]) for
+       constant-time reordering and traversal without recursive queries
+  ├─ * <<Compiled templates>>: the admin panel uses templ, which compiles
+       templates to Go bytecode with buffer pooling; no template parsing at
+       runtime
+  ├─ * <<Embedded static assets>>: CSS, JS, and web components are compiled into
+       the binary via [go:embed]; zero file I/O in production
+  ├─ * <<Image optimization pipeline>>: uploads are converted to WebP with
+       responsive dimension presets and focal-point cropping; variants are
+       precomputed at upload time, not on demand
+  ├─ * <<Per-IP rate limiting>>: token-bucket rate limiter with background
+       cleanup of stale entries; applied to auth endpoints to prevent
+       brute-force attacks
+  ├─ * <<Connection pooling>>: database connections are pooled (25 max open, 10
+       idle, 5-minute lifetime) across all three backends
+  ├─ * <<Plugin VM pooling>>: Lua plugin VMs use lock-free buffered channels
+       with backpressure; reserved channels guarantee hook execution under load
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                 Flexibility                                  │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  Modula uses a dual content schema: public tables for the site's actual
+  content and admin tables that power the admin panel UI itself. The schema is
+  defined at runtime: datatypes, fields, content data, content fields, and
+  routes combine to let you create any content structure you need without code
+  changes or redeployment.
+
+  ├─ * <<Runtime schema>>: define datatypes, attach fields, create content, and
+       configure routes entirely through the API, admin panel, or TUI; no
+       migrations, no redeploys
+  ├─ * <<Dual content schema>>: parallel admin and client table sets
+       ([admin_content_data] / [content_data], [admin_content_fields] /
+       [content_fields], etc.) give you a second full content layer with no
+       prescribed purpose. Agencies use it to build custom admin panels where
+       features toggle per client and upgrades distribute universally, but it is
+       just data, so use it for whatever you need
+  ├─ * <<Tri-database support>>: switch between SQLite, MySQL, and PostgreSQL by
+       changing one field in [modula.config.json]; the [DbDriver] interface
+       (~150 methods) abstracts all differences
+  ├─ * <<Six output formats>>: content responses can mimic Contentful, Sanity,
+       Strapi, WordPress, or use Modula clean/raw format; set a default or
+       override per request with [?format=]
+  ├─ * <<Multi-CMS import>>: bulk import content from Contentful, Sanity,
+       Strapi, WordPress, or Modula clean format with automatic datatype and
+       field creation
+  ├─ * <<Built-in backup and deploy>>: ZIP backups (SQL dump + media) stored
+       locally or in S3; content sync between environments with export, import,
+       push, pull, and snapshot restore with dry-run validation
+  ├─ * <<Full spec compliance>>: OAuth works with any provider that implements
+       the standard (Google, GitHub, Azure, Okta, Auth0) via configurable
+       endpoints; S3 storage works with AWS, MinIO, DigitalOcean Spaces, Wasabi,
+       or any S3-compatible service; email works with SMTP, SendGrid, SES, or
+       Postmark. You are never locked into a vendor
+  ├─ * <<Plugin system>>: Lua plugins can define custom database tables,
+       register HTTP routes, hook into content lifecycle events, and access core
+       CMS data through a gated API
+  ├─ * <<Connect system>>: manage multiple CMS instances and environments from a
+       single CLI; the same TUI works identically whether connected to a local
+       database or a remote server over HTTPS
+  ├─ * <<Self-consuming SDK>>: remote operations from a local binary use
+       Modula's own Go SDK as the transport layer. The [RemoteDriver] implements
+       the full [DbDriver] interface by delegating to SDK calls over HTTPS, so
+       local and remote modes share the same code paths. The MCP server and
+       deploy system use the same SDK
+  ├─ * <<Content versioning and i18n>>: publish, unpublish, schedule, version,
+       and restore content with locale-aware delivery and fallback chains
+  ├─ * <<Webhooks>>: event-driven HTTP notifications with HMAC-SHA256 signing,
+       delivery tracking, retry, and test endpoints
+  ├─ * <<Three SDKs>>: official TypeScript (ESM + CJS), Go, and Swift SDKs with
+       zero external dependencies
+  ├─ * <<Multi-format delivery>>: slug-based content delivery with preview mode,
+       locale selection, format override, datatype queries, and global content
+       trees
+  ├─ * <<MCP server>>: 40+ tool Model Context Protocol server for AI-assisted
+       content management
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                 Transparency                                 │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  Plugins always tell you what they need. Every plugin declares its
+  capabilities and core table access requirements in a [plugin_info] manifest:
+  there are no hidden lifecycles. Access is enforced through three sequential
+  gates: a hardcoded table whitelist, per-table read/write policies with
+  column-level filtering, and per-plugin approved access stored in the
+  database.
+
+  ├─ * <<Plugin manifest>>: plugins declare capabilities (hooks, routes, core
+       table access) in [plugin_info]; the system enforces exactly what was
+       declared and nothing more
+  ├─ * <<Plugin safety>>: operation counting (default 1000 ops per checkout),
+       per-hook timeouts (2000ms), per-event timeouts (5000ms), circuit breaker
+       on consecutive failures, sandboxed Lua VMs with stripped globals, and
+       table namespace isolation between plugins
+  ├─ * <<Single config file>>: [modula.config.json] contains every setting:
+       database, server ports, auth, OAuth, S3 storage, CORS, email, plugins,
+       observability, i18n, and update preferences. Environment variables are
+       referenced as [${VAR}] or [${VAR:-default}], not scattered across the
+       system
+  ├─ * <<Config introspection>>: [modula config fields] lists all 190+ config
+       fields with metadata, [modula config validate] checks required fields,
+       and [PATCH /api/v1/admin/config] with [GET /api/v1/admin/config/meta]
+       expose field metadata programmatically
+  ├─ * <<Audit trail>>: every database mutation atomically records a
+       [change_event] with operation type, old and new JSON values, user ID,
+       request ID, IP address, hybrid logical clock timestamp, and optional
+       metadata
+  ├─ * <<Request traceability>>: every request gets a UUID v4 [X-Request-ID]
+       that flows through middleware, handlers, audit records, and logs for
+       end-to-end tracing
+  ├─ * <<Explicit RBAC>>: permissions use [resource:operation] labels (e.g.,
+       [content:read], [media:create]) with O(1) set lookups; three bootstrap
+       roles (admin, editor, viewer) with 47 granular permissions;
+       system-protected roles cannot be deleted or renamed
+  ├─ * <<Webhook delivery tracking>>: every webhook delivery is recorded with
+       status (pending/success/failed), attempt count, and payload; failed
+       deliveries are retried on a 60-second interval with full history
+       available via API
+  ├─ * <<Structured logging>>: severity-based structured logging via slog with
+       request context; never logs credentials, tokens, or PII
+  ├─ * <<Observability>>: metrics collection (HTTP requests/duration, DB
+       queries, SSH connections, cache hits, plugin health, goroutine count)
+       with export to Sentry, Datadog, or console
+  ├─ * <<Version and update checks>>: [modula version] prints semantic version,
+       git commit, and build timestamp; [modula update check] compares against
+       GitHub releases with configurable channels
+  ├─ * <<Zero regular expressions>>: ModulaCMS does not use regular expressions
+       anywhere in its codebase. It is our opinion that regular expressions have
+       no practical use case. We strongly encourage plugin authors to avoid them
+       as well. No plugin that uses regular expressions will be officially
+       endorsed by ModulaCMS
+
+┌━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┐
+│                                   License                                    │
+└━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┘
+
+  See LICENSE (LICENSE) for details.

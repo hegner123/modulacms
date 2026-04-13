@@ -379,6 +379,6 @@ Each item in `data` contains:
 
 ## Next steps
 
-- [Serving your frontend](serving-your-frontend.md) -- wire up a frontend framework to display queried content
-- [Routing](routing.md) -- create routes and deliver content by slug
-- [Media](media.md) -- upload and serve responsive images
+- [Serving your frontend](/docs/building-content/serving-your-frontend) -- wire up a frontend framework to display queried content
+- [Routing](/docs/building-content/routing) -- create routes and deliver content by slug
+- [Media](/docs/building-content/media) -- upload and serve responsive images

@@ -328,12 +328,10 @@ This creates `localhost.crt` and `localhost.key` in the certificate directory. S
 | `-v`, `--verbose` | `false` | Enable debug logging |
 | `-y`, `--yes` | `false` | Auto-accept all prompts (equivalent to `--mode ci`) |
 
-> **Good to know**: PostgreSQL backups require `pg_dump` in your PATH and MySQL backups require `mysqldump`. SQLite backups need no external tools.
-
 > **Good to know**: S3 storage is optional. Media upload endpoints return errors until you configure storage, but the CMS starts without it.
 
 ## Next steps
 
-- [Your First Project](first-project.md) -- the three-step path from init to connected
-- [Configuration](configuration.md) -- all `modula.config.json` fields and options
-- [Content Modeling](../building-content/content-modeling.md) -- design datatypes and fields for your content
+- [Your First Project](/docs/getting-started/first-project) -- the three-step path from init to connected
+- [Configuration](/docs/getting-started/configuration) -- all `modula.config.json` fields and options
+- [Content Modeling](/docs/building-content/content-modeling) -- design datatypes and fields for your content

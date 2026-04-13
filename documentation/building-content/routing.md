@@ -74,7 +74,7 @@ curl -X POST http://localhost:8080/api/v1/contentdata \
   }'
 ```
 
-This gives the route an empty content tree ready for child nodes. See [content trees](content-trees.md) for details on building out the tree.
+This gives the route an empty content tree ready for child nodes. See [content trees](/docs/building-content/content-trees) for details on building out the tree.
 
 ## Manage routes
 
@@ -346,6 +346,6 @@ Route-related configuration in `modula.config.json`:
 
 ## Next steps
 
-- [Serving your frontend](serving-your-frontend.md) -- wire up a frontend framework to ModulaCMS
-- [Querying content](querying.md) -- query content by datatype with filters and pagination
-- [Media](media.md) -- upload and serve responsive images
+- [Serving your frontend](/docs/building-content/serving-your-frontend) -- wire up a frontend framework to ModulaCMS
+- [Querying content](/docs/building-content/querying) -- query content by datatype with filters and pagination
+- [Media](/docs/building-content/media) -- upload and serve responsive images

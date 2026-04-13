@@ -496,5 +496,5 @@ final class PaginatedViewModel<T: Decodable & Sendable> {
 
 ## Next Steps
 
-- [Error Handling](error-handling.md) -- APIError, do/catch patterns, network vs API errors
-- [Reference](reference.md) -- all resources, ID types, enums, JSONValue
+- [Error Handling](/docs/sdks/swift/error-handling) -- APIError, do/catch patterns, network vs API errors
+- [Reference](/docs/sdks/swift/reference) -- all resources, ID types, enums, JSONValue

@@ -2,9 +2,9 @@
 
 Extend ModulaCMS with custom HTTP endpoints, content lifecycle hooks, isolated database storage, and TUI screens using Lua plugins.
 
-> **Good to know**: This section is for plugin developers. For CMS administrator guidance on installing, configuring, and managing plugins, see the [Configuration](configuration.md) page.
+> **Good to know**: This section is for plugin developers. For CMS administrator guidance on installing, configuring, and managing plugins, see the [Configuration](/docs/extending/configuration) page.
 
-For a hands-on walkthrough, see the [tutorial](tutorial.md). For API details, see the [Lua API reference](lua-api.md).
+For a hands-on walkthrough, see the [tutorial](/docs/extending/tutorial). For API details, see the [Lua API reference](/docs/extending/lua-api).
 
 ## What Plugins Can Do
 
@@ -23,7 +23,7 @@ Plugins cannot access the filesystem, execute system commands, load dynamic code
 
 Each plugin runs inside a restricted Lua 5.1 environment. ModulaCMS removes dangerous modules (`io`, `os`, `package`, `debug`) and dynamic code loading functions (`load`, `dofile`, `loadfile`) before any plugin code executes. All injected API modules (`db`, `http`, `hooks`, `log`) are frozen read-only -- writes raise an error.
 
-See [security](security.md) for the full sandbox details.
+See [security](/docs/extending/security) for the full sandbox details.
 
 ### VM Pool
 
@@ -82,7 +82,7 @@ Hooks attach to CMS content lifecycle events. Before-hooks run synchronously and
 
 Routes and hooks start unapproved. Unapproved routes return 404; unapproved hooks are silently skipped. An admin must explicitly approve each route and hook before it executes. When a plugin's version changes, all approvals are revoked automatically, requiring re-approval of the updated code.
 
-See [approval workflow](approval.md) for details.
+See [approval workflow](/docs/extending/approval) for details.
 
 ### Circuit Breakers
 
@@ -91,14 +91,14 @@ Two independent circuit breaker systems protect the CMS:
 - **Plugin-level.** Tracks consecutive HTTP handler failures and manager operation errors. After `plugin_max_failures` consecutive errors (default 5), the breaker opens and all requests return 503 until the reset interval elapses and a probe request succeeds.
 - **Hook-level.** Tracks consecutive errors per (plugin, event, table) combination. After `plugin_hook_max_consecutive_aborts` consecutive errors (default 10), that specific hook is disabled until you reload the plugin. Hook failures do not feed into the plugin-level breaker.
 
-See [security](security.md) for the full security model.
+See [security](/docs/extending/security) for the full security model.
 
 ## Next Steps
 
-- [Tutorial](tutorial.md) -- build a bookmarks plugin from scratch
-- [Testing](testing.md) -- write and run automated tests for your plugins
-- [Lua API Reference](lua-api.md) -- every function, parameter, and return value
-- [Configuration](configuration.md) -- all modula.config.json fields with tuning guidance
-- [Security](security.md) -- sandbox, isolation, and protection mechanisms
-- [Approval Workflow](approval.md) -- route and hook approval in detail
-- [Examples](examples.md) -- complete example plugins demonstrating common patterns
+- [Tutorial](/docs/extending/tutorial) -- build a bookmarks plugin from scratch
+- [Testing](/docs/extending/testing) -- write and run automated tests for your plugins
+- [Lua API Reference](/docs/extending/lua-api) -- every function, parameter, and return value
+- [Configuration](/docs/extending/configuration) -- all modula.config.json fields with tuning guidance
+- [Security](/docs/extending/security) -- sandbox, isolation, and protection mechanisms
+- [Approval Workflow](/docs/extending/approval) -- route and hook approval in detail
+- [Examples](/docs/extending/examples) -- complete example plugins demonstrating common patterns

@@ -424,6 +424,6 @@ modula plugin test ./plugins/x402
 
 ## Next Steps
 
-- [Lua API Reference](lua-api.md) for the full list of available functions
-- [Examples](examples.md) for complete working plugins
-- [Approval Workflow](approval.md) for route and hook approval
+- [Lua API Reference](/docs/extending/lua-api) for the full list of available functions
+- [Examples](/docs/extending/examples) for complete working plugins
+- [Approval Workflow](/docs/extending/approval) for route and hook approval
