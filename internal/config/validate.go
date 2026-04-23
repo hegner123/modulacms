@@ -270,8 +270,8 @@ func configFieldString(c Config, key string) string {
 		return fmt.Sprintf("%t", c.Update_Notify_Only)
 	case "mcp_enabled":
 		return fmt.Sprintf("%t", c.MCP_Enabled)
-	case "mcp_api_key":
-		return c.MCP_API_Key
+	case "mcp_proxy_token":
+		return c.MCP_Proxy_Token
 	case "mcp_url":
 		return c.MCP_URL
 	default:

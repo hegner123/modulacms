@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
 )
@@ -17,7 +16,6 @@ import (
 
 type svcPublishingBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcPublishingBackend) PublishContent(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
@@ -32,7 +30,8 @@ func (b *svcPublishingBackend) PublishContent(ctx context.Context, params json.R
 	if locale == "" {
 		locale = "en"
 	}
-	result, err := b.svc.Content.Publish(ctx, b.ac, types.ContentID(input.ContentDataID), locale, b.ac.UserID)
+	ac := AuditContextFromMCP(ctx)
+	result, err := b.svc.Content.Publish(ctx, ac, types.ContentID(input.ContentDataID), locale, ac.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +50,8 @@ func (b *svcPublishingBackend) UnpublishContent(ctx context.Context, params json
 	if locale == "" {
 		locale = "en"
 	}
-	if err := b.svc.Content.Unpublish(ctx, b.ac, types.ContentID(input.ContentDataID), locale, b.ac.UserID); err != nil {
+	ac := AuditContextFromMCP(ctx)
+	if err := b.svc.Content.Unpublish(ctx, ac, types.ContentID(input.ContentDataID), locale, ac.UserID); err != nil {
 		return nil, err
 	}
 	return json.Marshal(map[string]string{
@@ -94,7 +94,8 @@ func (b *svcPublishingBackend) AdminPublishContent(ctx context.Context, params j
 	if locale == "" {
 		locale = "en"
 	}
-	if err := b.svc.AdminContent.Publish(ctx, b.ac, types.AdminContentID(input.AdminContentDataID), locale, b.ac.UserID); err != nil {
+	ac := AuditContextFromMCP(ctx)
+	if err := b.svc.AdminContent.Publish(ctx, ac, types.AdminContentID(input.AdminContentDataID), locale, ac.UserID); err != nil {
 		return nil, err
 	}
 	return json.Marshal(map[string]string{
@@ -115,7 +116,8 @@ func (b *svcPublishingBackend) AdminUnpublishContent(ctx context.Context, params
 	if locale == "" {
 		locale = "en"
 	}
-	if err := b.svc.AdminContent.Unpublish(ctx, b.ac, types.AdminContentID(input.AdminContentDataID), locale, b.ac.UserID); err != nil {
+	ac := AuditContextFromMCP(ctx)
+	if err := b.svc.AdminContent.Unpublish(ctx, ac, types.AdminContentID(input.AdminContentDataID), locale, ac.UserID); err != nil {
 		return nil, err
 	}
 	return json.Marshal(map[string]string{

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
 )
@@ -17,7 +16,6 @@ import (
 
 type svcSchemaBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcSchemaBackend) ListDatatypes(ctx context.Context, full bool) (json.RawMessage, error) {
@@ -48,7 +46,7 @@ func (b *svcSchemaBackend) CreateDatatype(ctx context.Context, params json.RawMe
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create datatype params: %w", err)
 	}
-	result, err := b.svc.Schema.CreateDatatype(ctx, b.ac, p)
+	result, err := b.svc.Schema.CreateDatatype(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +58,7 @@ func (b *svcSchemaBackend) UpdateDatatype(ctx context.Context, params json.RawMe
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update datatype params: %w", err)
 	}
-	result, err := b.svc.Schema.UpdateDatatype(ctx, b.ac, p)
+	result, err := b.svc.Schema.UpdateDatatype(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +66,7 @@ func (b *svcSchemaBackend) UpdateDatatype(ctx context.Context, params json.RawMe
 }
 
 func (b *svcSchemaBackend) DeleteDatatype(ctx context.Context, id string) error {
-	return b.svc.Schema.DeleteDatatype(ctx, b.ac, types.DatatypeID(id))
+	return b.svc.Schema.DeleteDatatype(ctx, AuditContextFromMCP(ctx), types.DatatypeID(id))
 }
 
 func (b *svcSchemaBackend) ListFields(ctx context.Context) (json.RawMessage, error) {
@@ -94,7 +92,7 @@ func (b *svcSchemaBackend) CreateField(ctx context.Context, params json.RawMessa
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create field params: %w", err)
 	}
-	result, err := b.svc.Schema.CreateField(ctx, b.ac, p)
+	result, err := b.svc.Schema.CreateField(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +104,7 @@ func (b *svcSchemaBackend) UpdateField(ctx context.Context, params json.RawMessa
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update field params: %w", err)
 	}
-	result, err := b.svc.Schema.UpdateField(ctx, b.ac, p)
+	result, err := b.svc.Schema.UpdateField(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +112,7 @@ func (b *svcSchemaBackend) UpdateField(ctx context.Context, params json.RawMessa
 }
 
 func (b *svcSchemaBackend) DeleteField(ctx context.Context, id string) error {
-	return b.svc.Schema.DeleteField(ctx, b.ac, types.FieldID(id))
+	return b.svc.Schema.DeleteField(ctx, AuditContextFromMCP(ctx), types.FieldID(id))
 }
 
 func (b *svcSchemaBackend) GetDatatypeFull(ctx context.Context, id string) (json.RawMessage, error) {
@@ -146,7 +144,7 @@ func (b *svcSchemaBackend) CreateFieldType(ctx context.Context, params json.RawM
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create field type params: %w", err)
 	}
-	result, err := b.svc.Schema.CreateFieldType(ctx, b.ac, p)
+	result, err := b.svc.Schema.CreateFieldType(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +156,7 @@ func (b *svcSchemaBackend) UpdateFieldType(ctx context.Context, params json.RawM
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update field type params: %w", err)
 	}
-	result, err := b.svc.Schema.UpdateFieldType(ctx, b.ac, p)
+	result, err := b.svc.Schema.UpdateFieldType(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +164,7 @@ func (b *svcSchemaBackend) UpdateFieldType(ctx context.Context, params json.RawM
 }
 
 func (b *svcSchemaBackend) DeleteFieldType(ctx context.Context, id string) error {
-	return b.svc.Schema.DeleteFieldType(ctx, b.ac, types.FieldTypeID(id))
+	return b.svc.Schema.DeleteFieldType(ctx, AuditContextFromMCP(ctx), types.FieldTypeID(id))
 }
 
 func (b *svcSchemaBackend) GetDatatypeMaxSortOrder(ctx context.Context) (json.RawMessage, error) {
@@ -179,7 +177,7 @@ func (b *svcSchemaBackend) GetDatatypeMaxSortOrder(ctx context.Context) (json.Ra
 }
 
 func (b *svcSchemaBackend) UpdateDatatypeSortOrder(ctx context.Context, id string, sortOrder int64) error {
-	return b.svc.Schema.UpdateDatatypeSortOrder(ctx, b.ac, db.UpdateDatatypeSortOrderParams{
+	return b.svc.Schema.UpdateDatatypeSortOrder(ctx, AuditContextFromMCP(ctx), db.UpdateDatatypeSortOrderParams{
 		DatatypeID: types.DatatypeID(id),
 		SortOrder:  sortOrder,
 	})
@@ -195,7 +193,7 @@ func (b *svcSchemaBackend) GetFieldMaxSortOrder(ctx context.Context) (json.RawMe
 }
 
 func (b *svcSchemaBackend) UpdateFieldSortOrder(ctx context.Context, id string, sortOrder int64) error {
-	return b.svc.Schema.UpdateFieldSortOrder(ctx, b.ac, db.UpdateFieldSortOrderParams{
+	return b.svc.Schema.UpdateFieldSortOrder(ctx, AuditContextFromMCP(ctx), db.UpdateFieldSortOrderParams{
 		FieldID:   types.FieldID(id),
 		SortOrder: sortOrder,
 	})
@@ -207,7 +205,6 @@ func (b *svcSchemaBackend) UpdateFieldSortOrder(ctx context.Context, id string, 
 
 type svcAdminSchemaBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcAdminSchemaBackend) ListAdminDatatypes(ctx context.Context, full bool) (json.RawMessage, error) {
@@ -233,7 +230,7 @@ func (b *svcAdminSchemaBackend) CreateAdminDatatype(ctx context.Context, params 
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create admin datatype params: %w", err)
 	}
-	result, err := b.svc.Schema.CreateAdminDatatype(ctx, b.ac, p)
+	result, err := b.svc.Schema.CreateAdminDatatype(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +242,7 @@ func (b *svcAdminSchemaBackend) UpdateAdminDatatype(ctx context.Context, params 
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update admin datatype params: %w", err)
 	}
-	result, err := b.svc.Schema.UpdateAdminDatatype(ctx, b.ac, p)
+	result, err := b.svc.Schema.UpdateAdminDatatype(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +250,7 @@ func (b *svcAdminSchemaBackend) UpdateAdminDatatype(ctx context.Context, params 
 }
 
 func (b *svcAdminSchemaBackend) DeleteAdminDatatype(ctx context.Context, id string) error {
-	return b.svc.Schema.DeleteAdminDatatype(ctx, b.ac, types.AdminDatatypeID(id))
+	return b.svc.Schema.DeleteAdminDatatype(ctx, AuditContextFromMCP(ctx), types.AdminDatatypeID(id))
 }
 
 func (b *svcAdminSchemaBackend) ListAdminFields(ctx context.Context) (json.RawMessage, error) {
@@ -277,7 +274,7 @@ func (b *svcAdminSchemaBackend) CreateAdminField(ctx context.Context, params jso
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create admin field params: %w", err)
 	}
-	result, err := b.svc.Schema.CreateAdminField(ctx, b.ac, p)
+	result, err := b.svc.Schema.CreateAdminField(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +286,7 @@ func (b *svcAdminSchemaBackend) UpdateAdminField(ctx context.Context, params jso
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update admin field params: %w", err)
 	}
-	result, err := b.svc.Schema.UpdateAdminField(ctx, b.ac, p)
+	result, err := b.svc.Schema.UpdateAdminField(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +294,7 @@ func (b *svcAdminSchemaBackend) UpdateAdminField(ctx context.Context, params jso
 }
 
 func (b *svcAdminSchemaBackend) DeleteAdminField(ctx context.Context, id string) error {
-	return b.svc.Schema.DeleteAdminField(ctx, b.ac, types.AdminFieldID(id))
+	return b.svc.Schema.DeleteAdminField(ctx, AuditContextFromMCP(ctx), types.AdminFieldID(id))
 }
 
 func (b *svcAdminSchemaBackend) AdminGetDatatypeMaxSortOrder(ctx context.Context) (json.RawMessage, error) {
@@ -309,7 +306,7 @@ func (b *svcAdminSchemaBackend) AdminGetDatatypeMaxSortOrder(ctx context.Context
 }
 
 func (b *svcAdminSchemaBackend) AdminUpdateDatatypeSortOrder(ctx context.Context, id string, sortOrder int64) error {
-	return b.svc.Schema.UpdateAdminDatatypeSortOrder(ctx, b.ac, db.UpdateAdminDatatypeSortOrderParams{
+	return b.svc.Schema.UpdateAdminDatatypeSortOrder(ctx, AuditContextFromMCP(ctx), db.UpdateAdminDatatypeSortOrderParams{
 		AdminDatatypeID: types.AdminDatatypeID(id),
 		SortOrder:       sortOrder,
 	})

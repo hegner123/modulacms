@@ -1,11 +1,7 @@
 package mcp
 
 import (
-	"crypto/subtle"
-	"fmt"
 	"net/http"
-	"os"
-	"strings"
 
 	"github.com/mark3labs/mcp-go/server"
 
@@ -17,8 +13,9 @@ import (
 // newServer creates an MCPServer with all tools registered.
 // If cm is non-nil, connection management tools (list_projects,
 // switch_project, get_connection) are also registered.
-func newServer(backends *Backends, cm *ConnectionManager) *server.MCPServer {
-	srv := server.NewMCPServer("modula", utility.Version)
+// Variadic opts are applied to the MCPServer after creation.
+func newServer(backends *Backends, cm *ConnectionManager, opts ...server.ServerOption) *server.MCPServer {
+	srv := server.NewMCPServer("modula", utility.Version, opts...)
 
 	if cm != nil {
 		registerConnectionTools(srv, cm)
@@ -77,7 +74,7 @@ func ServeWithRegistry(initialProject, initialEnv string) error {
 	} else {
 		// Best-effort: connect to whatever project matches the cwd.
 		if _, cwdErr := cm.ConnectFromCwd(); cwdErr != nil {
-			fmt.Fprintf(os.Stderr, "warning: auto-connect from cwd failed: %v\n", cwdErr)
+			utility.DefaultLogger.Warn("auto-connect from cwd failed", cwdErr)
 		}
 	}
 
@@ -85,35 +82,32 @@ func ServeWithRegistry(initialProject, initialEnv string) error {
 	return server.ServeStdio(newServer(backends, cm))
 }
 
-// ServeDirect creates an MCP server that calls services directly and serves over stdio.
+// ServeDirect creates an MCP server that calls services directly and serves
+// over stdio. Used for local/embedded scenarios where the MCP is a trusted
+// local pipe. Permission enforcement is not applied (no HTTP auth context).
+// The provided AuditContext is injected into tool calls via
+// injectAuditContextMiddleware so that AuditContextFromMCP has a fallback
+// identity for audit trails.
 func ServeDirect(svc *service.Registry, ac audited.AuditContext) error {
-	return server.ServeStdio(newServer(NewServiceBackends(svc, ac), nil))
+	backends := NewServiceBackends(svc)
+	srv := newServer(backends, nil,
+		server.WithToolHandlerMiddleware(injectAuditContextMiddleware(ac)),
+	)
+	return server.ServeStdio(srv)
 }
 
 // DirectHandler returns an http.Handler that serves the MCP protocol over
 // Streamable HTTP, calling services directly without HTTP round-trips.
-func DirectHandler(svc *service.Registry, ac audited.AuditContext) http.Handler {
-	return server.NewStreamableHTTPServer(
-		newServer(NewServiceBackends(svc, ac), nil),
-		server.WithEndpointPath("/mcp"),
+// Authentication is handled by the DefaultMiddlewareChain which wraps the
+// mux and populates the request context. The PermissionMiddleware checks
+// per-tool permissions before executing each tool call.
+func DirectHandler(svc *service.Registry) http.Handler {
+	backends := NewServiceBackends(svc)
+	srv := newServer(backends, nil,
+		server.WithToolHandlerMiddleware(PermissionMiddleware()),
 	)
-}
-
-// APIKeyAuth wraps an http.Handler with Bearer token authentication for the
-// MCP endpoint. It extracts the token from the Authorization header and
-// performs a constant-time comparison against the configured API key.
-func APIKeyAuth(apiKey string, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		auth := r.Header.Get("Authorization")
-		if !strings.HasPrefix(auth, "Bearer ") {
-			http.Error(w, "missing or invalid Authorization header", http.StatusUnauthorized)
-			return
-		}
-		token := auth[len("Bearer "):]
-		if subtle.ConstantTimeCompare([]byte(token), []byte(apiKey)) != 1 {
-			http.Error(w, "invalid API key", http.StatusForbidden)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+	return server.NewStreamableHTTPServer(srv,
+		server.WithEndpointPath("/mcp"),
+		server.WithHTTPContextFunc(PassthroughHTTPContextFunc()),
+	)
 }

@@ -428,10 +428,11 @@ Examples:
 
 			// MCP server (Model Context Protocol for AI tooling).
 			// Direct mode: tools call services directly without HTTP round-trips.
-			if cfg.MCP_Enabled && cfg.MCP_API_Key != "" {
-				mcpAC := audited.Ctx(types.NewNodeID(), types.UserID("mcp-direct"), "", "127.0.0.1")
-				mcpHandler := mcpserver.DirectHandler(svc, mcpAC)
-				mux.Handle("/mcp", mcpserver.APIKeyAuth(cfg.MCP_API_Key, mcpHandler))
+			// Authentication is handled by the DefaultMiddlewareChain; per-tool
+			// permission checks are enforced by the MCP PermissionMiddleware.
+			if cfg.MCP_Enabled {
+				mcpHandler := mcpserver.DirectHandler(svc)
+				mux.Handle("/mcp", mcpHandler)
 			}
 
 			return fullHandler

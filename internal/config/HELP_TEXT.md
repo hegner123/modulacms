@@ -669,8 +669,8 @@ Enable the Model Context Protocol server for AI tool integration. When enabled, 
 
 **Default:** `false`
 
-### `mcp_api_key`
-API key for authenticating MCP client connections. Required when `mcp_enabled` is `true`. Supports `${ENV_VAR}` syntax.
+### `mcp_proxy_token`
+API token for authenticating the local MCP server's outbound connection to a remote CMS instance in proxy mode. Supports `${ENV_VAR}` syntax.
 
 **Default:** empty
 

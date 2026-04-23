@@ -50,9 +50,9 @@ func (cm *ConnectionManager) SwitchProject(project, env string) error {
 		return fmt.Errorf("load config for %q: %w", project, loadErr)
 	}
 
-	apiKey := cfg.MCP_API_Key
+	apiKey := cfg.MCP_Proxy_Token
 	if apiKey == "" {
-		return fmt.Errorf("project %q has no mcp_api_key configured", project)
+		return fmt.Errorf("project %q has no mcp_proxy_token configured", project)
 	}
 
 	baseURL := buildBaseURL(cfg)

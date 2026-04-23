@@ -5,14 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
 )
 
 type svcWebhookBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcWebhookBackend) ListWebhooks(ctx context.Context) (json.RawMessage, error) {
@@ -42,13 +40,14 @@ func (b *svcWebhookBackend) CreateWebhook(ctx context.Context, params json.RawMe
 	if err := json.Unmarshal(params, &input); err != nil {
 		return nil, fmt.Errorf("unmarshal create webhook params: %w", err)
 	}
-	result, err := b.svc.Webhooks.CreateWebhook(ctx, b.ac, service.CreateWebhookInput{
+	ac := AuditContextFromMCP(ctx)
+	result, err := b.svc.Webhooks.CreateWebhook(ctx, ac, service.CreateWebhookInput{
 		Name:     input.Name,
 		URL:      input.URL,
 		Secret:   input.Secret,
 		Events:   input.Events,
 		IsActive: input.IsActive,
-	}, b.ac.UserID)
+	}, ac.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +66,7 @@ func (b *svcWebhookBackend) UpdateWebhook(ctx context.Context, params json.RawMe
 	if err := json.Unmarshal(params, &input); err != nil {
 		return nil, fmt.Errorf("unmarshal update webhook params: %w", err)
 	}
-	result, err := b.svc.Webhooks.UpdateWebhook(ctx, b.ac, service.UpdateWebhookInput{
+	result, err := b.svc.Webhooks.UpdateWebhook(ctx, AuditContextFromMCP(ctx), service.UpdateWebhookInput{
 		WebhookID: types.WebhookID(input.WebhookID),
 		Name:      input.Name,
 		URL:       input.URL,
@@ -82,7 +81,7 @@ func (b *svcWebhookBackend) UpdateWebhook(ctx context.Context, params json.RawMe
 }
 
 func (b *svcWebhookBackend) DeleteWebhook(ctx context.Context, id string) error {
-	return b.svc.Webhooks.DeleteWebhook(ctx, b.ac, types.WebhookID(id))
+	return b.svc.Webhooks.DeleteWebhook(ctx, AuditContextFromMCP(ctx), types.WebhookID(id))
 }
 
 func (b *svcWebhookBackend) TestWebhook(ctx context.Context, id string) (json.RawMessage, error) {

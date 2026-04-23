@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/tree/ops"
@@ -18,7 +17,6 @@ import (
 
 type svcContentBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcContentBackend) ListContent(ctx context.Context, limit, offset int64) (json.RawMessage, error) {
@@ -42,7 +40,7 @@ func (b *svcContentBackend) CreateContent(ctx context.Context, params json.RawMe
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create content params: %w", err)
 	}
-	result, err := b.svc.Content.Create(ctx, b.ac, p)
+	result, err := b.svc.Content.Create(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +55,7 @@ func (b *svcContentBackend) UpdateContent(ctx context.Context, params json.RawMe
 	if err := json.Unmarshal(params, &input); err != nil {
 		return nil, fmt.Errorf("unmarshal update content params: %w", err)
 	}
-	result, err := b.svc.Content.Update(ctx, b.ac, input.UpdateContentDataParams, input.Revision)
+	result, err := b.svc.Content.Update(ctx, AuditContextFromMCP(ctx), input.UpdateContentDataParams, input.Revision)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +63,7 @@ func (b *svcContentBackend) UpdateContent(ctx context.Context, params json.RawMe
 }
 
 func (b *svcContentBackend) DeleteContent(ctx context.Context, id string) error {
-	_, err := b.svc.Content.Delete(ctx, b.ac, types.ContentID(id), false)
+	_, err := b.svc.Content.Delete(ctx, AuditContextFromMCP(ctx), types.ContentID(id), false)
 	return err
 }
 
@@ -106,7 +104,7 @@ func (b *svcContentBackend) CreateContentField(ctx context.Context, params json.
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create content field params: %w", err)
 	}
-	result, err := b.svc.Content.CreateField(ctx, b.ac, p)
+	result, err := b.svc.Content.CreateField(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +116,7 @@ func (b *svcContentBackend) UpdateContentField(ctx context.Context, params json.
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update content field params: %w", err)
 	}
-	result, err := b.svc.Content.UpdateField(ctx, b.ac, p)
+	result, err := b.svc.Content.UpdateField(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +124,7 @@ func (b *svcContentBackend) UpdateContentField(ctx context.Context, params json.
 }
 
 func (b *svcContentBackend) DeleteContentField(ctx context.Context, id string) error {
-	return b.svc.Content.DeleteField(ctx, b.ac, types.ContentFieldID(id))
+	return b.svc.Content.DeleteField(ctx, AuditContextFromMCP(ctx), types.ContentFieldID(id))
 }
 
 func (b *svcContentBackend) ReorderContent(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
@@ -148,7 +146,7 @@ func (b *svcContentBackend) ReorderContent(ctx context.Context, params json.RawM
 		orderedIDs[i] = types.ContentID(id)
 	}
 
-	result, err := b.svc.Content.Reorder(ctx, b.ac, parentID, orderedIDs)
+	result, err := b.svc.Content.Reorder(ctx, AuditContextFromMCP(ctx), parentID, orderedIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +168,7 @@ func (b *svcContentBackend) MoveContent(ctx context.Context, params json.RawMess
 		newParentID = ops.NullID(types.ContentID(*input.NewParentID))
 	}
 
-	result, err := b.svc.Content.Move(ctx, b.ac, ops.MoveParams[types.ContentID]{
+	result, err := b.svc.Content.Move(ctx, AuditContextFromMCP(ctx), ops.MoveParams[types.ContentID]{
 		NodeID:      types.ContentID(input.NodeID),
 		NewParentID: newParentID,
 		Position:    input.Position,
@@ -188,7 +186,7 @@ func (b *svcContentBackend) SaveContentTree(ctx context.Context, params json.Raw
 }
 
 func (b *svcContentBackend) HealContent(ctx context.Context, dryRun bool) (json.RawMessage, error) {
-	result, err := b.svc.Content.Heal(ctx, b.ac, dryRun)
+	result, err := b.svc.Content.Heal(ctx, AuditContextFromMCP(ctx), dryRun)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +198,7 @@ func (b *svcContentBackend) BatchUpdateContent(ctx context.Context, params json.
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal batch update params: %w", err)
 	}
-	result, err := b.svc.Content.BatchUpdate(ctx, b.ac, p)
+	result, err := b.svc.Content.BatchUpdate(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +239,6 @@ func (b *svcContentBackend) CreateContentComposite(ctx context.Context, params j
 
 type svcAdminContentBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcAdminContentBackend) ListAdminContent(ctx context.Context, limit, offset int64) (json.RawMessage, error) {
@@ -265,7 +262,7 @@ func (b *svcAdminContentBackend) CreateAdminContent(ctx context.Context, params 
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create admin content params: %w", err)
 	}
-	result, err := b.svc.AdminContent.Create(ctx, b.ac, p)
+	result, err := b.svc.AdminContent.Create(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +277,7 @@ func (b *svcAdminContentBackend) UpdateAdminContent(ctx context.Context, params 
 	if err := json.Unmarshal(params, &input); err != nil {
 		return nil, fmt.Errorf("unmarshal update admin content params: %w", err)
 	}
-	result, err := b.svc.AdminContent.Update(ctx, b.ac, input.UpdateAdminContentDataParams, input.Revision)
+	result, err := b.svc.AdminContent.Update(ctx, AuditContextFromMCP(ctx), input.UpdateAdminContentDataParams, input.Revision)
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +285,7 @@ func (b *svcAdminContentBackend) UpdateAdminContent(ctx context.Context, params 
 }
 
 func (b *svcAdminContentBackend) DeleteAdminContent(ctx context.Context, id string) error {
-	_, err := b.svc.AdminContent.Delete(ctx, b.ac, types.AdminContentID(id), false)
+	_, err := b.svc.AdminContent.Delete(ctx, AuditContextFromMCP(ctx), types.AdminContentID(id), false)
 	return err
 }
 
@@ -311,7 +308,7 @@ func (b *svcAdminContentBackend) ReorderAdminContent(ctx context.Context, params
 		orderedIDs[i] = types.AdminContentID(id)
 	}
 
-	result, err := b.svc.AdminContent.Reorder(ctx, b.ac, parentID, orderedIDs)
+	result, err := b.svc.AdminContent.Reorder(ctx, AuditContextFromMCP(ctx), parentID, orderedIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +330,7 @@ func (b *svcAdminContentBackend) MoveAdminContent(ctx context.Context, params js
 		newParentID = ops.NullID(types.AdminContentID(*input.NewParentID))
 	}
 
-	result, err := b.svc.AdminContent.Move(ctx, b.ac, ops.MoveParams[types.AdminContentID]{
+	result, err := b.svc.AdminContent.Move(ctx, AuditContextFromMCP(ctx), ops.MoveParams[types.AdminContentID]{
 		NodeID:      types.AdminContentID(input.NodeID),
 		NewParentID: newParentID,
 		Position:    input.Position,
@@ -365,7 +362,7 @@ func (b *svcAdminContentBackend) CreateAdminContentField(ctx context.Context, pa
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create admin content field params: %w", err)
 	}
-	result, err := b.svc.AdminContent.CreateField(ctx, b.ac, p)
+	result, err := b.svc.AdminContent.CreateField(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +374,7 @@ func (b *svcAdminContentBackend) UpdateAdminContentField(ctx context.Context, pa
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update admin content field params: %w", err)
 	}
-	result, err := b.svc.AdminContent.UpdateField(ctx, b.ac, p)
+	result, err := b.svc.AdminContent.UpdateField(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +382,7 @@ func (b *svcAdminContentBackend) UpdateAdminContentField(ctx context.Context, pa
 }
 
 func (b *svcAdminContentBackend) DeleteAdminContentField(ctx context.Context, id string) error {
-	return b.svc.AdminContent.DeleteField(ctx, b.ac, types.AdminContentFieldID(id))
+	return b.svc.AdminContent.DeleteField(ctx, AuditContextFromMCP(ctx), types.AdminContentFieldID(id))
 }
 
 func (b *svcAdminContentBackend) AdminGetContentFull(ctx context.Context, limit, offset int64) (json.RawMessage, error) {
@@ -449,7 +446,6 @@ func (b *svcAdminContentBackend) GetAdminTree(ctx context.Context, slug string) 
 
 type svcVersionBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcVersionBackend) ListVersions(ctx context.Context, contentID string) (json.RawMessage, error) {
@@ -481,7 +477,7 @@ func (b *svcVersionBackend) CreateVersion(ctx context.Context, params json.RawMe
 	if input.Locale == "" {
 		input.Locale = "en"
 	}
-	result, err := b.svc.Content.CreateVersion(ctx, b.ac, types.ContentID(input.ContentDataID), input.Locale, input.Label, types.UserID(input.UserID))
+	result, err := b.svc.Content.CreateVersion(ctx, AuditContextFromMCP(ctx), types.ContentID(input.ContentDataID), input.Locale, input.Label, types.UserID(input.UserID))
 	if err != nil {
 		return nil, err
 	}
@@ -489,7 +485,7 @@ func (b *svcVersionBackend) CreateVersion(ctx context.Context, params json.RawMe
 }
 
 func (b *svcVersionBackend) DeleteVersion(ctx context.Context, versionID string) error {
-	return b.svc.Content.DeleteVersion(ctx, b.ac, types.ContentVersionID(versionID))
+	return b.svc.Content.DeleteVersion(ctx, AuditContextFromMCP(ctx), types.ContentVersionID(versionID))
 }
 
 func (b *svcVersionBackend) RestoreVersion(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
@@ -501,7 +497,7 @@ func (b *svcVersionBackend) RestoreVersion(ctx context.Context, params json.RawM
 	if err := json.Unmarshal(params, &input); err != nil {
 		return nil, fmt.Errorf("unmarshal restore version params: %w", err)
 	}
-	result, err := b.svc.Content.RestoreVersion(ctx, b.ac, types.ContentID(input.ContentDataID), types.ContentVersionID(input.ContentVersionID), types.UserID(input.UserID))
+	result, err := b.svc.Content.RestoreVersion(ctx, AuditContextFromMCP(ctx), types.ContentID(input.ContentDataID), types.ContentVersionID(input.ContentVersionID), types.UserID(input.UserID))
 	if err != nil {
 		return nil, err
 	}
@@ -537,7 +533,7 @@ func (b *svcVersionBackend) AdminCreateVersion(ctx context.Context, params json.
 	if input.Locale == "" {
 		input.Locale = "en"
 	}
-	result, err := b.svc.AdminContent.CreateVersion(ctx, b.ac, types.AdminContentID(input.AdminContentDataID), input.Locale, input.Label, types.UserID(input.UserID))
+	result, err := b.svc.AdminContent.CreateVersion(ctx, AuditContextFromMCP(ctx), types.AdminContentID(input.AdminContentDataID), input.Locale, input.Label, types.UserID(input.UserID))
 	if err != nil {
 		return nil, err
 	}
@@ -545,7 +541,7 @@ func (b *svcVersionBackend) AdminCreateVersion(ctx context.Context, params json.
 }
 
 func (b *svcVersionBackend) AdminDeleteVersion(ctx context.Context, versionID string) error {
-	return b.svc.AdminContent.DeleteVersion(ctx, b.ac, types.AdminContentVersionID(versionID))
+	return b.svc.AdminContent.DeleteVersion(ctx, AuditContextFromMCP(ctx), types.AdminContentVersionID(versionID))
 }
 
 func (b *svcVersionBackend) AdminRestoreVersion(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
@@ -557,7 +553,7 @@ func (b *svcVersionBackend) AdminRestoreVersion(ctx context.Context, params json
 	if err := json.Unmarshal(params, &input); err != nil {
 		return nil, fmt.Errorf("unmarshal admin restore version params: %w", err)
 	}
-	result, err := b.svc.AdminContent.RestoreVersion(ctx, b.ac, types.AdminContentID(input.AdminContentDataID), types.AdminContentVersionID(input.AdminContentVersionID), types.UserID(input.UserID))
+	result, err := b.svc.AdminContent.RestoreVersion(ctx, AuditContextFromMCP(ctx), types.AdminContentID(input.AdminContentDataID), types.AdminContentVersionID(input.AdminContentVersionID), types.UserID(input.UserID))
 	if err != nil {
 		return nil, err
 	}

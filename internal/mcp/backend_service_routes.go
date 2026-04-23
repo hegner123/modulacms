@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
 )
@@ -17,7 +16,6 @@ import (
 
 type svcRouteBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcRouteBackend) ListRoutes(ctx context.Context) (json.RawMessage, error) {
@@ -41,7 +39,7 @@ func (b *svcRouteBackend) CreateRoute(ctx context.Context, params json.RawMessag
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create route params: %w", err)
 	}
-	result, err := b.svc.Routes.CreateRoute(ctx, b.ac, p)
+	result, err := b.svc.Routes.CreateRoute(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +51,7 @@ func (b *svcRouteBackend) UpdateRoute(ctx context.Context, params json.RawMessag
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update route params: %w", err)
 	}
-	result, err := b.svc.Routes.UpdateRoute(ctx, b.ac, p)
+	result, err := b.svc.Routes.UpdateRoute(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +59,7 @@ func (b *svcRouteBackend) UpdateRoute(ctx context.Context, params json.RawMessag
 }
 
 func (b *svcRouteBackend) DeleteRoute(ctx context.Context, id string) error {
-	return b.svc.Routes.DeleteRoute(ctx, b.ac, types.RouteID(id))
+	return b.svc.Routes.DeleteRoute(ctx, AuditContextFromMCP(ctx), types.RouteID(id))
 }
 
 func (b *svcRouteBackend) ListRoutesFull(ctx context.Context) (json.RawMessage, error) {
@@ -89,7 +87,6 @@ func (b *svcRouteBackend) ListRoutesFull(ctx context.Context) (json.RawMessage, 
 
 type svcAdminRouteBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcAdminRouteBackend) ListAdminRoutes(ctx context.Context) (json.RawMessage, error) {
@@ -113,7 +110,7 @@ func (b *svcAdminRouteBackend) CreateAdminRoute(ctx context.Context, params json
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create admin route params: %w", err)
 	}
-	result, err := b.svc.Routes.CreateAdminRoute(ctx, b.ac, p)
+	result, err := b.svc.Routes.CreateAdminRoute(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +122,7 @@ func (b *svcAdminRouteBackend) UpdateAdminRoute(ctx context.Context, params json
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update admin route params: %w", err)
 	}
-	result, err := b.svc.Routes.UpdateAdminRoute(ctx, b.ac, p)
+	result, err := b.svc.Routes.UpdateAdminRoute(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +130,7 @@ func (b *svcAdminRouteBackend) UpdateAdminRoute(ctx context.Context, params json
 }
 
 func (b *svcAdminRouteBackend) DeleteAdminRoute(ctx context.Context, id string) error {
-	return b.svc.Routes.DeleteAdminRoute(ctx, b.ac, types.AdminRouteID(id))
+	return b.svc.Routes.DeleteAdminRoute(ctx, AuditContextFromMCP(ctx), types.AdminRouteID(id))
 }
 
 func (b *svcAdminRouteBackend) ListAdminFieldTypes(ctx context.Context) (json.RawMessage, error) {
@@ -157,7 +154,7 @@ func (b *svcAdminRouteBackend) CreateAdminFieldType(ctx context.Context, params 
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create admin field type params: %w", err)
 	}
-	result, err := b.svc.Schema.CreateAdminFieldType(ctx, b.ac, p)
+	result, err := b.svc.Schema.CreateAdminFieldType(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +166,7 @@ func (b *svcAdminRouteBackend) UpdateAdminFieldType(ctx context.Context, params 
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update admin field type params: %w", err)
 	}
-	result, err := b.svc.Schema.UpdateAdminFieldType(ctx, b.ac, p)
+	result, err := b.svc.Schema.UpdateAdminFieldType(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -177,5 +174,5 @@ func (b *svcAdminRouteBackend) UpdateAdminFieldType(ctx context.Context, params 
 }
 
 func (b *svcAdminRouteBackend) DeleteAdminFieldType(ctx context.Context, id string) error {
-	return b.svc.Schema.DeleteAdminFieldType(ctx, b.ac, types.AdminFieldTypeID(id))
+	return b.svc.Schema.DeleteAdminFieldType(ctx, AuditContextFromMCP(ctx), types.AdminFieldTypeID(id))
 }

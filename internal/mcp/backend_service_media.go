@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
 )
@@ -20,7 +19,6 @@ import (
 
 type svcMediaBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcMediaBackend) ListMedia(ctx context.Context, limit, offset int64) (json.RawMessage, error) {
@@ -54,7 +52,7 @@ func (b *svcMediaBackend) UpdateMedia(ctx context.Context, params json.RawMessag
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update media params: %w", err)
 	}
-	result, err := b.svc.Media.UpdateMediaMetadata(ctx, b.ac, p)
+	result, err := b.svc.Media.UpdateMediaMetadata(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +60,7 @@ func (b *svcMediaBackend) UpdateMedia(ctx context.Context, params json.RawMessag
 }
 
 func (b *svcMediaBackend) DeleteMedia(ctx context.Context, id string) error {
-	return b.svc.Media.DeleteMedia(ctx, b.ac, types.MediaID(id))
+	return b.svc.Media.DeleteMedia(ctx, AuditContextFromMCP(ctx), types.MediaID(id))
 }
 
 func (b *svcMediaBackend) UploadMedia(ctx context.Context, reader io.Reader, filename string) (json.RawMessage, error) {
@@ -118,7 +116,7 @@ func (b *svcMediaBackend) CreateMediaDimension(ctx context.Context, params json.
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create media dimension params: %w", err)
 	}
-	result, err := b.svc.Media.CreateMediaDimension(ctx, b.ac, p)
+	result, err := b.svc.Media.CreateMediaDimension(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +128,7 @@ func (b *svcMediaBackend) UpdateMediaDimension(ctx context.Context, params json.
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update media dimension params: %w", err)
 	}
-	result, err := b.svc.Media.UpdateMediaDimension(ctx, b.ac, p)
+	result, err := b.svc.Media.UpdateMediaDimension(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +136,7 @@ func (b *svcMediaBackend) UpdateMediaDimension(ctx context.Context, params json.
 }
 
 func (b *svcMediaBackend) DeleteMediaDimension(ctx context.Context, id string) error {
-	return b.svc.Media.DeleteMediaDimension(ctx, b.ac, id)
+	return b.svc.Media.DeleteMediaDimension(ctx, AuditContextFromMCP(ctx), id)
 }
 
 func (b *svcMediaBackend) DownloadMedia(ctx context.Context, id string) (json.RawMessage, error) {
@@ -232,7 +230,6 @@ func (b *svcMediaBackend) ReprocessMedia(ctx context.Context) (json.RawMessage, 
 
 type svcMediaFolderBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcMediaFolderBackend) ListMediaFolders(ctx context.Context, parentID string) (json.RawMessage, error) {
@@ -307,7 +304,7 @@ func (b *svcMediaFolderBackend) CreateMediaFolder(ctx context.Context, params js
 	}
 
 	now := types.NewTimestamp(time.Now().UTC())
-	folder, err := d.CreateMediaFolder(ctx, b.ac, db.CreateMediaFolderParams{
+	folder, err := d.CreateMediaFolder(ctx, AuditContextFromMCP(ctx), db.CreateMediaFolderParams{
 		Name:         p.Name,
 		ParentID:     parentID,
 		DateCreated:  now,
@@ -378,7 +375,7 @@ func (b *svcMediaFolderBackend) UpdateMediaFolder(ctx context.Context, params js
 		}
 	}
 
-	_, err = d.UpdateMediaFolder(ctx, b.ac, db.UpdateMediaFolderParams{
+	_, err = d.UpdateMediaFolder(ctx, AuditContextFromMCP(ctx), db.UpdateMediaFolderParams{
 		FolderID:     fid,
 		Name:         name,
 		ParentID:     parentID,
@@ -435,7 +432,7 @@ func (b *svcMediaFolderBackend) DeleteMediaFolder(ctx context.Context, id string
 		})
 	}
 
-	if err := d.DeleteMediaFolder(ctx, b.ac, fid); err != nil {
+	if err := d.DeleteMediaFolder(ctx, AuditContextFromMCP(ctx), fid); err != nil {
 		return nil, err
 	}
 	return json.Marshal(map[string]string{"status": "deleted"})
@@ -478,7 +475,7 @@ func (b *svcMediaFolderBackend) MoveMediaToFolder(ctx context.Context, params js
 		if err := mid.Validate(); err != nil {
 			continue
 		}
-		err := d.MoveMediaToFolder(ctx, b.ac, db.MoveMediaToFolderParams{
+		err := d.MoveMediaToFolder(ctx, AuditContextFromMCP(ctx), db.MoveMediaToFolderParams{
 			FolderID:     folderID,
 			DateModified: now,
 			MediaID:      mid,
@@ -543,7 +540,6 @@ func (b *svcMediaFolderBackend) ListMediaInFolder(ctx context.Context, folderID 
 
 type svcAdminMediaBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcAdminMediaBackend) ListAdminMedia(ctx context.Context, limit, offset int64) (json.RawMessage, error) {
@@ -655,7 +651,7 @@ func (b *svcAdminMediaBackend) UpdateAdminMedia(ctx context.Context, params json
 		updateParams.FocalY = types.NullableFloat64{Float64: *p.FocalY, Valid: true}
 	}
 
-	if _, err := d.UpdateAdminMedia(ctx, b.ac, updateParams); err != nil {
+	if _, err := d.UpdateAdminMedia(ctx, AuditContextFromMCP(ctx), updateParams); err != nil {
 		return nil, err
 	}
 
@@ -672,7 +668,7 @@ func (b *svcAdminMediaBackend) DeleteAdminMedia(ctx context.Context, id string) 
 	if err := mid.Validate(); err != nil {
 		return &service.ValidationError{Errors: []service.FieldError{{Field: "id", Message: fmt.Sprintf("invalid: %v", err)}}}
 	}
-	return d.DeleteAdminMedia(ctx, b.ac, mid)
+	return d.DeleteAdminMedia(ctx, AuditContextFromMCP(ctx), mid)
 }
 
 func (b *svcAdminMediaBackend) UploadAdminMedia(ctx context.Context, reader io.Reader, filename string) (json.RawMessage, error) {
@@ -698,7 +694,6 @@ func (b *svcAdminMediaBackend) ListMediaDimensions(ctx context.Context) (json.Ra
 
 type svcAdminMediaFolderBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcAdminMediaFolderBackend) ListAdminMediaFolders(ctx context.Context, parentID string) (json.RawMessage, error) {
@@ -773,7 +768,7 @@ func (b *svcAdminMediaFolderBackend) CreateAdminMediaFolder(ctx context.Context,
 	}
 
 	now := types.NewTimestamp(time.Now().UTC())
-	folder, err := d.CreateAdminMediaFolder(ctx, b.ac, db.CreateAdminMediaFolderParams{
+	folder, err := d.CreateAdminMediaFolder(ctx, AuditContextFromMCP(ctx), db.CreateAdminMediaFolderParams{
 		Name:         p.Name,
 		ParentID:     parentID,
 		DateCreated:  now,
@@ -844,7 +839,7 @@ func (b *svcAdminMediaFolderBackend) UpdateAdminMediaFolder(ctx context.Context,
 		}
 	}
 
-	_, err = d.UpdateAdminMediaFolder(ctx, b.ac, db.UpdateAdminMediaFolderParams{
+	_, err = d.UpdateAdminMediaFolder(ctx, AuditContextFromMCP(ctx), db.UpdateAdminMediaFolderParams{
 		AdminFolderID: fid,
 		Name:          name,
 		ParentID:      parentID,
@@ -901,7 +896,7 @@ func (b *svcAdminMediaFolderBackend) DeleteAdminMediaFolder(ctx context.Context,
 		})
 	}
 
-	if err := d.DeleteAdminMediaFolder(ctx, b.ac, fid); err != nil {
+	if err := d.DeleteAdminMediaFolder(ctx, AuditContextFromMCP(ctx), fid); err != nil {
 		return nil, err
 	}
 	return json.Marshal(map[string]string{"status": "deleted"})
@@ -944,7 +939,7 @@ func (b *svcAdminMediaFolderBackend) MoveAdminMediaToFolder(ctx context.Context,
 		if err := mid.Validate(); err != nil {
 			continue
 		}
-		err := d.MoveAdminMediaToFolder(ctx, b.ac, db.MoveAdminMediaToFolderParams{
+		err := d.MoveAdminMediaToFolder(ctx, AuditContextFromMCP(ctx), db.MoveAdminMediaToFolderParams{
 			FolderID:     folderID,
 			DateModified: now,
 			AdminMediaID: mid,

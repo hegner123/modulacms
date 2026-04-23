@@ -239,7 +239,7 @@ func SettingsUpdateHandler(svc *service.Registry) http.HandlerFunc {
 
 		// MCP settings
 		setBoolIfPresent(r, updates, "mcp_enabled")
-		setIfPresent(r, updates, "mcp_api_key")
+		setIfPresent(r, updates, "mcp_proxy_token")
 
 		// Search settings
 		setBoolIfPresent(r, updates, "search_enabled")

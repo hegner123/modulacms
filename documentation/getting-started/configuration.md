@@ -166,7 +166,7 @@ These settings change between development, staging, and production:
 | **Email credentials** | `email_username`, `email_password`, `email_api_key`, `email_api_endpoint`, `email_aws_access_key_id`, `email_aws_secret_access_key` | Credentials differ per environment |
 | **OAuth credentials** | `oauth_client_id`, `oauth_client_secret`, `oauth_redirect_url`, `oauth_success_redirect` | Different OAuth app per environment |
 | **Deploy targets** | `deploy_environments`, `deploy_snapshot_dir` | Each environment pushes/pulls to different targets |
-| **Secrets** | `auth_salt`, `mcp_api_key`, `remote_api_key` | Unique per environment |
+| **Secrets** | `auth_salt`, `mcp_proxy_token`, `remote_api_key` | Unique per environment |
 | **TLS** | `cert_dir` | Different cert paths |
 | **Observability** | `observability_*` | Different DSN, sample rates, environment tags |
 | **Logging** | `log_path` | Different log locations |
@@ -616,7 +616,7 @@ Each entry in `deploy_environments` is an object:
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `mcp_enabled` | bool | `false` | Enable the MCP server (Model Context Protocol for AI tooling) |
-| `mcp_api_key` | string | `""` | API key for authenticating MCP clients |
+| `mcp_proxy_token` | string | `""` | API token for connecting to a remote CMS instance in proxy mode |
 
 ## Composition Settings
 
@@ -773,7 +773,7 @@ ModulaCMS redacts the following fields (replacing them with `********`) when ret
 - `email_api_key`
 - `email_aws_access_key_id`
 - `email_aws_secret_access_key`
-- `mcp_api_key`
+- `mcp_proxy_token`
 
 > **Good to know**: When you update configuration via the API, redacted values (`********`) are skipped automatically to prevent overwriting secrets with the placeholder.
 

@@ -16,6 +16,16 @@ The server runs over stdio transport. Register it with your MCP client:
 claude mcp add --transport stdio modula -- ./modula mcp mysite
 ```
 
+## Authentication
+
+The MCP server uses the same API token and RBAC system as the REST API. Every tool call checks the authenticated user's permissions before executing.
+
+For HTTP mode (Streamable HTTP transport on `/mcp`), pass a Bearer token in the `Authorization` header. The token resolves to a user, and that user's role determines which tools are available.
+
+For stdio mode (`modula mcp`), the MCP server connects to a remote CMS using the `mcp_proxy_token` from your config. The remote server enforces its own authentication.
+
+For setup steps, token creation, and the complete tool-to-permission mapping, see [MCP Authentication](/docs/reference/mcp-authentication).
+
 ## Connection Management
 
 Manage which CMS instance you're connected to.

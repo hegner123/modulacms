@@ -76,6 +76,9 @@ Client libraries for consuming the ModulaCMS API. See the [SDK overview](/docs/s
 
 ## Reference
 
+- [MCP Server](/docs/reference/mcp-server) -- tool reference for AI integrations
+- [MCP Authentication](/docs/reference/mcp-authentication) -- API tokens, permissions, and audit trails for MCP
+- [CLI](/docs/reference/cli) -- command-line reference
 - [Glossary](/docs/reference/glossary)
 - [Troubleshooting](/docs/reference/troubleshooting)
 - [Philosophy](/docs/PHILOSOPHY) -- performance, flexibility, transparency

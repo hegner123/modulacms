@@ -1352,7 +1352,7 @@ func SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchIn
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = settingsPasswordField("mcp_api_key", "API Key", cfg.MCP_API_Key, "API key for authenticating MCP requests").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = settingsPasswordField("mcp_proxy_token", "Proxy Token", cfg.MCP_Proxy_Token, "API token for connecting to a remote CMS instance in proxy mode").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

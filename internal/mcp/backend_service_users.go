@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
 )
@@ -17,13 +16,12 @@ import (
 
 type svcUserBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcUserBackend) Whoami(ctx context.Context) (json.RawMessage, error) {
 	// Whoami identifies the MCP operator. In direct mode the audit context
 	// carries the user identity set at construction time.
-	user, err := b.svc.Users.GetUser(ctx, b.ac.UserID)
+	user, err := b.svc.Users.GetUser(ctx, AuditContextFromMCP(ctx).UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +56,7 @@ func (b *svcUserBackend) CreateUser(ctx context.Context, params json.RawMessage)
 	}
 	// MCP operates as admin
 	p.IsAdmin = true
-	result, err := b.svc.Users.CreateUser(ctx, b.ac, p)
+	result, err := b.svc.Users.CreateUser(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +71,7 @@ func (b *svcUserBackend) UpdateUser(ctx context.Context, params json.RawMessage)
 	}
 	// MCP operates as admin
 	p.IsAdmin = true
-	result, err := b.svc.Users.UpdateUser(ctx, b.ac, p)
+	result, err := b.svc.Users.UpdateUser(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +80,7 @@ func (b *svcUserBackend) UpdateUser(ctx context.Context, params json.RawMessage)
 }
 
 func (b *svcUserBackend) DeleteUser(ctx context.Context, id string) error {
-	return b.svc.Users.DeleteUser(ctx, b.ac, types.UserID(id))
+	return b.svc.Users.DeleteUser(ctx, AuditContextFromMCP(ctx), types.UserID(id))
 }
 
 func (b *svcUserBackend) ListUsersFull(ctx context.Context) (json.RawMessage, error) {
@@ -118,7 +116,7 @@ func (b *svcUserBackend) ReassignAndDeleteUser(ctx context.Context, params json.
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal reassign and delete user params: %w", err)
 	}
-	result, err := b.svc.Users.ReassignDelete(ctx, b.ac, p)
+	result, err := b.svc.Users.ReassignDelete(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +124,7 @@ func (b *svcUserBackend) ReassignAndDeleteUser(ctx context.Context, params json.
 }
 
 func (b *svcUserBackend) ListUserSessions(ctx context.Context) (json.RawMessage, error) {
-	result, err := b.svc.Sessions.GetSessionByUser(ctx, b.ac.UserID)
+	result, err := b.svc.Sessions.GetSessionByUser(ctx, AuditContextFromMCP(ctx).UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +144,6 @@ func sanitizeUserList(users []db.Users) {
 
 type svcRBACBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcRBACBackend) ListRoles(ctx context.Context) (json.RawMessage, error) {
@@ -170,7 +167,7 @@ func (b *svcRBACBackend) CreateRole(ctx context.Context, params json.RawMessage)
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create role params: %w", err)
 	}
-	result, err := b.svc.RBAC.CreateRole(ctx, b.ac, p)
+	result, err := b.svc.RBAC.CreateRole(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +179,7 @@ func (b *svcRBACBackend) UpdateRole(ctx context.Context, params json.RawMessage)
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update role params: %w", err)
 	}
-	result, err := b.svc.RBAC.UpdateRole(ctx, b.ac, p)
+	result, err := b.svc.RBAC.UpdateRole(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +187,7 @@ func (b *svcRBACBackend) UpdateRole(ctx context.Context, params json.RawMessage)
 }
 
 func (b *svcRBACBackend) DeleteRole(ctx context.Context, id string) error {
-	return b.svc.RBAC.DeleteRole(ctx, b.ac, types.RoleID(id))
+	return b.svc.RBAC.DeleteRole(ctx, AuditContextFromMCP(ctx), types.RoleID(id))
 }
 
 func (b *svcRBACBackend) ListPermissions(ctx context.Context) (json.RawMessage, error) {
@@ -214,7 +211,7 @@ func (b *svcRBACBackend) CreatePermission(ctx context.Context, params json.RawMe
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create permission params: %w", err)
 	}
-	result, err := b.svc.RBAC.CreatePermission(ctx, b.ac, p)
+	result, err := b.svc.RBAC.CreatePermission(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +223,7 @@ func (b *svcRBACBackend) UpdatePermission(ctx context.Context, params json.RawMe
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update permission params: %w", err)
 	}
-	result, err := b.svc.RBAC.UpdatePermission(ctx, b.ac, p)
+	result, err := b.svc.RBAC.UpdatePermission(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +231,7 @@ func (b *svcRBACBackend) UpdatePermission(ctx context.Context, params json.RawMe
 }
 
 func (b *svcRBACBackend) DeletePermission(ctx context.Context, id string) error {
-	return b.svc.RBAC.DeletePermission(ctx, b.ac, types.PermissionID(id))
+	return b.svc.RBAC.DeletePermission(ctx, AuditContextFromMCP(ctx), types.PermissionID(id))
 }
 
 func (b *svcRBACBackend) AssignRolePermission(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
@@ -242,7 +239,7 @@ func (b *svcRBACBackend) AssignRolePermission(ctx context.Context, params json.R
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal assign role permission params: %w", err)
 	}
-	result, err := b.svc.RBAC.CreateRolePermission(ctx, b.ac, p)
+	result, err := b.svc.RBAC.CreateRolePermission(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +247,7 @@ func (b *svcRBACBackend) AssignRolePermission(ctx context.Context, params json.R
 }
 
 func (b *svcRBACBackend) RemoveRolePermission(ctx context.Context, id string) error {
-	return b.svc.RBAC.DeleteRolePermission(ctx, b.ac, types.RolePermissionID(id))
+	return b.svc.RBAC.DeleteRolePermission(ctx, AuditContextFromMCP(ctx), types.RolePermissionID(id))
 }
 
 func (b *svcRBACBackend) ListRolePermissions(ctx context.Context) (json.RawMessage, error) {
@@ -283,7 +280,6 @@ func (b *svcRBACBackend) ListRolePermissionsByRole(ctx context.Context, roleID s
 
 type svcSessionBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcSessionBackend) ListSessions(ctx context.Context) (json.RawMessage, error) {
@@ -307,7 +303,7 @@ func (b *svcSessionBackend) UpdateSession(ctx context.Context, params json.RawMe
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update session params: %w", err)
 	}
-	result, err := b.svc.Sessions.UpdateSession(ctx, b.ac, p)
+	result, err := b.svc.Sessions.UpdateSession(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +311,7 @@ func (b *svcSessionBackend) UpdateSession(ctx context.Context, params json.RawMe
 }
 
 func (b *svcSessionBackend) DeleteSession(ctx context.Context, id string) error {
-	return b.svc.Sessions.DeleteSession(ctx, b.ac, types.SessionID(id))
+	return b.svc.Sessions.DeleteSession(ctx, AuditContextFromMCP(ctx), types.SessionID(id))
 }
 
 // ---------------------------------------------------------------------------
@@ -324,7 +320,6 @@ func (b *svcSessionBackend) DeleteSession(ctx context.Context, id string) error 
 
 type svcTokenBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcTokenBackend) ListTokens(ctx context.Context) (json.RawMessage, error) {
@@ -348,7 +343,7 @@ func (b *svcTokenBackend) CreateToken(ctx context.Context, params json.RawMessag
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create token params: %w", err)
 	}
-	result, err := b.svc.Tokens.CreateToken(ctx, b.ac, p)
+	result, err := b.svc.Tokens.CreateToken(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -356,7 +351,7 @@ func (b *svcTokenBackend) CreateToken(ctx context.Context, params json.RawMessag
 }
 
 func (b *svcTokenBackend) DeleteToken(ctx context.Context, id string) error {
-	return b.svc.Tokens.DeleteToken(ctx, b.ac, id)
+	return b.svc.Tokens.DeleteToken(ctx, AuditContextFromMCP(ctx), id)
 }
 
 // ---------------------------------------------------------------------------
@@ -365,12 +360,12 @@ func (b *svcTokenBackend) DeleteToken(ctx context.Context, id string) error {
 
 type svcSSHKeyBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcSSHKeyBackend) ListSSHKeys(ctx context.Context) (json.RawMessage, error) {
 	// List SSH keys for the audit context user.
-	userID := types.NullableUserID{ID: b.ac.UserID, Valid: !b.ac.UserID.IsZero()}
+	ac := AuditContextFromMCP(ctx)
+	userID := types.NullableUserID{ID: ac.UserID, Valid: !ac.UserID.IsZero()}
 	result, err := b.svc.SSHKeys.ListKeys(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -385,9 +380,9 @@ func (b *svcSSHKeyBackend) CreateSSHKey(ctx context.Context, params json.RawMess
 	}
 	// Default to the audit context user if not set.
 	if p.UserID.IsZero() {
-		p.UserID = b.ac.UserID
+		p.UserID = AuditContextFromMCP(ctx).UserID
 	}
-	result, err := b.svc.SSHKeys.AddKey(ctx, b.ac, p)
+	result, err := b.svc.SSHKeys.AddKey(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -395,7 +390,8 @@ func (b *svcSSHKeyBackend) CreateSSHKey(ctx context.Context, params json.RawMess
 }
 
 func (b *svcSSHKeyBackend) DeleteSSHKey(ctx context.Context, id string) error {
-	return b.svc.SSHKeys.DeleteKey(ctx, b.ac, b.ac.UserID, id)
+	ac := AuditContextFromMCP(ctx)
+	return b.svc.SSHKeys.DeleteKey(ctx, ac, ac.UserID, id)
 }
 
 // ---------------------------------------------------------------------------
@@ -404,7 +400,6 @@ func (b *svcSSHKeyBackend) DeleteSSHKey(ctx context.Context, id string) error {
 
 type svcOAuthBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcOAuthBackend) ListUsersOAuth(ctx context.Context) (json.RawMessage, error) {
@@ -428,7 +423,7 @@ func (b *svcOAuthBackend) CreateUserOAuth(ctx context.Context, params json.RawMe
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create user oauth params: %w", err)
 	}
-	result, err := b.svc.OAuth.CreateUserOauth(ctx, b.ac, p)
+	result, err := b.svc.OAuth.CreateUserOauth(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -440,7 +435,7 @@ func (b *svcOAuthBackend) UpdateUserOAuth(ctx context.Context, params json.RawMe
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update user oauth params: %w", err)
 	}
-	result, err := b.svc.OAuth.UpdateUserOauth(ctx, b.ac, p)
+	result, err := b.svc.OAuth.UpdateUserOauth(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -455,5 +450,5 @@ func (b *svcOAuthBackend) UpdateUserOAuth(ctx context.Context, params json.RawMe
 }
 
 func (b *svcOAuthBackend) DeleteUserOAuth(ctx context.Context, id string) error {
-	return b.svc.OAuth.DeleteUserOauth(ctx, b.ac, types.UserOauthID(id))
+	return b.svc.OAuth.DeleteUserOauth(ctx, AuditContextFromMCP(ctx), types.UserOauthID(id))
 }

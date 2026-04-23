@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/service"
 )
@@ -17,7 +16,6 @@ import (
 
 type svcValidationBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 // --- Public ---
@@ -43,7 +41,7 @@ func (b *svcValidationBackend) CreateValidation(ctx context.Context, params json
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create validation params: %w", err)
 	}
-	result, err := b.svc.Validations.CreateValidation(ctx, b.ac, p)
+	result, err := b.svc.Validations.CreateValidation(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +53,7 @@ func (b *svcValidationBackend) UpdateValidation(ctx context.Context, params json
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update validation params: %w", err)
 	}
-	result, err := b.svc.Validations.UpdateValidation(ctx, b.ac, p)
+	result, err := b.svc.Validations.UpdateValidation(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +61,7 @@ func (b *svcValidationBackend) UpdateValidation(ctx context.Context, params json
 }
 
 func (b *svcValidationBackend) DeleteValidation(ctx context.Context, id string) error {
-	return b.svc.Validations.DeleteValidation(ctx, b.ac, types.ValidationID(id))
+	return b.svc.Validations.DeleteValidation(ctx, AuditContextFromMCP(ctx), types.ValidationID(id))
 }
 
 func (b *svcValidationBackend) SearchValidations(ctx context.Context, query string) (json.RawMessage, error) {
@@ -97,7 +95,7 @@ func (b *svcValidationBackend) AdminCreateValidation(ctx context.Context, params
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create admin validation params: %w", err)
 	}
-	result, err := b.svc.Validations.CreateAdminValidation(ctx, b.ac, p)
+	result, err := b.svc.Validations.CreateAdminValidation(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +107,7 @@ func (b *svcValidationBackend) AdminUpdateValidation(ctx context.Context, params
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update admin validation params: %w", err)
 	}
-	result, err := b.svc.Validations.UpdateAdminValidation(ctx, b.ac, p)
+	result, err := b.svc.Validations.UpdateAdminValidation(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +115,7 @@ func (b *svcValidationBackend) AdminUpdateValidation(ctx context.Context, params
 }
 
 func (b *svcValidationBackend) AdminDeleteValidation(ctx context.Context, id string) error {
-	return b.svc.Validations.DeleteAdminValidation(ctx, b.ac, types.AdminValidationID(id))
+	return b.svc.Validations.DeleteAdminValidation(ctx, AuditContextFromMCP(ctx), types.AdminValidationID(id))
 }
 
 func (b *svcValidationBackend) AdminSearchValidations(ctx context.Context, query string) (json.RawMessage, error) {

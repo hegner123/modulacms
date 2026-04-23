@@ -644,7 +644,7 @@ templ SettingsContent(cfg *config.Config, csrfToken string, searchStatus SearchI
                             @settingsCheckbox("mcp_enabled", "Enabled", cfg.MCP_Enabled, "Enable the MCP server for AI tool integration")
                         </div>
                         <div class="sm:col-span-6">
-                            @settingsPasswordField("mcp_api_key", "API Key", cfg.MCP_API_Key, "API key for authenticating MCP requests")
+                            @settingsPasswordField("mcp_proxy_token", "Proxy Token", cfg.MCP_Proxy_Token, "API token for connecting to a remote CMS instance in proxy mode")
                         </div>
                     </div>
                 </div>

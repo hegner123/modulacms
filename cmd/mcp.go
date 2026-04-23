@@ -22,8 +22,8 @@ Connection is resolved from the project registry:
   modula mcp mysite                  Connect to project "mysite" (default env)
   modula mcp mysite production       Connect to "mysite" production environment
 
-The URL and API key are read from the project's modula.config.json (port field
-for URL, mcp_api_key for authentication). When overlays are configured, the
+The URL and proxy token are read from the project's modula.config.json (port
+field for URL, mcp_proxy_token for authentication). When overlays are configured, the
 overlay values take precedence.
 
 Three connection management tools are always available:

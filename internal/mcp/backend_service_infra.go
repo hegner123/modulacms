@@ -7,7 +7,6 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/service"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -18,7 +17,6 @@ import (
 
 type svcTableBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcTableBackend) ListTables(ctx context.Context) (json.RawMessage, error) {
@@ -43,7 +41,7 @@ func (b *svcTableBackend) CreateTable(ctx context.Context, params json.RawMessag
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal create table params: %w", err)
 	}
-	result, err := b.svc.Driver().CreateTable(ctx, b.ac, p)
+	result, err := b.svc.Driver().CreateTable(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +53,7 @@ func (b *svcTableBackend) UpdateTable(ctx context.Context, params json.RawMessag
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("unmarshal update table params: %w", err)
 	}
-	result, err := b.svc.Tables.UpdateTable(ctx, b.ac, p)
+	result, err := b.svc.Tables.UpdateTable(ctx, AuditContextFromMCP(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +61,7 @@ func (b *svcTableBackend) UpdateTable(ctx context.Context, params json.RawMessag
 }
 
 func (b *svcTableBackend) DeleteTable(ctx context.Context, id string) error {
-	return b.svc.Tables.DeleteTable(ctx, b.ac, id)
+	return b.svc.Tables.DeleteTable(ctx, AuditContextFromMCP(ctx), id)
 }
 
 // ---------------------------------------------------------------------------
@@ -236,7 +234,6 @@ func (b *svcConfigBackend) UpdateConfig(ctx context.Context, updates map[string]
 
 type svcImportBackend struct {
 	svc *service.Registry
-	ac  audited.AuditContext
 }
 
 func (b *svcImportBackend) ImportContent(ctx context.Context, format string, data any) (json.RawMessage, error) {
@@ -244,7 +241,7 @@ func (b *svcImportBackend) ImportContent(ctx context.Context, format string, dat
 	if err != nil {
 		return nil, fmt.Errorf("marshal import data: %w", err)
 	}
-	result, err := b.svc.Import.ImportContent(ctx, b.ac, service.ImportContentInput{
+	result, err := b.svc.Import.ImportContent(ctx, AuditContextFromMCP(ctx), service.ImportContentInput{
 		Format: config.OutputFormat(format),
 		Body:   body,
 	})
